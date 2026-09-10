@@ -37,7 +37,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.File;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
@@ -51,8 +51,8 @@ public class FileReadLineTest {
 	private static String	tmpDirectory	= "src/test/resources/tmp/fileReadLineTest";
 	private static String	testFile		= "src/test/resources/tmp/fileReadLineTest/file-read-line-test.txt";
 	private static String	emptyFile		= "src/test/resources/tmp/fileReadLineTest/empty.txt";
-	private static File		writeFile		= null;
-	private static File		readFile		= null;
+	private static BoxFile	writeFile		= null;
+	private static BoxFile	readFile		= null;
 
 	@BeforeAll
 	public static void setUp() throws IOException {
@@ -85,7 +85,7 @@ public class FileReadLineTest {
 			readFile = null;
 		}
 		if ( !FileSystemUtil.exists( testFile ) ) {
-			writeFile = new File( testFile, "write" );
+			writeFile = new BoxFile( testFile, BoxFile.Mode.WRITE );
 			writeFile.writeLine( "box" ).writeLine( "lang" ).writeLine( "rocks!" );
 			writeFile.close();
 			writeFile = null;
@@ -96,7 +96,7 @@ public class FileReadLineTest {
 	@Test
 	@Ignore
 	public void testFileReadLine() {
-		readFile = new File( testFile, "read" );
+		readFile = new BoxFile( testFile, "read" );
 		variables.put( Key.of( "testFileObj" ), readFile );
 		instance.executeSource(
 		    """
@@ -118,7 +118,7 @@ public class FileReadLineTest {
 	@Test
 	@Ignore
 	public void testReadLineMember() {
-		readFile = new File( testFile, "read" );
+		readFile = new BoxFile( testFile, "read" );
 		variables.put( Key.of( "testFileObj" ), readFile );
 		instance.executeSource(
 		    """
@@ -140,7 +140,7 @@ public class FileReadLineTest {
 	@Test
 	@Ignore
 	public void testWriteFileError() {
-		readFile = new File( emptyFile, "write" );
+		readFile = new BoxFile( emptyFile, "write" );
 		variables.put( Key.of( "testFileObj" ), readFile );
 		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """

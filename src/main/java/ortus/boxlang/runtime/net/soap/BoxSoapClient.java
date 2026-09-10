@@ -33,6 +33,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -145,6 +146,23 @@ public class BoxSoapClient implements IReferenceable {
 	private Map<String, String>		customHeaders				= new HashMap<>();
 
 	/**
+	 * SOAP headers to include in the SOAP envelope.
+	 * 
+	 * SOAP Spec:
+	 * - <soap:Header> is OPTIONAL.
+	 * - If present it must be the first child of <soap:Envelope> (before <soap:Body>).
+	 * - There is only ONE <soap:Header> section per request.
+	 * 
+	 * Storage and injection:
+	 * - We store normalized key/value headers as a Java Map<String, String>.
+	 * - Example: { "AuthToken" : "abc123", "SessionId" : "session-456" }.
+	 * - When building the SOAP request (e.g., in buildSoapRequest), these stored headers
+	 * are injected into the <soap:Header> section of the SOAP envelope.
+	 */
+
+	private Map<String, String>		soapHeaders;
+
+	/**
 	 * SOAP version (1.1 or 1.2)
 	 */
 	private String					soapVersion					= "1.1";
@@ -186,6 +204,9 @@ public class BoxSoapClient implements IReferenceable {
 		// Initialize SOAP version from WSDL definition (can be overridden later)
 		this.soapVersion		= wsdlDefinition.getSoapVersion();
 		this.executionContext	= context;
+		// Initialize SOAP headers storage as an empty map
+		// This avoids NullPointerExceptions later when we add header
+		this.soapHeaders		= new HashMap<>();
 	}
 
 	/**
@@ -295,6 +316,18 @@ public class BoxSoapClient implements IReferenceable {
 	 */
 	public BoxSoapClient withTimeout( Integer timeout ) {
 		this.timeout = timeout != null ? timeout : 30;
+		return this;
+	}
+
+	/**
+	 * Set SOAP headers to be included in the SOAP envelope.
+	 *
+	 * @param headers A struct of simple key/value pairs
+	 *
+	 * @return This instance for chaining
+	 */
+	public BoxSoapClient withSoapHeaders( IStruct headers ) {
+		this.soapHeaders = normalizeSoapHeaders( headers );
 		return this;
 	}
 
@@ -409,23 +442,21 @@ public class BoxSoapClient implements IReferenceable {
 	}
 
 	/**
-	 * ------------------------------------------------------------------------------
-	 * Operation Invocation Methods
-	 * ------------------------------------------------------------------------------
-	 */
-
-	/**
 	 * Invoke a SOAP operation without arguments
 	 *
 	 * @param operationName The operation to invoke
 	 *
 	 * @return The operation result
-	 *
-	 * @throws BoxRuntimeException If the operation fails
 	 */
 	public Object invoke( String operationName ) {
 		return invoke( operationName, null );
 	}
+
+	/**
+	 * ------------------------------------------------------------------------------
+	 * Operation Invocation Methods
+	 * ------------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Invoke a SOAP operation with positional arguments
@@ -660,6 +691,49 @@ public class BoxSoapClient implements IReferenceable {
 	 */
 
 	/**
+	 * Validate SOAP header input.
+	 *
+	 * @param headers A struct of simple key/value pairs
+	 */
+	private Map<String, String> normalizeSoapHeaders( IStruct headers ) {
+		if ( headers == null ) {
+			throw new BoxRuntimeException( "SOAP headers cannot be null" );
+		}
+
+		Map<String, String> normalizedHeaders = new HashMap<>();
+
+		for ( Key key : headers.keySet() ) {
+			Object value = headers.get( key );
+
+			if ( key.getName() == null || key.getName().isEmpty() ) {
+				throw new BoxRuntimeException(
+				    "SOAP header keys must be non-empty strings"
+				);
+			}
+
+			try {
+				createHeaderElement( createDocumentBuilder().newDocument(), key.getName() );
+			} catch ( BoxRuntimeException e ) {
+				throw e;
+			} catch ( Exception e ) {
+				throw new BoxRuntimeException( "Failed to validate SOAP header keys", e );
+			}
+
+			if ( value == null ) {
+				normalizedHeaders.put( key.getName(), null );
+				continue;
+			}
+			normalizedHeaders.put(
+			    key.getName(),
+			    StringCaster.attempt( value )
+			        .orThrow( "Invalid SOAP header value for key '" + key.getName() + "'. Only simple scalar values are allowed." )
+			);
+		}
+
+		return normalizedHeaders;
+	}
+
+	/**
 	 * Build a SOAP request envelope for an operation
 	 *
 	 * @param operation The operation to invoke
@@ -669,9 +743,7 @@ public class BoxSoapClient implements IReferenceable {
 	 */
 	private String buildSoapRequest( WsdlOperation operation, Object arguments ) {
 		try {
-			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-			factory.setNamespaceAware( true );
-			DocumentBuilder	builder		= factory.newDocumentBuilder();
+			DocumentBuilder	builder		= createDocumentBuilder();
 			Document		doc			= builder.newDocument();
 
 			// Determine SOAP namespace
@@ -690,6 +762,12 @@ public class BoxSoapClient implements IReferenceable {
 			}
 
 			doc.appendChild( envelope );
+
+			if ( this.soapHeaders != null && !this.soapHeaders.isEmpty() ) {
+				Element header = doc.createElementNS( soapNS, "soap:Header" );
+				envelope.appendChild( header );
+				addSoapHeadersToRequest( doc, header, this.soapHeaders );
+			}
 
 			// Create Body
 			Element body = doc.createElementNS( soapNS, "soap:Body" );
@@ -714,6 +792,44 @@ public class BoxSoapClient implements IReferenceable {
 	}
 
 	/**
+	 * Add SOAP headers to the request envelope.
+	 *
+	 * @param doc           The XML document
+	 * @param headerElement The SOAP header element
+	 * @param headers       The headers to serialize
+	 */
+	private void addSoapHeadersToRequest( Document doc, Element headerElement, Map<String, String> headers ) {
+		for ( Map.Entry<String, String> header : headers.entrySet() ) {
+			String	headerName	= header.getKey();
+			String	headerValue	= header.getValue();
+
+			Element	headerChild	= createHeaderElement( doc, headerName );
+
+			if ( headerValue != null ) {
+				try {
+					headerChild.setTextContent( headerValue );
+				} catch ( DOMException e ) {
+					throw new BoxRuntimeException(
+					    "Invalid SOAP header value for key '" + headerName + "'",
+					    e
+					);
+				}
+			}
+
+			headerElement.appendChild( headerChild );
+
+			if ( this.logger.isTraceEnabled() ) {
+				this.logger.trace(
+				    "Added SOAP header element: <{}>{}</{}>",
+				    headerName,
+				    headerValue != null ? headerValue : "",
+				    headerName
+				);
+			}
+		}
+	}
+
+	/**
 	 * Add parameters to the SOAP request
 	 *
 	 * @param doc           The XML document
@@ -732,6 +848,7 @@ public class BoxSoapClient implements IReferenceable {
 		Map<String, Object> argMap = new HashMap<>();
 
 		if ( arguments instanceof IStruct struct ) {
+
 			if ( logger.isTraceEnabled() ) {
 				logger.trace( "Processing SOAP struct arguments with keys: " + struct.keySet() );
 				logger.trace( "WSDL parameters: " + params.stream().map( p -> p.getName() ).collect( java.util.stream.Collectors.toList() ) );
@@ -1093,8 +1210,8 @@ public class BoxSoapClient implements IReferenceable {
 		}
 
 		throw new BoxRuntimeException(
-		    "SOAP Fault: [" + faultCode + "] " + faultString +
-		        ( faultDetail.isEmpty() ? "" : " - " + faultDetail )
+		    "SOAP Fault: [" + faultCode + "] " + faultString
+		        + ( faultDetail.isEmpty() ? "" : " - " + faultDetail )
 		);
 	}
 
@@ -1141,7 +1258,6 @@ public class BoxSoapClient implements IReferenceable {
 
 			return result;
 		} else {
-			// Leaf element - get text content and attempt type casting
 			String textContent = element.getTextContent();
 
 			// Check for xsi:type attribute for explicit type information
@@ -1386,16 +1502,45 @@ public class BoxSoapClient implements IReferenceable {
 	}
 
 	/**
+	 * Create a namespace-aware document builder for SOAP XML processing.
+	 *
+	 * @return A configured document builder
+	 *
+	 * @throws Exception If the builder cannot be created
+	 */
+	private DocumentBuilder createDocumentBuilder() throws Exception {
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		factory.setNamespaceAware( true );
+		return factory.newDocumentBuilder();
+	}
+
+	/**
+	 * Create a SOAP header element with XML name validation delegated to the DOM implementation.
+	 *
+	 * @param doc        The owning XML document
+	 * @param headerName The header element name
+	 *
+	 * @return The created header element
+	 */
+	private Element createHeaderElement( Document doc, String headerName ) {
+		try {
+			return doc.createElement( headerName );
+		} catch ( DOMException e ) {
+			throw new BoxRuntimeException( "SOAP header keys must be valid XML element names", e );
+		}
+	}
+
+	/**
 	 * Get a string representation
 	 *
 	 * @return String representation
 	 */
 	@Override
 	public String toString() {
-		return "SoapClient{" +
-		    "wsdlUrl='" + this.wsdlDefinition.getWsdlUrl() + '\'' +
-		    ", serviceName='" + this.wsdlDefinition.getServiceName() + '\'' +
-		    ", operations=" + this.wsdlDefinition.getOperations().size() +
-		    '}';
+		return "SoapClient{"
+		    + "wsdlUrl='" + this.wsdlDefinition.getWsdlUrl() + '\''
+		    + ", serviceName='" + this.wsdlDefinition.getServiceName() + '\''
+		    + ", operations=" + this.wsdlDefinition.getOperations().size()
+		    + '}';
 	}
 }

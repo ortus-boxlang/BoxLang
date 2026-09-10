@@ -83,6 +83,16 @@ public class MethodContextTracker {
 		stringLabel.put( label, target );
 	}
 
+	public void inheritLoopControlState( MethodContextTracker parentTracker ) {
+		if ( parentTracker == null ) {
+			return;
+		}
+
+		this.nodeBreaks.putAll( parentTracker.nodeBreaks );
+		this.nodeContinues.putAll( parentTracker.nodeContinues );
+		this.stringLabel.putAll( parentTracker.stringLabel );
+	}
+
 	public BoxNode getStringLabel( String label ) {
 		return stringLabel.get( label );
 	}

@@ -13,7 +13,7 @@ Result: 8
 
 ### Increment 7.5
 
-There is a difference between BL engines. ACF will return the integer incremented removing the decimal part. Boxlang will increment the integer part but return both.
+BoxLang increments the integer part of the number but returns the full value, including the decimal part.
 
 <a href="https://try.boxlang.io/?code=eJzLzEsuSs1NzSsJS8wpTdVQMNczVdC05gIAZrYHMw%3D%3D" target="_blank">Run Example</a>
 

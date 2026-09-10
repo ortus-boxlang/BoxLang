@@ -39,6 +39,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -66,6 +67,8 @@ public class SystemExecute extends BIF {
 		    new Argument( false, "string", Key.directory ),
 		    new Argument( false, "string", Key.output ),
 		    new Argument( false, "string", Key.error ),
+		    new Argument( false, "boolean", Key.inheritEnvironment, true ),
+		    new Argument( false, "struct", Key.environment, new Struct() ),
 		};
 	}
 
@@ -96,6 +99,10 @@ public class SystemExecute extends BIF {
 	 * @argument.ouptut An optional file path to write the command output to
 	 *
 	 * @argument.error An optional file path to write errors to
+	 *
+	 * @argument.inheritEnvironment Whether to inherit the parent process environment variables. Defaults to true.
+	 *
+	 * @argument.environment A struct of environment variables to pass to the process. Merged in after the inherit decision.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String				bin					= arguments.getAsString( Key.of( "name" ) );
@@ -105,6 +112,8 @@ public class SystemExecute extends BIF {
 		Boolean				terminateOnTimeout	= arguments.getAsBoolean( Key.terminateOnTimeout );
 		String				outputTarget		= arguments.getAsString( Key.output );
 		String				errorTarget			= arguments.getAsString( Key.error );
+		Boolean				inheritEnvironment	= arguments.getAsBoolean( Key.inheritEnvironment );
+		IStruct				environment			= arguments.getAsStruct( Key.environment );
 
 		ArrayList<String>	cmd					= new ArrayList<String>( 1 );
 		Struct				response			= new Struct( new HashMap<Key, Object>() {
@@ -146,6 +155,16 @@ public class SystemExecute extends BIF {
 		}
 
 		ProcessBuilder processBuilder = new ProcessBuilder( cmd );
+
+		// If inheritEnvironment is false, start with a clean slate; otherwise keep the JVM's inherited env.
+		if ( !Boolean.TRUE.equals( inheritEnvironment ) ) {
+			processBuilder.environment().clear();
+		}
+
+		// Merge any caller-supplied environment variables on top (works regardless of inherit flag).
+		if ( environment != null && !environment.isEmpty() ) {
+			environment.entrySet().forEach( entry -> processBuilder.environment().put( entry.getKey().getName(), StringCaster.cast( entry.getValue() ) ) );
+		}
 
 		if ( directory != null ) {
 			processBuilder.directory( Path.of( directory ).toFile() );

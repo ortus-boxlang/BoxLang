@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 public class GetBoxVersionInfo extends BIF {
 
 	/**
-	 * Get's the version information of the current Box Runtime
+	 * Get version information for the current Box Runtime
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

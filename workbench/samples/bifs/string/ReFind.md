@@ -13,7 +13,7 @@ Result: 2
 
 ### Script Syntax
 
-CF2016+ example with all optional arguments
+Example with all optional arguments
 
 <a href="https://try.boxlang.io/?code=eJzzCvb3C04tykzMyaxK1VAoSnXLzEvxy3dOLAbylFyVdBSUSlKLSxQMjYwVgRxDHYWSotJUoKijj4%2BSgqaCpjUXAMLsEn0%3D" target="_blank">Run Example</a>
 

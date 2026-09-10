@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer.expression;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.github.javaparser.ast.Node;
@@ -24,8 +25,10 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.javaboxpiler.Transpiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -51,13 +54,14 @@ public class BoxStringConcatTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxStringConcat	interpolation	= ( BoxStringConcat ) node;
-		Node			javaExpr;
-		if ( interpolation.getValues().size() == 1 ) {
-			javaExpr = transpiler.transform( interpolation.getValues().get( 0 ), TransformerContext.RIGHT );
+		BoxStringConcat		interpolation	= ( BoxStringConcat ) node;
+		List<BoxExpression>	optimized		= optimizeStringLiterals( interpolation.getValues() );
+		Node				javaExpr;
+		if ( optimized.size() == 1 ) {
+			javaExpr = ( Expression ) transpiler.transform( optimized.get( 0 ), TransformerContext.RIGHT );
 		} else {
 
-			List<Expression>	operands		= interpolation.getValues()
+			List<Expression>	operands		= optimized
 			    .stream()
 			    .map( it -> ( Expression ) transpiler.transform( it, TransformerContext.RIGHT ) )
 			    .toList();
@@ -70,5 +74,48 @@ public class BoxStringConcatTransformer extends AbstractTransformer {
 		// logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
+	}
+
+	/**
+	 * Optimizes a list of expressions by combining contiguous string literals.
+	 * For example: ["foo", "bar", var, "baz", "qux"] becomes ["foobar", var, "bazqux"]
+	 *
+	 * @param values the list of expressions to optimize
+	 * 
+	 * @return an optimized list with contiguous string literals combined
+	 */
+	private List<BoxExpression> optimizeStringLiterals( List<BoxExpression> values ) {
+		if ( values.isEmpty() ) {
+			return values;
+		}
+
+		List<BoxExpression>	result				= new ArrayList<>();
+		StringBuilder		combinedString		= new StringBuilder();
+		BoxExpression		firstLiteralNode	= null;
+
+		for ( BoxExpression value : values ) {
+			if ( value instanceof BoxStringLiteral literal ) {
+				// Combine all string literals (including empty ones)
+				if ( firstLiteralNode == null ) {
+					firstLiteralNode = value;
+				}
+				combinedString.append( literal.getValue() );
+			} else {
+				// Non-literal expression found, flush any accumulated string (even if empty)
+				if ( firstLiteralNode != null ) {
+					result.add( new BoxStringLiteral( combinedString.toString(), firstLiteralNode.getPosition(), firstLiteralNode.getSourceText() ) );
+					combinedString		= new StringBuilder();
+					firstLiteralNode	= null;
+				}
+				result.add( value );
+			}
+		}
+
+		// Flush any remaining combined string
+		if ( combinedString.length() > 0 ) {
+			result.add( new BoxStringLiteral( combinedString.toString(), firstLiteralNode.getPosition(), firstLiteralNode.getSourceText() ) );
+		}
+
+		return result;
 	}
 }

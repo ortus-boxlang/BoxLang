@@ -22,13 +22,19 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
+import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxNewTransformer extends AbstractTransformer {
 
@@ -44,34 +50,63 @@ public class BoxNewTransformer extends AbstractTransformer {
 	 *
 	 * @return Generates a throw
 	 *
-	 * @throws IllegalStateException
 	 */
 	@Override
-	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxNew		boxNew	= ( BoxNew ) node;
-		Expression	expr	= ( Expression ) transpiler.transform( boxNew.getExpression(), TransformerContext.RIGHT );
-
-		String		fqn		= expr.toString();
-		if ( expr instanceof NameExpr ) {
-			fqn = fqn.startsWith( "\"" ) ? fqn : "\"" + fqn + "\"";
+	public Node transform( BoxNode node, TransformerContext context ) {
+		BoxNew			boxNew	= ( BoxNew ) node;
+		BoxExpression	expr	= boxNew.getExpression();
+		String			fqn;
+		String			prefix	= boxNew.getPrefix() == null ? "" : boxNew.getPrefix().getName() + ":";
+		String			exprSource;
+		if ( expr instanceof BoxStringLiteral bsl ) {
+			fqn			= bsl.getValue();
+			fqn			= prefix + fqn.replace( "java:", "" );
+			exprSource	= new StringLiteralExpr( fqn ).toString();
+		} else if ( expr instanceof BoxFQN bFqn ) {
+			fqn			= bFqn.getValue();
+			fqn			= prefix + fqn.replace( "java:", "" );
+			exprSource	= new StringLiteralExpr( fqn ).toString();
+		} else if ( expr instanceof BoxStringInterpolation bsi ) {
+			fqn			= transpiler.transform( ( BoxNode ) bsi, context ).toString();
+			exprSource	= "StringCaster.cast(" + fqn + ")";
+		} else {
+			throw new ExpressionException( "BoxNew expression must be a string literal or FQN, but was a " + expr.getClass().getSimpleName(), expr );
 		}
-		String				finalFqn	= fqn.replace( "java:", "" );
 		Map<String, String>	values		= new HashMap<>() {
 
 											{
-												put( "expr", finalFqn );
+												put( "expr", exprSource );
 												put( "contextName", transpiler.peekContextName() );
-												put( "prefix", boxNew.getPrefix() == null ? "" : boxNew.getPrefix().getName() + ":" );
 
 											}
 										};
+		boolean				allSpread	= isAllSpread( boxNew.getArguments() );
 		for ( int i = 0; i < boxNew.getArguments().size(); i++ ) {
-			Expression expr2 = ( Expression ) transpiler.transform( ( BoxNode ) boxNew.getArguments().get( i ), context );
-			values.put( "arg" + i, expr2.toString() );
+			if ( allSpread && boxNew.getArguments().get( i ).isSpread() ) {
+				// For allSpread path, transform the inner expression directly (not wrapped in SpreadValue)
+				BoxSpreadExpression	spread	= ( BoxSpreadExpression ) boxNew.getArguments().get( i ).getValue();
+				Expression			expr2	= ( Expression ) transpiler.transform( spread.getExpression(), context );
+				values.put( "arg" + i, expr2.toString() );
+			} else {
+				Expression expr2 = ( Expression ) transpiler.transform( ( BoxNode ) boxNew.getArguments().get( i ), context );
+				values.put( "arg" + i, expr2.toString() );
+			}
 		}
-		String	template	= "classLocator.load(${contextName},\"${prefix}\".concat( StringCaster.cast(${expr})),imports).invokeConstructor( ${contextName}, "
-		    + generateArguments( boxNew.getArguments() ) + " ).unWrapBoxLangClass()";
-		Node	javaStmt	= parseExpression( template, values );
+
+		String template;
+		if ( allSpread ) {
+			StringBuilder sb = new StringBuilder(
+			    "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.invokeSpreadOnlyConstructor( classLocator.load(${contextName}, ${expr}, imports), ${contextName}" );
+			for ( int i = 0; i < boxNew.getArguments().size(); i++ ) {
+				sb.append( ", ${arg" ).append( i ).append( "}" );
+			}
+			sb.append( " ).unWrapBoxLangClass()" );
+			template = sb.toString();
+		} else {
+			template = "classLocator.load(${contextName}, ${expr}, imports).invokeConstructor( ${contextName}, "
+			    + generateArguments( boxNew.getArguments() ) + " ).unWrapBoxLangClass()";
+		}
+		Node javaStmt = parseExpression( template, values );
 		// logger.trace( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;

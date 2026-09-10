@@ -67,7 +67,7 @@ public class DataSource implements Comparable<DataSource> {
 	 */
 	/**
 	 * Configure and initialize a new DataSource given a configuration struct.
-	 * 
+	 *
 	 * Immediately begins connection pooling.
 	 *
 	 * @param config A struct of properties to configure the datasource. Hikari itself will require either `dataSourceClassName` or `jdbcUrl` to be
@@ -79,12 +79,12 @@ public class DataSource implements Comparable<DataSource> {
 
 	/**
 	 * Configure and initialize a new DataSource given a configuration struct.
-	 * 
+	 *
 	 * Optionally specify beginPooling=false to delay connection pooling until calling {@link #beginPooling()} manually when desired.
 	 *
 	 * @param config       A struct of properties to configure the datasource. Hikari itself will require either `dataSourceClassName` or `jdbcUrl` to be
 	 *                     defined, and potentially `username` and `password` as well.
-	 * 
+	 *
 	 * @param beginPooling Whether to begin connection pooling immediately.
 	 */
 	public DataSource( DatasourceConfig config, boolean beginPooling ) {
@@ -93,17 +93,35 @@ public class DataSource implements Comparable<DataSource> {
 		    Key.properties, config.properties,
 		    Key.config, config
 		);
+
+		// Announce the datasource startup event, allowing interceptors to modify the configuration before initialization.
 		BoxRuntime.getInstance().getInterceptorService().announce(
 		    BoxEvent.ON_DATASOURCE_STARTUP,
-		    eventParams
+		    () -> Struct.ofNonConcurrent(
+		        Key._NAME, config.getUniqueName(),
+		        Key.properties, config.properties,
+		        Key.config, config
+		    )
 		);
-		// Retrieve and store the potentially modified configuration from the event.
-		this.configuration = eventParams.getAs( DatasourceConfig.class, Key.of( "config" ) );
 
+		// Retrieve and store the potentially modified configuration from the event.
+		this.configuration = eventParams.getAs( DatasourceConfig.class, Key.config );
 		// Warn if driver is not found in the datasource service
 		this.configuration.validateDriver();
-
+		// Convert to HikariConfig and initialize the connection pool
 		this.hikariConfig = this.configuration.toHikariConfig();
+
+		// Announce the datasource initialization event, allowing interceptors to modify the configuration before the connection pool is established.
+		BoxRuntime.getInstance().getInterceptorService().announce(
+		    BoxEvent.ON_DATASOURCE_INITIALIZED,
+		    () -> Struct.ofNonConcurrent(
+		        Key._NAME, configuration.getUniqueName(),
+		        Key.properties, configuration.properties,
+		        Key.config, this.configuration,
+		        Key.hikariConfig, this.hikariConfig
+		    )
+		);
+
 		if ( beginPooling ) {
 			beginPooling();
 		}
@@ -111,7 +129,7 @@ public class DataSource implements Comparable<DataSource> {
 
 	/**
 	 * Begin connection pooling for this datasource.
-	 * 
+	 *
 	 * No-op if pooling is already started.
 	 *
 	 * @return This DataSource object, now with an active connection pool.
@@ -156,7 +174,7 @@ public class DataSource implements Comparable<DataSource> {
 
 	/**
 	 * Helper builder to build out a new DataSource object from a struct of properties and a name.
-	 * 
+	 *
 	 * Will begin connection pooling automatically.
 	 *
 	 * @param name       The name of the datasource.
@@ -264,7 +282,7 @@ public class DataSource implements Comparable<DataSource> {
 
 	/**
 	 * Get a connection to the configured datasource.
-	 * 
+	 *
 	 * This method is deprecated. Use {@link #getBoxConnection()} instead.
 	 *
 	 * @return A JDBC connection to the configured datasource.
@@ -293,9 +311,9 @@ public class DataSource implements Comparable<DataSource> {
 
 	/**
 	 * Get an unpooled connection to the configured datasource.
-	 * 
+	 *
 	 * This method is deprecated. Use {@link #getUnpooledBoxConnection()} instead.
-	 * 
+	 *
 	 * @return A JDBC connection to the configured datasource.
 	 */
 	@Deprecated
@@ -359,9 +377,9 @@ public class DataSource implements Comparable<DataSource> {
 
 	/**
 	 * Get a connection to the configured datasource with the provided username and password.
-	 * 
+	 *
 	 * This method is deprecated. Use {@link #getBoxConnection(String, String)} instead.
-	 * 
+	 *
 	 * <p>
 	 * <strong>Important:</strong> Some JDBC drivers do not support the pooled
 	 * {@code getConnection(username, password)} method and will throw a
@@ -472,7 +490,7 @@ public class DataSource implements Comparable<DataSource> {
 
 	/**
 	 * Execute a query on the connection, using the provided connection.
-	 * 
+	 *
 	 * @deprecated Use {@link #execute(String, BoxConnection, IBoxContext)} instead.
 	 *             <p>
 	 *             Note the connection passed in is NOT closed automatically. It is up to the caller to close the connection when they are done with it. If you want
@@ -500,7 +518,7 @@ public class DataSource implements Comparable<DataSource> {
 
 	/**
 	 * Execute a query with a List of parameters on a given connection.
-	 * 
+	 *
 	 * @deprecated Use {@link #execute(String, List, BoxConnection, IBoxContext)} instead.
 	 */
 	@Deprecated
@@ -529,7 +547,7 @@ public class DataSource implements Comparable<DataSource> {
 
 	/**
 	 * Execute a query with an array of parameters on a given connection.
-	 * 
+	 *
 	 * @deprecated Use {@link #execute(String, Array, BoxConnection, IBoxContext)} instead.
 	 */
 	@Deprecated
@@ -558,7 +576,7 @@ public class DataSource implements Comparable<DataSource> {
 
 	/**
 	 * Execute a query with a struct of parameters on a given connection.
-	 * 
+	 *
 	 * @deprecated Use {@link #execute(String, IStruct, BoxConnection, IBoxContext)} instead.
 	 */
 	@Deprecated

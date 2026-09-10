@@ -27,6 +27,8 @@ import ortus.boxlang.runtime.types.BoxLangType;
 @BoxMember( type = BoxLangType.STRING_STRICT )
 public class Reverse extends BIF {
 
+	private static final Reverse INSTANCE = new Reverse();
+
 	/**
 	 * Constructor
 	 */
@@ -46,13 +48,14 @@ public class Reverse extends BIF {
 	 * @argument.string The string to reverse.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String			input		= arguments.getAsString( Key.string );
+		return invoke( arguments.getAsString( Key.string ) );
+	}
 
-		// Create a StringBuilder to reverse the string
-		StringBuilder	reversed	= new StringBuilder( input );
-		reversed.reverse();
+	public static String invokebridge( IBoxContext context, Key functionName, Object input ) {
+		return invoke( ( String ) INSTANCE.getDeclaredArguments()[ 0 ].prepareValue( context, functionName, input ) );
+	}
 
-		// Convert the StringBuilder back to a String
-		return reversed.toString();
+	public static String invoke( String input ) {
+		return new StringBuilder( input ).reverse().toString();
 	}
 }

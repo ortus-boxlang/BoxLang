@@ -61,28 +61,35 @@ public class BitMaskClearTest {
 	@Test
 	public void testBitwiseMaskClearWithPositiveIntegers() {
 		instance.executeSource( "result = bitMaskClear(15, 1, 3);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( 1L );
 	}
 
 	@DisplayName( "Bitwise Mask Clear operation with negative integers" )
 	@Test
 	public void testBitwiseMaskClearWithNegativeIntegers() {
 		instance.executeSource( "result = bitMaskClear(-5, 1, 2);", context );
-		assertThat( variables.get( result ) ).isEqualTo( -7 );
+		assertThat( variables.get( result ) ).isEqualTo( -7L );
 	}
 
 	@DisplayName( "Bitwise Mask Clear operation with zero" )
 	@Test
 	public void testBitwiseMaskClearWithZero() {
 		instance.executeSource( "result = bitMaskClear(0, 2, 4);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
+		assertThat( variables.get( result ) ).isEqualTo( 0L );
 	}
 
 	@DisplayName( "Bitwise Mask Clear operation with large integers" )
 	@Test
 	public void testBitwiseMaskClearWithLargeIntegers() {
 		instance.executeSource( "result = bitMaskClear(123456789, 4, 10);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 123453445 );
+		assertThat( variables.get( result ) ).isEqualTo( 123453445L );
+	}
+
+	@DisplayName( "Bitwise Mask Clear operation with long-range values" )
+	@Test
+	public void testBitwiseMaskClearWithLongRangeValues() {
+		instance.executeSource( "result = bitMaskClear(2190225219, 4, 10);", context );
+		assertThat( variables.get( result ) ).isEqualTo( 2190213123L );
 	}
 
 	@DisplayName( "Bitwise Mask Clear operation with invalid length" )

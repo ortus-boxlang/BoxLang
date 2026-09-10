@@ -1,0 +1,9 @@
+<bx:script>
+	local.MAXTOP = 10;
+	try {
+		structKeyExists( session, "x" );
+	} catch (any e) {
+		variables.addOverride( "bxcatch", e );
+		local.SESSIONSCOPEEXISTS = false;
+	}
+</bx:script>

@@ -22,8 +22,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.File;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF( description = "Set access permissions for a file" )
@@ -37,7 +37,7 @@ public class FileSetAccessMode extends BIF {
 	public FileSetAccessMode() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.file ),
+		    new Argument( true, "boxfile", Key.file ),
 		    new Argument( true, "string", Key.mode )
 		};
 	}
@@ -53,18 +53,9 @@ public class FileSetAccessMode extends BIF {
 	 * @argument.mode The three-digit permission designations for the file or directory
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	file	= null;
-		File	fileObj	= null;
-		if ( arguments.get( Key.file ) instanceof File ) {
-			fileObj	= ( File ) arguments.get( Key.file );
-			file	= fileObj.filepath;
-		} else {
-			file = FileSystemUtil.expandPath( context, arguments.getAsString( Key.file ) ).absolutePath().toString();
-		}
-
-		FileSystemUtil.setPosixPermissions( file, arguments.getAsString( Key.mode ) );
-
-		return fileObj != null ? fileObj : null;
+		BoxFile file = arguments.getAsBoxFile( Key.file );
+		FileSystemUtil.setPosixPermissions( file.filepath, arguments.getAsString( Key.mode ) );
+		return file.implicitlyCast ? null : file;
 	}
 
 }

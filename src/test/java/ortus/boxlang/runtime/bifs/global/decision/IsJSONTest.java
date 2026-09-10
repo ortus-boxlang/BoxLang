@@ -91,6 +91,7 @@ public class IsJSONTest {
 		    anArrayWithTrailingComma    = isJSON( '["a","b",123,]' );
 		    anArrayWithAFloat           = isJSON( '[123456789,.11]' );
 		    aStructWithSingleQuotedKeys = isJSON( '[ { ''a'' : ''123'' } ]' );
+		    numberAndTextMixed     = isJSON( '1234 Main St.' );
 		      """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "anEmptyString" ) ) ).isFalse();
@@ -99,6 +100,7 @@ public class IsJSONTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "anArrayWithTrailingComma" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "anArrayWithAFloat" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "aStructWithSingleQuotedKeys" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "numberAndTextMixed" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It will return true when reading a JSON file with a BOM and escape characters" )

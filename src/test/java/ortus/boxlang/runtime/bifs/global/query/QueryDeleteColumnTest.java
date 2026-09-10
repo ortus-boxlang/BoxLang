@@ -112,4 +112,19 @@ public class QueryDeleteColumnTest {
 		);
 	}
 
+	@DisplayName( "It should trim whitespace from column name" )
+	@Test
+	public void testColumnNameTrimming() {
+		instance.executeSource(
+		    """
+		    query = QueryNew("col1,col2", "varchar,varchar");
+		    QueryAddRow(query, {col1: "foo", col2: "bar"});
+		    QueryDeleteColumn(query, " col2 ");
+		    result = QueryColumnExists(query, "col2");
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
 }

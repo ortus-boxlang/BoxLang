@@ -1,0 +1,23 @@
+class {
+
+	class Animal {
+
+		function speak() {
+			return "...";
+		}
+
+	}
+
+	class Dog extends="Animal" {
+
+		function speak() {
+			return "Woof!";
+		}
+
+	}
+
+	function getDog() {
+		return new Dog();
+	}
+
+}

@@ -25,9 +25,6 @@ import java.net.http.HttpClient;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -35,7 +32,9 @@ import javax.net.ssl.SSLContext;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
+import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.net.soap.BoxSoapClient;
@@ -54,29 +53,49 @@ import ortus.boxlang.runtime.util.EncryptionUtil;
 public class HttpService extends BaseService {
 
 	/**
-	 * Concurrent map that stores all HTTP reusable clients
+	 * Default HTTP connection timeout in seconds
 	 */
-	private final ConcurrentMap<Key, BoxHttpClient>										clients						= new ConcurrentHashMap<>();
+	public static final int		DEFAULT_HTTP_TIMEOUT_SECONDS		= 30;
 
 	/**
-	 * Concurrent map that stores all SOAP/WSDL clients
+	 * Default last access timeout (idle timeout) in seconds
 	 */
-	private final ConcurrentMap<String, ortus.boxlang.runtime.net.soap.BoxSoapClient>	soapClients					= new ConcurrentHashMap<>();
+	public static final int		DEFAULT_LAST_ACCESS_TIMEOUT_SECONDS	= 60;
+
+	/**
+	 * Name of the cache used to store HTTP and SOAP clients
+	 */
+	public static final Key		HTTP_CLIENTS_CACHE_NAME				= Key.of( "bxHttpClients" );
+
+	/**
+	 * Key prefix for HTTP clients in the cache
+	 */
+	public static final String	HTTP_CLIENT_KEY_PREFIX				= "bxHttp-";
+
+	/**
+	 * Key prefix for SOAP clients in the cache
+	 */
+	public static final String	SOAP_CLIENT_KEY_PREFIX				= "bxSoap-";
+
+	/**
+	 * Cache that stores all HTTP and SOAP reusable clients
+	 */
+	private ICacheProvider		httpClientCache;
 
 	/**
 	 * Shutdown timeout in seconds
 	 */
-	private static final Long															SHUTDOWN_TIMEOUT_SECONDS	= 10L;
+	private static final Long	SHUTDOWN_TIMEOUT_SECONDS			= 10L;
 
 	/**
 	 * The main HTTP logger
 	 */
-	private BoxLangLogger																logger;
+	private BoxLangLogger		logger;
 
 	/**
 	 * The HTTP Executor used by all clients
 	 */
-	private BoxExecutor																	httpExecutor;
+	private BoxExecutor			httpExecutor;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -117,8 +136,7 @@ public class HttpService extends BaseService {
 			this.logger.info( "+ Http Service graceful shutdown initiated" );
 			this.httpExecutor.shutdownAndAwaitTermination( SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS );
 		}
-		this.clients.clear();
-		this.soapClients.clear();
+		this.httpClientCache.clearAll();
 		this.logger.info( "+ Http Service shutdown complete" );
 	}
 
@@ -129,6 +147,19 @@ public class HttpService extends BaseService {
 		if ( System.getProperty( "jdk.httpclient.allowRestrictedHeaders" ) == null ) {
 			System.setProperty( "jdk.httpclient.allowRestrictedHeaders", "host,content-length" );
 		}
+
+		// Create the HTTP clients cache if it doesn't exist
+		this.httpClientCache = runtime
+		    .getCacheService()
+		    .createCacheIfAbsent(
+		        HTTP_CLIENTS_CACHE_NAME,
+		        Key.boxCacheProvider,
+		        Struct.of(
+		            "defaultTimeout", DEFAULT_LAST_ACCESS_TIMEOUT_SECONDS,
+		            "defaultLastAccessTimeout", DEFAULT_HTTP_TIMEOUT_SECONDS
+		        )
+		    );
+
 		this.logger.info( "+ Http Service started" );
 	}
 
@@ -166,7 +197,9 @@ public class HttpService extends BaseService {
 	 * How many HTTP clients are currently managed
 	 */
 	public int getClientCount() {
-		return this.clients.size();
+		return ( int ) this.httpClientCache.getKeysStream()
+		    .filter( k -> k.startsWith( HTTP_CLIENT_KEY_PREFIX ) )
+		    .count();
 	}
 
 	/**
@@ -175,7 +208,7 @@ public class HttpService extends BaseService {
 	 * @param key The client key
 	 */
 	public boolean hasClient( Key key ) {
-		return this.clients.containsKey( key );
+		return this.httpClientCache.lookupQuiet( key.getName() );
 	}
 
 	/**
@@ -186,7 +219,9 @@ public class HttpService extends BaseService {
 	 * @return The HttpClient instance, or null if not found
 	 */
 	public BoxHttpClient getClient( Key key ) {
-		return this.clients.get( key );
+		return ( BoxHttpClient ) this.httpClientCache
+		    .get( key.getName() )
+		    .orElse( null );
 	}
 
 	/**
@@ -196,7 +231,12 @@ public class HttpService extends BaseService {
 	 * @param client The HttpClient instance
 	 */
 	public BoxHttpClient putClient( Key key, BoxHttpClient client ) {
-		this.clients.put( key, client );
+		this.httpClientCache.set(
+		    key.getName(),
+		    client,
+		    DEFAULT_HTTP_TIMEOUT_SECONDS,
+		    DEFAULT_LAST_ACCESS_TIMEOUT_SECONDS
+		);
 		return client;
 	}
 
@@ -206,7 +246,7 @@ public class HttpService extends BaseService {
 	 * @param key The client key
 	 */
 	public HttpService removeClient( Key key ) {
-		this.clients.remove( key );
+		this.httpClientCache.clear( key.getName() );
 		return this;
 	}
 
@@ -219,9 +259,9 @@ public class HttpService extends BaseService {
 	 */
 	public Array getAllClientKeys() {
 		Array keys = new Array();
-		for ( Key key : this.clients.keySet() ) {
-			keys.add( key.getName() );
-		}
+		this.httpClientCache.getKeysStream()
+		    .filter( k -> k.startsWith( HTTP_CLIENT_KEY_PREFIX ) )
+		    .forEach( keys::add );
 		return keys;
 	}
 
@@ -245,22 +285,31 @@ public class HttpService extends BaseService {
 	 */
 	public IStruct getAllClientStats() {
 		IStruct allStats = new Struct( false );
-		for ( Key key : this.clients.keySet() ) {
-			allStats.put( key.getName(), getClientStats( key ) );
-		}
+		this.httpClientCache
+		    .getKeysStream()
+		    .filter( k -> k.startsWith( HTTP_CLIENT_KEY_PREFIX ) )
+		    .forEach( key -> {
+			    this.httpClientCache.getQuiet( key ).ifPresent( clientObj -> {
+				    if ( clientObj instanceof BoxHttpClient client ) {
+					    allStats.put( key, client.getStatistics() );
+				    }
+			    } );
+		    } );
 		return allStats;
 	}
 
 	/**
 	 * Clear all cached HTTP clients
 	 * <p>
-	 * This method removes all cached clients from the service.
+	 * This method removes all cached HTTP clients from the service.
 	 * Useful for testing or when you need to force recreation of all clients.
 	 *
 	 * @return This HttpService instance for method chaining
 	 */
 	public HttpService clearAllClients() {
-		this.clients.clear();
+		this.httpClientCache.getKeysStream()
+		    .filter( k -> k.startsWith( HTTP_CLIENT_KEY_PREFIX ) )
+		    .forEach( this.httpClientCache::clear );
 		return this;
 	}
 
@@ -300,7 +349,7 @@ public class HttpService extends BaseService {
 		}
 
 		// Build a unique key for this client configuration
-		Key clientKey = buildClientKey(
+		String clientKey = buildClientKey(
 		    httpVersion,
 		    followRedirects,
 		    connectTimeout,
@@ -313,94 +362,104 @@ public class HttpService extends BaseService {
 		);
 
 		// Return cached client if it exists
-		if ( hasClient( clientKey ) ) {
-			synchronized ( this.clients ) {
-				if ( hasClient( clientKey ) ) {
-					this.logger.trace( "Reusing cached HTTP client with key: {}", clientKey );
-					return getClient( clientKey );
+		if ( hasClient( Key.of( clientKey ) ) ) {
+			this.logger.trace( "Reusing cached HTTP client with key: {}", clientKey );
+			return getClient( Key.of( clientKey ) );
+		}
+
+		// Double-checked locking for thread safety
+		synchronized ( this ) {
+			if ( hasClient( Key.of( clientKey ) ) ) {
+				this.logger.trace( "Reusing cached HTTP client with key: {}", clientKey );
+				return getClient( Key.of( clientKey ) );
+			}
+			this.logger.trace( "Building new HTTP client with key: {}", clientKey );
+
+			// Create HttpClient builder
+			HttpClient.Builder builder = HttpClient.newBuilder()
+			    // Configure Executor
+			    .executor( this.httpExecutor.executor() )
+			    // Configure redirect policy
+			    .followRedirects( followRedirects ? HttpClient.Redirect.NORMAL : HttpClient.Redirect.NEVER )
+			    // Configure HTTP version
+			    .version( httpVersion.equalsIgnoreCase( BoxHttpClient.HTTP_1 )
+			        ? HttpClient.Version.HTTP_1_1
+			        : HttpClient.Version.HTTP_2
+			    );
+
+			// Configure connect timeout
+			if ( connectTimeout != null ) {
+				builder.connectTimeout( Duration.ofSeconds( connectTimeout ) );
+			}
+
+			// Configure proxy
+			if ( proxyServer != null && !proxyServer.isEmpty() && proxyPort != null ) {
+				builder.proxy( ProxySelector.of( new InetSocketAddress( proxyServer, proxyPort ) ) );
+
+				// Configure proxy authentication if credentials provided
+				if ( proxyUser != null && !proxyUser.isEmpty() && proxyPassword != null && !proxyPassword.isEmpty() ) {
+					builder.authenticator( new Authenticator() {
+
+						@Override
+						protected PasswordAuthentication getPasswordAuthentication() {
+							return new PasswordAuthentication( proxyUser, proxyPassword.toCharArray() );
+						}
+					} );
 				}
 			}
-		}
 
-		// Build a new HttpClient with the specified configuration
-		this.logger.trace( "Building new HTTP client with key: {}", clientKey );
-
-		// Create HttpClient builder
-		HttpClient.Builder builder = HttpClient.newBuilder()
-		    // Configure Executor
-		    .executor( this.httpExecutor.executor() )
-		    // Configure redirect policy
-		    .followRedirects( followRedirects ? HttpClient.Redirect.NORMAL : HttpClient.Redirect.NEVER )
-		    // Configure HTTP version
-		    .version( httpVersion.equalsIgnoreCase( BoxHttpClient.HTTP_1 )
-		        ? HttpClient.Version.HTTP_1_1
-		        : HttpClient.Version.HTTP_2
-		    );
-
-		// Configure connect timeout
-		if ( connectTimeout != null ) {
-			builder.connectTimeout( Duration.ofSeconds( connectTimeout ) );
-		}
-
-		// Configure proxy
-		if ( proxyServer != null && !proxyServer.isEmpty() && proxyPort != null ) {
-			builder.proxy( ProxySelector.of( new InetSocketAddress( proxyServer, proxyPort ) ) );
-
-			// Configure proxy authentication if credentials provided
-			if ( proxyUser != null && !proxyUser.isEmpty() && proxyPassword != null && !proxyPassword.isEmpty() ) {
-				builder.authenticator( new Authenticator() {
-
-					@Override
-					protected PasswordAuthentication getPasswordAuthentication() {
-						return new PasswordAuthentication( proxyUser, proxyPassword.toCharArray() );
+			// Configure client certificate (SSL/TLS)
+			if ( clientCertPath != null ) {
+				try {
+					// Verify the certificate file exists before attempting to load
+					java.io.File certFile = new java.io.File( clientCertPath );
+					if ( !certFile.exists() ) {
+						throw new BoxRuntimeException( "Client certificate file not found: " + clientCertPath );
 					}
-				} );
-			}
-		}
+					if ( !certFile.canRead() ) {
+						throw new BoxRuntimeException( "Client certificate file is not readable: " + clientCertPath );
+					}
 
-		// Configure client certificate (SSL/TLS)
-		if ( clientCertPath != null ) {
-			try {
-				// Verify the certificate file exists before attempting to load
-				java.io.File certFile = new java.io.File( clientCertPath );
-				if ( !certFile.exists() ) {
-					throw new BoxRuntimeException( "Client certificate file not found: " + clientCertPath );
-				}
-				if ( !certFile.canRead() ) {
-					throw new BoxRuntimeException( "Client certificate file is not readable: " + clientCertPath );
-				}
+					// Load the client certificate keystore using EncryptionUtil
+					KeyStore keyStore = EncryptionUtil.loadPKCS12KeyStore( clientCertPath, clientCertPass );
+					if ( keyStore == null ) {
+						throw new BoxRuntimeException(
+						    "Failed to load client certificate keystore (check password or file format): " + clientCertPath
+						);
+					}
 
-				// Load the client certificate keystore using EncryptionUtil
-				KeyStore keyStore = EncryptionUtil.loadPKCS12KeyStore( clientCertPath, clientCertPass );
-				if ( keyStore == null ) {
+					KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance( KeyManagerFactory.getDefaultAlgorithm() );
+					keyManagerFactory.init( keyStore, clientCertPass != null ? clientCertPass.toCharArray() : null );
+
+					SSLContext sslContext = SSLContext.getInstance( "TLS" );
+					sslContext.init( keyManagerFactory.getKeyManagers(), null, new SecureRandom() );
+
+					builder.sslContext( sslContext );
+				} catch ( BoxRuntimeException e ) {
+					// Re-throw BoxRuntimeException as-is (these are our validation errors)
+					this.logger.error( "Client certificate configuration error: {}", e.getMessage() );
+					throw e;
+				} catch ( Exception e ) {
+					this.logger.error( "Failed to configure client certificate: {}", clientCertPath, e );
 					throw new BoxRuntimeException(
-					    "Failed to load client certificate keystore (check password or file format): " + clientCertPath
+					    "Failed to configure client certificate: " + clientCertPath,
+					    e
 					);
 				}
-
-				KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance( KeyManagerFactory.getDefaultAlgorithm() );
-				keyManagerFactory.init( keyStore, clientCertPass != null ? clientCertPass.toCharArray() : null );
-
-				SSLContext sslContext = SSLContext.getInstance( "TLS" );
-				sslContext.init( keyManagerFactory.getKeyManagers(), null, new SecureRandom() );
-
-				builder.sslContext( sslContext );
-			} catch ( BoxRuntimeException e ) {
-				// Re-throw BoxRuntimeException as-is (these are our validation errors)
-				this.logger.error( "Client certificate configuration error: {}", e.getMessage() );
-				throw e;
-			} catch ( Exception e ) {
-				this.logger.error( "Failed to configure client certificate: {}", clientCertPath, e );
-				throw new BoxRuntimeException(
-				    "Failed to configure client certificate: " + clientCertPath,
-				    e
-				);
 			}
-		}
 
-		// Create our BoxHttpClient wrapper
-		this.logger.trace( "HTTP client created and cached with key: {}", clientKey );
-		return putClient( clientKey, new BoxHttpClient( builder.build(), this ) );
+			// Create our BoxHttpClient wrapper and cache it
+			BoxHttpClient newClient = new BoxHttpClient(
+			    builder.build(),
+			    this,
+			    clientKey,
+			    httpVersion,
+			    followRedirects,
+			    connectTimeout
+			);
+			this.logger.trace( "HTTP client created and cached with key: {}", clientKey );
+			return putClient( Key.of( clientKey ), newClient );
+		}
 	}
 
 	/**
@@ -420,9 +479,9 @@ public class HttpService extends BaseService {
 	 * @param clientCertPath  The path to the client certificate
 	 * @param clientCertPass  The client certificate password
 	 *
-	 * @return A unique Key identifying this client configuration
+	 * @return A unique String key identifying this client configuration
 	 */
-	public Key buildClientKey(
+	public String buildClientKey(
 	    String httpVersion,
 	    boolean followRedirects,
 	    Integer connectTimeout,
@@ -460,8 +519,8 @@ public class HttpService extends BaseService {
 		// Generate SHA-256 hash of the configuration string using EncryptionUtil
 		String hash = EncryptionUtil.hash( keyBuilder.toString(), "SHA-256" );
 
-		// Build the key
-		return Key.of( "bx-http-" + hash );
+		// Build the key with HTTP prefix
+		return HTTP_CLIENT_KEY_PREFIX + hash;
 	}
 
 	/**
@@ -482,18 +541,20 @@ public class HttpService extends BaseService {
 	 * @throws ortus.boxlang.runtime.types.exceptions.BoxRuntimeException If WSDL parsing or client creation fails
 	 */
 	public BoxSoapClient getOrCreateSoapClient( String wsdlUrl, IBoxContext context ) {
+		String			soapKey	= SOAP_CLIENT_KEY_PREFIX + wsdlUrl;
+
 		// Check if we already have a cached client for this WSDL
-		BoxSoapClient cachedClient = this.soapClients.get( wsdlUrl );
-		if ( cachedClient != null ) {
+		Attempt<Object>	cached	= this.httpClientCache.getQuiet( soapKey );
+		if ( cached.isPresent() && cached.get() instanceof BoxSoapClient soapClient ) {
 			this.logger.trace( "Reusing cached SOAP client for WSDL: {}", wsdlUrl );
-			return cachedClient;
+			return soapClient;
 		}
 
 		// Double-checked locking for thread safety
-		synchronized ( this.soapClients ) {
-			cachedClient = this.soapClients.get( wsdlUrl );
-			if ( cachedClient != null ) {
-				return cachedClient;
+		synchronized ( this ) {
+			cached = this.httpClientCache.getQuiet( soapKey );
+			if ( cached.isPresent() && cached.get() instanceof BoxSoapClient soapClient ) {
+				return soapClient;
 			}
 
 			this.logger.trace( "Creating new SOAP client for WSDL: {}", wsdlUrl );
@@ -502,7 +563,12 @@ public class HttpService extends BaseService {
 			BoxSoapClient newClient = BoxSoapClient.fromWsdl( wsdlUrl, this, context );
 
 			// Cache and return
-			this.soapClients.put( wsdlUrl, newClient );
+			this.httpClientCache.set(
+			    soapKey,
+			    newClient,
+			    DEFAULT_HTTP_TIMEOUT_SECONDS,
+			    DEFAULT_LAST_ACCESS_TIMEOUT_SECONDS
+			);
 			this.logger.trace( "Created and cached SOAP client for WSDL: {}", wsdlUrl );
 
 			return newClient;
@@ -517,7 +583,10 @@ public class HttpService extends BaseService {
 	 * @return The SoapClient instance, or null if not cached
 	 */
 	public BoxSoapClient getSoapClient( String wsdlUrl ) {
-		return this.soapClients.get( wsdlUrl );
+		String soapKey = SOAP_CLIENT_KEY_PREFIX + wsdlUrl;
+		return ( BoxSoapClient ) this.httpClientCache
+		    .getQuiet( soapKey )
+		    .orElse( null );
 	}
 
 	/**
@@ -528,7 +597,8 @@ public class HttpService extends BaseService {
 	 * @return True if a client is cached for this WSDL
 	 */
 	public boolean hasSoapClient( String wsdlUrl ) {
-		return this.soapClients.containsKey( wsdlUrl );
+		String soapKey = SOAP_CLIENT_KEY_PREFIX + wsdlUrl;
+		return this.httpClientCache.lookupQuiet( soapKey );
 	}
 
 	/**
@@ -539,7 +609,8 @@ public class HttpService extends BaseService {
 	 * @return This HttpService instance for method chaining
 	 */
 	public HttpService removeSoapClient( String wsdlUrl ) {
-		this.soapClients.remove( wsdlUrl );
+		String soapKey = SOAP_CLIENT_KEY_PREFIX + wsdlUrl;
+		this.httpClientCache.clear( soapKey );
 		return this;
 	}
 
@@ -549,7 +620,9 @@ public class HttpService extends BaseService {
 	 * @return This HttpService instance for method chaining
 	 */
 	public HttpService clearAllSoapClients() {
-		this.soapClients.clear();
+		this.httpClientCache.getKeysStream()
+		    .filter( k -> k.startsWith( SOAP_CLIENT_KEY_PREFIX ) )
+		    .forEach( this.httpClientCache::clear );
 		return this;
 	}
 
@@ -559,7 +632,9 @@ public class HttpService extends BaseService {
 	 * @return The number of cached SOAP clients
 	 */
 	public int getSoapClientCount() {
-		return this.soapClients.size();
+		return ( int ) this.httpClientCache.getKeysStream()
+		    .filter( k -> k.startsWith( SOAP_CLIENT_KEY_PREFIX ) )
+		    .count();
 	}
 
 	/**
@@ -572,7 +647,7 @@ public class HttpService extends BaseService {
 	 * @throws ortus.boxlang.runtime.types.exceptions.BoxRuntimeException If no client is cached for this WSDL
 	 */
 	public IStruct getSoapClientStats( String wsdlUrl ) {
-		BoxSoapClient client = this.soapClients.get( wsdlUrl );
+		BoxSoapClient client = getSoapClient( wsdlUrl );
 		if ( client == null ) {
 			throw new ortus.boxlang.runtime.types.exceptions.BoxRuntimeException( "No SOAP client found for WSDL: " + wsdlUrl );
 		}
@@ -586,9 +661,16 @@ public class HttpService extends BaseService {
 	 */
 	public IStruct getAllSoapClientStats() {
 		IStruct allStats = new Struct( false );
-		for ( Map.Entry<String, ortus.boxlang.runtime.net.soap.BoxSoapClient> entry : this.soapClients.entrySet() ) {
-			allStats.put( entry.getKey(), entry.getValue().getStatistics() );
-		}
+		this.httpClientCache.getKeysStream()
+		    .filter( k -> k.startsWith( SOAP_CLIENT_KEY_PREFIX ) )
+		    .forEach( key -> {
+			    Attempt<Object> result = this.httpClientCache.getQuiet( key );
+			    if ( result.isPresent() && result.get() instanceof BoxSoapClient soapClient ) {
+				    // Strip prefix for display
+				    String wsdlUrl = key.substring( SOAP_CLIENT_KEY_PREFIX.length() );
+				    allStats.put( wsdlUrl, soapClient.getStatistics() );
+			    }
+		    } );
 		return allStats;
 	}
 

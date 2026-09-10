@@ -27,6 +27,8 @@ import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
@@ -47,10 +49,15 @@ import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxStringBuilderLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -91,6 +98,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -99,6 +107,7 @@ import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxSwitchBreakingCase;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
@@ -148,6 +157,10 @@ public abstract class VoidBoxVisitor {
 		visitChildren( node );
 	}
 
+	public void visit( BoxLocalClass node ) {
+		visitChildren( node );
+	}
+
 	public void visit( BoxStaticInitializer node ) {
 		visitChildren( node );
 	}
@@ -185,6 +198,14 @@ public abstract class VoidBoxVisitor {
 	}
 
 	public void visit( BoxArrayLiteral node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxSetLiteral node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxStringBuilderLiteral node ) {
 		visitChildren( node );
 	}
 
@@ -260,7 +281,28 @@ public abstract class VoidBoxVisitor {
 		visitChildren( node );
 	}
 
+	/** {@inheritDoc} */
 	public void visit( BoxNull node ) {
+		visitChildren( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxArrayDestructuringPattern node ) {
+		visitChildren( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxArrayDestructuringBinding node ) {
+		visitChildren( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxObjectDestructuringPattern node ) {
+		visitChildren( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxObjectDestructuringBinding node ) {
 		visitChildren( node );
 	}
 
@@ -268,7 +310,15 @@ public abstract class VoidBoxVisitor {
 		visitChildren( node );
 	}
 
+	/**
+	 * visit.
+	 */
 	public void visit( BoxScope node ) {
+		visitChildren( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxSpreadExpression node ) {
 		visitChildren( node );
 	}
 
@@ -374,6 +424,10 @@ public abstract class VoidBoxVisitor {
 
 	public void visit( BoxSwitchCase node ) {
 		visitChildren( node );
+	}
+
+	public void visit( BoxSwitchBreakingCase node ) {
+		visit( ( BoxSwitchCase ) node );
 	}
 
 	public void visit( BoxThrow node ) {

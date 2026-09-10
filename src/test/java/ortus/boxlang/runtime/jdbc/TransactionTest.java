@@ -279,6 +279,35 @@ public class TransactionTest extends BaseJDBCTest {
 		);
 	}
 
+	@DisplayName( "Can roll back from finally block" )
+	@Test
+	public void testRollbackFromFinally() {
+		// @formatter:off
+		getInstance().executeSource(
+		    """
+			transaction{
+				try{
+					queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+				} catch ( any e ){
+					rethrow;
+				} finally {
+					transaction action="rollback";
+				}
+			}
+			variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    """,
+		    getContext()
+		);
+		// @formatter:on
+		assertNull(
+		    getVariables().getAsQuery( result )
+		        .stream()
+		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
 	@DisplayName( "Commits persist despite rollbacks" )
 	@Test
 	public void testCommitWithRollback() {
@@ -551,37 +580,44 @@ public class TransactionTest extends BaseJDBCTest {
 	@DisplayName( "Nested transactions: A rollback on the child will not roll back the parent" )
 	@Test
 	public void testChildRollback() {
-		getInstance().executeSource(
-		    """
-		    transaction{
-		      queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
-		      transaction{
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		        transactionRollback();
-		      }
-		    }
-		    variables.result = queryExecute( "SELECT * FROM developers", {} );
-		    """,
-		    getContext() );
-		Query theResult = getVariables().getAsQuery( result );
+		try {
+			getInstance().getConfiguration().enableNestedTransactions = true;
+			( ( IJDBCCapableContext ) getContext() ).getConnectionManager().setEnableNestedTransactions( true );
+			getInstance().executeSource(
+			    """
+			    transaction{
+			      queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
+			      transaction{
+			        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+			        transactionRollback();
+			      }
+			    }
+			    variables.result = queryExecute( "SELECT * FROM developers", {} );
+			    """,
+			    getContext() );
+			Query theResult = getVariables().getAsQuery( result );
 
-		// This insert from the outer transaction should have been committed
-		assertNotNull(
-		    theResult
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Brad Wood" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
+			// This insert from the outer transaction should have been committed
+			assertNotNull(
+			    theResult
+			        .stream()
+			        .filter( row -> row.getAsString( Key._NAME ).equals( "Brad Wood" ) )
+			        .findFirst()
+			        .orElse( null )
+			);
 
-		// This insert from the inner transaction should have been rolled back
-		assertNull(
-		    theResult
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
+			// This insert from the inner transaction should have been rolled back
+			assertNull(
+			    theResult
+			        .stream()
+			        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+			        .findFirst()
+			        .orElse( null )
+			);
+		} finally {
+			getInstance().getConfiguration().enableNestedTransactions = false;
+			( ( IJDBCCapableContext ) getContext() ).getConnectionManager().setEnableNestedTransactions( false );
+		}
 	}
 
 	@DisplayName( "Nested transactions: A rollback on the parent will roll back the child" )
@@ -624,41 +660,46 @@ public class TransactionTest extends BaseJDBCTest {
 	@DisplayName( "Nested transactions: Savepoints do not collide between the parent and child" )
 	@Test
 	public void testNestedSavepointCollisions() {
-		getInstance().executeSource(
-		    """
-		        transaction{
-		            queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
-		            transactionSetSavepoint( 'developer.inserted' );
-		            transaction{
-		            	transactionSetSavepoint( 'developer.inserted' );
-		            	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-		            	transactionRollback( 'developer.inserted' );
-		            }
-		        }
-		        variables.result = queryExecute( "SELECT * FROM developers", {} );
-		    """,
-		    getContext() );
-		Query theResult = getVariables().getAsQuery( result );
+		try {
+			getInstance().getConfiguration().enableNestedTransactions = true;
+			getInstance().executeSource(
+			    """
+			        transaction{
+			            queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
+			            transactionSetSavepoint( 'developer.inserted' );
+			            transaction{
+			            	transactionSetSavepoint( 'developer.inserted' );
+			            	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+			            	transactionRollback( 'developer.inserted' );
+			            }
+			        }
+			        variables.result = queryExecute( "SELECT * FROM developers", {} );
+			    """,
+			    getContext() );
+			Query theResult = getVariables().getAsQuery( result );
 
-		// This insert from the outer transaction should NOT be rolled back
-		assertNotNull(
-		    theResult
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Brad Wood" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
-		// This insert from the inner transaction should be rolled back
-		assertNull(
-		    theResult
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
+			// This insert from the outer transaction should NOT be rolled back
+			assertNotNull(
+			    theResult
+			        .stream()
+			        .filter( row -> row.getAsString( Key._NAME ).equals( "Brad Wood" ) )
+			        .findFirst()
+			        .orElse( null )
+			);
+			// This insert from the inner transaction should be rolled back
+			assertNull(
+			    theResult
+			        .stream()
+			        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+			        .findFirst()
+			        .orElse( null )
+			);
+
+		} finally {
+			getInstance().getConfiguration().enableNestedTransactions = false;
+		}
 	}
 
-	// @Disabled( "Fails due to savepoint not existing. More testing to do here." )
 	@DisplayName( "Nested transactions: Won't throw 'savepoint name too long' on 4+ level transaction savepoints" )
 	@Test
 	public void testHighlyNestedSavepoints() {
@@ -713,4 +754,66 @@ public class TransactionTest extends BaseJDBCTest {
 		        .orElse( null )
 		);
 	}
+
+	@DisplayName( "No-op Nested Transactions: A commit on the child will commit the parent transaction" )
+	@Test
+	public void testNoOpNestedCommit() {
+		try {
+			getInstance().getConfiguration().enableNestedTransactions = false;
+			getInstance().executeSource(
+			    """
+			    transaction{
+			    	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
+			    	transaction{
+			    		queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+			    		transactionCommit();
+			    	}
+			    	// this should not roll back the transaction because the entire transaction has already been committed
+			    	transactionRollback();
+			    }
+			    variables.brad = queryExecute( "SELECT * FROM developers WHERE id=22" );
+			    variables.jon = queryExecute( "SELECT * FROM developers WHERE id=33" );
+			         """,
+			    getContext() );
+			Query	brad	= getVariables().getAsQuery( Key.of( "brad" ) );
+			Query	jon		= getVariables().getAsQuery( Key.of( "jon" ) );
+
+			// This insert from the outer transaction should have been committed by the inner transaction's commit
+			assertThat( brad.size() ).isEqualTo( 1 );
+
+			// This insert from the inner transaction should have been committed
+			assertThat( jon.size() ).isEqualTo( 1 );
+		} finally {
+			getInstance().getConfiguration().enableNestedTransactions = true;
+		}
+	}
+
+	@DisplayName( "No-op Nested Transactions: A rollback on the child will rollback the parent transaction" )
+	@Test
+	public void testNoOpNestedRollback() {
+		getInstance().executeSource(
+		    """
+		    transaction{
+		    	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
+		    	transaction{
+		    		queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		    		transactionRollback();
+		    	}
+		    	// this should not commit any changes because the entire transaction has already been rolled back
+		    	transactionCommit();
+		    }
+		    variables.brad = queryExecute( "SELECT * FROM developers WHERE id=22" );
+		    variables.jon = queryExecute( "SELECT * FROM developers WHERE id=33" );
+		        """,
+		    getContext() );
+		Query	brad	= getVariables().getAsQuery( Key.of( "brad" ) );
+		Query	jon		= getVariables().getAsQuery( Key.of( "jon" ) );
+
+		// This insert from the outer transaction should have been rolled back by the inner transaction's rollback
+		assertThat( brad.size() ).isEqualTo( 0 );
+
+		// This insert from the inner transaction should have been rolled back
+		assertThat( jon.size() ).isEqualTo( 0 );
+	}
+
 }

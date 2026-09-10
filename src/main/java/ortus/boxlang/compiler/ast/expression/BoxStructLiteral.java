@@ -64,13 +64,24 @@ public class BoxStructLiteral extends BoxExpression implements IBoxLiteral {
 
 	@Override
 	public boolean isLiteral() {
-		var i = 0;
-		for ( var value : values ) {
-			i++;
-			// Odd-numbered values (keys) are allowed to be identifiers
-			if ( !value.isLiteral() && ! ( i % 2 != 0 && value instanceof BoxIdentifier ) ) {
+		for ( int i = 0; i < values.size(); ) {
+			BoxExpression value = values.get( i );
+			if ( value instanceof BoxSpreadExpression spread ) {
+				if ( !spread.isLiteral() ) {
+					return false;
+				}
+				i++;
+				continue;
+			}
+			// Key
+			if ( !value.isLiteral() && ! ( value instanceof BoxIdentifier ) ) {
 				return false;
 			}
+			// Value
+			if ( i + 1 >= values.size() || !values.get( i + 1 ).isLiteral() ) {
+				return false;
+			}
+			i += 2;
 		}
 		return true;
 	}

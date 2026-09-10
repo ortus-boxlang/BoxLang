@@ -68,7 +68,7 @@ public class ParseDateTime extends BIF {
 		Object	dateRef		= arguments.get( Key.date );
 		String	format		= arguments.getAsString( Key.format );
 		ZoneId	timezone	= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
-		Locale	locale		= LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
+		Locale	locale		= LocalizationUtil.parseLocaleFromContext( context, arguments );
 		if ( dateRef instanceof DateTime ) {
 			DateTime dateObj = DateTimeCaster.cast( dateRef, context );
 			if ( format != null ) {

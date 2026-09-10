@@ -13,7 +13,7 @@ Result: lazy dog
 
 ### Using right() with a negative count on a string
 
-In this example we'll use a negative count right() to return part of a string. CF2018+
+In this example we'll use a negative count right() to return part of a string.
 
 <a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKMpMzwBSSiEZqQqFpZnJ2QpJRfnleQpp%2BRUKWaW5BakpCvllqUUKJUD5nMSqSoWU%2FHQlHQVdYyMFTQVNay4APN0Zkw%3D%3D" target="_blank">Run Example</a>
 

@@ -9,8 +9,10 @@
  * - Multi-byte characters (UTF-8) work
  * 
  * To run this test:
- * 1. Compile the project: ./gradlew compileJava
- * 2. Run this script directly (not automated, requires manual interaction)
+ * 1. Compile: ./gradlew compileJava compileTestJava
+ * 2. Run: ./gradlew runManualConsoleTest
+ * 
+ * Or directly: java -cp "build/classes/java/main:build/classes/java/test:$(./gradlew -q dependencies --configuration runtimeClasspath 2>/dev/null | tr '\n' ':')" ortus.boxlang.runtime.cli.MiniConsoleManualTest
  */
 package ortus.boxlang.runtime.cli;
 
@@ -26,9 +28,11 @@ public class MiniConsoleManualTest {
 		System.out.println( "Test the following features:" );
 		System.out.println( "  1. Type some text and press ENTER" );
 		System.out.println( "  2. Use UP/DOWN arrows to navigate history" );
-		System.out.println( "  3. Type UTF-8 characters like: 世界 or 😀" );
-		System.out.println( "  4. Press Ctrl+D on empty line to exit" );
-		System.out.println( "  5. Press Ctrl+C to cancel current input" );
+		System.out.println( "  3. Use LEFT/RIGHT arrows to move cursor within text" );
+		System.out.println( "     (type some text, then press left/right - cursor should move)" );
+		System.out.println( "  4. Type UTF-8 characters like: 世界 or 😀" );
+		System.out.println( "  5. Press Ctrl+D on empty line to exit" );
+		System.out.println( "  6. Press Ctrl+C to cancel current input" );
 		System.out.println();
 		System.out.println( "Type 'exit' or press Ctrl+D to quit." );
 		System.out.println( "==================================================" );

@@ -83,7 +83,7 @@ public class ASMBoxpiler extends Boxpiler {
 			File sourceFile = classInfo.resolvedFilePath().absolutePath().toFile();
 			// Check if the source file contains Java bytecode by reading the first few bytes
 			if ( DiskClassUtil.isJavaByteCode( sourceFile ) ) {
-				return classInfo.getClassLoader().defineClasses( FQN, sourceFile, classInfo );
+				return classInfo.getDiskClassLoader().defineClasses( FQN, sourceFile, classInfo );
 			}
 			ParsingResult result = parseOrFail( sourceFile );
 			classes = doWriteClassInfo( result.getRoot(), classInfo );
@@ -107,7 +107,7 @@ public class ASMBoxpiler extends Boxpiler {
 	}
 
 	private List<byte[]> doWriteClassInfo( BoxNode node, ClassInfo classInfo ) {
-		node.accept( new QueryEscapeSingleQuoteVisitor() );
+		node.accept( new QueryEscapeSingleQuoteVisitor( classInfo.sourceType() ) );
 		final List<byte[]>					classes		= new ArrayList<>();
 		final Map<String, ClassNode>		allClasses	= new LinkedHashMap<>();
 		final BiConsumer<String, ClassNode>	collector	= ( fqn, classNode ) -> allClasses.put( fqn, classNode );
@@ -115,10 +115,9 @@ public class ASMBoxpiler extends Boxpiler {
 		// First, collect all ClassNodes (main + auxiliaries) from the transpiler
 		doCompileClassInfo( transpiler( classInfo ), classInfo, node, collector );
 
-		// Now process them in two phases to ensure auxiliary classes are defined before the main class
-
-		// Phase 1: Process and define all auxiliary classes (closures, lambdas, etc.)
-		// This must happen first so they're available when ASM computes frames for the main class
+		// Process auxiliary classes first (define without init), then the main class.
+		// Auxiliaries are defined so the JVM can resolve class references (e.g., Person.class in imports)
+		// but initialization is deferred until first use (e.g., new Person()).
 		String mainClassFqn = classInfo.fqn().toString();
 		for ( Map.Entry<String, ClassNode> entry : allClasses.entrySet() ) {
 			String		fqn			= entry.getKey();
@@ -129,10 +128,10 @@ public class ASMBoxpiler extends Boxpiler {
 				continue;
 			}
 
-			// Process auxiliary class
+			// Define auxiliary class (no initialization - will be initialized on first use)
 			byte[] bytes = convertClassNodeToBytes( fqn, classNode, classInfo );
 			classes.addFirst( bytes );
-			classInfo.getClassLoader().defineClass( fqn, bytes );
+			classInfo.getDiskClassLoader().defineClassWithoutInit( fqn, bytes );
 
 			// Store on disk if configured
 			if ( runtime.getConfiguration().storeClassFilesOnDisk ) {
@@ -142,12 +141,12 @@ public class ASMBoxpiler extends Boxpiler {
 			}
 		}
 
-		// Phase 2: Process the main class (now that all auxiliary classes are defined)
+		// Now process the main class (auxiliaries are already defined and loadable)
 		ClassNode mainClassNode = allClasses.get( mainClassFqn );
 		if ( mainClassNode != null ) {
 			byte[] bytes = convertClassNodeToBytes( mainClassFqn, mainClassNode, classInfo );
 			classes.addFirst( bytes );
-			classInfo.getClassLoader().defineClass( mainClassFqn, bytes );
+			classInfo.getDiskClassLoader().defineClass( mainClassFqn, bytes );
 
 			// Store on disk if configured
 			if ( runtime.getConfiguration().storeClassFilesOnDisk ) {

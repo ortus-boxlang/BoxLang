@@ -40,6 +40,7 @@ import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
@@ -217,6 +218,12 @@ public abstract class AbstractTransformer implements Transformer {
 				} else if ( onlyLiteralValues ) {
 					// Runtime expressions we just put this place holder text in for
 					value = BoxStringLiteralTransformer.transform( "<Runtime Expression>" );
+				} else if ( thisValue instanceof BoxStringInterpolation bsi && bsi.getValues().size() == 1 ) {
+					// A quoted attribute value with a single interpolation element isn't forced to a string.
+					// Ex: <bx:myComponent foo="#complexValue#">
+					// It's represented as a BoxStringInterpolation, but we DON'T want to use the actual string transformer
+					// as it will force the output to be a string!!
+					value = ( Expression ) transpiler.transform( bsi.getValues().get( 0 ) );
 				} else {
 					value = ( Expression ) transpiler.transform( thisValue );
 				}
@@ -253,13 +260,17 @@ public abstract class AbstractTransformer implements Transformer {
 
 	// TODO: This loses line number mapping. Stop parsing and start building the AST directly
 	protected String generateArguments( List<BoxArgument> arguments ) {
+		boolean hasSpread = arguments.stream().anyMatch( BoxArgument::isSpread );
+		if ( hasSpread ) {
+			return generateSpreadArguments( arguments );
+		}
 		StringBuilder sb = new StringBuilder( "" );
 
 		if ( arguments.size() == 0 ) {
 			sb.append( "new Object[]{}" );
 		} else {
 			// Positional args
-			if ( arguments.get( 0 ).getName() == null ) {
+			if ( !arguments.get( 0 ).isNamed() ) {
 				sb.append( "new Object[] { " );
 				for ( int i = 0; i < arguments.size(); i++ ) {
 					sb.append( "${" ).append( "arg" ).append( i ).append( "}" );
@@ -282,6 +293,62 @@ public abstract class AbstractTransformer implements Transformer {
 		return sb.toString();
 	}
 
+	/**
+	 * Check if all arguments are spread expressions (no explicit named or positional args).
+	 * In this case, runtime disambiguation is needed.
+	 */
+	protected boolean isAllSpread( List<BoxArgument> arguments ) {
+		return !arguments.isEmpty() && arguments.stream().allMatch( BoxArgument::isSpread );
+	}
+
+	/**
+	 * Generate arguments template when spread expressions are present.
+	 * Uses LiteralSpreadUtil.positionalArgs/namedArgs to expand spread values at runtime.
+	 */
+	private String generateSpreadArguments( List<BoxArgument> arguments ) {
+		// Determine if the non-spread args are named
+		boolean isNamed = false;
+		for ( BoxArgument arg : arguments ) {
+			if ( !arg.isSpread() ) {
+				isNamed = arg.isNamed();
+				break;
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+		if ( !isNamed ) {
+			// Positional with spread
+			sb.append( "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.positionalArgs( " );
+			for ( int i = 0; i < arguments.size(); i++ ) {
+				if ( i > 0 ) {
+					sb.append( ", " );
+				}
+				sb.append( "${arg" ).append( i ).append( "}" );
+			}
+			sb.append( " )" );
+		} else {
+			// Named with spread
+			sb.append( "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.namedArgs( " );
+			boolean first = true;
+			for ( int i = 0; i < arguments.size(); i++ ) {
+				BoxArgument arg = arguments.get( i );
+				if ( !first ) {
+					sb.append( ", " );
+				}
+				first = false;
+				if ( arg.isSpread() ) {
+					// spread arg contributes only the spread value
+					sb.append( "${arg" ).append( i ).append( "}" );
+				} else {
+					// named arg contributes key, value pair
+					sb.append( createKey( arg.getName() ).toString() ).append( ", ${arg" ).append( i ).append( "}" );
+				}
+			}
+			sb.append( " )" );
+		}
+		return sb.toString();
+	}
+
 	@SuppressWarnings( "unchecked" )
 	public ExitsAllowed getExitsAllowed( BoxNode node ) {
 		BoxNode ancestor = node.getFirstNodeOfTypes( BoxFunctionDeclaration.class, BoxClosure.class, BoxLambda.class, BoxComponent.class, BoxDo.class,
@@ -291,6 +358,10 @@ public abstract class AbstractTransformer implements Transformer {
 			return ExitsAllowed.FUNCTION;
 		} else if ( ancestor instanceof BoxComponent ) {
 			return ExitsAllowed.COMPONENT;
+		} else if ( ancestor instanceof BoxSwitch sw
+		    && sw.hasBreakingCases() ) {
+			// Breaking switches are not valid break targets - keep looking
+			return getExitsAllowed( ancestor.getParent() );
 		} else if ( ancestor != null ) {
 			return ExitsAllowed.LOOP;
 		} else {

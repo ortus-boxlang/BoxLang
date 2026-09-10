@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.debug.DebuggerExternalConnectionUtil;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cli.providers.BifTabProvider;
 import ortus.boxlang.runtime.cli.providers.ComponentTabProvider;
@@ -40,7 +41,6 @@ import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
-import ortus.boxlang.debug.DebuggerExternalConnectionUtil;
 
 /**
  * BoxLang Read-Eval-Print-Loop (REPL) implementation.
@@ -251,7 +251,9 @@ public class BoxRepl {
 						System.out.println( "No previous command found." );
 						continue;
 					}
-				} else if ( braceDepth == 0 && source.startsWith( "!" ) && source.length() > 1 ) {
+				}
+				// Handle history recall (!n) where n is the command number (only when not in multi-line mode)
+				else if ( braceDepth == 0 && source.startsWith( "!" ) && source.length() > 1 ) {
 					try {
 						int		historyNum		= Integer.parseInt( source.substring( 1 ) );
 						String	historyCommand	= console.getHistoryCommand( historyNum );

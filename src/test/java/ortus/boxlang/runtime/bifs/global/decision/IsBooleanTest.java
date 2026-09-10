@@ -60,19 +60,21 @@ public class IsBooleanTest {
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-		    trueValue        = isBoolean( true );
-		    falseValue       = isBoolean( false );
+		       trueValue        = isBoolean( true );
+		       falseValue       = isBoolean( false );
 
-		    stringTrue  = isBoolean( 'true' );
-		    stringFalse = isBoolean( 'false' );
+		       stringTrue  = isBoolean( 'true' );
+		       stringFalse = isBoolean( 'false' );
 
-		    yes         = isBoolean( "yes" );
-		    no          = isBoolean( "no" );
+		       yes         = isBoolean( "yes" );
+		       no          = isBoolean( "no" );
 
-		    float       = isBoolean( 1.1 );
-		    zero        = isBoolean( 0 );
-		    twentythree = isBoolean( 23 );
-		    """,
+		       float       = isBoolean( 1.1 );
+		       zero        = isBoolean( 0 );
+		       twentythree = isBoolean( 23 );
+
+		    nullValue    = isBoolean( null );
+		       """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "trueValue" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "falseValue" ) ) ).isTrue();
@@ -86,6 +88,8 @@ public class IsBooleanTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "float" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "zero" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "twentythree" ) ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.get( Key.of( "nullValue" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It returns false for non-boolean values" )

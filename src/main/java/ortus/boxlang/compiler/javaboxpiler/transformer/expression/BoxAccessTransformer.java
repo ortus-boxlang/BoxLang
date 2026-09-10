@@ -45,6 +45,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxAccess	objectAccess	= ( BoxAccess ) node;
+		boolean		isDotAccess		= objectAccess instanceof BoxDotAccess;
 		Boolean		safe			= objectAccess.isSafe() || context == TransformerContext.SAFE;
 
 		Node		accessKey;
@@ -98,13 +99,15 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			                                                  )
 			                                            """;
 			BoxNode	parent		= ( BoxNode ) objectAccess.getParent();
-			// Excempt if this access is the context of another access, meaning there's another key to dereference from us
+			// Exempt if this access is the context of another access, meaning there's another key to dereference from us
 			if ( ! ( parent instanceof BoxAccess ba && ba.getContext() == objectAccess )
-			    // I don't know if this will work, but I'm trying to make an exception for query columns being passed to array BIFs
-			    // The argument must be the first argument to the function
-			    && ! ( parent instanceof BoxArgument barg && barg.getParent() instanceof BoxFunctionInvocation bfun
-			        && bfun.getName().toLowerCase().startsWith( "array" )
-			        && bfun.getArguments().get( 0 ) == barg ) ) {
+			    // We're matching CF here and they only apply to array access, not dot access.
+			    && ( isDotAccess
+			        // I don't know if this will work, but I'm trying to make an exception for query columns being passed to array BIFs
+			        // The argument must be the first argument to the function
+			        || ! ( parent instanceof BoxArgument barg && barg.getParent() instanceof BoxFunctionInvocation bfun
+			            && bfun.getName().toLowerCase().startsWith( "array" )
+			            && bfun.getArguments().get( 0 ) == barg ) ) ) {
 				template = "${contextName}.unwrapQueryColumn( " + template + " )";
 			}
 			Node javaExpr = parseExpression( template, values );

@@ -25,6 +25,7 @@ import com.github.javaparser.ast.expr.Expression;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -52,9 +53,19 @@ public class BoxArgumentTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxArgument			arg			= ( BoxArgument ) node;
-		Expression			expr		= ( Expression ) transpiler.transform( arg.getValue(), context );
-		// TODO handle named parameters
+		BoxArgument	arg	= ( BoxArgument ) node;
+		Expression	expr;
+		String		template;
+
+		if ( arg.isSpread() ) {
+			BoxSpreadExpression spread = ( BoxSpreadExpression ) arg.getValue();
+			expr		= ( Expression ) transpiler.transform( spread.getExpression(), context );
+			template	= "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.spread(${expr})";
+		} else {
+			expr		= ( Expression ) transpiler.transform( arg.getValue(), context );
+			template	= "${expr}";
+		}
+
 		Map<String, String>	values		= new HashMap<>() {
 
 											{
@@ -63,10 +74,7 @@ public class BoxArgumentTransformer extends AbstractTransformer {
 											}
 										};
 
-		String				template	= "${expr}";
-
 		Node				javaExpr	= parseExpression( template, values );
-		// logger.trace( side + node.getSourceText() + " -> " + javaExpr );
 
 		return javaExpr;
 	}

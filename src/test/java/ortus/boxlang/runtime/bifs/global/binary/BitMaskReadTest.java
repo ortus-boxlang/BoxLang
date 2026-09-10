@@ -61,28 +61,35 @@ public class BitMaskReadTest {
 	@Test
 	public void testBitwiseMaskReadWithPositiveIntegers() {
 		instance.executeSource( "result = bitMaskRead(15, 1, 3);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 7 );
+		assertThat( variables.get( result ) ).isEqualTo( 7L );
 	}
 
 	@DisplayName( "Bitwise Mask Read operation with negative integers" )
 	@Test
 	public void testBitwiseMaskReadWithNegativeIntegers() {
 		instance.executeSource( "result = bitMaskRead(-5, 1, 2);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( 1L );
 	}
 
 	@DisplayName( "Bitwise Mask Read operation with zero" )
 	@Test
 	public void testBitwiseMaskReadWithZero() {
 		instance.executeSource( "result = bitMaskRead(0, 2, 4);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
+		assertThat( variables.get( result ) ).isEqualTo( 0L );
 	}
 
 	@DisplayName( "Bitwise Mask Read operation with large integers" )
 	@Test
 	public void testBitwiseMaskReadWithLargeIntegers() {
 		instance.executeSource( "result = bitMaskRead(123456789, 4, 10);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 209 );
+		assertThat( variables.get( result ) ).isEqualTo( 209L );
+	}
+
+	@DisplayName( "Bitwise Mask Read operation with long-range values" )
+	@Test
+	public void testBitwiseMaskReadWithLongRangeValues() {
+		instance.executeSource( "result = bitMaskRead(2190225219, 4, 10);", context );
+		assertThat( variables.get( result ) ).isEqualTo( 756L );
 	}
 
 	@DisplayName( "Bitwise Mask Read operation with invalid length" )

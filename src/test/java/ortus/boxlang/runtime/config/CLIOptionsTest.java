@@ -42,6 +42,7 @@ public class CLIOptionsTest {
 		    true,
 		    "runtimeHome",
 		    true,
+		    true,
 		    List.of( "cliArgs" ),
 		    new String[] { "cliArgsRaw" },
 		    "targetModule",
@@ -56,6 +57,7 @@ public class CLIOptionsTest {
 		assertThat( options.transpile() ).isTrue();
 		assertThat( options.runtimeHome() ).isEqualTo( "runtimeHome" );
 		assertThat( options.showVersion() ).isTrue();
+		assertThat( options.showHelp() ).isTrue();
 		assertThat( options.cliArgs() ).containsExactly( "cliArgs" );
 		assertThat( options.targetModule() ).isEqualTo( "targetModule" );
 		assertThat( options.actionCommand() ).isEqualTo( "actionCommand" );
@@ -73,6 +75,7 @@ public class CLIOptionsTest {
 		    true,
 		    "runtimeHome",
 		    true,
+		    false,
 		    List.of( "path/to/template.bxs",
 		        "--debug",
 		        "--!verbose",

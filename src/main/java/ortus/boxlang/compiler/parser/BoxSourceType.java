@@ -21,8 +21,27 @@ package ortus.boxlang.compiler.parser;
  * Supported files
  */
 public enum BoxSourceType {
+
 	CFSCRIPT,
 	CFTEMPLATE,
 	BOXSCRIPT,
-	BOXTEMPLATE
+	BOXTEMPLATE;
+
+	/**
+	 * Check if this source type is a CF type (CFSCRIPT or CFTEMPLATE)
+	 *
+	 * @return true if this is a CF type
+	 */
+	public boolean isCFType() {
+		return this == CFSCRIPT || this == CFTEMPLATE;
+	}
+
+	/**
+	 * Check if this source type is a Box type (BOXSCRIPT or BOXTEMPLATE)
+	 *
+	 * @return true if this is a Box type
+	 */
+	public boolean isBoxType() {
+		return this == BOXSCRIPT || this == BOXTEMPLATE;
+	}
 }

@@ -47,6 +47,12 @@ public class ArraySlice extends BIF {
 	 *
 	 * @param context
 	 * @param arguments Argument scope defining the array.
+	 *
+	 * @argument.array The array to slice.
+	 *
+	 * @argument.start The position to start the slice from. Negative values count from the end of the array.
+	 *
+	 * @argument.length The number of elements to return. 0 (default) returns all elements from start to the end of the array.
 	 */
 	public Array _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );

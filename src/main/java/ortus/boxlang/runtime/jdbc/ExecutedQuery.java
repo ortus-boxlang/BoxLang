@@ -30,6 +30,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.jdbc.drivers.JDBCDriverFeature;
 import ortus.boxlang.runtime.jdbc.qoq.QoQStatement;
@@ -177,7 +178,8 @@ public final class ExecutedQuery implements Serializable {
 	    @NonNull BoxStatement statement,
 	    long executionTime,
 	    boolean hasResults,
-	    SQLException initialSqlException ) {
+	    SQLException initialSqlException,
+	    IBoxContext context ) {
 		boolean				generatedKeysComeAsResultSet	= false;
 		Object				generatedKey					= null;
 		Throwable			raisedError						= initialSqlException;
@@ -397,7 +399,8 @@ public final class ExecutedQuery implements Serializable {
 		        Key.data, iResults,
 		        Key.result, queryMeta,
 		        Key.pendingQuery, pendingQuery,
-		        Key.executedQuery, executedQuery
+		        Key.executedQuery, executedQuery,
+		        Key.context, context
 		    )
 		);
 

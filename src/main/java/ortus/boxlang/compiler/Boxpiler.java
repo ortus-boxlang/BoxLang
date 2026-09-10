@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.compiler;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -153,17 +154,21 @@ public abstract class Boxpiler implements IBoxpiler {
 	 *
 	 * @param classPool The class pool to check
 	 * @param classInfo The class info to ensure
+	 * 
+	 * @return The ensured class info.
 	 */
-	protected void ensureClassInfo( Map<String, ClassInfo> classPool, ClassInfo classInfo ) {
-		String name = classInfo.fqn().toString();
-		if ( classPool.get( name ) != null ) {
-			return;
+	protected ClassInfo ensureClassInfo( Map<String, ClassInfo> classPool, ClassInfo classInfo ) {
+		String		name	= classInfo.fqn().toString();
+		ClassInfo	ensuredClassInfo;
+		if ( ( ensuredClassInfo = classPool.get( name ) ) != null ) {
+			return ensuredClassInfo;
 		}
 		synchronized ( classPool ) {
-			if ( classPool.get( name ) != null ) {
-				return;
+			if ( ( ensuredClassInfo = classPool.get( name ) ) != null ) {
+				return ensuredClassInfo;
 			}
 			classPool.put( name, classInfo );
+			return classInfo;
 		}
 	}
 
@@ -284,8 +289,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IBoxRunnable> compileStatement( String source, BoxSourceType type ) {
 		ClassInfo	classInfo	= ClassInfo.forStatement( source, type, this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		ensureClassInfo( classPool, classInfo );
-		classInfo = classPool.get( classInfo.fqn().toString() );
+		classInfo = ensureClassInfo( classPool, classInfo );
 
 		return classInfo.getDiskClass();
 
@@ -303,8 +307,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IBoxRunnable> compileScript( String source, BoxSourceType type ) {
 		ClassInfo	classInfo	= ClassInfo.forScript( source, type, this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		ensureClassInfo( classPool, classInfo );
-		classInfo = classPool.get( classInfo.fqn().toString() );
+		classInfo = ensureClassInfo( classPool, classInfo );
 		return classInfo.getDiskClass();
 	}
 
@@ -317,27 +320,32 @@ public abstract class Boxpiler implements IBoxpiler {
 	 */
 	@Override
 	public Class<IBoxRunnable> compileTemplate( ResolvedFilePath resolvedFilePath ) {
-		ClassInfo	classInfo	= ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this );
-		var			classPool	= getClassPool( classInfo.classPoolName() );
-		ensureClassInfo( classPool, classInfo );
+		ClassInfo	classInfo			= ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this );
+		var			classPool			= getClassPool( classInfo.classPoolName() );
+		ClassInfo	ensuredClassInfo	= ensureClassInfo( classPool, classInfo );
 		// If the new class is newer than the one on disk, recompile it
-		long	lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
-		long	lastModified2	= classInfo.lastModified();
+		long		lastModified		= ensuredClassInfo.lastModified();
+		long		lastModified2		= classInfo.lastModified();
 		// This needs to be tested at decision time since the setting may have changed in the runtime since the compiler was created
-		Boolean	trustedCache	= runtime.getConfiguration().trustedCache;
+		Boolean		trustedCache		= runtime.getConfiguration().trustedCache;
 		if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && !trustedCache && ( lastModified != lastModified2 ) ) {
 			// Double check lock using the class name as the lockn. This ensures only one thread recompiles a class at a time
 			String internedFQN = classInfo.fqn().toString().intern();
 			synchronized ( internedFQN ) {
 
-				lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
+				lastModified	= ensuredClassInfo.lastModified();
 				lastModified2	= classInfo.lastModified();
 				if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && !trustedCache && ( lastModified != lastModified2 ) ) {
-					try {
-						// Don't know if this does anything, but calling it for good measure
-						classPool.get( classInfo.fqn().toString() ).getClassLoader().close();
-					} catch ( IOException e ) {
-						e.printStackTrace();
+					// Close the stale loader before recompiling. Match the prior behavior exactly: close
+					// without nulling the discarded ClassInfo's reference (it is replaced in the pool
+					// below). Guard for resolve-only loaders (e.g. Android's) which are not Closeable.
+					ClassLoader staleLoader = ensuredClassInfo.getClassLoader();
+					if ( staleLoader instanceof Closeable closeable ) {
+						try {
+							closeable.close();
+						} catch ( IOException e ) {
+							e.printStackTrace();
+						}
 					}
 					try {
 						// Mark the class info instance as not ready to use yet
@@ -349,11 +357,11 @@ public abstract class Boxpiler implements IBoxpiler {
 						classInfo.doneCompiling();
 					}
 				} else {
-					classInfo = classPool.get( classInfo.fqn().toString() );
+					classInfo = ensuredClassInfo;
 				}
 			}
 		} else {
-			classInfo = classPool.get( classInfo.fqn().toString() );
+			classInfo = ensuredClassInfo;
 		}
 		// This will block if the class info is still being compiled
 		return classInfo.getDiskClass();
@@ -370,8 +378,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IBoxRunnable> compileClass( String source, BoxSourceType type ) {
 		ClassInfo	classInfo	= ClassInfo.forClass( source, type, this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		ensureClassInfo( classPool, classInfo );
-		classInfo = classPool.get( classInfo.fqn().toString() );
+		classInfo = ensureClassInfo( classPool, classInfo );
 
 		return classInfo.getDiskClass();
 	}
@@ -386,6 +393,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	@Override
 	public Class<IBoxRunnable> compileClass( ResolvedFilePath resolvedFilePath ) {
 		ClassInfo				classInfo			= null;
+		ClassInfo				ensuredClassInfo	= null;
 		Map<String, ClassInfo>	classPool			= null;
 		FQN						fqn					= null;
 		long					lastModifiedCurrent	= 0;
@@ -405,6 +413,7 @@ public abstract class Boxpiler implements IBoxpiler {
 					}
 					if ( entry.resolvedFilePath().equals( resolvedFilePath ) ) {
 						classInfo			= entry;
+						ensuredClassInfo	= classInfo;
 						// The classInfo may be cached, but get a fresh modified date
 						lastModifiedCurrent	= classInfo.getFreshLastModified();
 						break;
@@ -412,8 +421,9 @@ public abstract class Boxpiler implements IBoxpiler {
 				}
 				// Ok, if that didn't work, look for the normalized FQN.
 				if ( classInfo == null ) {
-					fqn			= resolvedFilePath.getFQN( "boxgenerated.boxclass" );
-					classInfo	= classPool.get( fqn.toString() );
+					fqn					= resolvedFilePath.getFQN( "boxgenerated.boxclass" );
+					classInfo			= classPool.get( fqn.toString() );
+					ensuredClassInfo	= classInfo;
 					if ( classInfo != null ) {
 						// The classInfo may be cached, but get a fresh modified date
 						lastModifiedCurrent = classInfo.getFreshLastModified();
@@ -421,6 +431,7 @@ public abstract class Boxpiler implements IBoxpiler {
 				}
 			}
 		}
+
 		// Ok, we give up. Now we create a full ClassInfo instance.
 		if ( classInfo == null ) {
 			// If we created an FQN above, don't let that effort be in vain. Pass it here. If it's null, it will be created internally.
@@ -428,12 +439,12 @@ public abstract class Boxpiler implements IBoxpiler {
 			// This date will be fresh since we just created the ClassInfo.
 			lastModifiedCurrent	= classInfo.lastModified();
 			classPool			= getClassPool( classInfo.classPoolName() );
-			ensureClassInfo( classPool, classInfo );
+			ensuredClassInfo	= ensureClassInfo( classPool, classInfo );
 		}
 
 		// If the new class is newer than the one on disk, recompile it
 		@SuppressWarnings( "null" )
-		long	lastModifiedPrevious	= classPool.get( classInfo.fqn().toString() ).lastModified();
+		long	lastModifiedPrevious	= ensuredClassInfo.lastModified();
 		// This needs to be tested at decision time since the setting may have changed in the runtime since the compiler was created
 		Boolean	trustedCache			= runtime.getConfiguration().trustedCache;
 		if ( ( lastModifiedPrevious > 0 ) && ( lastModifiedCurrent > 0 ) && !trustedCache && ( lastModifiedPrevious != lastModifiedCurrent ) ) {
@@ -441,10 +452,10 @@ public abstract class Boxpiler implements IBoxpiler {
 			String internedFQN = classInfo.fqn().toString().intern();
 			synchronized ( internedFQN ) {
 
-				lastModifiedPrevious	= classPool.get( classInfo.fqn().toString() ).lastModified();
+				lastModifiedPrevious	= ensuredClassInfo.lastModified();
 				lastModifiedCurrent		= classInfo.getFreshLastModified();
 				if ( ( lastModifiedPrevious > 0 ) && ( lastModifiedCurrent > 0 ) && !trustedCache && ( lastModifiedPrevious != lastModifiedCurrent ) ) {
-					classPool.get( classInfo.fqn().toString() ).shutdownClassLoader();
+					ensuredClassInfo.shutdownClassLoader();
 					// Get a fresh class info since we may have had a used one from above with an outdated modified date and class loader
 					classInfo = ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this, fqn );
 					try {
@@ -457,11 +468,11 @@ public abstract class Boxpiler implements IBoxpiler {
 						classInfo.doneCompiling();
 					}
 				} else {
-					classInfo = classPool.get( classInfo.fqn().toString() );
+					classInfo = ensuredClassInfo;
 				}
 			}
 		} else {
-			classInfo = classPool.get( classInfo.fqn().toString() );
+			classInfo = ensuredClassInfo;
 		}
 		// This will block if the class info is still being compiled
 		return classInfo.getDiskClass();
@@ -471,8 +482,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IProxyRunnable> compileInterfaceProxy( IBoxContext context, InterfaceProxyDefinition definition ) {
 		ClassInfo	classInfo	= ClassInfo.forInterfaceProxy( definition.name(), definition, this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		ensureClassInfo( classPool, classInfo );
-		classInfo = classPool.get( classInfo.fqn().toString() );
+		classInfo = ensureClassInfo( classPool, classInfo );
 
 		return classInfo.getDiskClassProxy();
 
@@ -506,7 +516,7 @@ public abstract class Boxpiler implements IBoxpiler {
 			classInfo = ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
 		}
 		var classPool = getClassPool( classInfo.classPoolName() );
-		ensureClassInfo( classPool, classInfo );
+		classInfo = ensureClassInfo( classPool, classInfo );
 		return compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
 	}
 

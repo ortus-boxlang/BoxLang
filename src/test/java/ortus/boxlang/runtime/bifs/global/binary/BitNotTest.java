@@ -59,13 +59,20 @@ public class BitNotTest {
 	@Test
 	public void testBitwiseNotWithPositiveIntegers() {
 		instance.executeSource( "result = bitNot(5);", context );
-		assertThat( variables.get( result ) ).isEqualTo( -6 );
+		assertThat( variables.get( result ) ).isEqualTo( -6L );
 	}
 
 	@DisplayName( "Bitwise NOT operation with negative integers" )
 	@Test
 	public void testBitwiseNotWithNegativeIntegers() {
 		instance.executeSource( "result = bitNot(-5);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 4 );
+		assertThat( variables.get( result ) ).isEqualTo( 4L );
+	}
+
+	@DisplayName( "Bitwise NOT operation with long-range values" )
+	@Test
+	public void testBitwiseNotWithLongRangeValues() {
+		instance.executeSource( "result = bitNot(2190225219);", context );
+		assertThat( variables.get( result ) ).isEqualTo( -2190225220L );
 	}
 }

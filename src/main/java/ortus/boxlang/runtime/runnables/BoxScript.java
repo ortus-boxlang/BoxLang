@@ -51,6 +51,10 @@ public abstract class BoxScript implements IScriptRunnable {
 	public Object invoke( IBoxContext context ) {
 		BoxRuntime runtime = BoxRuntime.getInstance();
 
+		// Push this script as a template so context.getCurrentImports() works
+		// (e.g., for BIFs like getClassMetadata() that need access to classRef imports)
+		context.pushTemplate( this );
+
 		// Announcements
 		runtime.announce(
 		    BoxEvent.ON_PRE_SOURCE_INVOKE,
@@ -69,6 +73,7 @@ public abstract class BoxScript implements IScriptRunnable {
 			        Key.source, this
 			    )
 			);
+			context.popTemplate();
 		}
 
 	}

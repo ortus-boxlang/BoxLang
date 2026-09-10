@@ -21,21 +21,37 @@ import java.math.BigDecimal;
 
 import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
+import ortus.boxlang.runtime.dynamic.casters.SetCaster;
+import ortus.boxlang.runtime.types.BoxSet;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
 /**
- * Performs Math Power for BoxLang
+ * Performs Math Power, with overloads for set symmetric difference when both operands are {@link BoxSet}.
  * {@code a = 2 ^ 3}
  */
 public class Power implements IOperator {
 
 	/**
+	 * Generic dispatch: returns a {@link BoxSet} (symmetric difference) when either operand is a
+	 * {@link BoxSet} and the other coerces to one; otherwise delegates to numeric exponentiation.
+	 *
 	 * @param left  The left operand
 	 * @param right The right operand
 	 *
-	 * @return The the result
+	 * @return The power (Number) for numeric operands, or a new {@link BoxSet} for set operands.
 	 */
-	public static Number invoke( Object left, Object right ) {
+	public static Object invoke( Object left, Object right ) {
+		if ( left instanceof BoxSet bsl ) {
+			var rs = SetCaster.attemptLoose( right );
+			if ( rs.wasSuccessful() ) {
+				return bsl.symmetricDifference( rs.get() );
+			}
+		} else if ( right instanceof BoxSet bsr ) {
+			var ls = SetCaster.attemptLoose( left );
+			if ( ls.wasSuccessful() ) {
+				return ls.get().symmetricDifference( bsr );
+			}
+		}
 		return invoke( NumberCaster.cast( left ), NumberCaster.cast( right ) );
 	}
 

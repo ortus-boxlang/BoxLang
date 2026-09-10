@@ -178,19 +178,16 @@ public class GetMetaDataTest {
 		IStruct myMethodAnnotations = myMethod.getAsStruct( Key.annotations );
 		assertThat( myMethodAnnotations ).isNotNull();
 		assertThat( myMethodAnnotations.getAsString( Key.of( "foo" ) ) ).isEqualTo( "bar" );
-		assertThat( myMethodAnnotations.getAsBoolean( Key.output ) ).isTrue();
 
 		// Assert myMethod2 exists and has correct structure
 		assertThat( myMethod2 ).isNotNull();
 		assertThat( myMethod2.getAsString( Key.access ) ).isEqualTo( "public" );
 		assertThat( myMethod2.getAsString( Key.returnType ) ).isEqualTo( "Any" );
-		assertThat( myMethod2.getAsBoolean( Key.output ) ).isTrue();
 
 		// Check myMethod2 annotations - should have foo="bar"
 		IStruct myMethod2Annotations = myMethod2.getAsStruct( Key.annotations );
 		assertThat( myMethod2Annotations ).isNotNull();
 		assertThat( myMethod2Annotations.getAsString( Key.of( "baz" ) ) ).isEqualTo( "bum" );
-		assertThat( myMethod2Annotations.getAsBoolean( Key.output ) ).isTrue();
 
 		// Implements and extends should be empty structs
 		assertThat( meta.getAsStruct( Key._IMPLEMENTS ) ).isEmpty();

@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.interop.proxies.BaseProxy;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
@@ -75,6 +76,20 @@ public class InterfaceProxyService {
 	 * @return The proxy definition
 	 */
 	public static InterfaceProxyDefinition generateDefinition( IBoxContext context, Array interfaces ) {
+		return generateDefinition( context, interfaces, context.getCurrentImports() );
+	}
+
+	/**
+	 * Turn an array of interfaces into a proxy definition, using the provided imports
+	 * for alias resolution instead of relying on the context's imports.
+	 *
+	 * @param context    The context to bind with
+	 * @param interfaces The interfaces to implement
+	 * @param imports    The list of import definitions for alias resolution
+	 *
+	 * @return The proxy definition
+	 */
+	public static InterfaceProxyDefinition generateDefinition( IBoxContext context, Array interfaces, List<ImportDefinition> imports ) {
 		String			name			= generateName( interfaces );
 		List<Method>	methods			= new ArrayList<>();
 		List<String>	interfaceNames	= new ArrayList<>();
@@ -86,8 +101,9 @@ public class InterfaceProxyService {
 				interfaceNames.add( ic.getName() );
 				iClass = DynamicObject.of( ic );
 			} else {
-				iClass = classLocator.load( context, ( String ) iface, ClassLocator.JAVA_PREFIX, true, context.getCurrentImports() );
-				interfaceNames.add( ( String ) iface );
+				iClass = classLocator.load( context, ( String ) iface, ClassLocator.JAVA_PREFIX, true, imports );
+				// Use the actual resolved class name (not the alias) for the interface list
+				interfaceNames.add( iClass.getTargetClass().getName() );
 			}
 			methods.addAll( iClass.getMethods( false ).stream().map( e -> ( Method ) e ).toList() );
 		}

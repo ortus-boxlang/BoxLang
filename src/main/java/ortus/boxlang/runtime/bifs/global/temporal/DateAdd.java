@@ -68,4 +68,19 @@ public class DateAdd extends BIF {
 		);
 	}
 
+	/**
+	 * Static helper to add a time interval to a DateTime, returning a NEW DateTime instance.
+	 * This is used internally by range stepping and anywhere else that needs dateAdd semantics
+	 * without going through the BIF argument machinery.
+	 *
+	 * @param date     the DateTime to modify (not mutated)
+	 * @param datepart the datepart code (d, m, yyyy, h, n, s, l, w, ww, q, y)
+	 * @param quantity the number of units to add (negative to subtract)
+	 *
+	 * @return a new DateTime advanced by the given quantity
+	 */
+	public static DateTime invoke( DateTime date, String datepart, long quantity ) {
+		return date.clone().modify( datepart, quantity );
+	}
+
 }

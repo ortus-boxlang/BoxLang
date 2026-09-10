@@ -1,0 +1,6 @@
+a = {
+	// Preserve key comments outside the generated quotes
+	thing: 5,
+	"alreadyQuoted": { nested: true },
+	'singleQuoted': 10
+};

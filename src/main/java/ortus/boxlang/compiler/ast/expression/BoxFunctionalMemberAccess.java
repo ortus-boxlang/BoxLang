@@ -28,7 +28,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  * I represent functional access to an instance member method
  * myArray.map( .UCase )
  */
-public class BoxFunctionalMemberAccess extends BoxExpression {
+public class BoxFunctionalMemberAccess extends BoxExpression implements IBoxArgumentHolder {
 
 	private String				name;
 	private List<BoxArgument>	arguments;

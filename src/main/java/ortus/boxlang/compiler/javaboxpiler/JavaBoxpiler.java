@@ -22,7 +22,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -115,7 +118,7 @@ public class JavaBoxpiler extends Boxpiler {
 	 */
 	@SuppressWarnings( "unused" )
 	public String generateJavaSource( BoxNode node, ClassInfo classInfo ) {
-		node.accept( new QueryEscapeSingleQuoteVisitor() );
+		node.accept( new QueryEscapeSingleQuoteVisitor( classInfo.sourceType() ) );
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
 		transpiler.setProperty( "packageName", classInfo.packageName().toString() );
@@ -176,7 +179,7 @@ public class JavaBoxpiler extends Boxpiler {
 			File sourceFile = classInfo.resolvedFilePath().absolutePath().toFile();
 			// Check if the source file contains Java bytecode by reading the first few bytes
 			if ( diskClassUtil.isJavaBytecode( sourceFile ) ) {
-				return classInfo.getClassLoader().defineClasses( FQN, sourceFile, classInfo );
+				return classInfo.getDiskClassLoader().defineClasses( FQN, sourceFile, classInfo );
 			}
 			ParsingResult result = parseOrFail( sourceFile );
 			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.fqn().toString(), classPoolName, classInfo.lastModified() );
@@ -231,21 +234,25 @@ public class JavaBoxpiler extends Boxpiler {
 																						@Override
 																						public OutputStream openOutputStream()
 																						    throws IOException {
+																							Path finalPath = Paths.get( f.toUri() );
+																							Path tempPath = finalPath
+																							    .resolveSibling( finalPath.getFileName() + ".tmp" );
 																							return new FileOutputStream(
-																							    f.toUri().getPath() ) {
+																							    tempPath.toFile() ) {
 
 																																@Override
 																																public void close()
 																																    throws IOException {
 																																	super.close();
 																																	if ( lastModifiedDate > 0 ) {
-																																		Paths
-																																		    .get(
-																																		        f.toUri() )
-																																		    .toFile()
+																																		tempPath.toFile()
 																																		    .setLastModified(
 																																		        lastModifiedDate );
 																																	}
+																																	Files.move( tempPath,
+																																	    finalPath,
+																																	    StandardCopyOption.REPLACE_EXISTING,
+																																	    StandardCopyOption.ATOMIC_MOVE );
 																																}
 																															};
 																						}

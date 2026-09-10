@@ -22,6 +22,10 @@ public enum BoxBinaryOperator {
 	NotContains,
 	Plus,
 	Minus,
+	Range,
+	RangeLeftExclusive,
+	RangeRightExclusive,
+	RangeFullExclusive,
 	Star,
 	Slash,
 	Power,
@@ -54,6 +58,14 @@ public enum BoxBinaryOperator {
 				return "+";
 			case Minus :
 				return "-";
+			case Range :
+				return "..";
+			case RangeLeftExclusive :
+				return ">..";
+			case RangeRightExclusive :
+				return "..<";
+			case RangeFullExclusive :
+				return ">..<";
 			case Star :
 				return "*";
 			case Slash :
@@ -114,8 +126,7 @@ public enum BoxBinaryOperator {
 	 */
 	public boolean isNumeric() {
 		return switch ( this ) {
-			case Plus, Minus, Star, Slash, Power, Backslash, Mod, BitwiseAnd, BitwiseOr, BitwiseXor, BitwiseSignedLeftShift, BitwiseSignedRightShift,
-			    BitwiseUnsignedRightShift -> true;
+			case Slash, Backslash, Mod, BitwiseAnd, BitwiseOr, BitwiseXor, BitwiseSignedLeftShift, BitwiseSignedRightShift, BitwiseUnsignedRightShift -> true;
 			default -> false;
 		};
 	}

@@ -17,16 +17,27 @@
  */
 package ortus.boxlang.runtime.services;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.ZoneId;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
+import ortus.boxlang.runtime.async.tasks.ScheduledTask;
+import ortus.boxlang.runtime.async.watchers.WatcherEvent;
+import ortus.boxlang.runtime.async.watchers.WatcherInstance;
+import ortus.boxlang.runtime.async.watchers.listeners.IWatcherListener;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
@@ -39,6 +50,9 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.types.util.JSONUtil;
+import ortus.boxlang.runtime.util.ConfigSecretUtil;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -58,6 +72,11 @@ public class SchedulerService extends BaseService {
 	public static final long		DEFAULT_SHUTDOWN_TIMEOUT	= 30;
 
 	/**
+	 * The default scheduler name used by the bx:schedule component when none is specified.
+	 */
+	public static final String		DEFAULT_SCHEDULER_NAME		= "bxschedule";
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Private Variables
 	 * --------------------------------------------------------------------------
@@ -72,6 +91,35 @@ public class SchedulerService extends BaseService {
 	 * The logger for this service
 	 */
 	private BoxLangLogger			logger;
+
+	/**
+	 * Lock object for thread-safe tasks.json access.
+	 */
+	private final Object			tasksFileLock				= new Object();
+
+	/**
+	 * WatcherInstance that monitors tasks.json for external changes.
+	 * Non-null only when reloadOnChange=true and the watcher started successfully.
+	 */
+	private WatcherInstance			tasksFileWatcher			= null;
+
+	/**
+	 * Epoch-millisecond timestamp of the most recent self-write to tasks.json.
+	 * Used to suppress watcher events triggered by the service's own writes.
+	 */
+	volatile long					lastSelfWriteMs				= 0;
+
+	/**
+	 * Watcher events arriving within this many milliseconds after a self-write are
+	 * suppressed to avoid a reload loop caused by the service's own persistence calls.
+	 * Set to 5 seconds to give schedulers time to finish in-flight changes.
+	 */
+	private static final long		SELF_WRITE_GRACE_MS			= 5_000;
+
+	/**
+	 * Credential fields persisted for scheduled tasks.
+	 */
+	private static final Key[]		CREDENTIAL_KEYS				= { Key.username, Key.password, Key.proxyUser, Key.proxyPassword };
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -114,8 +162,16 @@ public class SchedulerService extends BaseService {
 		// This will look in the configuration for the global scheduler and start it up
 		registerGlobalSchedulers();
 
+		// Load and register any persisted bxschedule tasks from tasks.json
+		registerPersistedScheduleTasks();
+
 		// Startup all the schedulers
 		startupRegisteredSchedulers();
+
+		// Start tasks.json file watcher if reloadOnChange is enabled
+		if ( Boolean.TRUE.equals( runtime.getConfiguration().scheduler.reloadOnChange ) ) {
+			startTasksFileWatcher();
+		}
 
 		// Announce it
 		announce(
@@ -159,6 +215,83 @@ public class SchedulerService extends BaseService {
 	}
 
 	/**
+	 * Load persisted scheduled tasks from the configured {@code tasksFile} and register them
+	 * in their respective schedulers. This is called during startup before {@link #startupRegisteredSchedulers()}.
+	 */
+	public void registerPersistedScheduleTasks() {
+		java.nio.file.Path tasksFile = getTasksFilePath();
+		if ( !java.nio.file.Files.exists( tasksFile ) ) {
+			return;
+		}
+
+		this.logger.info( "+ Loading persisted schedule tasks from [{}]", tasksFile );
+
+		Array		tasks;
+		IBoxContext	runtimeContext	= runtime.getRuntimeContext();
+		try {
+			tasks = loadTasksFromDisk();
+		} catch ( Exception e ) {
+			this.logger.error( "Failed to load persisted schedule tasks — startup will continue without them: {}", e.getMessage() );
+			return;
+		}
+
+		for ( Object entry : tasks ) {
+			if ( ! ( entry instanceof IStruct ) ) {
+				continue;
+			}
+			IStruct	taskDef			= ( IStruct ) entry;
+
+			String	taskName		= taskDef.getAsString( Key.task );
+
+			// Get the scheduler name from the task definition
+			Object	schedulerField	= taskDef.get( Key.scheduler );
+			String	schedulerName	= schedulerField != null ? schedulerField.toString() : null;
+			if ( schedulerName == null || schedulerName.isBlank() ) {
+				schedulerName = DEFAULT_SCHEDULER_NAME;
+			}
+			if ( taskName == null || taskName.isBlank() ) {
+				this.logger.warn( "Skipping persisted task with no name" );
+				continue;
+			}
+
+			boolean	paused			= BooleanCaster.cast( taskDef.getOrDefault( Key.paused, false ) );
+
+			// Get or create the named scheduler (register only — startup happens later via startupRegisteredSchedulers)
+			Key		schedulerKey	= Key.of( schedulerName );
+			if ( !hasScheduler( schedulerKey ) ) {
+				ortus.boxlang.runtime.async.tasks.BaseScheduler s = new ortus.boxlang.runtime.async.tasks.BaseScheduler( schedulerName, runtimeContext );
+				registerScheduler( s, false );
+			}
+			ortus.boxlang.runtime.async.tasks.BaseScheduler	scheduler	= ( ortus.boxlang.runtime.async.tasks.BaseScheduler ) getScheduler( schedulerKey );
+
+			String											group		= taskDef.getAsString( Key.group );
+			String											className	= taskDef.getAsString( Key._CLASS );
+			ortus.boxlang.runtime.async.tasks.ScheduledTask	scheduledTask;
+			Runnable										callable	= null;
+
+			if ( className != null && !className.isBlank() ) {
+				// Class-based task: instantiate once and wire life-cycle methods (identical to doUpdate)
+				scheduledTask = ortus.boxlang.runtime.components.async.Schedule.registerClassTask(
+				    scheduler, taskName, group != null ? group : "", runtimeContext, taskDef );
+			} else {
+				// Build callable and register the task
+				callable		= ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext, taskDef );
+				scheduledTask	= scheduler.task( taskName, group != null ? group : "" ).call( callable );
+			}
+
+			// Apply full configuration (identical to doUpdate — repeat, exclude, callbacks, metadata, scheduling)
+			ortus.boxlang.runtime.components.async.Schedule.applyTaskConfiguration( scheduledTask, callable, taskDef, runtimeContext );
+
+			// Restore paused state last so it overrides any enable set by configuration
+			if ( paused ) {
+				scheduledTask.disable();
+			}
+
+			this.logger.info( "  + Loaded persisted task [{}] in scheduler [{}]", taskName, schedulerName );
+		}
+	}
+
+	/**
 	 * The shutdown event is fired when the runtime shuts down
 	 *
 	 * @param force If true, forces the shutdown of the scheduler
@@ -170,6 +303,9 @@ public class SchedulerService extends BaseService {
 		    BoxEvent.ON_SCHEDULER_SERVICE_SHUTDOWN,
 		    Struct.of( "schedulerService", this )
 		);
+		// Stop the tasks.json file watcher if running
+		stopTasksFileWatcher();
+
 		// Call shutdown on each scheduler in parallel
 		schedulers.values()
 		    .parallelStream()
@@ -253,6 +389,7 @@ public class SchedulerService extends BaseService {
 	/**
 	 * Get all the registered scheduler names as a BoxLang Array
 	 */
+	@SuppressWarnings( "null" )
 	public Array getSchedulerNames() {
 		return this.schedulers.keySet()
 		    .stream()
@@ -377,7 +514,7 @@ public class SchedulerService extends BaseService {
 	 *
 	 * @return The scheduler
 	 */
-	public IScheduler registerScheduler( IScheduler scheduler, Boolean force ) {
+	public synchronized IScheduler registerScheduler( IScheduler scheduler, Boolean force ) {
 		Key schedulerName = scheduler.getSchedulerNameAsKey();
 
 		if ( hasScheduler( schedulerName ) && !force ) {
@@ -420,6 +557,27 @@ public class SchedulerService extends BaseService {
 		registerScheduler( scheduler.setSchedulerName( name.getName() ), true );
 
 		// Return it
+		return scheduler;
+	}
+
+	/**
+	 * Create and register a new scheduler
+	 *
+	 * @param name     The name of the scheduler
+	 * @param timezone The timezone for the scheduler (uses system default if null/empty)
+	 * @param context  The context to seed the scheduler with (uses runtime context if null)
+	 * @param force    Whether to replace an existing scheduler with the same name
+	 *
+	 * @return The newly created scheduler
+	 */
+	public IScheduler newScheduler( String name, String timezone, IBoxContext context, boolean force ) {
+		ZoneId			schedulerTimezone	= ( timezone != null && !timezone.isBlank() )
+		    ? ZoneId.of( timezone )
+		    : ZoneId.systemDefault();
+		IBoxContext		schedulerContext	= context != null ? context : runtime.getRuntimeContext();
+
+		BaseScheduler	scheduler			= new BaseScheduler( name, schedulerTimezone, schedulerContext );
+		registerScheduler( scheduler, force );
 		return scheduler;
 	}
 
@@ -513,6 +671,107 @@ public class SchedulerService extends BaseService {
 	}
 
 	/**
+	 * Reload a scheduler from disk: shuts it down, removes it, re-reads
+	 * tasks.json for tasks belonging to this scheduler, then starts the
+	 * fresh scheduler. Useful when tasks.json has been modified externally
+	 * or when the bx:schedule action="reload" is invoked.
+	 *
+	 * @param schedulerName The key of the scheduler to reload
+	 * @param force         If true, force-kills running tasks during shutdown
+	 * @param timeout       Graceful shutdown timeout in seconds
+	 *
+	 * @return This service for chaining
+	 */
+	public SchedulerService reloadSchedulerFromDisk( Key schedulerName, boolean force, long timeout ) {
+		String name = schedulerName.getName();
+		this.logger.info( "+ Reloading scheduler [{}] from disk...", name );
+
+		// Shutdown and remove the existing scheduler
+		if ( hasScheduler( schedulerName ) ) {
+			removeScheduler( schedulerName, force, timeout );
+		}
+
+		// Re-load tasks from tasks.json for this scheduler only
+		Path		tasksFilePath	= getTasksFilePath();
+		IBoxContext	runtimeContext	= runtime.getRuntimeContext();
+
+		if ( java.nio.file.Files.exists( tasksFilePath ) ) {
+			Array tasks;
+			try {
+				tasks = loadTasksFromDisk();
+			} catch ( Exception e ) {
+				this.logger.error( "Failed to reload tasks for scheduler [{}] — scheduler will start empty: {}", name, e.getMessage() );
+				tasks = new Array();
+			}
+
+			for ( Object entry : tasks ) {
+				if ( ! ( entry instanceof IStruct ) ) {
+					continue;
+				}
+				IStruct	taskDef			= ( IStruct ) entry;
+
+				// Only process tasks belonging to this scheduler
+				Object	schedulerField	= taskDef.get( Key.scheduler );
+				String	taskScheduler	= schedulerField != null ? schedulerField.toString() : DEFAULT_SCHEDULER_NAME;
+				if ( !name.equalsIgnoreCase( taskScheduler ) ) {
+					continue;
+				}
+
+				String taskName = taskDef.getAsString( Key.task );
+				if ( taskName == null || taskName.isBlank() ) {
+					this.logger.warn( "Skipping persisted task with no name during reload of scheduler [{}]", name );
+					continue;
+				}
+
+				boolean paused = BooleanCaster.cast( taskDef.getOrDefault( Key.paused, false ) );
+
+				// Get or create the (now-empty) scheduler
+				if ( !hasScheduler( schedulerName ) ) {
+					BaseScheduler s = new BaseScheduler( name, runtimeContext );
+					registerScheduler( s, false );
+				}
+				BaseScheduler	scheduler	= ( BaseScheduler ) getScheduler( schedulerName );
+
+				String			group		= taskDef.getAsString( Key.group );
+				String			className	= taskDef.getAsString( Key._CLASS );
+				ScheduledTask	scheduledTask;
+				Runnable		callable	= null;
+
+				if ( className != null && !className.isBlank() ) {
+					scheduledTask = ortus.boxlang.runtime.components.async.Schedule.registerClassTask(
+					    scheduler, taskName, group != null ? group : "", runtimeContext, taskDef );
+				} else {
+					callable		= ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext, taskDef );
+					scheduledTask	= scheduler.task( taskName, group != null ? group : "" ).call( callable );
+				}
+
+				ortus.boxlang.runtime.components.async.Schedule.applyTaskConfiguration( scheduledTask, callable, taskDef, runtimeContext );
+
+				if ( paused ) {
+					scheduledTask.disable();
+				}
+
+				this.logger.info( "  + Reloaded task [{}] in scheduler [{}]", taskName, name );
+			}
+		} else {
+			this.logger.info( "+ No tasks.json found — scheduler [{}] will start empty after reload", name );
+		}
+
+		// Start the scheduler if tasks were found and a scheduler was created
+		IScheduler scheduler = getScheduler( schedulerName );
+		if ( scheduler != null ) {
+			startupScheduler( scheduler );
+			announce(
+			    BoxEvent.ON_SCHEDULER_RESTART,
+			    Struct.of( "scheduler", scheduler, "force", force, "timeout", timeout )
+			);
+			this.logger.info( "+ Scheduler [{}] reloaded from disk", name );
+		}
+
+		return this;
+	}
+
+	/**
 	 * Shutdown the scheduler
 	 *
 	 * @param scheduler The scheduler to shutdown
@@ -545,6 +804,398 @@ public class SchedulerService extends BaseService {
 	 */
 	public void shutdownScheduler( Key scheduler, boolean force, long timeout ) {
 		shutdownScheduler( getSchedulerOrFail( scheduler ), force, timeout );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Task Persistence Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Returns the resolved {@link Path} for the tasks persistence file,
+	 * taken from {@code scheduler.tasksFile} in boxlang.json.
+	 */
+	private Path getTasksFilePath() {
+		return Paths.get( runtime.getConfiguration().scheduler.tasksFile );
+	}
+
+	/**
+	 * Load the persisted task array from the configured {@code tasksFile}.
+	 * Returns an empty array when the file does not yet exist.
+	 * Throws when the file exists but cannot be read or parsed, so callers that
+	 * would subsequently write back to disk do not overwrite a temporarily
+	 * unreadable file with an empty array.
+	 *
+	 * @return The array of persisted task definition structs, or an empty array if the file does not exist.
+	 *
+	 * @throws BoxRuntimeException if the file exists but cannot be read or parsed.
+	 */
+	public Array loadTasksFromDisk() {
+		Path tasksFile = getTasksFilePath();
+		if ( !Files.exists( tasksFile ) ) {
+			return new Array();
+		}
+		try {
+			Object parsed = JSONUtil.fromJSON( tasksFile.toFile(), true );
+			if ( parsed instanceof Array ) {
+				Array tasks = ( Array ) parsed;
+				decryptTaskValues( tasks );
+				return tasks;
+			}
+			// File exists but contains non-array JSON — treat as corrupt
+			throw new BoxRuntimeException( "tasks.json exists but does not contain a JSON array; refusing to overwrite." );
+		} catch ( BoxRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "Failed to read tasks.json: " + e.getMessage(), e );
+		}
+	}
+
+	/**
+	 * Save the task array to the configured {@code tasksFile}.
+	 *
+	 * @param tasks The array of task definition structs to persist.
+	 */
+	public void saveTasksToDisk( Array tasks ) {
+		// Stamp before writing so the watcher grace window starts before the OS event fires.
+		this.lastSelfWriteMs = System.currentTimeMillis();
+		Path tasksFile = getTasksFilePath();
+		try {
+			encryptTaskCredentials( tasks );
+			String json = JSONUtil.getJSONBuilder( true ).asString( tasks );
+			FileSystemUtil.write( tasksFile.toString(), json, "UTF-8", true );
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "Failed to persist tasks to disk: " + e.getMessage(), e );
+		}
+	}
+
+	/**
+	 * Persist (upsert) a task definition to tasks.json based on its component attributes.
+	 *
+	 * @param attributes The component attribute struct containing the task definition fields.
+	 */
+	public void persistTask( IStruct attributes ) {
+		synchronized ( tasksFileLock ) {
+			Array	tasks		= loadTasksFromDisk();
+			String	taskName	= attributes.getAsString( Key.task );
+			String	scheduler	= attributes.getAsString( Key.scheduler );
+
+			IStruct	taskDef		= Struct.ofNonConcurrent(
+			    "task", taskName,
+			    "scheduler", scheduler,
+			    "group", attributes.getAsString( Key.group ),
+			    "url", attributes.getAsString( Key.URL ),
+			    "class", attributes.getAsString( Key._CLASS ),
+			    "method", attributes.getAsString( Key.method ),
+			    "interval", attributes.getAsString( Key.interval ),
+			    "cronTime", attributes.getAsString( Key.cronTime ),
+			    "startDate", attributes.getAsString( Key.startDate ),
+			    "startTime", attributes.getAsString( Key.startTime ),
+			    "endDate", attributes.getAsString( Key.endDate ),
+			    "endTime", attributes.getAsString( Key.endTime ),
+			    "repeat", attributes.getAsInteger( Key.repeat ),
+			    "exclude", attributes.getAsString( Key.exclude ),
+			    "port", attributes.getAsInteger( Key.port ),
+			    "username", encryptCredential( attributes.getAsString( Key.username ) ),
+			    "password", encryptCredential( attributes.getAsString( Key.password ) ),
+			    "proxyServer", attributes.getAsString( Key.proxyServer ),
+			    "proxyPort", attributes.getAsInteger( Key.proxyPort ),
+			    "proxyUser", encryptCredential( attributes.getAsString( Key.proxyUser ) ),
+			    "proxyPassword", encryptCredential( attributes.getAsString( Key.proxyPassword ) ),
+			    "publish", BooleanCaster.cast( attributes.getOrDefault( Key.publish, false ) ),
+			    "path", attributes.getAsString( Key.path ),
+			    "file", attributes.getAsString( Key.file ),
+			    "overwrite", BooleanCaster.cast( attributes.getOrDefault( Key.overwrite, true ) ),
+			    "resolveURL", BooleanCaster.cast( attributes.getOrDefault( Key.resolveUrl, false ) ),
+			    "retryCount", attributes.getAsInteger( Key.retryCount ),
+			    "onException", attributes.getAsString( Key.onException ),
+			    "oncomplete", attributes.getAsString( Key.onComplete ),
+			    "eventhandler", attributes.getAsString( Key.eventHandler ),
+			    "cluster", BooleanCaster.cast( attributes.getOrDefault( Key.cluster, false ) ),
+			    "isDaily", BooleanCaster.cast( attributes.getOrDefault( Key.isDaily, false ) ),
+			    "paused", false
+			);
+
+			// Upsert: remove existing entry with same task + scheduler
+			tasks.removeIf( entry -> {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					return taskName.equals( existing.getAsString( Key.task ) )
+					    && scheduler.equals( existing.getAsString( Key.scheduler ) );
+				}
+				return false;
+			} );
+			tasks.add( taskDef );
+
+			saveTasksToDisk( tasks );
+		}
+	}
+
+	/**
+	 * Remove a task from tasks.json.
+	 *
+	 * @param taskName      The name of the task to remove.
+	 * @param schedulerName The name of the scheduler the task belongs to.
+	 */
+	public void removeTaskFromDisk( String taskName, String schedulerName ) {
+		synchronized ( tasksFileLock ) {
+			Array tasks = loadTasksFromDisk();
+			tasks.removeIf( entry -> {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					return taskName.equals( existing.getAsString( Key.task ) )
+					    && schedulerName.equals( existing.getAsString( Key.scheduler ) );
+				}
+				return false;
+			} );
+			saveTasksToDisk( tasks );
+		}
+	}
+
+	/**
+	 * Update the paused flag for a single task in tasks.json.
+	 *
+	 * @param taskName      The name of the task.
+	 * @param schedulerName The name of the scheduler the task belongs to.
+	 * @param paused        The new paused state.
+	 */
+	public void updateTaskPausedState( String taskName, String schedulerName, boolean paused ) {
+		synchronized ( tasksFileLock ) {
+			Array tasks = loadTasksFromDisk();
+			for ( Object entry : tasks ) {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					if ( taskName.equals( existing.getAsString( Key.task ) )
+					    && schedulerName.equals( existing.getAsString( Key.scheduler ) ) ) {
+						existing.put( Key.paused, paused );
+						break;
+					}
+				}
+			}
+			saveTasksToDisk( tasks );
+		}
+	}
+
+	/**
+	 * Update the paused flag for all tasks in a given scheduler in tasks.json.
+	 * Optionally filter by group.
+	 *
+	 * @param schedulerName The name of the scheduler.
+	 * @param group         Optional group filter; pass null or blank to match all groups.
+	 * @param paused        The new paused state.
+	 */
+	public void updateAllTasksPausedState( String schedulerName, String group, boolean paused ) {
+		synchronized ( tasksFileLock ) {
+			Array tasks = loadTasksFromDisk();
+			for ( Object entry : tasks ) {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					if ( !schedulerName.equals( existing.getAsString( Key.scheduler ) ) ) {
+						continue;
+					}
+					if ( group != null && !group.isBlank() && !group.equals( existing.getAsString( Key.group ) ) ) {
+						continue;
+					}
+					existing.put( Key.paused, paused );
+				}
+			}
+			saveTasksToDisk( tasks );
+		}
+	}
+
+	// --------------------------------------------------------------------------
+	// Tasks-file watcher methods (reloadOnChange support)
+	// --------------------------------------------------------------------------
+
+	/**
+	 * Starts a {@link WatcherInstance} that monitors the tasks.json parent directory for
+	 * external modifications. When a relevant change arrives outside the self-write grace
+	 * window, {@link #onTasksFileChanged()} is called to reload affected schedulers.
+	 */
+	private void startTasksFileWatcher() {
+		Path	tasksFilePath	= getTasksFilePath().toAbsolutePath().normalize();
+		Path	watchDir		= tasksFilePath.getParent();
+		String	fileName		= tasksFilePath.getFileName().toString();
+
+		try {
+			Files.createDirectories( watchDir );
+		} catch ( Exception e ) {
+			this.logger.error( "Cannot create tasks directory for reload-on-change: {}", e.getMessage() );
+			return;
+		}
+
+		IWatcherListener watcherListener = ( event, ctx ) -> {
+			if ( ( event.getKind() == WatcherEvent.Kind.MODIFIED || event.getKind() == WatcherEvent.Kind.CREATED )
+			    && event.getPath() != null
+			    && fileName.equals( event.getPath().getFileName().toString() ) ) {
+				onTasksFileChanged();
+			}
+		};
+
+		this.tasksFileWatcher = WatcherInstance.builder( Key.of( "bxschedule-tasks-watcher" ) )
+		    .addPath( watchDir.toString() )
+		    .recursive( false )
+		    .debounce( 500 )
+		    .atomicWrites( true )
+		    .errorThreshold( 5 )
+		    .parentContext( runtime.getRuntimeContext() )
+		    .listener( watcherListener )
+		    .build()
+		    .start();
+
+		this.logger.info( "+ Scheduler Service tasks.json reload-on-change watcher started for [{}]", tasksFilePath );
+	}
+
+	/**
+	 * Called when tasks.json changes on disk.
+	 * Suppresses events caused by the service's own writes (within the grace window),
+	 * then reloads all affected schedulers.
+	 */
+	void onTasksFileChanged() {
+		if ( System.currentTimeMillis() - this.lastSelfWriteMs < SELF_WRITE_GRACE_MS ) {
+			this.logger.debug( "+ tasks.json changed (self-write within grace window) — suppressing reload-on-change" );
+			return;
+		}
+
+		this.logger.info( "+ tasks.json changed externally — reloading affected schedulers..." );
+
+		// Collect scheduler names: union of currently registered BaseSchedulers and names in the new file
+		Set<String> schedulerNames = new HashSet<>();
+
+		for ( Map.Entry<Key, IScheduler> entry : this.schedulers.entrySet() ) {
+			if ( entry.getValue() instanceof BaseScheduler ) {
+				schedulerNames.add( entry.getKey().getName() );
+			}
+		}
+
+		try {
+			Array tasks = loadTasksFromDisk();
+			for ( Object entry : tasks ) {
+				if ( entry instanceof IStruct ) {
+					IStruct	taskDef			= ( IStruct ) entry;
+					Object	schedulerField	= taskDef.get( Key.scheduler );
+					String	schedulerName	= schedulerField != null ? schedulerField.toString() : DEFAULT_SCHEDULER_NAME;
+					schedulerNames.add( schedulerName );
+				}
+			}
+		} catch ( Exception e ) {
+			this.logger.error( "Failed to read tasks.json during reload-on-change: {}", e.getMessage() );
+			return;
+		}
+
+		for ( String name : schedulerNames ) {
+			try {
+				reloadSchedulerFromDisk( Key.of( name ), false, DEFAULT_SHUTDOWN_TIMEOUT );
+			} catch ( Exception e ) {
+				this.logger.error( "Failed to reload scheduler [{}] on tasks.json change: {}", name, e.getMessage() );
+			}
+		}
+	}
+
+	/**
+	 * Stop and clean up the tasks.json WatcherInstance.
+	 */
+	private void stopTasksFileWatcher() {
+		if ( this.tasksFileWatcher != null && this.tasksFileWatcher.isRunning() ) {
+			this.tasksFileWatcher.stop( true );
+			this.tasksFileWatcher = null;
+		}
+	}
+
+	/**
+	 * Encrypts a credential value using the runtime seed.
+	 * Returns an empty string if the value is null or blank.
+	 *
+	 * @param value The plaintext credential.
+	 *
+	 * @return Encrypted Base64-encoded string, or empty string.
+	 */
+	private String encryptCredential( String value ) {
+		if ( value == null || value.isBlank() ) {
+			return "";
+		}
+		return ConfigSecretUtil.isEncrypted( value ) ? value : ConfigSecretUtil.encryptWithPrefix( value );
+	}
+
+	/**
+	 * Decrypts all prefixed values in persisted task definitions. Bare credential values are also decrypted for backward compatibility.
+	 *
+	 * @param tasks The persisted task definitions loaded from disk.
+	 */
+	private void decryptTaskValues( Array tasks ) {
+		for ( Object task : tasks ) {
+			if ( task instanceof IStruct taskDef ) {
+				// LEGACY COMPATIBILITY: Bare credential ciphertext remains readable until legacy task-file support is removed.
+				decryptLegacyTaskCredentials( taskDef );
+				decryptTaskValues( taskDef );
+			}
+		}
+	}
+
+	/**
+	 * Temporarily supports the historical bare-ciphertext format for credential fields in tasks.json.
+	 * LEGACY COMPATIBILITY: Remove this fallback when support for historical task files is retired.
+	 *
+	 * @param taskDef The persisted task definition struct.
+	 */
+	private void decryptLegacyTaskCredentials( IStruct taskDef ) {
+		for ( Key credentialKey : CREDENTIAL_KEYS ) {
+			String encrypted = taskDef.getAsString( credentialKey );
+			if ( ConfigSecretUtil.isEncrypted( encrypted ) ) {
+				continue;
+			}
+			if ( encrypted != null && !encrypted.isBlank() ) {
+				try {
+					taskDef.put( credentialKey, ConfigSecretUtil.decryptLegacy( encrypted ) );
+				} catch ( Exception e ) {
+					this.logger.warn( "Failed to decrypt legacy credential [{}] for task [{}] — using empty value: {}", credentialKey.getName(),
+					    taskDef.getAsString( Key.task ), e.getMessage() );
+					taskDef.put( credentialKey, "" );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Recursively decrypts all {@code bxsecret:} values in a persisted task value tree.
+	 *
+	 * @param value The task value, map, list, or scalar to decrypt.
+	 *
+	 * @return The value tree with prefixed ciphertext replaced by plaintext.
+	 */
+	@SuppressWarnings( "unchecked" )
+	private Object decryptTaskValues( Object value ) {
+		if ( value instanceof Map<?, ?> rawMap ) {
+			Map<Object, Object> taskMap = ( Map<Object, Object> ) rawMap;
+			for ( Object key : List.copyOf( taskMap.keySet() ) ) {
+				taskMap.put( key, decryptTaskValues( taskMap.get( key ) ) );
+			}
+		} else if ( value instanceof List<?> rawList ) {
+			List<Object> taskList = ( List<Object> ) rawList;
+			for ( int i = 0; i < taskList.size(); i++ ) {
+				taskList.set( i, decryptTaskValues( taskList.get( i ) ) );
+			}
+		} else if ( value instanceof String stringValue ) {
+			return ConfigSecretUtil.decryptIfEncrypted( stringValue );
+		}
+
+		return value;
+	}
+
+	/**
+	 * Encrypts credential fields in task definitions using the current {@code bxsecret:} storage format.
+	 *
+	 * @param tasks The task definitions to prepare for persistence.
+	 */
+	private void encryptTaskCredentials( Array tasks ) {
+		for ( Object task : tasks ) {
+			if ( task instanceof IStruct taskDef ) {
+				for ( Key credentialKey : CREDENTIAL_KEYS ) {
+					taskDef.put( credentialKey, encryptCredential( taskDef.getAsString( credentialKey ) ) );
+				}
+			}
+		}
 	}
 
 }

@@ -36,7 +36,8 @@ public class Extract extends BIF {
 	public Extract() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.STRING, Key.format, Set.of( Validator.valueOneOf( "zip", "gzip" ) ) ),
+		    new Argument( false, Argument.STRING, Key.format,
+		        Set.of( Validator.valueOneOf( "bzip", "bzip2", "gzip", "tar", "tar.bz", "tbz", "tbz2", "tgz", "tar.gz", "zip" ) ) ),
 		    new Argument( true, Argument.STRING, Key.source ),
 		    new Argument( true, Argument.STRING, Key.destination ),
 		    new Argument( false, Argument.BOOLEAN, Key.overwrite, false ),
@@ -51,6 +52,10 @@ public class Extract extends BIF {
 	 * <p>
 	 * - zip
 	 * - gzip
+	 * - tar (raw TAR archive)
+	 * - tgz/tar.gz (gzip-compressed tar)
+	 * - bzip/bzip2 (raw bzip2 stream)
+	 * - tbz/tbz2/tar.bz (bzip2-compressed tar)
 	 * <p>
 	 * The {@code overwrite} argument is used to overwrite the destination
 	 * file if it already exists, else it will throw an exception. The default is {@code false}.
@@ -68,7 +73,7 @@ public class Extract extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.format The format to use for the compression: zip or gzip.
+	 * @argument.format The format to use for the compression. If omitted, it is detected from the source extension.
 	 *
 	 * @argument.source The absolute path to the source file or folder to compress.
 	 *
@@ -84,14 +89,15 @@ public class Extract extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	format			= arguments.getAsString( Key.format );
-		String	source			= arguments.getAsString( Key.source );
-		String	destination		= arguments.getAsString( Key.destination );
-		Boolean	overwrite		= BooleanCaster.cast( arguments.get( Key.overwrite ) );
-		Boolean	recurse			= BooleanCaster.cast( arguments.get( Key.recurse ) );
+		String						format				= arguments.getAsString( Key.format );
+		String						source				= arguments.getAsString( Key.source );
+		String						destination			= arguments.getAsString( Key.destination );
+		ZipUtil.COMPRESSION_FORMAT	compressionFormat	= ZipUtil.detectFormat( format, source );
+		Boolean						overwrite			= BooleanCaster.cast( arguments.get( Key.overwrite ) );
+		Boolean						recurse				= BooleanCaster.cast( arguments.get( Key.recurse ) );
 
-		Array	entryPaths		= new Array();
-		Object	entryPathsValue	= arguments.get( Key.entryPaths );
+		Array						entryPaths			= new Array();
+		Object						entryPathsValue		= arguments.get( Key.entryPaths );
 		if ( entryPathsValue != null ) {
 			if ( entryPathsValue instanceof String ) {
 				entryPaths.add( entryPathsValue );
@@ -101,7 +107,7 @@ public class Extract extends BIF {
 		}
 
 		ZipUtil.extract(
-		    ZipUtil.COMPRESSION_FORMAT.valueOf( format.toUpperCase() ),
+		    compressionFormat,
 		    source,
 		    destination,
 		    overwrite,

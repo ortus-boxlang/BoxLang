@@ -1,0 +1,57 @@
+/**
+ * Test fixture: a module that carries modules of its own (module inception).
+ *
+ * Its `modules` folder holds `inceptionChild`, which in turn holds `inceptionGrandchild`.
+ * All of them must be discovered, registered and activated before this module itself.
+ *
+ * This descriptor also exercises parent-level setting overrides via `this.modules`.
+ */
+class {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Module Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	this.version		= "1.0.0";
+	this.mapping		= "inceptionParent";
+	this.author			= "Ortus Solutions";
+	this.description	= "A module that carries nested modules";
+	this.enabled		= true;
+
+	/**
+	 * Per-child overrides for the modules nested inside this one.
+	 * These win over the child's own configure() defaults, but lose to the global app config.
+	 */
+	this.modules = {
+		"inceptionChild" : {
+			settings : {
+				overriddenByParent	: "fromParent",
+				parentOnlySetting	: "addedByParent"
+			}
+		}
+	};
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Module Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	function configure(){
+		settings = {
+			owner : "inceptionParent"
+		};
+
+		interceptors				= [];
+		customInterceptionPoints	= [];
+	}
+
+	function onLoad(){
+	}
+
+	function onUnload(){
+	}
+
+}

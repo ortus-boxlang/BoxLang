@@ -1,0 +1,6 @@
+<bx:output>
+	#html.doctype()#
+	<html lang="en">
+	<head><title>Test</title></head>
+	</html>
+</bx:output>

@@ -54,13 +54,13 @@ public class QueryAddRow extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Query					query		= arguments.getAsQuery( Key.query );
-		Object					rowData		= arguments.get( Key.rowData );
-		CastAttempt<Integer>	castAttempt	= IntegerCaster.attempt( rowData );
+		Query					query			= arguments.getAsQuery( Key.query );
+		Object					rowData			= arguments.get( Key.rowData );
+		CastAttempt<Integer>	IntegerAttempt	= IntegerCaster.attempt( rowData );
 
 		// If rowData is an integer, add that many empty rows
-		if ( castAttempt.wasSuccessful() ) {
-			return query.addRows( castAttempt.get() );
+		if ( IntegerAttempt.wasSuccessful() ) {
+			return query.addRows( IntegerAttempt.get() );
 		}
 
 		// Otherwise, add a single row with the provided data (if any)
@@ -69,7 +69,7 @@ public class QueryAddRow extends BIF {
 		}
 
 		// If rowData is provided, it must be an array of arrays or structs, or a single struct
-		return query.addData( rowData );
+		return query.addData( rowData, context );
 	}
 
 }

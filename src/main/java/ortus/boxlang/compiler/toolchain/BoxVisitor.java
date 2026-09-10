@@ -3,8 +3,10 @@ package ortus.boxlang.compiler.toolchain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -45,6 +47,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
@@ -62,6 +65,7 @@ import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.parser.BoxParser;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.parser.antlr.BoxGrammar;
 import ortus.boxlang.parser.antlr.BoxGrammar.AssertContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.AtomsContext;
@@ -72,6 +76,7 @@ import ortus.boxlang.parser.antlr.BoxGrammar.CatchesContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ClassBodyContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ClassBodyStatementContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ClassOrInterfaceContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ClosureFuncContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ComponentAttributeContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ComponentContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ComponentIslandContext;
@@ -126,6 +131,8 @@ import ortus.boxlang.parser.antlr.BoxGrammar.ImportStatementContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.IncludeContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.InterfaceContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.InvocableContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.LambdaFuncContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.LocalClassContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ModifierContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.NormalStatementBlockContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.NotContext;
@@ -169,6 +176,9 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 	private final BoxExpressionVisitor	expressionVisitor;
 	public ComponentService				componentService	= BoxRuntime.getInstance().getComponentService();
 
+	/** Tracks local class names seen in this file to detect duplicates during parsing. */
+	private final Set<String>			seenLocalClassNames	= new HashSet<>();
+
 	public BoxVisitor( BoxParser tools ) {
 		this.tools				= tools;
 		this.expressionVisitor	= new BoxExpressionVisitor( tools, this );
@@ -198,7 +208,8 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		List<BoxStatement>	statements	= ctx.functionOrStatement().stream()
 		    .map( stmt -> tools.toStatementOrError( () -> ( BoxStatement ) stmt.accept( this ), stmt ) )
 		    .collect( Collectors.toList() );
-		return new BoxScript( statements, pos, src );
+
+		return new BoxScript( statements, pos, src, BoxSourceType.BOXSCRIPT );
 	}
 
 	@Override
@@ -262,7 +273,60 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 			    tools.getPosition( ctx.FINAL() ), ctx.FINAL().getText() ) );
 		}
 
-		return new BoxClass( imports, body, annotations, documentation, property, pos, src );
+		return new BoxClass( imports, body, annotations, documentation, property, pos, src, BoxSourceType.BOXSCRIPT );
+	}
+
+	/**
+	 * Visit the localClass context to generate the AST node for a named class defined inside a script or template.
+	 *
+	 * @param ctx the parse tree
+	 *
+	 * @return the AST node representing the local class
+	 */
+	@Override
+	public BoxNode visitLocalClass( LocalClassContext ctx ) {
+		var										pos			= tools.getPositionStartingAt( ctx, ctx.CLASS().getSymbol() );
+		var										src			= tools.getSourceText( ctx );
+
+		BoxIdentifier							name		= ( BoxIdentifier ) ctx.identifier().accept( expressionVisitor );
+
+		// Semantic check: class defined inside a function/closure/lambda body
+		org.antlr.v4.runtime.ParserRuleContext	ancestor	= ctx.getParent();
+		while ( ancestor != null ) {
+			if ( ancestor instanceof FunctionContext || ancestor instanceof ClosureFuncContext || ancestor instanceof LambdaFuncContext ) {
+				tools.reportError(
+				    "Class definitions are not allowed inside function bodies. Move class [" + name.getName() + "] outside of any function body.", pos );
+				break;
+			}
+			ancestor = ancestor.getParent();
+		}
+
+		// Semantic check: duplicate local class names in the same file
+		if ( !seenLocalClassNames.add( name.getName().toLowerCase() ) ) {
+			tools.reportError( "Duplicate local class name [" + name.getName() + "]. A local class with this name is already defined in this file.", pos );
+		}
+
+		List<BoxStatement>					body			= buildClassBody( ctx.classBody() );
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+		List<BoxProperty>					property		= new ArrayList<>();
+
+		processIfNotNull( ctx.preAnnotation(), a -> annotations.add( ( BoxAnnotation ) a.accept( this ) ) );
+		processIfNotNull( ctx.postAnnotation(), a -> annotations.add( ( BoxAnnotation ) a.accept( this ) ) );
+		processIfNotNull( ctx.property(), p -> property.add( ( BoxProperty ) p.accept( this ) ) );
+
+		// Convert abstract keyword to an annotation of null value
+		if ( ctx.ABSTRACT() != null ) {
+			annotations.add( new BoxAnnotation( new BoxFQN( "abstract", tools.getPosition( ctx.ABSTRACT() ), ctx.ABSTRACT().getText() ), null,
+			    tools.getPosition( ctx.ABSTRACT() ), ctx.ABSTRACT().getText() ) );
+		}
+		// Convert final keyword to an annotation of null value
+		if ( ctx.FINAL() != null ) {
+			annotations.add( new BoxAnnotation( new BoxFQN( "final", tools.getPosition( ctx.FINAL() ), ctx.FINAL().getText() ), null,
+			    tools.getPosition( ctx.FINAL() ), ctx.FINAL().getText() ) );
+		}
+
+		return new BoxLocalClass( name, body, annotations, documentation, property, pos, src, BoxSourceType.BOXSCRIPT );
 	}
 
 	@Override
@@ -305,7 +369,8 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		processIfNotNull( ctx.function(), stmt -> body.add( tools.toStatementOrError( () -> ( BoxStatement ) stmt.accept( this ), stmt ) ) );
 		processIfNotNull( ctx.staticInitializer(), stmt -> body.add( tools.toStatementOrError( () -> ( BoxStatement ) stmt.accept( this ), stmt ) ) );
 
-		return new BoxInterface( imports, body, preAnnotations, postAnnotations, documentation, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+		return new BoxInterface( imports, body, preAnnotations, postAnnotations, documentation, tools.getPosition( ctx ), tools.getSourceText( ctx ),
+		    BoxSourceType.BOXSCRIPT );
 	}
 
 	@Override
@@ -323,7 +388,7 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		    StatementContext::try_, StatementContext::while_, BoxGrammar.StatementContext::expressionStatement, StatementContext::include,
 		    StatementContext::component, BoxGrammar.StatementContext::statementBlock, StatementContext::simpleStatement,
 		    BoxGrammar.StatementContext::componentIsland, StatementContext::throw_,
-		    StatementContext::emptyStatementBlock, StatementContext::function );
+		    StatementContext::emptyStatementBlock, StatementContext::function, StatementContext::localClass );
 
 		// Iterate over the functions
 		for ( Function<BoxGrammar.StatementContext, ParserRuleContext> function : functions ) {

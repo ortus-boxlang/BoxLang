@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 @BoxMember( type = BoxLangType.STRUCT, name = "hash" )
 @BoxMember( type = BoxLangType.ARRAY, name = "hash" )
 @BoxMember( type = BoxLangType.DATETIME, name = "hash" )
+@BoxMember( type = BoxLangType.SET, name = "hash" )
 
 public class Hash extends BIF {
 
@@ -50,9 +51,6 @@ public class Hash extends BIF {
 	private static final String		QUICK_ALGORITHM		= "quick";
 	private static final String		DEFAULT_ENCODING	= "utf-8";
 	private static final Integer	DEFAULT_ITERATIONS	= 1;
-
-	// The hash item object - non-local so we can reassign it in streams
-	private static Object			hashItem			= null;
 
 	/**
 	 * Constructor
@@ -72,7 +70,7 @@ public class Hash extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @throws IOException
 	 * @throws JSONObjectException
 	 *
@@ -82,10 +80,10 @@ public class Hash extends BIF {
 	 *
 	 * @argument.encoding Applicable to strings ( default "utf-8" )
 	 *
-	 * @argument.iterations The number of iterations to re-digest the object ( default 1 );
+	 * @argument.numIterations The number of iterations to re-digest the object ( default 1 );
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		hashItem = arguments.get( Key.input );
+		Object	hashItem			= arguments.get( Key.input );
 		byte[]	hashBytes			= null;
 		Integer	iterations			= arguments.getAsInteger( Key.numIterations );
 		String	algorithm			= arguments.getAsString( Key.algorithm );

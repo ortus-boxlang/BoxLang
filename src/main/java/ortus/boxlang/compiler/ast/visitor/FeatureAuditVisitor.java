@@ -288,8 +288,8 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "filesetattribute", "core" );
 		BIFMap.put( "filesetlastmodified", "core" );
 		BIFMap.put( "fileskipbytes", "core" );
-		BIFMap.put( "fileupload", "boxlang-web-support" );
-		BIFMap.put( "fileuploadall", "boxlang-web-support" );
+		BIFMap.put( "fileupload", "bx-web-support" );
+		BIFMap.put( "fileuploadall", "bx-web-support" );
 		BIFMap.put( "filewrite", "core" );
 		BIFMap.put( "filewriteline", "core" );
 		BIFMap.put( "find", "core" );
@@ -330,7 +330,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "getfunctionkeywords", "" );
 		BIFMap.put( "getfunctionlist", "core" );
 		BIFMap.put( "getgatewayhelper", "" );
-		BIFMap.put( "gethttprequestdata", "boxlang-web-support" );
+		BIFMap.put( "gethttprequestdata", "bx-web-support" );
 		BIFMap.put( "gethttptimestring", "" );
 		BIFMap.put( "getk2serverdoccount", "" );
 		BIFMap.put( "getk2serverdoccountlimit", "" );
@@ -339,13 +339,13 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "getlocaledisplayname", "core" );
 		BIFMap.put( "getlocaleinfo", "core" );
 		BIFMap.put( "getlocalelanguage", "" );
-		BIFMap.put( "getlocalhostip", "" );
+		BIFMap.put( "getlocalhostip", "core" );
 		BIFMap.put( "getluceeid", "" );
 		BIFMap.put( "getmemoryusage", "bx-oshi" );
 		BIFMap.put( "getmetadata", "core" );
 		BIFMap.put( "getmetricdata", "" );
 		BIFMap.put( "getnumericdate", "core" );
-		BIFMap.put( "getpagecontext", "boxlang-web-support" );
+		BIFMap.put( "getpagecontext", "bx-web-support" );
 		BIFMap.put( "getprinterinfo", "" );
 		BIFMap.put( "getprinterlist", "" );
 		BIFMap.put( "getprofilesections", "" );
@@ -478,9 +478,9 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "isnumeric", "core" );
 		BIFMap.put( "isnumericdate", "core" );
 		BIFMap.put( "isobject", "core" );
-		BIFMap.put( "ispdfarchive", "" );
-		BIFMap.put( "ispdffile", "" );
-		BIFMap.put( "ispdfobject", "" );
+		BIFMap.put( "ispdfarchive", "bx-pdf+" );
+		BIFMap.put( "ispdffile", "bx-pdf+" );
+		BIFMap.put( "ispdfobject", "bx-pdf+" );
 		BIFMap.put( "isquery", "core" );
 		BIFMap.put( "issafehtml", "bx-esapi" );
 		BIFMap.put( "issimplevalue", "core" );
@@ -542,7 +542,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "listvaluecount", "core" );
 		BIFMap.put( "listvaluecountnocase", "core" );
 		BIFMap.put( "ljustify", "core" );
-		BIFMap.put( "location", "boxlang-web-support" );
+		BIFMap.put( "location", "bx-web-support" );
 		BIFMap.put( "log", "core" );
 		BIFMap.put( "log10", "core" );
 		BIFMap.put( "lscurrencyformat", "core" );
@@ -602,7 +602,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "parsedatetime", "core" );
 		BIFMap.put( "parsenumber", "core" );
 		BIFMap.put( "pi", "core" );
-		BIFMap.put( "precisionevaluate", "core" );
+		BIFMap.put( "precisionevaluate", "bx-unsafe-evaluate" );
 		BIFMap.put( "preservesinglequotes", "core" );
 		BIFMap.put( "quarter", "core" );
 		BIFMap.put( "query", "core" );
@@ -905,9 +905,9 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "col", "" );
 		componentMap.put( "collection", "" );
 		componentMap.put( "component", "core" );
-		componentMap.put( "content", "boxlang-web-support" );
+		componentMap.put( "content", "bx-web-support" );
 		// componentMap.put( "continue", "core" );
-		componentMap.put( "cookie", "boxlang-web-support" );
+		componentMap.put( "cookie", "bx-web-support" );
 		componentMap.put( "dbinfo", "core" );
 		// componentMap.put( "defaultcase", "core" );
 		componentMap.put( "directory", "core" );
@@ -929,7 +929,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "exit", "core" );
 		componentMap.put( "feed", "bx-rss" );
 		componentMap.put( "file", "core" );
-		componentMap.put( "fileupload", "boxlang-web-support" );
+		componentMap.put( "fileupload", "bx-web-support" );
 		// componentMap.put( "finally", "core" );
 		componentMap.put( "flush", "core" );
 		componentMap.put( "form", "bx-ui-forms" );
@@ -942,9 +942,9 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "gridcolumn", "bx-ui-compat" );
 		componentMap.put( "gridrow", "bx-ui-compat" );
 		componentMap.put( "gridupdate", "bx-ui-compat" );
-		componentMap.put( "header", "boxlang-web-support" );
+		componentMap.put( "header", "bx-web-support" );
 		componentMap.put( "htmlbody", "" );
-		componentMap.put( "htmlhead", "boxlang-web-support" );
+		componentMap.put( "htmlhead", "bx-web-support" );
 		componentMap.put( "htmltopdf", "" );
 		componentMap.put( "htmltopdfitem", "" );
 		componentMap.put( "http", "core" );
@@ -964,7 +964,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "layout", "bx-ui-compat" );
 		componentMap.put( "layoutarea", "bx-ui-compat" );
 		componentMap.put( "ldap", "bx-ldap+" );
-		componentMap.put( "location", "boxlang-web-support" );
+		componentMap.put( "location", "bx-web-support" );
 		componentMap.put( "lock", "core" );
 		componentMap.put( "log", "core" );
 		componentMap.put( "login", "" );
@@ -1141,7 +1141,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 
 	/**
 	 * Determine if the given class name matches a known CFC-based service, and if so, add it to the list of features used.
-	 * 
+	 *
 	 * @param className The name of the class to check
 	 * @param node      The BoxNode where the class name was found, used for reporting the position of the feature usage
 	 */

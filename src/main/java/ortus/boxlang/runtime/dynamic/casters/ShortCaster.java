@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
@@ -111,6 +114,32 @@ public class ShortCaster implements IBoxCaster {
 	}
 
 	private static Short handleNumber( Number num, boolean allowTruncate, boolean fail ) {
+		// Check if the number is within the valid range for a short
+		boolean outOfRange = false;
+		if ( num instanceof Double || num instanceof Float ) {
+			double doubleVal = num.doubleValue();
+			outOfRange = doubleVal < Short.MIN_VALUE || doubleVal > Short.MAX_VALUE;
+		} else if ( num instanceof BigDecimal bd ) {
+			outOfRange = bd.compareTo( new BigDecimal( Short.MIN_VALUE ) ) < 0 || bd.compareTo( new BigDecimal( Short.MAX_VALUE ) ) > 0;
+		} else if ( num instanceof BigInteger bi ) {
+			outOfRange = bi.compareTo( BigInteger.valueOf( Short.MIN_VALUE ) ) < 0 || bi.compareTo( BigInteger.valueOf( Short.MAX_VALUE ) ) > 0;
+		} else if ( num instanceof Long ) {
+			long longValue = num.longValue();
+			outOfRange = longValue < Short.MIN_VALUE || longValue > Short.MAX_VALUE;
+		} else if ( num instanceof Integer ) {
+			int intValue = num.intValue();
+			outOfRange = intValue < Short.MIN_VALUE || intValue > Short.MAX_VALUE;
+		}
+		// Byte falls through - guaranteed to fit
+
+		if ( outOfRange ) {
+			if ( fail ) {
+				throw new BoxCastException( String.format( "Can't cast [%s] to a short. Value is outside the range of valid shorts.", num ) );
+			} else {
+				return null;
+			}
+		}
+
 		if ( allowTruncate ) {
 			return Short.valueOf( num.shortValue() );
 		} else {

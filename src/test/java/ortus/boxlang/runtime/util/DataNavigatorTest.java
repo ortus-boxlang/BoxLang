@@ -20,11 +20,21 @@ package ortus.boxlang.runtime.util;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
@@ -33,7 +43,21 @@ import ortus.boxlang.runtime.util.DataNavigator.Navigator;
 
 public class DataNavigatorTest {
 
-	private DataNavigator dataNavigator;
+	static BoxRuntime	instance;
+	IBoxContext			context;
+	IScope				variables;
+	static Key			result	= new Key( "result" );
+
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+	}
+
+	@BeforeEach
+	public void setupEach() {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
 
 	@DisplayName( "Test an invalid path" )
 	@Test
@@ -70,6 +94,31 @@ public class DataNavigatorTest {
 		assertThat( name ).isEqualTo( "luis" );
 	}
 
+	@DisplayName( "from(String) navigates a single segment" )
+	@Test
+	void testFromSinglePathOverload() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+
+		assertThat( nav.from( "boxlang" ).getAsString( "moduleName" ) ).isEqualTo( "test" );
+	}
+
+	@DisplayName( "Single-string overloads exist for BoxLang dispatch" )
+	@Test
+	void testSingleStringOverloadsExist() throws NoSuchMethodException {
+		assertThat( Navigator.class.getMethod( "has", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "get", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getOrDefault", String.class, Object.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsKey", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsString", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsBoolean", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsInteger", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsDate", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsLong", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsDouble", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsStruct", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsArray", String.class ) ).isNotNull();
+	}
+
 	@DisplayName( "Cannot navigate non-existent segments" )
 	@Test
 	void testNonExistentSegments() {
@@ -90,6 +139,86 @@ public class DataNavigatorTest {
 	void testGetNestedSegmentsThatDontExist() {
 		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
 		assertThat( nav.get( "boxlang", "settings", "bogus" ) ).isNull();
+	}
+
+	@DisplayName( "Can get exact keys without path parsing" )
+	@Test
+	void testGetByKey() {
+		Navigator nav = DataNavigator.of(
+		    Map.of(
+		        "value.sep", "root",
+		        "settings", Struct.of( "value.sep", "nested" )
+		    )
+		);
+
+		assertThat( nav.getByKey( "value.sep" ) ).isEqualTo( "root" );
+		assertThat( nav.getByKey( "settings.value.sep" ) ).isNull();
+		assertThat( nav.from( "settings" ).getByKey( "value.sep" ) ).isEqualTo( "nested" );
+	}
+
+	@DisplayName( "Can call has() from boxlang" )
+	@Test
+	void testHasFromBoxLang() throws Throwable {
+		// @formatter:off
+		instance.executeSource("""
+			navigator = dataNavigate( {
+				"name": "BoxLang Test Module",
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				},
+				"keywords": [ "test", "example" ]
+			} )
+			getName = navigator.get( "name" )
+			hasName = navigator.has( "name" )
+			hasBogus = navigator.has( "bogus" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( "getName" ) ).isEqualTo( "BoxLang Test Module" );
+		assertThat( variables.get( "hasName" ) ).isEqualTo( true );
+		assertThat( variables.get( "hasBogus" ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "Can detect exact keys without path parsing" )
+	@Test
+	void testHasByKey() {
+		Navigator nav = DataNavigator.of(
+		    Map.of(
+		        "value.sep", "root",
+		        "settings", Struct.of( "value.sep", "nested" )
+		    )
+		);
+
+		assertThat( nav.hasByKey( "value.sep" ) ).isTrue();
+		assertThat( nav.hasByKey( "settings.value.sep" ) ).isFalse();
+		assertThat( nav.from( "settings" ).hasByKey( "value.sep" ) ).isTrue();
+	}
+
+	@DisplayName( "Exact key lookup does not traverse dotted paths" )
+	@Test
+	void testByKeyDoesNotTraverseDots() {
+		Navigator nav = DataNavigator.of(
+		    Map.of(
+		        "settings.value.sep", "exact",
+		        "settings", Struct.of( "value", Struct.of( "sep", "nested" ) )
+		    )
+		);
+
+		assertThat( nav.getByKey( "settings.value.sep" ) ).isEqualTo( "exact" );
+		assertThat( nav.hasByKey( "settings.value.sep" ) ).isTrue();
+		assertThat( nav.get( "settings.value.sep" ) ).isEqualTo( "nested" );
+	}
+
+	@DisplayName( "Exact key lookup preserves null values" )
+	@Test
+	void testByKeyNullValue() {
+		Navigator nav = DataNavigator.of( Map.of( "settings", Struct.of( "nullable", null ) ) );
+
+		assertThat( nav.hasByKey( "settings" ) ).isTrue();
+		assertThat( nav.from( "settings" ).hasByKey( "nullable" ) ).isTrue();
+		assertThat( nav.from( "settings" ).getByKey( "nullable" ) ).isNull();
 	}
 
 	@DisplayName( "Test nested has" )
@@ -144,6 +273,15 @@ public class DataNavigatorTest {
 		} );
 	}
 
+	@DisplayName( "Can getOrDefault() from path and return fallback when missing" )
+	@Test
+	void testGetOrDefault() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+
+		assertThat( nav.getOrDefault( "boxlang.settings.hello", "default" ) ).isEqualTo( "luis" );
+		assertThat( nav.getOrDefault( "boxlang.settings.bogus", "default" ) ).isEqualTo( "default" );
+	}
+
 	@DisplayName( "If present execute the consume" )
 	@Test
 	void testIfPresent() {
@@ -183,6 +321,507 @@ public class DataNavigatorTest {
 			        assertThat( true ).isTrue();
 		        }
 		    );
+	}
+
+	// -------------------------------------------------------------------------
+	// Path expression tests — get()
+	// -------------------------------------------------------------------------
+
+	@DisplayName( "get() with a plain key is unchanged" )
+	@Test
+	void testGetPlainKey() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.get( "name" ) ).isEqualTo( "BoxLang Test Module" );
+	}
+
+	@DisplayName( "get() with a dot-path navigates nested structs" )
+	@Test
+	void testGetDotPath() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.get( "boxlang.settings.hello" ) ).isEqualTo( "luis" );
+	}
+
+	@DisplayName( "get() with a dot-path to a missing leaf returns null" )
+	@Test
+	void testGetDotPathMissingLeaf() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.get( "boxlang.settings.bogus" ) ).isNull();
+	}
+
+	@DisplayName( "get() with a dot-path and a default value returns the default when missing" )
+	@Test
+	void testGetDotPathWithDefault() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.get( "boxlang.settings.bogus", "default" ) ).isEqualTo( "default" );
+	}
+
+	@DisplayName( "get() with a 1-based bracket index returns the correct array element" )
+	@Test
+	void testGetBracketIndex() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.get( "keywords[1]" ) ).isEqualTo( "test" );
+		assertThat( nav.get( "keywords[ 1  ]" ) ).isEqualTo( "test" );
+		assertThat( nav.get( "keywords[   2]" ) ).isEqualTo( "example" );
+	}
+
+	@DisplayName( "get() with a bracket index out of range returns null" )
+	@Test
+	void testGetBracketIndexOutOfRange() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.get( "keywords[ 99 ]" ) ).isNull();
+	}
+
+	@DisplayName( "get() with recursive descent (..) returns the first matching value" )
+	@Test
+	void testGetRecursiveDescent() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.get( "..hello" ) ).isEqualTo( "luis" );
+		assertThat( nav.get( "   ..hello" ) ).isEqualTo( "luis" );
+	}
+
+	@DisplayName( "get() with recursive descent scoped under a parent key" )
+	@Test
+	void testGetRecursiveDescentScoped() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.get( "boxlang..hello" ) ).isEqualTo( "luis" );
+	}
+
+	@DisplayName( "get() with recursive descent for a missing key returns null" )
+	@Test
+	void testGetRecursiveDescentMissing() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.get( "..nonexistent" ) ).isNull();
+	}
+
+	@DisplayName( "getAsString() transparently supports a dot-path expression" )
+	@Test
+	void testGetAsStringWithPath() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.getAsString( "boxlang.settings.hello" ) ).isEqualTo( "luis" );
+	}
+
+	// -------------------------------------------------------------------------
+	// Path expression tests — has()
+	// -------------------------------------------------------------------------
+
+	@DisplayName( "has() with a dot-path returns true when the path exists" )
+	@Test
+	void testHasDotPathTrue() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.has( "boxlang.settings.hello" ) ).isTrue();
+		assertThat( nav.has( " boxlang.settings.hello " ) ).isTrue();
+	}
+
+	@DisplayName( "has() with a dot-path returns false when the path is missing" )
+	@Test
+	void testHasDotPathFalse() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.has( "bogus.path" ) ).isFalse();
+	}
+
+	@DisplayName( "has() with recursive descent returns true when the key exists anywhere" )
+	@Test
+	void testHasRecursiveDescent() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.has( "..hello" ) ).isTrue();
+		assertThat( nav.has( "   ..hello" ) ).isTrue();
+		assertThat( nav.has( "..nonexistent" ) ).isFalse();
+	}
+
+	@DisplayName( "has() with a wildcard path returns true when any match exists" )
+	@Test
+	void testHasWildcardPath() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.has( "keywords[*]" ) ).isTrue();
+		assertThat( nav.has( " boxlang.settings.* " ) ).isTrue();
+		assertThat( nav.has( "missing[*]" ) ).isFalse();
+	}
+
+	@DisplayName( "has() with a slice path returns true when the slice yields matches" )
+	@Test
+	void testHasSlicePath() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.has( "keywords[1:2]" ) ).isTrue();
+		assertThat( nav.has( "keywords[3:4]" ) ).isFalse();
+	}
+
+	@DisplayName( "has() with a filter path returns true only when filtered matches exist" )
+	@Test
+	void testHasFilterPath() {
+		Navigator nav = DataNavigator.of(
+		    Map.of(
+		        "items", List.of(
+		            Map.of( "name", "alpha", "active", true ),
+		            Map.of( "name", "beta", "active", false )
+		        )
+		    )
+		);
+
+		assertThat( nav.has( "items[?(@.active == true)]" ) ).isTrue();
+		assertThat( nav.has( "items[?(@.active == true)].name" ) ).isTrue();
+		assertThat( nav.has( "items[?(@.active == null)]" ) ).isFalse();
+	}
+
+	@DisplayName( "has() with a path to a null value still reports the path as present" )
+	@Test
+	void testHasPathToNullValue() {
+		Navigator nav = DataNavigator.of( Map.of( "settings", Struct.of( "nullable", null ) ) );
+		assertThat( nav.has( "settings.nullable" ) ).isTrue();
+	}
+
+	@DisplayName( "getOrThrow() with a dot-path throws when the path is missing" )
+	@Test
+	void testGetOrThrowWithPath() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.getOrThrow( "boxlang.settings.hello" ) ).isEqualTo( "luis" );
+		assertThrows( BoxRuntimeException.class, () -> nav.getOrThrow( "bogus.missing" ) );
+	}
+
+	// -------------------------------------------------------------------------
+	// query() tests
+	// -------------------------------------------------------------------------
+
+	@DisplayName( "query() with an array wildcard returns all elements" )
+	@Test
+	void testQueryArrayWildcard() {
+		Navigator	nav		= DataNavigator.of( "src/modules/test/box.json" );
+		Array		result	= nav.query( "keywords[*]" );
+		assertThat( result ).hasSize( 2 );
+		assertThat( result ).containsExactly( "test", "example" ).inOrder();
+	}
+
+	@DisplayName( "query() with a 1-based inclusive slice returns the correct elements" )
+	@Test
+	void testQuerySlice() {
+		Navigator	nav		= DataNavigator.of( "src/modules/test/box.json" );
+		Array		result	= nav.query( "keywords[1:2]" );
+		assertThat( result ).hasSize( 2 );
+		assertThat( result ).containsExactly( "test", "example" ).inOrder();
+	}
+
+	@DisplayName( "query() with a struct wildcard returns all top-level values of that struct" )
+	@Test
+	void testQueryStructWildcard() {
+		Navigator	nav		= DataNavigator.of( "src/modules/test/box.json" );
+		Array		result	= nav.query( "boxlang.settings.*" );
+		assertThat( result ).hasSize( 1 );
+		assertThat( result.get( 0 ) ).isEqualTo( "luis" );
+	}
+
+	@DisplayName( "query() with a plain path wraps the single result in an Array" )
+	@Test
+	void testQueryPlainPath() {
+		Navigator	nav		= DataNavigator.of( "src/modules/test/box.json" );
+		Array		result	= nav.query( "name" );
+		assertThat( result ).hasSize( 1 );
+		assertThat( result.get( 0 ) ).isEqualTo( "BoxLang Test Module" );
+	}
+
+	@DisplayName( "query() preserves null matches for direct key paths" )
+	@Test
+	void testQueryPlainPathWithNullValue() {
+		Navigator	nav		= DataNavigator.of( Map.of( "settings", Struct.of( "nullable", null ) ) );
+		Array		result	= nav.query( "settings.nullable" );
+		assertThat( result ).hasSize( 1 );
+		assertThat( result.get( 0 ) ).isNull();
+	}
+
+	@DisplayName( "query() with recursive descent collects all matches" )
+	@Test
+	void testQueryRecursiveDescent() {
+		Navigator	nav		= DataNavigator.of( "src/modules/test/box.json" );
+		Array		result	= nav.query( "..hello" );
+		assertThat( result ).hasSize( 1 );
+		assertThat( result.get( 0 ) ).isEqualTo( "luis" );
+
+		result = nav.query( "   ..hello" );
+		assertThat( result ).hasSize( 1 );
+		assertThat( result.get( 0 ) ).isEqualTo( "luis" );
+	}
+
+	@DisplayName( "query() tolerates whitespace around wildcard syntax" )
+	@Test
+	void testQueryWildcardWithWhitespace() {
+		Navigator	nav		= DataNavigator.of( "src/modules/test/box.json" );
+		Array		result	= nav.query( " keywords [ * ] " );
+		assertThat( result ).hasSize( 2 );
+		assertThat( result ).containsExactly( "test", "example" ).inOrder();
+	}
+
+	@DisplayName( "query() with a filter returns only matching array elements" )
+	@Test
+	void testQueryFilter() {
+		Navigator	nav		= DataNavigator.of(
+		    Map.of(
+		        "items", List.of(
+		            Map.of( "name", "alpha", "active", true ),
+		            Map.of( "name", "beta", "active", false ),
+		            Map.of( "name", "gamma", "active", true )
+		        )
+		    )
+		);
+		Array		result	= nav.query( "items[?(@.active == true)]" );
+		assertThat( result ).hasSize( 2 );
+	}
+
+	@DisplayName( "query() filter with numeric comparison" )
+	@Test
+	void testQueryFilterNumeric() {
+		Navigator	nav		= DataNavigator.of(
+		    Map.of(
+		        "products", List.of(
+		            Map.of( "name", "cheap", "price", 5 ),
+		            Map.of( "name", "mid", "price", 15 ),
+		            Map.of( "name", "expensive", "price", 50 )
+		        )
+		    )
+		);
+		Array		result	= nav.query( "products[?(@.price < 20)]" );
+		assertThat( result ).hasSize( 2 );
+	}
+
+	@DisplayName( "query() filter existence check returns elements that have the key" )
+	@Test
+	void testQueryFilterExistence() {
+		Navigator	nav		= DataNavigator.of(
+		    Map.of(
+		        "items", List.of(
+		            Map.of( "name", "has-tag", "tag", "x" ),
+		            Map.of( "name", "no-tag" )
+		        )
+		    )
+		);
+		Array		result	= nav.query( "items[?(@.tag)]" );
+		assertThat( result ).hasSize( 1 );
+	}
+
+	// -------------------------------------------------------------------------
+	// BoxLang modern varargs tests — calling varargs methods with individual args
+	// -------------------------------------------------------------------------
+
+	@DisplayName( "BoxLang: from() with modern varargs navigates nested segments" )
+	@Test
+	void testFromModernVarargsBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			result = nav.from( "boxlang", "settings" ).get( "hello" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( "luis" );
+	}
+
+	@DisplayName( "BoxLang: get() with modern varargs retrieves nested value" )
+	@Test
+	void testGetModernVarargsBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			result = nav.get( "boxlang", "settings", "hello" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( "luis" );
+	}
+
+	@DisplayName( "BoxLang: get() with modern varargs returns null for missing path" )
+	@Test
+	void testGetModernVarargsMissingBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			result = nav.get( "boxlang", "settings", "bogus" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isNull();
+	}
+
+	@DisplayName( "BoxLang: has() with modern varargs returns true for existing path" )
+	@Test
+	void testHasModernVarargsTrueBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			result = nav.has( "boxlang", "settings", "hello" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "BoxLang: has() with modern varargs returns false for missing path" )
+	@Test
+	void testHasModernVarargsFalseBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			result = nav.has( "boxlang", "settings", "nonexistent" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "BoxLang: getOrThrow() with modern varargs returns value" )
+	@Test
+	void testGetOrThrowModernVarargsBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			result = nav.getOrThrow( "boxlang", "settings", "hello" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( "luis" );
+	}
+
+	@DisplayName( "BoxLang: getOrDefault() returns existing value or fallback" )
+	@Test
+	void testGetOrDefaultBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			hit = nav.getOrDefault( "boxlang.settings.hello", "fallback" )
+			miss = nav.getOrDefault( "boxlang.settings.bogus", "fallback" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( Key.of( "hit" ) ) ).isEqualTo( "luis" );
+		assertThat( variables.get( Key.of( "miss" ) ) ).isEqualTo( "fallback" );
+	}
+
+	@DisplayName( "BoxLang: getOrThrow() with modern varargs throws for missing path" )
+	@Test
+	void testGetOrThrowModernVarargsThrowsBoxLang() {
+		assertThrows( BoxRuntimeException.class, () -> {
+			// @formatter:off
+			instance.executeSource("""
+				nav = dataNavigate( {
+					"boxlang": {
+						"settings": {
+							"hello": "luis"
+						}
+					}
+				} )
+				result = nav.getOrThrow( "boxlang", "settings", "bogus" )
+				""", context );
+			// @formatter:on
+		} );
+	}
+
+	@DisplayName( "BoxLang: from() with modern varargs to non-existent path returns empty navigator" )
+	@Test
+	void testFromModernVarargsNonExistentBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			emptyNav = nav.from( "boxlang", "settings", "nonexistent" )
+			result = emptyNav.isEmpty()
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "BoxLang: chained from() with modern varargs and get()" )
+	@Test
+	void testChainedFromModernVarargsBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"app": {
+					"database": {
+						"connection": {
+							"host": "localhost",
+							"port": 5432
+						}
+					}
+				}
+			} )
+			hostResult = nav.from( "app", "database", "connection" ).get( "host" )
+			portResult = nav.from( "app", "database" ).get( "connection", "port" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( Key.of( "hostResult" ) ) ).isEqualTo( "localhost" );
+		assertThat( variables.get( Key.of( "portResult" ) ) ).isEqualTo( 5432 );
+	}
+
+	@DisplayName( "BoxLang: modern varargs vs array-style produce same results" )
+	@Test
+	void testModernVarargsVsArrayStyleBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"level1": {
+					"level2": {
+						"level3": "deep_value"
+					}
+				}
+			} )
+			// Modern varargs style
+			modernResult = nav.get( "level1", "level2", "level3" )
+			modernHas = nav.has( "level1", "level2", "level3" )
+			// Array style
+			arrayResult = nav.get( ["level1", "level2", "level3"] )
+			arrayHas = nav.has( ["level1", "level2", "level3"] )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( Key.of( "modernResult" ) ) ).isEqualTo( "deep_value" );
+		assertThat( variables.get( Key.of( "arrayResult" ) ) ).isEqualTo( "deep_value" );
+		assertThat( variables.get( Key.of( "modernHas" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "arrayHas" ) ) ).isEqualTo( true );
 	}
 
 }

@@ -28,6 +28,16 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 public class BoxSingleLineComment extends BoxComment {
 
 	/**
+	 * Recognised formatter-ignore-start directives
+	 */
+	public static final String[]	FORMATTER_IGNORE_START	= { "cfformat-ignore-start", "@formatter:off", "bxformat-ignore-start" };
+
+	/**
+	 * Recognised formatter-ignore-end directives
+	 */
+	public static final String[]	FORMATTER_IGNORE_END	= { "cfformat-ignore-end", "@formatter:on", "bxformat-ignore-end" };
+
+	/**
 	 * Create a instance of a BoxComment
 	 *
 	 * @param position   position within the source code
@@ -35,6 +45,26 @@ public class BoxSingleLineComment extends BoxComment {
 	 */
 	public BoxSingleLineComment( String commentText, Position position, String sourceText ) {
 		super( commentText, position, sourceText );
+	}
+
+	/**
+	 * Returns true if this comment is a formatter-ignore-start marker.
+	 * Recognised directives: cfformat-ignore-start, @formatter:off, bxformat-ignore-start
+	 *
+	 * @return true if this is a formatter-ignore-start comment
+	 */
+	public boolean isFormatterIgnoreStart() {
+		return textEqualsAny( FORMATTER_IGNORE_START );
+	}
+
+	/**
+	 * Returns true if this comment is a formatter-ignore-end marker.
+	 * Recognised directives: cfformat-ignore-end, @formatter:on, bxformat-ignore-end
+	 *
+	 * @return true if this is a formatter-ignore-end comment
+	 */
+	public boolean isFormatterIgnoreEnd() {
+		return textEqualsAny( FORMATTER_IGNORE_END );
 	}
 
 	public void accept( VoidBoxVisitor v ) {

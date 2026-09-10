@@ -72,6 +72,9 @@ public class QoQIntersectionGenerator {
 			}
 		}
 
+		// Store the intersection count in QoQExec for partition capacity estimation
+		QoQExec.setIntersectionCount( totalCombinations );
+
 		// Tweak this based on size of intersections to process
 		if ( totalCombinations > 50 ) {
 			theStream = theStream.parallel();

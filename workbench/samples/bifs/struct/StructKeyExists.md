@@ -13,7 +13,7 @@ Result: true
 
 ### Check if server struct has OS key using member function
 
-CF11+ calling the keyExists member function on a struct.
+Calling the keyExists member function on a struct.
 
 <a href="https://try.boxlang.io/?code=eJwrTi0qSy3Sy06tdK3ILC4p1lBQyi9WUtC05gIAhJEIiw%3D%3D" target="_blank">Run Example</a>
 

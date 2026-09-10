@@ -66,4 +66,9 @@ public class BoxParenthesis extends BoxExpression {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		return v.visit( this );
 	}
+
+	@Override
+	public boolean returnsNumber() {
+		return this.expression.returnsNumber();
+	}
 }

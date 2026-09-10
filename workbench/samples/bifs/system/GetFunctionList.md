@@ -1,6 +1,6 @@
 ### Check to see if a function exists
 
-CF11+ Uses the member function of structKeyExists.
+Uses the member function of structKeyExists.
 
 <a href="https://try.boxlang.io/?code=eJxLTy1xK81LLsnMz%2FPJLC7R0NTLTq10rQAyizUUlIpSfRNLkjOUFDStuQBPYQ5J" target="_blank">Run Example</a>
 

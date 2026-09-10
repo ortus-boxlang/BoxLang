@@ -127,10 +127,9 @@ public class ToScriptTest {
 
 		String myResult = variables.getAsString( result );
 
-		assertThat( myResult ).contains( "myVar = {" );
-		assertThat( myResult ).contains( "\"columns\"" );
+		// Queries serialize as struct format by default (array of structs)
+		assertThat( myResult ).contains( "myVar = [" );
 		assertThat( myResult ).contains( "\"col1\"" );
-		assertThat( myResult ).contains( "\"data\"" );
 		assertThat( myResult ).contains( "\"Grant\"" );
 
 	}

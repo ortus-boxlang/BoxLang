@@ -1,0 +1,5 @@
+// Short chain - under 40 chars
+result = obj.foo();
+
+// Chain over 40 chars should break (this is about 42 chars)
+result = obj.methodOne().methodTwo().methodThree();

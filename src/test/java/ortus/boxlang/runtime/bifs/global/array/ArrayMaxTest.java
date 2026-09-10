@@ -98,4 +98,15 @@ public class ArrayMaxTest {
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
 
+	@DisplayName( "It can get max date" )
+	@Test
+	public void testCanSearchDate() {
+
+		instance.executeSource(
+		    """
+		    result = [ now() ].max()
+		    """,
+		    context );
+	}
+
 }

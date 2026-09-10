@@ -19,7 +19,7 @@ Result: 42
 
 ### Member function version.
 
-Using the member function. This version also works in ACF2018.
+Using the member function.
 
 <a href="https://try.boxlang.io/?code=eJxLLCpSsFWIVuDiNNTh4jQCYhMjrlhrrgKgaGJRkV5BfoGGpjVXeVFmSap%2FaUlBaYmGQoECUAQAf3kOiw%3D%3D" target="_blank">Run Example</a>
 

@@ -20,10 +20,13 @@ package ortus.boxlang.runtime.loader;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -247,6 +250,204 @@ public class DynamicClassLoaderTest {
 		assertThat( dynamicClassLoader.getURLs().length ).isEqualTo( initialUrlCount );
 
 		dynamicClassLoader.close();
+	}
+
+	// ---- Temp File Tests ----
+
+	@Test
+	@DisplayName( "Constructor creates temp copies of JAR files" )
+	void testConstructorCreatesTempJars() throws Exception {
+		Path				libPath				= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
+		URL[]				urls				= DynamicClassLoader.getJarURLs( libPath );
+		ClassLoader			parentClassLoader	= getClass().getClassLoader();
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TempJarTest" ), urls, parentClassLoader, false );
+
+		try {
+			URL[] clURLs = dynamicClassLoader.getURLs();
+
+			// All JAR URLs should point to temp files in boxlang-jars directory
+			for ( URL url : clURLs ) {
+				String urlStr = url.toString();
+				if ( urlStr.endsWith( ".jar" ) ) {
+					assertThat( urlStr ).contains( "boxlang-jars" );
+					// Temp naming: {originalName}-{pathHash}-{lastModified}.jar
+				}
+			}
+			// Non-jar files (like config.properties) should remain at their original path
+		} finally {
+			dynamicClassLoader.close();
+		}
+	}
+
+	@Test
+	@DisplayName( "Temp files exist on disk and ORPHANS are deleted on close" )
+	void testTempFilesExistAndOrphansAreDeletedOnClose() throws Exception {
+		Path				libPath				= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
+		URL[]				urls				= DynamicClassLoader.getJarURLs( libPath );
+		ClassLoader			parentClassLoader	= getClass().getClassLoader();
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TempFileCleanup" ), urls, parentClassLoader, false );
+
+		// Collect temp file paths before close
+		List<File>			tempFilesBefore		= new ArrayList<>();
+		for ( URL url : dynamicClassLoader.getURLs() ) {
+			String urlStr = url.toString();
+			if ( urlStr.endsWith( ".jar" ) ) {
+				tempFilesBefore.add( new File( url.toURI() ) );
+			}
+		}
+
+		// There should be at least some temp files for this CL
+		assertThat( tempFilesBefore ).isNotEmpty();
+
+		// Close — orphans (source gone/changed) are deleted, but valid files are kept
+		dynamicClassLoader.close();
+
+		// Source jars still exist with the same lastModified, so these temp files are
+		// NOT orphans and must survive close (they're shared across processes).
+		for ( File f : tempFilesBefore ) {
+			assertThat( f.exists() ).isTrue();
+		}
+	}
+
+	@Test
+	@DisplayName( "addURL creates temp copies of JARs" )
+	void testAddURLCreatesTempJar() throws Exception {
+		String				jarPath				= Paths.get( "src/test/resources/libs/helloworld.jar" ).toAbsolutePath().toString();
+		ClassLoader			parentClassLoader	= getClass().getClassLoader();
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "AddURLTempTest" ), new URL[] {}, parentClassLoader, false );
+
+		try {
+			dynamicClassLoader.addURL( Paths.get( jarPath ).toUri().toURL() );
+
+			URL[] clURLs = dynamicClassLoader.getURLs();
+			assertThat( clURLs ).hasLength( 1 );
+
+			String urlStr = clURLs[ 0 ].toString();
+			// Should point to a temp location, not the original
+			assertThat( urlStr ).contains( "boxlang-jars" );
+			// Temp naming: {originalName}-{pathHash}-{lastModified}.jar
+		} finally {
+			dynamicClassLoader.close();
+		}
+	}
+
+	@Test
+	@DisplayName( "Config properties are NOT copied to temp (not a .jar file)" )
+	void testNonJarFilesNotCopiedToTemp() throws Exception {
+		URL[]				urls				= DynamicClassLoader.getJarURLs(
+		    Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize()
+		);
+		ClassLoader			parentClassLoader	= getClass().getClassLoader();
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "NonJarTest" ), urls, parentClassLoader, false );
+
+		try {
+			for ( URL url : dynamicClassLoader.getURLs() ) {
+				String urlStr = url.toString();
+				// Only .jar files should be temp-copied
+				if ( urlStr.endsWith( ".properties" ) || urlStr.endsWith( ".class" ) ) {
+					assertThat( urlStr ).doesNotContain( "boxlang-jars" );
+				}
+			}
+		} finally {
+			dynamicClassLoader.close();
+		}
+	}
+
+	@Test
+	@DisplayName( "Close purges cached classes from global ClassLocator resolver cache" )
+	void testClosePurgesGlobalResolverCache() throws Exception {
+		Path				libPath	= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
+		URL[]				urls	= DynamicClassLoader.getJarURLs( libPath );
+		DynamicClassLoader	dcl		= new DynamicClassLoader( Key.of( "closePurgeTest" ), urls, getClass().getClassLoader(), false );
+		ClassLocator		locator	= runtime.getClassLocator();
+
+		try {
+			// Load a class through the DCL
+			Class<?> helloWorld = dcl.loadClass( "HelloWorld" );
+			assertThat( helloWorld.getClassLoader() ).isEqualTo( dcl );
+
+			// Put a ClassLocation referencing that DCL-loaded class into the resolver cache
+			ClassLocation location = new ClassLocation(
+			    "HelloWorld",
+			    "HelloWorld.class",
+			    "com.example",
+			    ClassLocator.TYPE_JAVA,
+			    helloWorld,
+			    null,
+			    true,
+			    "testApp",
+			    null
+			);
+			locator.getResolverCache().put( "purge:HelloWorld", location );
+			assertThat( locator.getResolverCache() ).containsKey( "purge:HelloWorld" );
+
+			// Close the DCL — this should call clearForClassLoader() and remove the entry
+			dcl.close();
+
+			assertThat( locator.getResolverCache() ).doesNotContainKey( "purge:HelloWorld" );
+		} finally {
+			// Ensure it's closed (double-close is guarded in close())
+			dcl.close();
+		}
+	}
+
+	@Test
+	@DisplayName( "When jarTempFileCaching is false, JARs load from original paths" )
+	void testJarCachingDisabledUsesOriginalURLs() throws Exception {
+		Path	libPath		= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
+		URL[]	urls		= DynamicClassLoader.getJarURLs( libPath );
+
+		// Save old state, set caching to false
+		boolean	original	= runtime.getConfiguration().jarTempFileCaching;
+		runtime.getConfiguration().jarTempFileCaching = false;
+
+		try {
+			DynamicClassLoader dcl = new DynamicClassLoader( Key.of( "NoCacheTest" ), urls, getClass().getClassLoader(), false );
+
+			try {
+				// JAR URLs should point to the original paths, not temp boxlang-jars
+				for ( URL url : dcl.getURLs() ) {
+					String urlStr = url.toString();
+					if ( urlStr.endsWith( ".jar" ) ) {
+						assertThat( urlStr ).doesNotContain( "boxlang-jars" );
+					}
+				}
+				// Class loading still works
+				Class<?> helloWorld = dcl.loadClass( "HelloWorld" );
+				assertThat( helloWorld ).isNotNull();
+			} finally {
+				dcl.close();
+			}
+		} finally {
+			runtime.getConfiguration().jarTempFileCaching = original;
+		}
+	}
+
+	@Test
+	@DisplayName( "When jarTempFileCaching is false, no sidecar .origin files are written" )
+	void testJarCachingDisabledNoSidecarFiles() throws Exception {
+		Path	libPath		= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
+		URL[]	urls		= DynamicClassLoader.getJarURLs( libPath );
+
+		boolean	original	= runtime.getConfiguration().jarTempFileCaching;
+		runtime.getConfiguration().jarTempFileCaching = false;
+
+		try {
+			DynamicClassLoader dcl = new DynamicClassLoader( Key.of( "NoSidecarTest" ), urls, getClass().getClassLoader(), false );
+
+			try {
+				// No .origin files should exist since no temp copies were made
+				File tempDir = new File( System.getProperty( "java.io.tmpdir" ), "boxlang-jars" );
+				if ( tempDir.isDirectory() ) {
+					File[] sidecars = tempDir.listFiles( ( dir, name ) -> name.endsWith( ".origin" ) && name.contains( "NoSidecarTest" ) );
+					assertThat( sidecars ).isEmpty();
+				}
+			} finally {
+				dcl.close();
+			}
+		} finally {
+			runtime.getConfiguration().jarTempFileCaching = original;
+		}
 	}
 
 }

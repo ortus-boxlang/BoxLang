@@ -1,0 +1,4 @@
+result = a EQ b;
+result = a != b;
+result = a GT b;
+result = a <= b;

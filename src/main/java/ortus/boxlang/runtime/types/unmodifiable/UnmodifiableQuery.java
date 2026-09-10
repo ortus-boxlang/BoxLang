@@ -106,8 +106,26 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 	 *
 	 * @return Query object
 	 */
+	/**
+	 * @deprecated Use {@link #fromArray(Array, Array, Object, IBoxContext)} instead.
+	 */
+	@Deprecated
 	public static UnmodifiableQuery fromArray( Array columnNames, Array columnTypes, Object rowData ) {
-		return Query.fromArray( columnNames, columnTypes, rowData ).toUnmodifiable();
+		return Query.fromArray( columnNames, columnTypes, rowData, null ).toUnmodifiable();
+	}
+
+	/**
+	 * Create a new unmodifiable query with columns and data, casting values to the appropriate column types.
+	 *
+	 * @param columnNames List of column names
+	 * @param columnTypes List of column types
+	 * @param rowData     List of row data
+	 * @param context     The context to use for type casting, or null to skip casting
+	 *
+	 * @return UnmodifiableQuery object
+	 */
+	public static UnmodifiableQuery fromArray( Array columnNames, Array columnTypes, Object rowData, IBoxContext context ) {
+		return Query.fromArray( columnNames, columnTypes, rowData, context ).toUnmodifiable();
 	}
 
 	@Override
@@ -347,8 +365,21 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 	 */
 	@Override
 	@Deprecated
+	@SuppressWarnings( "removal" )
 	public UnmodifiableQuery duplicate() {
-		return duplicate( RequestBoxContext.getCurrent() );
+		return duplicate( false, RequestBoxContext.getCurrent() );
+	}
+
+	/**
+	 * Duplicate the current query.
+	 *
+	 * @param deep    If true, nested objects will be duplicated as well.
+	 * @param context The box context.
+	 *
+	 * @return A copy of the current query.
+	 */
+	public UnmodifiableQuery duplicate( boolean deep, IBoxContext context ) {
+		return super.duplicate( deep, context ).toUnmodifiable();
 	}
 
 	/**

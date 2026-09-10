@@ -18,7 +18,14 @@
 
 package ortus.boxlang.runtime.bifs.global.array;
 
-import org.junit.jupiter.api.*;
+import static com.google.common.truth.Truth.assertThat;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -26,8 +33,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
-
-import static com.google.common.truth.Truth.assertThat;
 
 public class ArrayUniqueTest {
 
@@ -68,5 +73,64 @@ public class ArrayUniqueTest {
 		assertThat( resultArray.get( 1 ) ).isEqualTo( 2 );
 		assertThat( resultArray.get( 2 ) ).isEqualTo( 4 );
 		assertThat( resultArray.get( 3 ) ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "It treats different numeric types with the same value as duplicates" )
+	@Test
+	public void testMixedNumericTypesAreDeduplicated() {
+		instance.executeSource(
+		    """
+		    	nums = [ 1, 1.0, 2, 2.00, 3 ];
+		    	result = ArrayUnique( nums );
+		    """,
+		    context );
+		Array resultArray = ( Array ) variables.get( result );
+		assertThat( resultArray.size() ).isEqualTo( 3 );
+		assertThat( resultArray.get( 0 ) ).isEqualTo( 1 );
+		assertThat( resultArray.get( 1 ) ).isEqualTo( 2 );
+		assertThat( resultArray.get( 2 ) ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "It treats differently-cased strings as duplicates by default" )
+	@Test
+	public void testCaseInsensitiveStringDedup() {
+		instance.executeSource(
+		    """
+		    	words = [ "Hello", "hello", "HELLO", "World", "world" ];
+		    	result = ArrayUnique( words );
+		    """,
+		    context );
+		Array resultArray = ( Array ) variables.get( result );
+		assertThat( resultArray.size() ).isEqualTo( 2 );
+		assertThat( resultArray.get( 0 ) ).isEqualTo( "Hello" );
+		assertThat( resultArray.get( 1 ) ).isEqualTo( "World" );
+	}
+
+	@DisplayName( "It preserves differently-cased strings when caseSensitive=true" )
+	@Test
+	public void testCaseSensitiveStringDedup() {
+		instance.executeSource(
+		    """
+		    	words = [ "Hello", "hello", "HELLO", "World", "world" ];
+		    	result = ArrayUnique( words, true );
+		    """,
+		    context );
+		Array resultArray = ( Array ) variables.get( result );
+		assertThat( resultArray.size() ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "It works as a member function" )
+	@Test
+	public void testMemberFunction() {
+		instance.executeSource(
+		    """
+		    	result = [ 1, 1.0, "foo", "FOO", 2 ].unique();
+		    """,
+		    context );
+		Array resultArray = ( Array ) variables.get( result );
+		assertThat( resultArray.size() ).isEqualTo( 3 );
+		assertThat( resultArray.get( 0 ) ).isEqualTo( 1 );
+		assertThat( resultArray.get( 1 ) ).isEqualTo( "foo" );
+		assertThat( resultArray.get( 2 ) ).isEqualTo( 2 );
 	}
 }

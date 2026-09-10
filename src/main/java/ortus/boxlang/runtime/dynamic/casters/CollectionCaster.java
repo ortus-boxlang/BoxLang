@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Range;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.util.ListUtil;
@@ -97,6 +98,18 @@ public class CollectionCaster implements IBoxCaster {
 
 		if ( object instanceof Collection col ) {
 			return col;
+		}
+
+		if ( object instanceof Range<?> range ) {
+			if ( range.isIterable() && range.isBounded() ) {
+				return range.toArray();
+			}
+			if ( fail ) {
+				throw new BoxCastException(
+				    String.format( "Can't cast Range [%s] to a Collection.", range.asString() )
+				);
+			}
+			return null;
 		}
 
 		if ( object.getClass().isArray() ) {

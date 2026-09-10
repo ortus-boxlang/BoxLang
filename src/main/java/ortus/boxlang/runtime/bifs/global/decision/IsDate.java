@@ -69,7 +69,10 @@ public class IsDate extends BIF {
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		Object	dateRef			= arguments.get( Key.date );
 		String	timezone		= arguments.getAsString( Key.timezone );
-		String	localeString	= arguments.getAsString( Key.locale );
+
+		if ( dateRef == null || dateRef instanceof String stringDate && stringDate.isBlank() ) {
+			return false;
+		}
 
 		if ( bifMethodKey.equals( numericDateFunction ) ) {
 			return DoubleCaster.attempt( dateRef ).wasSuccessful();
@@ -94,7 +97,7 @@ public class IsDate extends BIF {
 		if ( NumberCaster.attempt( dateRef, false ).wasSuccessful() ) {
 			return false;
 		}
-		Locale locale = LocalizationUtil.getParsedLocale( localeString );
+		Locale locale = LocalizationUtil.parseLocaleFromContext( context, arguments );
 		return DateTimeCaster.cast( dateRef, false, zoneId, false, context, locale ) != null;
 	}
 

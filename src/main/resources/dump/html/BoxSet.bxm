@@ -1,0 +1,74 @@
+<bx:script>
+	expandRoot = expand ?: true;
+	isBoxSet   = isInstanceOf( var, "ortus.boxlang.runtime.types.BoxSet" );
+	setType    = isBoxSet ? var.getType().name() : var.getClass().getName();
+</bx:script>
+<bx:output>
+	<div class="bx-dump">
+		<table class="bx-table-secondary" title="#encodeForHTML( posInCode )#">
+			<bx:if var.size() >
+				<caption
+					role="button"
+					tabindex="0"
+					<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+					data-bx-toggle="siblings"
+				>
+					<strong>
+						<bx:if label.len() >#label# - </bx:if>
+						Set (#setType#):
+						<bx:if !isNull( maxRows ) && maxRows lt var.size()>#maxRows#/</bx:if>#var.size()#
+					</strong>
+					<bx:if isBoxSet>
+					<span class="bx-meta">
+						[caseSensitive=#var.isCaseSensitive()#, synchronized=#var.isSynchronized()#]
+					</span>
+					</bx:if>
+				</caption>
+			<bx:else>
+				<caption class="bx-dhAy">
+					<strong>
+						<bx:if label.len() >#label# - </bx:if>
+						Set (#setType#): #var.size()#
+					</strong>
+					<bx:if isBoxSet>
+					<span class="bx-meta">
+						[caseSensitive=#var.isCaseSensitive()#, synchronized=#var.isSynchronized()#]
+					</span>
+					</bx:if>
+				</caption>
+			</bx:if>
+			<tbody
+				<bx:if !expandRoot>class="d-none"</bx:if>
+			>
+				<bx:set setItems = var.toArray()>
+				<bx:set maxItems = isNull( maxRows ) ? setItems.len() : min( maxRows, setItems.len() )>
+				<bx:loop from="1" to="#maxItems#" index="i">
+						<bx:set value = setItems[i]>
+						<tr>
+							<th
+								aria-expanded="true"
+								data-bx-toggle="onoff"
+								scope="row"
+								valign="top"
+								tabindex="0"
+							>
+								#i#
+							</th>
+							<td>
+								<div class="bx-onoff">
+									<bx:set dump(
+										var : value ?: null,
+										depth : isNull( depth ) ? null : depth - 1,
+										maxRows : maxRows ?: null,
+										expand : expand ?: null,
+										output : "buffer",
+										format : format ?: null
+									)>
+								</div>
+							</td>
+						</tr>
+					</bx:loop>
+			</tbody>
+		</table>
+	</div>
+</bx:output>

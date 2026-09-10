@@ -1,0 +1,5 @@
+{
+	"braces": {
+		"require_for_single_statement": true
+	}
+}

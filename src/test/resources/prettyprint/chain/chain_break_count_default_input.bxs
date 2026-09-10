@@ -1,0 +1,8 @@
+// Short chain - should stay on one line (default break_count is 3)
+result = obj.foo().bar();
+
+// Exactly 3 calls - should break
+result = obj.foo().bar().baz();
+
+// 4 calls - should definitely break
+result = obj.foo().bar().baz().qux();

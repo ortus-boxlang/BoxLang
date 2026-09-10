@@ -252,6 +252,11 @@ public class DateTimeCasterTest {
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "MM/dd/yyyy hh:mm a" ) ).isEqualTo( "03/28/2025 04:32 PM" );
 
+		dateString	= "3/5/2026 12:00:00 AM";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "M/d/yyyy hh:mm:ss a" ) ).isEqualTo( "3/5/2026 12:00:00 AM" );
+
 		dateString	= "03/28/2025 04:32:26 PM";
 		result		= DateTimeCaster.cast( dateString );
 		assertThat( result ).isNotNull();
@@ -341,6 +346,16 @@ public class DateTimeCasterTest {
 	}
 
 	@Test
+	@DisplayName( "Test medium format date and time with AM/PM scrunched" )
+	public void testMedFormatAMPMScrunched() {
+		// Med string example Aug 26, 2024 22:05:00 UTC
+		String		dateString	= "Mar 12 2026 12:00AM";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd hh:mm:ss a" ) ).isEqualTo( "2026-03-12 12:00:00 AM" );
+	}
+
+	@Test
 	@DisplayName( "Test medium format datetime with no comma separator between year and time and narrow no-break space unicode char" )
 	public void testMedFormatWithMeridianAndNoSeparator() {
 		// Do not change the no-break space character here; it's intentional
@@ -414,6 +429,55 @@ public class DateTimeCasterTest {
 		DateTime	result		= DateTimeCaster.cast( dateString );
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "yyyy-MM-dd hh:mm a" ) ).isEqualTo( "2017-07-17 09:29 PM" );
+	}
+
+	@Test
+	@DisplayName( "Test ISO date with 24-hour hours and AM/PM marker (validated)" )
+	public void testParseISOWith24HourAndMeridian() {
+		// Hour 21 with PM: accept (hour stays as 21:01:00)
+		String		dateString1	= "2024-04-02 21:01:00 PM";
+		DateTime	result1		= DateTimeCaster.cast( dateString1 );
+		assertThat( result1 ).isNotNull();
+		assertThat( result1.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2024-04-02 21:01:00" );
+
+		// Hour 9 with AM: handled by the existing 12-hour pattern (h:mm:ss a).
+		// Confirms hour 1-12 + AM/PM still works.
+		String		dateString2	= "2024-04-02 09:30:00 AM";
+		DateTime	result2		= DateTimeCaster.cast( dateString2 );
+		assertThat( result2 ).isNotNull();
+		assertThat( result2.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2024-04-02 09:30:00" );
+
+		// Hour 9 with PM: handled by the existing 12-hour pattern (h:mm:ss a) -> 21:30:00.
+		String		dateString3	= "2024-04-02 09:30:00 PM";
+		DateTime	result3		= DateTimeCaster.cast( dateString3 );
+		assertThat( result3 ).isNotNull();
+		assertThat( result3.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2024-04-02 21:30:00" );
+
+		// Hour 12 with PM: existing 12-hour pattern handles; hour stays as 12 (noon).
+		String		dateString4	= "2024-04-02 12:00:00 PM";
+		DateTime	result4		= DateTimeCaster.cast( dateString4 );
+		assertThat( result4 ).isNotNull();
+		assertThat( result4.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2024-04-02 12:00:00" );
+
+		// Hour 12 with AM: existing 12-hour pattern normalizes to midnight (hour 0).
+		String		dateString5	= "2024-04-02 12:00:00 AM";
+		DateTime	result5		= DateTimeCaster.cast( dateString5 );
+		assertThat( result5 ).isNotNull();
+		assertThat( result5.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2024-04-02 00:00:00" );
+
+		// Hour 23 with PM: new pattern accepts; hour stays as 23.
+		String		dateString6	= "2024-04-02 23:59:59 PM";
+		DateTime	result6		= DateTimeCaster.cast( dateString6 );
+		assertThat( result6 ).isNotNull();
+		assertThat( result6.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2024-04-02 23:59:59" );
+
+		// Hour 13 with AM: REJECT (inconsistent).
+		String dateString7 = "2024-04-02 13:00:00 AM";
+		assertThat( DateTimeCaster.attempt( dateString7 ).wasSuccessful() ).isFalse();
+
+		// Hour 21 with AM: REJECT (inconsistent).
+		String dateString8 = "2024-04-02 21:00:00 AM";
+		assertThat( DateTimeCaster.attempt( dateString8 ).wasSuccessful() ).isFalse();
 	}
 
 	@Test
@@ -576,5 +640,50 @@ public class DateTimeCasterTest {
 		DateTime	result		= DateTimeCaster.cast( dateString );
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "dd-MMM-yyyy HH:mm" ) ).isEqualTo( "05-Nov-2025 14:43" );
+	}
+
+	@Test
+	@DisplayName( "Test European DD/MM/YYYY format with day > 12 to distinguish from US format" )
+	public void testEuropeanDDMMYYYYFormat() {
+		String		dateString	= "15/04/2024";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "dd/MM/yyyy" ) ).isEqualTo( "15/04/2024" );
+	}
+
+	@Test
+	@DisplayName( "Test European DD/MM/YYYY format with time and day > 12" )
+	public void testEuropeanDDMMYYYYWithTime() {
+		String		dateString	= "25/12/2024 14:30:45";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "dd/MM/yyyy HH:mm:ss" ) ).isEqualTo( "25/12/2024 14:30:45" );
+	}
+
+	@Test
+	@DisplayName( "Test European DD.MM.YYYY format with day > 12 to distinguish from US format" )
+	public void testEuropeanDDMMYYYYDotFormat() {
+		String		dateString	= "13.03.2024";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "dd.MM.yyyy" ) ).isEqualTo( "13.03.2024" );
+	}
+
+	@Test
+	@DisplayName( "Test US format with single-digit month, 24-hour time and milliseconds" )
+	public void testUSSingleDigitMonthWithMillis() {
+		String		dateString	= "7/17/2025 00:00:00.000";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2025-07-17 00:00:00" );
+	}
+
+	@Test
+	@DisplayName( "Test US format with single-digit month, 24-hour time without milliseconds" )
+	public void testUSSingleDigitMonthNoMillis() {
+		String		dateString	= "7/17/2025 00:00:00";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2025-07-17 00:00:00" );
 	}
 }

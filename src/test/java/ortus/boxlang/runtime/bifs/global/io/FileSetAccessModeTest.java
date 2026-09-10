@@ -44,7 +44,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.File;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
@@ -112,7 +112,7 @@ public class FileSetAccessModeTest {
 		       """,
 		    context );
 		Set<PosixFilePermission> finalPermissions = FileSystemUtil.getPosixPermissions( testTextFile );
-		assertTrue( variables.get( Key.of( "result" ) ) instanceof File );
+		assertTrue( variables.get( Key.of( "result" ) ) instanceof BoxFile );
 		assertEquals( finalPermissions.size(), 9 );
 		assertTrue( finalPermissions.contains( PosixFilePermission.OTHERS_WRITE ) );
 		assertTrue( finalPermissions.contains( PosixFilePermission.GROUP_WRITE ) );

@@ -89,16 +89,25 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * -----------------------------------------------------------
 	 */
 
-	private static final InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+	private static final InterceptorService	interceptorService				= BoxRuntime.getInstance().getInterceptorService();
 
-	private static final FunctionService	functionService		= BoxRuntime.getInstance().getFunctionService();
+	private static final FunctionService	functionService					= BoxRuntime.getInstance().getFunctionService();
 
-	private static final long				serialVersionUID	= 1L;
+	private static final long				serialVersionUID				= 1L;
 
 	/**
 	 * Flag to allow compat to influence the empty-string-to-null coercion when setting cell values to an empty string on a non-string-typed column.
 	 */
-	public static boolean					queryNullToEmpty	= false;
+	public static boolean					queryNullToEmpty				= false;
+
+	/**
+	 * Flag to allow compat to permit reading from row indexes beyond the current record count,
+	 * returning an empty string instead of throwing an exception. Row indexes below 1 (0-based negative)
+	 * still throw regardless of this flag. This mirrors the relaxed behavior of certain CFML engines.
+	 * 
+	 * TODO: Disable this and enable with compat, but we have bugs related to safe access that need fixed first
+	 */
+	public static boolean					allowAccessToNonExistentRows	= true;
 
 	/**
 	 * -----------------------------------------------------------
@@ -116,19 +125,19 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * This is an AtomicInteger so that it can be modified from multiple threads
 	 * safely.
 	 */
-	protected AtomicInteger					size				= new AtomicInteger( 0 );
+	protected AtomicInteger					size							= new AtomicInteger( 0 );
 
 	/**
 	 * Actual size of the data list, used to track how many rows have been added
 	 * This is volatile so that it can be updated from multiple threads
 	 * safely.
 	 */
-	private volatile int					actualSize			= 0;
+	private volatile int					actualSize						= 0;
 
 	/**
 	 * Map of column definitions
 	 */
-	private volatile Map<Key, QueryColumn>	columns				= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
+	private volatile Map<Key, QueryColumn>	columns							= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
 
 	/**
 	 * Metadata object
@@ -138,12 +147,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/**
 	 * Denormalized list of column names for fast access. Initialized on first use.
 	 */
-	private transient String				columnNameList		= null;
+	private transient String				columnNameList					= null;
 
 	/**
 	 * Denormalized array of column names for fast access. Initialized on first use.
 	 */
-	private transient Array					columnNameArray		= null;
+	private transient Array					columnNameArray					= null;
 
 	/**
 	 * Create a new query with additional metadata
@@ -151,16 +160,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @param meta Struct of metadata, most likely JDBC metadata such as sql, cache parameters, etc.
 	 */
 	public Query( IStruct meta, int initialSize ) {
-		if ( initialSize > 0 ) {
-			this.data	= new ArrayList<Object[]>( initialSize );
-			// add nulls and increment for each row
-			actualSize	= initialSize;
-			for ( int i = 0; i < initialSize; i++ ) {
-				data.add( null );
-			}
-		} else {
-			this.data = new ArrayList<Object[]>();
-		}
+		initialSize		= Math.max( initialSize, ChunkedArrayList.DEFAULT_CHUNK_SIZE );
+		this.data		= ChunkedArrayList.ofNulls( initialSize );
+		this.actualSize	= initialSize;
 	}
 
 	/**
@@ -255,6 +257,18 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 					columnMapList.add( i );
 					// Store the SQL type for this column (columnMapList.size() - 1 is the current column index)
 					columnSQLTypes[ i - 1 ] = resultSetMetaData.getColumnType( i );
+
+					// Capture rich JDBC metadata on the column
+					QueryColumn col = query.getColumn( colName );
+					try {
+						col.setNullable( resultSetMetaData.isNullable( i ) != ResultSetMetaData.columnNoNulls );
+						col.setReadOnly( resultSetMetaData.isReadOnly( i ) || resultSetMetaData.isAutoIncrement( i ) );
+						int scale = resultSetMetaData.getScale( i );
+						col.setDecimals( scale > 0 ? scale : null );
+						col.setMaxLength( resultSetMetaData.getColumnDisplaySize( i ) );
+					} catch ( SQLException e ) {
+						// Some JDBC drivers don't support all metadata methods — leave as null
+					}
 				}
 			}
 
@@ -276,6 +290,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			throw new DatabaseException( e );
 		}
 
+		query.truncateInternal();
 		return query;
 	}
 
@@ -288,7 +303,26 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return Query object
 	 */
+	/**
+	 * @deprecated Use {@link #fromArray(Array, Array, Object, IBoxContext)} instead.
+	 */
+	@Deprecated
 	public static Query fromArray( Array columnNames, Array columnTypes, Object rowData ) {
+		return fromArray( columnNames, columnTypes, rowData, null );
+	}
+
+	/**
+	 * Create a new query with columns and data, casting values to the appropriate column types
+	 * if a context is provided.
+	 *
+	 * @param columnNames List of column names
+	 * @param columnTypes List of column types
+	 * @param rowData     List of row data
+	 * @param context     The context to use for type casting, or null to skip casting
+	 *
+	 * @return Query object
+	 */
+	public static Query fromArray( Array columnNames, Array columnTypes, Object rowData, IBoxContext context ) {
 		Query	q	= new Query();
 		int		i	= 0;
 		for ( var columnName : columnNames ) {
@@ -298,7 +332,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		if ( rowData == null ) {
 			return q;
 		}
-		q.addData( rowData );
+		q.addData( rowData, context );
 		return q;
 	}
 
@@ -309,6 +343,25 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public Map<Key, QueryColumn> getColumns() {
 		return this.columns;
+	}
+
+	/**
+	 * Here for CF compat. Returns the 1-based index of the given column name
+	 * 
+	 * @param name column name
+	 * 
+	 * @return 1-based index of the column, or 0 if not found
+	 */
+	public int findColumn( String name ) {
+		Key	keyName	= Key.of( name );
+		int	index	= 1; // 1-based index
+		for ( Key key : columns.keySet() ) {
+			if ( key.equals( keyName ) ) {
+				return index;
+			}
+			index++;
+		}
+		return 0;
 	}
 
 	/**
@@ -463,12 +516,19 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				addRow( row );
 			}
 		}
-		columnNameList	= null;
-		columnNameArray	= null;
+		invalidateColumnCaches();
+		return this;
+	}
+
+	/**
+	 * Invalidate cached column name data. Called when columns are added, removed, or renamed.
+	 */
+	void invalidateColumnCaches() {
+		this.columnNameList		= null;
+		this.columnNameArray	= null;
 		if ( this.$bx != null ) {
 			this.$bx.buildColumnsMeta();
 		}
-		return this;
 	}
 
 	/**
@@ -512,7 +572,11 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		int			index		= getColumn( name ).getIndex();
 		Object[]	columnData	= new Object[ size.get() ];
 		for ( int i = 0; i < size.get(); i++ ) {
-			columnData[ i ] = data.get( i )[ index ];
+			Object value = data.get( i )[ index ];
+			if ( queryNullToEmpty && value == null ) {
+				value = "";
+			}
+			columnData[ i ] = value;
 		}
 		return columnData;
 	}
@@ -706,8 +770,18 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return the row number that was added (1-based)
 	 */
+	/**
+	 * Add a row to the query
+	 *
+	 * @deprecated Use {@link #addRow(Array, IBoxContext)} instead.
+	 *
+	 * @param row row data as a BoxLang array
+	 *
+	 * @return the row number that was added (1-based)
+	 */
+	@Deprecated
 	public int addRow( Array row ) {
-		return addRowDefaultMissing( row.toArray() );
+		return addRow( row, null );
 	}
 
 	/**
@@ -726,21 +800,23 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return the row number that was added (1-based)
 	 */
+	/**
+	 * Add a row to the query
+	 *
+	 * @deprecated Use {@link #addRow(IStruct, IBoxContext)} instead.
+	 *
+	 * @param row row data as Struct
+	 *
+	 * @return the row number that was added (1-based)
+	 */
+	@Deprecated
 	public int addRow( IStruct row ) {
-		Object[]	rowData	= new Object[ columns.size() ];
-		int			i		= 0;
-		for ( QueryColumn column : columns.values() ) {
-			// Missing keys in the struct go in the query as an empty string (CF compat)
-			rowData[ i ] = row.containsKey( column.getName() ) ? row.get( column.getName() ) : "";
-			i++;
-		}
-		// We're ignoring extra keys in the struct that aren't query columns. Lucee
-		// compat, but not CF compat.
-		return addRow( rowData );
+		return addRow( row, null );
 	}
 
 	/**
-	 * Add a row to the query
+	 * Add a row to the query. I do NOT cast incoming values to the column types; they are added as-is.
+	 * Only call this if you have trusted data.
 	 *
 	 * @param row row data as array of objects
 	 *
@@ -809,11 +885,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			System.arraycopy( row, index + 1, newRow, index, row.length - index - 1 );
 			data.set( i, newRow );
 		}
-		columnNameList	= null;
-		columnNameArray	= null;
-		if ( this.$bx != null ) {
-			this.$bx.buildColumnsMeta();
-		}
+		invalidateColumnCaches();
 	}
 
 	/**
@@ -844,11 +916,41 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return index of last row added
 	 */
+	/**
+	 * Helper method for queryNew() and queryAddRow() to handle the different
+	 * scenarios for adding data to a query
+	 *
+	 * @deprecated Use {@link #addData(Object, IBoxContext)} instead.
+	 *
+	 * @param rowData Data to populate the query. Can be a struct (with keys
+	 *                matching column names), an array of structs, or an array of
+	 *                arrays (in
+	 *                same order as columnList)
+	 *
+	 * @return index of last row added
+	 */
+	@Deprecated
 	public int addData( Object rowData ) {
+		return addData( rowData, null );
+	}
+
+	/**
+	 * Helper method for queryNew() and queryAddRow() to handle the different
+	 * scenarios for adding data to a query, casting values to the appropriate column types
+	 * if a context is provided.
+	 *
+	 * @param rowData Data to populate the query. Can be a struct (with keys
+	 *                matching column names), an array of structs, or an array of
+	 *                arrays (in same order as columnList)
+	 * @param context The context to use for type casting, or null to skip casting
+	 *
+	 * @return index of last row added
+	 */
+	public int addData( Object rowData, IBoxContext context ) {
 		CastAttempt<IStruct> structCastAttempt = StructCaster.attempt( rowData );
 		// Add a single row as a struct
 		if ( structCastAttempt.wasSuccessful() ) {
-			return addRow( structCastAttempt.get() );
+			return addRow( structCastAttempt.get(), context );
 		}
 		// Add multiple rows as an array of structs
 		CastAttempt<Array> arrayCastAttempt = ArrayCaster.attempt( rowData );
@@ -865,22 +967,87 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				int lastRow = 0;
 				for ( Object row : arrData ) {
 					if ( isArray ) {
-						// Will throw if the first row is an array, but the rest are not
-						lastRow = addRow( ArrayCaster.cast( row ) );
+						lastRow = addRow( ArrayCaster.cast( row ), context );
 					} else {
-						// Will throw if the first row is an struct, but the rest are not
-						lastRow = addRow( StructCaster.cast( row ) );
+						lastRow = addRow( StructCaster.cast( row ), context );
 					}
 				}
 				return lastRow;
 			} else {
 				// A single array of simple values to be set into the cells of the first row
-				return addRow( arrData );
+				return addRow( arrData, context );
 			}
 		}
 		throw new BoxRuntimeException(
 		    "rowData must be a struct, an array of structs, or an array of arrays.  " + rowData.getClass().getName()
 		        + " was passed." );
+	}
+
+	/**
+	 * Add a row to the query, casting values to the appropriate column types
+	 * if a context is provided.
+	 *
+	 * @param row     row data as a BoxLang array
+	 * @param context The context to use for type casting, or null to skip casting
+	 *
+	 * @return the row number that was added (1-based)
+	 */
+	public int addRow( Array row, IBoxContext context ) {
+		return addRow( row.toArray(), context );
+	}
+
+	/**
+	 * Add a row to the query, casting values to the appropriate column types
+	 * if a context is provided.
+	 *
+	 * @param row     row data as Struct
+	 * @param context The context to use for type casting, or null to skip casting
+	 *
+	 * @return the row number that was added (1-based)
+	 */
+	public int addRow( IStruct row, IBoxContext context ) {
+		Object[]	rowData	= new Object[ columns.size() ];
+		int			i		= 0;
+		for ( QueryColumn column : columns.values() ) {
+			// Missing values are null
+			Object value = row.containsKey( column.getName() ) ? row.get( column.getName() ) : null;
+			// This allows nulls which were turned into empty strings in the struct to be turned back into nulls
+			if ( queryNullToEmpty && !QueryColumnType.isStringType( column.getType() ) && value instanceof String castValue && castValue.isEmpty() ) {
+				value = null;
+			}
+			rowData[ i ] = context != null ? QueryColumnType.toSQLType( column.getType(), value, context, null ) : value;
+			i++;
+		}
+		// We're ignoring extra keys in the struct that aren't query columns.
+		return addRow( rowData );
+	}
+
+	/**
+	 * Add a row to the query, casting values to the appropriate column types
+	 * if a context is provided. Always defaults missing values to null.
+	 *
+	 * @param row     row data as array of objects
+	 * @param context The context to use for type casting, or null to skip casting
+	 *
+	 * @return the row number that was added (1-based)
+	 */
+	public int addRow( Object[] row, IBoxContext context ) {
+		// Always default missing values
+		if ( row.length < columns.size() ) {
+			Object[] newRow = new Object[ columns.size() ];
+			System.arraycopy( row, 0, newRow, 0, row.length );
+			row = newRow;
+		}
+		// Optionally cast if context is provided
+		if ( context != null ) {
+			Object[]		castRow		= new Object[ columns.size() ];
+			QueryColumn[]	colArray	= columns.values().toArray( new QueryColumn[ 0 ] );
+			for ( int i = 0; i < castRow.length; i++ ) {
+				castRow[ i ] = QueryColumnType.toSQLType( colArray[ i ].getType(), row[ i ], context, null );
+			}
+			return addRow( castRow );
+		}
+		return addRow( row );
 	}
 
 	/**
@@ -899,7 +1066,36 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		Object[]	row		= data.get( index );
 		int			i		= 0;
 		for ( QueryColumn column : columns.values() ) {
-			struct.put( column.getName(), row[ i ] );
+			Object value = row[ i ];
+			if ( queryNullToEmpty && value == null ) {
+				value = "";
+			}
+			struct.put( column.getName(), value );
+			i++;
+		}
+		return struct;
+	}
+
+	/**
+	 * Get data for a row as a Struct. 0-based index!
+	 * Data is copied, so re-assignments into the struct will not be reflected in
+	 * the query.
+	 * Mutating a complex object in the array will be reflected in the query.
+	 * This method does not convert null values to empty strings.
+	 *
+	 * @param index row index, starting at 0
+	 *
+	 * @return array of row data
+	 */
+	public IStruct getRowAsStructRaw( int index ) {
+		validateRow( index );
+		IStruct		struct	= new Struct( IStruct.TYPES.LINKED );
+		Object[]	row		= data.get( index );
+		int			i		= 0;
+		for ( QueryColumn column : columns.values() ) {
+			Object value = row[ i ];
+			// Do not convert null to empty string for raw access
+			struct.put( column.getName(), value );
 			i++;
 		}
 		return struct;
@@ -915,8 +1111,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public Object getCell( Key columnName, int rowIndex ) {
 		validateRow( rowIndex );
-		int columnIndex = getColumn( columnName ).getIndex();
-		return data.get( rowIndex )[ columnIndex ];
+		int		columnIndex	= getColumn( columnName ).getIndex();
+		Object	value		= data.get( rowIndex )[ columnIndex ];
+		if ( queryNullToEmpty && value == null ) {
+			return "";
+		}
+		return value;
 	}
 
 	/**
@@ -962,7 +1162,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Get the list of column names as a comma-separated string
-	 * TODO: Look into caching this and invalidating when columns are added/removed
 	 *
 	 * @return column names as string
 	 */
@@ -1046,12 +1245,29 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		}
 	}
 
-	private void truncateInternal() {
+	/**
+	 * Internal method to truncate the query to the current size.
+	 * We eagerly allocate additional rows when adding data to optimize for performance, so this method is used to trim those extra rows when needed.
+	 */
+	public void truncateInternal() {
+		int targetSize = size.get();
+
+		// Fast path for chunked storage: truncate logical size and trim backing chunks in one operation
+		if ( data instanceof ChunkedArrayList<?> cal ) {
+			cal.truncateToSize( targetSize );
+			actualSize = cal.size();
+			return;
+		}
+
 		// loop and remove all rows over the count
-		while ( data.size() > size.get() ) {
+		while ( data.size() > targetSize ) {
 			data.remove( data.size() - 1 );
 		}
 		actualSize = data.size();
+
+		if ( data instanceof ArrayList<?> al ) {
+			al.trimToSize();
+		}
 	}
 
 	/***************************
@@ -1081,7 +1297,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	@Override
 	public Iterator<IStruct> iterator() {
-		// TODO: Thread safe?
 		return new Iterator<IStruct>() {
 
 			private int index = 0;
@@ -1143,7 +1358,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	@Override
 	public boolean add( IStruct row ) {
-		addRow( row );
+		addRow( row, null );
 		return true;
 	}
 
@@ -1186,7 +1401,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	@Override
 	public boolean addAll( Collection<? extends IStruct> rows ) {
 		for ( IStruct row : rows ) {
-			addRow( row );
+			addRow( row, null );
 		}
 		return true;
 	}
@@ -1288,7 +1503,13 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	@Override
 	public Object assign( IBoxContext context, Key name, Object value ) {
-		getColumn( name ).setCell( getRowFromContext( context ), value );
+		QueryColumn		column		= getColumn( name );
+		QueryColumnType	columnType	= column.getType();
+		if ( Query.queryNullToEmpty && !QueryColumnType.isStringType( columnType ) && value instanceof String castValue && castValue.isEmpty() ) {
+			value = null;
+		}
+		value = QueryColumnType.toSQLType( columnType, value, context, null );
+		column.setCell( getRowFromContext( context ), value );
 		return value;
 	}
 
@@ -1371,7 +1592,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return A copy of the current query.
 	 */
-	@Deprecated
+	@Deprecated( forRemoval = true )
 	public Query duplicate() {
 		return duplicate( RequestBoxContext.getCurrent() );
 	}
@@ -1396,7 +1617,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return A copy of the current query.
 	 */
-	@Deprecated
+	@Deprecated( forRemoval = true )
 	public Query duplicate( boolean deep ) {
 		return duplicate( deep, RequestBoxContext.getCurrent() );
 	}
@@ -1417,9 +1638,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		} );
 
 		if ( deep ) {
-			newQuery.addData( DuplicationUtil.duplicate( this.getData(), deep, context ) );
+			newQuery.addData( DuplicationUtil.duplicate( this.getData(), deep, context ), null );
 		} else {
-			newQuery.addData( this.getData() );
+			newQuery.addData( this.getData(), null );
 		}
 		return newQuery;
 	}
@@ -1492,6 +1713,27 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public Array getColumnNames() {
 		return getColumnArray();
+	}
+
+	/**
+	 * Set the column names from an array. The array values are mapped positionally to the existing columns.
+	 * If the array has fewer names than columns, only the first N columns are renamed.
+	 * If the array has more names than columns, the extra names are ignored.
+	 *
+	 * @param names Array of new column names
+	 *
+	 * @return this query
+	 */
+	public synchronized Query setColumnNames( Array names ) {
+		List<QueryColumn> cols = new ArrayList<>( this.columns.values() );
+		for ( int i = 0; i < cols.size() && i < names.size(); i++ ) {
+			cols.get( i ).setName( Key.of( names.get( i ) ) );
+		}
+		this.columns.clear();
+		for ( QueryColumn col : cols ) {
+			this.columns.put( col.getName(), col );
+		}
+		return this;
 	}
 
 }

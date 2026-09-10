@@ -19,8 +19,11 @@ package TestCases.phase3;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneId;
 
 import org.junit.jupiter.api.AfterEach;
@@ -33,6 +36,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
+import ortus.boxlang.runtime.async.watchers.WatcherInstance;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.BaseBoxContext;
@@ -47,6 +51,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.util.ConfigSecretUtil;
 
 public class ApplicationTest {
 
@@ -132,6 +137,33 @@ public class ApplicationTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		assertThat( variables.getAsStruct( result ).get( "name" ) ).isEqualTo( "" );
 		assertThat( variables.getAsStruct( result ).get( "sessionmanagement" ).toString() ).isEqualTo( "false" );
+	}
+
+	/**
+	 * Verifies application settings decrypt prefixed values before datasource and cache configuration is consumed.
+	 */
+	@DisplayName( "Application settings decrypt prefixed values" )
+	@Test
+	public void testEncryptedApplicationSettings() {
+		variables.put( Key.of( "encryptedDatasourcePassword" ), ConfigSecretUtil.encryptWithPrefix( "datasource-password" ) );
+		variables.put( Key.of( "encryptedCachePassword" ), ConfigSecretUtil.encryptWithPrefix( "cache-password" ) );
+
+		instance.executeSource(
+		    """
+		    bx:application
+		        name="encryptedApplicationSettings"
+		        datasource={ driver="derby", password=encryptedDatasourcePassword }
+		        caches={ encrypted={ provider="BoxCacheProvider", properties={ password=encryptedCachePassword } } };
+		    """,
+		    context
+		);
+
+		IStruct settings = context.getRequestContext().getApplicationListener().getSettings();
+		assertThat( settings.getAsStruct( Key.datasource ).getAsString( Key.password ) ).isEqualTo( "datasource-password" );
+		assertThat( settings.getAsStruct( Key.caches ).getAsStruct( Key.of( "encrypted" ) ).getAsStruct( Key.properties ).getAsString( Key.password ) )
+		    .isEqualTo( "cache-password" );
+		assertThat( context.getConfig().getAsStruct( Key.datasources ).getAsStruct( Key.bxDefaultDatasource ).getAsString( Key.password ) )
+		    .isEqualTo( "datasource-password" );
 	}
 
 	@DisplayName( "java settings setup" )
@@ -267,6 +299,133 @@ public class ApplicationTest {
 
 		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
 		Application				app			= appContext.getApplication();
+		assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "Reload java settings jar when reloadOnChange is enabled" )
+	@Test
+	public void testJavaSettingsReloadOnChange() throws Exception {
+		Path	sourceJar		= Path.of( "src/test/resources/libs/helloworld.jar" ).toAbsolutePath();
+		Path	tempDirectory	= Files.createTempDirectory( "boxlang-java-settings-" );
+		Path	targetJar		= tempDirectory.resolve( "helloworld.jar" );
+		Files.copy( sourceJar, targetJar, StandardCopyOption.REPLACE_EXISTING );
+
+		try {
+			String jarPath = targetJar.toString().replace( "\\", "/" );
+			instance.executeSource(
+			    "bx:application name=\"reloadOnChangeApp\" javaSettings={ loadPaths=[\"" + jarPath + "\"], reloadOnChange=true };",
+			    context );
+
+			RequestBoxContext	requestContext		= context.getRequestContext();
+			ClassLoader			firstClassLoader	= requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+			Application			app					= context.getParentOfType( ApplicationBoxContext.class ).getApplication();
+
+			Files.copy( sourceJar, targetJar, StandardCopyOption.REPLACE_EXISTING );
+			Files.setLastModifiedTime( targetJar, java.nio.file.attribute.FileTime.from( Instant.now().plusSeconds( 2 ) ) );
+
+			instance.executeSource(
+			    "bx:application name=\"reloadOnChangeApp\" javaSettings={ loadPaths=[\"" + jarPath + "\"], reloadOnChange=true };",
+			    context );
+
+			ClassLoader secondClassLoader = requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+			assertThat( secondClassLoader ).isNotSameInstanceAs( firstClassLoader );
+			assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
+			assertThat( app.getClassLoaders().containsValue( firstClassLoader ) ).isFalse();
+		} finally {
+			Files.deleteIfExists( targetJar );
+			Files.deleteIfExists( tempDirectory );
+		}
+	}
+
+	@DisplayName( "Do not reload java settings jar when reloadOnChange is disabled" )
+	@Test
+	public void testJavaSettingsNoReloadOnChange() throws Exception {
+		Path	sourceJar		= Path.of( "src/test/resources/libs/helloworld.jar" ).toAbsolutePath();
+		Path	tempDirectory	= Files.createTempDirectory( "boxlang-java-settings-" );
+		Path	targetJar		= tempDirectory.resolve( "helloworld.jar" );
+		Files.copy( sourceJar, targetJar, StandardCopyOption.REPLACE_EXISTING );
+
+		try {
+			String jarPath = targetJar.toString().replace( "\\", "/" );
+			instance.executeSource(
+			    "bx:application name=\"noReloadOnChangeApp\" javaSettings={ loadPaths=[\"" + jarPath + "\"], reloadOnChange=false };",
+			    context );
+
+			RequestBoxContext	requestContext		= context.getRequestContext();
+			ClassLoader			firstClassLoader	= requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+			Application			app					= context.getParentOfType( ApplicationBoxContext.class ).getApplication();
+
+			Files.copy( sourceJar, targetJar, StandardCopyOption.REPLACE_EXISTING );
+			Files.setLastModifiedTime( targetJar, java.nio.file.attribute.FileTime.from( Instant.now().plusSeconds( 2 ) ) );
+
+			instance.executeSource(
+			    "bx:application name=\"noReloadOnChangeApp\" javaSettings={ loadPaths=[\"" + jarPath + "\"], reloadOnChange=false };",
+			    context );
+
+			ClassLoader secondClassLoader = requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+			assertThat( secondClassLoader ).isSameInstanceAs( firstClassLoader );
+			assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
+		} finally {
+			Files.deleteIfExists( targetJar );
+			Files.deleteIfExists( tempDirectory );
+		}
+	}
+
+	@DisplayName( "Add a java settings jar during an application update" )
+	@Test
+	public void testJavaSettingsAddJar() throws Exception {
+		Path	helloWorldJar	= Path.of( "src/test/resources/libs/helloworld.jar" ).toAbsolutePath();
+		Path	caffeineJar		= Path.of( "src/test/resources/libs/caffeine-3.1.8.jar" ).toAbsolutePath();
+		String	helloWorldPath	= helloWorldJar.toString().replace( "\\", "/" );
+		String	caffeinePath	= caffeineJar.toString().replace( "\\", "/" );
+
+		instance.executeSource(
+		    "bx:application name=\"addJarApp\" javaSettings={ loadPaths=[\"" + helloWorldPath + "\"], reloadOnChange=false };",
+		    context );
+
+		RequestBoxContext	requestContext		= context.getRequestContext();
+		ClassLoader			firstClassLoader	= requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+		Application			app					= context.getParentOfType( ApplicationBoxContext.class ).getApplication();
+
+		instance.executeSource(
+		    """
+		    bx:application name="addJarApp" javaSettings={
+		    	loadPaths=["%s", "%s"],
+		    	reloadOnChange=false
+		    };
+		    import com.github.benmanes.caffeine.cache.Caffeine;
+		    result = Caffeine.newBuilder();
+		    """.formatted( helloWorldPath, caffeinePath ),
+		    context );
+
+		ClassLoader secondClassLoader = requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+		assertThat( secondClassLoader ).isNotSameInstanceAs( firstClassLoader );
+		assertThat( variables.get( result ) ).isNotNull();
+		assertThat( app.getClassLoaderCount() ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "Reuse the classloader when java settings paths are reordered" )
+	@Test
+	public void testJavaSettingsPathOrderDoesNotCreateDuplicateClassLoader() {
+		String	helloWorldPath	= Path.of( "src/test/resources/libs/helloworld.jar" ).toAbsolutePath().toString().replace( "\\", "/" );
+		String	caffeinePath	= Path.of( "src/test/resources/libs/caffeine-3.1.8.jar" ).toAbsolutePath().toString().replace( "\\", "/" );
+
+		instance.executeSource(
+		    "bx:application name=\"orderedJavaSettingsApp\" javaSettings={ loadPaths=[\"" + helloWorldPath + "\", \"" + caffeinePath
+		        + "\"], reloadOnChange=false };",
+		    context );
+
+		RequestBoxContext	requestContext		= context.getRequestContext();
+		ClassLoader			firstClassLoader	= requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+		Application			app					= context.getParentOfType( ApplicationBoxContext.class ).getApplication();
+
+		instance.executeSource(
+		    "bx:application name=\"orderedJavaSettingsApp\" javaSettings={ loadPaths=[\"" + caffeinePath + "\", \"" + helloWorldPath
+		        + "\"], reloadOnChange=false };",
+		    context );
+
+		ClassLoader secondClassLoader = requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+		assertThat( secondClassLoader ).isSameInstanceAs( firstClassLoader );
 		assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
 	}
 
@@ -436,18 +595,128 @@ public class ApplicationTest {
 		assertThat( variables.getAsBoolean( Key.of( "started" ) ) ).isTrue();
 	}
 
+	@DisplayName( "Create this.watchers for an application using a class-name listener" )
+	@Test
+	public void testCreateWatchersWithClassListener() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        bx:application
+					action    = "update"
+					name      = "watcherTestApp"
+					watchers  = {
+						myWatcher = {
+							paths    : [ "./src" ],
+							listener : "src.test.bx.Watcher"
+						}
+					}
+					;
+
+					result   = getApplicationMetadata().watchers
+					watcher  = watcherGet( "watcherTestApp:myWatcher" )
+					running  = watcher.isRunning()
+			""" , context );
+		// @formatter:on
+
+		IStruct watchers = variables.getAsStruct( Key.result );
+		assertThat( watchers ).isNotNull();
+		assertThat( watchers.containsKey( Key.of( "myWatcher" ) ) ).isTrue();
+
+		WatcherInstance watcher = ( WatcherInstance ) variables.get( Key.of( "watcher" ) );
+		assertThat( watcher ).isNotNull();
+		assertThat( variables.getAsBoolean( Key.of( "running" ) ) ).isTrue();
+
+		// Cleanup
+		instance.getWatcherService().removeWatcher( Key.of( "watcherTestApp:myWatcher" ) );
+	}
+
+	@DisplayName( "Create this.watchers for an application using a closure listener" )
+	@Test
+	public void testCreateWatchersWithClosureListener() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        bx:application
+					action    = "update"
+					name      = "watcherClosureApp"
+					watchers  = {
+						closureWatcher = {
+							paths    : [ "./src" ],
+							listener : ( event ) -> {
+								println( "Got event: " & event.kind )
+							}
+						}
+					}
+					;
+
+					result  = getApplicationMetadata().watchers
+					watcher = watcherGet( "watcherClosureApp:closureWatcher" )
+					running = watcher.isRunning()
+			""" , context );
+		// @formatter:on
+
+		IStruct watchers = variables.getAsStruct( Key.result );
+		assertThat( watchers ).isNotNull();
+		assertThat( watchers.containsKey( Key.of( "closureWatcher" ) ) ).isTrue();
+
+		WatcherInstance watcher = ( WatcherInstance ) variables.get( Key.of( "watcher" ) );
+		assertThat( watcher ).isNotNull();
+		assertThat( variables.getAsBoolean( Key.of( "running" ) ) ).isTrue();
+
+		// Cleanup
+		instance.getWatcherService().removeWatcher( Key.of( "watcherClosureApp:closureWatcher" ) );
+	}
+
+	@DisplayName( "Create this.watchers for an application using a struct listener" )
+	@Test
+	public void testCreateWatchersWithStructListener() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        bx:application
+					action    = "update"
+					name      = "watcherStructApp"
+					watchers  = {
+						structWatcher = {
+							paths    : [ "./src" ],
+							listener : {
+								onEvent : ( event ) -> println( "event: " & event.kind ),
+								onError : ( error ) -> println( "error: " & error.message )
+							}
+						}
+					}
+					;
+
+					result  = getApplicationMetadata().watchers
+					watcher = watcherGet( "watcherStructApp:structWatcher" )
+					running = watcher.isRunning()
+			""" , context );
+		// @formatter:on
+
+		IStruct watchers = variables.getAsStruct( Key.result );
+		assertThat( watchers ).isNotNull();
+		assertThat( watchers.containsKey( Key.of( "structWatcher" ) ) ).isTrue();
+
+		WatcherInstance watcher = ( WatcherInstance ) variables.get( Key.of( "watcher" ) );
+		assertThat( watcher ).isNotNull();
+		assertThat( variables.getAsBoolean( Key.of( "running" ) ) ).isTrue();
+
+		// Cleanup
+		instance.getWatcherService().removeWatcher( Key.of( "watcherStructApp:structWatcher" ) );
+	}
+
 	@DisplayName( "Use a decimal value as fractional days for session timeout" )
 	@Test
 	public void testFractionalSessionTimeout() {
 
 		// @formatter:off
 		instance.executeSource(
-		    
+
 		    """
 		        bx:application name="myAppsdfsdf21" sessionmanagement="true" sessionTimeout=".5";
 				result = GetApplicationMetadata();
 			""", context );
-			
+
 		// @formatter:on
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
@@ -462,10 +731,10 @@ public class ApplicationTest {
 
 		// @formatter:off
 		instance.executeSource(
-		    
+
 		    """
-		        bx:application 
-					name="myAppWithAltCache" 
+		        bx:application
+					name="myAppWithAltCache"
 					sessionmanagement="true"
 					caches = {
 						sessionCache = {
@@ -478,7 +747,7 @@ public class ApplicationTest {
 				sessionStorage="sessionCache";
 				result = GetApplicationMetadata();
 			""", context );
-			
+
 		// @formatter:on
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );

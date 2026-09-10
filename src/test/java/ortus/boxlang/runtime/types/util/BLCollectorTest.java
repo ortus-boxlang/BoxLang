@@ -104,7 +104,7 @@ class BLCollectorTest {
 		);
 
 		// Collect to a Query using BLCollector with the template query
-		var				result			= structStream.collect( BLCollector.toQuery( templateQuery ) );
+		var				result			= structStream.collect( BLCollector.toQuery( templateQuery, null ) );
 
 		assertThat( result.size() ).isEqualTo( 3 );
 		assertThat( result.getColumnNames() ).containsExactly( "id", "name" ).inOrder();

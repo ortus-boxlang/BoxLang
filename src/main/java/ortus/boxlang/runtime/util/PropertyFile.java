@@ -153,7 +153,7 @@ public class PropertyFile {
 		this.path = path;
 
 		// Load and normalize file contents
-		String		fileContents	= ( ( String ) FileSystemUtil.read( this.path ) )
+		String		fileContents	= FileSystemUtil.readString( this.path )
 		    .replace( "\r\n", "\n" )
 		    .replace( "\r", "\n" );
 

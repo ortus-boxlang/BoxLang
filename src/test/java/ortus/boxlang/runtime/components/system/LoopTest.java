@@ -20,6 +20,9 @@ package ortus.boxlang.runtime.components.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -1076,6 +1079,63 @@ public class LoopTest {
 	}
 
 	@Test
+	public void testLoopFileLines() throws Exception {
+		Path file = Files.createTempFile( "boxlang-loop", ".txt" );
+		try {
+			Files.writeString( file, "one\ntwo\nthree" );
+			instance.executeSource(
+			    """
+			    result = [];
+			    bx:loop file="%s" item="line" index="row" {
+			    	result.append( row & ":" & line );
+			    }
+			    """.formatted( file ),
+			    context );
+			assertThat( variables.getAsArray( Key.of( "result" ) ) ).containsExactly( "1:one", "2:two", "3:three" ).inOrder();
+		} finally {
+			Files.deleteIfExists( file );
+		}
+	}
+
+	@Test
+	public void testLoopFileCharactersWithoutIndex() throws Exception {
+		Path file = Files.createTempFile( "boxlang-loop", ".txt" );
+		try {
+			Files.writeString( file, "abcdef" );
+			instance.executeSource(
+			    """
+			    result = [];
+			    bx:loop file="%s" item="chunk" characters="2" {
+			    	result.append( chunk );
+			    }
+			    """.formatted( file ),
+			    context );
+			assertThat( variables.getAsArray( Key.of( "result" ) ) ).containsExactly( "ab", "cd", "ef" ).inOrder();
+		} finally {
+			Files.deleteIfExists( file );
+		}
+	}
+
+	@Test
+	public void testLoopFileCharactersWithoutItem() throws Exception {
+		Path file = Files.createTempFile( "boxlang-loop", ".txt" );
+		try {
+			Files.writeString( file, "abcdef" );
+			instance.executeSource(
+			    """
+			    result = [];
+			    bx:loop file="%s" index="chunk" characters="2" {
+			    	result.append( chunk );
+			    }
+			    """.formatted( file ),
+			    context );
+			assertThat( variables.getAsArray( Key.of( "result" ) ) ).containsExactly( "ab", "cd", "ef" ).inOrder();
+		} finally {
+			Files.deleteIfExists( file );
+		}
+	}
+
+	@Test
 	public void testUnscopeOutputAfterGroup() {
 		instance.executeSource(
 		    """
@@ -1123,6 +1183,35 @@ public class LoopTest {
 		    context, BoxSourceType.CFSCRIPT );
 		String resultText = variables.getAsString( result ).replaceAll( "\\s+", "" );
 		assertThat( resultText ).isEqualTo( "-outer-10-inner-10-inner-20-outer-again-10-outer-20-inner-10-inner-20-outer-again-20" );
+	}
+
+	@Test
+	public void testTruncateStartEndValues() {
+		instance.executeSource(
+		    """
+		       data = queryNew( "col", "varchar", [[1],[2],[3],[4],[5]] )
+		    result = "";
+		       cfloop( query=data, startRow=2.1, endRow=4.9) {
+		       	result &= col;
+		       }
+		                """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "234" );
+	}
+
+	@Test
+	public void testEndRowZero() {
+		instance.executeSource(
+		    """
+		         data = queryNew( "col", "varchar", [[1],[2],[3],[4],[5]] )
+		      result = "";
+		    // end row of zero just doesn't loop at all
+		         cfloop( query=data, startRow=1, endRow=0) {
+		         	result &= col;
+		         }
+		                  """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "" );
 	}
 
 }

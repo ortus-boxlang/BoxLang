@@ -16,6 +16,9 @@ package ortus.boxlang.compiler;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -568,6 +571,24 @@ public class CFTranspilerTest {
 		assertThat( variables.getAsString( result ) ).isEqualTo( "1,2,3,4,5,6" );
 	}
 
+	@DisplayName( "Can append a number in a string list with a custom delimiter" )
+	@Test
+	public void testAppendNumberWithCustomDelimiter() {
+		instance.executeSource(
+		    """
+		        result = "///Users//luis//".listAppend( "//foo///bar////baz///", "/"  )
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "///Users//luis/////foo///bar////baz///" );
+
+		instance.executeSource(
+		    """
+		        result = listAppend( "///Users//luis//", "//foo///bar////baz///", "/"  )
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "///Users//luis/////foo///bar////baz///" );
+	}
+
 	@DisplayName( "Can replace once with one in replaceNoCase" )
 	@Test
 	public void testReplaceNoCaseOnce() {
@@ -612,6 +633,241 @@ public class CFTranspilerTest {
 		    """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
+	@DisplayName( "It allows invalid types" )
+	@Test
+	public void testInvalidTypes() {
+		instance.executeSource(
+		    """
+		    result = "";
+		    // same as readonly
+		    cflock( timeout=1, type="read" ) {
+		    	result &= "read";
+		    }
+		    // same as exclusive
+		    cflock( timeout=1, type="write" ) {
+		    	result &= "write";
+		    }
+		    // same as readonly
+		    cflock( timeout=1, type="sdfsdf" ) {
+		    	result &= "sdfsdf";
+		    }
+		             """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "readwritesdfsdf" );
+	}
+
+	@DisplayName( "It formats numbers with a string pattern" )
+	@Test
+	public void testNumberFormatSecondArgAsString() {
+		instance.executeSource(
+		    """
+		    result = numberFormat( 1, 000.000 );
+		             """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "001.000" );
+	}
+
+	@DisplayName( "It doesn't escape single quotes in SQL output from UDF" )
+	@Test
+	public void testItDoesntEscapeSingleQuotesInSqlOutputFromUDF() {
+		instance.executeSource(
+		    """
+		    	<cfset myQry = queryNew( "name", "varchar", [["Brad"], ["Luis"]] ) >
+		    	<cffunction name="getSQL">
+		    		<cfreturn mySQL = "SELECT * FROM myQry WHERE name = 'Brad'" >
+		    	</cffunction>
+		    	<cfquery name="result" dbtype="query">
+		    		#getSQL()#
+		    	</cfquery>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "CF output save content" )
+	@Test
+	public void testCFOutputSaveContent() {
+
+		instance.executeSource(
+		    """
+		    result = new src.test.java.ortus.boxlang.runtime.components.system.testCFOutputSaveContent().run();
+		                """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "hello world" );
+	}
+
+	@DisplayName( "It transpiles parameterExists( foo ) to isDefined( 'foo' )" )
+	@Test
+	public void testParameterExistsSimple() {
+		instance.executeSource(
+		    """
+		    foo = "bar";
+		    result = parameterExists( foo );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It transpiles parameterExists( variables.foo ) to isDefined( 'variables.foo' )" )
+	@Test
+	public void testParameterExistsScoped() {
+		instance.executeSource(
+		    """
+		    variables.foo = "bar";
+		    result = parameterExists( variables.foo );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It transpiles parameterExists() returns false for missing var" )
+	@Test
+	public void testParameterExistsFalse() {
+		instance.executeSource(
+		    """
+		    result = parameterExists( doesNotExist );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "It transpiles hash(string='test' ) to hash(input='test')" )
+	@Test
+	public void testHashStringArg() {
+		instance.executeSource(
+		    """
+		    result = hash( string="test", algorithm="MD5" );
+
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "098f6bcd4621d373cade4e832627b4f6" );
+	}
+
+	@Test
+	public void testLoopWithStructInsteadOfCollection() {
+		instance.executeSource(
+		    """
+		    <cfset brad = "wood">
+		    <cfset result = "">
+		    <cfloop struct="#variables#" item="key">
+		    	<cfset result &= key />
+		    </cfloop>
+		             """, context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ) ).contains( "brad" );
+		assertThat( variables.getAsString( result ) ).contains( "result" );
+	}
+
+	private static final String NESTED_STRUCT_SOURCE = """
+	                                                   data = { "alpha": "a",
+	                                                   		"beta" : {
+	                                                   			"charlie": "c",
+	                                                   			"delta": "d"
+	                                                   		},
+	                                                   		"echo" : {
+	                                                   			"foxtrot" : {
+	                                                   				"golf" : "g",
+	                                                   				"hotel" : "h"
+	                                                   			}
+	                                                   		}
+	                                                   	};
+	                                                   """;
+
+	@DisplayName( "It transpiles writeDump( top=value ) to writeDump( depth=value-1 )" )
+	@Test
+	public void testWriteDumpTopTranspilesToDepthMinusOne() {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		context.getRequestContext().setOut( new PrintStream( baos, true ) );
+		// @formatter:off
+		instance.executeSource(
+		    NESTED_STRUCT_SOURCE + """
+		    writeDump( var = data, top = 3, format = "html" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		String output = baos.toString();
+		// top=3 -> depth=2: recurse one level in
+		assertThat( output ).contains( "alpha" );
+		assertThat( output ).contains( "charlie" );
+		assertThat( output ).contains( "foxtrot" );
+		assertThat( output ).doesNotContain( "golf" );
+	}
+
+	@DisplayName( "It transpiles writeDump( top=1 ) to writeDump( depth=0 ), showing nothing" )
+	@Test
+	public void testWriteDumpTopOneTranspilesToDepthZero() {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		context.getRequestContext().setOut( new PrintStream( baos, true ) );
+		// @formatter:off
+		instance.executeSource(
+		    NESTED_STRUCT_SOURCE + """
+		    writeDump( var = data, top = 1, format = "html" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "Depth Limit reached" );
+		assertThat( output ).doesNotContain( "alpha" );
+	}
+
+	@DisplayName( "It transpiles <cfdump top=value> to <bx:dump depth=value-1>" )
+	@Test
+	public void testCfDumpTopTranspilesToDepthMinusOne() {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		context.getRequestContext().setOut( new PrintStream( baos, true ) );
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    <cfscript>
+		    """ + NESTED_STRUCT_SOURCE + """
+		    </cfscript>
+		    <cfdump var="#data#" top="3" format="html">
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
+		String output = baos.toString();
+		// top=3 -> depth=2: recurse one level in
+		assertThat( output ).contains( "alpha" );
+		assertThat( output ).contains( "charlie" );
+		assertThat( output ).contains( "foxtrot" );
+		assertThat( output ).doesNotContain( "golf" );
+	}
+
+	@Test
+	public void testArrayAppendArgs() {
+		instance.executeSource(
+		    """
+		    	arr = []
+		    	ignore = arrayAppend(arr, "asdf" & Chr(10))
+		    """, context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsArray( Key.of( "arr" ) ) ).contains( "asdf" + "\n" );
+	}
+
+	@DisplayName( "It transpiles nested CF BIFs inside args of a return-type-fixed BIF (named args)" )
+	@Test
+	public void testArrayAppendArgsNamed() {
+		instance.executeSource(
+		    """
+		    	arr = []
+		    	ignore = arrayAppend( array=arr, value="asdf" & Chr(10) )
+		    """, context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsArray( Key.of( "arr" ) ) ).contains( "asdf" + "\n" );
+	}
+
+	@DisplayName( "It transpiles nested CF BIFs inside args of a return-type-fixed BIF used in an expression" )
+	@Test
+	public void testArrayAppendArgsInExpression() {
+		instance.executeSource(
+		    """
+		    	arr = []
+		    	ignore = arrayAppend( arr, Chr(10) & "asdf" ) & "x"
+		    """, context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsArray( Key.of( "arr" ) ) ).contains( "\n" + "asdf" );
 	}
 
 }

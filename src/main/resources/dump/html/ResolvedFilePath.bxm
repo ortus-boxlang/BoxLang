@@ -1,0 +1,36 @@
+<!--- ResolvedFilePath template --->
+<bx:output>
+	<div class="bx-dump">
+		<table class="bx-table-primary" title="#posInCode#">
+			<caption
+				role="button"
+				tabindex="0"
+				open aria-expanded="true"
+				data-bx-toggle="siblings"
+			>
+				<strong>
+					<bx:if label.len() >#label# - </bx:if>
+					ResolvedFilePath
+				</strong>
+			</caption>
+			<tbody>
+				<tr>
+					<th scope="row" valign="top">mappingName</th>
+					<td>#encodeForHTML( var.mappingName() ?: "" )#</td>
+				</tr>
+				<tr>
+					<th scope="row" valign="top">mappingPath</th>
+					<td>#encodeForHTML( var.mappingPath() ?: "" )#</td>
+				</tr>
+				<tr>
+					<th scope="row" valign="top">relativePath</th>
+					<td>#encodeForHTML( var.relativePath() ?: "" )#</td>
+				</tr>
+				<tr>
+					<th scope="row" valign="top">absolutePath</th>
+					<td>#encodeForHTML( var.absolutePath()?.toString() ?: "" )#</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</bx:output>

@@ -67,15 +67,25 @@ public class ListPrepend extends BIF {
 	 * @argument.maxThreads number the maximum number of threads to use in the parallel filter
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Boolean	isMultiChar	= arguments.getAsBoolean( Key.multiCharacterDelimiter );
-		String	delimiter	= arguments.getAsString( Key.delimiter );
-		return ListUtil.asDelimitedList(
+		Boolean	isMultiChar		= arguments.getAsBoolean( Key.multiCharacterDelimiter );
+		String	delimiter		= arguments.getAsString( Key.delimiter );
+		Boolean	includeEmpty	= arguments.getAsBoolean( Key.includeEmptyFields );
+
+		// Tokenize both the incoming list and the value being prepended with the same delimiter
+		// and empty-field policy so the two are treated consistently.
+		var		list			= ListUtil.asDelimitedList(
 		    arguments.getAsString( Key.list ),
 		    delimiter,
-		    arguments.getAsBoolean( Key.includeEmptyFields ),
+		    includeEmpty,
 		    isMultiChar
-		).withDelimiter( delimiter, isMultiChar ).insertAt( 1, arguments.getAsString( Key.value ) )
-		    .asString();
+		).withDelimiter( delimiter, isMultiChar );
+
+		list.addAll(
+		    0,
+		    ListUtil.asList( arguments.getAsString( Key.value ), delimiter, includeEmpty, isMultiChar )
+		);
+
+		return list.asString();
 	}
 
 }

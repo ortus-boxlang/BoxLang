@@ -1,0 +1,47 @@
+class implements="java:java.lang.Iterable" {
+
+	property Array items;
+
+	function init( array items = [] ) {
+		variables.items = arguments.items;
+		return this;
+	}
+
+	function get( numeric index ) {
+		return variables.items[ index + 1 ];
+	}
+
+	function size() {
+		return variables.items.len();
+	}
+
+	function iterator() {
+		return new BoxIterator( variables.items );
+	}
+
+	class BoxIterator implements="java:java.util.Iterator" {
+
+		property name="data";
+		property name="position";
+
+		function init( array data ) {
+			variables.data = arguments.data;
+			variables.position = 0;
+			return this;
+		}
+
+		boolean function hasNext() {
+			return variables.position < variables.data.len();
+		}
+
+		function next() {
+			if ( !hasNext() ) {
+				throw( type = "java.util.NoSuchElementException", message = "No more elements" );
+			}
+			variables.position++;
+			return variables.data[ variables.position ];
+		}
+
+	}
+
+}

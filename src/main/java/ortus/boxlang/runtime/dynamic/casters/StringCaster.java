@@ -36,6 +36,7 @@ import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.input.BOMInputStream;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.types.BoxStringBuilder;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
@@ -231,6 +232,9 @@ public class StringCaster implements IBoxCaster {
 		}
 		if ( object instanceof StringBuffer sb ) {
 			return sb.toString();
+		}
+		if ( object instanceof BoxStringBuilder bsb ) {
+			return bsb.toString();
 		}
 		if ( object instanceof byte[] b ) {
 			if ( charset != null ) {

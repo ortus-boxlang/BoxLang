@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
@@ -123,6 +126,29 @@ public class IntegerCaster implements IBoxCaster {
 	}
 
 	private static Integer handleNumber( Number num, boolean allowTruncate, boolean fail ) {
+		// Check if the number is within the valid range for an integer
+		boolean outOfRange = false;
+		if ( num instanceof Double || num instanceof Float ) {
+			double doubleVal = num.doubleValue();
+			outOfRange = doubleVal < Integer.MIN_VALUE || doubleVal > Integer.MAX_VALUE;
+		} else if ( num instanceof BigDecimal bd ) {
+			outOfRange = bd.compareTo( new BigDecimal( Integer.MIN_VALUE ) ) < 0 || bd.compareTo( new BigDecimal( Integer.MAX_VALUE ) ) > 0;
+		} else if ( num instanceof BigInteger bi ) {
+			outOfRange = bi.compareTo( BigInteger.valueOf( Integer.MIN_VALUE ) ) < 0 || bi.compareTo( BigInteger.valueOf( Integer.MAX_VALUE ) ) > 0;
+		} else if ( num instanceof Long ) {
+			long longValue = num.longValue();
+			outOfRange = longValue < Integer.MIN_VALUE || longValue > Integer.MAX_VALUE;
+		}
+		// Integer, Short, Byte fall through - guaranteed to fit
+
+		if ( outOfRange ) {
+			if ( fail ) {
+				throw new BoxCastException( String.format( "Can't cast [%s] to a int. Value is outside the range of valid integers.", num ) );
+			} else {
+				return null;
+			}
+		}
+
 		if ( allowTruncate ) {
 			return Integer.valueOf( num.intValue() );
 		} else {

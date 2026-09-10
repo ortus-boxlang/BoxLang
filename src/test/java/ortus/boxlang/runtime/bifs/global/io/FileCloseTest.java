@@ -38,7 +38,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.File;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
@@ -53,8 +53,8 @@ public class FileCloseTest {
 	private static String	testFile		= "src/test/resources/tmp/fileCloseTest/file-test.txt";
 	private static String	emptyFile		= "src/test/resources/tmp/fileCloseTest/file-write-test.txt";
 	static String			testBinaryFile	= "src/test/resources/tmp/fileCloseTest/test.jpg";
-	private static File		readFile		= null;
-	private static File		writeFile		= null;
+	private static BoxFile	readFile		= null;
+	private static BoxFile	writeFile		= null;
 
 	@BeforeAll
 	public static void setUp() {
@@ -98,8 +98,8 @@ public class FileCloseTest {
 		    fileClose( result );
 		       """,
 		    context );
-		readFile = ( File ) variables.get( Key.of( "result" ) );
-		assertThat( readFile ).isInstanceOf( File.class );
+		readFile = ( BoxFile ) variables.get( Key.of( "result" ) );
+		assertThat( readFile ).isInstanceOf( BoxFile.class );
 		assertThrows(
 		    BoxRuntimeException.class,
 		    () -> readFile.readLine()
@@ -117,8 +117,8 @@ public class FileCloseTest {
 		    fileClose( result );
 		       """,
 		    context );
-		readFile = ( File ) variables.get( Key.of( "result" ) );
-		assertThat( readFile ).isInstanceOf( File.class );
+		readFile = ( BoxFile ) variables.get( Key.of( "result" ) );
+		assertThat( readFile ).isInstanceOf( BoxFile.class );
 		assertThrows(
 		    BoxRuntimeException.class,
 		    () -> readFile.writeLine( "blah!" )
@@ -130,15 +130,12 @@ public class FileCloseTest {
 	@Ignore
 	public void testBifWithInvalidFile() {
 		variables.put( Key.of( "testFile" ), Path.of( testFile ).toAbsolutePath().toString() );
-		assertThrows(
-		    BoxRuntimeException.class,
-		    () -> instance.executeSource(
-		        """
-		        result = fileClose( testFile );
-		        """,
-		        context )
-		);
-
+		// Closing a file that was never opened is a no-op since the caster creates an unopened BoxFile
+		instance.executeSource(
+		    """
+		    result = fileClose( testFile );
+		    """,
+		    context );
 	}
 
 }

@@ -76,6 +76,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 
 		var varStore = tracker.storeNewVariable( Opcodes.ASTORE );
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		nodes.addAll( varStore.nodes() );
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - goto firstLoop" );
 		nodes.add( new JumpInsnNode( Opcode.GOTO, firstLoop ) );
@@ -90,8 +91,6 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - firstLoop" );
 		nodes.add( firstLoop );
-
-		nodes.addAll( varStore.nodes() );
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - condition" );
 		if ( forIn.getCondition() != null ) {
@@ -118,14 +117,14 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - body" );
 		nodes.addAll( transpiler.transform( forIn.getBody(), context, ReturnValueContext.VALUE_OR_NULL ) );
+		nodes.addAll( varStore.nodes() );
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - goto loopStart" );
 		nodes.add( new JumpInsnNode( Opcode.GOTO, loopStart ) );
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - breakTarget" );
 		nodes.add( breakTarget );
-
-		nodes.addAll( varStore.nodes() );
+		nodes.add( new JumpInsnNode( Opcode.GOTO, loopEnd ) );
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - loopEnd" );
 		nodes.add( loopEnd );

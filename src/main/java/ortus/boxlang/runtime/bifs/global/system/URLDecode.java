@@ -36,7 +36,7 @@ public class URLDecode extends BIF {
 	public URLDecode() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.string ),
+		    new Argument( true, "string", Key.string ),
 		    new Argument( false, "string", Key.charset, "UTF-8" )
 		};
 	}

@@ -133,15 +133,15 @@ public class Cache extends Component {
 		    new Attribute( Key.throwOnError, "boolean", false ), // "false|true"
 		    new Attribute( Key.useCache, "boolean", true ), // "true|false"
 		    // TODO: These are specfic to web connectivity and will need to be implemented with the web runtime
-		    new Attribute( Key.expireURL, "string", Set.of( Validator.NOT_IMPLEMENTED ) ), // "wildcarded URL reference"
-		    new Attribute( Key.password, "string", Set.of( Validator.NOT_IMPLEMENTED ) ), // "password"
-		    new Attribute( Key.port, "integer", Set.of( Validator.NOT_IMPLEMENTED ) ), // "port number"
-		    new Attribute( Key.protocol, "string", Set.of( Validator.NOT_IMPLEMENTED ) ), // "http://|https://"
-		    new Attribute( Key.region, "string", Set.of( Validator.NOT_IMPLEMENTED ) ), // "region_name"
-		    new Attribute( Key.useQueryString, "boolean", false, Set.of( Validator.NOT_IMPLEMENTED ) ), // "false|true"
-		    new Attribute( Key.username, "string", Set.of( Validator.NOT_IMPLEMENTED ) ), // "username"
+		    new Attribute( Key.expireURL, "string" ), // "wildcarded URL reference"
+		    new Attribute( Key.password, "string" ), // "password"
+		    new Attribute( Key.port, "integer" ), // "port number"
+		    new Attribute( Key.protocol, "string" ), // "http://|https://"
+		    new Attribute( Key.region, "string" ), // "region_name"
+		    new Attribute( Key.useQueryString, "boolean", false ), // "false|true"
+		    new Attribute( Key.username, "string" ), // "username"
 		    // TODO: Circle back and immplement find nearby checks for these variables - then make them part of the key
-		    new Attribute( Key.dependsOn, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),// "variable name list"
+		    new Attribute( Key.dependsOn, "string" ),// "variable name list"
 		};
 	}
 

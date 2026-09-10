@@ -48,7 +48,7 @@ public class QueryDeleteColumn extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query		= arguments.getAsQuery( Key.query );
-		String	column		= arguments.getAsString( Key.column );
+		String	column		= arguments.getAsString( Key.column ).trim();
 		Key		columnKey	= Key.of( column );
 
 		// Verify that the column exists, throw error if it does not

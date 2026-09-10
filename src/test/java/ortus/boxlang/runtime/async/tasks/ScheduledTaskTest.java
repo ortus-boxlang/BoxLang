@@ -254,6 +254,37 @@ class ScheduledTaskTest {
 			assertThat( t.getTimeUnit().toString().toLowerCase() ).isEqualTo( "seconds" );
 		}
 
+		@DisplayName( "can align every() + startOnTime() to the next period boundary instead of firing immediately" )
+		@Test
+		void testEveryWithStartOnTimeAlignsToBoundary() throws InvalidAttributeValueException {
+			var t = task.every( 1800, TimeUnit.SECONDS );
+			t.startOnTime( "00:00" );
+			t.start();
+
+			assertThat( t.getInitialDelay() ).isGreaterThan( 0L );
+			assertThat( t.getInitialDelay() ).isAtMost( 1800L );
+		}
+
+		@DisplayName( "every() without startOnTime() still fires immediately (unchanged behavior)" )
+		@Test
+		void testEveryWithoutStartOnTimeStillFiresImmediately() {
+			var t = task.every( 1800, TimeUnit.SECONDS );
+			t.start();
+
+			assertThat( t.getInitialDelay() ).isEqualTo( 0L );
+		}
+
+		@DisplayName( "explicit delay() takes precedence over startOnTime() alignment" )
+		@Test
+		void testExplicitDelayOverridesStartTimeAlignment() throws InvalidAttributeValueException {
+			var t = task.every( 1800, TimeUnit.SECONDS );
+			t.startOnTime( "00:00" );
+			t.delay( 5, TimeUnit.SECONDS, true );
+			t.start();
+
+			assertThat( t.getInitialDelay() ).isEqualTo( 5L );
+		}
+
 	}
 
 	@Nested
@@ -475,5 +506,31 @@ class ScheduledTaskTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "what" );
 
+	}
+
+	@DisplayName( "call( DynamicObject, String ) registers without infinite recursion and executes the named method" )
+	@Test
+	public void testCallDynamicObjectWithMethodName() {
+		DynamicObject	dyno		= DynamicObject.of( new CallableTestTarget() );
+
+		ScheduledTask	registered	= task.call( dyno, "run" );
+		assertThat( registered ).isSameInstanceAs( task );
+
+		task.run( true );
+
+		@SuppressWarnings( "unchecked" )
+		java.util.Optional<Object> lastResult = ( java.util.Optional<Object> ) task.getStats().get( "lastResult" );
+		assertThat( lastResult.get() ).isEqualTo( "ran" );
+	}
+
+	/**
+	 * A named, public class so JVM reflection can resolve its public methods —
+	 * anonymous test-local classes are not public and fail reflective lookup.
+	 */
+	public static class CallableTestTarget {
+
+		public String run() {
+			return "ran";
+		}
 	}
 }

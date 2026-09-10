@@ -35,6 +35,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
+import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
@@ -54,6 +55,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxAccess				objectAccess	= ( BoxAccess ) node;
+		boolean					isDotAccess		= objectAccess instanceof BoxDotAccess;
 		Boolean					safe			= objectAccess.isSafe() || context == TransformerContext.SAFE;
 
 		List<AbstractInsnNode>	accessKey;
@@ -133,12 +135,14 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			    false ) );
 			BoxNode parent = objectAccess.getParent();
 
-			if ( ! ( parent instanceof BoxAccess ba && ba.getContext() == objectAccess )
-			    // I don't know if this will work, but I'm trying to make an exception for query columns being passed to array BIFs
-			    // This prolly won't work if a query column is passed as a second param that isn't the array
-			    && ! ( parent instanceof BoxArgument barg && barg.getParent() instanceof BoxFunctionInvocation bfun
-			        && bfun.getName().toLowerCase().startsWith( "array" )
-			        && bfun.getArguments().get( 0 ) == barg ) ) {
+			if ( ! ( parent instanceof BoxArrayAccess ba && ba.getContext() == objectAccess )
+			    // We're matching CF here and they only apply to array access, not dot access.
+			    && ( isDotAccess
+			        // I don't know if this will work, but I'm trying to make an exception for query columns being passed to array BIFs
+			        // This prolly won't work if a query column is passed as a second param that isn't the array
+			        || ! ( parent instanceof BoxArgument barg && barg.getParent() instanceof BoxFunctionInvocation bfun
+			            && bfun.getName().toLowerCase().startsWith( "array" )
+			            && bfun.getArguments().get( 0 ) == barg ) ) ) {
 				nodes.addAll( 0, transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 				nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 				    Type.getInternalName( IBoxContext.class ),

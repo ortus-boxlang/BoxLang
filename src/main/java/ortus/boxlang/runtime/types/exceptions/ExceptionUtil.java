@@ -52,6 +52,7 @@ import ortus.boxlang.runtime.types.Struct;
  */
 public class ExceptionUtil {
 
+	private static final int	MAX_CAUSE_DEPTH				= 50;
 	private static BoxRuntime	runtime						= BoxRuntime.getInstance();
 
 	public static final String	LICENSE_MODULE_NAME			= "bx-plus";
@@ -72,7 +73,12 @@ public class ExceptionUtil {
 			return true;
 		}
 		// Check the exception and all of its causes
-		while ( e != null ) {
+		Throwable	firstCause	= null;
+		int			causeDepth	= 0;
+		while ( e != null && causeDepth++ < MAX_CAUSE_DEPTH && e != firstCause ) {
+			if ( firstCause == null ) {
+				firstCause = e;
+			}
 			// BoxLangExceptions check the type
 			if ( e instanceof BoxLangException ble ) {
 				// Either direct match to type, or "foo.bar" matches "foo.bar.baz
@@ -96,8 +102,13 @@ public class ExceptionUtil {
 	 * @param exception The exception
 	 */
 	public static boolean isInterruptedException( Throwable exception ) {
-		Throwable e = exception;
-		while ( e != null ) {
+		Throwable	e			= exception;
+		Throwable	firstCause	= null;
+		int			causeDepth	= 0;
+		while ( e != null && causeDepth++ < MAX_CAUSE_DEPTH && e != firstCause ) {
+			if ( firstCause == null ) {
+				firstCause = e;
+			}
 			if ( e instanceof InterruptedException ) {
 				return true;
 			}
@@ -140,7 +151,12 @@ public class ExceptionUtil {
 
 		Throwable			current		= e;
 		String				indent		= "";
-		while ( current != null ) {
+		Throwable			firstCause	= null;
+		int					causeDepth	= 0;
+		while ( current != null && causeDepth++ < MAX_CAUSE_DEPTH && current != firstCause ) {
+			if ( firstCause == null ) {
+				firstCause = current;
+			}
 			pw.println( indent + current.getClass().getName() + ": " + current.getMessage() );
 			indent	+= "  ";
 			current	= current.getCause();
@@ -204,12 +220,13 @@ public class ExceptionUtil {
 				    // _pseudoConstructor means we're in a class pseudoconstructor, ._invoke means we're executing the template or function.
 				    // invokeFunction_Xxx, invokeLambda_N, invokeClosure_N are the static method patterns for functions/lambdas/closures.
 				    // componentBody_N is the static method pattern for component bodies.
+				    // componentIfBranch_N and _split_N are ASM helper methods generated from source nodes.
 				    // lambda$_invoke$ means we're in a lambda inside of that same template (Java boxpiler).
 				    // argumentDefaultValue is true when this is next stack AFTER a call to Argument.getDefaultValue()
 				    && ( fileName.contains( "._pseudoConstructor(" ) || fileName.contains( "._invoke(" )
 				        || methodName.startsWith( IBoxpiler.INVOKE_FUNCTION_PREFIX ) || methodName.startsWith( "invokeLambda_" )
 				        || methodName.startsWith( "invokeClosure_" )
-				        || ( isInComponent = isComponentBody( methodName ) ) || argumentDefaultValue ) ) {
+				        || ( isInComponent = isComponentBody( methodName ) ) || isGeneratedSourceHelper( methodName ) || argumentDefaultValue ) ) {
 
 					// If we're just inside the nested lambda for a component, skip subssequent lines of the stack trace
 					if ( !skipNext.isEmpty() ) {
@@ -338,6 +355,10 @@ public class ExceptionUtil {
 		return methodName.startsWith( "componentBody_" ) || methodName.startsWith( "lambda$_invoke$" );
 	}
 
+	private static boolean isGeneratedSourceHelper( String methodName ) {
+		return methodName.startsWith( "componentIfBranch_" ) || methodName.startsWith( "_split_" );
+	}
+
 	/**
 	 * Utility to get the surrounding lines of code for a given line number in a file
 	 *
@@ -464,8 +485,13 @@ public class ExceptionUtil {
 		StackTraceElement[]		elements	= cause.getStackTrace();
 		merged.addAll( Arrays.asList( elements ) );
 
-		Throwable parent = cause.getCause();
-		while ( parent != null ) {
+		Throwable	parent		= cause.getCause();
+		Throwable	firstCause	= null;
+		int			causeDepth	= 0;
+		while ( parent != null && causeDepth++ < MAX_CAUSE_DEPTH && parent != firstCause ) {
+			if ( firstCause == null ) {
+				firstCause = parent;
+			}
 			elements = parent.getStackTrace();
 			int	i	= merged.size() - 1;
 			int	j	= elements.length - 1;
@@ -496,10 +522,15 @@ public class ExceptionUtil {
 	 * @return The merged stack trace
 	 */
 	public static LinkedHashMap<Throwable, StackTraceElement[]> getMergedStackTrace2( Throwable cause ) {
-		LinkedHashMap<Throwable, StackTraceElement[]>	map		= new LinkedHashMap<>();
+		LinkedHashMap<Throwable, StackTraceElement[]>	map			= new LinkedHashMap<>();
 
-		Throwable										current	= cause;
-		while ( current != null ) {
+		Throwable										current		= cause;
+		Throwable										firstCause	= null;
+		int												causeDepth	= 0;
+		while ( current != null && causeDepth++ < MAX_CAUSE_DEPTH && current != firstCause ) {
+			if ( firstCause == null ) {
+				firstCause = current;
+			}
 			StackTraceElement[]		elements	= current.getStackTrace();
 			List<StackTraceElement>	merged		= new ArrayList<>( Arrays.asList( elements ) );
 
@@ -536,7 +567,14 @@ public class ExceptionUtil {
 	 * @return The Struct
 	 */
 	public static IStruct throwableToStruct( Throwable target ) {
+		return throwableToStruct( target, target, 0 );
+	}
+
+	private static IStruct throwableToStruct( Throwable target, Throwable firstCause, int causeDepth ) {
 		if ( target == null ) {
+			return null;
+		}
+		if ( causeDepth >= MAX_CAUSE_DEPTH || ( causeDepth > 0 && target == firstCause ) ) {
 			return null;
 		}
 
@@ -545,7 +583,7 @@ public class ExceptionUtil {
 		IStruct result = StructCasterLoose.cast( target );
 		result.put( Key.tagContext, ExceptionUtil.buildTagContext( target ) );
 		result.put( Key.stackTrace, ExceptionUtil.getStackTraceAsString( target ) );
-		result.put( Key.cause, throwableToStruct( target.getCause() ) );
+		result.put( Key.cause, throwableToStruct( target.getCause(), firstCause, causeDepth + 1 ) );
 
 		// Ensure we have a type field
 		if ( !result.containsKey( Key.type ) ) {

@@ -48,7 +48,8 @@ public class TestAST extends TestBase {
 		    "1 + a.create(p1='a')",
 		    "1 + a.b",
 		    "true && false",
-		    "true || false"
+		    "true || false",
+		    "1..5"
 			// "1 % 2",
 
 		};

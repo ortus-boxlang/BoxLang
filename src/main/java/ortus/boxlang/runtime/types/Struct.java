@@ -20,13 +20,15 @@ package ortus.boxlang.runtime.types;
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.AbstractSet;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -72,6 +74,11 @@ import ortus.boxlang.runtime.util.RegexBuilder;
  * - SOFT: This implementation of a Struct uses a default struct with values wrapped in a SoftReference.
  */
 public class Struct implements IStruct, IListenable<IStruct>, Serializable {
+
+	/**
+	 * Maximum number of keys to show in key-not-found error messages.
+	 */
+	public static final int							KEYS_ERROR_DISPLAY_LIMIT			= 20;
 
 	/**
 	 * This is to help prevent endless recursion when converting a struct to a string. Technically, this approach only applies to structs
@@ -191,7 +198,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 
 	/**
 	 * Create a default struct
-	 * 
+	 *
 	 * @param concurrent Whether to use a concurrent map implementation
 	 */
 	public Struct( boolean concurrent ) {
@@ -587,7 +594,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 
 	/**
 	 * Set a value in the struct by a Key object.
-	 * 
+	 *
 	 * I exist since I can be used internally to bypass overridden put() methods in subclasses
 	 * such as ArgumentScope, which have undesirable behaviors in scenarios such as putAll().
 	 *
@@ -745,7 +752,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	@Override
 	public Collection<Object> values() {
 		return wrapped.values().stream()
-		    .map( entry -> unWrapNullInternal( entry ) )
+		    .map( this::unWrapNullInternal )
 		    .collect( Collectors.toList() );
 	}
 
@@ -753,10 +760,14 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	 * Returns a {@link Set} view of the mappings contained in this map.
 	 */
 	@Override
+	@SuppressWarnings( "unchecked" )
 	public Set<Entry<Key, Object>> entrySet() {
-		return wrapped.entrySet().stream()
-		    .map( entry -> new SimpleEntry<>( entry.getKey(), unWrapNullInternal( entry.getValue() ) ) )
-		    .collect( Collectors.toCollection( LinkedHashSet::new ) );
+		Map.Entry<Key, Object>[]		snapshot	= wrapped.entrySet().toArray( new Map.Entry[ 0 ] );
+		ArrayList<Entry<Key, Object>>	entries		= new ArrayList<>( snapshot.length );
+		for ( Map.Entry<Key, Object> entry : snapshot ) {
+			entries.add( new SimpleEntry<>( entry.getKey(), unWrapNullInternal( entry.getValue() ) ) );
+		}
+		return new ListBackedSet<>( entries );
 	}
 
 	/**
@@ -873,7 +884,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 
 	/**
 	 * Get the BoxLang type name for this type
-	 * 
+	 *
 	 * @return The BoxLang type name
 	 */
 	@Override
@@ -963,11 +974,31 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 		Object value = getRaw( key );
 		if ( value == null && !safe ) {
 			throw new KeyNotFoundException(
-			    // TODO: Limit the number of keys. There could be thousands!
-			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", key.getName(), getKeysAsStrings() ), this
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", key.getName(), formatKeysForError( getKeysAsStrings() ) ), this
 			);
 		}
 		return unWrapNullInternal( value );
+	}
+
+	/**
+	 * Format keys for inclusion in error messages, truncating when the list is large.
+	 *
+	 * @param keys The key names to format
+	 *
+	 * @return A string representation of the key list with overflow marker when truncated
+	 */
+	public static String formatKeysForError( List<String> keys ) {
+		if ( keys == null || keys.isEmpty() ) {
+			return "[]";
+		}
+
+		if ( keys.size() <= KEYS_ERROR_DISPLAY_LIMIT ) {
+			return keys.toString();
+		}
+
+		int				overflow	= keys.size() - KEYS_ERROR_DISPLAY_LIMIT;
+		List<String>	displayKeys	= keys.subList( 0, KEYS_ERROR_DISPLAY_LIMIT );
+		return displayKeys.toString() + " ... +" + overflow + " more";
 	}
 
 	/**
@@ -1202,6 +1233,29 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	private void initListeners() {
 		if ( listeners == null ) {
 			listeners = new ConcurrentHashMap<Key, IChangeListener<IStruct>>();
+		}
+	}
+
+	/**
+	 * A Set backed by a List that avoids hashCode computation on elements.
+	 * Used for entrySet() to prevent expensive value hashCode calls.
+	 */
+	public static class ListBackedSet<E> extends AbstractSet<E> {
+
+		private final List<E> list;
+
+		public ListBackedSet( List<E> list ) {
+			this.list = list;
+		}
+
+		@Override
+		public Iterator<E> iterator() {
+			return this.list.iterator();
+		}
+
+		@Override
+		public int size() {
+			return this.list.size();
 		}
 	}
 

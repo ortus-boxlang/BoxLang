@@ -27,6 +27,7 @@ public class BoxComparisonOperation extends BoxExpression {
 	private BoxExpression			left;
 	private BoxExpression			right;
 	private BoxComparisonOperator	operator;
+	private boolean					wasKeyword	= false;
 
 	/**
 	 * Comparision
@@ -73,6 +74,14 @@ public class BoxComparisonOperation extends BoxExpression {
 
 	public void setOperator( BoxComparisonOperator operator ) {
 		this.operator = operator;
+	}
+
+	public boolean isWasKeyword() {
+		return wasKeyword;
+	}
+
+	public void setWasKeyword( boolean wasKeyword ) {
+		this.wasKeyword = wasKeyword;
 	}
 
 	@Override

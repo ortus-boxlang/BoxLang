@@ -59,7 +59,7 @@ public class ArraySet extends BIF {
 	 *
 	 * @argument.end The ending index
 	 *
-	 * @arguent.value The value to set
+	 * @argument.value The value to set
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualObj	= arguments.getAsArray( Key.array );

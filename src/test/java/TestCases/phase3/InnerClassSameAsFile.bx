@@ -1,0 +1,15 @@
+class {
+
+	class InnerClassSameAsFile {
+
+		function getValue() {
+			return "inner";
+		}
+
+	}
+
+	function getInner() {
+		return new InnerClassSameAsFile();
+	}
+
+}

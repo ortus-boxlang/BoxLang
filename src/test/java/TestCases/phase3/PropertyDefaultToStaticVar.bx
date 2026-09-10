@@ -1,0 +1,8 @@
+class {
+	property name="myProp" default="#static.MY_DEFAULT#";
+
+	static {
+		MY_DEFAULT = 5;		
+	}
+		
+}

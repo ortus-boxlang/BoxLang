@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.util.DuplicationUtil;
 @BoxMember( type = BoxLangType.STRUCT )
 @BoxMember( type = BoxLangType.DATETIME )
 @BoxMember( type = BoxLangType.QUERY )
+@BoxMember( type = BoxLangType.SET )
 public class Duplicate extends BIF {
 
 	/**

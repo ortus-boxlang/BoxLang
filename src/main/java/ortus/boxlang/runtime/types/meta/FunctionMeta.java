@@ -21,6 +21,7 @@ import java.util.List;
 
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Closure;
@@ -107,7 +108,7 @@ public class FunctionMeta extends BoxMeta<Function> {
 			    Key.type, argument.type(),
 			    Key._DEFAULT, argument.defaultValue(),
 			    Key.documentation, argument.documentation(),
-			    Key.annotations, argument.annotations()
+			    Key.annotations, BoxClassSupport.transformAnnotations( argument.annotations() )
 			);
 		}
 		// Assemble the metadata

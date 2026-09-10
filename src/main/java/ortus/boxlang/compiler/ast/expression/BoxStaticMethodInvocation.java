@@ -28,7 +28,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  * AST Node representing a static method invocation like:
  * <code>object::method(1,"a")</code>
  */
-public class BoxStaticMethodInvocation extends BoxExpression {
+public class BoxStaticMethodInvocation extends BoxExpression implements IBoxArgumentHolder {
 
 	private BoxIdentifier		name;
 

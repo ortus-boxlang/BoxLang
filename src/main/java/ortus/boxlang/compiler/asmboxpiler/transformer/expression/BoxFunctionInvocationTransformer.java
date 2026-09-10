@@ -47,7 +47,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 
 		TransformerContext argContext = safe ? TransformerContext.SAFE : context;
 		nodes.addAll( AsmHelper.callinvokeFunction( transpiler, Type.getType( Key.class ), function.getArguments(), transpiler.createKey( function.getName() ),
-		    argContext, safe ) );
+		    argContext, safe, function.isNamedArgs(), function.hasSpread() ) );
 
 		if ( returnContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );

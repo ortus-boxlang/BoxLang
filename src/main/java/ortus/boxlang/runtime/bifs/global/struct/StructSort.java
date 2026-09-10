@@ -65,6 +65,8 @@ public class StructSort extends BIF {
 	 *
 	 * @argument.sortOrder The sort order applicable to the sortType argument
 	 *
+	 * @argument.path An optional key path used to sort by a nested value within each struct entry (e.g. "address.city").
+	 *
 	 * @argument.callback An optional callback to use as the sorting function. You can alternatively pass a Java Comparator.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

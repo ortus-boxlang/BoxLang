@@ -1,0 +1,27 @@
+class {
+
+	class First {
+
+		class Second {
+
+			function getDepth() {
+				return "second";
+			}
+
+		}
+
+		function getSecond() {
+			return new Second();
+		}
+
+		function getDepth() {
+			return "first";
+		}
+
+	}
+
+	function getFirst() {
+		return new First();
+	}
+
+}

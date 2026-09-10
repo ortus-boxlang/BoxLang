@@ -21,8 +21,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.File;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.BoxFile;
 
 @BoxBIF( description = "Close an open file" )
 
@@ -34,7 +33,7 @@ public class FileClose extends BIF {
 	public FileClose() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.file ),
+		    new Argument( true, "boxfile", Key.file ),
 		};
 	}
 
@@ -47,12 +46,8 @@ public class FileClose extends BIF {
 	 * @argument.file The file to close.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		if ( arguments.get( Key.file ) instanceof File ) {
-			File file = ( File ) arguments.get( Key.file );
-			file.close();
-		} else {
-			throw new BoxRuntimeException( "The file [" + arguments.getAsString( Key.file ) + "] is not an open file stream." );
-		}
+		BoxFile file = arguments.getAsBoxFile( Key.file );
+		file.close();
 		return null;
 	}
 

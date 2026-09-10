@@ -656,7 +656,19 @@ public class DuplicateTest {
 		    context );
 		assertThat( variables.get( resultKey ) ).isInstanceOf( ParseException.class );
 		assertThat( ( ( Throwable ) variables.get( resultKey ) ).getMessage() ).contains( "'^' was unexpected" );
+	}
 
+	@DisplayName( "duplicate() passes through immutable ranges" )
+	@Test
+	public void testDuplicateRange() {
+		instance.executeSource(
+		    """
+		    original = 1..10;
+		    copy = duplicate( original );
+		    result = copy;
+		    """,
+		    context );
+		assertThat( variables.get( resultKey ) ).isSameInstanceAs( variables.get( Key.of( "original" ) ) );
 	}
 
 	@Test

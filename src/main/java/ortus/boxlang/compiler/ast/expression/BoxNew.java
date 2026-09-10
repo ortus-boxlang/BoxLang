@@ -27,7 +27,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 /**
  * AST Node representing new statement
  */
-public class BoxNew extends BoxExpression {
+public class BoxNew extends BoxExpression implements IBoxArgumentHolder {
 
 	private BoxExpression		expression;
 	private BoxIdentifier		prefix;

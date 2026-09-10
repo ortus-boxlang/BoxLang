@@ -20,7 +20,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.File;
+import ortus.boxlang.runtime.types.BoxFile;
 
 @BoxBIF( description = "Check if value is a file object" )
 public class IsFileObject extends BIF {
@@ -44,7 +44,7 @@ public class IsFileObject extends BIF {
 	 * @argument.object Object to test.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return arguments.get( Key.object ) instanceof File;
+		return arguments.get( Key.object ) instanceof BoxFile;
 	}
 
 }

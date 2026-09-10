@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.operators;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,8 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.BoxSet;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class IncrementTest {
 
@@ -57,6 +60,12 @@ public class IncrementTest {
 		scope.put( Key.of( "i" ), 5 );
 		assertThat( Increment.invokePost( context, scope, Key.of( "i" ) ) ).isEqualTo( 5 );
 		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( 6 );
+	}
+
+	@DisplayName( "Incrementing a Set throws BoxRuntimeException" )
+	@Test
+	void testIncrementSetThrows() {
+		assertThrows( BoxRuntimeException.class, () -> Increment.invoke( ( Object ) new BoxSet() ) );
 	}
 
 }

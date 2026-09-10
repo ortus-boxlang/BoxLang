@@ -33,7 +33,7 @@ public class BitNot extends BIF {
 	public BitNot() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "integer", Key.number )
+		    new Argument( true, "long", Key.number )
 		};
 	}
 
@@ -46,7 +46,7 @@ public class BitNot extends BIF {
 	 * @argument.number Numeric value for bitwise NOT.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		int number = arguments.getAsInteger( Key.number );
+		long number = arguments.getAsLong( Key.number );
 
 		return ~number;
 	}

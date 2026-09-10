@@ -73,6 +73,32 @@ public class BoxCacheStatsTest {
 	}
 
 	@Test
+	@DisplayName( "When there are both hits and misses, the hit rate should return an integer percentage" )
+	void testHitRateWithHitsAndMisses() {
+		// Given
+		for ( int i = 0; i < 22; i++ ) {
+			cacheStats.recordHit();
+		}
+		for ( int i = 0; i < 87; i++ ) {
+			cacheStats.recordMiss();
+		}
+
+		// Then
+		assertThat( cacheStats.hitRate() ).isEqualTo( 20 );
+	}
+
+	@Test
+	@DisplayName( "When there are only hits, the hit rate should be 100 percent" )
+	void testHitRateWithOnlyHits() {
+		// Given
+		cacheStats.recordHit();
+		cacheStats.recordHit();
+
+		// Then
+		assertThat( cacheStats.hitRate() ).isEqualTo( 100 );
+	}
+
+	@Test
 	@DisplayName( "When resetting the cache stats, all counts should be reset to 0" )
 	void testReset() {
 		// Given

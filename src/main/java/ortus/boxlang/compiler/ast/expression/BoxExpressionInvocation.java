@@ -27,7 +27,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 /**
  * AST Node representing an invoked expression
  */
-public class BoxExpressionInvocation extends BoxExpression {
+public class BoxExpressionInvocation extends BoxExpression implements IBoxArgumentHolder {
 
 	private BoxExpression		expr;
 	private List<BoxArgument>	arguments;

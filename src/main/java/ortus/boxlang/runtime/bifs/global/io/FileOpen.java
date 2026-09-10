@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.File;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF( description = "Open a file for reading or writing" )
@@ -62,7 +62,7 @@ public class FileOpen extends BIF {
 		if ( !FileSystemUtil.exists( filePath ) ) {
 			filePath = FileSystemUtil.expandPath( context, filePath ).absolutePath().toString();
 		}
-		return new File(
+		return new BoxFile(
 		    filePath,
 		    arguments.getAsString( Key.mode ),
 		    arguments.getAsString( Key.charset ),

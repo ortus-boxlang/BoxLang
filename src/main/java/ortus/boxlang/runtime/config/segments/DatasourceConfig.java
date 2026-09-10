@@ -56,6 +56,10 @@ import ortus.boxlang.runtime.types.util.StructUtil;
 		"password": "${env.MYSQL_PASSWORD}"
 	}
  * </pre>
+ *
+ * <p>
+ * Any string value can be stored as plaintext or encrypted. To encrypt a value, prefix the Base64-encoded encrypted value with
+ * {@code bxsecret:}. Values are decrypted while the configuration file is loaded, before datasource processing begins.
  */
 public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSegment {
 
@@ -174,12 +178,14 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	// List of keys to NOT set dynamically. All keys not in this list will use
 	// `addDataSourceProperty` to set the property and pass it to the JDBC driver.
 	// Please use the hikariConfig setters for any hikari-specific properties.
-	private List<Key>				RESERVED_CONNECTION_PROPERTIES	= List.of(
+	private static final List<Key>	RESERVED_CONNECTION_PROPERTIES	= List.of(
 	    Key.leakDetectionThreshold,
 	    Key.autoCommit,
+	    Key.connectionLimit,
 	    Key.connectionString,
 	    Key.connectionTestQuery,
 	    Key.connectionTimeout,
+	    Key.custom,
 	    Key.driver,
 	    Key.dsn,
 	    Key.healthCheckRegistry,
@@ -194,6 +200,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	    Key.password,
 	    Key.poolName,
 	    Key.port,
+	    Key.registerMbeans,
 	    Key.username );
 
 	/**
@@ -692,12 +699,19 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		if ( properties.containsKey( Key.initializationFailTimeout ) ) {
 			result.setInitializationFailTimeout( LongCaster.cast( properties.getOrDefault( Key.initializationFailTimeout, 1 ) ) );
 		}
+		if ( properties.containsKey( Key.registerMbeans ) ) {
+			result.setRegisterMbeans( properties.getAsBoolean( Key.registerMbeans ) );
+		}
 
 		// ADD NON-RESERVED PROPERTIES
 		// as Hikari properties
+		// Note: HikariCP 7.x forwards these to the JDBC driver as-is, preserving the original
+		// Java type instead of stringifying them ( as 6.x did ). We stringify here ourselves so
+		// stricter JDBC drivers ( e.g. Derby ) don't choke on a non-String property value.
 		properties.entrySet().stream()
 		    .filter( entry -> !RESERVED_CONNECTION_PROPERTIES.contains( entry.getKey() ) )
-		    .forEach( entry -> result.addDataSourceProperty( entry.getKey().getName(), entry.getValue() ) );
+		    .filter( entry -> entry.getValue() != null )
+		    .forEach( entry -> result.addDataSourceProperty( entry.getKey().getName(), entry.getValue().toString() ) );
 
 		return result;
 	}

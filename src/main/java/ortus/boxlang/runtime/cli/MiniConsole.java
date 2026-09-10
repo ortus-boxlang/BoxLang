@@ -225,6 +225,11 @@ public class MiniConsole implements AutoCloseable {
 	private final StringBuilder			inputBuffer				= new StringBuilder( 256 );
 
 	/**
+	 * Current cursor position within the input buffer
+	 */
+	private int							cursorPosition			= 0;
+
+	/**
 	 * Optional syntax highlighter for real-time input coloring
 	 */
 	private ISyntaxHighlighter			syntaxHighlighter		= null;
@@ -650,11 +655,14 @@ public class MiniConsole implements AutoCloseable {
 
 			// Reuse buffer for performance
 			inputBuffer.setLength( 0 );
+			this.cursorPosition = 0;
 
 			for ( ;; ) {
 				int b = reader.readByte();
+
+				// EOF (Ctrl+D on empty line) - return null to signal end of input
 				if ( b == -1 ) {
-					return null; // EOF
+					return null;
 				}
 
 				// ENTER (CR or LF)
@@ -704,8 +712,9 @@ public class MiniConsole implements AutoCloseable {
 						completionState			= null; // Clear completion state
 						completionDisplayLines	= 0;
 					}
-					if ( inputBuffer.length() > 0 ) {
-						inputBuffer.deleteCharAt( inputBuffer.length() - 1 );
+					if ( this.cursorPosition > 0 ) {
+						inputBuffer.deleteCharAt( this.cursorPosition - 1 );
+						this.cursorPosition--;
 						redraw( prompt, inputBuffer );
 					}
 					continue;
@@ -739,6 +748,7 @@ public class MiniConsole implements AutoCloseable {
 				// Control+D (clear line if not empty)
 				if ( b == 4 && inputBuffer.length() > 0 ) {
 					inputBuffer.setLength( 0 );
+					this.cursorPosition = 0;
 					redraw( prompt, inputBuffer );
 					continue;
 				}
@@ -771,7 +781,8 @@ public class MiniConsole implements AutoCloseable {
 						completionState			= null; // Clear completion state
 						completionDisplayLines	= 0;
 					}
-					inputBuffer.append( ( char ) b );
+					inputBuffer.insert( this.cursorPosition, ( char ) b );
+					this.cursorPosition++;
 					redraw( prompt, inputBuffer );
 				}
 			}
@@ -841,6 +852,7 @@ public class MiniConsole implements AutoCloseable {
 			if ( prev != null ) {
 				buffer.setLength( 0 );
 				buffer.append( prev );
+				this.cursorPosition = buffer.length();
 				redraw( prompt, buffer );
 			}
 		} else if ( seq.endsWith( "B" ) ) { // Down arrow (any variant)
@@ -853,10 +865,30 @@ public class MiniConsole implements AutoCloseable {
 			if ( next != null ) {
 				buffer.setLength( 0 );
 				buffer.append( next );
+				this.cursorPosition = buffer.length();
+				redraw( prompt, buffer );
+			}
+		} else if ( seq.endsWith( "C" ) ) { // Right arrow (any variant)
+			if ( completionState != null ) {
+				clearCompletionDisplay();
+				completionState			= null;
+				completionDisplayLines	= 0;
+			}
+			if ( this.cursorPosition < buffer.length() ) {
+				this.cursorPosition++;
+				redraw( prompt, buffer );
+			}
+		} else if ( seq.endsWith( "D" ) ) { // Left arrow (any variant)
+			if ( completionState != null ) {
+				clearCompletionDisplay();
+				completionState			= null;
+				completionDisplayLines	= 0;
+			}
+			if ( this.cursorPosition > 0 ) {
+				this.cursorPosition--;
 				redraw( prompt, buffer );
 			}
 		}
-		// Ignore other CSI sequences (C=right, D=left, etc.)
 	}
 
 	/**
@@ -876,6 +908,7 @@ public class MiniConsole implements AutoCloseable {
 				if ( prev != null ) {
 					buffer.setLength( 0 );
 					buffer.append( prev );
+					this.cursorPosition = buffer.length();
 					redraw( prompt, buffer );
 				}
 			}
@@ -889,10 +922,32 @@ public class MiniConsole implements AutoCloseable {
 				if ( next != null ) {
 					buffer.setLength( 0 );
 					buffer.append( next );
+					this.cursorPosition = buffer.length();
 					redraw( prompt, buffer );
 				}
 			}
-			// Ignore other SS3 sequences (C=right, D=left, etc.)
+			case 'C' -> { // Right arrow
+				if ( completionState != null ) {
+					clearCompletionDisplay();
+					completionState			= null;
+					completionDisplayLines	= 0;
+				}
+				if ( this.cursorPosition < buffer.length() ) {
+					this.cursorPosition++;
+					redraw( prompt, buffer );
+				}
+			}
+			case 'D' -> { // Left arrow
+				if ( completionState != null ) {
+					clearCompletionDisplay();
+					completionState			= null;
+					completionDisplayLines	= 0;
+				}
+				if ( this.cursorPosition > 0 ) {
+					this.cursorPosition--;
+					redraw( prompt, buffer );
+				}
+			}
 		}
 	}
 
@@ -907,7 +962,7 @@ public class MiniConsole implements AutoCloseable {
 	 */
 	private void handleTabCompletion( String prompt, StringBuilder buffer ) {
 		String	currentInput	= buffer.toString();
-		int		cursorPosition	= buffer.length(); // Cursor is always at end in our simple implementation
+		int		cursorPos		= this.cursorPosition;
 
 		// If we're already showing completions and user presses tab again, cycle through them
 		if ( completionState != null ) {
@@ -920,9 +975,9 @@ public class MiniConsole implements AutoCloseable {
 		List<TabCompletion> allCompletions = new ArrayList<>();
 
 		for ( ITabProvider provider : tabProviders ) {
-			if ( provider.canProvideCompletions( currentInput, cursorPosition ) ) {
+			if ( provider.canProvideCompletions( currentInput, cursorPos ) ) {
 				// Use first provider that can handle this input (highest priority)
-				allCompletions.addAll( provider.getCompletions( currentInput, cursorPosition ) );
+				allCompletions.addAll( provider.getCompletions( currentInput, cursorPos ) );
 				break;
 			}
 		}
@@ -944,7 +999,7 @@ public class MiniConsole implements AutoCloseable {
 			int				replaceEnd		= buffer.length();
 			int				replaceStart	= firstCompletion.hasCustomRange() ? firstCompletion.getReplaceStart() : findWordStart( currentInput, replaceEnd );
 
-			completionState = new TabCompletionState( currentInput, allCompletions, cursorPosition, replaceStart, replaceEnd );
+			completionState = new TabCompletionState( currentInput, allCompletions, cursorPos, replaceStart, replaceEnd );
 			showCompletionList( prompt, buffer, completionState );
 		}
 	}
@@ -962,15 +1017,15 @@ public class MiniConsole implements AutoCloseable {
 
 		// If no completion state exists, start a new completion cycle and immediately go to the last item
 		String				currentInput	= buffer.toString();
-		int					cursorPosition	= buffer.length(); // Cursor is always at end in our simple implementation
+		int					cursorPos		= this.cursorPosition;
 
 		// Find completions from registered providers
 		List<TabCompletion>	allCompletions	= new ArrayList<>();
 
 		for ( ITabProvider provider : tabProviders ) {
 			try {
-				if ( provider.canProvideCompletions( currentInput, cursorPosition ) ) {
-					List<TabCompletion> providerCompletions = provider.getCompletions( currentInput, cursorPosition );
+				if ( provider.canProvideCompletions( currentInput, cursorPos ) ) {
+					List<TabCompletion> providerCompletions = provider.getCompletions( currentInput, cursorPos );
 					if ( providerCompletions != null ) {
 						allCompletions.addAll( providerCompletions );
 					}
@@ -998,7 +1053,7 @@ public class MiniConsole implements AutoCloseable {
 			int				replaceEnd		= buffer.length();
 			int				replaceStart	= firstCompletion.hasCustomRange() ? firstCompletion.getReplaceStart() : findWordStart( currentInput, replaceEnd );
 
-			completionState = new TabCompletionState( currentInput, allCompletions, cursorPosition, replaceStart, replaceEnd );
+			completionState = new TabCompletionState( currentInput, allCompletions, cursorPos, replaceStart, replaceEnd );
 
 			// Move to the last completion to give a "backwards" feel
 			for ( int i = 0; i < allCompletions.size() - 1; i++ ) {
@@ -1032,6 +1087,7 @@ public class MiniConsole implements AutoCloseable {
 		if ( replaceStart >= 0 && replaceEnd >= replaceStart && replaceEnd <= buffer.length() ) {
 			buffer.delete( replaceStart, replaceEnd );
 			buffer.insert( replaceStart, completion.getText() );
+			this.cursorPosition = replaceStart + completion.getText().length();
 		}
 
 		redraw( prompt, buffer );
@@ -1235,6 +1291,12 @@ public class MiniConsole implements AutoCloseable {
 			} else {
 				System.out.print( buffer );
 			}
+		}
+
+		// Position cursor for in-line editing
+		int cursorOffset = buffer.length() - this.cursorPosition;
+		if ( cursorOffset > 0 ) {
+			System.out.print( "\033[" + cursorOffset + "D" );
 		}
 
 		System.out.flush();

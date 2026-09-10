@@ -52,10 +52,10 @@ public class ArrayMin extends BIF {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		Number	min			= 0;
 		if ( actualArray.size() > 0 ) {
-			min = NumberCaster.cast( actualArray.get( 0 ) );
+			min = NumberCaster.cast( actualArray.get( 0 ), true, true );
 		}
 		for ( int i = 1; i < actualArray.size(); i++ ) {
-			min = Min._invoke( min, NumberCaster.cast( actualArray.get( i ) ) );
+			min = Min._invoke( min, NumberCaster.cast( actualArray.get( i ), true, true ) );
 		}
 		return min;
 	}

@@ -86,4 +86,17 @@ public class QueryGetCellTest {
 		assertThat( variables.get( result ) ).isEqualTo( 42 );
 	}
 
+	@DisplayName( "It should trim whitespace from column name" )
+	@Test
+	public void testColumnNameTrimming() {
+		instance.executeSource(
+		    """
+		    query = queryNew("col1", "varchar", [["hello"]]);
+		    result = queryGetCell( query, " col1 ", 1 );
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "hello" );
+	}
+
 }

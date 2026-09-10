@@ -121,13 +121,33 @@ public class DoubleCaster implements IBoxCaster {
 			return null;
 		}
 		value = value.trim();
-		if ( NumberUtils.isCreatable( value ) ) {
+		// Strip leading zeros so NumberUtils.isCreatable() doesn't treat them as octal
+		String	checkValue	= value;
+		int		start		= 0;
+		int		len			= checkValue.length();
+		// Skip past optional sign
+		if ( len > 0 && ( checkValue.charAt( 0 ) == '+' || checkValue.charAt( 0 ) == '-' ) ) {
+			start = 1;
+		}
+		// Find first non-zero digit after sign
+		while ( start < len - 1 && checkValue.charAt( start ) == '0' && checkValue.charAt( start + 1 ) != '.' ) {
+			start++;
+		}
+		if ( start > 0 ) {
+			// Preserve original sign if present
+			char first = value.charAt( 0 );
+			if ( first == '+' || first == '-' ) {
+				checkValue = first + checkValue.substring( start );
+			} else {
+				checkValue = checkValue.substring( start );
+			}
+		}
+		if ( NumberUtils.isCreatable( checkValue ) ) {
 			try {
 				return Double.parseDouble( value );
 			} catch ( Exception e ) {
 				return null;
 			}
-			// test for fractions
 		}
 
 		return null;

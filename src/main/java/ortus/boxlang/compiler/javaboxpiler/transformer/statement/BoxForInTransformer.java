@@ -138,7 +138,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		                                  }
 		                                                     """;
 		String		template1d			= """
-		                                  	Iterator ${variable} = CollectionCaster.cast( ${collectionName} ).iterator();
+		                                  	Iterator ${variable} = IterableCaster.cast( ${collectionName} ).iterator();
 		                                  """;
 		String		template2a			= """
 		                                                                           	while( ${variable}.hasNext() ) {
@@ -264,7 +264,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		// For structs: use entrySet().iterator() to get Map.Entry objects
 		// For arrays/queries: use regular iterator but track index separately (1-based)
 		String template1d = """
-			Iterator ${iteratorName} = ${isStructName} ? ((IStruct) ${collectionName}).entrySet().iterator() : CollectionCaster.cast( ${collectionName} ).iterator();
+			Iterator ${iteratorName} = ${isStructName} ? ((IStruct) ${collectionName}).entrySet().iterator() : IterableCaster.cast( ${collectionName} ).iterator();
 			""";
 
 		String template1dd = """

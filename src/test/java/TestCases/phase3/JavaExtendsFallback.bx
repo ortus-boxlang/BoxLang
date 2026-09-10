@@ -1,0 +1,26 @@
+class extends="java:TestCases.phase3.JavaOverloadTarget" {
+
+	@overrideJava
+	String function doSomething( String s ) {
+		// This single UDF handles all overloads but the annotation-based fallback
+		// only generates a stub for the declared signature (String)
+		if ( arrayLen( arguments ) == 0 ) {
+			return "bx:none";
+		} else if ( arrayLen( arguments ) == 1 ) {
+			return "bx:one:" & arguments[ 1 ];
+		} else {
+			return "bx:two:" & arguments[ 1 ] & ":" & arguments[ 2 ];
+		}
+	}
+
+	@overrideJava
+	String function getName() {
+		return "boxlang-fallback";
+	}
+
+	@overrideJava
+	boolean function isActive() {
+		return true;
+	}
+
+}

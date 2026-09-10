@@ -57,6 +57,8 @@ public class CreateTime extends BIF {
 	 * @argument.second The second of the date-time object.
 	 * 
 	 * @argument.millisecond The millisecond of the date-time object.
+	 *
+	 * @argument.timezone The timezone to apply to the date-time object. Defaults to the system default timezone.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId timezone = LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );

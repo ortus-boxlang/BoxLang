@@ -52,7 +52,7 @@ public class QueryUtil {
 	 * @return true if the column exists, false otherwise
 	 */
 	public static Boolean columnExists( Query query, String column ) {
-		return query.hasColumn( Key.of( column ) );
+		return query.hasColumn( Key.of( column.trim() ) );
 	}
 
 	/**
@@ -123,22 +123,24 @@ public class QueryUtil {
 		Stream<IStruct> queryStream = query
 		    .intStream()
 		    .filter( test )
-		    .mapToObj( query::getRowAsStruct );
+		    // Filtering a query must not convert internal nulls to empty strings incompat mode, so get raw struct
+		    .mapToObj( query::getRowAsStructRaw );
 
 		// Let's do it!
 		if ( parallel ) {
 			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
 			if ( !virtual && maxThreads <= 0 ) {
-				return queryStream.parallel().collect( BLCollector.toQuery( query ) );
+				return queryStream.parallel().collect( BLCollector.toQuery( query, callbackContext ) );
 			}
 
 			BoxExecutor executor = AsyncService.chooseParallelExecutor( "QueryFilter_", maxThreads, virtual );
 
-			return QueryCaster.cast( executor.submitAndGet( () -> queryStream.parallel().collect( BLCollector.toQuery( query ) ) ) );
+			return QueryCaster
+			    .cast( executor.submitAndGet( () -> queryStream.parallel().collect( BLCollector.toQueryTrustedTypes( query, callbackContext ) ) ) );
 		}
 
 		// If parallel is false, just use the regular stream
-		return queryStream.collect( BLCollector.toQuery( query ) );
+		return queryStream.collect( BLCollector.toQueryTrustedTypes( query, callbackContext ) );
 	}
 
 	/**
@@ -317,7 +319,7 @@ public class QueryUtil {
 			if ( !virtual && maxThreads <= 0 ) {
 				return queryStream
 				    .parallel()
-				    .collect( BLCollector.toQuery( query ) );
+				    .collect( BLCollector.toQuery( query, callbackContext ) );
 			}
 
 			BoxExecutor executor = AsyncService.chooseParallelExecutor( "QueryMap_", maxThreads, virtual );
@@ -326,12 +328,12 @@ public class QueryUtil {
 			return QueryCaster.cast( executor.submitAndGet( () -> {
 				return queryStream
 				    .parallel()
-				    .collect( BLCollector.toQuery( query ) );
+				    .collect( BLCollector.toQuery( query, callbackContext ) );
 			} ) );
 		}
 
 		// Non-parallel execution
-		return queryStream.collect( BLCollector.toQuery( query ) );
+		return queryStream.collect( BLCollector.toQuery( query, callbackContext ) );
 	}
 
 	/**

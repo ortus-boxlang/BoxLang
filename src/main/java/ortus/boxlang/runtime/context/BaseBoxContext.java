@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
@@ -44,6 +45,7 @@ import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.scopes.BaseScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ComponentService;
@@ -55,8 +57,8 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.Attachable;
@@ -75,6 +77,17 @@ public class BaseBoxContext implements IBoxContext {
 	 * A flag to control whether null is considered undefined or not. Used by the compat module
 	 */
 	public static boolean									nullIsUndefined			= false;
+
+	/**
+	 * Allow class files to be included.
+	 */
+	public static boolean									allowIncludeClassFiles	= false;
+
+	/**
+	 * Used to prevent having to catch exceptions when looking up the scope lookup chain for a variable which may not exist
+	 * but if it doesn't, we don't want to throw.
+	 */
+	protected static final IScope							DUMMY_SCOPE				= new DummyScope();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -313,7 +326,13 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return True if there is at least one output component, else false
 	 */
 	public boolean isInOutputComponent() {
-		return _getOutputComponentCount().get() > 0;
+		if ( _getOutputComponentCount().get() > 0 ) {
+			return true;
+		} else if ( hasParent() ) {
+			return getParent().isInOutputComponent();
+		} else {
+			return false;
+		}
 	}
 
 	/**
@@ -705,13 +724,13 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The function instance
 	 */
 	protected Function findFunction( Key name ) {
-		ScopeSearchResult result = null;
-		try {
-			result = scopeFindNearby( name, null, false );
-		} catch ( KeyNotFoundException e ) {
-			return null;
-		}
-		if ( result == null ) {
+		ScopeSearchResult result = scopeFindNearby( name, DUMMY_SCOPE, false );
+		if ( result == null || result.scope() == DUMMY_SCOPE ) {
+			// Before we give up, search for an import of this name.
+			Function importFunc = findFunctionInImport( name );
+			if ( importFunc != null ) {
+				return importFunc;
+			}
 			return null;
 		}
 		CastAttempt<Function> funcAttempt = FunctionCaster.attempt( result.value() );
@@ -724,16 +743,62 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Find a function in the current imports. Will search for a named import matching the given name,
+	 * then attempt to load the class and cast it to a function.
+	 * 
+	 * @param name The name of the function to find
+	 * 
+	 * @return The function instance if found, else null
+	 */
+	public Function findFunctionInImport( Key name ) {
+		if ( currentImports != null ) {
+			for ( ImportDefinition importDef : currentImports ) {
+				if ( !importDef.isMultiImport() && importDef.isNamed( name.getName() ) ) {
+					Class<?> clazz;
+					if ( importDef.hasClassRef() ) {
+						clazz = importDef.classRef();
+					} else {
+						try {
+							clazz = getRuntime().getClassLocator().load( this, name.getName(), currentImports ).getTargetClass();
+						} catch ( AbortException e ) {
+							throw e;
+						} catch ( Exception e ) {
+							return null;
+						}
+					}
+					return FunctionCaster.cast( clazz );
+				}
+			}
+		}
+		return null;
+
+	}
+
+	/**
 	 * Invoke a template in the current context
 	 *
-	 * @param templatePath A relateive template path
+	 * @param templatePath A relative template path
+	 * @param externalOnly Whether to only include external templates
 	 */
 	@Override
 	public void includeTemplate( String templatePath, boolean externalOnly ) {
+		includeTemplate( templatePath, externalOnly, true );
+	}
+
+	/**
+	 * Invoke a template in the current context
+	 *
+	 * @param templatePath  A relative or absolute template path (forceRelative controls how it's used)
+	 * @param externalOnly  Whether to only include external templates
+	 * @param forceRelative Whether to force the template path to be treated as relative
+	 */
+	@Override
+	public void includeTemplate( String templatePath, boolean externalOnly, boolean forceRelative ) {
 		Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions();
 		boolean		includeAll					= VALID_TEMPLATE_EXTENSIONS.contains( "*" );
+		templatePath = templatePath.trim();
 
-		String		ext							= "";
+		String ext = "";
 		// If there is double //, remove the first char
 		if ( templatePath.startsWith( "//" ) ) {
 			templatePath = templatePath.substring( 1 );
@@ -752,13 +817,45 @@ public class BaseBoxContext implements IBoxContext {
 		// This extension check is duplicated in the runnableLoader right now since some code paths hit the runnableLoader directly
 		if ( includeAll || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
 			// Load template class, compiling if neccessary
-			BoxTemplate template = RunnableLoader.getInstance().loadTemplateRelative( this, templatePath, externalOnly );
+			BoxTemplate template;
+			if ( forceRelative ) {
+				template = RunnableLoader.getInstance().loadTemplateRelative( this, templatePath, externalOnly );
+			} else {
+				template = RunnableLoader.getInstance().loadTemplateAbsolute( this, FileSystemUtil.expandPath( this, templatePath ) );
+			}
 
 			template.invoke( this );
+		} else if ( allowIncludeClassFiles && BoxRuntime.getInstance().getConfiguration().getValidClassExtensionsList().contains( ext ) ) {
+			// Load the class
+			Class<IBoxRunnable> clazz = RunnableLoader.getInstance().loadClass( FileSystemUtil.expandPath( this, templatePath ), this );
+			try {
+				// Instatiate it (JUST the Java constructor, nothing else)
+				IClassRunnable oClazz = ( IClassRunnable ) DynamicInteropService.getNoArgConstructorHandle( clazz ).invoke();
+				// Run the pseudoconstructor in our current context
+				oClazz.pseudoConstructor( this );
+			} catch ( Throwable e ) {
+				throw new BoxRuntimeException( "Error creating instance of class [" + templatePath + "]", e );
+			}
+
+		} else if ( BoxRuntime.getInstance().getConfiguration().getValidExtensions().contains( ext ) ) {
+			// Don't EVER allow a known script extension to be served
+			throw new BoxRuntimeException( "Template path [" + templatePath + "] with extension [" + ext + "] and cannot be included" );
 		} else {
 			// If this extension is not one we compile, then just read the contents and flush it to the buffer
 			writeToBuffer(
-			    invokeFunction( Key.fileread, new Object[] { FileSystemUtil.expandPath( this, templatePath, externalOnly ).absolutePath().toString() } ) );
+			    invokeFunction(
+			        Key.fileread,
+			        new Object[] {
+			            FileSystemUtil.expandPath(
+			                getConfig().getAsStruct( Key.mappings ),
+			                templatePath,
+			                findClosestTemplate(),
+			                externalOnly,
+			                forceRelative
+			            ).absolutePath().toString()
+			        }
+			    )
+			);
 		}
 	}
 
@@ -901,7 +998,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return True if the value is defined, else false
 	 */
 	public boolean isDefined( Object value, boolean forAssign ) {
-		// If the value is null, it's not defined because the struct litearlly has no key for this
+		// If the value is null, it's not defined because the struct literally has no key for this
 		if ( value == null ) {
 			return false;
 		}
@@ -1649,6 +1746,13 @@ public class BaseBoxContext implements IBoxContext {
 			count = 0;
 		}
 		return count;
+	}
+
+	private static class DummyScope extends BaseScope {
+
+		public DummyScope() {
+			super( Key.of( "dummy" ) );
+		}
 	}
 
 }

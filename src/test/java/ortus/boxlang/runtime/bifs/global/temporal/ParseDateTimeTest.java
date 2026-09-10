@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -287,6 +288,44 @@ public class ParseDateTimeTest {
 		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
 	}
 
+	@DisplayName( "It will parse European DD/MM/YYYY format correctly in Australian locale" )
+	@Test
+	public void testParseDateTimeAustralian() {
+		instance.executeSource(
+		    """
+		    setLocale( "en_AU" );
+		       result = ParseDateTime( date="11/01/2024" );
+		       """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2024 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 11 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
+
+		instance.executeSource(
+		    """
+		    setLocale( "en_US" );
+		       result = ParseDateTime( date="11/01/2024" );
+		       """,
+		    context );
+		result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2024 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 11 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
+	}
+
 	@DisplayName( "It tests the BIF ParseDateTime using a localized, Spanish long-form format" )
 	@Test
 	public void testParseDateTimeSpain() {
@@ -509,6 +548,24 @@ public class ParseDateTimeTest {
 		          """,
 		    context );
 		assertThat( variables.get( Key.of( "result" ) ) ).isInstanceOf( DateTime.class );
+	}
+
+	@DisplayName( "It tests the BIF ParseDateTime will parse a MM/yyyy pattern with a first day of month assumption" )
+	@Test
+	public void testMMYYYYPattern() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( "12/2025" );
+		          """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isInstanceOf( DateTime.class );
+		DateTime result = DateTimeCaster.cast( variables.get( Key.of( "result" ) ) );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2025 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 12 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It tests the speed of both masked and non-masked parsing" )

@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.bifs.global.decision;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -31,6 +32,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.BoxStringBuilder;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 
@@ -39,8 +41,10 @@ import ortus.boxlang.runtime.types.Query;
 @BoxBIF( alias = "arrayIsEmpty" )
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.STRUCT )
+@BoxMember( type = BoxLangType.STRING_BUILDER )
 @BoxMember( type = BoxLangType.STRING_STRICT )
 @BoxMember( type = BoxLangType.QUERY )
+@BoxMember( type = BoxLangType.SET )
 public class IsEmpty extends BIF {
 
 	/**
@@ -75,6 +79,12 @@ public class IsEmpty extends BIF {
 		}
 		if ( object instanceof Map map ) {
 			return map.isEmpty();
+		}
+		if ( object instanceof Set set ) {
+			return set.isEmpty();
+		}
+		if ( object instanceof BoxStringBuilder stringBuilder ) {
+			return stringBuilder.isEmpty();
 		}
 
 		CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( object );

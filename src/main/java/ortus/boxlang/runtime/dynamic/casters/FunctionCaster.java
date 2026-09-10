@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.ClassInvokerFunction;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.JavaMethod;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
@@ -125,6 +126,11 @@ public class FunctionCaster implements IBoxCaster {
 
 		if ( object instanceof Function fun ) {
 			return fun;
+		}
+
+		// A Class<?> reference can be treated as a callable constructor function
+		if ( object instanceof Class<?> clazz ) {
+			return new ClassInvokerFunction( clazz );
 		}
 
 		// Only allow abitrary objects to be cast to FI/SAM if the type specified it. i.e.

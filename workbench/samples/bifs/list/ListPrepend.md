@@ -30,7 +30,7 @@ Result: "0-1-2-3-4"
 
 ### Prepend to a List with Empty Fields On
 
-CF2018+
+
 
 <a href="https://try.boxlang.io/?code=eJwrzs9N9cksLlGwVVByS03S8U0s0nEsKFKy5ipGyOQAqYCi1ILUvBQNBZi4joKSjo5XYp4SiAEkSopKUxU0rbnKizJLUv1LSwpKSxCKQRIAUHoiJw%3D%3D" target="_blank">Run Example</a>
 
@@ -45,7 +45,7 @@ Result: ",,Jan,Feb,Mar,Apr"
 
 ### Prepend to a List with Empty Fields Off
 
-CF2018+
+
 
 <a href="https://try.boxlang.io/?code=eJwrzs9N9cksLlGwVVByS03S8U0s0nEsKFKy5ipGyOQAqYCi1ILUvBQNBZi4joKSjo5XYp6OjhKICSTSEnOKUxU0rbnKizJLUv1LSwpKSxDqQRIArBoiyg%3D%3D" target="_blank">Run Example</a>
 

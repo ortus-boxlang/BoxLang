@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.AfterAll;
@@ -119,7 +120,7 @@ public class FileReadTest {
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
 		assertThat( result ).contains( "ColdBox Framework" );
-		assertThat( result ).contains( System.getProperty( "line.separator" ) );
+		assertThat( result ).contains( "\n" );
 	}
 
 	@DisplayName( "It tests that a URL binary file read by fileRead wil return a string" )
@@ -203,6 +204,64 @@ public class FileReadTest {
 		assertThat( result ).isInstanceOf( byte[].class );
 	}
 
+	@DisplayName( "It tests that fileReadBinary returns bytes for a self-extracting text-plus-binary file" )
+	@Test
+	public void testSelfExtractingBinaryFileReadBIF() throws IOException {
+		String	selfExtractingFile	= tmpDirectory + "/self-extracting.bin";
+		byte[]	textHeader			= "#!/bin/sh\necho launcher\n".getBytes( "UTF-8" );
+		byte[]	binaryPayload		= new byte[] { 0, 1, 2, ( byte ) 0xFF, 3, 4 };
+		byte[]	contents			= new byte[ textHeader.length + binaryPayload.length ];
+		System.arraycopy( textHeader, 0, contents, 0, textHeader.length );
+		System.arraycopy( binaryPayload, 0, contents, textHeader.length, binaryPayload.length );
+		Files.write( Path.of( selfExtractingFile ), contents );
+
+		variables.put( Key.of( "testFile" ), Path.of( selfExtractingFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    result = fileReadBinary( variables.testFile );
+		    """,
+		    context );
+		Object result = variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( byte[].class );
+		assertThat( ( byte[] ) result ).isEqualTo( contents );
+	}
+
+	@DisplayName( "It tests the ability to read a text file using a file object" )
+	@Test
+	public void testTextFileReadWithFileObject() {
+		String streamFile = tmpDirectory + "/stream-read.txt";
+		variables.put( Key.of( "testFile" ), Path.of( streamFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    FileWrite( testFile, "read via file object" );
+		    fileObj = fileOpen( testFile, "read" );
+		    result = fileRead( fileObj );
+		    fileClose( fileObj );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "read via file object" );
+	}
+
+	@DisplayName( "It reads consecutive chunks from an open file object" )
+	@Test
+	public void testTextFileReadChunksWithFileObject() {
+		String chunkFile = tmpDirectory + "/chunk-read.txt";
+		variables.put( Key.of( "testFile" ), Path.of( chunkFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    fileWrite( testFile, "abcdefghijklmnop" );
+		    fileObj = fileOpen( testFile );
+		    first = fileRead( fileObj, 3 );
+		    second = fileRead( fileObj, 3 );
+		    third = fileRead( fileObj, 3 );
+		    fileClose( fileObj );
+		    """,
+		    context );
+		assertThat( variables.get( Key.of( "first" ) ) ).isEqualTo( "abc" );
+		assertThat( variables.get( Key.of( "second" ) ) ).isEqualTo( "def" );
+		assertThat( variables.get( Key.of( "third" ) ) ).isEqualTo( "ghi" );
+	}
+
 	@DisplayName( "Will correctly detect common cert extensions as text" )
 	@Test
 	public void testCertExtensions() {
@@ -225,6 +284,57 @@ public class FileReadTest {
 		result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof String );
 		assertThat( result ).isEqualTo( "-----BEGIN CERTIFICATE-----" );
+	}
+
+	@DisplayName( "It can read remaining content from an open file object" )
+	@Test
+	public void testReadRemainingFromOpenFile() {
+		String streamFile = tmpDirectory + "/stream-remaining.txt";
+		variables.put( Key.of( "testFile" ), Path.of( streamFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    FileWrite( testFile, "line1\nline2\nline3" );
+		    fileObj = fileOpen( testFile, "read" );
+		    first = fileReadLine( fileObj );
+		    result = fileRead( fileObj );
+		    fileClose( fileObj );
+		    """,
+		    context );
+		assertThat( variables.getAsString( Key.of( "first" ) ) ).isEqualTo( "line1" );
+		assertThat( variables.get( result ) ).isEqualTo( "line2\nline3" );
+	}
+
+	@DisplayName( "It can read entire file content from an open file object at position 0" )
+	@Test
+	public void testReadEntireFileFromOpenObject() {
+		String streamFile = tmpDirectory + "/stream-entire.txt";
+		variables.put( Key.of( "testFile" ), Path.of( streamFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    FileWrite( testFile, "complete content" );
+		    fileObj = fileOpen( testFile, "read" );
+		    result = fileRead( fileObj );
+		    fileClose( fileObj );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "complete content" );
+	}
+
+	@DisplayName( "It returns empty string when reading from an open file at EOF" )
+	@Test
+	public void testReadFromOpenFileAtEOF() {
+		String streamFile = tmpDirectory + "/stream-eof.txt";
+		variables.put( Key.of( "testFile" ), Path.of( streamFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    FileWrite( testFile, "short" );
+		    fileObj = fileOpen( testFile, "read" );
+		    discard = fileRead( fileObj );
+		    result = fileRead( fileObj );
+		    fileClose( fileObj );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "" );
 	}
 
 }

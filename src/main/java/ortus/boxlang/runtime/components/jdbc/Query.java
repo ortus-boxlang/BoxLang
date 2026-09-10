@@ -48,20 +48,21 @@ public class Query extends Component {
 		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key._NAME, "string" ),
-		    new Attribute( Key.datasource, "string" ),
+		    new Attribute( Key.datasource, "any" ),
 		    new Attribute( Key.returnType, "string", "query", Set.of(
 		        Validator.valueRequires( "struct", Key.columnKey ),
 		        Validator.valueOneOf( "query", "array", "struct" )
 		    ) ),
 		    new Attribute( Key.columnKey, "string" ),
+		    new Attribute( Key.transformer, "any" ),
 		    new Attribute( Key.dbtype, "string" ),
 		    new Attribute( Key.username, "string" ),
 		    new Attribute( Key.password, "string" ),
 
 		    // connection options
 		    new Attribute( Key.maxRows, "integer", -1 ),
-		    new Attribute( Key.blockfactor, "integer", Set.of( Validator.min( 1 ), Validator.max( 100 ) ) ),
-		    new Attribute( Key.fetchSize, "integer", Set.of( Validator.min( 1 ), Validator.max( 100 ) ) ),
+		    new Attribute( Key.blockfactor, "integer", Set.of( Validator.min( 0 ), Validator.max( 100 ) ) ),
+		    new Attribute( Key.fetchSize, "integer", Set.of( Validator.min( 0 ), Validator.max( 100 ) ) ),
 		    new Attribute( Key.timeout, "integer" ),
 
 		    // cache options
@@ -91,7 +92,7 @@ public class Query extends Component {
 	 *
 	 * @attribute.name The name of the variable to store the query results in.
 	 *
-	 * @attribute.datasource The datasource to execute the query against.
+	 * @attribute.datasource The name of the datasource to execute the query against, or a struct of datasource settings for on-the-fly connections.
 	 *
 	 * @attribute.returnType The type of the result to return. One of: `query`, `struct`, `array`.
 	 *
@@ -101,15 +102,18 @@ public class Query extends Component {
 	 *
 	 * @attribute.maxRows The maximum number of rows to return. -1 for no limit.
 	 *
-	 * @attribute.blockfactor Maximum rows per block to fetch from the server. Ranges from 1-100.
+	 * @attribute.blockfactor Maximum rows per block to fetch from the server. Ranges from 1-100. (0 means use default)
 	 *
-	 * @attribute.fetchSize The number of rows to fetch at a time. Ranges from 1-100.
+	 * @attribute.fetchSize The number of rows to fetch at a time. Ranges from 1-100. (0 means use default)
 	 *
 	 * @attribute.timeout The timeout for the query in seconds.
 	 *
 	 * @attribute.cache Whether or not to cache the results of the query.
 	 *
 	 * @attribute.cacheTimeout The timeout for the cached query, using a duration object like `createTimespan( 0, 1, 0, 0 )`.
+	 *                         If the timeout duration is zero (aka `createTimespan( 0, 0, 0, 0 )`), the cache will never expire
+	 *                         based on time, but can still be evicted based on other factors like memory pressure.
+	 *                         If the timeout duration is negative (aka `createTimespan( 0, -1, 0, 0 )`), the item will not be cached.
 	 *
 	 * @attribute.cacheLastAccessTimeout The timeout for the cached query, using a duration object like `createTimespan( 0, 1, 0, 0 )`.
 	 *
@@ -122,7 +126,7 @@ public class Query extends Component {
 	@Override
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		// Prepare the attributes
-		QueryOptions options = new QueryOptions( attributes );
+		QueryOptions options = new QueryOptions( attributes, context );
 		executionState.put( Key.queryParams, new Array() );
 		StringBuffer	buffer		= new StringBuffer();
 
@@ -163,7 +167,7 @@ public class Query extends Component {
 		}
 
 		String variableName = StringCaster.cast( attributes.getOrDefault( Key._NAME, "bxquery" ) );
-		ExpressionInterpreter.setVariable( context, variableName, options.castAsReturnType( executedQuery ) );
+		ExpressionInterpreter.setVariable( context, variableName, options.castAsReturnType( executedQuery, context ) );
 
 		return DEFAULT_RETURN;
 	}

@@ -41,6 +41,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxSwitchBreakingCase;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -64,24 +65,16 @@ public class BoxBreakTransformer extends AbstractTransformer {
 			labelTarget = getTargetAncestor( breakNode );
 		}
 
-		if ( returnContext.nullable
-		    || exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		}
-
 		LabelNode currentBreak = tracker.getBreak( labelTarget != null ? labelTarget : getTargetAncestor( breakNode ) );
 
 		if ( currentBreak != null ) {
-			if ( returnContext.nullable && nodes.size() == 0 ) {
-				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-			}
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, currentBreak ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
 			if ( breakNode.getLabel() != null ) {
-				nodes.add( new LdcInsnNode( breakNode.getLabel().toLowerCase() ) );
+				nodes.add( new LdcInsnNode( breakNode.getLabel() ) );
 			} else {
 				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			}
@@ -94,10 +87,20 @@ public class BoxBreakTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
+			if ( transpiler.canReturn() ) {
+				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
 			nodes.add( new InsnNode( transpiler.canReturn() ? Opcodes.ARETURN : Opcodes.RETURN ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
+			return AsmHelper.addLineNumberLabels( nodes, node );
+		}
+
+		// If we're inside a breaking switch case with no enclosing loop, the break is a no-op
+		if ( isInsideBreakingCase( node ) ) {
+			nodes.clear();
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
@@ -106,9 +109,16 @@ public class BoxBreakTransformer extends AbstractTransformer {
 	}
 
 	public BoxNode getTargetAncestor( BoxNode node ) {
-		return node.getFirstNodeOfTypes( BoxSwitch.class, BoxFunctionDeclaration.class, BoxClosure.class, BoxLambda.class, BoxComponent.class, BoxDo.class,
+		BoxNode target = node.getFirstNodeOfTypes( BoxSwitch.class, BoxFunctionDeclaration.class, BoxClosure.class, BoxLambda.class, BoxComponent.class,
+		    BoxDo.class,
 		    BoxForIndex.class, BoxForIn.class,
 		    BoxWhile.class );
+		// Skip breaking switches - they are not valid break targets
+		if ( target instanceof BoxSwitch sw
+		    && sw.hasBreakingCases() ) {
+			return getTargetAncestor( target.getParent() );
+		}
+		return target;
 	}
 
 	public int countIntermediateLoops( BoxNode target, BoxBreak breakNode ) {
@@ -125,5 +135,27 @@ public class BoxBreakTransformer extends AbstractTransformer {
 		}
 
 		return count;
+	}
+
+	/**
+	 * Check if the given node is inside a BoxSwitchBreakingCase (tag-based switch case).
+	 * 
+	 * @param node the BoxNode to check
+	 * 
+	 * @return true if the node is inside a BoxSwitchBreakingCase, false otherwise
+	 */
+	private boolean isInsideBreakingCase( BoxNode node ) {
+		BoxNode parent = node.getParent();
+		while ( parent != null ) {
+			if ( parent instanceof BoxSwitchBreakingCase ) {
+				return true;
+			}
+			if ( parent instanceof BoxSwitch || parent instanceof BoxDo || parent instanceof BoxForIndex
+			    || parent instanceof BoxForIn || parent instanceof BoxWhile ) {
+				return false;
+			}
+			parent = parent.getParent();
+		}
+		return false;
 	}
 }

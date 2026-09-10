@@ -59,10 +59,11 @@ public record ClassLocation(
 	 * BoxLang classes we ask the Loader to load it
 	 */
 	public Class<?> clazz( IBoxContext context ) {
-		// Java classes are already loaded
-		if ( ClassLocator.TYPE_JAVA == type ) {
+		// Java or local classes are already loaded
+		if ( clazz != null ) {
 			return clazz;
 		}
+
 		// BoxLang we delegate to the loader
 		return RunnableLoader.getInstance().loadClass( resolvedFilePath, context );
 	}

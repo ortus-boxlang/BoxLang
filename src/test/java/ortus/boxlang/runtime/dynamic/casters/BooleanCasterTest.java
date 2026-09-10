@@ -94,7 +94,7 @@ public class BooleanCasterTest {
 		Query qry = new Query();
 		assertThat( BooleanCaster.cast( qry ) ).isFalse();
 		qry.addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
-		qry.addRow( new Object[] { "Sana" } );
+		qry.addRow( new Object[] { "Sana" }, null );
 		assertThat( BooleanCaster.cast( qry ) ).isTrue();
 	}
 

@@ -56,7 +56,7 @@ public class QueryGetCell extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query		= arguments.getAsQuery( Key.query );
-		String	columnName	= arguments.getAsString( Key.column_name );
+		String	columnName	= arguments.getAsString( Key.column_name ).trim();
 		Integer	rowNumber	= arguments.getAsInteger( Key.row_number );
 		return query.getCell( Key.of( columnName ), rowNumber - 1 );
 	}

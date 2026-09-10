@@ -1,0 +1,11 @@
+class {
+
+	function init() {
+		return this;
+	}
+
+	function superMethod() {
+		return "from super";
+	}
+
+}

@@ -30,7 +30,6 @@ import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocation;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
@@ -219,7 +218,7 @@ public class BaseResolver implements IClassResolver {
 		    // Discover import by matching the resolver prefix and the class name or alias or multi-import
 		    // This runs from concrete resolvers: bx, java, etc.
 		    // So if the resolver prefix matches, we continue, else we skip it.
-		    .filter( thisImport -> importApplies( thisImport ) && importHas( context, thisImport, className ) )
+		    .filter( thisImport -> !thisImport.hasClassRef() && importApplies( thisImport ) && importHas( context, thisImport, className ) )
 		    // Return the first one, the first one wins
 		    .findFirst()
 		    // Convert the import to a fully qualified class name
@@ -306,7 +305,7 @@ public class BaseResolver implements IClassResolver {
 	 *
 	 * @return The BL system class loader
 	 */
-	protected static DynamicClassLoader getSystemClassLoader() {
+	protected static ClassLoader getSystemClassLoader() {
 		return BoxRuntime.getInstance().getRuntimeLoader();
 	}
 

@@ -52,7 +52,7 @@ public class QueryColumnData extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query			= arguments.getAsQuery( Key.query );
-		String	columnName		= arguments.getAsString( Key.columnName );
+		String	columnName		= arguments.getAsString( Key.columnName ).trim();
 		Key		columnNameKey	= Key.of( columnName );
 
 		if ( !query.hasColumn( columnNameKey ) ) {

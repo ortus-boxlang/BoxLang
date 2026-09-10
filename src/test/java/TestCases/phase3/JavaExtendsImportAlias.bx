@@ -1,0 +1,19 @@
+import TestCases.phase3.JavaOverloadTarget as MyTarget;
+
+class extends="java:MyTarget" {
+
+	function doSomething() {
+		if ( arrayLen( arguments ) == 0 ) {
+			return "alias:none";
+		} else if ( arrayLen( arguments ) == 1 ) {
+			return "alias:one:" & arguments[ 1 ];
+		} else {
+			return "alias:two:" & arguments[ 1 ] & ":" & arguments[ 2 ];
+		}
+	}
+
+	function getName() {
+		return "alias-override";
+	}
+
+}

@@ -27,12 +27,12 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.ApplicationDefaultListener;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.async.RequestThreadManager;
+import ortus.boxlang.runtime.config.segments.XMLConfig;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
-import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThreadScope;
@@ -79,7 +79,6 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	/**
 	 * The request class loader
 	 */
-	private DynamicClassLoader									requestClassLoader		= null;
 
 	/**
 	 * Flag to enforce explicit output
@@ -281,16 +280,12 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 *
 	 * @return The class loader
 	 */
-	public DynamicClassLoader getRequestClassLoader() {
-		if ( this.requestClassLoader != null ) {
-			return this.requestClassLoader;
-		}
+	public ClassLoader getRequestClassLoader() {
 		// Not using getApplicationListener() here so we don't cache a default class loader value
 		if ( this.applicationListener == null ) {
 			return getRuntime().getRuntimeLoader();
 		} else {
-			this.requestClassLoader = this.applicationListener.getRequestClassLoader( this );
-			return this.requestClassLoader;
+			return this.applicationListener.getRequestClassLoader( this );
 		}
 	}
 
@@ -396,6 +391,18 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 		/**
 		 * --------------------------------------------------------------------------
+		 * JSON Serialization Format Override from Application settings
+		 * --------------------------------------------------------------------------
+		 */
+		if ( appSettings.get( Key.serialization ) instanceof IStruct serialization ) {
+			Object queryFormatValue = serialization.get( Key.serializeQueryAs );
+			if ( queryFormatValue != null ) {
+				config.put( Key.defaultJSONQuerySerializationFormat, queryFormatValue );
+			}
+		}
+
+		/**
+		 * --------------------------------------------------------------------------
 		 * Datasource Overrides
 		 * --------------------------------------------------------------------------
 		 * - A string pointing to a datasource in the datasources struct
@@ -496,6 +503,15 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		StringCaster.attempt( appSettings.get( Key.disallowedFileOperationExtensions ) )
 		    .ifPresent( disallowedFileOperationExtensions -> config.put( Key.disallowedFileOperationExtensions,
 		        ListUtil.asList( disallowedFileOperationExtensions, ListUtil.DEFAULT_DELIMITER ) ) );
+
+		// Apply XML parsing overrides, looking in both XMLSettings and xmlFeatures. Override xml key in config, and normalize struct via XMLConfig.normalize()
+		if ( appSettings.containsKey( Key.XMLSettings ) ) {
+			config.getAsStruct( Key.xml ).putAll( XMLConfig.normalizeNoDefaults( StructCaster.cast( appSettings.get( Key.XMLSettings ) ) ) );
+		}
+
+		if ( appSettings.containsKey( Key.XMLFeatures ) ) {
+			config.getAsStruct( Key.xml ).putAll( XMLConfig.normalizeNoDefaults( StructCaster.cast( appSettings.get( Key.XMLFeatures ) ) ) );
+		}
 
 		// OTHER OVERRIDES go here
 
@@ -677,6 +693,19 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	}
 
 	/**
+	 * Look at the current thread and see if it has a request context and return it
+	 * Else return the provided default context if no current context is found.
+	 * 
+	 * @param defaultContext The default context to return if no current context is found
+	 *
+	 * @return The current request context or the provided default context if no current context is found
+	 */
+	public static IBoxContext getCurrent( IBoxContext defaultContext ) {
+		IBoxContext currentContext = getCurrent();
+		return currentContext != null ? currentContext : defaultContext;
+	}
+
+	/**
 	 * Set the current request context for the thread
 	 *
 	 * @param context The request context
@@ -768,6 +797,30 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 */
 	public static Object runInContext( java.util.function.Function<IBoxContext, Object> runnable ) {
 		return runInContext( null, runnable );
+	}
+
+	/**
+	 * Register a dependent thread on the request context for the given context, if one exists.
+	 *
+	 * @param context The context to look up the request context from
+	 */
+	public static void registerDependentThread( IBoxContext context ) {
+		RequestBoxContext requestContext = context.getRequestContext();
+		if ( requestContext != null ) {
+			requestContext.registerDependentThread();
+		}
+	}
+
+	/**
+	 * Unregister a dependent thread on the request context for the given context, if one exists.
+	 *
+	 * @param context The context to look up the request context from
+	 */
+	public static void unregisterDependentThread( IBoxContext context ) {
+		RequestBoxContext requestContext = context.getRequestContext();
+		if ( requestContext != null ) {
+			requestContext.unregisterDependentThread();
+		}
 	}
 
 }

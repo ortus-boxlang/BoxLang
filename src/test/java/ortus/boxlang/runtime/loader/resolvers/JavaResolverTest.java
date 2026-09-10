@@ -238,11 +238,12 @@ public class JavaResolverTest extends AbstractResolverTest {
 		IBoxContext	ctx			= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
 		Path		homeLibs	= Path.of( "src/test/resources/libs" ).toAbsolutePath();
 
-		runtime.getRuntimeLoader().addURLs(
+		// On the JVM the runtime loader is a DynamicClassLoader; assert before casting to seed it with jars.
+		assertThat( runtime.getRuntimeLoader() ).isInstanceOf( DynamicClassLoader.class );
+		DynamicClassLoader runtimeLoader = ( DynamicClassLoader ) runtime.getRuntimeLoader();
+		runtimeLoader.addURLs(
 		    DynamicClassLoader.getJarURLs( homeLibs )
 		);
-
-		System.out.println( Arrays.toString( runtime.getRuntimeLoader().getURLs() ) );
 
 		String					targetClass	= "com.github.benmanes.caffeine.cache.Caffeine";
 		Optional<ClassLocation>	location	= javaResolver.resolve( ctx, targetClass );

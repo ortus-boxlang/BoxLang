@@ -76,4 +76,32 @@ public class LTrimTest {
 		assertThat( variables.get( result ) ).isEqualTo( "Grant  " );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "Michael  " );
 	}
+
+	@DisplayName( "It trims specific leading characters when chars argument is provided" )
+	@Test
+	public void testItTrimsSpecificLeadingChars() {
+		instance.executeSource(
+		    """
+		    result = lTrim( '**Urgent**', '*' );
+		    result2 = lTrim( '---Hello---', '-' );
+		    result3 = lTrim( '*-*Mixed*-*', '*-' );
+		    result4 = lTrim( 'Hello', '*' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "Urgent**" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "Hello---" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "Mixed*-*" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "Hello" );
+	}
+
+	@DisplayName( "It trims specific leading characters as member function" )
+	@Test
+	public void testItTrimsSpecificLeadingCharsMember() {
+		instance.executeSource(
+		    """
+		    result = '**Urgent**'.lTrim( '*' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "Urgent**" );
+	}
 }

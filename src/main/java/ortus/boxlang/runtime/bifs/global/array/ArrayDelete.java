@@ -56,6 +56,8 @@ public class ArrayDelete extends BIF {
 	 * @argument.array The array to be deleted from.
 	 *
 	 * @argument.value The value to deleted.
+	 *
+	 * @argument.scope Which matches to delete: "one" (default) deletes the first matching value, "all" deletes every matching value.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray		= arguments.getAsArray( Key.array );

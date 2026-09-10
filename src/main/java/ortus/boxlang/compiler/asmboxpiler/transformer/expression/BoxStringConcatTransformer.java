@@ -30,8 +30,10 @@ import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.runtime.operators.Concat;
 
 public class BoxStringConcatTransformer extends AbstractTransformer {
@@ -42,12 +44,16 @@ public class BoxStringConcatTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxStringConcat interpolation = ( BoxStringConcat ) node;
-		if ( interpolation.getValues().size() == 1 ) {
-			return transpiler.transform( interpolation.getValues().get( 0 ), TransformerContext.NONE, returnContext );
+		BoxStringConcat		interpolation	= ( BoxStringConcat ) node;
+		List<BoxExpression>	optimized		= optimizeStringLiterals( interpolation.getValues() );
+
+		if ( optimized.size() == 1 ) {
+			List<AbstractInsnNode> nodes = new ArrayList<>();
+			nodes.addAll( transpiler.transform( optimized.get( 0 ), TransformerContext.NONE, ReturnValueContext.VALUE ) );
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else {
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), interpolation.getValues(),
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), optimized,
 			    ( value, i ) -> transpiler.transform( value, TransformerContext.NONE, ReturnValueContext.VALUE ) ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Concat.class ),
@@ -56,5 +62,48 @@ public class BoxStringConcatTransformer extends AbstractTransformer {
 			    false ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
+	}
+
+	/**
+	 * Optimizes a list of expressions by combining contiguous string literals.
+	 * For example: ["foo", "bar", var, "baz", "qux"] becomes ["foobar", var, "bazqux"]
+	 *
+	 * @param values the list of expressions to optimize
+	 * 
+	 * @return an optimized list with contiguous string literals combined
+	 */
+	private List<BoxExpression> optimizeStringLiterals( List<BoxExpression> values ) {
+		if ( values.isEmpty() ) {
+			return values;
+		}
+
+		List<BoxExpression>	result				= new ArrayList<>();
+		StringBuilder		combinedString		= new StringBuilder();
+		BoxExpression		firstLiteralNode	= null;
+
+		for ( BoxExpression value : values ) {
+			if ( value instanceof BoxStringLiteral literal ) {
+				// Combine all string literals (including empty ones)
+				if ( firstLiteralNode == null ) {
+					firstLiteralNode = value;
+				}
+				combinedString.append( literal.getValue() );
+			} else {
+				// Non-literal expression found, flush any accumulated string (even if empty)
+				if ( firstLiteralNode != null ) {
+					result.add( new BoxStringLiteral( combinedString.toString(), firstLiteralNode.getPosition(), firstLiteralNode.getSourceText() ) );
+					combinedString		= new StringBuilder();
+					firstLiteralNode	= null;
+				}
+				result.add( value );
+			}
+		}
+
+		// Flush any remaining combined string
+		if ( combinedString.length() > 0 ) {
+			result.add( new BoxStringLiteral( combinedString.toString(), firstLiteralNode.getPosition(), firstLiteralNode.getSourceText() ) );
+		}
+
+		return result;
 	}
 }

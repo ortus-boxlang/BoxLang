@@ -33,6 +33,7 @@ public class BoxSwitchCase extends BoxStatement {
 	// condition == null is the default case
 	private BoxExpression		condition;
 	private BoxExpression		delimiter;
+	private boolean				implicitDelimiter	= false;
 	private List<BoxStatement>	body;
 
 	/**
@@ -76,6 +77,14 @@ public class BoxSwitchCase extends BoxStatement {
 		if ( this.delimiter != null ) {
 			this.delimiter.setParent( this );
 		}
+	}
+
+	public boolean isImplicitDelimiter() {
+		return implicitDelimiter;
+	}
+
+	public void setImplicitDelimiter( boolean implicitDelimiter ) {
+		this.implicitDelimiter = implicitDelimiter;
 	}
 
 	public void setBody( List<BoxStatement> body ) {

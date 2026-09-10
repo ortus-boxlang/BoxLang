@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.DateTime;
 
 public class BoxScriptingEngineTest {
 
@@ -83,6 +84,20 @@ public class BoxScriptingEngineTest {
 		Invocable	invocable	= ( Invocable ) engine;
 		Object		result		= invocable.invokeFunction( "testFunction" );
 		assertThat( result ).isEqualTo( "Hello, World!" );
+	}
+
+	@Test
+	public void testBIFCallWithNoArguments() throws ScriptException, NoSuchMethodException {
+		Invocable	invocable	= ( Invocable ) engine;
+		Object		result		= invocable.invokeFunction( "now" );
+		assertThat( result ).isInstanceOf( DateTime.class );
+	}
+
+	@Test
+	public void testBIFCallWithArguments() throws ScriptException, NoSuchMethodException {
+		Invocable	invocable	= ( Invocable ) engine;
+		Object		result		= invocable.invokeFunction( "reverse", "Brad" );
+		assertThat( result ).isEqualTo( "darB" );
 	}
 
 	@Test

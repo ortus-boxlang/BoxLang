@@ -50,6 +50,51 @@ booleanFormat( 5 );
 
 Result: true
 
+### String representation of true is interpreted as true
+
+```java
+booleanFormat( "true" );
+
+```
+
+Result: true
+
+### String representation of false is interpreted as false
+
+```java
+booleanFormat( "false" );
+
+```
+
+Result: false
+
+### YES is recognized as synonym for true
+
+```java
+booleanFormat( "YES" );
+
+```
+
+Result: true
+
+### NO is recognized as synonym for false
+
+```java
+booleanFormat( "NO" );
+
+```
+
+Result: false
+
+### An empty string results in false
+
+```java
+booleanFormat( "" );
+
+```
+
+Result: false
+
 ### Additional Examples
 
 <a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUHDKz89JTcxzyy%2FKTSzRUDA0MlbQVNC0VtDXVwgpKk3lKsep1ACskAuk0i0xpziVCwC7Nho6" target="_blank">Run Example</a>
@@ -60,5 +105,9 @@ writeDump( BooleanFormat( 0 ) );
  // False
 
 ```
+
+### Deprecated Alias
+
+`trueFalseFormat()` is a deprecated alias for `booleanFormat()` and is planned for removal in the 2.0 release.
 
 

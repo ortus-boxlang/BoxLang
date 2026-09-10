@@ -20,65 +20,20 @@ package ortus.boxlang.runtime.scopes;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.config.CLIOptions;
-import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.types.IStruct;
 
 public class ServerScopeTest {
 
-	BoxRuntime	runtime;
-	IBoxContext	context;
-
 	@Test
 	public void testConstructor() {
-		CLIOptions options = new CLIOptions(
-		    null,
-		    true,
-		    null,
-		    null,
-		    false,
-		    false,
-		    null,
-		    false,
-		    List.of( "path/to/template.bxs",
-		        "--debug",
-		        "--!verbose",
-		        "--bundles=Spec",
-		        "-o='/path/to/file'",
-		        "-v",
-		        "--directory=",
-		        "-d=",
-		        "targetModule",
-		        "-abc"
-		    ),
-		    new String[] {
-		        "path/to/template.bxs",
-		        "--debug",
-		        "--!verbose",
-		        "--bundles=Spec",
-		        "-o='/path/to/file'",
-		        "-v",
-		        "--directory=",
-		        "-d=",
-		        "targetModule",
-		        "-abc"
-		    },
-		    null,
-		    null
-		);
-		runtime	= BoxRuntime.getInstance( options );
-		context	= new ScriptingRequestBoxContext();
+		// The ServerScope constructor (seedScope) and initialize() both need a
+		// runtime. Any instance works; the seeded values come from JVM state.
+		BoxRuntime.getInstance();
+
 		IScope scope = new ServerScope().initialize();
-
-		System.out.println( scope.get( "java" ) );
-
-		System.out.println( scope.get( "cli" ) );
 
 		assertThat( scope.size() ).isGreaterThan( 0 );
 		assertThat( scope.containsKey( Key.of( "os" ) ) ).isTrue();
@@ -102,12 +57,15 @@ public class ServerScopeTest {
 
 	@Test
 	void testUnmodifiableKeys() {
-		context = new ScriptingRequestBoxContext();
+		BoxRuntime.getInstance( true );
+
 		IScope scope = new ServerScope().initialize();
-		scope.assign( context, Key.of( "brad" ), "wood" );
+
+		// Non-unmodifiable keys can still be assigned after initialization
+		scope.put( Key.of( "brad" ), "wood" );
 		scope.put( Key.of( "luis" ), "majano" );
 
-		assertThrows( Throwable.class, () -> scope.assign( context, Key.of( "java" ), "" ) );
+		assertThrows( Throwable.class, () -> scope.put( Key.of( "java" ), "" ) );
 		assertThrows( Throwable.class, () -> scope.put( Key.of( "os" ), "" ) );
 
 	}

@@ -30,7 +30,7 @@ Result: bar,bar2|foo
 
 ### Simple listAppend Example with Empty Fields On
 
-CF2018+ Add 'foo,,' to the end of this list using includeEmptyFields as true
+Add 'foo,,' to the end of this list using includeEmptyFields as true
 
 <a href="https://try.boxlang.io/?code=eJzLz0nxySwuUbBVUEpKLNIBYiMla6681HKoaA6QciwoSM1L0VDIh6jVUVBKy8%2FX0VECMkBESVFpqoKmNVd5UWZJqn9pSUFpCVytgpqCkq6unRKQhpkJVAkAiv8jwQ%3D%3D" target="_blank">Run Example</a>
 
@@ -45,7 +45,7 @@ Result: bar,bar2,foo,,
 
 ### Simple listAppend Example with Empty Fields Off
 
-CF2018+ Add 'foo' to the end of this list using includeEmptyFields as false
+Add 'foo' to the end of this list using includeEmptyFields as false
 
 <a href="https://try.boxlang.io/?code=eJzLz0nxySwuUbBVUEpKLNIBYiMla6681HKoaA6QciwoSM1L0VDIh6jVUVBKy8%2FX0VECMkBEWmJOcaqCpjVXeVFmSap%2FaUlBaQlcsYKagpKurp0SkIYZClQJAK6NJAw%3D" target="_blank">Run Example</a>
 

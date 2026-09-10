@@ -1,0 +1,8 @@
+class {
+
+	function test() {
+		include "IncludedInClassUDFCCurrentTemplate.bxs";
+		return local.currentTemplate;
+	}
+	
+}

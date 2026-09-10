@@ -1,0 +1,8 @@
+
+function runIt( argCurrentTemplate=getCurrentTemplatePath() ) {
+	return {
+		argCurrentTemplate : arguments.argCurrentTemplate,
+		funCurrentTemplate : getCurrentTemplatePath()
+	};
+}
+local.currentTemplate = runIt();

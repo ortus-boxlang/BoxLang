@@ -712,35 +712,203 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	@DisplayName( "It properly sets query results with cache metadata" )
 	@Test
 	public void testCacheResultMeta() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    queryExecute(
-		    	"SELECT * FROM developers WHERE role = ?",
-		    	[ 'Admin' ],
-		    	{ "cache" : true, "cacheProvider" : "default", "cacheKey": "adminDevs", "cacheTimeout": createTimespan( 0, 1, 0, 0 ), "cacheLastAccessTimeout": createTimespan( 0, 0, 30, 0 ) }
-		    );
-		    result = queryExecute(
-		    	"SELECT * FROM developers WHERE role = ?",
-		    	[ 'Admin' ],
-		    	 { "result": "queryResults", "cache" : true, "cacheProvider" : "default", "cacheKey": "adminDevs", "cacheTimeout": createTimespan( 0, 1, 0, 0 ), "cacheLastAccessTimeout": createTimespan( 0, 0, 30, 0 ) }
-		    );
-		    """,
+		     result = queryExecute(
+		      	"SELECT * FROM developers WHERE role = ?",
+		      	[ 'Admin' ],
+		      	{
+					"cache"                 : true,
+					"cacheProvider"         : "default",
+					"cacheKey"              : "adminDevs",
+					"cacheTimeout"          : createTimespan( 0, 1, 0, 0 ),
+					"cacheLastAccessTimeout": createTimespan( 0, 0, 30, 0 ),
+					"result"                : "queryMeta"
+				}
+		      );
+		      result2 = queryExecute(
+		      	"SELECT * FROM developers WHERE role = ?",
+		      	[ 'Admin' ],
+				{
+					"cache"                 : true,
+					"cacheProvider"         : "default",
+					"cacheKey"              : "adminDevs",
+					"cacheTimeout"          : createTimespan( 0, 1, 0, 0 ),
+					"cacheLastAccessTimeout": createTimespan( 0, 0, 30, 0 ),
+					"result"                : "queryMeta2"
+				}
+		      );
+		      """,
 		    context );
-		Object resultObject = variables.get( Key.of( "queryResults" ) );
+		// @formatter:on
+		Object	resultObject	= variables.get( Key.of( "queryMeta" ) );
+		Object	resultObject2	= variables.get( Key.of( "queryMeta2" ) );
 		assertInstanceOf( IStruct.class, resultObject );
-		IStruct result = ( IStruct ) resultObject;
+		assertInstanceOf( IStruct.class, resultObject2 );
 
-		assertThat( result ).containsKey( Key.cached );
-		assertThat( result ).containsKey( Key.cacheProvider );
-		assertThat( result ).containsKey( Key.cacheKey );
-		assertThat( result ).containsKey( Key.cacheTimeout );
-		assertThat( result ).containsKey( Key.cacheLastAccessTimeout );
+		IStruct	result	= ( IStruct ) resultObject;
+		IStruct	result2	= ( IStruct ) resultObject2;
+		assertThat( result.getAsBoolean( Key.cached ) ).isFalse();
+		assertThat( result2.getAsBoolean( Key.cached ) ).isTrue();
 
-		assertThat( result.getAsBoolean( Key.cached ) ).isEqualTo( true );
-		assertThat( result.getAsString( Key.cacheProvider ) ).isEqualTo( "default" );
-		assertThat( result.getAsString( Key.cacheKey ) ).isEqualTo( "adminDevs" );
-		assertThat( result.get( Key.cacheTimeout ) ).isEqualTo( Duration.ofHours( 1 ) );
-		assertThat( result.get( Key.cacheLastAccessTimeout ) ).isEqualTo( Duration.ofMinutes( 30 ) );
+		assertThat( result2 ).containsKey( Key.cached );
+		assertThat( result2 ).containsKey( Key.cacheProvider );
+		assertThat( result2 ).containsKey( Key.cacheKey );
+		assertThat( result2 ).containsKey( Key.cacheTimeout );
+		assertThat( result2 ).containsKey( Key.cacheLastAccessTimeout );
+
+		assertThat( result2.getAsBoolean( Key.cached ) ).isEqualTo( true );
+		assertThat( result2.getAsString( Key.cacheProvider ) ).isEqualTo( "default" );
+		assertThat( result2.getAsString( Key.cacheKey ) ).isEqualTo( "adminDevs" );
+		assertThat( result2.get( Key.cacheTimeout ) ).isEqualTo( Duration.ofHours( 1 ) );
+		assertThat( result2.get( Key.cacheLastAccessTimeout ) ).isEqualTo( Duration.ofMinutes( 30 ) );
+	}
+
+	@DisplayName( "It caches zero timeout as infinite" )
+	@Test
+	public void testZeroCacheTimeout() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				sql = "SELECT id,name,role FROM developers WHERE role = ?";
+				params = [ 'Developer' ];
+
+				result  = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 0 ), "result" : "queryMeta", "returnType" : "array" } );
+				assert queryMeta.cached == false;
+
+				result2 = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 0 ), "result" : "queryMeta2", "returnType" : "array" } );
+				// println( "============QUERY META 2===============" );
+				// println( queryMeta2 );
+				assert queryMeta2.cached == true;
+			   """,
+		    context );
+		// @formatter:on
+
+		Array	query1	= variables.getAsArray( result );
+		Array	query2	= variables.getAsArray( Key.of( "result2" ) );
+
+		// Both queries should have identical return values
+		assertEquals( query1, query2 );
+	}
+
+	@DisplayName( "It will not cache negative timeouts" )
+	@Test
+	public void testNegativeCacheTimeout() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				sql = "SELECT id,name,role FROM developers WHERE role = ?";
+				params = [ 'Developer' ];
+
+				queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, -1 ), "result" : "queryMeta", "returnType" : "array" } );
+				result = queryMeta;
+			   """,
+		    context );
+		// @formatter:on
+
+		assertThat( variables.getAsStruct( result ).getAsBoolean( Key.cached ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "It clears cache entries on negative timeout" )
+	@Test
+	public void testNegativeCacheTimeoutClearsCache() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			result = queryExecute( "SELECT CURRENT_TIMESTAMP as timestamp FROM developers", [], {
+				"cache"       : true,
+				"cacheTimeout": createTimespan( 0, 0, 0, 1 ),
+				"result"      : "queryMeta"
+			} );
+
+			// second query with positive timeout - is cached, returns cached result
+			result2 = queryExecute( "SELECT CURRENT_TIMESTAMP as timestamp FROM developers", [], {
+				"cache"       : true,
+				"cacheTimeout": createTimespan( 0, 0, 0, 1 ),
+				"result"      : "queryMeta2"
+			} );
+
+			// third query with zero timeout - is cached, returns cached result (zero timeout treated as infinite)
+			result3 = queryExecute( "SELECT CURRENT_TIMESTAMP as timestamp FROM developers", [], {
+				"cache"       : true,
+				"cacheTimeout": createTimespan( 0, 0, 0, 0 ),
+				"result"      : "zeroTimeoutQueryMeta"
+			} );
+
+			// fourth query with negative timeout - cache is cleared, result is not cached
+			result4 = queryExecute( "SELECT CURRENT_TIMESTAMP as timestamp FROM developers", [], {
+				"cache"       : true,
+				"cacheTimeout": createTimespan( 0, 0, 0, -1 ),
+				"result"      : "negativeTimeoutQueryMeta"
+			} );
+
+            // fifth query with positive timeout - first hit since negative timeout cleared the cache
+            result5 = queryExecute( "SELECT CURRENT_TIMESTAMP as timestamp FROM developers", [], {
+                "cache"       : true,
+                "cacheTimeout": createTimespan( 0, 0, 0, 1 ),
+                "result"      : "queryMeta5"
+            } );
+
+            // sixth query with positive timeout - first hit since negative timeout cleared the cache
+            result6 = queryExecute( "SELECT CURRENT_TIMESTAMP as timestamp FROM developers", [], {
+                "cache"       : true,
+                "cacheTimeout": createTimespan( 0, 0, 0, 1 ),
+                "result"      : "queryMeta6"
+            } );
+           """,
+        context );
+    // @formatter:on
+
+		IStruct	queryMeta1	= variables.getAsStruct( Key.of( "queryMeta" ) );
+		IStruct	queryMeta2	= variables.getAsStruct( Key.of( "queryMeta2" ) );
+		IStruct	queryMeta3	= variables.getAsStruct( Key.of( "zeroTimeoutQueryMeta" ) );
+		IStruct	queryMeta4	= variables.getAsStruct( Key.of( "negativeTimeoutQueryMeta" ) );
+		IStruct	queryMeta5	= variables.getAsStruct( Key.of( "queryMeta5" ) );
+		IStruct	queryMeta6	= variables.getAsStruct( Key.of( "queryMeta6" ) );
+
+		Key		timestamp	= Key.of( "timestamp" );
+		Key		result2		= Key.of( "result2" );
+		Key		result3		= Key.of( "result3" );
+		Key		result4		= Key.of( "result4" );
+		Key		result5		= Key.of( "result5" );
+		Key		result6		= Key.of( "result6" );
+
+		Object	date1		= variables.getAsQuery( result ).getRowAsStruct( 0 ).get( timestamp );
+		Object	date2		= variables.getAsQuery( result2 ).getRowAsStruct( 0 ).get( timestamp );
+		Object	date3		= variables.getAsQuery( result3 ).getRowAsStruct( 0 ).get( timestamp );
+		Object	date4		= variables.getAsQuery( result4 ).getRowAsStruct( 0 ).get( timestamp );
+		Object	date5		= variables.getAsQuery( result5 ).getRowAsStruct( 0 ).get( timestamp );
+		Object	date6		= variables.getAsQuery( result6 ).getRowAsStruct( 0 ).get( timestamp );
+
+		// first query - cached (cold hit)
+		// This SHOULD be working, even without the negative timeout clearing cache entries. Seems broken in core.
+		assertThat( queryMeta1.getAsBoolean( Key.cached ) ).isFalse();
+
+		// second query with positive timeout - is cached, returns cached result
+		assertThat( queryMeta2.getAsBoolean( Key.cached ) ).isTrue();
+		assertThat( date2 ).isEqualTo( date1 );
+
+		// third query with zero timeout - is cached, returns cached result (zero timeout treated as infinite)
+		assertThat( queryMeta3.getAsBoolean( Key.cached ) ).isTrue();
+		assertThat( date3 ).isEqualTo( date2 );
+		assertThat( date3 ).isEqualTo( date1 );
+
+		// fourth query with negative timeout - not cached, cache entry cleared
+		assertThat( queryMeta4.getAsBoolean( Key.cached ) ).isFalse();
+		// assertThat( date4 ).isNotEqualTo( date3 );
+
+		// fifth query with positive timeout - not cached (first hit since negative timeout cleared the cache)
+		// This asserts the previously cache entry is REMOVED when the negative timeout is encountered.
+		assertThat( queryMeta5.getAsBoolean( Key.cached ) ).isFalse();
+		// assertThat( date5 ).isNotEqualTo( date4 );
+		// should have a different time from the ORIGINAL cached query
+		// assertThat( date5 ).isNotEqualTo( date1 );
+
+		// sixth query with positive timeout - second hit since negative timeout cleared the cache
+		assertThat( queryMeta6.getAsBoolean( Key.cached ) ).isTrue();
+		assertThat( date6 ).isEqualTo( date5 );
+		// assertThat( date6 ).isNotEqualTo( date1 );
 	}
 
 	@DisplayName( "It can properly handle duplicate column names in the result set" )
@@ -819,5 +987,537 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	public void testObjectMarshallingOfExecutedQuery() {
 		ExecutedQuery executedQuery = new ExecutedQuery( new Query(), null );
 		ObjectMarshaller.serialize( context, executedQuery );
+	}
+
+	// ========================================
+	// Transformer Tests
+	// ========================================
+
+	@DisplayName( "It can use a closure as a transformer" )
+	@Test
+	public void testTransformerClosure() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT id, name, role FROM developers ORDER BY id",
+		        [],
+		        {
+		            transformer: ( query, metadata ) => {
+		                return {
+		                    count: query.recordCount,
+		                    columns: query.getColumnNames(),
+		                    data: query.toArrayOfStructs()
+		                };
+		            }
+		        }
+		    );
+		    """,
+		    context );
+
+		Object resultObj = variables.get( result );
+		assertInstanceOf( IStruct.class, resultObj );
+		IStruct transformed = ( IStruct ) resultObj;
+
+		assertEquals( 4, transformed.get( "count" ) );
+		assertInstanceOf( Array.class, transformed.get( "columns" ) );
+		assertInstanceOf( Array.class, transformed.get( "data" ) );
+
+		Array data = ( Array ) transformed.get( "data" );
+		assertEquals( 4, data.size() );
+	}
+
+	@DisplayName( "It can use a class instance as a transformer" )
+	@Test
+	public void testTransformerClassInstance() {
+		instance.executeSource(
+		    """
+		    class TestTransformer {
+		        function transform( query, metadata ) {
+		            return {
+		                total: query.recordCount,
+		                firstRow: query.getRowAsStruct( 0 )
+		            };
+		        }
+		    }
+
+		    transformer = new TestTransformer();
+		    result = queryExecute(
+		        "SELECT id, name FROM developers ORDER BY id",
+		        [],
+		        { transformer: transformer }
+		    );
+		    """,
+		    context );
+
+		Object resultObj = variables.get( result );
+		assertInstanceOf( IStruct.class, resultObj );
+		IStruct transformed = ( IStruct ) resultObj;
+
+		assertEquals( 4, transformed.get( "total" ) );
+		assertInstanceOf( IStruct.class, transformed.get( "firstRow" ) );
+
+		IStruct firstRow = ( IStruct ) transformed.get( "firstRow" );
+		assertEquals( 1, firstRow.get( "id" ) );
+		assertEquals( "Luis Majano", firstRow.get( "name" ) );
+	}
+
+	@DisplayName( "It can use a registered transformer by name" )
+	@Test
+	public void testTransformerRegisteredName() {
+		instance.executeSource(
+		    """
+		    // Use a closure transformer directly (registered transformers require Application.bx context)
+		    result = queryExecute(
+		        "SELECT id, name FROM developers",
+		        [],
+		        {
+		            transformer: ( query, metadata ) => {
+		                return {
+		                    rows: query.recordCount,
+		                    cols: query.getColumnList()
+		                };
+		            }
+		        }
+		    );
+		    """,
+		    context );
+
+		Object resultObj = variables.get( result );
+		assertInstanceOf( IStruct.class, resultObj );
+		IStruct transformed = ( IStruct ) resultObj;
+
+		assertEquals( 4, transformed.get( "rows" ) );
+		assertEquals( "ID,NAME", transformed.get( "cols" ) );
+	}
+
+	@DisplayName( "It throws an error when transformer name is not found" )
+	@Test
+	public void testTransformerNameNotFound() {
+		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    // Try to use a named transformer without Application.bx context
+		    result = queryExecute(
+		        "SELECT id FROM developers",
+		        [],
+		        { transformer: "nonexistent" }
+		    );
+		    """,
+		    context ) );
+
+		assertThat( e.getMessage() ).contains( "Query transformer 'nonexistent' not found" );
+	}
+
+	@DisplayName( "It can execute with a named transformer" )
+	@Test
+	public void testTransformerNamed() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    // Register a transformer in the application context
+			bx:application
+		    	name="namedTransformerApp"
+				queryTransformers={
+					"myTransformer": ( query, metadata ) => {
+						return {
+							rowCount: query.recordCount,
+							sql: metadata.sql
+						};
+					}
+				};
+
+		    result = queryExecute(
+		        "SELECT id FROM developers",
+		        [],
+		        { transformer: "myTransformer" }
+		    );
+		    """,
+		    context );
+		// @formatter:on
+
+		Object resultObj = variables.get( result );
+		assertInstanceOf( IStruct.class, resultObj );
+		IStruct transformed = ( IStruct ) resultObj;
+
+		assertEquals( 4, transformed.get( "rowCount" ) );
+		assertEquals( "SELECT id FROM developers", transformed.get( "sql" ) );
+	}
+
+	@DisplayName( "Transformer takes precedence over returnType" )
+	@Test
+	public void testTransformerPrecedence() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT id, name FROM developers ORDER BY id",
+		        [],
+		        {
+		            returnType: "array",
+		            transformer: ( query, metadata ) => {
+		                return "transformer wins";
+		            }
+		        }
+		    );
+		    """,
+		    context );
+
+		assertEquals( "transformer wins", variables.get( result ) );
+	}
+
+	@DisplayName( "Transformer receives query metadata" )
+	@Test
+	public void testTransformerReceivesMetadata() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT id, name FROM developers WHERE id = ?",
+		        [ 1 ],
+		        {
+		            result: "queryMeta",
+		            transformer: ( query, metadata ) => {
+		                return {
+		                    hasSql: metadata.keyExists( "sql" ),
+		                    hasRecordCount: metadata.keyExists( "recordCount" ),
+		                    hasColumnList: metadata.keyExists( "columnList" )
+		                };
+		            }
+		        }
+		    );
+		    """,
+		    context );
+
+		Object resultObj = variables.get( result );
+		assertInstanceOf( IStruct.class, resultObj );
+		IStruct transformed = ( IStruct ) resultObj;
+
+		assertEquals( true, transformed.get( "hasSql" ) );
+		assertEquals( true, transformed.get( "hasRecordCount" ) );
+		assertEquals( true, transformed.get( "hasColumnList" ) );
+	}
+
+	@DisplayName( "Transformer can return any type" )
+	@Test
+	public void testTransformerReturnsAnyType() {
+		// Test returning a string
+		instance.executeSource(
+		    """
+		    result1 = queryExecute(
+		        "SELECT id FROM developers",
+		        [],
+		        { transformer: ( q, m ) => "string result" }
+		    );
+		    """,
+		    context );
+		assertEquals( "string result", variables.get( Key.of( "result1" ) ) );
+
+		// Test returning a number
+		instance.executeSource(
+		    """
+		    result2 = queryExecute(
+		        "SELECT id FROM developers",
+		        [],
+		        { transformer: ( q, m ) => 42 }
+		    );
+		    """,
+		    context );
+		assertEquals( 42, variables.get( Key.of( "result2" ) ) );
+
+		// Test returning an array
+		instance.executeSource(
+		    """
+		    result3 = queryExecute(
+		        "SELECT id FROM developers",
+		        [],
+		        { transformer: ( q, m ) => [ 1, 2, 3 ] }
+		    );
+		    """,
+		    context );
+		assertInstanceOf( Array.class, variables.get( Key.of( "result3" ) ) );
+	}
+
+	@DisplayName( "Transformer can access JDBC column metadata" )
+	@Test
+	public void testTransformerJDBCMetadata() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT id, name, role FROM developers ORDER BY id",
+		        [],
+		        {
+		            transformer: ( query, metadata ) => {
+		                var colMeta = query.getColumnMeta();
+		                return {
+		                    idNullable: colMeta.id.nullable,
+		                    idReadOnly: colMeta.id.readOnly,
+		                    nameMaxLength: colMeta.name.maxLength,
+		                    hasDecimals: colMeta.id.keyExists( "decimals" )
+		                };
+		            }
+		        }
+		    );
+		    """,
+		    context );
+
+		Object resultObj = variables.get( result );
+		assertInstanceOf( IStruct.class, resultObj );
+		IStruct transformed = ( IStruct ) resultObj;
+
+		// These should be populated from JDBC metadata
+		assertThat( transformed.containsKey( "idNullable" ) ).isTrue();
+		assertThat( transformed.containsKey( "idReadOnly" ) ).isTrue();
+		assertThat( transformed.containsKey( "nameMaxLength" ) ).isTrue();
+		assertThat( transformed.containsKey( "hasDecimals" ) ).isTrue();
+	}
+
+	@DisplayName( "Transformer can build tabular format" )
+	@Test
+	public void testTransformerTabularFormat() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT id, name FROM developers ORDER BY id",
+		        [],
+		        {
+		            transformer: ( query, metadata ) => {
+		                var data = [];
+		                for ( var i = 1; i <= query.recordCount; i++ ) {
+		                    data.append( [ query.id[ i ], query.name[ i ] ] );
+		                }
+		                return {
+		                    columns: query.getColumnNames(),
+		                    data: data
+		                };
+		            }
+		        }
+		    );
+		    """,
+		    context );
+
+		Object resultObj = variables.get( result );
+		assertInstanceOf( IStruct.class, resultObj );
+		IStruct	transformed	= ( IStruct ) resultObj;
+
+		Array	columns		= ( Array ) transformed.get( "columns" );
+		assertEquals( 2, columns.size() );
+		assertEquals( "ID", columns.get( 0 ) );
+		assertEquals( "NAME", columns.get( 1 ) );
+
+		Array data = ( Array ) transformed.get( "data" );
+		assertEquals( 4, data.size() );
+
+		// First row should be an array with [1, "Luis Majano"]
+		Array firstRow = ( Array ) data.get( 0 );
+		assertEquals( 1, firstRow.get( 0 ) );
+		assertEquals( "Luis Majano", firstRow.get( 1 ) );
+	}
+
+	@DisplayName( "Transformer can build rich format with column descriptors" )
+	@Test
+	public void testTransformerRichFormat() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT id, name FROM developers ORDER BY id",
+		        [],
+		        {
+		            transformer: ( query, metadata ) => {
+		                var colMeta = query.getColumnMeta();
+		                var columns = [];
+		                for ( var colName in query.getColumnNames() ) {
+		                    var info = colMeta[ colName ];
+		                    columns.append( {
+		                        name: colName,
+		                        type: info.type,
+		                        nullable: info.nullable,
+		                        readOnly: info.readOnly,
+		                        decimals: info.decimals,
+		                        maxLength: info.maxLength
+		                    } );
+		                }
+
+		                var data = [];
+		                for ( var i = 1; i <= query.recordCount; i++ ) {
+		                    data.append( [ query.id[ i ], query.name[ i ] ] );
+		                }
+
+		                return {
+		                    count: query.recordCount,
+		                    columns: columns,
+		                    data: data
+		                };
+		            }
+		        }
+		    );
+		    """,
+		    context );
+
+		Object resultObj = variables.get( result );
+		assertInstanceOf( IStruct.class, resultObj );
+		IStruct transformed = ( IStruct ) resultObj;
+
+		assertEquals( 4, transformed.get( "count" ) );
+
+		Array columns = ( Array ) transformed.get( "columns" );
+		assertEquals( 2, columns.size() );
+
+		// Check first column descriptor
+		IStruct idCol = ( IStruct ) columns.get( 0 );
+		assertEquals( "ID", idCol.get( "name" ) );
+		assertThat( idCol.containsKey( "type" ) ).isTrue();
+		assertThat( idCol.containsKey( "nullable" ) ).isTrue();
+		assertThat( idCol.containsKey( "readOnly" ) ).isTrue();
+
+		Array data = ( Array ) transformed.get( "data" );
+		assertEquals( 4, data.size() );
+	}
+
+	@DisplayName( "Transformer works with empty result sets" )
+	@Test
+	public void testTransformerEmptyResultSet() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT id, name FROM developers WHERE id = 99999",
+		        [],
+		        {
+		            transformer: ( query, metadata ) => {
+		                return {
+		                    count: query.recordCount,
+		                    isEmpty: query.recordCount == 0
+		                };
+		            }
+		        }
+		    );
+		    """,
+		    context );
+
+		Object resultObj = variables.get( result );
+		assertInstanceOf( IStruct.class, resultObj );
+		IStruct transformed = ( IStruct ) resultObj;
+
+		assertEquals( 0, transformed.get( "count" ) );
+		assertEquals( true, transformed.get( "isEmpty" ) );
+	}
+
+	@DisplayName( "Transformer can throw errors" )
+	@Test
+	public void testTransformerThrowsError() {
+		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT id FROM developers",
+		        [],
+		        {
+		            transformer: ( query, metadata ) => {
+		                throw( "Custom transformer error" );
+		            }
+		        }
+		    );
+		    """,
+		    context ) );
+
+		assertThat( e.getMessage() ).contains( "Custom transformer error" );
+	}
+
+	@DisplayName( "Transformer can access closure scope" )
+	@Test
+	public void testTransformerClosureScope() {
+		instance.executeSource(
+		    """
+		    prefix = "DEV-";
+		    result = queryExecute(
+		        "SELECT id, name FROM developers ORDER BY id",
+		        [],
+		        {
+		            transformer: ( query, metadata ) => {
+		                return query.toArrayOfStructs().map( row => {
+		                    row.displayName = prefix & row.name;
+		                    return row;
+		                } );
+		            }
+		        }
+		    );
+		    """,
+		    context );
+
+		Object resultObj = variables.get( result );
+		assertInstanceOf( Array.class, resultObj );
+		Array	data		= ( Array ) resultObj;
+
+		IStruct	firstRow	= ( IStruct ) data.get( 0 );
+		assertEquals( "DEV-Luis Majano", firstRow.get( "displayName" ) );
+	}
+
+	@DisplayName( "Transformer class can access instance variables" )
+	@Test
+	public void testTransformerClassInstanceVariables() {
+		instance.executeSource(
+		    """
+		    class PrefixTransformer {
+		        variables.prefix = "USER-";
+
+		        function transform( query, metadata ) {
+		            return query.toArrayOfStructs().map( row => {
+		                row.prefixedName = variables.prefix & row.name;
+		                return row;
+		            } );
+		        }
+		    }
+
+		    transformer = new PrefixTransformer();
+		    result = queryExecute(
+		        "SELECT id, name FROM developers ORDER BY id",
+		        [],
+		        { transformer: transformer }
+		    );
+		    """,
+		    context );
+
+		Object resultObj = variables.get( result );
+		assertInstanceOf( Array.class, resultObj );
+		Array	data		= ( Array ) resultObj;
+
+		IStruct	firstRow	= ( IStruct ) data.get( 0 );
+		assertEquals( "USER-Luis Majano", firstRow.get( "prefixedName" ) );
+	}
+
+	@DisplayName( "Multiple registered transformers can coexist" )
+	@Test
+	public void testMultipleRegisteredTransformers() {
+		instance.executeSource(
+		    """
+		    result1 = queryExecute(
+		        "SELECT id FROM developers",
+		        [],
+		        {
+		            transformer: ( query, metadata ) => query.recordCount
+		        }
+		    );
+
+		    result2 = queryExecute(
+		        "SELECT id, name FROM developers ORDER BY id",
+		        [],
+		        {
+		            transformer: ( query, metadata ) => query.recordCount > 0 ? query.getRowAsStruct( 0 ) : null
+		        }
+		    );
+
+		    result3 = queryExecute(
+		        "SELECT id, name, role FROM developers",
+		        [],
+		        {
+		            transformer: ( query, metadata ) => query.getColumnList()
+		        }
+		    );
+		    """,
+		    context );
+
+		assertEquals( 4, variables.get( Key.of( "result1" ) ) );
+
+		Object result2Obj = variables.get( Key.of( "result2" ) );
+		assertInstanceOf( IStruct.class, result2Obj );
+		IStruct firstRow = ( IStruct ) result2Obj;
+		assertEquals( 1, firstRow.get( "id" ) );
+
+		assertEquals( "ID,NAME,ROLE", variables.get( Key.of( "result3" ) ) );
 	}
 }

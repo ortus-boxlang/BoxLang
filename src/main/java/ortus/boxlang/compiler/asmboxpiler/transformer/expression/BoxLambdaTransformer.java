@@ -45,6 +45,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -106,6 +107,18 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		    Type.getInternalName( Lambda.class ),
 		    "defaultName",
 		    Type.getDescriptor( Key.class ) ) );
+
+		// Validate function parameter names against imports
+		boolean isBoxSyntax = transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" );
+		boxLambda.getArgs().forEach( arg -> {
+			if ( isBoxSyntax && transpiler.matchesImport( arg.getName() ) ) {
+				throw new ExpressionException(
+				    "You cannot use a function parameter with the same name as an import: [" + arg.getName() + "]",
+				    arg.getPosition(),
+				    arg.getSourceText()
+				);
+			}
+		} );
 
 		// Arg 2: arguments (Argument[])
 		instantiation.addAll(

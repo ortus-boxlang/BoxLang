@@ -1,0 +1,6 @@
+{
+	"braces": {
+		"style": "new-line",
+		"require_for_single_statement": true
+	}
+}

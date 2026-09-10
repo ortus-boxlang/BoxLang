@@ -43,8 +43,8 @@ public class MinusTest {
 	@DisplayName( "It can subtract strings" )
 	@Test
 	void testItCanSubtractStrings() {
-		assertThat( Minus.invoke( "3", "2" ).doubleValue() ).isEqualTo( 1 );
-		assertThat( Minus.invoke( "3.5", "2.5" ).doubleValue() ).isEqualTo( 1 );
+		assertThat( ( ( Number ) Minus.invoke( "3", "2" ) ).doubleValue() ).isEqualTo( 1 );
+		assertThat( ( ( Number ) Minus.invoke( "3.5", "2.5" ) ).doubleValue() ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It can compound subtract" )

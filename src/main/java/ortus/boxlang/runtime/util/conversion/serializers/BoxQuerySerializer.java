@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.util.conversion.serializers;
 
 import java.io.IOException;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -62,46 +63,53 @@ public class BoxQuerySerializer implements ValueWriter {
 			g.writeString( "recursive-Query-skipping" );
 		} else {
 			visited.put( bxQuery, Boolean.TRUE );
-			String queryFormat = currentQueryFormat.get();
-			if ( queryFormat == null ) {
-				queryFormat = "row";
-			}
-			final Object valueToSerialize;
 
-			// "row" is the same as "false". Top level struct with columns (array of strings), data (array of arrays)
-			if ( queryFormat.equals( "row" ) || queryFormat.equals( "false" ) ) {
-				valueToSerialize = Struct.linkedOf(
-				    "columns", bxQuery.getColumns().keySet().stream().map( c -> c.getName() ).toArray( String[]::new ),
-				    "data", bxQuery.getData()
-				);
-				runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, valueToSerialize ) );
-				context.writeValue( valueToSerialize );
-				// "column" is the same as "true". Top level struct with rowcount, columns (array of strings), data (struct with column name as key and array of
-				// values as value)
-			} else if ( queryFormat.equals( "column" ) || queryFormat.equals( "true" ) ) {
-				var						data	= new Struct( IStruct.TYPES.LINKED );
-				Map<Key, QueryColumn>	cols	= bxQuery.getColumns();
-				for ( var col : cols.keySet() ) {
-					data.put( col, cols.get( col ).getColumnData() );
+			try {
+				String queryFormat = currentQueryFormat.get();
+				if ( queryFormat == null ) {
+					queryFormat = "row";
 				}
-				valueToSerialize = Struct.linkedOf(
-				    "rowCount", bxQuery.size(),
-				    "columns", bxQuery.getColumns().keySet().stream().map( c -> c.getName() ).toArray( String[]::new ),
-				    "data", data
-				);
-				runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, valueToSerialize ) );
-				context.writeValue( valueToSerialize );
-				// "struct" is what we get by default (array of structs)
-			} else if ( queryFormat.equals( "struct" ) ) {
-				valueToSerialize = bxQuery.toArrayOfStructs();
-				runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, valueToSerialize ) );
-				context.writeValue( valueToSerialize );
-			} else {
-				throw new BoxRuntimeException( "Invalid queryFormat: " + queryFormat );
-			}
+				final Object valueToSerialize;
 
-			// Remove the struct from the set of seen structs
-			visited.remove( bxQuery );
+				// "row" is the same as "false". Top level struct with columns (array of strings), data (array of arrays)
+				if ( queryFormat.equals( "row" ) || queryFormat.equals( "false" ) ) {
+					valueToSerialize = Struct.linkedOf(
+					    "columns", bxQuery.getColumns().keySet().stream().map( c -> c.getName() ).toArray( String[]::new ),
+					    "data", bxQuery.getData()
+					);
+					runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, valueToSerialize ) );
+					context.writeValue( valueToSerialize );
+					// "column" is the same as "true". Top level struct with rowcount, columns (array of strings), data (struct with column name as key and array of
+					// values as value)
+				} else if ( queryFormat.equals( "column" ) || queryFormat.equals( "true" ) ) {
+					var						data	= new Struct( IStruct.TYPES.LINKED );
+					Map<Key, QueryColumn>	cols	= bxQuery.getColumns();
+					// Read the raw rows so queryNullToEmpty cannot convert stored nulls into empty strings.
+					List<Object[]>			rows	= bxQuery.getData();
+					for ( var col : cols.keySet() ) {
+						int columnIndex = cols.get( col ).getIndex();
+						data.put( col, rows.stream().map( row -> row[ columnIndex ] ).toArray() );
+					}
+					valueToSerialize = Struct.linkedOf(
+					    "rowCount", bxQuery.size(),
+					    "columns", bxQuery.getColumns().keySet().stream().map( c -> c.getName() ).toArray( String[]::new ),
+					    "data", data
+					);
+					runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, valueToSerialize ) );
+					context.writeValue( valueToSerialize );
+					// "struct" is what we get by default (array of structs)
+				} else if ( queryFormat.equals( "struct" ) ) {
+					// Use raw row access so queryNullToEmpty cannot convert stored nulls into empty strings.
+					valueToSerialize = bxQuery.intStream().mapToObj( bxQuery::getRowAsStructRaw ).toArray( IStruct[]::new );
+					runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, valueToSerialize ) );
+					context.writeValue( valueToSerialize );
+				} else {
+					throw new BoxRuntimeException( "Invalid queryFormat: " + queryFormat );
+				}
+			} finally {
+				// Remove the query from the set of seen queries
+				visited.remove( bxQuery );
+			}
 		}
 	}
 

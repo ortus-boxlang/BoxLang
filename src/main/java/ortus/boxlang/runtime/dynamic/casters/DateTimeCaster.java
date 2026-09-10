@@ -265,6 +265,14 @@ public class DateTimeCaster implements IBoxCaster {
 		// replace not standard spaces (like nbsp and nnsb) with standard spaces to ensure consistency for our masks
 		targetString = DateTime.sanitizeStringSpaces( targetString );
 
+		// Fast pre-rejection: if the string can't possibly be a date, bail out early
+		if ( isQuickReject( targetString ) ) {
+			if ( fail ) {
+				throw new BoxCastException( "Can't cast [" + targetString + "] to a DateTime." );
+			}
+			return null;
+		}
+
 		try {
 			// Timestamp string "^\{ts ([^\}])*\}" - {ts 2023-01-01 12:00:00} or {ts '2023-01-01 12:00:00'}
 			if ( targetString.trim().startsWith( "{ts" ) ) {
@@ -310,18 +318,31 @@ public class DateTimeCaster implements IBoxCaster {
 			return null;
 		}
 
-		// Now let's check common patterns and then fall back to the full localization parsing
+		if ( targetString.trim().length() == 0 ) {
+			if ( fail ) {
+				throw new BoxCastException( "Can't cast an empty string to a DateTime." );
+			}
+			return null;
+		}
+
+		// If we have a locale, try locale-specific parsing first
+		if ( locale != null ) {
+			try {
+				return new DateTime( targetString, locale, timezone );
+			} catch ( Throwable e ) {
+				// If locale-specific parsing failed, fall back to common patterns
+			}
+		}
+
+		// Try common patterns as fallback
 		DateTime parsed = LocalizationUtil.parseFromCommonPatterns( targetString, timezone );
 
 		if ( parsed != null ) {
 			return parsed;
 		} else {
+			// No locale specified or both locale and common patterns failed, try default locale parsing
 			try {
-				if ( locale != null ) {
-					return new DateTime( targetString, locale, timezone );
-				} else {
-					return new DateTime( targetString, timezone );
-				}
+				return new DateTime( targetString, timezone );
 			} catch ( Throwable e ) {
 				if ( fail ) {
 					throw new BoxCastException( "Can't cast [" + targetString + "] to a DateTime." );
@@ -344,32 +365,88 @@ public class DateTimeCaster implements IBoxCaster {
 	 * @return True if the object is a known date class
 	 */
 	public static boolean isKnownDateClass( Object object ) {
-		return switch ( object ) {
-			case DateTime d -> {
-				yield true;
+		return object != null && isKnownDateClass( object.getClass() );
+	}
+
+	/**
+	 * Checks if the given class is a known date class that can be successfully cast to a DateTime.
+	 *
+	 * @param clazz The class to check
+	 *
+	 * @return True if the class is a known date class
+	 */
+	public static boolean isKnownDateClass( Class<?> clazz ) {
+		return DateTime.class.isAssignableFrom( clazz )
+		    || java.time.ZonedDateTime.class.isAssignableFrom( clazz )
+		    || java.util.Calendar.class.isAssignableFrom( clazz )
+		    || java.time.LocalDateTime.class.isAssignableFrom( clazz )
+		    || java.time.LocalDate.class.isAssignableFrom( clazz )
+		    || java.sql.Date.class.isAssignableFrom( clazz )
+		    || java.util.Date.class.isAssignableFrom( clazz )
+		    || java.time.Instant.class.isAssignableFrom( clazz );
+	}
+
+	/**
+	 * Fast pre-rejection check for strings that cannot possibly be dates.
+	 * <p>
+	 * This is a cheap, single-pass, zero-allocation scan that runs BEFORE any
+	 * expensive date parsing machinery (regex matching, DateTimeFormatter.parse,
+	 * locale parsing). Its goal is to reject strings that are structurally
+	 * impossible to be dates so we never pay the cost of the full parse pipeline
+	 * for garbage input.
+	 * <p>
+	 * IMPORTANT: This must be conservative. It uses a BLACKLIST, not a whitelist.
+	 * Only characters that appear in NO supported date format are rejected.
+	 * Everything else — including CJK (年/月/日), accented Latin (é, ä, ñ),
+	 * and other Unicode — passes through so the locale-specific parsing paths
+	 * can handle them.
+	 *
+	 * @param s the input string to check
+	 *
+	 * @return {@code true} if this string cannot possibly be a date (reject it),
+	 *         {@code false} if it might be a date and should be parsed normally
+	 */
+	public static boolean isQuickReject( String s ) {
+		// Length sanity: the shortest date we support is a time-only "1:00" (4 chars);
+		// the longest is a full ZonedDateTime/JS toString with zone name (~52 chars).
+		// Anything shorter or longer cannot be a date.
+		int len = s.length();
+		if ( len < 4 || len > 60 ) {
+			return true;
+		}
+
+		// Every date must contain at least one digit (year, day, month, hour, etc.)
+		boolean hasDigit = false;
+		for ( int i = 0; i < len; i++ ) {
+			char c = s.charAt( i );
+
+			if ( c >= '0' && c <= '9' ) {
+				// Digit found — mark it and continue
+				hasDigit = true;
+				continue;
 			}
-			case java.time.ZonedDateTime d -> {
-				yield true;
+
+			// BLACKLIST: these characters appear in NO date format anywhere.
+			// Any of them means the string is guaranteed not to be a date.
+			if ( c == '_' || c == '#' || c == '@' || c == '!' || c == '~' || c == '`' ||
+			    c == '^' || c == '&' || c == '*' || c == '=' || c == '|' || c == '\\' ||
+			    c == '"' || c == ';' || c == '<' || c == '>' || c == '?' ) {
+				// Instant reject — saves us from the entire parse pipeline.
+				return true;
 			}
-			case java.util.Calendar d -> {
-				yield true;
+
+			if ( c < 0x20 && c != '\t' ) {
+				// Control characters (other than tab) never appear in dates
+				return true;
 			}
-			case java.time.LocalDateTime d -> {
-				yield true;
-			}
-			case java.time.LocalDate d -> {
-				yield true;
-			}
-			case java.sql.Date d -> {
-				yield true;
-			}
-			case java.util.Date d -> {
-				yield true;
-			}
-			default -> {
-				yield false;
-			}
-		};
+
+			// NOTE: every other character (letters, digits, separators, CJK,
+			// accented Latin, etc.) falls through WITHOUT rejection — the
+			// locale-specific parsing paths handle those.
+		}
+
+		// If we never saw a digit, this cannot be a date (no year/month/day/hour)
+		return !hasDigit;
 	}
 
 }

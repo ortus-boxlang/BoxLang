@@ -16,7 +16,9 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
 import java.util.List;
 
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -40,6 +42,12 @@ public class BoxExpressionStatementTransformer extends AbstractTransformer {
 
 		while ( expr instanceof BoxParenthesis bpExpr ) {
 			expr = bpExpr.getExpression();
+		}
+
+		if ( returnContext.empty ) {
+			List<AbstractInsnNode> nodes = transpiler.transform( expr, TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL );
+			nodes.add( new InsnNode( Opcodes.POP ) );
+			return nodes;
 		}
 
 		return transpiler.transform( expr, TransformerContext.NONE, returnContext );

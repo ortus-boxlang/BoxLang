@@ -173,17 +173,6 @@ public class SQLColumn extends SQLExpression {
 		}
 
 		return data.get( intersection[ tableIndex ] - 1 )[ colIndex ];
-		/*
-		 * var tableFinal = getTableFinal( QoQExec );
-		 * // System.out.println( "getting SQL column: " + name.getName() + " from table: " + tableFinal.getName() + " with index: " + tableFinal.getIndex() );
-		 * // System.out.println( "intersection: " + Arrays.toString( intersection ) );
-		 * int rowNum = intersection[ tableFinal.getIndex() ];
-		 * // This means an outer join matched nothing
-		 * if ( rowNum == 0 ) {
-		 * return null;
-		 * }
-		 * return QoQExec.getTableLookup().get( tableFinal ).getCell( name, rowNum - 1 );
-		 */
 	}
 
 	/**

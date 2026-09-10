@@ -128,4 +128,15 @@ public class DecimalFormatTest {
 		);
 	}
 
+	@DisplayName( "It tests if the incoming value is an empty string" )
+	@Test
+	public void testDecimalFormatEmptyString() {
+		instance.executeSource(
+		    """
+		    result = decimalFormat( "" );
+		    """,
+		    context );
+		assertEquals( variables.getAsString( result ), "0.00" );
+	}
+
 }

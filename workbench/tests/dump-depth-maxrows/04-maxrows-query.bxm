@@ -1,0 +1,28 @@
+<bx:script>
+	qry = queryNew( "id,name", "integer,varchar" );
+	queryAddRow( qry, [
+		{ id: 1, name: "Row One" },
+		{ id: 2, name: "Row Two" },
+		{ id: 3, name: "Row Three" },
+		{ id: 4, name: "Row Four" }
+	] );
+</bx:script>
+<!DOCTYPE html>
+<html>
+<head><title>04 - maxRows on a Query</title>
+<style>body{font-family:system-ui,sans-serif;max-width:1000px;margin:30px auto;padding:0 20px;} h2{border-bottom:2px solid #333;padding-bottom:4px;margin-top:40px;} .expect{background:#fffbe6;border-left:4px solid #e0a800;padding:8px 12px;margin:8px 0;}</style>
+</head>
+<body>
+<p><a href="index.bxm">&larr; back</a></p>
+<h1>04 - Row limiting (maxRows) on a Query</h1>
+<p>Fixture: 4-row query</p>
+
+<h2>maxRows = -1 (default / unlimited)</h2>
+<bx:dump var="#qry#" maxRows="-1">
+
+<h2>maxRows = 2</h2>
+<div class="expect">Expect: caption "2/4 rows", only rows 1-2 shown</div>
+<bx:dump var="#qry#" maxRows="2">
+
+</body>
+</html>

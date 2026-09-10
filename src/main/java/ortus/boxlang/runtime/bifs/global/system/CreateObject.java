@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 
 @BoxBIF( description = "Create an instance of a Java class or component" )
@@ -65,8 +66,8 @@ public class CreateObject extends BIF {
 	 * <p>
 	 * Available <strong>types</strong> are:
 	 * <ul>
-	 * <li><strong>class/component</strong> - Creates a new instance of a BoxLang class (Default if not used)</li>
-	 * <li><strong>java</strong> - Creates a new instance of a Java class</li>
+	 * <li><strong>class/component</strong> - Resolves a BoxLang class reference (Default if not used)</li>
+	 * <li><strong>java</strong> - Resolves a Java class reference</li>
 	 * <li><strong>webservice</strong> - Creates a SOAP web service client from a WSDL URL</li>
 	 * <li><strong>{anything}</strong> - Passes the request to the {@code BoxEvent.ON_CREATEOBJECT_REQUEST} event for further processing</li>
 	 * </ul>
@@ -77,6 +78,10 @@ public class CreateObject extends BIF {
 	 * You can also target an explicit class from a loaded BoxLang module by using the {@code @moduleName} suffix.
 	 * Example: {@code createObject( 'class', 'class.name.path@module' )}
 	 * <p>
+	 * Modern BoxLang code can also construct BoxLang and Java classes with {@code new ClassName( args )}, by calling {@code ClassName.init( args )} on an imported
+	 * class reference, or by invoking the class reference directly as {@code ClassName( args )}. {@code createObject()} remains useful for dynamic class names,
+	 * legacy compatibility, custom creation types, and interception-driven creation workflows.
+	 * <p>
 	 * The <strong>properties</strong> is an optional argument that can be used to pass to the object creation process according to the type.
 	 * <ul>
 	 * <li><strong>class/component</strong> - The properties are not used</li>
@@ -85,7 +90,8 @@ public class CreateObject extends BIF {
 	 * <li><strong>{anything}</strong> - The properties can be any object that the listener can use to create the object</li>
 	 * </ul>
 	 * <p>
-	 * <strong>IMPORTANT:</strong> For class/component types, this does NOT create an instance of the class. For that you will need to call the {@code init()} method on the returned object.
+	 * <strong>IMPORTANT:</strong> For class/component types, this returns a class reference and does NOT call the class constructor automatically. For an initialized
+	 * instance, call {@code init()} on the returned object, use {@code new ClassName( args )}, or invoke an imported class reference as {@code ClassName( args )}.
 	 * For webservice type, a fully configured SoapClient is returned ready for method invocation.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -104,11 +110,20 @@ public class CreateObject extends BIF {
 	 * @return The created object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	type			= arguments.getAsString( Key.type );
-		String	className		= arguments.getAsString( Key.className );
-		Object	properties		= arguments.get( Key.properties );
-		Boolean	externalOnly	= arguments.getAsBoolean( Key.externalOnly );
-		Object	classLoader		= arguments.get( Key.classLoader );
+		String		type			= arguments.getAsString( Key.type );
+		String		className		= arguments.getAsString( Key.className );
+		Object		properties		= arguments.get( Key.properties );
+		Boolean		externalOnly	= arguments.getAsBoolean( Key.externalOnly );
+		Object		objclassLoader	= DynamicObject.unWrap( arguments.get( Key.classLoader ) );
+		ClassLoader	classLoader		= null;
+
+		// validate non-null class loader as proper type, error if not
+		if ( objclassLoader != null && objclassLoader instanceof ClassLoader cl ) {
+			classLoader = cl;
+		} else if ( objclassLoader != null ) {
+			throw new BoxValidationException(
+			    "Invalid class loader provided.  You passed an object of type [" + TypeUtil.getObjectName( objclassLoader ) + "]" );
+		}
 
 		return createObject(
 		    context,
@@ -117,7 +132,7 @@ public class CreateObject extends BIF {
 		    properties,
 		    arguments,
 		    externalOnly,
-		    classLoader == null ? null : ( ClassLoader ) classLoader
+		    classLoader
 		);
 	}
 

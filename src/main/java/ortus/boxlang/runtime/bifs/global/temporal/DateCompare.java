@@ -73,6 +73,8 @@ public class DateCompare extends BIF {
 	 * @argument.date1 The reference date object
 	 *
 	 * @argument.date2 The date which to compare against date1
+	 *
+	 * @argument.datepart The precision to compare down to. Accepts y, yyyy, m, d, h, n, s (default).
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String		datePart	= arguments.getAsString( Key.datepart );
@@ -90,7 +92,7 @@ public class DateCompare extends BIF {
 			ChronoUnit unit = datePartMap.get( partKey );
 
 			switch ( unit ) {
-				case NANOS, MICROS, MILLIS, SECONDS, MINUTES, DAYS -> {
+				case NANOS, MICROS, MILLIS, SECONDS, MINUTES, HOURS, DAYS -> {
 					// For the smaller units, we can directly compare a truncated version
 					int comparison = date1.getWrapped().truncatedTo( unit ).compareTo( date2.getWrapped().truncatedTo( unit ) );
 					return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );

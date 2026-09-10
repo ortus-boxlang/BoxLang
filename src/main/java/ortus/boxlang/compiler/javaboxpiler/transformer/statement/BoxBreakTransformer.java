@@ -24,6 +24,7 @@ import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxSwitchBreakingCase;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
@@ -51,7 +52,7 @@ public class BoxBreakTransformer extends AbstractTransformer {
 			template = "if(true) return Component.BodyResult.ofBreak(" + componentLabel + ");";
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
 			@SuppressWarnings( "unchecked" )
-			BoxNode	specificExit		= node.getFirstNodeOfTypes( BoxDo.class, BoxForIndex.class, BoxForIn.class, BoxSwitch.class, BoxWhile.class );
+			BoxNode	specificExit		= findBreakTarget( node );
 			String	breakDetectionName	= null;
 			Integer	breakCounter		= transpiler.peekForLoopBreakCounter();
 			if ( specificExit instanceof BoxForIndex && breakCounter != null ) {
@@ -63,6 +64,9 @@ public class BoxBreakTransformer extends AbstractTransformer {
 
 		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			template = "if(true) return null;";
+		} else if ( isInsideBreakingCase( node ) ) {
+			// Break inside a breaking case with no enclosing loop - no-op
+			template = "{}";
 		} else {
 			template = "if(true) return;";
 		}
@@ -70,5 +74,37 @@ public class BoxBreakTransformer extends AbstractTransformer {
 		// logger.trace( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
+	}
+
+	/**
+	 * Find the nearest valid break target, skipping breaking switches.
+	 */
+	@SuppressWarnings( "unchecked" )
+	private BoxNode findBreakTarget( BoxNode node ) {
+		BoxNode target = node.getFirstNodeOfTypes( BoxDo.class, BoxForIndex.class, BoxForIn.class, BoxSwitch.class, BoxWhile.class );
+		// Skip breaking switches - they are not valid break targets
+		if ( target instanceof BoxSwitch sw
+		    && sw.hasBreakingCases() ) {
+			return findBreakTarget( target.getParent() );
+		}
+		return target;
+	}
+
+	/**
+	 * Check if the given node is inside a BoxSwitchBreakingCase (tag-based switch case).
+	 */
+	private boolean isInsideBreakingCase( BoxNode node ) {
+		BoxNode parent = node.getParent();
+		while ( parent != null ) {
+			if ( parent instanceof BoxSwitchBreakingCase ) {
+				return true;
+			}
+			if ( parent instanceof BoxSwitch || parent instanceof BoxDo || parent instanceof BoxForIndex
+			    || parent instanceof BoxForIn || parent instanceof BoxWhile ) {
+				return false;
+			}
+			parent = parent.getParent();
+		}
+		return false;
 	}
 }

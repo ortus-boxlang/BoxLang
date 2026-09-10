@@ -1,0 +1,20 @@
+{
+	"indentSize": 4,
+	"tabIndent": true,
+	"alignConsecutiveProperties": false,
+	"singleQuote": false,
+	"preserveStringQuotes": false,
+	"property": {
+		"multiline": {
+			"element_count": 4,
+			"min_length": 40
+		},
+		"key_value": {
+			"padding": false
+		}
+	},
+	"class": {
+		"member_spacing": 1,
+		"property_spacing": 1
+	}
+}

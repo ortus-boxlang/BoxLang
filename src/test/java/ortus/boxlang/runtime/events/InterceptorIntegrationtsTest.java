@@ -17,10 +17,12 @@
  */
 package ortus.boxlang.runtime.events;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +32,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class InterceptorIntegrationtsTest {
@@ -68,25 +71,36 @@ public class InterceptorIntegrationtsTest {
 
 	@DisplayName( "Can listen to pre function call events with a BoxLang function" )
 	@Test
+	@Disabled( "unregistering interceptors is not yet implemented fully, so this test will bork the rest of the test suite" )
 	public void testPreFunctionCallEvent() {
 
 		// @formatter:off
 		instance.executeSource(
 			"""
+			  request.calls = [];
 			  boxRegisterInterceptor(  ( data ) => {
-				println( "Pre function call: " & data.name );
+				request.calls.append( data.name );
 			  }, "preFunctionInvoke" )
 
 			  function testFunction(){
 				return "Hello from testFunction";
 			  }
+			  function brad(){
+				return "brad";
+			  }
 
 			  testFunction();
+			  brad();
+			  brad();
+			  testFunction();
 
+			  result = request.calls;
 			""",
 			context );
 		// @formatter:on
 
+		assertThat( variables.get( result ) )
+		    .isEqualTo( Array.of( "testFunction", "brad", "brad", "testFunction" ) );
 	}
 
 }

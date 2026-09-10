@@ -97,9 +97,10 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 	 * @return A new ResolvedFilePath instance.
 	 */
 	public static ResolvedFilePath of( Path absolutePath ) {
+		// We need to have a unique mapping name here to ensure we don't get overlap in class pools, which are based on mapping name.
 		return new ResolvedFilePath(
-		    null,
-		    null,
+		    absolutePath != null && absolutePath.getParent() != null ? "/" + absolutePath.getParent().toString() : "/",
+		    absolutePath != null && absolutePath.getParent() != null ? absolutePath.getParent().toString() : "/",
 		    absolutePath != null ? absolutePath.normalize().toString() : null,
 		    absolutePath
 		);

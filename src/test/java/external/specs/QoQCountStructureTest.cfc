@@ -7,7 +7,7 @@ component extends="testbox.system.BaseSpec"{
 		describe( title="Test suite for LDEV-691", body=function() {
 			it( title='Checking QuQ Count with structure data',body=function( currentSpec ) {
 				var obj = { a=1, b=2, c=3 };
-				var q_obj = QueryNew( "name,data,age", "varchar,varchar,Integer", [
+				var q_obj = QueryNew( "name,data,age", "varchar,object,Integer", [
 			    [ "Susi", obj, 24 ],
 			    [ "Urs" , "switz", 55 ],
 			    [ "Fred", "India", 45 ],
@@ -34,7 +34,7 @@ component extends="testbox.system.BaseSpec"{
 
 			it( title='Checking QuQ Count with array data',body=function( currentSpec ) {
 				var obj = [1,2,3,4];
-				var q_obj = QueryNew( "name,data,age", "varchar,varchar,Integer", [
+				var q_obj = QueryNew( "name,data,age", "varchar,object,Integer", [
 			    [ "Susi", obj, 24 ],
 			    [ "Urs" , "switz", 55 ],
 			    [ "Fred", "India", 45 ],
@@ -61,7 +61,7 @@ component extends="testbox.system.BaseSpec"{
 
 			it( title='Checking QuQ Count with query data',body=function( currentSpec ) {
 				var obj = queryNew("test1, test2");
-				var q_obj = QueryNew( "name,data,age", "varchar,varchar,Integer", [
+				var q_obj = QueryNew( "name,data,age", "varchar,object,Integer", [
 			    [ "Susi", obj, 24 ],
 			    [ "Urs" , "switz", 55 ],
 			    [ "Fred", "India", 45 ],

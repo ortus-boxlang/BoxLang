@@ -1,0 +1,6 @@
+{
+  "chain": {
+    "break_count": 100,
+    "break_length": 30
+  }
+}

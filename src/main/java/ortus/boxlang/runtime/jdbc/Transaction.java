@@ -261,7 +261,7 @@ public class Transaction implements ITransaction {
 					this.connection.rollback();
 				}
 			} catch ( SQLException e ) {
-				throw new DatabaseException( "Failed to rollback transaction:" + e.getMessage(), e );
+				throw new DatabaseException( "Failed to rollback transaction: " + e.getMessage(), e );
 			}
 		}
 		return this;

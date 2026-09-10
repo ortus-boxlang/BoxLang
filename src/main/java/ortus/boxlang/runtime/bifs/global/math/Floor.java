@@ -41,12 +41,12 @@ public class Floor extends BIF {
 	}
 
 	/**
-	 * Returns the absolute value of a number
+	 * Round a number down to the nearest integer
 	 * 
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 * 
-	 * @argument.value The number to return the absolute value of
+	 * @argument.number The number to round down to the nearest integer
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return _invoke( arguments.getAsNumber( Key.number ) );

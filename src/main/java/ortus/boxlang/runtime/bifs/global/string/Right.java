@@ -50,34 +50,29 @@ public class Right extends BIF {
 	 * @argument.count The number of characters to retrieve.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String input = arguments.getAsString( Key.string );
+		return right( arguments.getAsString( Key.string ), arguments.getAsInteger( Key.count ) );
+	}
 
+	public static String right( String input, int count ) {
 		if ( input == null ) {
 			return "";
 		}
 
-		int count = arguments.getAsInteger( Key.count );
-
-		// Check if count is zero
 		if ( count == 0 ) {
 			throw new BoxRuntimeException( "Count cannot be zero." );
 		}
 
 		if ( count > 0 ) {
-			// Ensure count doesn't exceed the length of the input string
 			if ( count > input.length() ) {
 				count = input.length();
 			}
-			// Extract the rightmost substring
 			return input.substring( input.length() - count );
-		} else {
-			// For negative count, skip the first characters
-			int start = -count;
-			if ( start > input.length() ) {
-				// If the skip count is greater than the length of the string, return the string as is
-				return input;
-			}
-			return input.substring( start );
 		}
+
+		int start = -count;
+		if ( start > input.length() ) {
+			return input;
+		}
+		return input.substring( start );
 	}
 }

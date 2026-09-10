@@ -22,12 +22,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileTest {
@@ -35,8 +38,13 @@ public class FileTest {
 	private static String	tmpDirectory	= "src/test/resources/tmp/FileTest";
 	private static String	testFile		= "src/test/resources/tmp/FileTest/file-test.txt";
 	private static String	emptyFile		= "src/test/resources/tmp/FileTest/file-write-test.txt";
-	private static File		readFile		= null;
-	private static File		writeFile		= null;
+	private static BoxFile	readFile		= null;
+	private static BoxFile	writeFile		= null;
+
+	@BeforeAll
+	public static void setup() {
+		BoxRuntime.getInstance( true );
+	}
 
 	@AfterAll
 	public static void teardown() throws IOException {
@@ -64,14 +72,18 @@ public class FileTest {
 	@DisplayName( "Test Constructors" )
 	@Test
 	void testConstructors() {
-		// tests the default constructor
-		readFile = new File( testFile );
+		// tests the default constructor - creates a reference without opening
+		readFile = new BoxFile( testFile );
 		assertThat( readFile.filename ).isEqualTo( "file-test.txt" );
+		assertThat( readFile.mode ).isEqualTo( BoxFile.Mode.NONE );
+		BoxFile relativeFile = new BoxFile( "file-test.txt" );
+		assertThat( relativeFile.directory ).isEqualTo( Path.of( "file-test.txt" ).toAbsolutePath().getParent().toString() );
+		readFile.openAs( BoxFile.Mode.READ );
 		assertFalse( readFile.isEOF() );
 		readFile.close();
 
 		// tests the constructor with the read mode
-		readFile = new File( testFile, "read" );
+		readFile = new BoxFile( testFile, BoxFile.Mode.READ );
 		assertThat( readFile.filename ).isEqualTo( "file-test.txt" );
 		assertFalse( readFile.isEOF() );
 		assertThat( readFile.readLine() ).isEqualTo( "open file test!" );
@@ -79,16 +91,25 @@ public class FileTest {
 		readFile.close();
 
 		// tests the constructor with the read mode
-		writeFile = new File( testFile, "write" );
+		writeFile = new BoxFile( testFile, BoxFile.Mode.WRITE );
 		assertThat( writeFile.filename ).isEqualTo( "file-test.txt" );
-		assertThat( writeFile.mode ).isEqualTo( "write" );
+		assertThat( writeFile.mode ).isEqualTo( BoxFile.Mode.WRITE );
 		writeFile.close();
 
 		// tests the constructor with the append mode
-		writeFile = new File( testFile, "append" );
+		writeFile = new BoxFile( testFile, BoxFile.Mode.APPEND );
 		assertThat( writeFile.filename ).isEqualTo( "file-test.txt" );
-		assertThat( writeFile.mode ).isEqualTo( "append" );
+		assertThat( writeFile.mode ).isEqualTo( BoxFile.Mode.APPEND );
 		writeFile.close();
+	}
+
+	@DisplayName( "Uses the filesystem root as the directory for files in the root" )
+	@Test
+	void testFileInFilesystemRootDirectory() {
+		Path	root		= Path.of( "" ).toAbsolutePath().getRoot();
+		BoxFile	rootFile	= new BoxFile( root.resolve( "file.txt" ) );
+
+		assertThat( rootFile.directory ).isEqualTo( root.toString() );
 	}
 
 }

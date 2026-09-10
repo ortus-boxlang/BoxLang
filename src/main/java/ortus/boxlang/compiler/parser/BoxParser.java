@@ -86,6 +86,7 @@ import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxSwitchBreakingCase;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
@@ -447,6 +448,15 @@ public class BoxParser extends AbstractParser {
 				}
 				message += " on line " + position.getStart().getLine();
 				errorListener.semanticError( message, position );
+			} else if ( modes.contains( "hashMode" ) ) {
+				Token lastHash = lexer.findPreviousToken( BoxLexer.ICHAR );
+				errorListener.semanticError( "Unterminated hash expression inside of string literal.", getPosition( lastHash ) );
+			} else if ( modes.contains( "quotesMode" ) ) {
+				Token lastQuote = lexer.findPreviousToken( BoxLexer.OPEN_QUOTE );
+				errorListener.semanticError( "Unterminated quote expression.", getPosition( lastQuote ) );
+			} else if ( modes.contains( "squotesMode" ) ) {
+				Token lastQuote = lexer.findPreviousToken( BoxLexer.OPEN_QUOTE );
+				errorListener.semanticError( "Unterminated single quote expression.", getPosition( lastQuote ) );
 			} else if ( lexer.hasMode( BoxLexerCustom.TEMPLATE_OUTPUT_MODE ) ) {
 				String	message				= "Unclosed output tag";
 				Token	outputStartToken	= lexer.findPreviousToken( BoxLexerCustom.OUTPUT_START );
@@ -485,15 +495,6 @@ public class BoxParser extends AbstractParser {
 				}
 				message += " starting on line " + position.getStart().getLine();
 				errorListener.semanticError( message, position );
-			} else if ( modes.contains( "hashMode" ) ) {
-				Token lastHash = lexer.findPreviousToken( BoxLexer.ICHAR );
-				errorListener.semanticError( "Unterminated hash expression inside of string literal.", getPosition( lastHash ) );
-			} else if ( modes.contains( "quotesMode" ) ) {
-				Token lastQuote = lexer.findPreviousToken( BoxLexer.OPEN_QUOTE );
-				errorListener.semanticError( "Unterminated quote expression.", getPosition( lastQuote ) );
-			} else if ( modes.contains( "squotesMode" ) ) {
-				Token lastQuote = lexer.findPreviousToken( BoxLexer.OPEN_QUOTE );
-				errorListener.semanticError( "Unterminated single quote expression.", getPosition( lastQuote ) );
 			} else {
 				// Catch-all. If this error is encountered, look at what modes were still on the stack, find what token was never ended, and
 				// add logic like the above to handle it. Eventually, this catch-all should never be used.
@@ -523,7 +524,15 @@ public class BoxParser extends AbstractParser {
 					extraText.append( token.getText() );
 					token = lexer.nextToken();
 				}
-				errorListener.semanticError( "Extra char(s) [" + extraText + "] at the end of parsing.", position );
+				if ( isLikelyUnparenthesizedObjectDestructuring( position ) ) {
+					errorListener.semanticError(
+					    "Object destructuring assignment must be wrapped in parentheses when not using var/final/static. "
+					        + "Use syntax like ({ a } = source).",
+					    position
+					);
+				} else {
+					errorListener.semanticError( "Extra char(s) [" + extraText + "] at the end of parsing.", position );
+				}
 			}
 		}
 
@@ -555,6 +564,39 @@ public class BoxParser extends AbstractParser {
 				    unclosedBracket.getCharPositionInLine() + 1 ) );
 			}
 		}
+	}
+
+	/**
+	 * isLikelyUnparenthesizedObjectDestructuring.
+	 */
+	private boolean isLikelyUnparenthesizedObjectDestructuring( Position position ) {
+		if ( ! ( sourceToParse instanceof SourceCode sourceCode ) ) {
+			return false;
+		}
+
+		String code = sourceCode.getCode();
+		if ( code == null ) {
+			return false;
+		}
+
+		String[]	lines	= code.split( "\\R", -1 );
+		int			line	= position.getStart().getLine() - 1;
+		int			col		= position.getStart().getColumn();
+		boolean		linePatternMatch;
+		if ( line >= 0 && line < lines.length ) {
+			String	currentLine		= lines[ line ];
+			int		safeCol			= Math.min( Math.max( col, 0 ), currentLine.length() );
+			String	beforeEquals	= currentLine.substring( 0, safeCol ).trim();
+			linePatternMatch = beforeEquals.startsWith( "{" ) && beforeEquals.endsWith( "}" );
+		} else {
+			linePatternMatch = false;
+		}
+
+		String	trimmed				= code.trim();
+		int		firstEquals			= trimmed.indexOf( '=' );
+		int		firstCloseBrace		= trimmed.indexOf( '}' );
+		boolean	globalPatternMatch	= trimmed.startsWith( "{" ) && firstCloseBrace > 0 && firstEquals > firstCloseBrace;
+		return linePatternMatch || globalPatternMatch;
 	}
 
 	private void extractComments( BoxLexerCustom lexer ) throws IOException {
@@ -619,7 +661,7 @@ public class BoxParser extends AbstractParser {
 		if ( rule.template_statements() != null ) {
 			statements = toAst( file, rule.template_statements() );
 		}
-		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ) );
+		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ), BoxSourceType.BOXTEMPLATE );
 	}
 
 	private BoxImport toAst( File file, Template_boxImportContext node ) {
@@ -836,7 +878,7 @@ public class BoxParser extends AbstractParser {
 					    List.of(),
 					    new BoxReturn( condition, null, null ),
 					    null,
-					    null );
+					    condition.getSourceText() );
 					attr.setValue( newCondition );
 				}
 			}
@@ -892,7 +934,7 @@ public class BoxParser extends AbstractParser {
 			}
 
 			value		= findExprInAnnotations( annotations, "value", true, null, "case", getPosition( node ) );
-			delimiter	= findExprInAnnotations( annotations, "delimiters", false, new BoxStringLiteral( ",", null, null ), "case", getPosition( node ) );
+			delimiter	= findExprInAnnotations( annotations, "delimiters", false, null, "case", getPosition( node ) );
 		}
 
 		List<BoxStatement> statements = null;
@@ -901,12 +943,12 @@ public class BoxParser extends AbstractParser {
 			statements.addAll( toAst( file, node.template_statements() ) );
 		}
 
-		if ( statements != null ) {
-			// In component mode, the break is implied
-			statements.add( new BoxBreak( null, null ) );
+		var switchCase = new BoxSwitchBreakingCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
+		if ( delimiter == null && value != null ) {
+			switchCase.setDelimiter( new BoxStringLiteral( ",", null, null ) );
+			switchCase.setImplicitDelimiter( true );
 		}
-
-		return new BoxSwitchCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
+		return switchCase;
 	}
 
 	private BoxStatement toAst( File file, Template_throwContext node ) {
@@ -1124,7 +1166,7 @@ public class BoxParser extends AbstractParser {
 	}
 
 	private BoxTryCatch toAst( File file, Template_catchBlockContext node ) {
-		BoxExpression		exception	= new BoxIdentifier( "bxcatch", null, null );
+		BoxExpression		exception;
 		List<BoxExpression>	catchTypes;
 		List<BoxStatement>	catchBody	= new ArrayList<>();
 
@@ -1142,8 +1184,21 @@ public class BoxParser extends AbstractParser {
 			} else {
 				catchTypes = List.of( new BoxFQN( "any", null, null ) );
 			}
+
+			// look for name attribute
+			var nameSearch = annotations.stream()
+			    .filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "name" ) && it.getValue() != null )
+			    .findFirst();
+			if ( nameSearch.isPresent() ) {
+				exception = new BoxIdentifier( getBoxExprAsString( nameSearch.get().getValue(), "name", false ),
+				    nameSearch.get().getPosition(),
+				    nameSearch.get().getSourceText() );
+			} else {
+				exception = new BoxIdentifier( "bxcatch", null, null );
+			}
 		} else {
-			catchTypes = List.of( new BoxFQN( "any", null, null ) );
+			catchTypes	= List.of( new BoxFQN( "any", null, null ) );
+			exception	= new BoxIdentifier( "bxcatch", null, null );
 		}
 		if ( node.template_statements() != null ) {
 			catchBody = toAst( file, node.template_statements() );
@@ -1490,6 +1545,10 @@ public class BoxParser extends AbstractParser {
 			}
 			case BoxArrayLiteral ignored -> {
 			}
+			case ortus.boxlang.compiler.ast.expression.BoxSetLiteral ignored -> {
+			}
+			case ortus.boxlang.compiler.ast.expression.BoxStringBuilderLiteral ignored -> {
+			}
 			case BoxScope ignored -> {
 			}
 			case BoxMethodInvocation ignored -> {
@@ -1507,6 +1566,8 @@ public class BoxParser extends AbstractParser {
 			case BoxStaticAccess ignored -> {
 			}
 			case BoxFQN ignored -> {
+			}
+			case BoxExpressionInvocation ignored -> {
 			}
 			default -> errorListener.semanticError( left.getDescription() + " is not a valid construct for " + ( isStatic ? "static" : "dot" ) + " access",
 			    left.getPosition() );
@@ -1558,6 +1619,8 @@ public class BoxParser extends AbstractParser {
 			case BoxStaticAccess ignored -> {
 			}
 			case BoxStaticMethodInvocation ignored -> {
+			}
+			case BoxExpressionInvocation ignored -> {
 			}
 			default -> errorListener.semanticError( object.getDescription() + " is not a valid construct for array access ", getPosition( ctx ) );
 		}

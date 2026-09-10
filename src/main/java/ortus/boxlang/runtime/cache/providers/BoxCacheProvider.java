@@ -228,6 +228,10 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * Shutdown the cache provider
 	 */
 	public void shutdown() {
+		if ( this.reapingFuture != null ) {
+			this.reapingFuture.cancel( true );
+		}
+		this.enabled.set( false );
 		this.objectStore.shutdown();
 		logger.debug( "BoxCache [{}] has been shutdown", getName().getName() );
 	}
@@ -622,6 +626,15 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 
 		// Record the hit
 		this.stats.recordHit();
+
+		// Update per-entry metadata tracking: hits, lastAccessed
+		cacheEntry
+		    .incrementHits()
+		    .touchLastAccessed();
+		// Is resetTimeoutOnAccess enabled? If so, jump up the creation time to increase the timeout
+		if ( BooleanCaster.cast( this.config.properties.get( Key.resetTimeoutOnAccess ) ) ) {
+			cacheEntry.resetCreated();
+		}
 
 		return cacheEntry.value();
 	}

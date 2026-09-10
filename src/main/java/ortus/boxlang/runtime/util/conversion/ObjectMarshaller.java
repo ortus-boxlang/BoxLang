@@ -61,9 +61,11 @@ public class ObjectMarshaller {
 		}
 
 		// Announce the event
-		context.getRuntime()
-		    .getInterceptorService()
-		    .announce( BoxEvent.BEFORE_OBJECT_MARSHALL_SERIALIZE, () -> Struct.ofNonConcurrent( Key.object, target ) );
+		if ( context.getRuntime().getInterceptorService().hasState( BoxEvent.BEFORE_OBJECT_MARSHALL_SERIALIZE ) ) {
+			context.getRuntime()
+			    .getInterceptorService()
+			    .announce( BoxEvent.BEFORE_OBJECT_MARSHALL_SERIALIZE, () -> Struct.ofNonConcurrent( Key.object, target ) );
+		}
 
 		// Serialize the object
 		try ( ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -73,9 +75,11 @@ public class ObjectMarshaller {
 			// Get the serialized object
 			byte[] result = bos.toByteArray();
 			// Announce the event
-			context.getRuntime()
-			    .getInterceptorService()
-			    .announce( BoxEvent.AFTER_OBJECT_MARSHALL_SERIALIZE, () -> Struct.ofNonConcurrent( Key.binary, result ) );
+			if ( context.getRuntime().getInterceptorService().hasState( BoxEvent.AFTER_OBJECT_MARSHALL_SERIALIZE ) ) {
+				context.getRuntime()
+				    .getInterceptorService()
+				    .announce( BoxEvent.AFTER_OBJECT_MARSHALL_SERIALIZE, () -> Struct.ofNonConcurrent( Key.binary, result ) );
+			}
 			return result;
 		} catch ( IOException e ) {
 			throw new BoxIOException( "Failed to serialize object", e );
@@ -98,11 +102,12 @@ public class ObjectMarshaller {
 			throw new BoxValidationException( "Byte array is null and cannot be deserialized" );
 		}
 
-		// Announce the event
-		context.getRuntime()
-		    .getInterceptorService()
-		    .announce( BoxEvent.BEFORE_OBJECT_MARSHALL_DESERIALIZE, () -> Struct.ofNonConcurrent( Key.binary, data ) );
-
+		if ( context.getRuntime().getInterceptorService().hasState( BoxEvent.BEFORE_OBJECT_MARSHALL_DESERIALIZE ) ) {
+			// Announce the event
+			context.getRuntime()
+			    .getInterceptorService()
+			    .announce( BoxEvent.BEFORE_OBJECT_MARSHALL_DESERIALIZE, () -> Struct.ofNonConcurrent( Key.binary, data ) );
+		}
 		try ( ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream( data );
 		    RuntimeObjectInputStream objectInputStream = new RuntimeObjectInputStream( byteArrayInputStream ) ) {
 
@@ -133,9 +138,11 @@ public class ObjectMarshaller {
 
 			// Announce the event
 			final var resultFinal = result;
-			context.getRuntime()
-			    .getInterceptorService()
-			    .announce( BoxEvent.AFTER_OBJECT_MARSHALL_DESERIALIZE, () -> Struct.ofNonConcurrent( Key.object, resultFinal ) );
+			if ( context.getRuntime().getInterceptorService().hasState( BoxEvent.AFTER_OBJECT_MARSHALL_DESERIALIZE ) ) {
+				context.getRuntime()
+				    .getInterceptorService()
+				    .announce( BoxEvent.AFTER_OBJECT_MARSHALL_DESERIALIZE, () -> Struct.ofNonConcurrent( Key.object, resultFinal ) );
+			}
 			return result;
 		} catch ( IOException e ) {
 			throw new BoxIOException( "Failed to deserialize object", e );

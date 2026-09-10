@@ -99,4 +99,20 @@ public class RepeatStringTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "" );
 	}
+
+	@DisplayName( "It truncates decimal inputs" )
+	@Test
+	public void testTruncatesDecimalInputs() {
+		instance.executeSource(
+		    """
+		    result  = repeatString( '*', 1.1 )
+		    result2 = repeatString( '*', 1.5 )
+		    result3 = repeatString( '*', 1.9 )
+		      """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "*" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "*" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "*" );
+	}
+
 }

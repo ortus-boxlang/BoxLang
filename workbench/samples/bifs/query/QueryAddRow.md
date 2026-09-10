@@ -1,6 +1,6 @@
 ### Builds a simple query using queryNew and queryAddRow
 
-CF10+ Pass in row data directly to queryAddRow argument.
+Pass in row data directly to queryAddRow argument.
 
 <a href="https://try.boxlang.io/?code=eJwljLEKAjEQRGvzFctWCtvYKhbC1RbiDwQzasCLurcxHOK%2Fu%2Bd1M8N7U9AG2tGrQscD2pI4J7Fsd7B4LoYrVN5Rz7eoTKtt%2BKP7lI4Pp4vrQp%2BwcI1pQ2vxOOveuEPDSAkXRBvopLWPhcN3ummaDV3tn%2FPJNP0AXTYr0A%3D%3D" target="_blank">Run Example</a>
 
@@ -17,7 +17,7 @@ writeDump( news );
 
 ### Builds a simple query using queryNew and queryAddRow member syntax
 
-CF10+ Pass in row data directly to queryAddRow argument.
+Pass in row data directly to queryAddRow argument.
 
 <a href="https://try.boxlang.io/?code=eJwljMEKwjAQRM%2FmK5Y9VQiCV8Vbzx6kPxCaUQM26nZjKMV%2Fd4O3mWHey6gznehdIMsZtSNO0WvSB9hbzoobxH%2BCjPcgTNujy0bsQoyXp71XtzGA6UB7b%2FEPWuMeFQtFXBF0pkHKFDK7bxNUSYq%2BTK%2BOmqtNPzgHKZw%3D" target="_blank">Run Example</a>
 
@@ -71,7 +71,7 @@ writeDump( news );
 
 ### Builds a simple query using queryNew queryAddRow with multiple rows as an array
 
-CF10+ The example above could be simplified even more this way:
+The example above could be simplified even more this way:
 
 <a href="https://try.boxlang.io/?code=eJxdjrEOwjAMROfkK6xMIHmBEcSA1LUMiA0xRMRAReuAmxBViH8naSfYzqd7vmNKPWzgGUmGHaUZmMZhaEJLBrPmQFcSfFk536wYmK%2F1GN06t%2Fc5zRlHOGr11kpl1MAKFlj09COfpqJEAzi6kA09HCR2lo1WH%2Fyhln9UTQzJtnfwDLX3I6FPZUCSJlAVu8dUX6wvBTs49A%3D%3D" target="_blank">Run Example</a>
 

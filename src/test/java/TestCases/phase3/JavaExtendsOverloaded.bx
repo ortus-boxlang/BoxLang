@@ -1,0 +1,19 @@
+class extends="java:TestCases.phase3.JavaOverloadTarget" {
+
+	function doSomething() {
+		// This single UDF handles all overloads of doSomething()
+		// The stub passes all args as Object[] regardless of the Java signature
+		if ( arrayLen( arguments ) == 0 ) {
+			return "bx:none";
+		} else if ( arrayLen( arguments ) == 1 ) {
+			return "bx:one:" & arguments[ 1 ];
+		} else {
+			return "bx:two:" & arguments[ 1 ] & ":" & arguments[ 2 ];
+		}
+	}
+
+	function getName() {
+		return "boxlang-override";
+	}
+
+}

@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
@@ -145,6 +146,21 @@ public class JavaCastTest {
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It throws when casting a value outside integer range" )
+	@Test
+	public void testItThrowsWhenCastingOutsideIntegerRange() {
+		BoxCastException exception = assertThrows(
+		    BoxCastException.class,
+		    () -> instance.executeSource(
+		        """
+		        result = javaCast('int', '2147483648');
+		        """,
+		        context )
+		);
+
+		assertThat( exception ).hasMessageThat().contains( "outside the range of valid integers" );
+	}
+
 	@DisplayName( "It casts a string to long" )
 	@Test
 	public void testItCastsStringToLong() {
@@ -160,6 +176,22 @@ public class JavaCastTest {
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( 1L );
 	}
 
+	@DisplayName( "It throws when casting a value outside long range" )
+	@Test
+	public void testItThrowsWhenCastingOutsideLongRange() {
+		BoxCastException exception = assertThrows(
+		    BoxCastException.class,
+		    () -> instance.executeSource(
+		        """
+		        tooLargeLong = createObject( 'java', 'java.math.BigInteger' ).init( '9223372036854775808' );
+		        result = javaCast('long', tooLargeLong);
+		        """,
+		        context )
+		);
+
+		assertThat( exception ).hasMessageThat().contains( "outside the range of valid longs" );
+	}
+
 	@DisplayName( "It casts a string to short" )
 	@Test
 	public void testItCastsStringToShort() {
@@ -173,6 +205,21 @@ public class JavaCastTest {
 		assertThat( variables.get( result ) ).isEqualTo( ( short ) 42 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( ( short ) 1 );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( ( short ) 1 );
+	}
+
+	@DisplayName( "It throws when casting a value outside short range" )
+	@Test
+	public void testItThrowsWhenCastingOutsideShortRange() {
+		BoxCastException exception = assertThrows(
+		    BoxCastException.class,
+		    () -> instance.executeSource(
+		        """
+		        result = javaCast('short', '32768');
+		        """,
+		        context )
+		);
+
+		assertThat( exception ).hasMessageThat().contains( "outside the range of valid shorts" );
 	}
 
 	@DisplayName( "It casts a string to float" )

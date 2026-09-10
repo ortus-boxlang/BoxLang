@@ -30,6 +30,8 @@ import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
@@ -51,8 +53,11 @@ import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
@@ -96,6 +101,8 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -117,7 +124,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Pretty print BoxLang AST nodes
- * 
+ *
  * TODO Items:
  * - Add configuration for indent size
  * - Add any other config settings such as white space inside paren, etc
@@ -215,7 +222,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	/**
 	 * Print multi-line output, respecting indentation
 	 * This will trim existing whitespace off each line.
-	 * 
+	 *
 	 * @param text The text to print
 	 */
 	public void printMultiLine( String text ) {
@@ -257,7 +264,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	/**
 	 * Prints pre and inside comments
-	 * 
+	 *
 	 * @param node
 	 */
 	private void printPreComments( BoxNode node ) {
@@ -324,6 +331,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 	}
 
+	@Override
 	public void visit( BoxScript node ) {
 		printPreComments( node );
 		for ( var statement : node.getStatements() ) {
@@ -333,6 +341,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxBufferOutput node ) {
 		printPreComments( node );
 		printPreComments( node.getExpression() );
@@ -362,6 +371,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	/**
 	 * BoxLang Classes will always be in script. No tags!
 	 */
+	@Override
 	public void visit( BoxClass node ) {
 		for ( var importNode : node.getImports() ) {
 			importNode.accept( this );
@@ -391,6 +401,34 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
+	public void visit( BoxLocalClass node ) {
+		printPreOnlyComments( node );
+		for ( var anno : node.getAnnotations() ) {
+			anno.accept( this );
+			newLineIfNeeded();
+		}
+		increaseIndent();
+		print( "class " + node.getName().getName() + " {" );
+		newLine();
+		for ( var property : node.getProperties() ) {
+			property.accept( this );
+			newLineIfNeeded();
+		}
+		if ( !node.getProperties().isEmpty() ) {
+			newLine();
+		}
+		for ( var statement : node.getBody() ) {
+			statement.accept( this );
+			newLineIfNeeded();
+		}
+		printInsideComments( node );
+		decreaseIndent();
+		print( "}" );
+		printPostComments( node );
+	}
+
+	@Override
 	public void visit( BoxStaticInitializer node ) {
 		if ( !isTemplate() ) {
 			printPreOnlyComments( node );
@@ -409,6 +447,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 	}
 
+	@Override
 	public void visit( BoxInterface node ) {
 		for ( var importNode : node.getImports() ) {
 			importNode.accept( this );
@@ -441,6 +480,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxSingleLineComment node ) {
 		if ( isTemplate() ) {
 			print( "<!--- " );
@@ -452,6 +492,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 	}
 
+	@Override
 	public void visit( BoxMultiLineComment node ) {
 		if ( isTemplate() ) {
 			print( "<!--- " );
@@ -470,6 +511,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 	}
 
+	@Override
 	public void visit( BoxDocComment node ) {
 		if ( isTemplate() ) {
 			print( "<!--- " );
@@ -488,6 +530,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 	}
 
+	@Override
 	public void visit( BoxScriptIsland node ) {
 		printPreComments( node );
 		boolean isTemplate = isTemplate();
@@ -508,6 +551,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxTemplate node ) {
 		currentSourceType.push( BoxSourceType.BOXTEMPLATE );
 		printPreOnlyComments( node );
@@ -519,6 +563,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		currentSourceType.pop();
 	}
 
+	@Override
 	public void visit( BoxTemplateIsland node ) {
 		printPreComments( node );
 		println( "```" );
@@ -531,6 +576,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxArgument node ) {
 		printPreComments( node );
 		if ( node.getName() == null ) {
@@ -547,6 +593,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxArrayAccess node ) {
 		printPreComments( node );
 		node.getContext().accept( this );
@@ -556,6 +603,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxArrayLiteral node ) {
 		printPreComments( node );
 		increaseIndent();
@@ -577,6 +625,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxAssignment node ) {
 		printPreComments( node );
 		if ( node.getModifiers().contains( BoxAssignmentModifier.VAR ) ) {
@@ -592,6 +641,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxBinaryOperation node ) {
 		printPreComments( node );
 		node.getLeft().accept( this );
@@ -602,12 +652,14 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxBooleanLiteral node ) {
 		printPreComments( node );
 		print( node.getValue() ? "true" : "false" );
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxClosure node ) {
 		printPreComments( node );
 		// TODO: Make AST "remember" difference between original function(){} and ()=>{}
@@ -629,6 +681,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxComparisonOperation node ) {
 		printPreComments( node );
 		node.getLeft().accept( this );
@@ -639,12 +692,14 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxDecimalLiteral node ) {
 		printPreComments( node );
 		print( node.getValue() );
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxDotAccess node ) {
 		printPreComments( node );
 		node.getContext().accept( this );
@@ -656,6 +711,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxStaticAccess node ) {
 		printPreComments( node );
 		node.getContext().accept( this );
@@ -664,6 +720,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxExpressionInvocation node ) {
 		printPreComments( node );
 		node.getExpr().accept( this );
@@ -685,12 +742,14 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxFQN node ) {
 		printPreComments( node );
 		print( node.getValue() );
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxFunctionInvocation node ) {
 		printPreOnlyComments( node );
 		print( node.getName() );
@@ -712,18 +771,21 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxIdentifier node ) {
 		printPreComments( node );
 		print( node.getName() );
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxIntegerLiteral node ) {
 		printPreComments( node );
 		print( node.getValue() );
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxLambda node ) {
 		printPreComments( node );
 		boolean hasArgs = !node.getArgs().isEmpty();
@@ -744,6 +806,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxMethodInvocation node ) {
 		printPreComments( node );
 		node.getObj().accept( this );
@@ -775,6 +838,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxStaticMethodInvocation node ) {
 		printPreComments( node );
 		node.getObj().accept( this );
@@ -797,6 +861,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxNegateOperation node ) {
 		printPreComments( node );
 		print( "not " );
@@ -804,6 +869,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxNew node ) {
 		printPreComments( node );
 		print( "new " );
@@ -830,9 +896,87 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxNull node ) {
 		printPreComments( node );
 		print( "null" );
+		printPostComments( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxArrayDestructuringPattern node ) {
+		printPreComments( node );
+		print( "[ " );
+		int size = node.getBindings().size();
+		for ( int i = 0; i < size; i++ ) {
+			node.getBindings().get( i ).accept( this );
+			if ( i < size - 1 ) {
+				print( ", " );
+			}
+		}
+		print( " ]" );
+		printPostComments( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxArrayDestructuringBinding node ) {
+		printPreComments( node );
+		if ( node.isRest() ) {
+			print( "..." );
+			node.getTarget().accept( this );
+			printPostComments( node );
+			return;
+		}
+
+		if ( node.getPattern() != null ) {
+			node.getPattern().accept( this );
+		} else if ( node.getTarget() != null ) {
+			node.getTarget().accept( this );
+		}
+		if ( node.getDefaultValue() != null ) {
+			print( " = " );
+			node.getDefaultValue().accept( this );
+		}
+		printPostComments( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxObjectDestructuringPattern node ) {
+		printPreComments( node );
+		print( "{ " );
+		int size = node.getBindings().size();
+		for ( int i = 0; i < size; i++ ) {
+			node.getBindings().get( i ).accept( this );
+			if ( i < size - 1 ) {
+				print( ", " );
+			}
+		}
+		print( " }" );
+		printPostComments( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxObjectDestructuringBinding node ) {
+		printPreComments( node );
+		if ( node.isRest() ) {
+			print( "..." );
+			node.getTarget().accept( this );
+			printPostComments( node );
+			return;
+		}
+
+		node.getKey().accept( this );
+		if ( node.getPattern() != null ) {
+			print( " : " );
+			node.getPattern().accept( this );
+		} else if ( node.getTarget() != null && !isDestructuringShorthand( node ) ) {
+			print( " : " );
+			node.getTarget().accept( this );
+		}
+		if ( node.getDefaultValue() != null ) {
+			print( " = " );
+			node.getDefaultValue().accept( this );
+		}
 		printPostComments( node );
 	}
 
@@ -844,12 +988,14 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxScope node ) {
 		printPreComments( node );
 		print( node.getName() );
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxStringConcat node ) {
 		printPreComments( node );
 		// TODO: Need to track more about original source
@@ -864,6 +1010,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxStringInterpolation node ) {
 		printPreComments( node );
 		// TODO: Track which quotes were used
@@ -875,7 +1022,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	/**
 	 * I process string interpolation, but without assuming it was a quoted string
-	 * 
+	 *
 	 * @param node The BoxStringInterpolation node
 	 */
 	public void processStringInterp( BoxStringInterpolation node, boolean isQuoted ) {
@@ -899,11 +1046,20 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 	}
 
+	@Override
 	public void visit( BoxStringLiteral node ) {
 		printPreComments( node );
 		print( "\"" );
 		print( node.getValue().replace( "\"", "\"\"" ).replace( "#", "##" ) );
 		print( "\"" );
+		printPostComments( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxSpreadExpression node ) {
+		printPreComments( node );
+		print( "..." );
+		node.getExpression().accept( this );
 		printPostComments( node );
 	}
 
@@ -922,14 +1078,21 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			else
 				print( "{" );
 		}
-		// Every other value is key/value
-		for ( int i = 0; i < size; i = i + 2 ) {
-			var key = node.getValues().get( i );
-			key.accept( this );
-			print( " : " );
-			var value = node.getValues().get( i + 1 );
-			value.accept( this );
-			if ( i < size - 2 ) {
+		for ( int i = 0; i < size; ) {
+			var current = node.getValues().get( i );
+			if ( current instanceof BoxSpreadExpression spread ) {
+				spread.accept( this );
+				i++;
+			} else {
+				current.accept( this );
+				if ( i + 1 < size ) {
+					print( " : " );
+					var value = node.getValues().get( i + 1 );
+					value.accept( this );
+				}
+				i += 2;
+			}
+			if ( i < size ) {
 				println( ", " );
 			} else {
 				newLine();
@@ -944,6 +1107,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxTernaryOperation node ) {
 		printPreComments( node );
 		node.getCondition().accept( this );
@@ -954,6 +1118,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxUnaryOperation node ) {
 		printPreComments( node );
 		String symbol = node.getOperator().getSymbol();
@@ -967,6 +1132,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxAnnotation node ) {
 		printPreComments( node );
 		if ( isTemplate() ) {
@@ -991,6 +1157,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxArgumentDeclaration node ) {
 		printPreComments( node );
 		if ( isTemplate() ) {
@@ -1031,6 +1198,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 	}
 
+	@Override
 	public void visit( BoxAssert node ) {
 		printPreComments( node );
 		print( "assert " );
@@ -1039,6 +1207,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxBreak node ) {
 		printPreComments( node );
 		if ( isTemplate() ) {
@@ -1060,6 +1229,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxContinue node ) {
 		printPreComments( node );
 		if ( isTemplate() ) {
@@ -1081,6 +1251,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxDo node ) {
 		printPreComments( node );
 		// No template version of this
@@ -1097,6 +1268,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxDocumentationAnnotation node ) {
 		printPreComments( node );
 		node.getKey().accept( this );
@@ -1107,6 +1279,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxExpressionStatement node ) {
 		printPreComments( node );
 		// TODO: Does boxlang want to introduce a separate tag for ad-hoc expressions outside of "set"?
@@ -1121,6 +1294,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxForIn node ) {
 		printPreComments( node );
 		if ( node.getLabel() != null ) {
@@ -1144,6 +1318,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxForIndex node ) {
 		printPreComments( node );
 		if ( node.getLabel() != null ) {
@@ -1174,10 +1349,10 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxFunctionDeclaration node ) {
 		newLine();
 		printPreComments( node );
-		Boolean defaultInterfaceMethod = node.getFirstNodeOfType( BoxInterface.class ) != null;
 		if ( isTemplate() ) {
 			print( "<bx:function" );
 			for ( var annotation : node.getAnnotations() ) {
@@ -1202,7 +1377,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			decreaseIndent();
 			print( "</bx:function>" );
 		} else {
-			if ( defaultInterfaceMethod ) {
+			if ( node.getModifiers() != null && node.getModifiers().contains( BoxMethodDeclarationModifier.DEFAULT ) ) {
 				print( "default " );
 			}
 			if ( node.getAccessModifier() != null ) {
@@ -1246,6 +1421,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxIfElse node ) {
 		printPreComments( node );
 		doBoxIfElse( node, false );
@@ -1292,6 +1468,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 	}
 
+	@Override
 	public void visit( BoxImport node ) {
 		printPreComments( node );
 		// work around for unsupported taglib imports
@@ -1339,6 +1516,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxParam node ) {
 		printPreComments( node );
 		if ( isTemplate() ) {
@@ -1373,6 +1551,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxProperty node ) {
 		newLine();
 		printPreComments( node );
@@ -1403,6 +1582,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxRethrow node ) {
 		printPreComments( node );
 		if ( isTemplate() ) {
@@ -1413,6 +1593,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxReturn node ) {
 		printPreComments( node );
 		if ( isTemplate() ) {
@@ -1433,6 +1614,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxReturnType node ) {
 		printPreComments( node );
 		if ( node.getType().equals( BoxType.Fqn ) ) {
@@ -1443,6 +1625,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxSwitch node ) {
 		printPreComments( node );
 		if ( isTemplate() ) {
@@ -1471,6 +1654,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxSwitchCase node ) {
 		printPreComments( node );
 		if ( isTemplate() ) {
@@ -1518,6 +1702,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxThrow node ) {
 		printPreComments( node );
 		print( "throw" );
@@ -1529,6 +1714,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxTry node ) {
 		if ( isTemplate() ) {
 			printPreComments( node );
@@ -1582,6 +1768,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxTryCatch node ) {
 		if ( isTemplate() ) {
 			printPreComments( node );
@@ -1626,6 +1813,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxWhile node ) {
 		printPreComments( node );
 		if ( isTemplate() ) {
@@ -1656,6 +1844,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxComponent node ) {
 		printPreComments( node );
 		if ( isTemplate() ) {
@@ -1715,6 +1904,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxStatementBlock node ) {
 		printPreOnlyComments( node );
 		if ( isTemplate() ) {
@@ -1736,12 +1926,14 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxEmptyStatement node ) {
 		printPreComments( node );
 		print( ";" );
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxFunctionalBIFAccess node ) {
 		printPreComments( node );
 		print( "::" );
@@ -1749,6 +1941,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxFunctionalMemberAccess node ) {
 		printPreComments( node );
 		print( "." );
@@ -1778,12 +1971,14 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	 * If an error node is printed, it should be printed as the original source text.
 	 * This may or may not duplicate comments depending on whether or not the associated comments were inside the error node boundaries or not
 	 */
+	@Override
 	public void visit( BoxStatementError node ) {
 		printPreComments( node );
 		print( node.getSourceText() );
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( BoxExpressionError node ) {
 		printPreComments( node );
 		print( node.getSourceText() );
@@ -1792,24 +1987,28 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	// SQL AST Nodes
 
+	@Override
 	public void visit( SQLBooleanLiteral node ) {
 		printPreComments( node );
 		print( String.valueOf( node.getValue() ) );
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLNullLiteral node ) {
 		printPreComments( node );
 		print( "null" );
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLNumberLiteral node ) {
 		printPreComments( node );
 		print( String.valueOf( node.getValue() ) );
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLStringLiteral node ) {
 		printPreComments( node );
 		print( "'" );
@@ -1818,6 +2017,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLBetweenOperation node ) {
 		printPreComments( node );
 		node.getExpression().accept( this );
@@ -1831,6 +2031,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLBinaryOperation node ) {
 		printPreComments( node );
 		node.getLeft().accept( this );
@@ -1841,6 +2042,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLInOperation node ) {
 		printPreComments( node );
 		node.getExpression().accept( this );
@@ -1865,6 +2067,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLInSubQueryOperation node ) {
 		printPreComments( node );
 		node.getExpression().accept( this );
@@ -1877,6 +2080,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLUnaryOperation node ) {
 		printPreComments( node );
 		print( node.getOperator().getSymbol() );
@@ -1884,6 +2088,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLCase node ) {
 		printPreComments( node );
 		print( "case" );
@@ -1904,6 +2109,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLCaseWhenThen node ) {
 		printPreComments( node );
 		print( " when " );
@@ -1913,6 +2119,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLColumn node ) {
 		printPreComments( node );
 		// TODO, actually track in the SQLColumn node what we had for the original table reference
@@ -1924,6 +2131,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLCountFunction node ) {
 		printPreComments( node );
 		print( "count( " );
@@ -1935,6 +2143,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLFunction node ) {
 		printPreComments( node );
 		print( node.getName().getName() );
@@ -1956,6 +2165,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLOrderBy node ) {
 		printPreComments( node );
 		node.getExpression().accept( this );
@@ -1965,6 +2175,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLParam node ) {
 		printPreComments( node );
 		if ( node.getName() != null ) {
@@ -1980,6 +2191,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLParenthesis node ) {
 		printPreComments( node );
 		print( "( " );
@@ -1988,6 +2200,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLStarExpression node ) {
 		printPreComments( node );
 		// TODO, actually track in the SQLColumn node what we had for the original table reference
@@ -1997,6 +2210,19 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 		print( "*" );
 		printPostComments( node );
+	}
+
+	/**
+	 * Determine whether a destructuring binding uses key shorthand syntax.
+	 *
+	 * @param node binding to inspect
+	 *
+	 * @return true when key and target are the same identifier
+	 */
+	private boolean isDestructuringShorthand( BoxObjectDestructuringBinding node ) {
+		return node.getKey() instanceof BoxIdentifier key
+		    && node.getTarget() instanceof BoxIdentifier target
+		    && key.getName().equals( target.getName() );
 	}
 
 }

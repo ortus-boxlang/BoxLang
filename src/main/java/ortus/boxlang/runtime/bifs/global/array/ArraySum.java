@@ -45,6 +45,8 @@ public class ArraySum extends BIF {
 	 *
 	 * @param context
 	 * @param arguments Argument scope defining the array.
+	 *
+	 * @argument.array The array to sum the values of.
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );
@@ -59,7 +61,7 @@ public class ArraySum extends BIF {
 	public static Number _invoke( Array array ) {
 		Number accumulator = 0;
 		for ( int i = 0; i < array.size(); i++ ) {
-			accumulator = Plus.invoke( accumulator, NumberCaster.cast( array.get( i ) ) );
+			accumulator = Plus.invoke( accumulator, NumberCaster.cast( array.get( i ), true, true ) );
 		}
 		return accumulator;
 	}

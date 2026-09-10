@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.validation.Validator;
 
 // I don't think this should allow a body, but Lucee supports this.
@@ -55,7 +56,9 @@ public class Execute extends Component {
 		    new Attribute( outputFileKey, "string" ),
 		    new Attribute( errorFileKey, "string" ),
 		    new Attribute( errorVariableKey, "string" ),
-		    new Attribute( Key.exitCode, "string" )
+		    new Attribute( Key.exitCode, "string" ),
+		    new Attribute( Key.inheritEnvironment, "boolean", true ),
+		    new Attribute( Key.environment, "struct", new Struct() )
 		};
 	}
 
@@ -84,8 +87,12 @@ public class Execute extends Component {
 	 * @attribute.ouptutFile An optional file path to write the command output to
 	 *
 	 * @attribute.errorFile An optional file path to write errors to
-	 * 
+	 *
 	 * @attribute.exitCode An optional variable to set the exit code into
+	 *
+	 * @attribute.inheritEnvironment Whether to inherit the parent process environment variables. Defaults to true.
+	 *
+	 * @attribute.environment A struct of environment variables to pass to the process. Merged in after the inherit decision.
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {

@@ -34,7 +34,7 @@ public class BitMaskClear extends BIF {
 	public BitMaskClear() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "integer", Key.number ),
+		    new Argument( true, "long", Key.number ),
 		    new Argument( true, "integer", Key.start ),
 		    new Argument( true, "integer", Key.length )
 		};
@@ -46,7 +46,7 @@ public class BitMaskClear extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number 32-bit signed integer on which the mask clear operation is performed.
+	 * @argument.number 64-bit signed integer on which the mask clear operation is performed.
 	 * 
 	 * @argument.start Start bit for the clear mask (Integer in the range 0-31, inclusive).
 	 * 
@@ -55,9 +55,9 @@ public class BitMaskClear extends BIF {
 	 * @throws BoxRuntimeException If length or start is not in the range 0-31, inclusive.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		int	number	= arguments.getAsInteger( Key.number );
-		int	start	= arguments.getAsInteger( Key.start );
-		int	length	= arguments.getAsInteger( Key.length );
+		long	number	= arguments.getAsLong( Key.number );
+		int		start	= arguments.getAsInteger( Key.start );
+		int		length	= arguments.getAsInteger( Key.length );
 
 		if ( start < 0 || start > 31 ) {
 			throw new BoxRuntimeException( "Start must be in the range 0-31, inclusive." );
@@ -68,7 +68,7 @@ public class BitMaskClear extends BIF {
 		}
 
 		// Create a bitmask with 'length' consecutive 1 bits starting from position 'start'
-		int bitmask = ( 1 << length ) - 1 << start;
+		long bitmask = ( 1L << length ) - 1 << start;
 
 		// Perform a bitwise mask clear operation on 'number' using the created bitmask
 		return number & ~bitmask;

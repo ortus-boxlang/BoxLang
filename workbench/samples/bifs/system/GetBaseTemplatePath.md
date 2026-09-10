@@ -6,7 +6,6 @@
 
 ```java
 getBaseTemplatePath();
-
 ```
 
 
@@ -16,7 +15,6 @@ getBaseTemplatePath();
 
 ```java
 writeDump( getBaseTemplatePath() );
-
 ```
 
 

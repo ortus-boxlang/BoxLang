@@ -18,16 +18,20 @@
 package ortus.boxlang.runtime;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,25 +43,39 @@ import ortus.boxlang.compiler.BXCompiler;
 import ortus.boxlang.compiler.CFTranspiler;
 import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.FeatureAudit;
+import ortus.boxlang.compiler.SyntaxCheck;
+import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.Parser;
+import ortus.boxlang.compiler.prettyprint.PrettyPrint;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
+import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
+import ortus.boxlang.runtime.async.tasks.TaskRecord;
 import ortus.boxlang.runtime.cli.BoxRepl;
 import ortus.boxlang.runtime.config.CLIOptions;
+import ortus.boxlang.runtime.config.segments.SchedulerConfig;
+import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.SchedulerService;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxLicenseException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.types.util.JSONUtil;
+import ortus.boxlang.runtime.util.ConfigSecretUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -98,12 +116,15 @@ public class BoxRunner {
 
 	/**
 	 * A list of action commands that can be executed by the BoxRunner:
-	 * compile, cftranspile, featureAudit, schedule
+	 * check, compile, cftranspile, featureaudit, format, generatesecret, schedule
 	 */
 	private static final List<String>	ACTION_COMMANDS				= List.of(
+	    "check",
 	    "compile",
 	    "cftranspile",
 	    "featureaudit",
+	    "format",
+	    "generatesecret",
 	    "schedule" );
 
 	/**
@@ -117,7 +138,8 @@ public class BoxRunner {
 	public static int					exitCode					= 0;
 
 	/**
-	 * Execute the BoxLang runtime with the passed arguments.
+	 * Execute the BoxLang runtime with the passed arguments and exit the JVM with
+	 * the resulting exit code.
 	 *
 	 * @param args The command-line arguments
 	 *
@@ -125,10 +147,38 @@ public class BoxRunner {
 	 * @throws JSONObjectException
 	 */
 	public static void main( String[] args ) {
+		System.exit( _main( args ) );
+	}
+
+	/**
+	 * Execute the BoxLang runtime with the passed arguments without exiting the
+	 * JVM.
+	 * <p>
+	 * This is the testable entry point. {@link #main} delegates to this method and
+	 * exits the JVM with the returned exit code. It is package-private so tests in
+	 * this package can invoke it directly, and so it can be called reflectively
+	 * from an isolated class loader.
+	 *
+	 * @param args The command-line arguments
+	 *
+	 * @return The exit code to use for the process (0 on success, non-zero on
+	 *         failure)
+	 *
+	 * @throws IOException
+	 * @throws JSONObjectException
+	 */
+	static int _main( String[] args ) {
 		Timer		timer	= new Timer();
 
 		// Parse CLI options with Env Overrides
 		CLIOptions	options	= parseEnvironmentVariables( parseCommandLineOptions( args ) );
+
+		// Show help? Handle this BEFORE starting the runtime so we never spin one up
+		// just to print usage.
+		if ( Boolean.TRUE.equals( options.showHelp() ) ) {
+			printHelp();
+			return 0;
+		}
 
 		// Debug mode?
 		if ( options.isDebugMode() ) {
@@ -148,22 +198,32 @@ public class BoxRunner {
 		} catch ( BoxLicenseException le ) {
 			System.out.println( String.format( licenseExceptionMessage, le.getMessage() ) );
 			ExceptionUtil.printBoxLangStackTrace( le, System.err );
-			System.exit( 1 );
-			return;
+			return 1;
 		} catch ( Throwable e ) {
 			String message = "An exception ocurred while initializing the BoxLang runtime: " + e.getMessage();
 			if ( message.contains( ExceptionUtil.LICENSE_MODULE_NAME ) || message.contains( ExceptionUtil.LICENSE_SUBSCRIPTION_NAME ) ) {
 				message = String.format( licenseExceptionMessage, e.getMessage() );
 			}
 			ExceptionUtil.printBoxLangStackTrace( e, System.err );
-			System.exit( 1 );
-			return;
+			return 1;
 		}
 		int exitCode = 0;
 
 		try {
+			// Now that the runtime is loaded, resolve the first positional argument to
+			// its execution target: registered module > template > shebang script >
+			// module failsafe. The module registry is only available after startup, so
+			// this can't happen during arg parsing.
+			final BoxRuntime resolvedRuntime = boxRuntime;
+			options = resolveExecutionTarget( options, name -> resolvedRuntime.getModuleService().hasModule( Key.of( name ) ) );
+
+			// Execute a Module — modules trump ALL other execution modes
+			if ( options.targetModule() != null ) {
+				System.setProperty( "boxlang.cliModule", options.targetModule() );
+				boxRuntime.executeModule( options.targetModule(), options.cliArgs().toArray( new String[ 0 ] ) );
+			}
 			// Show version
-			if ( Boolean.TRUE.equals( options.showVersion() ) ) {
+			else if ( Boolean.TRUE.equals( options.showVersion() ) ) {
 				var versionInfo = boxRuntime.getVersionInfo();
 				System.out.println( "Ortus BoxLang™ v" + versionInfo.get( "version" ) );
 				System.out.println( "BoxLang™ ID: " + versionInfo.get( "boxlangId" ) );
@@ -174,15 +234,16 @@ public class BoxRunner {
 			}
 			// Print AST
 			else if ( options.printAST() ) {
-				String source;
 				// If --bx-code is present, use inline code
 				if ( options.code() != null ) {
-					source = options.code();
+					boxRuntime.printSourceAST( options.code() );
 				}
-				// If a file path argument is present, read the file
+				// If a file path argument is present, detect the source type from the extension
 				else if ( options.templatePath() != null ) {
+					File			templateFile	= new File( options.templatePath() );
+					BoxSourceType	sourceType		= Parser.detectFile( templateFile );
 					try {
-						source = Files.readString( Paths.get( options.templatePath() ) );
+						boxRuntime.printSourceAST( Files.readString( templateFile.toPath() ), sourceType );
 					} catch ( IOException e ) {
 						throw new BoxRuntimeException( "Failed to read file: " + options.templatePath(), e );
 					}
@@ -190,12 +251,11 @@ public class BoxRunner {
 				// Otherwise, read from STDIN
 				else {
 					try {
-						source = new String( System.in.readAllBytes() );
+						boxRuntime.printSourceAST( new String( System.in.readAllBytes() ) );
 					} catch ( IOException e ) {
 						throw new BoxRuntimeException( "Failed to read from STDIN", e );
 					}
 				}
-				boxRuntime.printSourceAST( source );
 			}
 			// Transpile to Java
 			else if ( options.transpile() ) {
@@ -206,11 +266,6 @@ public class BoxRunner {
 				System.setProperty( "boxlang.cliTemplate", options.templatePath() );
 				boxRuntime.executeTemplate( options.templatePath(), options.cliArgs().toArray( new String[ 0 ] ) );
 			}
-			// Execute a Module
-			else if ( options.targetModule() != null ) {
-				System.setProperty( "boxlang.cliModule", options.targetModule() );
-				boxRuntime.executeModule( options.targetModule(), options.cliArgs().toArray( new String[ 0 ] ) );
-			}
 			// Execute incoming code
 			else if ( options.code() != null ) {
 				// Execute a string of code
@@ -218,7 +273,7 @@ public class BoxRunner {
 			}
 			// Action Command
 			else if ( options.actionCommand() != null ) {
-				runActionCommand( options, boxRuntime );
+				exitCode = runActionCommand( options, boxRuntime );
 			}
 			// REPL Mode: Execute code as read from the standard input of the process
 			else {
@@ -239,7 +294,7 @@ public class BoxRunner {
 		}
 
 		BoxRunner.exitCode = exitCode;
-		System.exit( exitCode );
+		return exitCode;
 	}
 
 	/**
@@ -249,11 +304,14 @@ public class BoxRunner {
 		System.out.println( "⏰ BoxLang Scheduler - Run and manage BoxLang scheduler files" );
 		System.out.println();
 		System.out.println( "📋 USAGE:" );
-		System.out.println( "  boxlang schedule <SCHEDULER_FILE>             # 🔧 Using OS binary" );
-		System.out.println( "  java -jar boxlang.jar schedule <SCHEDULER_FILE> # 🐍 Using Java JAR" );
+		System.out.println( "  boxlang schedule                                 # 📊 Print a report of configured/loaded schedulers and tasks" );
+		System.out.println( "  boxlang schedule --json                          # 🤖 Print that same report as JSON" );
+		System.out.println( "  boxlang schedule <SCHEDULER_FILE>                # 🔧 Using OS binary" );
+		System.out.println( "  java -jar boxlang.jar schedule <SCHEDULER_FILE>  # 🐍 Using Java JAR" );
 		System.out.println();
 		System.out.println( "⚙️  OPTIONS:" );
 		System.out.println( "  -h, --help                      ❓ Show this help message and exit" );
+		System.out.println( "  --json                          🤖 Print the scheduler report as JSON instead of text" );
 		System.out.println();
 		System.out.println( "📂 SCHEDULER FILE REQUIREMENTS:" );
 		System.out.println( "  • Must be a .bx (BoxLang) file" );
@@ -286,13 +344,350 @@ public class BoxRunner {
 	}
 
 	/**
+	 * Prints a report of the current scheduling landscape when {@code boxlang schedule} is run with no arguments:
+	 * how scheduling is configured in {@code boxlang.json}, which schedulers are already loaded/running in this
+	 * runtime along with their registered tasks, which tasks are persisted in {@code tasks.json}, and how to run
+	 * a scheduler file à la carte.
+	 *
+	 * @param runtime The BoxRuntime object
+	 */
+	private static void printScheduleReport( BoxRuntime runtime ) {
+		SchedulerService	schedulerService	= runtime.getSchedulerService();
+		SchedulerConfig		config				= runtime.getConfiguration().scheduler;
+		Path				resolvedTasksFile	= Paths.get( PlaceholderHelper.resolve( config.tasksFile ) ).normalize().toAbsolutePath();
+
+		System.out.println( "⏰ BoxLang Scheduler Report" );
+		System.out.println( "=========================================" );
+		System.out.println();
+
+		// --- Configuration -----------------------------------------------------
+		System.out.println( "⚙️  SCHEDULER CONFIGURATION (boxlang.json → \"scheduler\")" );
+		System.out.println( "  • Executor          : " + config.executor );
+		System.out.println( "  • Cache             : " + config.cacheName );
+		System.out.println( "  • Tasks File        : " + config.tasksFile );
+		System.out.println( "                        → resolved: " + resolvedTasksFile );
+		System.out.println( "  • Reload On Change  : " + config.reloadOnChange );
+		if ( config.schedulers.isEmpty() ) {
+			System.out.println( "  • Boot Schedulers   : (none configured)" );
+		} else {
+			System.out.println( "  • Boot Schedulers   : " + config.schedulers.size() + " configured" );
+			config.schedulers.forEach( schedulerPath -> System.out.println( "      - " + schedulerPath ) );
+		}
+		System.out.println();
+
+		// --- Loaded/running schedulers ------------------------------------------
+		Map<Key, IScheduler> schedulers = schedulerService.getSchedulers();
+		System.out.println( "📡 LOADED SCHEDULERS (" + schedulers.size() + ")" );
+		if ( schedulers.isEmpty() ) {
+			System.out.println( "  No schedulers are currently loaded in this runtime." );
+		} else {
+			schedulers.values()
+			    .stream()
+			    .sorted( ( a, b ) -> a.getSchedulerName().compareToIgnoreCase( b.getSchedulerName() ) )
+			    .forEach( scheduler -> {
+				    System.out.println();
+				    System.out.println(
+				        "  ▸ " + scheduler.getSchedulerName()
+				            + "  [started: " + scheduler.hasStarted() + "]"
+				            + "  [timezone: " + scheduler.getTimezone() + "]"
+				    );
+				    if ( scheduler instanceof BaseScheduler baseScheduler ) {
+					    List<String> taskNames = baseScheduler.getRegisteredTasks();
+					    if ( taskNames.isEmpty() ) {
+						    System.out.println( "      (no tasks registered)" );
+					    } else {
+						    taskNames.forEach( taskName -> printLoadedTask( baseScheduler.getTaskRecord( taskName ) ) );
+					    }
+				    }
+			    } );
+		}
+		System.out.println();
+
+		// --- Persisted tasks.json -----------------------------------------------
+		System.out.println( "📋 TASKS CONFIGURED IN tasks.json" );
+		System.out.println( "  File: " + resolvedTasksFile );
+		if ( !Files.exists( resolvedTasksFile ) ) {
+			System.out.println( "  (file not found — no persisted tasks configured yet)" );
+		} else {
+			Array tasks;
+			try {
+				tasks = schedulerService.loadTasksFromDisk();
+			} catch ( Exception e ) {
+				tasks = new Array();
+				System.out.println( "  ⚠ Unable to read tasks.json: " + e.getMessage() );
+			}
+			if ( tasks.isEmpty() ) {
+				System.out.println( "  (no tasks defined)" );
+			} else {
+				System.out.println( "  " + tasks.size() + " task(s) defined:" );
+				for ( Object entry : tasks ) {
+					if ( entry instanceof IStruct taskDef ) {
+						printPersistedTask( taskDef );
+					}
+				}
+			}
+		}
+		System.out.println();
+
+		// --- À la carte usage -----------------------------------------------------
+		System.out.println( "💡 RUN AN À LA CARTE SCHEDULER" );
+		System.out.println( "  boxlang schedule <SCHEDULER_FILE.bx>" );
+		System.out.println();
+		System.out.println( "  Example:" );
+		System.out.println( "    boxlang schedule ./schedulers/MainScheduler.bx" );
+		System.out.println();
+		System.out.println( "  Full usage & options:" );
+		System.out.println( "    boxlang schedule --help" );
+		System.out.println();
+	}
+
+	/**
+	 * Prints a single line describing a live, registered task belonging to an already-loaded scheduler.
+	 *
+	 * @param record The task record to print
+	 */
+	private static void printLoadedTask( TaskRecord record ) {
+		IStruct	stats	= record.task.getStats();
+		String	group	= ( record.group == null || record.group.isBlank() ) ? "default" : record.group;
+
+		System.out.println(
+		    "      - " + record.name
+		        + "  [group: " + group + "]"
+		        + "  [disabled: " + record.disabled + "]"
+		        + "  [next: " + formatScheduleDate( stats.get( "nextRun" ) ) + "]"
+		        + "  [last: " + formatScheduleDate( stats.get( "lastRun" ) ) + "]"
+		        + "  [runs: " + stats.get( "totalRuns" ) + ", ok: " + stats.get( "totalSuccess" ) + ", fail: " + stats.get( "totalFailures" ) + "]"
+		);
+		if ( Boolean.TRUE.equals( record.error ) ) {
+			System.out.println( "        ⚠ scheduling error: " + record.errorMessage );
+		}
+	}
+
+	/**
+	 * Prints a single line describing a task definition persisted in {@code tasks.json}. Credential fields
+	 * (username/password/proxy credentials) are intentionally never printed.
+	 *
+	 * @param taskDef The persisted task definition struct
+	 */
+	private static void printPersistedTask( IStruct taskDef ) {
+		Object	schedulerField	= taskDef.get( Key.scheduler );
+		String	schedulerName	= schedulerField != null && !schedulerField.toString().isBlank()
+		    ? schedulerField.toString()
+		    : SchedulerService.DEFAULT_SCHEDULER_NAME;
+		boolean	paused			= BooleanCaster.cast( taskDef.getOrDefault( Key.paused, false ) );
+
+		System.out.println(
+		    "  ▸ " + taskDef.get( Key.task )
+		        + "  [scheduler: " + schedulerName + "]"
+		        + "  [schedule: " + describeTaskSchedule( taskDef ) + "]"
+		        + "  [target: " + describeTaskTarget( taskDef ) + "]"
+		        + "  [paused: " + paused + "]"
+		);
+	}
+
+	/**
+	 * Builds a human-readable description of a persisted task's schedule (cron expression or interval).
+	 *
+	 * @param taskDef The persisted task definition struct
+	 *
+	 * @return A human-readable schedule description
+	 */
+	private static String describeTaskSchedule( IStruct taskDef ) {
+		Object cronTime = taskDef.get( Key.cronTime );
+		if ( cronTime != null && !cronTime.toString().isBlank() ) {
+			return "cron(" + cronTime + ")";
+		}
+		Object interval = taskDef.get( Key.interval );
+		if ( interval != null && !interval.toString().isBlank() ) {
+			return "interval(" + interval + ")";
+		}
+		if ( BooleanCaster.cast( taskDef.getOrDefault( Key.isDaily, false ) ) ) {
+			return "interval(daily)";
+		}
+		return "n/a";
+	}
+
+	/**
+	 * Builds a human-readable description of a persisted task's execution target (URL or class/method).
+	 *
+	 * @param taskDef The persisted task definition struct
+	 *
+	 * @return A human-readable target description
+	 */
+	private static String describeTaskTarget( IStruct taskDef ) {
+		Object url = taskDef.get( Key.url );
+		if ( url != null && !url.toString().isBlank() ) {
+			return "URL " + url;
+		}
+		Object targetClass = taskDef.get( Key._CLASS );
+		if ( targetClass != null && !targetClass.toString().isBlank() ) {
+			Object method = taskDef.get( Key.method );
+			return "Class " + targetClass + ( method != null && !method.toString().isBlank() ? "::" + method : "" );
+		}
+		return "n/a";
+	}
+
+	/**
+	 * Formats a stat value that is expected to be a {@link LocalDateTime}, or returns a friendly placeholder.
+	 *
+	 * @param value The raw stat value
+	 *
+	 * @return The formatted date, or "never" if not present
+	 */
+	private static String formatScheduleDate( Object value ) {
+		if ( value instanceof LocalDateTime dateTime ) {
+			return dateTime.format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) );
+		}
+		return "never";
+	}
+
+	/**
+	 * Prints the same scheduling landscape as {@link #printScheduleReport(BoxRuntime)}, but as a single JSON
+	 * document on stdout so it can be piped into tools like {@code jq} or consumed by other processes.
+	 *
+	 * @param runtime The BoxRuntime object
+	 */
+	private static void printScheduleReportAsJSON( BoxRuntime runtime ) {
+		SchedulerService	schedulerService	= runtime.getSchedulerService();
+		SchedulerConfig		config				= runtime.getConfiguration().scheduler;
+		Path				resolvedTasksFile	= Paths.get( PlaceholderHelper.resolve( config.tasksFile ) ).normalize().toAbsolutePath();
+		boolean				tasksFileExists		= Files.exists( resolvedTasksFile );
+
+		IStruct				configStruct		= Struct.ofNonConcurrent(
+		    "executor", config.executor,
+		    "cacheName", config.cacheName,
+		    "tasksFile", config.tasksFile,
+		    "tasksFileResolved", resolvedTasksFile.toString(),
+		    "reloadOnChange", config.reloadOnChange,
+		    "bootSchedulers", Array.fromList( config.schedulers )
+		);
+
+		Array				loadedSchedulers	= schedulerService.getSchedulers()
+		    .values()
+		    .stream()
+		    .sorted( ( a, b ) -> a.getSchedulerName().compareToIgnoreCase( b.getSchedulerName() ) )
+		    .map( BoxRunner::buildSchedulerJSON )
+		    .collect( Collectors.toCollection( Array::new ) );
+
+		Array				persistedTasks		= new Array();
+		String				tasksFileError		= null;
+		if ( tasksFileExists ) {
+			try {
+				for ( Object entry : schedulerService.loadTasksFromDisk() ) {
+					if ( entry instanceof IStruct taskDef ) {
+						persistedTasks.add( sanitizeTaskDef( taskDef ) );
+					}
+				}
+			} catch ( Exception e ) {
+				tasksFileError = e.getMessage();
+			}
+		}
+
+		IStruct report = Struct.ofNonConcurrent(
+		    "configuration", configStruct,
+		    "loadedSchedulers", loadedSchedulers,
+		    "tasksFile", Struct.ofNonConcurrent(
+		        "path", resolvedTasksFile.toString(),
+		        "exists", tasksFileExists,
+		        "error", tasksFileError,
+		        "tasks", persistedTasks
+		    )
+		);
+
+		try {
+			System.out.println( JSONUtil.getJSONBuilder( true ).asString( report ) );
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "Failed to render schedule report as JSON: " + e.getMessage(), e );
+		}
+	}
+
+	/**
+	 * Builds a JSON-safe struct describing a single loaded scheduler and its registered tasks.
+	 *
+	 * @param scheduler The scheduler to describe
+	 *
+	 * @return A struct with the scheduler's name, running state, timezone, and tasks
+	 */
+	private static IStruct buildSchedulerJSON( IScheduler scheduler ) {
+		Array tasks = new Array();
+		if ( scheduler instanceof BaseScheduler baseScheduler ) {
+			baseScheduler.getRegisteredTasks().forEach( taskName -> tasks.add( buildTaskJSON( baseScheduler.getTaskRecord( taskName ) ) ) );
+		}
+		return Struct.ofNonConcurrent(
+		    "name", scheduler.getSchedulerName(),
+		    "started", scheduler.hasStarted(),
+		    "timezone", scheduler.getTimezone().toString(),
+		    "tasks", tasks
+		);
+	}
+
+	/**
+	 * Builds a JSON-safe struct describing a single live task registered in an already-loaded scheduler.
+	 *
+	 * @param record The task record to describe
+	 *
+	 * @return A struct with the task's identity, state, and run stats
+	 */
+	private static IStruct buildTaskJSON( TaskRecord record ) {
+		IStruct	stats	= record.task.getStats();
+		String	group	= ( record.group == null || record.group.isBlank() ) ? "default" : record.group;
+
+		return Struct.ofNonConcurrent(
+		    "name", record.name,
+		    "group", group,
+		    "disabled", record.disabled,
+		    "error", record.error,
+		    "errorMessage", record.errorMessage,
+		    "nextRun", stats.get( "nextRun" ),
+		    "lastRun", stats.get( "lastRun" ),
+		    "totalRuns", statAsInt( stats.get( "totalRuns" ) ),
+		    "totalSuccess", statAsInt( stats.get( "totalSuccess" ) ),
+		    "totalFailures", statAsInt( stats.get( "totalFailures" ) )
+		);
+	}
+
+	/**
+	 * Unwraps an {@link AtomicInteger} task stat into a plain JSON-serializable {@link Integer}.
+	 *
+	 * @param value The raw stat value, expected to be an {@link AtomicInteger}
+	 *
+	 * @return The unwrapped integer value, or 0 if the value is not an {@link AtomicInteger}
+	 */
+	private static int statAsInt( Object value ) {
+		return ( value instanceof AtomicInteger atomicInteger ) ? atomicInteger.get() : 0;
+	}
+
+	/**
+	 * Returns a copy of a persisted task definition with credential fields (username/password/proxy
+	 * credentials) stripped out, so a JSON report never leaks secrets even though
+	 * {@link SchedulerService#loadTasksFromDisk()} decrypts them for internal use.
+	 *
+	 * @param taskDef The persisted task definition struct
+	 *
+	 * @return A sanitized copy of the task definition
+	 */
+	private static IStruct sanitizeTaskDef( IStruct taskDef ) {
+		IStruct safe = new Struct( taskDef );
+		safe.remove( Key.username );
+		safe.remove( Key.password );
+		safe.remove( Key.proxyUser );
+		safe.remove( Key.proxyPassword );
+		return safe;
+	}
+
+	/**
 	 * Run an action command based on the options passed.
 	 *
 	 * @param options The CLIOptions object with the parsed options
 	 * @param runtime The BoxRuntime object
+	 *
+	 * @return The exit code for the action command (0 on success)
 	 */
-	private static void runActionCommand( CLIOptions options, BoxRuntime runtime ) {
+	static int runActionCommand( CLIOptions options, BoxRuntime runtime ) {
 		switch ( options.actionCommand().toLowerCase() ) {
+			case "check" :
+				SyntaxCheck.main( options.cliArgs().toArray( new String[ 0 ] ) );
+				break;
 			case "compile" :
 				BXCompiler.main( options.cliArgs().toArray( new String[ 0 ] ) );
 				break;
@@ -302,23 +697,48 @@ public class BoxRunner {
 			case "featureaudit" :
 				FeatureAudit.main( options.cliArgs().toArray( new String[ 0 ] ) );
 				break;
+			case "format" :
+				PrettyPrint.main( options.cliArgs().toArray( new String[ 0 ] ) );
+				break;
+			case "generatesecret" :
+				generateSecret( options.cliArgs() );
+				break;
 			case "schedule" :
 				// Check for help first
 				if ( !options.cliArgs().isEmpty() &&
 				    ( options.cliArgs().getFirst().equalsIgnoreCase( "--help" ) ||
 				        options.cliArgs().getFirst().equalsIgnoreCase( "-h" ) ) ) {
 					printScheduleHelp();
-					System.exit( 0 );
+					return 0;
+				}
+				// Check for the report in JSON format: `boxlang schedule --json`
+				if ( !options.cliArgs().isEmpty() && options.cliArgs().getFirst().equalsIgnoreCase( "--json" ) ) {
+					printScheduleReportAsJSON( runtime );
+					return 0;
 				}
 				if ( options.cliArgs().isEmpty() ) {
-					throw new BoxRuntimeException(
-					    "schedule command requires a scheduler file path. Use: boxlang schedule --help" );
+					printScheduleReport( runtime );
+					return 0;
 				}
 				runScheduler( options.cliArgs().getFirst(), runtime );
 				break;
 			default :
 				throw new BoxRuntimeException( "Unknown action command: " + options.actionCommand() );
 		}
+		return 0;
+	}
+
+	/**
+	 * Encrypts plaintext with the active runtime's configured secret and prints the resulting {@code bxsecret:} value.
+	 *
+	 * @param plaintextParts The command-line arguments that form the plaintext value.
+	 */
+	private static void generateSecret( List<String> plaintextParts ) {
+		if ( plaintextParts.isEmpty() ) {
+			throw new BoxRuntimeException( "generatesecret command requires plaintext. Use: boxlang generatesecret <PLAINTEXT>" );
+		}
+
+		System.out.print( ConfigSecretUtil.encryptWithPrefix( String.join( " ", plaintextParts ) ) );
 	}
 
 	/**
@@ -485,6 +905,7 @@ public class BoxRunner {
 		    transpile,
 		    runtimeHome,
 		    options.showVersion(),
+		    options.showHelp(),
 		    options.cliArgs(),
 		    options.cliArgsRaw(),
 		    options.targetModule(),
@@ -493,16 +914,22 @@ public class BoxRunner {
 
 	/**
 	 * Helper method to parse command-line arguments and set options accordingly.
+	 * <p>
+	 * Runtime startup flags (--bx-debug, --bx-config, --bx-home) are extracted in
+	 * a pre-pass from ANYWHERE in the argument list so they are always honored for
+	 * runtime startup and are never passed through to a module or template,
+	 * regardless of their position relative to other arguments.
+	 * <p>
+	 * Package-private so it can be unit tested directly.
 	 *
 	 * @param args The cli arguments used
 	 *
 	 * @return The CLIOptions object with the parsed options
 	 */
-	private static CLIOptions parseCommandLineOptions( String[] args ) {
+	static CLIOptions parseCommandLineOptions( String[] args ) {
 		// Initialize options with defaults
 		Boolean			debug			= null;
 		Boolean			printAST		= false;
-		List<String>	argsList		= new ArrayList<>( Arrays.asList( args ) );
 		String			currentArgument	= null;
 		String			file			= null;
 		String			targetModule	= null;
@@ -511,29 +938,82 @@ public class BoxRunner {
 		String			code			= null;
 		Boolean			transpile		= false;
 		Boolean			showVersion		= false;
+		Boolean			showHelp		= false;
 		List<String>	cliArgs			= new ArrayList<>();
 		String			actionCommand	= null;
+
+		// Pre-parse pass: extract the runtime startup flags (--bx-debug, --bx-config,
+		// --bx-home) from ANYWHERE in the argument list, including after a module: or
+		// template argument. These flags must ALWAYS be honored for runtime startup
+		// and must NEVER be passed through to a module or template as arguments.
+		// Once extracted, they are removed from the list so the main parse loop below
+		// never sees them. Both the space-separated (--bx-config /path) and equals
+		// (--bx-config=/path) forms are supported.
+		List<String>	argsList		= new ArrayList<>();
+		for ( int i = 0; i < args.length; i++ ) {
+			String arg = args[ i ];
+
+			// Debug mode Flag
+			if ( arg.equalsIgnoreCase( "--bx-debug" ) ) {
+				debug = true;
+				continue;
+			}
+
+			// Config File Flag
+			if ( arg.equalsIgnoreCase( "--bx-config" ) || arg.toLowerCase().startsWith( "--bx-config=" ) ) {
+				if ( arg.indexOf( '=' ) > -1 ) {
+					configFile = arg.substring( arg.indexOf( '=' ) + 1 );
+				} else {
+					if ( i + 1 >= args.length ) {
+						throw new BoxRuntimeException(
+						    "Missing config file path with --config flag, it must be the next argument. [--config /path/boxlang.json]" );
+					}
+					configFile = args[ ++i ];
+				}
+				continue;
+			}
+
+			// Runtime Home Flag
+			if ( arg.equalsIgnoreCase( "--bx-home" ) || arg.toLowerCase().startsWith( "--bx-home=" ) ) {
+				if ( arg.indexOf( '=' ) > -1 ) {
+					runtimeHome = arg.substring( arg.indexOf( '=' ) + 1 );
+				} else {
+					if ( i + 1 >= args.length ) {
+						throw new BoxRuntimeException(
+						    "Missing runtime home path with --home flag, it must be the next argument. [--home /path/to/boxlang-home]" );
+					}
+					runtimeHome = args[ ++i ];
+				}
+				continue;
+			}
+
+			argsList.add( arg );
+		}
 
 		// Consume args in order via the `current` variable
 		while ( !argsList.isEmpty() ) {
 			currentArgument = argsList.remove( 0 );
 
-			// Help Flag, we find and break off
+			// Is this a module execution? Checked BEFORE all
+			// other flag/file/script/code processing so a module trumps all of those
+			if ( currentArgument.startsWith( "module:" ) ) {
+				// Remove the prefix
+				targetModule = currentArgument.substring( 7 );
+				cliArgs.addAll( argsList );
+				break;
+			}
+
+			// Help Flag, we find and break off. Set the flag and let _main() handle
+			// printing help so we never call System.exit() outside of main().
 			if ( currentArgument.equalsIgnoreCase( "--help" ) || currentArgument.equalsIgnoreCase( "-h" ) ) {
-				printHelp();
-				System.exit( 0 );
+				showHelp = true;
+				break;
 			}
 
 			// ShowVersion mode Flag, we find and break off
 			if ( currentArgument.equalsIgnoreCase( "--version" ) ) {
 				showVersion = true;
 				break;
-			}
-
-			// Debug mode Flag, we find and continue to the next argument
-			if ( currentArgument.equalsIgnoreCase( "--bx-debug" ) ) {
-				debug = true;
-				continue;
 			}
 
 			// Print AST Flag, we find and continue to the next argument
@@ -545,26 +1025,6 @@ public class BoxRunner {
 			// Transpile Flag, we find and continue to the next argument
 			if ( currentArgument.equalsIgnoreCase( "--bx-transpile" ) ) {
 				transpile = true;
-				continue;
-			}
-
-			// Config File Flag, we find and continue to the next argument for the path
-			if ( currentArgument.equalsIgnoreCase( "--bx-config" ) ) {
-				if ( argsList.isEmpty() ) {
-					throw new BoxRuntimeException(
-					    "Missing config file path with --config flag, it must be the next argument. [--config /path/boxlang.json]" );
-				}
-				configFile = argsList.remove( 0 );
-				continue;
-			}
-
-			// Runtime Home Flag, we find and continue to the next argument for the path
-			if ( currentArgument.equalsIgnoreCase( "--bx-home" ) ) {
-				if ( argsList.isEmpty() ) {
-					throw new BoxRuntimeException(
-					    "Missing runtime home path with --home flag, it must be the next argument. [--home /path/to/boxlang-home]" );
-				}
-				runtimeHome = argsList.remove( 0 );
 				continue;
 			}
 
@@ -585,37 +1045,12 @@ public class BoxRunner {
 				break;
 			}
 
-			// Is it a shebang script to execute
-			if ( isShebangScript( currentArgument ) ) {
-				file = getSheBangScript( currentArgument );
-				cliArgs.addAll( argsList );
-				break;
-			}
-
-			// Template to execute?
-			String targetPath = getExecutableTemplate( currentArgument );
-			if ( targetPath != null ) {
-				file = targetPath;
-				cliArgs.addAll( argsList );
-				break;
-			}
-
-			// Is this a module execution
-			if ( currentArgument.startsWith( "module:" ) ) {
-				// Remove the prefix
-				targetModule = currentArgument.substring( 7 );
-				cliArgs.addAll( argsList );
-				break;
-			}
-
-			// add it to the list of arguments
+			// Positional argument: classification is deferred until the runtime is
+			// loaded (see resolveExecutionTarget in main()). We can't know if this is
+			// a registered module name until the runtime and its module registry are
+			// up, and the runtime can't be started until all args are parsed (config
+			// file, runtime home, etc.), so deferring is the only correct option.
 			cliArgs.add( currentArgument );
-		}
-
-		// If no file, code, module, or action command was specified, but we have cliArgs,
-		// treat the first arg as a potential module name (shortcut for module:name syntax)
-		if ( file == null && code == null && targetModule == null && actionCommand == null && !cliArgs.isEmpty() ) {
-			targetModule = cliArgs.remove( 0 );
 		}
 
 		return new CLIOptions(
@@ -627,10 +1062,131 @@ public class BoxRunner {
 		    transpile,
 		    runtimeHome,
 		    showVersion,
+		    showHelp,
 		    cliArgs,
 		    args,
 		    targetModule,
 		    actionCommand );
+	}
+
+	/**
+	 * Resolve the first positional CLI argument to its execution target now that
+	 * the runtime (and therefore its module registry) is loaded.
+	 * <p>
+	 * During {@link #parseCommandLineOptions} we cannot know if the first
+	 * positional argument is a registered module name: the module registry only
+	 * exists once the runtime has started, and the runtime cannot be started until
+	 * all arguments (config file, runtime home, debug, etc.) have been parsed.
+	 * This catch-22 is why the classification is deferred to here, after startup.
+	 * <p>
+	 * Priority:
+	 * <ol>
+	 * <li><strong>Registered module</strong> — the predicate reports this name
+	 * exists, so it's a module execution. This prevents the shebang and template
+	 * checks from hijacking a module execution.</li>
+	 * <li><strong>Executable template</strong> — a valid template file on disk.</li>
+	 * <li><strong>Shebang script</strong> — a file whose first line starts with
+	 * {@code #!}.</li>
+	 * <li><strong>Module failsafe</strong> — nothing matched, so assume it's a
+	 * module name anyway. Preserves the historical end-of-parse behavior.</li>
+	 * </ol>
+	 * Package-private so it can be unit tested directly.
+	 * <p>
+	 * The module existence check is injected as a {@link Predicate} so this method
+	 * can be tested in a vacuum, without starting a BoxLang runtime. The real
+	 * caller passes a predicate backed by the runtime's module service.
+	 *
+	 * @param options      The parsed CLI options
+	 * @param isModuleName Predicate that returns true if the given name is a
+	 *                     registered module
+	 *
+	 * @return A new CLIOptions with the first positional argument resolved to its
+	 *         target
+	 */
+	static CLIOptions resolveExecutionTarget( CLIOptions options, Predicate<String> isModuleName ) {
+		// If a target was already resolved during parsing (module:, template, code or
+		// action command) or there are no positional arguments, there's nothing to do
+		if ( options.targetModule() != null
+		    || options.templatePath() != null
+		    || options.code() != null
+		    || options.actionCommand() != null
+		    || options.cliArgs().isEmpty() ) {
+			return options;
+		}
+
+		String			firstArg	= options.cliArgs().getFirst();
+		List<String>	rest		= new ArrayList<>( options.cliArgs().subList( 1, options.cliArgs().size() ) );
+
+		// 1. Is the first arg a registered module name?
+		if ( isModuleName.test( firstArg ) ) {
+			return withTargetModule( options, firstArg, rest );
+		}
+
+		// 2. Is it an executable template?
+		String targetPath = getExecutableTemplate( firstArg );
+		if ( targetPath != null ) {
+			return withTarget( options, targetPath, rest );
+		}
+
+		// 3. Is it a shebang script?
+		if ( isShebangScript( firstArg ) ) {
+			return withTarget( options, getSheBangScript( firstArg ), rest );
+		}
+
+		// 4. Failsafe: treat the first arg as a module name
+		return withTargetModule( options, firstArg, rest );
+	}
+
+	/**
+	 * Build a new CLIOptions with a template path set and the module cleared.
+	 *
+	 * @param options The options to base the new options on
+	 * @param file    The template path to execute
+	 * @param cliArgs The arguments to pass to the template
+	 *
+	 * @return A new CLIOptions instance
+	 */
+	private static CLIOptions withTarget( CLIOptions options, String file, List<String> cliArgs ) {
+		return new CLIOptions(
+		    file,
+		    options.debug(),
+		    options.code(),
+		    options.configFile(),
+		    options.printAST(),
+		    options.transpile(),
+		    options.runtimeHome(),
+		    options.showVersion(),
+		    options.showHelp(),
+		    cliArgs,
+		    options.cliArgsRaw(),
+		    null,
+		    options.actionCommand() );
+	}
+
+	/**
+	 * Build a new CLIOptions with a target module set and the template path cleared.
+	 *
+	 * @param options The options to base the new options on
+	 * @param module  The module to execute
+	 * @param cliArgs The arguments to pass to the module
+	 *
+	 * @return A new CLIOptions instance
+	 */
+	private static CLIOptions withTargetModule( CLIOptions options, String module, List<String> cliArgs ) {
+		return new CLIOptions(
+		    null,
+		    options.debug(),
+		    options.code(),
+		    options.configFile(),
+		    options.printAST(),
+		    options.transpile(),
+		    options.runtimeHome(),
+		    options.showVersion(),
+		    options.showHelp(),
+		    cliArgs,
+		    options.cliArgsRaw(),
+		    module,
+		    options.actionCommand() );
 	}
 
 	/**
@@ -721,6 +1277,10 @@ public class BoxRunner {
 			return false;
 		}
 
+		if ( Files.isDirectory( templatePath ) ) {
+			return false;
+		}
+
 		if ( DiskClassUtil.isJavaByteCode( templatePath.toFile() ) ) {
 			return false;
 		}
@@ -775,12 +1335,15 @@ public class BoxRunner {
 		System.out.println( "      --bx-transpile             🔄 Transpile BoxLang code to Java" );
 		System.out.println();
 		System.out.println( "🚀 ACTION COMMANDS:" );
+		System.out.println( "  check                            ✅ Check source files for syntax errors without executing them" );
+		System.out.println( "                                     Use: boxlang check --help" );
 		System.out.println( "  compile                         📦 Pre-compile BoxLang templates to class files" );
 		System.out.println( "                                     Use: boxlang compile --help" );
 		System.out.println( "  cftranspile                     🔄 Transpile ColdFusion code to BoxLang" );
 		System.out.println( "                                     Use: boxlang cftranspile --help" );
 		System.out.println( "  featureaudit                    🔍 Audit code for BoxLang feature compatibility" );
 		System.out.println( "                                     Use: boxlang featureaudit --help" );
+		System.out.println( "  generatesecret <PLAINTEXT>      🔐 Generate a bxsecret value using the active runtime configuration" );
 		System.out.println( "  schedule <SCHEDULER_FILE>       ⏰ Run a BoxLang scheduler from file" );
 		System.out.println( "                                     Use: boxlang schedule --help" );
 		System.out.println();
@@ -804,6 +1367,10 @@ public class BoxRunner {
 		System.out.println( "  # 🐛 Execute with debug mode and custom config" );
 		System.out.println( "  boxlang --bx-debug --bx-config ./custom.json myapp.bx" );
 		System.out.println();
+		System.out.println( "  # ✅ Check files for syntax errors" );
+		System.out.println( "  boxlang check myapp.bx" );
+		System.out.println( "  boxlang check --source ./src" );
+		System.out.println();
 		System.out.println( "  # 📦 Pre-compile templates" );
 		System.out.println( "  boxlang compile --source ./src --target ./compiled" );
 		System.out.println();
@@ -812,6 +1379,12 @@ public class BoxRunner {
 		System.out.println();
 		System.out.println( "  # 🔍 Audit code features" );
 		System.out.println( "  boxlang featureaudit --source ./myapp --output report.json" );
+		System.out.println();
+		System.out.println( "  # 🔐 Generate an encrypted configuration value" );
+		System.out.println( "  boxlang generatesecret \"my-sensitive-value\"" );
+		System.out.println();
+		System.out.println( "  # 🔍 Format Code" );
+		System.out.println( "  boxlang format ./" );
 		System.out.println();
 		System.out.println( "  # ⏰ Run a scheduler" );
 		System.out.println( "  boxlang schedule ./schedulers/MyScheduler.bx" );

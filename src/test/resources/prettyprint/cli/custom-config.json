@@ -1,0 +1,7 @@
+{
+    "maxLineLength": 120,
+    "indentSize": 2,
+    "useTabs": false,
+    "trailingComma": "none",
+    "bracketSpacing": true
+}

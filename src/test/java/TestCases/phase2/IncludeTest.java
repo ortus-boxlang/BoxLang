@@ -120,6 +120,20 @@ public class IncludeTest {
 		assertThat( variables.get( result ) ).isEqualTo( "<cfoutput>This will #not# compile<cfset now()></cfoutput>" );
 	}
 
+	@DisplayName( "can include with whitespace" )
+	@Test
+	public void testCanIncludeWithWhitespace() {
+		instance.executeSource(
+		    """
+		    bx:savecontent variable="result" {
+		    	include "src/test/java/TestCases/phase2/NonCompilableFileExtension.txt ";
+		    }
+		          """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "<cfoutput>This will #not# compile<cfset now()></cfoutput>" );
+	}
+
 	@DisplayName( "can include obey external mapping flag for static files" )
 	@Test
 	public void testCanIncludeObeyExternalMappingFlagForStaticFiles() {

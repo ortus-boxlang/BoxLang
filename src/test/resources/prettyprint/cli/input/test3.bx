@@ -1,0 +1,5 @@
+class MyClass{
+function init(){
+variables.data=[1,2,3];
+}
+}

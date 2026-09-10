@@ -77,4 +77,32 @@ public class RTrimTest {
 		assertThat( variables.get( result ) ).isEqualTo( "  Grant" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "  Michael" );
 	}
+
+	@DisplayName( "It trims specific trailing characters when chars argument is provided" )
+	@Test
+	public void testItTrimsSpecificTrailingChars() {
+		instance.executeSource(
+		    """
+		    result = rTrim( '**Urgent**', '*' );
+		    result2 = rTrim( '---Hello---', '-' );
+		    result3 = rTrim( '*-*Mixed*-*', '*-' );
+		    result4 = rTrim( 'Hello', '*' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "**Urgent" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "---Hello" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "*-*Mixed" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "Hello" );
+	}
+
+	@DisplayName( "It trims specific trailing characters as member function" )
+	@Test
+	public void testItTrimsSpecificTrailingCharsMember() {
+		instance.executeSource(
+		    """
+		    result = '**Urgent**'.rTrim( '*' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "**Urgent" );
+	}
 }

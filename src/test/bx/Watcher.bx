@@ -1,0 +1,52 @@
+/**
+ * A sample BoxLang watcher listener class used for testing.
+ * All event methods are optional except {@code onEvent}.
+ */
+class {
+
+	/**
+	 * Called for every filesystem event regardless of kind.
+	 *
+	 * @event A struct describing the change (kind, path, timestamp, etc.)
+	 */
+	void function onEvent( required struct event ){
+		println( "onEvent: #event.kind# => #event.path#" );
+	}
+
+	/**
+	 * Called when a new file or directory is created.
+	 *
+	 * @event A struct describing the change
+	 */
+	void function onCreate( required struct event ){
+		println( "onCreate: #event.path#" );
+	}
+
+	/**
+	 * Called when a file or directory is modified.
+	 *
+	 * @event A struct describing the change
+	 */
+	void function onModify( required struct event ){
+		println( "onModify: #event.path#" );
+	}
+
+	/**
+	 * Called when a file or directory is deleted.
+	 *
+	 * @event A struct describing the change
+	 */
+	void function onDelete( required struct event ){
+		println( "onDelete: #event.path#" );
+	}
+
+	/**
+	 * Called when a listener method throws an exception.
+	 *
+	 * @error A struct with error details
+	 */
+	void function onError( required struct error ){
+		println( "onError: #error.message#" );
+	}
+
+}

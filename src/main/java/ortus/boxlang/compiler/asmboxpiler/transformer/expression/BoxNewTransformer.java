@@ -34,11 +34,15 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
+import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxNewTransformer extends AbstractTransformer {
 
@@ -51,6 +55,8 @@ public class BoxNewTransformer extends AbstractTransformer {
 		BoxNew					boxNew	= ( BoxNew ) node;
 
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
+
+		// Default path: resolve class at runtime using ClassLocator (imports + Java / BoxLang class loading)
 		// nodes.add( new VarInsnNode( Opcodes.ALOAD, 2 ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( ClassLocator.class ),
@@ -59,18 +65,28 @@ public class BoxNewTransformer extends AbstractTransformer {
 		    false ) );
 
 		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
-		nodes.add( new LdcInsnNode( "" ) ); // TODO: how to set this?
-		nodes.addAll( transpiler.transform( boxNew.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
-		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-		    Type.getInternalName( StringCaster.class ),
-		    "cast",
-		    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
-		    false ) );
-		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
-		    Type.getInternalName( String.class ),
-		    "concat",
-		    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( String.class ) ),
-		    false ) );
+
+		// Extract the class name at compile time
+		String	prefix	= boxNew.getPrefix() == null ? "" : boxNew.getPrefix().getName() + ":";
+		String	fqn;
+		if ( boxNew.getExpression() instanceof BoxStringLiteral bsl ) {
+			fqn = bsl.getValue();
+			nodes.add( new LdcInsnNode( prefix + fqn.replace( "java:", "" ) ) );
+		} else if ( boxNew.getExpression() instanceof BoxFQN bFqn ) {
+			fqn = bFqn.getValue();
+			nodes.add( new LdcInsnNode( prefix + fqn.replace( "java:", "" ) ) );
+		} else if ( boxNew.getExpression() instanceof BoxStringInterpolation bsi ) {
+			nodes.addAll( transpiler.transform( bsi, TransformerContext.NONE, ReturnValueContext.VALUE ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( StringCaster.class ),
+			    "cast",
+			    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
+			    false ) );
+		} else {
+			throw new ExpressionException( "BoxNew expression must be a string literal or FQN, but was a " + boxNew.getExpression().getClass().getSimpleName(),
+			    boxNew.getExpression() );
+		}
+
 		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
 		    transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		        + "/"
@@ -89,7 +105,8 @@ public class BoxNewTransformer extends AbstractTransformer {
 
 		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 
-		nodes.addAll( AsmHelper.callDynamicObjectInvokeConstructor( transpiler, boxNew.getArguments(), context ) );
+		nodes.addAll( AsmHelper.callDynamicObjectInvokeConstructor( transpiler, boxNew.getArguments(), context,
+		    boxNew.isNamedArgs(), boxNew.hasSpread() ) );
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 		    Type.getInternalName( DynamicObject.class ),

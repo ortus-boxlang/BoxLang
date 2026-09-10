@@ -7,7 +7,7 @@ component extends="testbox.system.BaseSpec"{
         describe("testcase for LDEV-3522", function(){
 
             it(title="Can cast as date", body=function( currentSpec ){
-                qry = QueryNew('foo','integer',[['1/1/2025']]);
+                qry = QueryNew('foo','varchar',[['1/1/2025']]);
                 var actual = queryExecute(
                     "SELECT cast( foo as date ) as asDate,
 											convert( foo, date ) as asDate2,
@@ -34,7 +34,7 @@ component extends="testbox.system.BaseSpec"{
                     [],
                     {dbtype="query"} );
 								expect( actual.foo ).toBeDate();
-								expect( actual.foo ).toBeInstanceOf( 'DateTime' );
+								expect( actual.foo ).toBeInstanceOf( 'Date' );
 								expect( actual.asString ).toBeString();
 								expect( actual.asString ).toBeInstanceOf( 'java.lang.String' );
 								expect( actual.asString2 ).toBeString();

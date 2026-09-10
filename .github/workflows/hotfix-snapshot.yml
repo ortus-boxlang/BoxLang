@@ -1,0 +1,39 @@
+# Manually-triggered snapshot build for hotfix branches.
+# Builds the project and publishes ONLY to S3 as a snapshot: no version bump, no git
+# tag, no GitHub Release, no GitHub Packages publish, no Maven Central publish, and
+# tests are not re-run here (the hotfix branch's push-triggered CI already ran them).
+name: Hotfix Snapshot
+
+on:
+  workflow_dispatch:
+
+#Cancel running builds if another push to branch is made while this build is running
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    name: Verify Hotfix Branch
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Ensure this workflow only runs from a hotfix/* branch
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [[ "$REF_NAME" != hotfix/* ]]; then
+            echo "::error::This workflow can only be dispatched from a hotfix/* branch. Current branch: $REF_NAME"
+            exit 1
+          fi
+
+  build:
+    name: Build & Publish Hotfix Snapshot
+    needs: guard
+    uses: ./.github/workflows/release.yml
+    secrets: inherit
+    permissions:
+      contents: read
+    with:
+      snapshot: true
+      skipEvergreen: true

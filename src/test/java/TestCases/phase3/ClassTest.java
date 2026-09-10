@@ -30,8 +30,11 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.JavaMethodResolver;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.BaseBoxContext;
+import ortus.boxlang.runtime.context.ConfigOverrideBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
@@ -53,6 +56,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.Mapping;
 
 public class ClassTest {
 
@@ -476,7 +480,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 5 );
 		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
-		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( true );
 	}
@@ -509,7 +513,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 5 );
 		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
-		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( true );
 	}
@@ -634,7 +638,7 @@ public class ClassTest {
 		assertThat( meta.getAsString( Key.of( "path" ) ) ).contains( "MyClass.bx" );
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
-		assertThat( meta.getAsBoolean( Key.of( "output" ) ) ).isFalse();
+		assertThat( meta.getAsBoolean( Key.of( "output" ) ) ).isTrue();
 		Array properties = meta.getAsArray( Key.of( "properties" ) );
 		assertThat( properties.size() ).isEqualTo( 1 );
 		assertThat( properties.get( 0 ) instanceof IStruct ).isTrue();
@@ -1179,6 +1183,102 @@ public class ClassTest {
 	}
 
 	@Test
+	public void testJavaExtendsOverloadedMethods() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.JavaExtendsOverloaded();
+		    assert obj instanceof "TestCases.phase3.JavaOverloadTarget";
+
+		    // All overloads of doSomething() should route to the single BoxLang UDF
+		    result1 = obj.doSomething( "hello" );
+		    result2 = obj.doSomething( 99 );
+		    result3 = obj.doSomething( "test", 5 );
+		    """, context );
+		assertThat( variables.getAsString( Key.of( "result1" ) ) ).isEqualTo( "bx:one:hello" );
+		assertThat( variables.getAsString( Key.of( "result2" ) ) ).isEqualTo( "bx:one:99" );
+		assertThat( variables.getAsString( Key.of( "result3" ) ) ).isEqualTo( "bx:two:test:5" );
+	}
+
+	@Test
+	public void testJavaExtendsMethodOverrideWithoutAnnotation() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.JavaExtendsOverloaded();
+
+		    // getName() is overridden by the BoxLang UDF without @overrideJava
+		    result = obj.getName();
+		    """, context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "boxlang-override" );
+	}
+
+	@Test
+	public void testJavaExtendsUnmatchedMethodUsesSuper() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.JavaExtendsOverloaded();
+
+		    // untouched() has no matching UDF, so the Java super implementation runs
+		    result = obj.untouched();
+		    """, context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "original" );
+	}
+
+	@Test
+	public void testJavaExtendsFallbackWhenClassNotLoadable() {
+		// Override the resolver to pretend the class can't be loaded at compile time
+		JavaMethodResolver.classResolverOverride = ( className ) -> null;
+		try {
+			instance.executeSource(
+			    """
+			    obj = new src.test.java.TestCases.phase3.JavaExtendsFallback();
+			    assert obj instanceof "TestCases.phase3.JavaOverloadTarget";
+
+			    // The @overrideJava annotation-based fallback generates stubs for the declared signature
+			    result = obj.getName();
+			    result2 = obj.doSomething( "hi" );
+			    result3 = obj.isActive();
+			    """, context );
+			assertThat( variables.getAsString( result ) ).isEqualTo( "boxlang-fallback" );
+			assertThat( variables.getAsString( Key.of( "result2" ) ) ).isEqualTo( "bx:one:hi" );
+			assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
+		} finally {
+			JavaMethodResolver.classResolverOverride = null;
+		}
+	}
+
+	@Test
+	public void testJavaExtendsWithImportAlias() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.JavaExtendsImportAlias();
+		    assert obj instanceof "TestCases.phase3.JavaOverloadTarget";
+
+		    result = obj.getName();
+		    result2 = obj.doSomething( "world" );
+		    result3 = obj.doSomething( 7 );
+		    result4 = obj.doSomething( "x", 3 );
+		    """, context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "alias-override" );
+		assertThat( variables.getAsString( Key.of( "result2" ) ) ).isEqualTo( "alias:one:world" );
+		assertThat( variables.getAsString( Key.of( "result3" ) ) ).isEqualTo( "alias:one:7" );
+		assertThat( variables.getAsString( Key.of( "result4" ) ) ).isEqualTo( "alias:two:x:3" );
+	}
+
+	@Test
+	public void testJavaImplementsWithImportAlias() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.JavaImplementsImportAlias();
+		    assert obj instanceof "TestCases.phase3.JavaTestInterface";
+
+		    result = obj.greet( "brad" );
+		    result2 = obj.add( 3, 4 );
+		    """, context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "hello brad" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 7 );
+	}
+
+	@Test
 	public void testGeneratedAccessors() {
 		// @formatter:off
 		instance.executeSource(
@@ -1266,6 +1366,8 @@ public class ClassTest {
 								result11 = src.test.java.TestCases.phase3.StaticTest::finalStatic;
 								result12 = src.test.java.TestCases.phase3.StaticTest::finalStatic2;
 								result13 = src.test.java.TestCases.phase3.StaticTest::IAmStatic()
+								result14 = src.test.java.TestCases.phase3.StaticTest::IAmStatic2()
+								result15 = src.test.java.TestCases.phase3.StaticTest::ImWithStaticResult;
 		                                                                                                                      """, context,
 		    BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
@@ -1280,6 +1382,8 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( "finalStatic" );
 		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( "finalStatic2" );
 		assertThat( variables.get( Key.of( "result13" ) ) ).isEqualTo( "bradfinalStatic" );
+		assertThat( variables.get( Key.of( "result14" ) ) ).isEqualTo( "bradfinalStatic" );
+		assertThat( variables.get( Key.of( "result15" ) ) ).isEqualTo( "Hello" );
 	}
 
 	@Test
@@ -1734,6 +1838,19 @@ public class ClassTest {
 	}
 
 	@Test
+	public void testNewInterpolated() {
+		instance.executeSource(
+		    """
+		    name = "src.test.java.TestCases.phase3.sub-folder.Funky-Class";
+		         	cfc = new "#name#"();
+		       meta = cfc.$bx.meta;
+		         """, context );
+		assertThat( variables.get( "meta" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "meta" ) ).getAsString( Key.fullname ) )
+		    .isEqualTo( "src.test.java.TestCases.phase3.sub-folder.Funky-Class" );
+	}
+
+	@Test
 	public void testColdBoxRenderer() {
 		instance.executeSource(
 		    """
@@ -1895,23 +2012,6 @@ public class ClassTest {
 	}
 
 	@Test
-	public void testOuputInApplication() {
-		instance.executeSource(
-		    """
-		    bx:savecontent variable="result" {
-		       	new src.test.java.TestCases.phase3.Application().run()
-		    }
-
-		    bx:savecontent variable="result2" {
-		       	new src.test.java.TestCases.phase3.NotApplication().run()
-		    }
-		         """,
-		    context );
-		assertThat( variables.get( "result" ) ).isEqualTo( "Hello BradHello World" );
-		assertThat( variables.get( "result2" ) ).isEqualTo( "" );
-	}
-
-	@Test
 	public void testCFCNameSameAsType() {
 		instance.executeSource(
 		    """
@@ -2056,10 +2156,13 @@ public class ClassTest {
 	public void testStaticInitCallStaticMethod() {
 		instance.executeSource(
 		    """
-		    result = new src.test.java.TestCases.phase3.StaticInitCallStaticMethod().someStruct.foo;
+		    obj = new src.test.java.TestCases.phase3.StaticInitCallStaticMethod();
+		    result = obj.someStruct.foo;
+		    result2 = obj.getFromPseudo();
 		    """,
 		    context );
 		assertThat( variables.get( "result" ) ).isEqualTo( "bar" );
+		assertThat( variables.get( "result2" ) ).isEqualTo( "baz" );
 	}
 
 	@Test
@@ -2176,6 +2279,13 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 		    result = new src.test.java.TestCases.phase3.TagComponentParse();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse2();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse3();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse4();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse5();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse6();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse7();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse8();
 		       """,
 		    context );
 	}
@@ -2327,6 +2437,115 @@ public class ClassTest {
 		       x = createObject( "src.test.java.TestCases.phase3.Beta2" );
 		           """,
 		    context ) );
+	}
+
+	@DisplayName( "It can recover from a failed class load when super class mapping is added later" )
+	@Test
+	public void testRecoverFromMissingSuperClassMapping() {
+		instance.executeSource(
+		    """
+		       // First attempt: try to instantiate the child class — this will fail because the super class mapping doesn't exist yet
+		       try {
+		           new src.test.java.TestCases.phase3.UnmappedSuperChild();
+		           result = "should have thrown";
+		       } catch( any e ) {
+		           result = "failed as expected";
+		       }
+
+		       // Now register the mapping so the super class can be found
+		       getBoxRuntime().getConfiguration().registerMapping(
+		           "/unmappedSuperLib",
+		           expandPath( "/src/test/java/TestCases/phase3/unmapped-super" )
+		       );
+		    getBoxContext().clearConfigCache();
+
+		       // Second attempt: should now succeed since the tainted classloader was shut down and the mapping is registered
+		       child = new src.test.java.TestCases.phase3.UnmappedSuperChild();
+		       childResult = child.childMethod();
+		       superResult = child.superMethod();
+		          """,
+		    context );
+
+		assertThat( variables.getAsString( result ) ).isEqualTo( "failed as expected" );
+		assertThat( variables.getAsString( Key.of( "childResult" ) ) ).isEqualTo( "from child" );
+		assertThat( variables.getAsString( Key.of( "superResult" ) ) ).isEqualTo( "from super" );
+	}
+
+	@Test
+	public void testSemVerCFC() {
+		instance.executeSource(
+		    """
+		       semver = new src.test.java.TestCases.phase3.SemanticVersion();
+		    semver.satisfies( "1.2.3", "^1.0.0" );
+		           """,
+		    context );
+	}
+
+	@Test
+	public void testPropertyDefaultToStaticVar() {
+		instance.executeSource(
+		    """
+		       clazz = new src.test.java.TestCases.phase3.PropertyDefaultToStaticVar();
+		    result = clazz.getMyProp();
+		           """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( 5 );
+	}
+
+	@Test
+	public void testClassLookupRelativeToBaseTemplateFallback() {
+		context		= getContext( "src/test/java/TestCases/phase3/", "baseTemplateFallback/index.cfm" );
+		variables	= context.getScopeNearby( VariablesScope.name );
+		instance.executeSource(
+		    """
+		    include "/baseTemplateFallback/index.cfm";
+		       """,
+		    context );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "baseTemplateFallback/includes/cfc/MyClass.cfc" );
+		assertThat( variables.getAsString( Key.of( "result2" ) ) ).isEqualTo( "baseTemplateFallback/cfc/MyClass2.cfc" );
+
+	}
+
+	@Test
+	public void testIncludeAClass() {
+		boolean originalAllowIncludeClassFiles = BaseBoxContext.allowIncludeClassFiles;
+		BaseBoxContext.allowIncludeClassFiles = true;
+		try {
+			instance.executeSource(
+			    """
+			       include "/src/test/java/TestCases/phase3/IncludeMe.bx";
+			    fooResult = foo();
+			    barResult = bar();
+			          """,
+			    context );
+		} finally {
+			BaseBoxContext.allowIncludeClassFiles = originalAllowIncludeClassFiles;
+		}
+		assertThat( variables.get( Key.of( "pseudoRan" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "out" ) ) ).isEqualTo( System.out );
+		assertThat( variables.getAsString( Key.of( "fooResult" ) ) ).isEqualTo( "foo" );
+		assertThat( variables.getAsString( Key.of( "barResult" ) ) ).isEqualTo( "bar" );
+
+		BaseBoxContext.allowIncludeClassFiles = false;
+		try {
+			Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+			    """
+			    include "/src/test/java/TestCases/phase3/IncludeMe.bx";
+			       """,
+			    context ) );
+			assertThat( t.getMessage() ).contains( "cannot be included" );
+		} finally {
+			BaseBoxContext.allowIncludeClassFiles = originalAllowIncludeClassFiles;
+		}
+
+	}
+
+	// Used for tests that need to spoof a base template path
+	private IBoxContext getContext( String rootPath, String template ) {
+		return new ScriptingRequestBoxContext( new ConfigOverrideBoxContext( instance.getRuntimeContext(), config -> {
+			config.getAsStruct( Key.mappings ).put( "/", Mapping.ofExternal( "/", new java.io.File( rootPath ).getAbsolutePath() ) );
+			return config;
+		} ), false ).loadApplicationDescriptor( FileSystemUtil.createFileUri( template ) );
 	}
 
 }

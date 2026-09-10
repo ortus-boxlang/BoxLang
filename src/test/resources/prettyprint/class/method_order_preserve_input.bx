@@ -1,0 +1,11 @@
+class {
+    function zebra() {
+        return "zebra";
+    }
+    function apple() {
+        return "apple";
+    }
+    function mango() {
+        return "mango";
+    }
+}

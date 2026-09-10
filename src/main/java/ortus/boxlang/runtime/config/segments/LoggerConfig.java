@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import ortus.boxlang.runtime.config.util.PropertyHelper;
@@ -24,6 +26,7 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.logging.LogLevel;
 import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
@@ -71,6 +74,13 @@ public class LoggerConfig implements IConfigSegment {
 	public boolean					additive			= true;
 
 	/**
+	 * An optional list of Java class or package names whose log events should be
+	 * redirected to this logger's appender at the same log level.
+	 * Example: ["com.zaxxer.hikari", "org.hibernate"]
+	 */
+	public List<String>				categories			= new ArrayList<>();
+
+	/**
 	 * Default logging configuration
 	 */
 	private LoggingConfig			loggingConfig;
@@ -105,6 +115,7 @@ public class LoggerConfig implements IConfigSegment {
 		);
 		this.appenderArguments	= PropertyHelper.processToStruct( config, Key.appenderArguments );
 		this.additive			= BooleanCaster.cast( PropertyHelper.processString( config, Key.additive, "true" ) );
+		PropertyHelper.processStringOrArrayToList( config, Key.categories, this.categories );
 
 		return this;
 	}
@@ -120,7 +131,8 @@ public class LoggerConfig implements IConfigSegment {
 		    Key.additive, this.additive,
 		    Key.appender, this.appender.getName(),
 		    Key.encoder, this.encoder.getName(),
-		    Key.appenderArguments, argsCopy
+		    Key.appenderArguments, argsCopy,
+		    Key.categories, new Array( this.categories )
 		);
 	}
 

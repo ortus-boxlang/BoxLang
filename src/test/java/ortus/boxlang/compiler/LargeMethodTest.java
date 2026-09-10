@@ -17,13 +17,23 @@ package ortus.boxlang.compiler;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
+import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -174,5 +184,41 @@ public class LargeMethodTest {
 
 		Object resultValue = variables.get( result );
 		assert resultValue.equals( true ) : "Expected true from end of method, got: " + resultValue;
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@Test
+	public void testShouldNotRecursivelyResplitUnsplittableMethod() {
+		assertDoesNotThrow( () -> {
+			AsmTranspiler transpiler = new AsmTranspiler();
+			transpiler.setProperty( "packageName", "ortus.boxlang.compiler" );
+			transpiler.setProperty( "classname", "LargeMethodSplitterRegression" );
+
+			ClassNode classNode = new ClassNode();
+			classNode.visit( Opcodes.V21, Opcodes.ACC_PUBLIC, "ortus/boxlang/compiler/LargeMethodSplitterRegression", null, "java/lang/Object", null );
+			transpiler.setOwningClass( classNode );
+
+			AsmHelper.methodWithContextAndClassLocator(
+			    classNode,
+			    "oversizedUnsplittableMethod",
+			    Type.getType( IBoxContext.class ),
+			    Type.getType( Object.class ),
+			    false,
+			    transpiler,
+			    true,
+			    () -> buildOversizedUnsplittableNodes()
+			);
+		} );
+	}
+
+	private static List<AbstractInsnNode> buildOversizedUnsplittableNodes() {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+
+		for ( int i = 0; i < 30000; i++ ) {
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
+
+		return nodes;
 	}
 }

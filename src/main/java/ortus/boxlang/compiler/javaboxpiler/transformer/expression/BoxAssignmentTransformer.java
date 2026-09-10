@@ -29,18 +29,26 @@ import com.github.javaparser.ast.expr.Expression;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
+import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.transformer.util.AssignmentRewriteOptimizer;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
@@ -52,8 +60,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxAssignment	assignment	= ( BoxAssignment ) node;
-		Expression		key;
+		BoxAssignment assignment = ( BoxAssignment ) node;
+		AssignmentRewriteOptimizer.optimizeCompoundAssignmentPatterns( assignment );
+		Expression key;
 		if ( assignment.getOp() == null ) {
 			if ( assignment.getLeft() instanceof BoxIdentifier id ) {
 				key = createKey( id.getName() );
@@ -85,6 +94,15 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 		} else if ( assignment.getOp() == BoxAssignmentOperator.Equal ) {
 			Expression jRight = ( Expression ) transpiler.transform( assignment.getRight(), TransformerContext.NONE );
+			if ( assignment.getLeft() instanceof BoxObjectDestructuringPattern pattern ) {
+				Node javaExpr = transformDestructuringEquals( pattern, jRight, assignment.getModifiers() );
+				addIndex( javaExpr, node );
+				return javaExpr;
+			} else if ( assignment.getLeft() instanceof BoxArrayDestructuringPattern pattern ) {
+				Node javaExpr = transformArrayDestructuringEquals( pattern, jRight, assignment.getModifiers() );
+				addIndex( javaExpr, node );
+				return javaExpr;
+			}
 			return transformEquals( assignment.getLeft(), jRight, assignment.getOp(), assignment.getModifiers(), assignment.getSourceText(),
 			    context );
 		} else {
@@ -160,6 +178,16 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			furthestLeft = currentObjectAccess.getContext();
 		}
 
+		// CF parses `var["foo"] = "bar"` as a `var` modifier + array literal LHS.
+		// Treat it as assignment to identifier `var` with bracket access key(s).
+		if ( hasVar && furthestLeft instanceof BoxArrayLiteral arrayLiteral ) {
+			hasVar = false;
+			for ( BoxExpression value : arrayLiteral.getValues() ) {
+				accessKeys.add( createKey( value ) );
+			}
+			furthestLeft = new BoxIdentifier( "var", null, null );
+		}
+
 		if ( hasStatic && hasVar ) {
 			throw new ExpressionException( "You cannot use the [var] and [static] keywords together", left.getPosition(), left.getSourceText() );
 		}
@@ -209,7 +237,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			boolean isBoxSyntax = transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" );
 			// imported.foo = 5 is ok, but imported = 5 is not
 			if ( left instanceof BoxIdentifier idl && transpiler.matchesImport( idl.getName() ) && isBoxSyntax ) {
-				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + idl.getName() + "]",
+				String importType = transpiler.matchesClassRefImport( idl.getName() ) ? "a local class" : "an import";
+				throw new ExpressionException( "You cannot assign a variable with the same name as " + importType + ": [" + idl.getName() + "]",
 				    idl.getPosition(), idl.getSourceText() );
 			}
 
@@ -278,20 +307,316 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return javaExpr;
 	}
 
+	/**
+	 * transformDestructuringEquals.
+	 */
+	private Node transformDestructuringEquals( BoxObjectDestructuringPattern pattern, Expression jRight, List<BoxAssignmentModifier> modifiers ) {
+		boolean	hasVar			= hasVar( modifiers );
+		boolean	hasStatic		= hasStatic( modifiers );
+		boolean	hasFinal		= hasFinal( modifiers );
+		boolean	isDeclaration	= !modifiers.isEmpty();
+		String	mustBeScopeName	= null;
+
+		if ( hasStatic && hasVar ) {
+			throw new ExpressionException( "You cannot use the [var] and [static] keywords together", pattern.getPosition(), pattern.getSourceText() );
+		}
+
+		if ( hasVar ) {
+			mustBeScopeName = "local";
+		} else if ( hasStatic ) {
+			mustBeScopeName = "static";
+		}
+
+		Map<String, String> values = new HashMap<>();
+		values.put( "contextName", transpiler.peekContextName() );
+		values.put( "right", jRight.toString() );
+		values.put( "hasFinal", hasFinal ? "true" : "false" );
+		values.put( "mustBeScopeName", mustBeScopeName == null ? "null" : createKey( mustBeScopeName ).toString() );
+		values.put( "bindings", buildDestructuringBindingsExpression( pattern.getBindings(), isDeclaration ) );
+
+		String template = """
+		                  ortus.boxlang.runtime.dynamic.ObjectDestructurer.destructure(
+		                  	${contextName},
+		                  	${right},
+		                  	${hasFinal},
+		                  	${mustBeScopeName},
+		                  	${bindings}
+		                  )
+		                  """;
+		return parseExpression( template, values );
+	}
+
+	/**
+	 * transformArrayDestructuringEquals.
+	 */
+	private Node transformArrayDestructuringEquals( BoxArrayDestructuringPattern pattern, Expression jRight, List<BoxAssignmentModifier> modifiers ) {
+		boolean	hasVar			= hasVar( modifiers );
+		boolean	hasStatic		= hasStatic( modifiers );
+		boolean	hasFinal		= hasFinal( modifiers );
+		boolean	isDeclaration	= !modifiers.isEmpty();
+		String	mustBeScopeName	= null;
+
+		if ( hasStatic && hasVar ) {
+			throw new ExpressionException( "You cannot use the [var] and [static] keywords together", pattern.getPosition(), pattern.getSourceText() );
+		}
+
+		if ( hasVar ) {
+			mustBeScopeName = "local";
+		} else if ( hasStatic ) {
+			mustBeScopeName = "static";
+		}
+
+		Map<String, String> values = new HashMap<>();
+		values.put( "contextName", transpiler.peekContextName() );
+		values.put( "right", jRight.toString() );
+		values.put( "hasFinal", hasFinal ? "true" : "false" );
+		values.put( "mustBeScopeName", mustBeScopeName == null ? "null" : createKey( mustBeScopeName ).toString() );
+		values.put( "bindings", buildArrayDestructuringBindingsExpression( pattern.getBindings(), isDeclaration ) );
+
+		String template = """
+		                  ortus.boxlang.runtime.dynamic.ArrayDestructurer.destructure(
+		                  	${contextName},
+		                  	${right},
+		                  	${hasFinal},
+		                  	${mustBeScopeName},
+		                  	${bindings}
+		                  )
+		                  """;
+		return parseExpression( template, values );
+	}
+
+	/**
+	 * buildDestructuringBindingsExpression.
+	 */
+	private String buildDestructuringBindingsExpression( List<BoxObjectDestructuringBinding> bindings, boolean isDeclaration ) {
+		if ( bindings.isEmpty() ) {
+			return "new ortus.boxlang.runtime.dynamic.ObjectDestructurer.Binding[] {}";
+		}
+		return "new ortus.boxlang.runtime.dynamic.ObjectDestructurer.Binding[] { "
+		    + bindings.stream().map( binding -> buildDestructuringBindingExpression( binding, isDeclaration ) ).collect( Collectors.joining( ", " ) )
+		    + " }";
+	}
+
+	/**
+	 * buildDestructuringBindingExpression.
+	 */
+	private String buildDestructuringBindingExpression( BoxObjectDestructuringBinding binding, boolean isDeclaration ) {
+		if ( binding.isRest() ) {
+			return "ortus.boxlang.runtime.dynamic.ObjectDestructurer.rest("
+			    + buildDestructuringTargetExpression( binding.getTarget(), isDeclaration )
+			    + ")";
+		}
+
+		String	sourceKey	= quoteJavaString( extractDestructuringKeyName( binding.getKey(), binding ) );
+		String	target		= binding.getTarget() == null ? "null" : buildDestructuringTargetExpression( binding.getTarget(), isDeclaration );
+		String	nested		= binding.getPattern() == null
+		    ? "null"
+		    : buildDestructuringBindingsExpression( binding.getPattern().getBindings(), isDeclaration );
+		String	defaultExpr	= binding.getDefaultValue() == null
+		    ? "null"
+		    : "(__ignored) -> " + transpiler.transform( binding.getDefaultValue(), TransformerContext.NONE );
+
+		return "ortus.boxlang.runtime.dynamic.ObjectDestructurer.binding("
+		    + sourceKey + ", "
+		    + target + ", "
+		    + nested + ", "
+		    + defaultExpr
+		    + ")";
+	}
+
+	/**
+	 * buildArrayDestructuringBindingsExpression.
+	 */
+	private String buildArrayDestructuringBindingsExpression( List<BoxArrayDestructuringBinding> bindings, boolean isDeclaration ) {
+		if ( bindings.isEmpty() ) {
+			return "new ortus.boxlang.runtime.dynamic.ArrayDestructurer.Binding[] {}";
+		}
+		return "new ortus.boxlang.runtime.dynamic.ArrayDestructurer.Binding[] { "
+		    + bindings.stream().map( binding -> buildArrayDestructuringBindingExpression( binding, isDeclaration ) ).collect( Collectors.joining( ", " ) )
+		    + " }";
+	}
+
+	/**
+	 * buildArrayDestructuringBindingExpression.
+	 */
+	private String buildArrayDestructuringBindingExpression( BoxArrayDestructuringBinding binding, boolean isDeclaration ) {
+		if ( binding.isRest() ) {
+			return "ortus.boxlang.runtime.dynamic.ArrayDestructurer.rest("
+			    + buildArrayDestructuringTargetExpression( binding.getTarget(), isDeclaration )
+			    + ")";
+		}
+
+		String	target		= binding.getTarget() == null ? "null" : buildArrayDestructuringTargetExpression( binding.getTarget(), isDeclaration );
+		String	nested		= binding.getPattern() == null
+		    ? "null"
+		    : buildArrayDestructuringBindingsExpression( binding.getPattern().getBindings(), isDeclaration );
+		String	defaultExpr	= binding.getDefaultValue() == null
+		    ? "null"
+		    : "(__ignored) -> " + transpiler.transform( binding.getDefaultValue(), TransformerContext.NONE );
+
+		return "ortus.boxlang.runtime.dynamic.ArrayDestructurer.binding("
+		    + target + ", "
+		    + nested + ", "
+		    + defaultExpr
+		    + ")";
+	}
+
+	/**
+	 * buildDestructuringTargetExpression.
+	 */
+	private String buildDestructuringTargetExpression( BoxExpression target, boolean isDeclaration ) {
+		DestructuringTargetDescriptor	descriptor	= describeDestructuringTarget( target, isDeclaration );
+		String							path		= descriptor.path().stream().map( this::quoteJavaString ).collect( Collectors.joining( ", " ) );
+		return "ortus.boxlang.runtime.dynamic.ObjectDestructurer.target(" + ( descriptor.scoped() ? "true" : "false" ) + ", " + path + ")";
+	}
+
+	/**
+	 * buildArrayDestructuringTargetExpression.
+	 */
+	private String buildArrayDestructuringTargetExpression( BoxExpression target, boolean isDeclaration ) {
+		DestructuringTargetDescriptor	descriptor	= describeDestructuringTarget( target, isDeclaration );
+		String							path		= descriptor.path().stream().map( this::quoteJavaString ).collect( Collectors.joining( ", " ) );
+		return "ortus.boxlang.runtime.dynamic.ArrayDestructurer.target(" + ( descriptor.scoped() ? "true" : "false" ) + ", " + path + ")";
+	}
+
+	/**
+	 * describeDestructuringTarget.
+	 */
+	private DestructuringTargetDescriptor describeDestructuringTarget( BoxExpression target, boolean isDeclaration ) {
+		if ( target instanceof BoxIdentifier id ) {
+			return new DestructuringTargetDescriptor( false, List.of( id.getName() ) );
+		}
+		if ( target instanceof BoxScope scope ) {
+			return new DestructuringTargetDescriptor( false, List.of( scope.getName() ) );
+		}
+		if ( target instanceof BoxDotAccess dotAccess ) {
+			List<String>	segments	= new ArrayList<>();
+			BoxExpression	current		= dotAccess;
+			while ( current instanceof BoxDotAccess dot ) {
+				if ( dot.isSafe() ) {
+					throw new ExpressionException( "Destructuring targets cannot use safe navigation.", dot.getPosition(), dot.getSourceText() );
+				}
+				if ( ! ( dot.getAccess() instanceof BoxIdentifier id ) ) {
+					throw new ExpressionException(
+					    "Destructuring targets only support identifier path segments.",
+					    dot.getAccess().getPosition(),
+					    dot.getAccess().getSourceText() );
+				}
+				segments.add( 0, id.getName() );
+				current = dot.getContext();
+			}
+			String scopeName;
+			if ( current instanceof BoxScope scope ) {
+				scopeName = scope.getName();
+			} else if ( current instanceof BoxIdentifier id && isExplicitDestructuringScope( id.getName() ) ) {
+				scopeName = id.getName();
+			} else {
+				throw new ExpressionException(
+				    "Destructuring dotted targets must start with an explicit scope.",
+				    target.getPosition(),
+				    target.getSourceText() );
+			}
+			segments.add( 0, scopeName );
+			if ( isDeclaration ) {
+				throw new ExpressionException(
+				    "Scoped targets are not allowed in var/final/static destructuring declarations.",
+				    target.getPosition(),
+				    target.getSourceText() );
+			}
+			return new DestructuringTargetDescriptor( true, segments );
+		}
+
+		throw new ExpressionException(
+		    "Unsupported destructuring target [" + target.getClass().getSimpleName() + "]",
+		    target.getPosition(),
+		    target.getSourceText() );
+	}
+
+	/**
+	 * extractDestructuringKeyName.
+	 */
+	private String extractDestructuringKeyName( BoxExpression key, BoxObjectDestructuringBinding binding ) {
+		if ( key instanceof BoxIdentifier id ) {
+			return id.getName();
+		}
+		if ( key instanceof BoxStringLiteral str ) {
+			return str.getValue();
+		}
+		if ( key instanceof BoxIntegerLiteral integer ) {
+			return integer.getValue();
+		}
+		if ( key instanceof BoxFQN fqn ) {
+			return fqn.getValue();
+		}
+		if ( key instanceof BoxScope scope ) {
+			return scope.getName();
+		}
+
+		throw new ExpressionException(
+		    "Unsupported destructuring key [" + key.getClass().getSimpleName() + "]",
+		    binding.getPosition(),
+		    binding.getSourceText() );
+	}
+
+	/**
+	 * quoteJavaString.
+	 */
+	private String quoteJavaString( String value ) {
+		return "\"" + value.replace( "\\", "\\\\" ).replace( "\"", "\\\"" ) + "\"";
+	}
+
+	/**
+	 * isExplicitDestructuringScope.
+	 */
+	private boolean isExplicitDestructuringScope( String scopeName ) {
+		return switch ( scopeName.toLowerCase() ) {
+			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread", "url",
+			    "variables" -> true;
+			default -> false;
+		};
+	}
+
+	/**
+	 * DestructuringTargetDescriptor.
+	 */
+	private record DestructuringTargetDescriptor( boolean scoped, List<String> path ) {
+	}
+
 	private Node transformCompoundEquals( BoxAssignment assignment, TransformerContext context ) throws IllegalStateException {
 		// Note any var keyword is completley ignored in this code path!
 
-		Expression			right	= ( Expression ) transpiler.transform( assignment.getRight(), TransformerContext.NONE );
-		String				template;
-		Node				accessKey;
+		final String	right;
+		String			template;
+		Node			accessKey;
 
-		Map<String, String>	values	= new HashMap<>() {
+		// Special handling for ConcatEqual with BoxStringConcat to avoid nested Concat.invoke calls
+		if ( assignment.getOp() == BoxAssignmentOperator.ConcatEqual && assignment.getRight() instanceof BoxStringConcat concat ) {
+			// Get optimized values and build Object[] array directly
+			List<BoxExpression> optimized = optimizeStringLiterals( concat.getValues() );
+			if ( optimized.size() == 1 ) {
+				// Single optimized value, just transform it
+				Expression singleValue = ( Expression ) transpiler.transform( optimized.get( 0 ), TransformerContext.NONE );
+				right = singleValue.toString();
+			} else {
+				// Multiple values, build Object[] array
+				List<String> transformedValues = optimized
+				    .stream()
+				    .map( v -> transpiler.transform( v, TransformerContext.NONE ).toString() )
+				    .toList();
+				right = "new Object[]{" + String.join( ", ", transformedValues ) + "}";
+			}
+		} else {
+			Expression rightExpr = ( Expression ) transpiler.transform( assignment.getRight(), TransformerContext.NONE );
+			right = rightExpr.toString();
+		}
 
-										{
-											put( "contextName", transpiler.peekContextName() );
-											put( "right", right.toString() );
-										}
-									};
+		Map<String, String> values = new HashMap<>() {
+
+			{
+				put( "contextName", transpiler.peekContextName() );
+				put( "right", right );
+			}
+		};
 
 		if ( assignment.getLeft() instanceof BoxIdentifier id ) {
 			accessKey = createKey( id.getName() );
@@ -339,6 +664,47 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	private boolean hasFinal( List<BoxAssignmentModifier> modifiers ) {
 		return modifiers.stream().anyMatch( it -> it == BoxAssignmentModifier.FINAL );
+	}
+
+	/**
+	 * Optimizes a list of expressions by combining contiguous string literals.
+	 *
+	 * @param values the list of expressions to optimize
+	 * 
+	 * @return an optimized list with contiguous string literals combined
+	 */
+	private List<BoxExpression> optimizeStringLiterals( List<BoxExpression> values ) {
+		if ( values.isEmpty() ) {
+			return values;
+		}
+
+		List<BoxExpression>	result				= new ArrayList<>();
+		StringBuilder		combinedString		= new StringBuilder();
+		BoxExpression		firstLiteralNode	= null;
+
+		for ( BoxExpression value : values ) {
+			if ( value instanceof BoxStringLiteral literal ) {
+				if ( firstLiteralNode == null ) {
+					firstLiteralNode = value;
+				}
+				combinedString.append( literal.getValue() );
+			} else {
+				// Non-literal found, flush any accumulated string
+				if ( combinedString.length() > 0 ) {
+					result.add( new BoxStringLiteral( combinedString.toString(), firstLiteralNode.getPosition(), firstLiteralNode.getSourceText() ) );
+					combinedString		= new StringBuilder();
+					firstLiteralNode	= null;
+				}
+				result.add( value );
+			}
+		}
+
+		// Flush any remaining combined string
+		if ( combinedString.length() > 0 ) {
+			result.add( new BoxStringLiteral( combinedString.toString(), firstLiteralNode.getPosition(), firstLiteralNode.getSourceText() ) );
+		}
+
+		return result;
 	}
 
 	private String getMethodCallTemplate( BoxAssignment assignment ) {

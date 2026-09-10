@@ -106,7 +106,7 @@ public class FileCopyTest {
 		    """,
 		    context );
 		assertTrue( FileSystemUtil.exists( destinationFile ) );
-		assertTrue( FileSystemUtil.read( destinationFile, "utf-8", null ).equals( "copy me" ) );
+		assertTrue( FileSystemUtil.readString( destinationFile, "utf-8" ).equals( "copy me" ) );
 	}
 
 	@DisplayName( "It tests the BIF FileCopy will create the nested destinatioin paths by default" )
@@ -123,7 +123,7 @@ public class FileCopyTest {
 		    """,
 		    context );
 		assertTrue( FileSystemUtil.exists( nestedDestinationFile ) );
-		assertTrue( FileSystemUtil.read( nestedDestinationFile, "utf-8", null ).equals( "copy me" ) );
+		assertTrue( FileSystemUtil.readString( nestedDestinationFile, "utf-8" ).equals( "copy me" ) );
 	}
 
 	@DisplayName( "It tests that file copy error with createPath set to false" )
@@ -203,6 +203,52 @@ public class FileCopyTest {
 		    fileCopy( source, badFile, true, true, "torrent" );
 		    """,
 		    context );
+	}
+
+	@DisplayName( "It can copy a file using Java Path objects" )
+	@Test
+	public void testFileCopyWithJavaPath() throws IOException {
+		variables.put( Key.of( "source" ), Path.of( sourceFile ).toAbsolutePath() );
+		variables.put( Key.of( "destination" ), Path.of( destinationFile ).toAbsolutePath() );
+		instance.executeSource(
+		    """
+		    fileCopy( source, destination );
+		    """,
+		    context );
+		assertTrue( FileSystemUtil.exists( destinationFile ) );
+	}
+
+	@DisplayName( "It can copy a file using Java File objects" )
+	@Test
+	public void testFileCopyWithJavaFile() throws IOException {
+		variables.put( Key.of( "source" ), Path.of( sourceFile ).toAbsolutePath().toFile() );
+		variables.put( Key.of( "destination" ), Path.of( destinationFile ).toAbsolutePath().toFile() );
+		instance.executeSource(
+		    """
+		    fileCopy( source, destination );
+		    """,
+		    context );
+		assertTrue( FileSystemUtil.exists( destinationFile ) );
+	}
+
+	@DisplayName( "It rejects an explicit BoxFile object" )
+	@Test
+	public void testFileCopyRejectsBoxFile() throws IOException {
+		variables.put( Key.of( "source" ), Path.of( sourceFile ).toAbsolutePath().toString() );
+		variables.put( Key.of( "destination" ), Path.of( destinationFile ).toAbsolutePath().toString() );
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		        fileObj = fileOpen( source, "read" );
+		        try {
+		            fileCopy( fileObj, destination );
+		        } finally {
+		            fileClose( fileObj );
+		        }
+		        """,
+		        context )
+		);
 	}
 
 }

@@ -45,7 +45,7 @@ public class PlusTest {
 	@Test
 	void testItCanAddStrings() {
 		assertThat( Plus.invoke( "3", "2" ) ).isEqualTo( 5 );
-		assertThat( Plus.invoke( "3.5", "2.5" ).doubleValue() ).isEqualTo( 6 );
+		assertThat( ( ( Number ) Plus.invoke( "3.5", "2.5" ) ).doubleValue() ).isEqualTo( 6 );
 	}
 
 	@DisplayName( "It can compound add" )

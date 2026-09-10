@@ -65,10 +65,12 @@ public class BooleanFormatTest {
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 0 )" ), "false" );
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( -1 )" ), "true" );
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 1 )" ), "true" );
+		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 999 )" ), "true" );
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 'Yes' )" ), "true" );
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 'No' )" ), "false" );
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 'true' )" ), "true" );
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 'false' )" ), "false" );
+		assertEquals( ( String ) instance.executeStatement( "booleanFormat( '' )" ), "false" );
 		assertThrows( BoxRuntimeException.class, () -> instance.executeStatement( "booleanFormat( 'blah' )" ) );
 	}
 
@@ -88,6 +90,34 @@ public class BooleanFormatTest {
 		assertEquals( ( String ) instance.executeStatement( "javacast( 'integer', 0 ).booleanFormat()" ), "false" );
 		assertEquals( ( String ) instance.executeStatement( "javacast( 'integer', -1 ).booleanFormat()" ), "true" );
 		assertEquals( ( String ) instance.executeStatement( "javacast( 'integer', 1 ).booleanFormat()" ), "true" );
+	}
+
+	@DisplayName( "It tests the deprecated TrueFalseFormat alias" )
+	@Test
+	public void testDeprecatedTrueFalseFormatAlias() {
+		assertEquals( ( String ) instance.executeStatement( "trueFalseFormat( 'true' )", context ), "true" );
+		assertEquals( ( String ) instance.executeStatement( "trueFalseFormat( true )", context ), "true" );
+		assertEquals( ( String ) instance.executeStatement( "trueFalseFormat( 1 )", context ), "true" );
+		assertEquals( ( String ) instance.executeStatement( "trueFalseFormat( 999 )", context ), "true" );
+		assertEquals( ( String ) instance.executeStatement( "trueFalseFormat( 'yes' )", context ), "true" );
+
+		assertEquals( ( String ) instance.executeStatement( "'true'.trueFalseFormat()", context ), "true" );
+		assertEquals( ( String ) instance.executeStatement( "true.trueFalseFormat()", context ), "true" );
+		assertEquals( ( String ) instance.executeStatement( "(1).trueFalseFormat()", context ), "true" );
+		assertEquals( ( String ) instance.executeStatement( "(999).trueFalseFormat()", context ), "true" );
+		assertEquals( ( String ) instance.executeStatement( "'yes'.trueFalseFormat()", context ), "true" );
+
+		assertEquals( ( String ) instance.executeStatement( "trueFalseFormat( 'false' )", context ), "false" );
+		assertEquals( ( String ) instance.executeStatement( "trueFalseFormat( false )", context ), "false" );
+		assertEquals( ( String ) instance.executeStatement( "trueFalseFormat( 0 )", context ), "false" );
+		assertEquals( ( String ) instance.executeStatement( "trueFalseFormat( 'no' )", context ), "false" );
+
+		assertEquals( ( String ) instance.executeStatement( "'false'.trueFalseFormat()", context ), "false" );
+		assertEquals( ( String ) instance.executeStatement( "false.trueFalseFormat()", context ), "false" );
+		assertEquals( ( String ) instance.executeStatement( "(0).trueFalseFormat()", context ), "false" );
+		assertEquals( ( String ) instance.executeStatement( "'no'.trueFalseFormat()", context ), "false" );
+		assertEquals( ( String ) instance.executeStatement( "trueFalseFormat( '' )", context ), "false" );
+		assertEquals( ( String ) instance.executeStatement( "trueFalseFormat( null )", context ), "false" );
 	}
 
 }

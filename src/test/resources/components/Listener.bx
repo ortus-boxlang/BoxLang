@@ -1,0 +1,20 @@
+class {
+	this.onCreateCount = 0;
+	this.onEventCount = 0;
+	this.onErrorCount = 0;
+	this.lastKind = "";
+
+	function onCreate( required struct event ) {
+		this.onCreateCount = this.onCreateCount + 1;
+		this.lastKind = event.kind;
+	}
+
+	function onEvent( required struct event ) {
+		this.onEventCount = this.onEventCount + 1;
+		this.lastKind = event.kind;
+	}
+
+	function onError( required any exception ) {
+		this.onErrorCount = this.onErrorCount + 1;
+	}
+}

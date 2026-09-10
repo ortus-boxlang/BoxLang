@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.jdbc.BoxConnection;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
  * Represents a column type in a Query object.
@@ -73,13 +74,15 @@ public enum QueryColumnType {
 	 * Create a new QueryColumnType from a string value.
 	 */
 	public static QueryColumnType fromString( String type ) {
-		type = type.toLowerCase();
+		// Legacy CF code can prefix types with "cf_sql_", so we'll strip that if it's present.
+		type = type.toLowerCase().replace( "cf_sql_", "" );
 
 		switch ( type ) {
 			case "array" :
 			case "struct" :
 			case "sqlxml" :
 				return OTHER;
+			case "long" :
 			case "bigint" :
 				return BIGINT;
 			case "binary" :
@@ -301,6 +304,15 @@ public enum QueryColumnType {
 		if ( value == null ) {
 			return null;
 		}
+		// Treat empty arrays and empty strings as null for all SQL types.
+		// This handles cases where JDBC drivers return empty arrays for nullable
+		// metadata columns (e.g. DatabaseMetaData.getColumns()), which would
+		// otherwise fail to cast to numeric SQL types during query reconstruction
+		// (e.g. Query.filter() -> BLCollector.toQuery() -> addRow).
+		if ( value instanceof Array arr && arr.isEmpty() ) {
+			return null;
+		}
+
 		try {
 			return switch ( type ) {
 				case QueryColumnType.INTEGER -> IntegerCaster.cast( true, value );
@@ -339,13 +351,13 @@ public enum QueryColumnType {
 				case QueryColumnType.REFCURSOR -> value;
 			};
 		} catch ( Exception e ) {
-			throw new IllegalArgumentException( "Cannot convert value to SQL type " + type + ": " + e.getMessage(), e );
+			throw new BoxCastException( "Cannot convert value to SQL type " + type + ": " + e.getMessage(), e );
 		}
 	}
 
 	/**
 	 * Convert a value to the appropriate SQL type.
-	 * 
+	 *
 	 * Deprecated: Use the overload that includes BoxConnection.
 	 * <p>
 	 *

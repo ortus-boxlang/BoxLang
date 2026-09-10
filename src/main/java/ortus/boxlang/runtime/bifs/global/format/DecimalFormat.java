@@ -58,7 +58,8 @@ public class DecimalFormat extends BIF {
 	 */
 	public String _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Locale			locale			= ( Locale ) context.getConfig().get( Key.locale );
-		Number			value			= NumberCaster.cast( arguments.get( Key.number ) );
+		Object			number			= arguments.get( Key.number );
+		Number			value			= ( number instanceof String str && str.isEmpty() ) ? 0 : NumberCaster.cast( number );
 		int				decimalPlaces	= arguments.getAsInteger( Key.length );
 		NumberFormat	formatter		= java.text.DecimalFormat.getInstance( locale );
 		formatter.setMinimumFractionDigits( 2 );

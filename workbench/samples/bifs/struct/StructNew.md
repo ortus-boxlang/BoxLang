@@ -33,7 +33,7 @@ writeDump( unordered );
 
 ### New ordered struct using literal notation
 
-CF2016+ Creates an ordered struct. Note the square brackets.
+Creates an ordered struct. Note the square brackets.
 
 <a href="https://try.boxlang.io/?code=eJzLL0pJLUpNUbBViFbg4nRUsFIw1OHidALSRkDaGUgbc8Vac5UXZZakupTmFmgo5EN1aFpzAQDI2Q9h" target="_blank">Run Example</a>
 
@@ -81,7 +81,7 @@ writeDump( ordered );
 
 ### New case-sensitive struct using function
 
-CF2021+ Creates a case-sensitive struct.
+Creates a case-sensitive struct.
 
 <a href="https://try.boxlang.io/?code=eJxLTixOLU7NK84sySxLVbBVKC4pKk0u8Ust11BQSkaWU1LQtOZCEdFzBKo3RBd0AgoaoQs6AwWNrbnKizJLUl1Kcws0FFDkQUYDAPspLu4%3D" target="_blank">Run Example</a>
 
@@ -97,7 +97,7 @@ writeDump( casesensitive );
 
 ### New case-sensitive struct using literal notation
 
-CF2021+ Creates a case-sensitive struct.
+Creates a case-sensitive struct.
 
 
 ```java
@@ -114,7 +114,7 @@ writeDump( casesensitive );
 
 ### New ordered and case-sensitive struct using function
 
-CF2021+ Creates a case-sensitive struct.
+Creates a case-sensitive struct.
 
 <a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVKAYz%2FFLLNRSU8otSUotSU3STE4tTi1PzijNLMstSlRQ0rbmK4Vr0nIGajFFEnIAiRigijkARQ2uu8qLMklSX0twCDQWEJMg4AJpRK88%3D" target="_blank">Run Example</a>
 
@@ -130,7 +130,7 @@ writeDump( someStruct );
 
 ### New ordered and case-sensitive struct using literal notation
 
-CF2021+ Creates an ordered and case-sensitive struct.
+Creates an ordered and case-sensitive struct.
 
 
 ```java

@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.application;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URL;
@@ -31,6 +32,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.watchers.WatcherInstance;
+import ortus.boxlang.runtime.async.watchers.listeners.ClassListener;
+import ortus.boxlang.runtime.async.watchers.listeners.ClosureListener;
+import ortus.boxlang.runtime.async.watchers.listeners.IWatcherListener;
+import ortus.boxlang.runtime.async.watchers.listeners.StructListener;
 import ortus.boxlang.runtime.bifs.global.scheduler.SchedulerStart;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.filters.SessionPrefixFilter;
@@ -41,12 +47,15 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.events.IInterceptorLambda;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ApplicationService;
@@ -55,12 +64,15 @@ import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.services.SchedulerService;
+import ortus.boxlang.runtime.services.WatcherService;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
-import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.ClassLoaderUtil;
 
 /**
  * I represent an Application in BoxLang
@@ -86,7 +98,7 @@ public class Application {
 	/**
 	 * The duration of the application before it times out
 	 */
-	Duration								appDuration						= Duration.ZERO;
+	private Duration						appDuration						= Duration.ZERO;
 
 	/**
 	 * The timestamp when the application was last accessed
@@ -124,9 +136,19 @@ public class Application {
 	protected SchedulerService				schedulerService				= BoxRuntime.getInstance().getSchedulerService();
 
 	/**
+	 * Watcher Service
+	 */
+	protected WatcherService				watcherService					= BoxRuntime.getInstance().getWatcherService();
+
+	/**
 	 * The sessions for this application
 	 */
 	private ICacheProvider					sessionsCache;
+
+	/**
+	 * session cleanup interceptor for: BEFORE_CACHE_ELEMENT_REMOVED
+	 */
+	private IInterceptorLambda				sessionCacheInterceptorBeforeCacheElementRemoved;
 
 	/**
 	 * The listener that started this application (used for stopping it)
@@ -157,6 +179,11 @@ public class Application {
 	 * Started schedulers
 	 */
 	private List<Key>						startedSchedulers				= new ArrayList<>();
+
+	/**
+	 * Started watchers
+	 */
+	private List<Key>						startedWatchers					= new ArrayList<>();
 
 	/**
 	 * Default session cache properties
@@ -258,7 +285,7 @@ public class Application {
 	 *
 	 * @param requestContext The request context
 	 */
-	public void startupClassLoaderPaths( RequestBoxContext requestContext ) {
+	public ClassLoader startupClassLoaderPaths( RequestBoxContext requestContext ) {
 		URL[] loadPathsUrls = this.startingListener.getJavaSettingsLoadPaths( requestContext );
 
 		// if we don't have any return out
@@ -266,23 +293,66 @@ public class Application {
 			logger.trace( "===> Setting the context classLoader to the [runtime] loader during startupClassLoaderPaths via [{}]",
 			    Thread.currentThread().getName() );
 			// If there are no javasettings, ensure we just use the runtime CL
-			Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
-			return;
+			ClassLoader runtimeClassLoader = BoxRuntime.getInstance().getRuntimeLoader();
+			Thread.currentThread().setContextClassLoader( runtimeClassLoader );
+			return runtimeClassLoader;
 		}
 
 		// Get or compute a class loader according to the incoming URIs for classes to load
 		// Remember that Application.bx is instantiated per request, so each request could be different
-		String loaderCacheKey = EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );
-		this.classLoaders.computeIfAbsent( loaderCacheKey,
-		    key -> {
-			    logger.debug( "Application ClassLoader [{}] registered with these paths: [{}]", this.name, Arrays.toString( loadPathsUrls ) );
-			    return new DynamicClassLoader( this.name, loadPathsUrls, BoxRuntime.getInstance().getRuntimeLoader(), false );
-		    } );
+
+		// if javaSettings.reloadOnChange is true, incorporate time stamps for each jar
+
+		Object[]	pathsForHashing	= Arrays.copyOf( loadPathsUrls, loadPathsUrls.length, Object[].class );
+		IStruct		javaSettings	= this.startingListener.getSettings().getAsStruct( Key.javaSettings );
+		boolean		reloadOnChange	= BooleanCaster.cast( javaSettings.get( Key.reloadOnChange ) );
+		// If we want to reload when the jars change on disk, add the timestamps into the array to hash.
+		if ( reloadOnChange ) {
+			for ( int i = 0; i < loadPathsUrls.length; i++ ) {
+				File file = new File( loadPathsUrls[ i ].getPath() );
+				if ( file.exists() ) {
+					pathsForHashing[ i ] = loadPathsUrls[ i ].toString() + file.lastModified();
+				}
+			}
+			// Now the URL of paths has been modified to include the last modified timestamps if reloadOnChange is true
+			// This will force a new CL if one of the jars has changed on disk
+		}
+		String				loaderCacheKey	= ClassLoaderUtil.hashSorted( pathsForHashing );
+		DynamicClassLoader	theCL			= this.classLoaders.computeIfAbsent( loaderCacheKey, key -> {
+												logger.debug( "Application ClassLoader [{}] registered with these paths: [{}]", this.name,
+												    Arrays.toString( loadPathsUrls ) );
+												return new DynamicClassLoader( this.name, loadPathsUrls,
+												    BoxRuntime.getInstance().getRuntimeLoader(), false );
+											} );
+
+		// clear old class loaders for the same file set
+		if ( reloadOnChange ) {
+			// remove any CLs from the map whose URLHash is the same as theCL.getURLHash() but don't remove ourselves!
+			// This is to prevent memory leaks when using reloadOnChange and changing the jars many times in a row
+			// Note, we are NOT closing these CLs. It's not safe to since they may be in by another request and I don't want this action
+			// to activley trash any other threads still using the old CL.
+			boolean removedAny = this.classLoaders.entrySet().removeIf( entry -> {
+				if ( entry.getValue() != theCL && entry.getValue().getURLHash().equals( theCL.getURLHash() ) ) {
+					BoxRuntime.getInstance().getClassLocator().clearForClassLoader( entry.getValue() );
+					return true;
+				}
+				return false;
+			} );
+			// If any class loaders were removed, fire a single GC hint so the Cleaner can run on the
+			// now-abandoned class loaders and delete their stale temp JAR files.
+			// This line allows temp jar files to be removed in Windows from the previous CL, assuming they are no longer having
+			// any hard reference to themselves.
+			if ( removedAny ) {
+				System.gc();
+			}
+		}
+
 		// Make sure our thread is using the right class loader
 		logger.trace( "===> Setting the context classLoader to the [javasettings] loader during startupClassLoaderPaths via [{}]",
 		    Thread.currentThread().getName() );
 
-		Thread.currentThread().setContextClassLoader( this.classLoaders.get( loaderCacheKey ) );
+		Thread.currentThread().setContextClassLoader( theCL );
+		return theCL;
 	}
 
 	/**
@@ -336,8 +406,8 @@ public class Application {
 			// TODO: the context when the application started isn't even nececarily the same as the context whe the session started, so even that isn't quite right.
 			// Both app end and session end generally run outside of an HTTP request, so it's ambiguous what should really be available to them.
 			this.startingListener.getRequestContext().registerDependentThread();
-			// Startup the class loader
-			startupClassLoaderPaths( context.getRequestContext() );
+			// Startup the class loader and retain it on the request-scoped listener
+			this.startingListener.setRequestClassLoader( startupClassLoaderPaths( context.getRequestContext() ) );
 			// Startup the caches
 			startupAppCaches( context.getRequestContext() );
 			// Startup session storages
@@ -369,7 +439,10 @@ public class Application {
 
 			// Startup the schedulers so the application can use them
 			startupAppSchedulers( context.getRequestContext() );
+			// Startup the watchers so the application can use them
+			startupAppWatchers( context.getRequestContext() );
 
+			// Calculate the application duration for expiry purposes
 			calculateAppDuration();
 
 			// Start up expiry task
@@ -517,6 +590,109 @@ public class Application {
 	}
 
 	/**
+	 * Startup the application watchers if any are defined in the settings of the Application.bx
+	 *
+	 * <pre>
+	 * this.watchers = {
+	 *     myWatcher = {
+	 *         paths     = [ "/path/to/watch" ],
+	 *         listener  = myListenerClosure,  // Function, IStruct, class name String, or IClassRunnable instance
+	 *         recursive = true,               // optional, default true
+	 *         debounce  = 0,                  // optional, ms
+	 *         throttle  = 0,                  // optional, ms
+	 *         atomicWrites   = true,          // optional, default true
+	 *         errorThreshold = 10             // optional, default 10
+	 *     }
+	 * }
+	 * </pre>
+	 *
+	 * @param requestContext The request context
+	 */
+	public void startupAppWatchers( RequestBoxContext requestContext ) {
+		StructCaster
+		    .attempt( requestContext.getConfigItems( Key.applicationSettings, Key.watchers ) )
+		    .ifPresent( appWatchers -> {
+			    for ( Map.Entry<Key, Object> entry : appWatchers.entrySet() ) {
+				    Key watcherKey = entry.getKey();
+				    Key watcherName = Key.of( this.name.getName() + ":" + watcherKey.getName() );
+
+				    // Skip if already registered
+				    if ( watcherService.hasWatcher( watcherName ) ) {
+					    continue;
+				    }
+
+				    IStruct def		= StructCaster.cast( entry.getValue() );
+
+				    // Resolve paths: string or array
+				    Object pathsArg	= def.get( Key.paths );
+				    Array pathArray	= new Array();
+				    if ( pathsArg instanceof String singlePath ) {
+					    pathArray.add( singlePath );
+				    } else if ( pathsArg instanceof Array arr ) {
+					    pathArray = arr;
+				    } else {
+					    throw new BoxRuntimeException(
+					        "Application watcher [" + watcherKey.getName() + "]: 'paths' must be a string or an array of strings." );
+				    }
+
+				    // Resolve listener
+				    Object			listenerArg	= def.get( Key.listener );
+				    IWatcherListener listener	= resolveAppWatcherListener( listenerArg, requestContext );
+
+				    // Build the watcher instance
+				    WatcherInstance	watcher		= WatcherInstance.builder( watcherName )
+				        .paths( pathArray )
+				        .recursive( BooleanCaster.cast( def.getOrDefault( Key.recursive, true ) ) )
+				        .debounce( LongCaster.cast( def.getOrDefault( Key.debounce, 0L ) ) )
+				        .throttle( LongCaster.cast( def.getOrDefault( Key.throttle, 0L ) ) )
+				        .atomicWrites( BooleanCaster.cast( def.getOrDefault( Key.atomicWrites, true ) ) )
+				        .errorThreshold( IntegerCaster.cast( def.getOrDefault( Key.errorThreshold, 10 ) ) )
+				        .parentContext( requestContext )
+				        .listener( listener )
+				        .build();
+
+				    watcherService.registerAndStart( watcher, false );
+				    startedWatchers.add( watcherName );
+			    }
+		    } );
+	}
+
+	/**
+	 * Resolves a listener definition from an Application.bx watcher struct entry into an {@link IWatcherListener}.
+	 *
+	 * Supported forms:
+	 * <ul>
+	 * <li>{@link Function} — wrapped as a {@code ClosureListener}</li>
+	 * <li>{@link IStruct} — wrapped as a {@code StructListener}</li>
+	 * <li>{@link IClassRunnable} — wrapped as a {@code ClassListener} using the pre-instantiated class</li>
+	 * <li>{@link String} — treated as a class name; wrapped as a {@code ClassListener}</li>
+	 * </ul>
+	 *
+	 * @param listenerArg    The raw listener value from the watcher definition struct
+	 * @param requestContext The request context used for class resolution
+	 *
+	 * @return An {@link IWatcherListener} instance
+	 *
+	 * @throws BoxRuntimeException if {@code listenerArg} is not a supported type
+	 */
+	private IWatcherListener resolveAppWatcherListener( Object listenerArg, RequestBoxContext requestContext ) {
+		if ( listenerArg instanceof Function fn ) {
+			return new ClosureListener( fn );
+		}
+		if ( listenerArg instanceof IStruct structArg ) {
+			return new StructListener( structArg );
+		}
+		if ( listenerArg instanceof IClassRunnable icr ) {
+			return new ClassListener( icr, requestContext );
+		}
+		if ( listenerArg instanceof String className ) {
+			return new ClassListener( className, requestContext );
+		}
+		throw new BoxRuntimeException(
+		    "Application watcher listener must be a Function, IStruct of functions, a class name String, or an IClassRunnable instance." );
+	}
+
+	/**
 	 * Build a cache key for the application
 	 *
 	 * @param cacheName The name of the cache
@@ -583,9 +759,10 @@ public class Application {
 		// Now store it
 		this.sessionsCache = this.cacheService.getCache( sessionCacheName );
 		// Register the session cleanup interceptor for: BEFORE_CACHE_ELEMENT_REMOVED
+
 		this.sessionsCache
 		    .getInterceptorPool()
-		    .register( data -> {
+		    .register( this.sessionCacheInterceptorBeforeCacheElementRemoved = data -> {
 			    ICacheProvider targetCache = ( ICacheProvider ) data.get( "cache" );
 			    String		key			= ( String ) data.get( "key" );
 
@@ -698,6 +875,33 @@ public class Application {
 	}
 
 	/**
+	 * Get the application duration before it times out.
+	 *
+	 * @return the application duration
+	 */
+	public Duration getAppDuration() {
+		return this.appDuration;
+	}
+
+	/**
+	 * Get the list of scheduler names that were started by this application.
+	 *
+	 * @return the list of started scheduler keys
+	 */
+	public List<Key> getStartedSchedulers() {
+		return this.startedSchedulers;
+	}
+
+	/**
+	 * Get the list of watcher names that were started by this application.
+	 *
+	 * @return the list of started watcher keys
+	 */
+	public List<Key> getStartedWatchers() {
+		return this.startedWatchers;
+	}
+
+	/**
 	 * Update the last access time of the application to the current time.
 	 */
 	public Application updateLastAccessTime() {
@@ -801,8 +1005,10 @@ public class Application {
 		// Shutdown all started schedulers if forced
 		if ( force ) {
 			startedSchedulers.forEach( schedulerName -> {
-				// TODO: Allow the user to configure a timeout for graceful shutdown
 				schedulerService.removeScheduler( schedulerName );
+			} );
+			startedWatchers.forEach( watcherName -> {
+				watcherService.removeWatcher( watcherName );
 			} );
 		}
 
@@ -828,6 +1034,13 @@ public class Application {
 			    .map( Key::of )
 			    .map( sessionKey -> ( Session ) this.sessionsCache.get( sessionKey.getName() ).get() )
 			    .forEach( session -> session.shutdown( this.getStartingListener() ) );
+		}
+
+		if ( this.sessionCacheInterceptorBeforeCacheElementRemoved != null ) {
+			this.sessionsCache.getInterceptorPool().unregister(
+			    this.sessionCacheInterceptorBeforeCacheElementRemoved
+			);
+			this.sessionCacheInterceptorBeforeCacheElementRemoved = null;
 		}
 
 		// Announce it to the listener

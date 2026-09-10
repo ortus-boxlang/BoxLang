@@ -1,0 +1,2 @@
+result = a === b;
+result = a !== b;

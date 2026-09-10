@@ -15,7 +15,6 @@
 package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +48,7 @@ import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.CollectionCaster;
+import ortus.boxlang.runtime.dynamic.casters.IterableCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -210,14 +209,14 @@ public class BoxForInTransformer extends AbstractTransformer {
 			) );
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, endIteratorLabel ) );
 
-			// For non-structs: use CollectionCaster.cast(...).iterator()
+			// For non-structs: use IterableCaster.cast(...).iterator()
 			nodes.add( notStructLabel );
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, collectionVar.index() ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( CollectionCaster.class ),
+			    Type.getInternalName( IterableCaster.class ),
 			    "cast",
 			    Type.getMethodDescriptor(
-			        Type.getType( Collection.class ),
+			        Type.getType( Iterable.class ),
 			        Type.getType( Object.class )
 			    ),
 			    false
@@ -243,10 +242,10 @@ public class BoxForInTransformer extends AbstractTransformer {
 			// Single variable: use regular iterator
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, collectionVar.index() ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( CollectionCaster.class ),
+			    Type.getInternalName( IterableCaster.class ),
 			    "cast",
 			    Type.getMethodDescriptor(
-			        Type.getType( Collection.class ),
+			        Type.getType( Iterable.class ),
 			        Type.getType( Object.class )
 			    ),
 			    false
@@ -263,13 +262,11 @@ public class BoxForInTransformer extends AbstractTransformer {
 			nodes.addAll( iteratorVar.nodes() );
 		}
 
+		var varStore = tracker.storeNewVariable( Opcodes.ASTORE );
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		nodes.addAll( varStore.nodes() );
 
 		nodes.add( loopStart );
-
-		var varStore = tracker.storeNewVariable( Opcodes.ASTORE );
-		// every iteration we will swap the values and pop in order to remove the older value
-		nodes.addAll( varStore.nodes() );
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, iteratorVar.index() ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
@@ -296,6 +293,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		nodes.addAll( expressionPos.end() );
 
 		nodes.addAll( transpiler.transform( forIn.getBody(), context, ReturnValueContext.VALUE_OR_NULL ) );
+		nodes.addAll( varStore.nodes() );
 
 		nodes.add( continueTarget );
 
@@ -336,8 +334,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, loopStart ) );
 
 		nodes.add( breakTarget );
-
-		nodes.addAll( varStore.nodes() );
+		nodes.add( new JumpInsnNode( Opcodes.GOTO, loopEnd ) );
 
 		nodes.add( loopEnd );
 

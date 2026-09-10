@@ -25,6 +25,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Struct;
 
 public class SecurityConfigTest {
 
@@ -76,6 +77,14 @@ public class SecurityConfigTest {
 		String importName = "java\\.lang\\.String";
 		securityConfig.disallowedImports.add( importName );
 		assertThrows( SecurityException.class, () -> securityConfig.isClassAllowed( "java.lang.String" ) );
+	}
+
+	@DisplayName( "It uses a configured secret seed without reading or creating the seed file" )
+	@Test
+	void testConfiguredSecretSeedDoesNotAccessRuntime() {
+		securityConfig.process( Struct.of( Key.secretSeed, "configured-seed" ) );
+
+		assertTrue( securityConfig.getSecretSeed().equals( "configured-seed" ) );
 	}
 
 }

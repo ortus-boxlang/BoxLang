@@ -45,6 +45,10 @@ public class StructKeyList extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @argument.structure The struct whose keys are returned.
+	 *
+	 * @argument.delimiter The delimiter to use between the keys in the returned list. Defaults to a comma.
+	 *
 	 * @return A string containing the keys of the structure, delimited by the specified delimiter (or a default delimiter comma if not provided).
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

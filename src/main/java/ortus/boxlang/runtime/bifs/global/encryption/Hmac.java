@@ -35,9 +35,6 @@ public class Hmac extends BIF {
 	private static final String		DEFAULT_ENCODING	= "utf-8";
 	private static final Integer	DEFAULT_ITERATIONS	= 1;
 
-	// The hash item object - non-local so we can reassign it in streams
-	private static Object			hashItem			= null;
-
 	/**
 	 * Constructor
 	 */
@@ -60,11 +57,13 @@ public class Hmac extends BIF {
 	 *
 	 * @argument.input The item to be hashed
 	 *
+	 * @argument.key The secret key used to generate the HMAC. Can be a string or a binary value.
+	 *
 	 * @argument.algorithm The supported {@link java.security.MessageDigest } algorithm (case-insensitive)
 	 *
 	 * @argument.encoding Applicable to strings ( default "utf-8" )
 	 *
-	 * @argument.iterations The number of iterations to re-digest the object ( default 1 );
+	 * @argument.numIterations The number of iterations to re-digest the object ( default 1 );
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	hashItem	= arguments.get( Key.input );

@@ -1,0 +1,10 @@
+class {
+
+	function init() {
+		var x = 1;
+
+		// This comment has a blank line before it
+		var y = 2;
+		return this;
+	}
+}

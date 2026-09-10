@@ -33,6 +33,7 @@ import java.sql.SQLException;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -72,62 +73,52 @@ public class QoQPreparedStatement extends QoQStatement implements java.sql.Prepa
 
 	@Override
 	public void setNull( int parameterIndex, int sqlType ) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'setNull'" );
+		setObject( parameterIndex, null, sqlType );
 	}
 
 	@Override
 	public void setBoolean( int parameterIndex, boolean x ) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'setBoolean'" );
+		setObject( parameterIndex, x, Types.BOOLEAN );
 	}
 
 	@Override
 	public void setByte( int parameterIndex, byte x ) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'setByte'" );
+		setObject( parameterIndex, x, Types.TINYINT );
 	}
 
 	@Override
 	public void setShort( int parameterIndex, short x ) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'setShort'" );
+		setObject( parameterIndex, x, Types.SMALLINT );
 	}
 
 	@Override
 	public void setInt( int parameterIndex, int x ) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'setInt'" );
+		setObject( parameterIndex, x, Types.INTEGER );
 	}
 
 	@Override
 	public void setLong( int parameterIndex, long x ) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'setLong'" );
+		setObject( parameterIndex, x, Types.BIGINT );
 	}
 
 	@Override
 	public void setFloat( int parameterIndex, float x ) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'setFloat'" );
+		setObject( parameterIndex, x, Types.REAL );
 	}
 
 	@Override
 	public void setDouble( int parameterIndex, double x ) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'setDouble'" );
+		setObject( parameterIndex, x, Types.DOUBLE );
 	}
 
 	@Override
 	public void setBigDecimal( int parameterIndex, BigDecimal x ) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'setBigDecimal'" );
+		setObject( parameterIndex, x, Types.DECIMAL );
 	}
 
 	@Override
 	public void setString( int parameterIndex, String x ) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'setString'" );
+		setObject( parameterIndex, x, Types.VARCHAR );
 	}
 
 	@Override
@@ -138,20 +129,17 @@ public class QoQPreparedStatement extends QoQStatement implements java.sql.Prepa
 
 	@Override
 	public void setDate( int parameterIndex, Date x ) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'setDate'" );
+		setObject( parameterIndex, x, Types.DATE );
 	}
 
 	@Override
 	public void setTime( int parameterIndex, Time x ) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'setTime'" );
+		setObject( parameterIndex, x, Types.TIME );
 	}
 
 	@Override
 	public void setTimestamp( int parameterIndex, Timestamp x ) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'setTimestamp'" );
+		setObject( parameterIndex, x, Types.TIMESTAMP );
 	}
 
 	@Override
@@ -205,8 +193,7 @@ public class QoQPreparedStatement extends QoQStatement implements java.sql.Prepa
 
 	@Override
 	public void setObject( int parameterIndex, Object x ) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'setObject'" );
+		setObject( parameterIndex, x, Types.JAVA_OBJECT );
 	}
 
 	@Override

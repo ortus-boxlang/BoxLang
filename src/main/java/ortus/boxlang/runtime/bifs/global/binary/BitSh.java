@@ -43,7 +43,7 @@ public class BitSh extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number Numeric value to shift.
+	 * @argument.number 32-bit signed integer value to shift.
 	 *
 	 * @argument.count Number of bits to shift (Integer in the range 0-31, inclusive).
 	 *

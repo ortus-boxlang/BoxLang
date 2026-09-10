@@ -65,12 +65,12 @@ public class BoxWhileTransformer extends AbstractTransformer {
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		// nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		var varStore = tracker.storeNewVariable( Opcodes.ASTORE );
+		nodes.addAll( varStore.nodes() );
 
 		// }
 
 		AsmHelper.addDebugLabel( nodes, "BoxWhile - start label" );
 		nodes.add( start );
-		nodes.addAll( varStore.nodes() );
 		// every iteration we will swap the values and pop in order to remove the older value
 		// if ( returnContext == ReturnValueContext.VALUE_OR_NULL ) {
 		// nodes.add( new InsnNode( Opcodes.SWAP ) );
@@ -95,14 +95,14 @@ public class BoxWhileTransformer extends AbstractTransformer {
 		nodes.add( new JumpInsnNode( Opcodes.IFEQ, end ) );
 
 		nodes.addAll( transpiler.transform( boxWhile.getBody(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
+		nodes.addAll( varStore.nodes() );
 
 		AsmHelper.addDebugLabel( nodes, "BoxWhile - jump start" );
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, start ) );
 
 		AsmHelper.addDebugLabel( nodes, "BoxWhile - breakTarget" );
 		nodes.add( breakTarget );
-
-		nodes.addAll( varStore.nodes() );
+		nodes.add( new JumpInsnNode( Opcodes.GOTO, end ) );
 
 		AsmHelper.addDebugLabel( nodes, "BoxWhile - end label" );
 		nodes.add( end );

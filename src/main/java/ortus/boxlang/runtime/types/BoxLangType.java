@@ -48,15 +48,19 @@ public enum BoxLangType {
 	ASSIGNABLE_ARRAY( Key.assignableArray ),
 	MODIFIABLE_STRUCT( Key.modifiableStruct ),
 	MODIFIABLE_QUERY( Key.modifiableQuery ),
+	MODIFIABLE_SET( Key.modifiableSet ),
 	NUMERIC( Key._NUMERIC ),
 	QUERY( Key._QUERY ),
+	SET( Key._SET ),
 	STRING( Key._STRING ),
 	STRING_STRICT( Key.string_strict ),
 	STRUCT( Key._STRUCT ),
 	STRUCT_LOOSE( Key.structLoose ),
 	UDF( Key._UDF ),
 	XML( Key.XML ),
-	STREAM( Key.stream );
+	STREAM( Key.stream ),
+	STRING_BUILDER( Key.stringBuilder ),
+	STRING_BUILDER_STRICT( Key.stringBuilderStrict );
 
 	/**
 	 * This class is used to store the key of the enum.
@@ -114,6 +118,36 @@ public enum BoxLangType {
 	@Override
 	public String toString() {
 		return this.key.getName();
+	}
+
+	/**
+	 * Returns the base type name, stripping any modifiers (strict, loose, modifiable, assignable, numeric suffixes).
+	 * For example, STRING_STRICT returns "string", MODIFIABLE_ARRAY returns "array", STRUCT_LOOSE returns "struct".
+	 * Used for deriving default member method names from BIF class names.
+	 *
+	 * @return The base type name as a Key
+	 */
+	public Key getBaseTypeName() {
+		return switch ( this ) {
+			case STRING_STRICT -> Key._STRING;
+			case STRUCT_LOOSE -> Key._STRUCT;
+			case MODIFIABLE_ARRAY, ASSIGNABLE_ARRAY -> Key._ARRAY;
+			case MODIFIABLE_STRUCT -> Key._STRUCT;
+			case MODIFIABLE_QUERY -> Key._QUERY;
+			case MODIFIABLE_SET -> Key._SET;
+			default -> this.key;
+		};
+	}
+
+	/**
+	 * Detect if a type is one of our 3 cystom types
+	 * 
+	 * @param type The BoxLangType to check
+	 *
+	 * @return True if the type is one of the custom types, false otherwise
+	 */
+	public static boolean isCustomType( BoxLangType type ) {
+		return type == BoxLangType.CUSTOM || type == BoxLangType.CUSTOM2 || type == BoxLangType.CUSTOM3;
 	}
 
 }

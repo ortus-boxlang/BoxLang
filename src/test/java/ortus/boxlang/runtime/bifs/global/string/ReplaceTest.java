@@ -127,4 +127,44 @@ public class ReplaceTest {
 		assertThat( variables.get( result ) ).isEqualTo( "RED1greenblueRED13" );
 	}
 
+	@Test
+	public void testHandlesNullValuesAsEmptyStrings() {
+		instance.executeSource(
+		    """
+		    result = Replace( null, "RED", 'brad' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "" );
+	}
+
+	@Test
+	public void testHandlesNullSubstringAsNoOp() {
+		instance.executeSource(
+		    """
+		    result = Replace( "redgreenbluered", null, 'brad' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "redgreenbluered" );
+	}
+
+	@Test
+	public void testHandlesNullReplacementAsEmptyString() {
+		instance.executeSource(
+		    """
+		    result = Replace( "redgreenbluered", "red", null, "all" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "greenblue" );
+	}
+
+	@Test
+	public void testHandlesNullScopeAsOne() {
+		instance.executeSource(
+		    """
+		    result = Replace( "redgreenbluered", "red", 'brad', null );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "bradgreenbluered" );
+	}
+
 }

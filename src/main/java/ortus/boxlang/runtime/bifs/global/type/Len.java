@@ -27,23 +27,28 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.BoxStringBuilder;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 
-@BoxBIF( description = "Get the length of a string, array, or struct" ) // Len()
+@BoxBIF( description = "Get the length of a string, array, struct, query, or set" ) // Len()
 @BoxBIF( alias = "StructCount" )
 @BoxBIF( alias = "ArrayLen" )
 @BoxBIF( alias = "StringLen" )
 @BoxBIF( alias = "QueryRecordCount" )
 @BoxMember( type = BoxLangType.ARRAY )
+@BoxMember( type = BoxLangType.STRING_BUILDER )
 @BoxMember( type = BoxLangType.STRING_STRICT )
 @BoxMember( type = BoxLangType.STRUCT, name = "count" )
 @BoxMember( type = BoxLangType.STRUCT, name = "len" )
 @BoxMember( type = BoxLangType.QUERY )
 @BoxMember( type = BoxLangType.DATETIME, name = "len" )
 @BoxMember( type = BoxLangType.DATE, name = "len" )
+@BoxMember( type = BoxLangType.SET, name = "size" )
+@BoxMember( type = BoxLangType.SET, name = "len" )
+@BoxMember( type = BoxLangType.SET, name = "length" )
 @BoxMember( type = BoxLangType.CUSTOM, customType = java.util.Set.class, name = "len" )
 public class Len extends BIF {
 
@@ -107,6 +112,10 @@ public class Len extends BIF {
 		// handle Set
 		if ( object instanceof java.util.Set<?> set ) {
 			return set.size();
+		}
+
+		if ( object instanceof BoxStringBuilder stringBuilder ) {
+			return stringBuilder.length();
 		}
 
 		if ( !arguments.getAsKey( __functionName ).equals( stringLenKey ) ) {

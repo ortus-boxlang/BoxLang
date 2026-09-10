@@ -33,6 +33,7 @@ import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNumberLiteral
 import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.NameAndDirection;
 import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.TypedResultColumn;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.ChunkedArrayList;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
@@ -49,6 +50,7 @@ public class QoQSelectExecution {
 	public Map<String, List<int[]>>			partitions				= new ConcurrentHashMap<String, List<int[]>>();
 
 	private Map<SQLSelectStatement, Query>	independentSubQueries	= new ConcurrentHashMap<SQLSelectStatement, Query>();
+	private int								intersectionCount		= 0;
 
 	/**
 	 * Constructor
@@ -288,16 +290,45 @@ public class QoQSelectExecution {
 	}
 
 	/**
+	 * Set the intersection count (estimated from stream generation)
+	 * 
+	 * @param count estimated number of intersections
+	 */
+	public void setIntersectionCount( int count ) {
+		this.intersectionCount = count;
+	}
+
+	/**
+	 * Get the intersection count
+	 * 
+	 * @return estimated number of intersections
+	 */
+	public int getIntersectionCount() {
+		return intersectionCount;
+	}
+
+	/**
 	 * Add a partition
 	 * 
 	 * @param partitionName Name of the partition
 	 * @param partition     The partition
 	 */
 	public void addPartition( String partitionName, int[] partition ) {
-		List<int[]> thisPartition = partitions.computeIfAbsent( partitionName, p -> new ArrayList<int[]>() );
-		synchronized ( thisPartition ) {
-			thisPartition.add( partition );
+		// Fast path: partition already exists — lock-free CHM read, no CHM write lock
+		List<int[]> thisPartition = partitions.get( partitionName );
+		if ( thisPartition == null ) {
+			// Estimate capacity using an even-share heuristic, but cap each new partition
+			// at 1/10 of total intersections to avoid oversized early allocations.
+			int	evenShareEstimate	= intersectionCount > 0 ? Math.max( 16, intersectionCount / Math.max( 1, partitions.size() + 1 ) ) : 16;
+			int	maxPerPartition		= intersectionCount > 0 ? Math.max( 16, intersectionCount / 20 ) : 16;
+			int	estimatedCapacity	= Math.min( evenShareEstimate, maxPerPartition );
+			partitions.putIfAbsent( partitionName, new ChunkedArrayList<>( ChunkedArrayList.DEFAULT_CHUNK_SIZE, estimatedCapacity ) );
+			// Re-fetch winner in case of race
+			thisPartition = partitions.get( partitionName );
 		}
+		// synchronized ( thisPartition ) {
+		thisPartition.add( partition );
+		// }
 	}
 
 	/**

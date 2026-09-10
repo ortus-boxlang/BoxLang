@@ -1,0 +1,7 @@
+{
+    "property": {
+        "multiline": {
+            "min_length": 10
+        }
+    }
+}

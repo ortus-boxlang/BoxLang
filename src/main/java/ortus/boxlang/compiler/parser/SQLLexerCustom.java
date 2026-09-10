@@ -224,7 +224,7 @@ public class SQLLexerCustom extends SQLLexer {
 		}
 
 		// detect function calls and set the token type to FUNCTION_NAME
-		if ( getInputStream().LA( 1 ) == LPAREN_Char_Code && !notFunctionNames.contains( nextToken.getType() ) ) {
+		if ( nextToken.getType() != OPEN_PAR && getInputStream().LA( 1 ) == LPAREN_Char_Code && !notFunctionNames.contains( nextToken.getType() ) ) {
 			( ( CommonToken ) nextToken ).setType( SQLLexer.FUNCTION_NAME );
 			return setLastToken( nextToken );
 		}

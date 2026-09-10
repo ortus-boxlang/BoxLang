@@ -173,18 +173,18 @@ public class FeatureAudit {
 				System.out.println();
 				System.out.println();
 				Set<String> rcommendedModulesWeCareAbout = recommendedModules.stream()
-				    .filter( mod -> !mod.equals( "core" ) && !mod.equals( "boxlang-web-support" ) )
+				    .filter( mod -> !mod.equals( "core" ) && !mod.equals( "bx-web-support" ) )
 				    .collect( Collectors.toSet() );
-				if ( rcommendedModulesWeCareAbout.size() > 0 ) {
+				if ( !rcommendedModulesWeCareAbout.isEmpty() ) {
 					System.out.println( "Recommended Modules to install:" );
 					System.out.println( "box install "
 					    + rcommendedModulesWeCareAbout.stream().sorted().map( name -> name.replace( "+", "" ) ).collect( Collectors.joining( "," ) ) );
 					System.out.println();
-					if ( recommendedModules.contains( "boxlang-web-support" ) ) {
+					if ( recommendedModules.contains( "bx-web-support" ) ) {
 						System.out.println(
 						    "You have code that requires a web runtime.  You can install the [bx-web-support] into your CLI runtime to prevent those features from being marked as missing." );
 						System.out.println(
-						    "But DO NOT install bx-web-support into your actual server, as it will cause conflicts.  The web runtimes already come with everything they need." );
+						    "But DO NOT install bx-web-support into your actual server, as it will cause conflicts.  The web runtimes already come with everything they need. That module is used for mocking and testing." );
 						System.out.println();
 					}
 					System.out.println();

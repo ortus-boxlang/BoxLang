@@ -51,10 +51,19 @@ public class IsJSON extends BIF {
 		if ( !stringAttempt.wasSuccessful() ) {
 			return false;
 		}
-		// TODO: Make a JSON caster for this.
-		// I don't like catching the exception, but our JSON lib doesn't give us another option
+		return isJSON( stringAttempt.get() );
+	}
+
+	/**
+	 * Check if a string is valid JSON.
+	 *
+	 * @param value The string to test
+	 *
+	 * @return true if the string is valid JSON, false otherwise
+	 */
+	public static boolean isJSON( String value ) {
 		try {
-			JSONUtil.getJSONBuilder( false ).anyFrom( stringAttempt.get() );
+			JSONUtil.fromJSON( value );
 			return true;
 		} catch ( Exception e ) {
 			return false;

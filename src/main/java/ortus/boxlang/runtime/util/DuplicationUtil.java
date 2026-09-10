@@ -41,6 +41,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.Range;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -95,6 +96,8 @@ public class DuplicationUtil {
 		} else if ( target instanceof String || target instanceof Number || target instanceof Character ) {
 			return target;
 		} else if ( target instanceof Enum<?> || target instanceof Class<?> ) {
+			return target;
+		} else if ( target instanceof Range<?> ) {
 			return target;
 		} else if ( target instanceof IClassRunnable icr ) {
 			return duplicateClass( icr, deep, context );

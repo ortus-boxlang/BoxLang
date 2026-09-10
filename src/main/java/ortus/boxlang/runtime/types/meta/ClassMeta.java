@@ -85,25 +85,29 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 		    target.getAnnotations(),
 		    target.getDocumentation(),
 		    target.getProperties(),
-		    target.getStaticScope()
+		    target.getStaticScope(),
+		    target.getEnclosingClassName(),
+		    target.getInnerClassNames()
 		);
 	}
 
 	/**
 	 * Generate metadata for a class
 	 *
-	 * @param targetClass     The class reference (for future use)
-	 * @param name            The class name key
-	 * @param sourceType      The source type of the class
-	 * @param runnablePath    The path to the class file
-	 * @param superClass      The super class, if any
-	 * @param interfaces      The list of interfaces implemented
-	 * @param abstractMethods The abstract methods defined
-	 * @param udfs            The UDFs defined in the class
-	 * @param annotations     The class annotations
-	 * @param documentation   The class documentation
-	 * @param properties      The class properties
-	 * @param staticScope     The static scope
+	 * @param targetClass        The class reference (for future use)
+	 * @param name               The class name key
+	 * @param sourceType         The source type of the class
+	 * @param runnablePath       The path to the class file
+	 * @param superClass         The super class, if any
+	 * @param interfaces         The list of interfaces implemented
+	 * @param abstractMethods    The abstract methods defined
+	 * @param udfs               The UDFs defined in the class
+	 * @param annotations        The class annotations
+	 * @param documentation      The class documentation
+	 * @param properties         The class properties
+	 * @param staticScope        The static scope
+	 * @param enclosingClassName The FQN of the enclosing (outer) class, or empty string if not an inner class
+	 * @param innerClassNames    Struct of inner class short names to their FQN strings, or empty struct
 	 *
 	 * @return The metadata as a struct
 	 */
@@ -119,7 +123,9 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 	    IStruct annotations,
 	    IStruct documentation,
 	    Map<Key, ortus.boxlang.runtime.types.Property> properties,
-	    StaticScope staticScope ) {
+	    StaticScope staticScope,
+	    String enclosingClassName,
+	    IStruct innerClassNames ) {
 
 		// Assemble the metadata
 		var mdFunctions = new ArrayList<Object>();
@@ -168,13 +174,15 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 
 		// Build the meta struct
 		var		fullName	= name.getName();
+		// simpleName strips both package (.) and enclosing class ($) prefixes
+		int		lastSep		= Math.max( fullName.lastIndexOf( '.' ), fullName.lastIndexOf( '$' ) );
 		IStruct	meta		= Struct.ofNonConcurrent(
 		    Key._NAME, fullName,
 		    Key.nameAsKey, name,
-		    Key.simpleName, fullName.substring( fullName.lastIndexOf( '.' ) + 1 ),
+		    Key.simpleName, fullName.substring( lastSep + 1 ),
 		    Key.output, BoxClassSupport.canOutput( annotations, name.getName() ),
 		    Key.documentation, new Struct( documentation ),
-		    Key.annotations, new Struct( annotations ),
+		    Key.annotations, BoxClassSupport.transformAnnotations( new Struct( annotations ) ),
 		    Key._EXTENDS, superClass != null ? superClass.invokeStatic( BoxRuntime.getInstance().getRuntimeContext(), "getMetaStatic" ) : Struct.EMPTY,
 		    Key.functions, UnmodifiableArray.fromList( mdFunctions ),
 		    // Key._HASHCODE, targetClass.hashCode(),
@@ -183,6 +191,10 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 		    Key.fullname, fullName,
 		    Key.path, runnablePath.absolutePath().toString()
 		);
+
+		// Add enclosingClass and innerClasses
+		meta.put( Key.enclosingClass, enclosingClassName != null ? enclosingClassName : "" );
+		meta.put( Key.innerClasses, innerClassNames != null ? innerClassNames : Struct.EMPTY );
 
 		// Add interfaces if any
 		meta.put(
@@ -260,6 +272,26 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 	 */
 	public IScope getStaticScope() {
 		return target.getStaticScope();
+	}
+
+	/**
+	 * Get the enclosing (outer) BoxLang class for this inner class.
+	 * Returns null if this class is not an inner class.
+	 *
+	 * @return The enclosing class, or null if not an inner class
+	 */
+	public Class<?> getEnclosingBoxClass() {
+		return this.target.getEnclosingBoxClass();
+	}
+
+	/**
+	 * Get the inner BoxLang classes defined within this class.
+	 * The key is the BoxLang name (case-insensitive Key), the value is the compiled Class.
+	 *
+	 * @return Map of inner class name to class reference, or empty map
+	 */
+	public Map<Key, Class<?>> getInnerBoxClasses() {
+		return this.target.getInnerBoxClasses();
 	}
 
 }
