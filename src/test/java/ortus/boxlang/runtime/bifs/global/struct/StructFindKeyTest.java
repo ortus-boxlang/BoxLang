@@ -385,4 +385,62 @@ public class StructFindKeyTest {
 
 	}
 
+	@DisplayName( "It finds keys inside structs nested in arrays - BL-2523" )
+	@Test
+	public void testFindsKeysWithinArrays() {
+		//@formatter:off
+		instance.executeSource(
+		    """
+		    myResponse = {
+		        "advisories": [
+		            {
+		                "code": 3780,
+		                "errorLevel": 5,
+		                "text": "This is an advisory",
+		                "message": "",
+		                "textCode": ""
+		            }
+		        ]
+		    };
+		    result = structFindKey( myResponse, "code", "all" );
+		    """,
+		    context );
+		//@formatter:on
+
+		Array found = variables.getAsArray( result );
+		assertEquals( 1, found.size() );
+
+		IStruct match = StructCaster.cast( found.get( 0 ) );
+		assertEquals( 3780, match.get( Key.value ) );
+		// Path carries the 1-based array index, matching structFindValue()
+		assertEquals( ".advisories[1].code", match.getAsString( Key.path ) );
+		// The owner is the struct inside the array, not the outer response
+		assertEquals( "This is an advisory", match.getAsStruct( Key.owner ).getAsString( Key.of( "text" ) ) );
+	}
+
+	@DisplayName( "It finds keys across multiple array entries and nested structs - BL-2523" )
+	@Test
+	public void testFindsKeysAcrossMultipleArrayEntries() {
+		//@formatter:off
+		instance.executeSource(
+		    """
+		    myResponse = {
+		        "advisories": [
+		            { "code": 1, "detail": { "code": 2 } },
+		            { "code": 3 }
+		        ],
+		        "code": 0
+		    };
+		    result = structFindKey( myResponse, "code", "all" );
+		    single = structFindKey( myResponse, "code" );
+		    """,
+		    context );
+		//@formatter:on
+
+		// Top level, both array entries, and the struct nested under an array entry
+		assertEquals( 4, variables.getAsArray( result ).size() );
+		// "one" scope still returns a single match
+		assertEquals( 1, variables.getAsArray( Key.of( "single" ) ).size() );
+	}
+
 }
