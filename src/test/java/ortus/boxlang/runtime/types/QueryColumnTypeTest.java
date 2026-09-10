@@ -18,11 +18,14 @@
  */
 package ortus.boxlang.runtime.types;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class QueryColumnTypeTest {
 	;
@@ -92,6 +95,13 @@ public class QueryColumnTypeTest {
 		assertNull( QueryColumnType.toSQLType( QueryColumnType.INTEGER, null, null, null ) );
 		assertNull( QueryColumnType.toSQLType( QueryColumnType.VARCHAR, null, null, null ) );
 		assertNull( QueryColumnType.toSQLType( QueryColumnType.BOOLEAN, null, null, null ) );
+	}
+
+	@DisplayName( "toSQLType() preserves numeric BIT values" )
+	@ParameterizedTest( name = "BIT {0} remains numeric" )
+	@ValueSource( ints = { 0, 1 } )
+	void testToSQLTypePreservesBitValues( int value ) {
+		assertThat( QueryColumnType.toSQLType( QueryColumnType.BIT, value, null, null ) ).isEqualTo( value );
 	}
 
 	@DisplayName( "toSQLType() handles non-empty values correctly" )

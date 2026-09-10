@@ -26,13 +26,11 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.jr.ob.api.ValueWriter;
 import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 
-import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -45,8 +43,6 @@ public class BoxQuerySerializer implements ValueWriter {
 
 	// ThreadLocal for query format
 	public static final ThreadLocal<String>								currentQueryFormat	= new ThreadLocal<>();
-
-	private static BoxRuntime											runtime				= BoxRuntime.getInstance();
 
 	/**
 	 * Custom BoxLang Query Serializer
@@ -69,40 +65,58 @@ public class BoxQuerySerializer implements ValueWriter {
 				if ( queryFormat == null ) {
 					queryFormat = "row";
 				}
-				final Object valueToSerialize;
+				Map<Key, QueryColumn>	cols	= bxQuery.getColumns();
+				// Read raw values to preserve nulls regardless of queryNullToEmpty.
+				List<Object[]>			rows	= bxQuery.getData();
 
 				// "row" is the same as "false". Top level struct with columns (array of strings), data (array of arrays)
 				if ( queryFormat.equals( "row" ) || queryFormat.equals( "false" ) ) {
-					valueToSerialize = Struct.linkedOf(
-					    "columns", bxQuery.getColumns().keySet().stream().map( c -> c.getName() ).toArray( String[]::new ),
-					    "data", bxQuery.getData()
-					);
-					runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, valueToSerialize ) );
-					context.writeValue( valueToSerialize );
+					g.writeStartObject();
+					g.writeFieldName( "columns" );
+					writeColumns( g, cols );
+					g.writeFieldName( "data" );
+					g.writeStartArray();
+					for ( Object[] row : rows ) {
+						g.writeStartArray();
+						for ( QueryColumn column : cols.values() ) {
+							writeValue( context, g, column, row[ column.getIndex() ] );
+						}
+						g.writeEndArray();
+					}
+					g.writeEndArray();
+					g.writeEndObject();
 					// "column" is the same as "true". Top level struct with rowcount, columns (array of strings), data (struct with column name as key and array of
 					// values as value)
 				} else if ( queryFormat.equals( "column" ) || queryFormat.equals( "true" ) ) {
-					var						data	= new Struct( IStruct.TYPES.LINKED );
-					Map<Key, QueryColumn>	cols	= bxQuery.getColumns();
-					// Read the raw rows so queryNullToEmpty cannot convert stored nulls into empty strings.
-					List<Object[]>			rows	= bxQuery.getData();
+					g.writeStartObject();
+					g.writeNumberField( "rowCount", bxQuery.size() );
+					g.writeFieldName( "columns" );
+					writeColumns( g, cols );
+					g.writeObjectFieldStart( "data" );
 					for ( var col : cols.keySet() ) {
-						int columnIndex = cols.get( col ).getIndex();
-						data.put( col, rows.stream().map( row -> row[ columnIndex ] ).toArray() );
+						QueryColumn column = cols.get( col );
+						g.writeFieldName( col.toString() );
+						g.writeStartArray();
+						for ( Object[] row : rows ) {
+							writeValue( context, g, column, row[ column.getIndex() ] );
+						}
+						g.writeEndArray();
 					}
-					valueToSerialize = Struct.linkedOf(
-					    "rowCount", bxQuery.size(),
-					    "columns", bxQuery.getColumns().keySet().stream().map( c -> c.getName() ).toArray( String[]::new ),
-					    "data", data
-					);
-					runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, valueToSerialize ) );
-					context.writeValue( valueToSerialize );
+					g.writeEndObject();
+					g.writeEndObject();
 					// "struct" is what we get by default (array of structs)
 				} else if ( queryFormat.equals( "struct" ) ) {
-					// Use raw row access so queryNullToEmpty cannot convert stored nulls into empty strings.
-					valueToSerialize = bxQuery.intStream().mapToObj( bxQuery::getRowAsStructRaw ).toArray( IStruct[]::new );
-					runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, valueToSerialize ) );
-					context.writeValue( valueToSerialize );
+					g.writeStartArray();
+					for ( Object[] row : rows ) {
+						g.writeStartObject();
+						for ( var entry : cols.entrySet() ) {
+							g.writeFieldName( entry.getKey().toString() );
+							QueryColumn column = entry.getValue();
+							writeValue( context, g, column, row[ column.getIndex() ] );
+						}
+						g.writeEndObject();
+					}
+					g.writeEndArray();
 				} else {
 					throw new BoxRuntimeException( "Invalid queryFormat: " + queryFormat );
 				}
@@ -111,6 +125,18 @@ public class BoxQuerySerializer implements ValueWriter {
 				visited.remove( bxQuery );
 			}
 		}
+	}
+
+	private static void writeColumns( JsonGenerator g, Map<Key, QueryColumn> columns ) throws IOException {
+		g.writeStartArray();
+		for ( QueryColumn column : columns.values() ) {
+			g.writeString( column.getName().toString() );
+		}
+		g.writeEndArray();
+	}
+
+	private static void writeValue( JSONWriter context, JsonGenerator g, QueryColumn column, Object value ) throws IOException {
+		context.writeValue( column.getType() == QueryColumnType.BIT && value != null ? BooleanCaster.cast( value ) : value );
 	}
 
 	@Override

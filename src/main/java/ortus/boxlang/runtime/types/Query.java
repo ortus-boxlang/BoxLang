@@ -277,7 +277,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			int[] columnMap = columnMapList.stream().mapToInt( i -> i ).toArray();
 			// Update, may be smaller now if there were duplicate column names
 			columnCount = columnMap.length;
-			int rowCount = 0;
+			QueryColumn[]	queryColumns	= query.getColumns().values().toArray( QueryColumn[]::new );
+			int				rowCount		= 0;
 			while ( resultSet.next() && ( maxRows == -1 || rowCount < maxRows ) ) {
 				rowCount++;
 				Object[] row = new Object[ columnCount ];
