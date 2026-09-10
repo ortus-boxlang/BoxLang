@@ -259,23 +259,26 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	 */
 	public static Object transformValueStatic( int sqlType, Object value, BoxStatement statement ) {
 		// Handle common JDBC LOB and complex types
-		if ( value instanceof java.sql.Blob blob ) {
+		if ( value instanceof java.sql.NClob nclob ) {
 			try {
-				return blob.getBytes( 1, ( int ) blob.length() );
+				long length = nclob.length();
+				return length == 0 ? "" : nclob.getSubString( 1, ( int ) length );
+			} catch ( Exception e ) {
+				throw new RuntimeException( "Error reading NClob data", e );
+			}
+		} else if ( value instanceof java.sql.Blob blob ) {
+			try {
+				long length = blob.length();
+				return length == 0 ? new byte[ 0 ] : blob.getBytes( 1, ( int ) length );
 			} catch ( Exception e ) {
 				throw new RuntimeException( "Error reading Blob data", e );
 			}
 		} else if ( value instanceof java.sql.Clob clob ) {
 			try {
-				return clob.getSubString( 1, ( int ) clob.length() );
+				long length = clob.length();
+				return length == 0 ? "" : clob.getSubString( 1, ( int ) length );
 			} catch ( Exception e ) {
 				throw new RuntimeException( "Error reading Clob data", e );
-			}
-		} else if ( value instanceof java.sql.NClob nclob ) {
-			try {
-				return nclob.getSubString( 1, ( int ) nclob.length() );
-			} catch ( Exception e ) {
-				throw new RuntimeException( "Error reading NClob data", e );
 			}
 		} else if ( value instanceof java.sql.SQLXML sqlxml ) {
 			try {
