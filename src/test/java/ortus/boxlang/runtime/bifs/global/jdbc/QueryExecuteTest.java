@@ -50,6 +50,21 @@ public class QueryExecuteTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );
 
+	@DisplayName( "It executes a query with a Double maxLength in a raw parameter struct" )
+	@Test
+	public void testStringBindingWithNumericMaxLength() {
+		this.variables.put( Key.maxLength, 13.0D );
+		instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT id FROM developers WHERE name = :name",
+		        { name: { value: "Eric Peterson", sqltype: "varchar", maxLength: maxLength } } );
+		    """,
+		    this.context );
+		Query query = this.variables.getAsQuery( result );
+		assertThat( query.size() ).isEqualTo( 1 );
+		assertThat( query.getRowAsStruct( 0 ).get( "id" ) ).isEqualTo( 42 );
+	}
+
 	@DisplayName( "It inserts decimal bindings with a Double scale" )
 	@Test
 	public void testDecimalBindingWithNumericScale() {

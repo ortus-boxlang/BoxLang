@@ -105,7 +105,7 @@ public class QueryParameter {
 		this.value		= this.isNullParam ? null : v;
 		this.sqltype	= RegexBuilder.of( sqltype, RegexBuilder.CF_SQL ).replaceAllAndGet( "" ).toUpperCase().trim();
 		this.type		= QueryColumnType.fromString( this.sqltype );
-		this.maxLength	= param.getAsInteger( Key.maxLength );
+		this.maxLength	= param.get( Key.maxLength ) == null ? null : IntegerCaster.cast( param.get( Key.maxLength ) );
 		this.scale		= param.get( Key.scale ) == null ? null : IntegerCaster.cast( param.get( Key.scale ) );
 	}
 

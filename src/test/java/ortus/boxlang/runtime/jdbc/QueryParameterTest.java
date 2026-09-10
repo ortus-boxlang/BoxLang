@@ -35,24 +35,24 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 public class QueryParameterTest {
 
-	static Stream<Object> numericScales() {
+	static Stream<Object> numericMetadataValues() {
 		return Stream.of( ( byte ) 2, ( short ) 2, 2, 2L, 2.0F, 2.0D, new BigInteger( "2" ), new BigDecimal( "2.00" ), "2.0" );
 	}
 
 	@ParameterizedTest
-	@MethodSource( "numericScales" )
+	@MethodSource( "numericMetadataValues" )
 	void testNumericScaleCoercion( Object scale ) {
 		QueryParameter parameter = QueryParameter.fromAny( Struct.of( Key.value, new BigDecimal( "12.50" ), Key.sqltype, "decimal", Key.scale, scale ) );
 		assertThat( parameter.getScaleOrLength() ).isEqualTo( 2 );
 	}
 
-	static Stream<Object> invalidScales() {
+	static Stream<Object> invalidMetadataValues() {
 		return Stream.of( 2.5D, 2.5F, new BigDecimal( "2.5" ), "2.5", "invalid", Double.NaN, Double.POSITIVE_INFINITY,
 		    Double.NEGATIVE_INFINITY, 2147483648L, -2147483649L, new BigInteger( "2147483648" ), new BigDecimal( "2147483648" ) );
 	}
 
 	@ParameterizedTest
-	@MethodSource( "invalidScales" )
+	@MethodSource( "invalidMetadataValues" )
 	void testInvalidScaleRejected( Object scale ) {
 		assertThrows( BoxCastException.class,
 		    () -> QueryParameter.fromAny( Struct.of( Key.value, 12.5, Key.sqltype, "decimal", Key.scale, scale ) ) );
@@ -64,4 +64,26 @@ public class QueryParameterTest {
 		assertThat( QueryParameter.fromAny( Struct.of( Key.value, 12.5, Key.sqltype, "decimal", Key.scale, null ) ).getScaleOrLength() ).isNull();
 		assertThat( QueryParameter.fromAny( Struct.of( Key.value, 12, Key.sqltype, "decimal", Key.scale, 0.0D ) ).getScaleOrLength() ).isEqualTo( 0 );
 	}
+
+	@ParameterizedTest
+	@MethodSource( "numericMetadataValues" )
+	void testNumericMaxLengthCoercion( Object maxLength ) {
+		QueryParameter parameter = QueryParameter.fromAny( Struct.of( Key.value, "ab", Key.sqltype, "varchar", Key.maxLength, maxLength ) );
+		assertThat( parameter.getScaleOrLength() ).isEqualTo( 2 );
+	}
+
+	@ParameterizedTest
+	@MethodSource( "invalidMetadataValues" )
+	void testInvalidMaxLengthRejected( Object maxLength ) {
+		assertThrows( BoxCastException.class,
+		    () -> QueryParameter.fromAny( Struct.of( Key.value, "ab", Key.sqltype, "varchar", Key.maxLength, maxLength ) ) );
+	}
+
+	@Test
+	void testOptionalMaxLength() {
+		assertThat( QueryParameter.fromAny( Struct.of( Key.value, "ab", Key.sqltype, "varchar" ) ).getScaleOrLength() ).isNull();
+		assertThat( QueryParameter.fromAny( Struct.of( Key.value, "ab", Key.sqltype, "varchar", Key.maxLength, null ) ).getScaleOrLength() ).isNull();
+		assertThat( QueryParameter.fromAny( Struct.of( Key.value, "", Key.sqltype, "varchar", Key.maxLength, 0.0D ) ).getScaleOrLength() ).isEqualTo( 0 );
+	}
+
 }
