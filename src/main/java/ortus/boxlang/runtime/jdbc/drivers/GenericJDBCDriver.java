@@ -232,7 +232,7 @@ public class GenericJDBCDriver implements IJDBCDriver {
 
 	/**
 	 * Transform a value according to the driver's specific needs. This allows drivers to map custom Java classes to native BL types.
-	 * The default implementation will return the value as-is.
+	 * The default implementation will message common JDBC types into BoxLang equivalents.
 	 * 
 	 * @param sqlType   The SQL type of the value, from java.sql.Types
 	 * @param value     The value to transform
@@ -242,6 +242,22 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	 */
 	@Override
 	public Object transformValue( int sqlType, Object value, BoxStatement statement ) {
+		return transformValueStatic( sqlType, value, statement );
+	}
+
+	/**
+	 * Transform a value according to the driver's specific needs. This allows drivers to map custom Java classes to native BL types.
+	 * The default implementation will message common JDBC types into BoxLang equivalents.
+	 * 
+	 * This static version allows this logic to be used generically outside of a driver instance.
+	 * 
+	 * @param sqlType   The SQL type of the value, from java.sql.Types
+	 * @param value     The value to transform
+	 * @param statement The BoxStatement instance. Statement is only used if you have a type of ResultSet.
+	 * 
+	 * @return The transformed value
+	 */
+	public static Object transformValueStatic( int sqlType, Object value, BoxStatement statement ) {
 		// Handle common JDBC LOB and complex types
 		if ( value instanceof java.sql.Blob blob ) {
 			try {
