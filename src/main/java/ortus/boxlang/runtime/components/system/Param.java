@@ -23,11 +23,12 @@ import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.DefaultExpression;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( description = "Define and validate parameters with default values" )
@@ -44,7 +45,7 @@ public class Param extends Component {
 		this.declaredAttributes = new Attribute[] {
 		    new Attribute( Key._NAME, "string", Set.of( Validator.REQUIRED ) ),
 		    new Attribute( Key.type, "string" ),
-		    new Attribute( Key._DEFAULT, "any" ),
+		    new Attribute( Key._DEFAULT, "function" ),
 		    new Attribute( Key.max, "numeric" ),
 		    new Attribute( Key.min, "numeric" ),
 		    new Attribute( Key.pattern, "string" )
@@ -73,30 +74,30 @@ public class Param extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		String					varName			= attributes.getAsString( Key._NAME );
-		Object					defaultValue	= attributes.get( Key._DEFAULT );
-		Object					existingValue;
-		// Retain the original missing-variable error in case the deferred default evaluates to null.
-		KeyNotFoundException	missingVariable	= null;
-		try {
-			existingValue = ExpressionInterpreter.getVariable( context, varName, false );
-		} catch ( KeyNotFoundException e ) {
-			if ( defaultValue == null ) {
-				throw e;
-			}
-			existingValue	= null;
-			missingVariable	= e;
-		}
+		String		varName			= attributes.getAsString( Key._NAME );
+		Function	defaultValue	= attributes.getAsFunction( Key._DEFAULT );
+		Object		existingValue	= ExpressionInterpreter.getVariable( context, varName, defaultValue != null );
 		if ( existingValue == null && defaultValue != null ) {
-			// Compiler-generated callbacks defer evaluation without invoking function-valued defaults.
-			if ( defaultValue instanceof DefaultExpression expression ) {
-				defaultValue = expression.evaluate( context );
-			}
-			if ( defaultValue != null ) {
-				ExpressionInterpreter.setVariable( context, varName, defaultValue );
-			} else if ( missingVariable != null ) {
-				throw missingVariable;
-			}
+			// The generated closure defers an expression, not a new user function scope.
+			// Preserve explicit local/arguments references and assignment targets from the caller.
+			Object value = defaultValue.invoke( new FunctionBoxContext( context, defaultValue ) {
+
+				@Override
+				public IScope getScopeNearby( Key name, boolean shallow ) {
+					return context.getScopeNearby( name, shallow );
+				}
+
+				@Override
+				public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
+					return context.scopeFindNearby( key, defaultScope, shallow, forAssign );
+				}
+
+				@Override
+				public IScope getDefaultAssignmentScope() {
+					return context.getDefaultAssignmentScope();
+				}
+			} );
+			ExpressionInterpreter.setVariable( context, varName, value );
 		}
 
 		// TODO: Enforce validation here

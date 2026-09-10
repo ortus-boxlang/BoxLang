@@ -300,9 +300,10 @@ public class ParamTest {
 
 	@ParameterizedTest
 	@MethodSource( "paramForms" )
-	public void testParamNullDefaultStillRequiresVariable( String statement, BoxSourceType sourceType ) {
+	public void testParamDefaultCanReturnNull( String statement, BoxSourceType sourceType ) {
 		instance.executeSource( "function getDefault() { return javacast('null', ''); }", this.context );
-		assertThrows( KeyNotFoundException.class, () -> instance.executeSource( statement, this.context, sourceType ) );
+		instance.executeSource( statement, this.context, sourceType );
+		assertThat( this.variables.get( result ) ).isNull();
 	}
 
 	@ParameterizedTest
@@ -348,6 +349,23 @@ public class ParamTest {
 		                        variables.result = withDefault().toString();
 		                        """, this.context );
 		assertThat( this.variables.getAsString( result ) ).isEqualTo( "local default" );
+	}
+
+	@Test
+	public void testParamDefaultPreservesExplicitFunctionScopes() {
+		instance.executeSource( """
+		                        function withDefault( fallback ) {
+		                            var localFallback = "local default";
+		                            param local.first = arguments.fallback;
+		                            param local.second = local.localFallback;
+		                            param local.third = (local.localFallback = "changed");
+		                            return [local.first, local.second, local.localFallback];
+		                        }
+		                        variables.result = withDefault("argument default");
+		                        """, this.context );
+		assertThat( this.variables.getAsArray( result ).get( 0 ) ).isEqualTo( "argument default" );
+		assertThat( this.variables.getAsArray( result ).get( 1 ) ).isEqualTo( "local default" );
+		assertThat( this.variables.getAsArray( result ).get( 2 ) ).isEqualTo( "changed" );
 	}
 
 	@DisplayName( "It preserves falsey param values without evaluating the default" )

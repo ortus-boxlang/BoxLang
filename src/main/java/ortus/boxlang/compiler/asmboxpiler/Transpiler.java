@@ -435,12 +435,6 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	public List<AbstractInsnNode> transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue, boolean onlyLiteralValues ) {
-		return transformAnnotations( annotations, defaultTrue, onlyLiteralValues, null );
-	}
-
-	/** Transform annotations, optionally deferring one attribute until runtime. */
-	public List<AbstractInsnNode> transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue, boolean onlyLiteralValues,
-	    String deferredAttribute ) {
 		List<List<AbstractInsnNode>> members = new ArrayList<>();
 
 		annotations.forEach( annotation -> {
@@ -448,19 +442,21 @@ public abstract class Transpiler implements ITranspiler {
 			members.add( annotationKey );
 			BoxExpression			thisValue	= annotation.getValue();
 			List<AbstractInsnNode>	value;
-			// A single interpolated attribute preserves the underlying value's type.
-			if ( !onlyLiteralValues && thisValue instanceof BoxStringInterpolation bsi && bsi.getValues().size() == 1 ) {
-				thisValue = bsi.getValues().get( 0 );
-			}
 			if ( thisValue != null ) {
-				// Deferred attributes preserve the expression until the component requests its value.
-				if ( !thisValue.isLiteral() && annotation.getKey().getValue().equalsIgnoreCase( deferredAttribute ) ) {
-					value = AsmHelper.getDefaultExpression( ( AsmTranspiler ) this, thisValue );
-				} else if ( thisValue.isLiteral() ) {
+				// Literal values are transformed directly
+				if ( thisValue.isLiteral() ) {
 					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.VALUE );
-				} else if ( onlyLiteralValues ) {
+				}
+				// gonna try commenting this out
+				else if ( onlyLiteralValues ) {
 					// Runtime expressions we just put this place holder text in for
 					value = List.of( new LdcInsnNode( "<Runtime Expression>" ) );
+				} else if ( thisValue instanceof BoxStringInterpolation bsi && bsi.getValues().size() == 1 ) {
+					// A quoted attribute value with a single interpolation element isn't forced to a string.
+					// Ex: <bx:myComponent foo="#complexValue#">
+					// It's represented as a BoxStringInterpolation, but we DON'T want to use the actual string transformer
+					// as it will force the output to be a string!!
+					value = transform( bsi.getValues().get( 0 ), TransformerContext.NONE, ReturnValueContext.VALUE );
 				} else {
 					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.VALUE );
 				}

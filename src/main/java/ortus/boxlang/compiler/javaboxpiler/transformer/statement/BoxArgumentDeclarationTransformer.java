@@ -17,13 +17,20 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer.statement;
 
+import java.util.Map;
+
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
@@ -53,7 +60,19 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 				Node initExpr = transpiler.transform( boxArgument.getValue() );
 				defaultLiteral = ( Expression ) initExpr;
 			} else {
-				defaultExpression = transformDefaultExpression( boxArgument.getValue(), true );
+				String lambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
+				transpiler.pushContextName( lambdaContextName );
+				Node initExpr = transpiler.transform( boxArgument.getValue() );
+				transpiler.popContextName();
+
+				LambdaExpr lambda = new LambdaExpr();
+				lambda.setParameters( new NodeList<>(
+				    new Parameter( new UnknownType(), lambdaContextName ) ) );
+				BlockStmt body = new BlockStmt();
+				body.addStatement( parseStatement( "ClassLocator classLocator = ClassLocator.getInstance();", Map.of() ) );
+				body.addStatement( new ReturnStmt( ( Expression ) initExpr ) );
+				lambda.setBody( body );
+				defaultExpression = lambda;
 			}
 		}
 

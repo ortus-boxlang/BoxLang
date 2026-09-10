@@ -301,7 +301,10 @@ public class JavaTranspiler extends Transpiler {
 	 * @see TransformerContext
 	 */
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		Transformer transformer = registry.get( node.getClass() );
+		// All param syntax uses the dedicated transformer before generic component generation.
+		Transformer transformer = registry.get( node instanceof BoxComponent component && component.getName().equalsIgnoreCase( "param" )
+		    ? BoxParam.class
+		    : node.getClass() );
 		if ( transformer != null ) {
 			Node javaNode = transformer.transform( node, context );
 			// logger.trace( "Transforming {} node with source {} - node is {}", transformer.getClass().getSimpleName(), node.getSourceText(), javaNode
