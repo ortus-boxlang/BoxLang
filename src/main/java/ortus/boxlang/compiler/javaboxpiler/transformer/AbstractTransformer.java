@@ -37,7 +37,8 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.UnknownType;
 
@@ -215,6 +216,32 @@ public abstract class AbstractTransformer implements Transformer {
 		return transformAnnotations( annotations, defaultTrue, onlyLiteralValues, null );
 	}
 
+	/**
+	 * Build the callback shared by argument, property, and component defaults.
+	 *
+	 * @param expression          The expression to evaluate in the supplied runtime context
+	 * @param declareClassLocator Whether the callback needs its own class locator; component callbacks capture the enclosing one
+	 */
+	protected LambdaExpr transformDefaultExpression( BoxExpression expression, boolean declareClassLocator ) {
+		String contextName = "lambdaContext" + this.transpiler.incrementAndGetLambdaContextCounter();
+		this.transpiler.pushContextName( contextName );
+		Expression value;
+		try {
+			value = ( Expression ) this.transpiler.transform( expression );
+		} finally {
+			this.transpiler.popContextName();
+		}
+		BlockStmt body = new BlockStmt();
+		if ( declareClassLocator ) {
+			body.addStatement( parseStatement( "ClassLocator classLocator = ClassLocator.getInstance();", Map.of() ) );
+		}
+		body.addStatement( new ReturnStmt( value ) );
+		LambdaExpr lambda = new LambdaExpr();
+		lambda.setParameters( new NodeList<>( new Parameter( new UnknownType(), contextName ) ) );
+		lambda.setBody( body );
+		return lambda;
+	}
+
 	/** Transform annotations, optionally deferring one attribute until runtime. */
 	public Expression transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue, boolean onlyLiteralValues, String deferredAttribute ) {
 		List<Expression> members = new ArrayList<>();
@@ -223,38 +250,21 @@ public abstract class AbstractTransformer implements Transformer {
 			members.add( annotationKey );
 			BoxExpression	thisValue	= annotation.getValue();
 			Expression		value;
+			// A single interpolated attribute preserves the underlying value's type.
+			if ( !onlyLiteralValues && thisValue instanceof BoxStringInterpolation bsi && bsi.getValues().size() == 1 ) {
+				thisValue = bsi.getValues().get( 0 );
+			}
 			if ( thisValue != null ) {
 				// Deferred attributes preserve the expression until the component requests its value.
 				if ( !thisValue.isLiteral() && annotation.getKey().getValue().equalsIgnoreCase( deferredAttribute ) ) {
-					BoxExpression	deferredValue		= thisValue instanceof BoxStringInterpolation bsi && bsi.getValues().size() == 1
-					    ? bsi.getValues().get( 0 )
-					    : thisValue;
-					String			lambdaContextName	= "lambdaContext" + this.transpiler.incrementAndGetLambdaContextCounter();
-					this.transpiler.pushContextName( lambdaContextName );
-					Expression expression;
-					try {
-						expression = ( Expression ) this.transpiler.transform( deferredValue );
-					} finally {
-						this.transpiler.popContextName();
-					}
-					LambdaExpr lambda = new LambdaExpr();
-					lambda.setParameters( new NodeList<>( new Parameter( new UnknownType(), lambdaContextName ) ) );
-					// Component code already has a class locator in scope; the lambda captures it if needed.
-					lambda.setBody( new ExpressionStmt( expression ) );
 					CastExpr callback = ( CastExpr ) parseExpression( "(ortus.boxlang.runtime.types.DefaultExpression) null", Map.of() );
-					callback.setExpression( new EnclosedExpr( lambda ) );
+					callback.setExpression( new EnclosedExpr( transformDefaultExpression( thisValue, false ) ) );
 					value = callback;
 				} else if ( thisValue.isLiteral() ) {
 					value = ( Expression ) transpiler.transform( thisValue );
 				} else if ( onlyLiteralValues ) {
 					// Runtime expressions we just put this place holder text in for
 					value = BoxStringLiteralTransformer.transform( "<Runtime Expression>" );
-				} else if ( thisValue instanceof BoxStringInterpolation bsi && bsi.getValues().size() == 1 ) {
-					// A quoted attribute value with a single interpolation element isn't forced to a string.
-					// Ex: <bx:myComponent foo="#complexValue#">
-					// It's represented as a BoxStringInterpolation, but we DON'T want to use the actual string transformer
-					// as it will force the output to be a string!!
-					value = ( Expression ) transpiler.transform( bsi.getValues().get( 0 ) );
 				} else {
 					value = ( Expression ) transpiler.transform( thisValue );
 				}

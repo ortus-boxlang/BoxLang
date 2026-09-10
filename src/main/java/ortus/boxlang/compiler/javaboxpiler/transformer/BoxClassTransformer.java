@@ -29,12 +29,10 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
-import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
@@ -43,7 +41,6 @@ import com.github.javaparser.ast.stmt.EmptyStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.JavaMethodResolver;
@@ -981,19 +978,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 					Node defaultValueExpr = transpiler.transform( defaultAnnotation.getValue() );
 					defaultValue = defaultValueExpr.toString();
 				} else {
-					String lambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
-					transpiler.pushContextName( lambdaContextName );
-					Node initExpr = transpiler.transform( defaultAnnotation.getValue() );
-					transpiler.popContextName();
-
-					LambdaExpr lambda = new LambdaExpr();
-					lambda.setParameters( new NodeList<>(
-					    new Parameter( new UnknownType(), lambdaContextName ) ) );
-					BlockStmt body = new BlockStmt();
-					body.addStatement( parseStatement( "ClassLocator classLocator = ClassLocator.getInstance();", Map.of() ) );
-					body.addStatement( new ReturnStmt( ( Expression ) initExpr ) );
-					lambda.setBody( body );
-					defaultExpression = lambda.toString();
+					defaultExpression = transformDefaultExpression( defaultAnnotation.getValue(), true ).toString();
 				}
 			}
 
