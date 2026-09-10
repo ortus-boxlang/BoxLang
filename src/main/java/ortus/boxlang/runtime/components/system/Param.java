@@ -26,6 +26,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.DefaultExpression;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( description = "Define and validate parameters with default values" )
@@ -39,7 +41,7 @@ public class Param extends Component {
 
 	public Param() {
 		super();
-		declaredAttributes = new Attribute[] {
+		this.declaredAttributes = new Attribute[] {
 		    new Attribute( Key._NAME, "string", Set.of( Validator.REQUIRED ) ),
 		    new Attribute( Key.type, "string" ),
 		    new Attribute( Key._DEFAULT, "any" ),
@@ -61,7 +63,7 @@ public class Param extends Component {
 	 *
 	 * @attribute.type The data type of the parameter
 	 *
-	 * @attribute.default The default value of the parameter
+	 * @attribute.default The default value of the parameter. Compiled expressions are deferred until the variable is missing.
 	 *
 	 * @attribute.max The maximum value of the parameter
 	 *
@@ -71,11 +73,30 @@ public class Param extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		String	varName			= attributes.getAsString( Key._NAME );
-		Object	defaultValue	= attributes.get( Key._DEFAULT );
-		Object	existingValue	= ExpressionInterpreter.getVariable( context, varName, defaultValue != null );
+		String					varName			= attributes.getAsString( Key._NAME );
+		Object					defaultValue	= attributes.get( Key._DEFAULT );
+		Object					existingValue;
+		// Retain the original missing-variable error in case the deferred default evaluates to null.
+		KeyNotFoundException	missingVariable	= null;
+		try {
+			existingValue = ExpressionInterpreter.getVariable( context, varName, false );
+		} catch ( KeyNotFoundException e ) {
+			if ( defaultValue == null ) {
+				throw e;
+			}
+			existingValue	= null;
+			missingVariable	= e;
+		}
 		if ( existingValue == null && defaultValue != null ) {
-			ExpressionInterpreter.setVariable( context, varName, defaultValue );
+			// Compiler-generated callbacks defer evaluation without invoking function-valued defaults.
+			if ( defaultValue instanceof DefaultExpression expression ) {
+				defaultValue = expression.evaluate( context );
+			}
+			if ( defaultValue != null ) {
+				ExpressionInterpreter.setVariable( context, varName, defaultValue );
+			} else if ( missingVariable != null ) {
+				throw missingVariable;
+			}
 		}
 
 		// TODO: Enforce validation here

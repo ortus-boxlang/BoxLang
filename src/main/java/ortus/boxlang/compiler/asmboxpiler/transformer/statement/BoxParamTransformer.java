@@ -17,16 +17,9 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.JumpInsnNode;
-import org.objectweb.asm.tree.LabelNode;
-import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
-import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
@@ -35,8 +28,6 @@ import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
-import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 
 public class BoxParamTransformer extends AbstractTransformer {
 
@@ -70,7 +61,6 @@ public class BoxParamTransformer extends AbstractTransformer {
 			    )
 			);
 		}
-		List<BoxAnnotation> requiredAttrs = new ArrayList<>( attrs );
 		if ( boxParam.getDefaultValue() != null ) {
 			attrs.add(
 			    new BoxAnnotation(
@@ -83,27 +73,7 @@ public class BoxParamTransformer extends AbstractTransformer {
 			    )
 			);
 		}
-		if ( boxParam.getDefaultValue() == null ) {
-			return transpiler.transform( new BoxComponent( "param", attrs, node.getPosition(), node.getSourceText() ), context, returnContext );
-		}
-
-		// Preserve component processing, but only evaluate the default when the variable is missing.
-		List<AbstractInsnNode> nodes = new ArrayList<>();
-		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
-		nodes.addAll( transpiler.transform( boxParam.getVariable(), context, ReturnValueContext.VALUE ) );
-		nodes.add( new InsnNode( Opcodes.ICONST_1 ) );
-		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-		    Type.getInternalName( ExpressionInterpreter.class ), "getVariable",
-		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( IBoxContext.class ), Type.getType( String.class ), Type.BOOLEAN_TYPE ),
-		    false ) );
-		LabelNode	existing	= new LabelNode();
-		LabelNode	end			= new LabelNode();
-		nodes.add( new JumpInsnNode( Opcodes.IFNONNULL, existing ) );
-		nodes.addAll( transpiler.transform( new BoxComponent( "param", attrs, node.getPosition(), node.getSourceText() ), context, returnContext ) );
-		nodes.add( new JumpInsnNode( Opcodes.GOTO, end ) );
-		nodes.add( existing );
-		nodes.addAll( transpiler.transform( new BoxComponent( "param", requiredAttrs, node.getPosition(), node.getSourceText() ), context, returnContext ) );
-		nodes.add( end );
-		return AsmHelper.addLineNumberLabels( nodes, node );
+		// Delegate to the component transformer
+		return transpiler.transform( new BoxComponent( "param", attrs, node.getPosition(), node.getSourceText() ), context, returnContext );
 	}
 }

@@ -232,6 +232,79 @@ public class ParamTest {
 		assertThat( variables.getAsInteger( Key.of( "defaultCalls" ) ) ).isEqualTo( 1 );
 	}
 
+	private static Stream<Arguments> paramForms() {
+		return Stream.concat( paramStatements(), Stream.of(
+		    Arguments.of( "bx:param name=\"result\" default=getDefault();", BoxSourceType.BOXSCRIPT ),
+		    Arguments.of( "param name=\"result\" default=getDefault();", BoxSourceType.CFSCRIPT ),
+		    Arguments.of( "cfparam(name=\"result\", default=getDefault());", BoxSourceType.CFSCRIPT ),
+		    Arguments.of( "<bx:param name=\"result\" default=\"#getDefault()#\">", BoxSourceType.BOXTEMPLATE ),
+		    Arguments.of( "<cfparam name=\"result\" default=\"#getDefault()#\">", BoxSourceType.CFTEMPLATE )
+		) );
+	}
+
+	@ParameterizedTest
+	@MethodSource( "paramForms" )
+	public void testAllParamFormsDeferDefaults( String statement, BoxSourceType sourceType ) {
+		instance.executeSource( """
+		                        variables.defaultCalls = 0;
+		                        function getDefault() {
+		                            variables.defaultCalls++;
+		                            return { value: "default" };
+		                        }
+		                        """, this.context );
+		this.variables.put( result, "existing" );
+		instance.executeSource( statement, this.context, sourceType );
+		assertThat( this.variables.get( result ) ).isEqualTo( "existing" );
+		assertThat( this.variables.getAsInteger( Key.of( "defaultCalls" ) ) ).isEqualTo( 0 );
+		this.variables.remove( result );
+		instance.executeSource( statement, this.context, sourceType );
+		assertThat( this.variables.getAsStruct( result ) ).isEqualTo( Struct.of( "value", "default" ) );
+		assertThat( this.variables.getAsInteger( Key.of( "defaultCalls" ) ) ).isEqualTo( 1 );
+	}
+
+	@ParameterizedTest
+	@MethodSource( "paramForms" )
+	public void testParamPreservesFunctionDefaults( String statement, BoxSourceType sourceType ) {
+		instance.executeSource( "function callback() { throw 'Must not invoke the default value'; }", this.context );
+		instance.executeSource( statement.replace( "getDefault()", "callback" ), this.context, sourceType );
+		assertThat( this.variables.get( result ) ).isSameInstanceAs( this.variables.get( Key.of( "callback" ) ) );
+	}
+
+	@ParameterizedTest
+	@MethodSource( "paramForms" )
+	public void testParamChecksExistenceOnce( String statement, BoxSourceType sourceType ) {
+		int[]	reads	= { 0 };
+		Struct	holder	= new Struct() {
+
+							@Override
+							public Object dereference( IBoxContext context, Key key, Boolean safe ) {
+								reads[ 0 ]++;
+								return super.dereference( context, key, safe );
+							}
+						};
+		holder.put( result, "existing" );
+		this.variables.put( Key.of( "holder" ), holder );
+		instance.executeSource( "function getDefault() { return 'default'; }", this.context );
+		String nestedStatement = statement.replace( "variables.result", "holder.result" );
+		if ( !nestedStatement.contains( "holder.result" ) ) {
+			nestedStatement = nestedStatement.replace( "result", "holder.result" );
+		}
+		instance.executeSource( nestedStatement, this.context, sourceType );
+		assertThat( reads[ 0 ] ).isEqualTo( 1 );
+		holder.remove( result );
+		reads[ 0 ] = 0;
+		instance.executeSource( nestedStatement, this.context, sourceType );
+		assertThat( reads[ 0 ] ).isEqualTo( 1 );
+		assertThat( holder.get( result ) ).isEqualTo( "default" );
+	}
+
+	@ParameterizedTest
+	@MethodSource( "paramForms" )
+	public void testParamNullDefaultStillRequiresVariable( String statement, BoxSourceType sourceType ) {
+		instance.executeSource( "function getDefault() { return javacast('null', ''); }", this.context );
+		assertThrows( KeyNotFoundException.class, () -> instance.executeSource( statement, this.context, sourceType ) );
+	}
+
 	@DisplayName( "It preserves falsey param values without evaluating the default" )
 	@ParameterizedTest
 	@EnumSource( value = BoxSourceType.class, names = { "BOXSCRIPT", "CFSCRIPT" } )

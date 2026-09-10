@@ -435,6 +435,12 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	public List<AbstractInsnNode> transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue, boolean onlyLiteralValues ) {
+		return transformAnnotations( annotations, defaultTrue, onlyLiteralValues, null );
+	}
+
+	/** Transform annotations, optionally deferring one attribute until runtime. */
+	public List<AbstractInsnNode> transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue, boolean onlyLiteralValues,
+	    String deferredAttribute ) {
 		List<List<AbstractInsnNode>> members = new ArrayList<>();
 
 		annotations.forEach( annotation -> {
@@ -443,8 +449,13 @@ public abstract class Transpiler implements ITranspiler {
 			BoxExpression			thisValue	= annotation.getValue();
 			List<AbstractInsnNode>	value;
 			if ( thisValue != null ) {
-				// Literal values are transformed directly
-				if ( thisValue.isLiteral() ) {
+				// Deferred attributes preserve the expression until the component requests its value.
+				if ( annotation.getKey().getValue().equalsIgnoreCase( deferredAttribute ) ) {
+					BoxExpression deferredValue = thisValue instanceof BoxStringInterpolation bsi && bsi.getValues().size() == 1
+					    ? bsi.getValues().get( 0 )
+					    : thisValue;
+					value = AsmHelper.getDefaultExpression( ( AsmTranspiler ) this, deferredValue );
+				} else if ( thisValue.isLiteral() ) {
 					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.VALUE );
 				}
 				// gonna try commenting this out

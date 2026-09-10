@@ -75,7 +75,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		nodes.addAll( transpiler.createKey( componentName ) );
 
 		// convert attributes to struct
-		nodes.addAll( transpiler.transformAnnotations( attributes, true, false ) );
+		nodes.addAll( transpiler.transformAnnotations( attributes, true, false, componentName.equalsIgnoreCase( "param" ) ? "default" : null ) );
 
 		// Component.ComponentBody
 		transpiler.incrementComponentCounter();

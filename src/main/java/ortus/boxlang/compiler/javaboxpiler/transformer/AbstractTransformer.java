@@ -205,6 +205,11 @@ public abstract class AbstractTransformer implements Transformer {
 	 * @return an Expression node
 	 */
 	public Expression transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue, boolean onlyLiteralValues ) {
+		return transformAnnotations( annotations, defaultTrue, onlyLiteralValues, null );
+	}
+
+	/** Transform annotations, optionally deferring one attribute until runtime. */
+	public Expression transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue, boolean onlyLiteralValues, String deferredAttribute ) {
 		List<Expression> members = new ArrayList<>();
 		annotations.forEach( annotation -> {
 			Expression annotationKey = createKey( annotation.getKey().getValue() );
@@ -212,8 +217,17 @@ public abstract class AbstractTransformer implements Transformer {
 			BoxExpression	thisValue	= annotation.getValue();
 			Expression		value;
 			if ( thisValue != null ) {
-				// Literal values are transformed directly
-				if ( thisValue.isLiteral() ) {
+				// Deferred attributes preserve the expression until the component requests its value.
+				if ( annotation.getKey().getValue().equalsIgnoreCase( deferredAttribute ) ) {
+					BoxExpression	deferredValue		= thisValue instanceof BoxStringInterpolation bsi && bsi.getValues().size() == 1
+					    ? bsi.getValues().get( 0 )
+					    : thisValue;
+					String			lambdaContextName	= this.transpiler.peekContextName();
+					// Use an anonymous implementation so its context and class locator shadow the enclosing method's locals.
+					Expression		expression			= ( Expression ) this.transpiler.transform( deferredValue );
+					value = parseExpression( "new ortus.boxlang.runtime.types.DefaultExpression() { public Object evaluate(IBoxContext "
+					    + lambdaContextName + ") { ClassLocator classLocator = ClassLocator.getInstance(); return " + expression + "; } }", Map.of() );
+				} else if ( thisValue.isLiteral() ) {
 					value = ( Expression ) transpiler.transform( thisValue );
 				} else if ( onlyLiteralValues ) {
 					// Runtime expressions we just put this place holder text in for
