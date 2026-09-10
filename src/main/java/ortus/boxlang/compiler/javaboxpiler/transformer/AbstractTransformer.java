@@ -28,11 +28,18 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.BooleanLiteralExpr;
+import com.github.javaparser.ast.expr.CastExpr;
+import com.github.javaparser.ast.expr.EnclosedExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -218,15 +225,25 @@ public abstract class AbstractTransformer implements Transformer {
 			Expression		value;
 			if ( thisValue != null ) {
 				// Deferred attributes preserve the expression until the component requests its value.
-				if ( annotation.getKey().getValue().equalsIgnoreCase( deferredAttribute ) ) {
+				if ( !thisValue.isLiteral() && annotation.getKey().getValue().equalsIgnoreCase( deferredAttribute ) ) {
 					BoxExpression	deferredValue		= thisValue instanceof BoxStringInterpolation bsi && bsi.getValues().size() == 1
 					    ? bsi.getValues().get( 0 )
 					    : thisValue;
-					String			lambdaContextName	= this.transpiler.peekContextName();
-					// Use an anonymous implementation so its context and class locator shadow the enclosing method's locals.
-					Expression		expression			= ( Expression ) this.transpiler.transform( deferredValue );
-					value = parseExpression( "new ortus.boxlang.runtime.types.DefaultExpression() { public Object evaluate(IBoxContext "
-					    + lambdaContextName + ") { ClassLocator classLocator = ClassLocator.getInstance(); return " + expression + "; } }", Map.of() );
+					String			lambdaContextName	= "lambdaContext" + this.transpiler.incrementAndGetLambdaContextCounter();
+					this.transpiler.pushContextName( lambdaContextName );
+					Expression expression;
+					try {
+						expression = ( Expression ) this.transpiler.transform( deferredValue );
+					} finally {
+						this.transpiler.popContextName();
+					}
+					LambdaExpr lambda = new LambdaExpr();
+					lambda.setParameters( new NodeList<>( new Parameter( new UnknownType(), lambdaContextName ) ) );
+					// Component code already has a class locator in scope; the lambda captures it if needed.
+					lambda.setBody( new ExpressionStmt( expression ) );
+					CastExpr callback = ( CastExpr ) parseExpression( "(ortus.boxlang.runtime.types.DefaultExpression) null", Map.of() );
+					callback.setExpression( new EnclosedExpr( lambda ) );
+					value = callback;
 				} else if ( thisValue.isLiteral() ) {
 					value = ( Expression ) transpiler.transform( thisValue );
 				} else if ( onlyLiteralValues ) {

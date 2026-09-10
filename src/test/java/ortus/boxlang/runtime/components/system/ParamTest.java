@@ -305,6 +305,51 @@ public class ParamTest {
 		assertThrows( KeyNotFoundException.class, () -> instance.executeSource( statement, this.context, sourceType ) );
 	}
 
+	@ParameterizedTest
+	@MethodSource( "paramForms" )
+	public void testParamDefersExpressionsInsideLiterals( String statement, BoxSourceType sourceType ) {
+		instance.executeSource( """
+		                        variables.defaultCalls = 0;
+		                        function getDefault() { variables.defaultCalls++; return "default"; }
+		                        """, this.context );
+		this.variables.put( result, "existing" );
+		String arrayDefault = statement.replace( "getDefault()", "[getDefault()]" );
+		instance.executeSource( arrayDefault, this.context, sourceType );
+		assertThat( this.variables.getAsInteger( Key.of( "defaultCalls" ) ) ).isEqualTo( 0 );
+		this.variables.remove( result );
+		instance.executeSource( arrayDefault, this.context, sourceType );
+		assertThat( this.variables.getAsInteger( Key.of( "defaultCalls" ) ) ).isEqualTo( 1 );
+		assertThat( this.variables.getAsArray( result ).get( 0 ) ).isEqualTo( "default" );
+	}
+
+	@Test
+	public void testParamLiteralDefaultsAreFreshForEachCall() {
+		instance.executeSource( """
+		                        function withDefault() {
+		                            param local.items = [];
+		                            return local.items;
+		                        }
+		                        variables.first = withDefault();
+		                        variables.first.append( "changed" );
+		                        variables.result = withDefault();
+		                        """, this.context );
+		assertThat( this.variables.getAsArray( result ).size() ).isEqualTo( 0 );
+	}
+
+	@Test
+	public void testParamDefaultCanConstructJavaObjectsInFunctionContext() {
+		instance.executeSource( """
+		                        import java.lang.StringBuilder;
+		                        function withDefault( supplied ) {
+		                            var fallback = "local default";
+		                            param arguments.supplied = new StringBuilder( fallback );
+		                            return arguments.supplied;
+		                        }
+		                        variables.result = withDefault().toString();
+		                        """, this.context );
+		assertThat( this.variables.getAsString( result ) ).isEqualTo( "local default" );
+	}
+
 	@DisplayName( "It preserves falsey param values without evaluating the default" )
 	@ParameterizedTest
 	@EnumSource( value = BoxSourceType.class, names = { "BOXSCRIPT", "CFSCRIPT" } )

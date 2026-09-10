@@ -450,7 +450,7 @@ public abstract class Transpiler implements ITranspiler {
 			List<AbstractInsnNode>	value;
 			if ( thisValue != null ) {
 				// Deferred attributes preserve the expression until the component requests its value.
-				if ( annotation.getKey().getValue().equalsIgnoreCase( deferredAttribute ) ) {
+				if ( !thisValue.isLiteral() && annotation.getKey().getValue().equalsIgnoreCase( deferredAttribute ) ) {
 					BoxExpression deferredValue = thisValue instanceof BoxStringInterpolation bsi && bsi.getValues().size() == 1
 					    ? bsi.getValues().get( 0 )
 					    : thisValue;
