@@ -47,6 +47,7 @@ import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.jdbc.BoxStatement;
+import ortus.boxlang.runtime.jdbc.drivers.GenericJDBCDriver;
 import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -1015,7 +1016,20 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			if ( queryNullToEmpty && !QueryColumnType.isStringType( column.getType() ) && value instanceof String castValue && castValue.isEmpty() ) {
 				value = null;
 			}
-			rowData[ i ] = context != null ? QueryColumnType.toSQLType( column.getType(), value, context, null ) : value;
+			rowData[ i ] = context != null
+			    // This method will change things like Clob or Blob which we "hide" from the user to a String, byte[], etc, etc
+			    ? GenericJDBCDriver.transformValueStatic(
+			        column.getType().sqlType,
+			        // This method casts incoming values to the appropriate SQL type, but will leave things like Clob or Blob instances
+			        QueryColumnType.toSQLType(
+			            column.getType(),
+			            value,
+			            context,
+			            null
+			        ),
+			        null
+			    )
+			    : value;
 			i++;
 		}
 		// We're ignoring extra keys in the struct that aren't query columns.
@@ -1043,7 +1057,18 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			Object[]		castRow		= new Object[ columns.size() ];
 			QueryColumn[]	colArray	= columns.values().toArray( new QueryColumn[ 0 ] );
 			for ( int i = 0; i < castRow.length; i++ ) {
-				castRow[ i ] = QueryColumnType.toSQLType( colArray[ i ].getType(), row[ i ], context, null );
+				var sqlColType = colArray[ i ].getType();
+				// This method will change things like Clob or Blob which we "hide" from the user to a String, byte[], etc, etc
+				castRow[ i ] = GenericJDBCDriver.transformValueStatic(
+				    sqlColType.sqlType,
+				    // This method casts incoming values to the appropriate SQL type, but will leave things like Clob or Blob instances
+				    QueryColumnType.toSQLType(
+				        sqlColType,
+				        row[ i ],
+				        context,
+				        null
+				    ),
+				    null );
 			}
 			return addRow( castRow );
 		}
