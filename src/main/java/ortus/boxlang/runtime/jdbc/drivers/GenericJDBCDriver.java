@@ -259,6 +259,10 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	 * @return The transformed value
 	 */
 	public static Object transformValueStatic( int sqlType, Object value, BoxStatement statement ) {
+		if ( value == null ) {
+			return null;
+		}
+
 		// Handle common JDBC LOB and complex types
 		if ( value instanceof java.sql.NClob nclob ) {
 			try {
