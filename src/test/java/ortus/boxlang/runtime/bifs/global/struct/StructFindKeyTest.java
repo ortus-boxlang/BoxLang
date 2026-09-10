@@ -418,7 +418,7 @@ public class StructFindKeyTest {
 		assertEquals( "This is an advisory", match.getAsStruct( Key.owner ).getAsString( Key.of( "text" ) ) );
 	}
 
-	@DisplayName( "It finds keys across multiple array entries and nested arrays - BL-2523" )
+	@DisplayName( "It finds keys across multiple array entries and nested structs - BL-2523" )
 	@Test
 	public void testFindsKeysAcrossMultipleArrayEntries() {
 		//@formatter:off
