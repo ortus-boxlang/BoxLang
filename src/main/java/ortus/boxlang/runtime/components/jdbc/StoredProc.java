@@ -266,6 +266,12 @@ public class StoredProc extends Component {
 			int				sqlType		= queryType.sqlType;
 			Object			value		= attr.get( Key.value );
 			if ( varType.contains( "in" ) ) {
+				boolean isNull = BooleanCaster.cast( attr.getOrDefault( Key.nulls, false ) );
+				if ( isNull ) {
+					value = null;
+				} else {
+					value = QueryColumnType.toSQLType( queryType, value, context, procedure.getConnection() );
+				}
 				if ( debug ) {
 					String paramName = attr.getAsString( Key.DBVarName );
 					if ( paramName != null ) {
@@ -273,17 +279,18 @@ public class StoredProc extends Component {
 					} else {
 						paramName = "";
 					}
-					QueryColumnType typeInfo = QueryColumnType.fromSQLType( sqlType );
+					QueryColumnType	typeInfo	= QueryColumnType.fromSQLType( sqlType );
+					String			debugValue	= value == null ? null : value.toString();
+					if ( debugValue != null && debugValue.length() > 100 ) {
+						debugValue = debugValue.substring( 0, 100 ) + "...";
+					}
 					System.out.println(
 					    "Procedure [" + procedureName + "] Setting IN param " + paramName +
 					        "in position " + ( i + 1 + paramOffset ) +
-					        " (type: " + typeInfo + ")"
+					        " (type: " + typeInfo + ")" +
+					        " (null: " + isNull + ")" +
+					        " (value: " + debugValue + ")"
 					);
-				}
-				if ( BooleanCaster.cast( attr.getOrDefault( Key.nulls, false ) ) ) {
-					value = null;
-				} else {
-					value = QueryColumnType.toSQLType( queryType, value, context, procedure.getConnection() );
 				}
 				procedure.setObject( i + 1 + paramOffset, value, sqlType );
 			}
