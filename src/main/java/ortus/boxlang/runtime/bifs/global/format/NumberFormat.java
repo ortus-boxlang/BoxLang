@@ -143,6 +143,12 @@ public class NumberFormat extends BIF {
 					}
 				}
 
+				// Convert fractional underscore placeholders to required zeroes so trailing decimal places are preserved.
+				if ( format.contains( "." ) ) {
+					int decimalIndex = format.indexOf( '.' );
+					format = format.substring( 0, decimalIndex ) + "." + format.substring( decimalIndex + 1 ).replace( "_", "0" );
+				}
+
 				for ( Map.Entry<String, String> entry : formatReplacements.entrySet() ) {
 					format = format.replace( entry.getKey(), entry.getValue() );
 				}
