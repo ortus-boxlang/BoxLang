@@ -1,0 +1,171 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS"
+ * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+package ortus.boxlang.compiler.parser;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BOMInputStream;
+
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.SourceCode;
+import ortus.boxlang.compiler.ast.SourceFile;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.toolchain.GroovyVisitor;
+import ortus.boxlang.parser.antlr.GroovyGrammar;
+import ortus.boxlang.parser.antlr.GroovyGrammar.CompilationUnitContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.ImportStatementContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.TopLevelDeclarationContext;
+import ortus.boxlang.parser.antlr.GroovyLexer;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
+
+/**
+ * Parses Groovy source into the shared BoxLang AST, following the same overall shape as
+ * {@code CFParser}: an ANTLR lexer/parser pair produces a parse tree, which a visitor walks
+ * into {@code ortus.boxlang.compiler.ast} nodes.
+ * <p>
+ * Phase 2 of the Groovy parser/transpiler effort. A source is treated as a "class file" when
+ * it contains exactly one top-level {@code class}/{@code interface}/{@code trait} declaration
+ * and nothing else besides package/import statements; otherwise it is treated as a script.
+ * Mixing top-level statements with an embedded class declaration in the same file (which real
+ * Groovy allows) is a documented, deliberate Phase 2 gap - it raises a clear
+ * {@link ExpressionException} rather than silently doing the wrong thing.
+ */
+public class GroovyParser extends AbstractParser {
+
+	private final GroovyVisitor statementVisitor = new GroovyVisitor( this );
+
+	public GroovyParser() {
+		super();
+	}
+
+	public GroovyParser( int startLine, int startColumn ) {
+		super( startLine, startColumn );
+	}
+
+	@Override
+	public ParsingResult parse( File file, boolean isScript ) throws IOException {
+		this.file = file;
+		setSource( new SourceFile( file ) );
+		BOMInputStream	inputStream	= getInputStream( file );
+		BoxNode			ast			= parserFirstStage( inputStream, false, isScript );
+		return new ParsingResult( ast, issues, comments );
+	}
+
+	@Override
+	public ParsingResult parse( String code, boolean classOrInterface, boolean isScript ) throws IOException {
+		this.sourceCode = code;
+		setSource( new SourceCode( code ) );
+		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface, isScript );
+		return new ParsingResult( ast, issues, comments );
+	}
+
+	@Override
+	protected BoxNode parserFirstStage( InputStream stream, boolean classOrInterface, boolean isScript ) throws IOException {
+		GroovyLexer		lexer	= new GroovyLexer( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ) );
+		GroovyGrammar	parser	= new GroovyGrammar( new CommonTokenStream( lexer ) );
+
+		addErrorListeners( lexer, parser );
+
+		CompilationUnitContext parseTree;
+		try {
+			parseTree = parser.compilationUnit();
+		} catch ( Exception e ) {
+			errorListener.semanticError( e.getClass().getName() + " " + e.getMessage(), createOffsetPosition( 1, 0, 1, 0 ) );
+			return null;
+		}
+
+		if ( !issues.isEmpty() ) {
+			return null;
+		}
+
+		BoxNode rootNode;
+		try {
+			rootNode = toAst( parseTree );
+		} catch ( Exception e ) {
+			if ( issues.isEmpty() ) {
+				throw e;
+			}
+			return null;
+		}
+
+		if ( isSubParser() ) {
+			return rootNode;
+		}
+		return rootNode;
+	}
+
+	/**
+	 * Decides whether the parsed compilation unit is a single class/interface/trait file or a
+	 * script, and builds the corresponding {@code BoxClass}/{@code BoxScript} root node.
+	 */
+	private BoxNode toAst( CompilationUnitContext ctx ) {
+		var									pos				= getPosition( ctx );
+		var									src				= getSourceText( ctx );
+		List<BoxImport>						imports			= buildImports( ctx.importStatement() );
+
+		List<TopLevelDeclarationContext>	declarations	= ctx.topLevelDeclarations() == null
+		    ? new ArrayList<>()
+		    : ctx.topLevelDeclarations().topLevelDeclaration();
+
+		long								classCount		= declarations.stream().filter( d -> d.classDeclaration() != null ).count();
+
+		if ( classCount == 1 && declarations.size() == 1 ) {
+			return statementVisitor.buildClass( declarations.get( 0 ).classDeclaration(), imports );
+		}
+
+		if ( classCount > 0 ) {
+			throw new ExpressionException(
+			    "Mixing a class declaration with top-level script statements in the same Groovy file is not yet supported by this parser", pos, src );
+		}
+
+		List<BoxStatement> statements = new ArrayList<>();
+		for ( TopLevelDeclarationContext decl : declarations ) {
+			if ( decl.methodDeclaration() != null ) {
+				statements.add( ( BoxStatement ) decl.methodDeclaration().accept( statementVisitor ) );
+			} else {
+				statements.add( ( BoxStatement ) decl.statement().accept( statementVisitor ) );
+			}
+		}
+		return new ortus.boxlang.compiler.ast.BoxScript( statements, pos, src, BoxSourceType.GROOVYSCRIPT );
+	}
+
+	private List<BoxImport> buildImports( List<ImportStatementContext> importContexts ) {
+		List<BoxImport> imports = new ArrayList<>();
+		for ( ImportStatementContext importCtx : importContexts ) {
+			var		pos			= getPosition( importCtx );
+			var		src			= getSourceText( importCtx );
+			String	fqnText		= importCtx.qualifiedName().getText() + ( importCtx.STAR() != null ? ".*" : "" );
+			var		expression	= new BoxFQN( fqnText, pos, src );
+			var		alias		= importCtx.AS() != null
+			    ? new BoxIdentifier( importCtx.IDENTIFIER().getText(), getPosition( importCtx.IDENTIFIER().getSymbol() ), importCtx.IDENTIFIER().getText() )
+			    : null;
+			imports.add( new BoxImport( expression, alias, pos, src ) );
+		}
+		return imports;
+	}
+
+}
