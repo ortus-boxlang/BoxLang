@@ -205,4 +205,28 @@ public class GroovyExecutionTest {
 		assertThat( result.toString() ).isEqualTo( "3" );
 	}
 
+	@Test
+	@DisplayName( "collect{} aliases to BoxLang's Array.map()" )
+	public void testCollectAliasesToMap() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def doubled = [1, 2, 3].collect { it * 2 }\nreturn doubled.toList(\",\")\n", context );
+		assertThat( result.toString() ).isEqualTo( "2,4,6" );
+	}
+
+	@Test
+	@DisplayName( "findAll{} aliases to BoxLang's Array.filter(), not its own native findAll" )
+	public void testFindAllAliasesToFilter() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def positives = [-2, -1, 0, 1, 2].findAll { it > 0 }\nreturn positives.toList(\",\")\n", context );
+		assertThat( result.toString() ).isEqualTo( "1,2" );
+	}
+
+	@Test
+	@DisplayName( "any{} aliases to BoxLang's Array.some()" )
+	public void testAnyAliasesToSome() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "return [1, 2, 3].any { it > 2 }\n", context );
+		assertThat( result ).isEqualTo( true );
+	}
+
 }

@@ -150,13 +150,23 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		return new BoxExpressionInvocation( callee.accept( this ), args, pos, src );
 	}
 
+	// Groovy collection methods that exist on BoxLang's Array type under a different member
+	// name. Only renames apply where the semantics genuinely match - e.g. Groovy's findAll
+	// (filter-by-predicate) deliberately maps to BoxLang's "filter", NOT its own native
+	// "findAll" member (ArrayFindAll), which instead searches for indices of a given value and
+	// would silently do the wrong thing if called with a predicate closure.
+	private static final java.util.Map<String, String> GROOVY_METHOD_ALIASES = java.util.Map.of(
+	    "collect", "map",
+	    "any", "some",
+	    "findAll", "filter" );
+
 	@Override
 	public BoxExpression visitTrailingClosureCallExpr( TrailingClosureCallExprContext ctx ) {
 		var					pos			= tools.getPosition( ctx );
 		var					src			= tools.getSourceText( ctx );
 		BoxExpression		obj			= ctx.expression().accept( this );
 		boolean				safe		= ctx.SAFE_DOT() != null;
-		BoxExpression		nameExpr	= identifier( ctx.IDENTIFIER() );
+		BoxExpression		nameExpr	= aliasedIdentifier( ctx.IDENTIFIER() );
 		BoxExpression		closureExpr	= visitClosure( ctx.closure() );
 		List<BoxArgument>	args		= List.of(
 		    new BoxArgument( closureExpr, tools.getPosition( ctx.closure() ), tools.getSourceText( ctx.closure() ) ) );
@@ -169,8 +179,13 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		}
 		BoxExpression	obj			= memberCtx.expression().accept( this );
 		boolean			safe		= memberCtx.SAFE_DOT() != null;
-		BoxExpression	nameExpr	= identifier( memberCtx.IDENTIFIER() );
+		BoxExpression	nameExpr	= aliasedIdentifier( memberCtx.IDENTIFIER() );
 		return new BoxMethodInvocation( nameExpr, obj, args, safe, true, pos, src );
+	}
+
+	private BoxIdentifier aliasedIdentifier( org.antlr.v4.runtime.tree.TerminalNode node ) {
+		String name = GROOVY_METHOD_ALIASES.getOrDefault( node.getText(), node.getText() );
+		return new BoxIdentifier( name, tools.getPosition( node.getSymbol() ), node.getText() );
 	}
 
 	@Override
