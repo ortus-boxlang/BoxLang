@@ -19,6 +19,8 @@ package ortus.boxlang.runtime.bifs.global.conversion;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,9 +31,13 @@ import org.junit.jupiter.params.provider.CsvSource;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.events.IInterceptorLambda;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 
 public class JSONSerializeTest {
@@ -195,6 +201,29 @@ public class JSONSerializeTest {
 		assertThat( query.getColumnData( Key.of( "flag" ) ) ).asList().containsExactly( 0, 1, null ).inOrder();
 		assertThat( query.getColumnData( Key.count ) ).asList().containsExactly( 0, 1, null ).inOrder();
 		assertThat( this.variables.getAsString( result ) ).isEqualTo( expectedJSON );
+	}
+
+	@DisplayName( "It announces query serialization before writing JSON" )
+	@Test
+	public void testQuerySerializationInterceptorCanModifyPayload() {
+		AtomicInteger		calls				= new AtomicInteger();
+		IInterceptorLambda	interceptor			= data -> {
+													calls.incrementAndGet();
+													( ( IStruct ) data.get( Key.data ) ).put( Key.of( "intercepted" ), true );
+													return false;
+												};
+		DynamicObject		interceptorObject	= DynamicObject.of( interceptor );
+		instance.getInterceptorService().register( interceptorObject, BoxEvent.ON_JSON_QUERY_SERIALIZE.key() );
+		try {
+			instance.executeSource(
+			    "result = JSONSerialize( queryNew( \"flag\", \"bit\", [[1]] ), \"row\" );",
+			    context );
+			assertThat( calls.get() ).isEqualTo( 1 );
+			assertThat( variables.getAsString( result ) )
+			    .isEqualTo( "{\"columns\":[\"flag\"],\"data\":[[true]],\"intercepted\":true}" );
+		} finally {
+			instance.getInterceptorService().unregister( interceptorObject, BoxEvent.ON_JSON_QUERY_SERIALIZE.key() );
+		}
 	}
 
 	@DisplayName( "It can serialize a query as array of structs" )
