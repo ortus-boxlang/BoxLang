@@ -46,14 +46,14 @@ public class GroovyGrammarParsingTest {
 	@DisplayName( "class with field, method, and GString interpolation" )
 	public void testClassWithGString() {
 		assertParses( """
-		    class Greeter {
-		      String prefix = "Hi"
-		      def greet(String name) {
-		        def msg = "${prefix}, ${name}!"
-		        return msg
-		      }
-		    }
-		    """ );
+		              class Greeter {
+		                String prefix = "Hi"
+		                def greet(String name) {
+		                  def msg = "${prefix}, ${name}!"
+		                  return msg
+		                }
+		              }
+		              """ );
 	}
 
 	@Test
@@ -70,11 +70,11 @@ public class GroovyGrammarParsingTest {
 	@DisplayName( "multi-statement script with no semicolons" )
 	public void testNewlineSignificantStatements() {
 		assertParses( """
-		    def x = 1
-		    def y = 2
-		    def z = x + y
-		    return z
-		    """ );
+		              def x = 1
+		              def y = 2
+		              def z = x + y
+		              return z
+		              """ );
 	}
 
 	@Test
@@ -87,65 +87,65 @@ public class GroovyGrammarParsingTest {
 	@DisplayName( "newlines inside parens do not terminate the statement" )
 	public void testNewlineSuppressedInsideParens() {
 		assertParses( """
-		    def result = Math.max(
-		      1,
-		      2
-		    )
-		    """ );
+		              def result = Math.max(
+		                1,
+		                2
+		              )
+		              """ );
 	}
 
 	@Test
 	@DisplayName( "expression precedence: arithmetic, ternary, elvis, safe-nav, range, instanceof, logical" )
 	public void testExpressionPrecedence() {
 		assertParses( """
-		    def a = 1 + 2 * 3 - 4 / 2
-		    def b = a > 1 ? a : 0
-		    def c = a?.toString()
-		    def d = a ?: 5
-		    def e = 1..10
-		    def f = (a instanceof Integer) && (b > 0 || c != null)
-		    """ );
+		              def a = 1 + 2 * 3 - 4 / 2
+		              def b = a > 1 ? a : 0
+		              def c = a?.toString()
+		              def d = a ?: 5
+		              def e = 1..10
+		              def f = (a instanceof Integer) && (b > 0 || c != null)
+		              """ );
 	}
 
 	@Test
 	@DisplayName( "control flow: if/else, while, classic for, for-in, try/catch/finally, throw" )
 	public void testControlFlow() {
 		assertParses( """
-		    def run(items) {
-		      if (items == null) {
-		        throw new IllegalArgumentException("null")
-		      } else {
-		        def total = 0
-		        for (i = 0; i < items.size(); i++) {
-		          total += items[i]
-		        }
-		        for (item in items) {
-		          total += item
-		        }
-		        while (total > 1000) {
-		          total = total - 1000
-		        }
-		        try {
-		          return total
-		        } catch (Exception e) {
-		          return -1
-		        } finally {
-		          println("done")
-		        }
-		      }
-		    }
-		    """ );
+		              def run(items) {
+		                if (items == null) {
+		                  throw new IllegalArgumentException("null")
+		                } else {
+		                  def total = 0
+		                  for (i = 0; i < items.size(); i++) {
+		                    total += items[i]
+		                  }
+		                  for (item in items) {
+		                    total += item
+		                  }
+		                  while (total > 1000) {
+		                    total = total - 1000
+		                  }
+		                  try {
+		                    return total
+		                  } catch (Exception e) {
+		                    return -1
+		                  } finally {
+		                    println("done")
+		                  }
+		                }
+		              }
+		              """ );
 	}
 
 	@Test
 	@DisplayName( "list and map literals, including empty forms" )
 	public void testListAndMapLiterals() {
 		assertParses( """
-		    def list = [1, 2, 3]
-		    def map = [a: 1, b: 2]
-		    def emptyList = []
-		    def emptyMap = [:]
-		    """ );
+		              def list = [1, 2, 3]
+		              def map = [a: 1, b: 2]
+		              def emptyList = []
+		              def emptyMap = [:]
+		              """ );
 	}
 
 	@Test
@@ -158,11 +158,11 @@ public class GroovyGrammarParsingTest {
 	@DisplayName( "package and import statements, including static import" )
 	public void testPackageAndImports() {
 		assertParses( """
-		    package com.example.app
-		    import java.util.List
-		    import static java.lang.Math.max
-		    class Foo {}
-		    """ );
+		              package com.example.app
+		              import java.util.List
+		              import static java.lang.Math.max
+		              class Foo {}
+		              """ );
 	}
 
 	@Test
@@ -171,10 +171,10 @@ public class GroovyGrammarParsingTest {
 		// Interface (and abstract) methods have no body - "block" must be optional on
 		// methodDeclaration. A prior version of this grammar required it, which broke this.
 		assertParses( """
-		    interface Shape {
-		      def area()
-		    }
-		    """ );
+		              interface Shape {
+		                def area()
+		              }
+		              """ );
 	}
 
 	@Test
@@ -184,20 +184,20 @@ public class GroovyGrammarParsingTest {
 		// class body. A prior version of this grammar only allowed methodDeclaration as a
 		// classMember, which broke this extremely common script-level pattern.
 		assertParses( """
-		    def run(items) {
-		      return items.size()
-		    }
-		    """ );
+		              def run(items) {
+		                return items.size()
+		              }
+		              """ );
 	}
 
 	@Test
 	@DisplayName( "closures with typed params, untyped params, and implicit 'it'" )
 	public void testClosureForms() {
 		assertParses( """
-		    def adder = { int a, int b -> a + b }
-		    def doubler = { it * 2 }
-		    def noArgs = { 42 }
-		    """ );
+		              def adder = { int a, int b -> a + b }
+		              def doubler = { it * 2 }
+		              def noArgs = { 42 }
+		              """ );
 	}
 
 	@Test
@@ -210,10 +210,10 @@ public class GroovyGrammarParsingTest {
 	@DisplayName( "mismatched braces are rejected" )
 	public void testMismatchedBracesFails() {
 		assertFailsToParse( """
-		    class Foo {
-		      def bar() {
-		    }
-		    """ );
+		                    class Foo {
+		                      def bar() {
+		                    }
+		                    """ );
 	}
 
 	@Test
@@ -251,19 +251,20 @@ public class GroovyGrammarParsingTest {
 	}
 
 	private List<String> parse( String source ) {
-		GroovyLexer			lexer	= new GroovyLexer( CharStreams.fromString( source ) );
-		CommonTokenStream	tokens	= new CommonTokenStream( lexer );
-		GroovyGrammar		parser	= new GroovyGrammar( tokens );
+		GroovyLexer			lexer		= new GroovyLexer( CharStreams.fromString( source ) );
+		CommonTokenStream	tokens		= new CommonTokenStream( lexer );
+		GroovyGrammar		parser		= new GroovyGrammar( tokens );
 
-		List<String>		errors	= new ArrayList<>();
-		BaseErrorListener	listener = new BaseErrorListener() {
+		List<String>		errors		= new ArrayList<>();
+		BaseErrorListener	listener	= new BaseErrorListener() {
 
-			@Override
-			public void syntaxError( Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg,
-			    RecognitionException e ) {
-				errors.add( "line " + line + ":" + charPositionInLine + " " + msg );
-			}
-		};
+											@Override
+											public void syntaxError( Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine,
+											    String msg,
+											    RecognitionException e ) {
+												errors.add( "line " + line + ":" + charPositionInLine + " " + msg );
+											}
+										};
 		lexer.removeErrorListeners();
 		lexer.addErrorListener( listener );
 		parser.removeErrorListeners();
