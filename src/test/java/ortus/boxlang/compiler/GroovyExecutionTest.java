@@ -400,6 +400,40 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
+	@DisplayName( "'+=' concatenates when the right side is syntactically a string literal/GString" )
+	public void testPlusEqualsConcatenatesWhenRightSideIsAStringLiteral() {
+		// Same gap/fix as testPlusConcatenatesWhenOneSideIsAStringLiteral, but for the compound
+		// "+=" assignment operator - BoxLang's PlusEqual is strictly numeric too.
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def s = \"a\"\ns += \"b\"\nreturn s\n", context );
+		assertThat( result ).isEqualTo( "ab" );
+	}
+
+	@Test
+	@DisplayName( "'+=' is still numeric when both sides are numbers" )
+	public void testPlusEqualsStaysNumericForNumbers() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def n = 1\nn += 2\nreturn n\n", context );
+		assertThat( result.toString() ).isEqualTo( "3" );
+	}
+
+	@Test
+	@DisplayName( "spread call argument expands a list's elements as individual positional arguments" )
+	public void testSpreadCallArgument() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def args = [1, 2]\nreturn Math.max(*args)\n", context );
+		assertThat( result.toString() ).isEqualTo( "2" );
+	}
+
+	@Test
+	@DisplayName( "spread call argument can be mixed with a leading positional argument" )
+	public void testSpreadCallArgumentMixedWithPositional() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def rest = [7]\nreturn Math.max(3, *rest)\n", context );
+		assertThat( result.toString() ).isEqualTo( "7" );
+	}
+
+	@Test
 	@DisplayName( "'+' between two unknown-typed variables is a documented gap, not silently wrong" )
 	public void testPlusBetweenVariablesIsNumericOnly() {
 		// The fully general case - both sides are variables, so whether "+" means concat or

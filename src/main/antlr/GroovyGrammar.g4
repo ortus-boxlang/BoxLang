@@ -204,7 +204,14 @@ assignOp: ASSIGN
     | RSHIFT_ASSIGN
     ;
 
-argumentList: expression ( COMMA expression )*
+argumentList: argument ( COMMA argument )*
+    ;
+
+// STAR-prefixed spread argument, e.g. foo(*list) - expands a list's elements as individual
+// positional arguments at that call site (mirrors CFGrammar's own "...expr" spread argument,
+// just with Groovy's own "*" token instead of CF's ellipsis).
+argument: STAR expression                                                        # spreadArgument
+    | expression                                                                 # positionalArgument
     ;
 
 primary: IDENTIFIER                                                               # identifierExpr

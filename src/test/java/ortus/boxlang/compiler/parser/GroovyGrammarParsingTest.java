@@ -239,6 +239,13 @@ public class GroovyGrammarParsingTest {
 	}
 
 	@Test
+	@DisplayName( "spread call argument, alone and mixed with positional arguments" )
+	public void testSpreadCallArgument() {
+		assertParses( "Math.max(*list)\n" );
+		assertParses( "Math.max(1, *list)\n" );
+	}
+
+	@Test
 	@DisplayName( "unterminated string literal is rejected" )
 	public void testUnterminatedStringFails() {
 		assertFailsToParse( "def x = \"unterminated\n" );

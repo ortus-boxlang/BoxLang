@@ -42,6 +42,7 @@ import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
@@ -54,6 +55,7 @@ import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.compiler.parser.GroovyParser;
 import ortus.boxlang.parser.antlr.GroovyGrammar.AdditiveExprContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.ArgumentContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ArgumentListContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.AsExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.AssignExprContext;
@@ -87,12 +89,14 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.MultiplicativeExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.NewInstanceExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.NullLiteralExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ParenExprContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.PositionalArgumentContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.PostfixExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.PowerExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.PrimaryExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.RangeExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.RelationalExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ShiftExprContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.SpreadArgumentContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.StringExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.SuperExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.TernaryExprContext;
@@ -434,8 +438,13 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		return switch ( assignOpText ) {
 			case "=" -> new BoxAssignment( ctx.expression( 0 ).accept( this ), BoxAssignmentOperator.Equal, ctx.expression( 1 ).accept( this ), List.of(),
 			    pos, src );
-			case "+=" -> new BoxAssignment( ctx.expression( 0 ).accept( this ), BoxAssignmentOperator.PlusEqual, ctx.expression( 1 ).accept( this ),
-			    List.of(), pos, src );
+			// Same reasoning as visitAdditiveExpr's "+" handling: BoxLang's PlusEqual is strictly
+			// numeric, so when the right side is SYNTACTICALLY a string literal/GString, desugar
+			// into `left = left & right` (string concat) instead of the numeric PlusEqual.
+			case "+=" -> isStringLiteralExpr( ctx.expression( 1 ) )
+			    ? desugarCompoundConcatAssign( ctx, pos, src )
+			    : new BoxAssignment( ctx.expression( 0 ).accept( this ), BoxAssignmentOperator.PlusEqual, ctx.expression( 1 ).accept( this ),
+			        List.of(), pos, src );
 			case "-=" -> new BoxAssignment( ctx.expression( 0 ).accept( this ), BoxAssignmentOperator.MinusEqual, ctx.expression( 1 ).accept( this ),
 			    List.of(), pos, src );
 			case "*=" -> new BoxAssignment( ctx.expression( 0 ).accept( this ), BoxAssignmentOperator.StarEqual, ctx.expression( 1 ).accept( this ),
@@ -463,6 +472,14 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		BoxExpression	leftForBinaryOp		= ctx.expression( 0 ).accept( this );
 		BoxExpression	right				= ctx.expression( 1 ).accept( this );
 		BoxExpression	combined			= new BoxBinaryOperation( leftForBinaryOp, op, right, pos, src );
+		return new BoxAssignment( leftForAssignTarget, BoxAssignmentOperator.Equal, combined, List.of(), pos, src );
+	}
+
+	private BoxAssignment desugarCompoundConcatAssign( AssignExprContext ctx, Position pos, String src ) {
+		BoxExpression	leftForAssignTarget	= ctx.expression( 0 ).accept( this );
+		BoxExpression	leftForConcat		= ctx.expression( 0 ).accept( this );
+		BoxExpression	right				= ctx.expression( 1 ).accept( this );
+		BoxExpression	combined			= new BoxStringConcat( List.of( leftForConcat, right ), pos, src );
 		return new BoxAssignment( leftForAssignTarget, BoxAssignmentOperator.Equal, combined, List.of(), pos, src );
 	}
 
@@ -637,9 +654,23 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		if ( ctx == null ) {
 			return new ArrayList<>();
 		}
-		return ctx.expression().stream()
-		    .map( e -> new BoxArgument( e.accept( this ), tools.getPosition( e ), tools.getSourceText( e ) ) )
-		    .collect( java.util.stream.Collectors.toList() );
+		return ctx.argument().stream().map( this::buildArgument ).collect( java.util.stream.Collectors.toList() );
+	}
+
+	// Groovy's STAR-prefixed spread argument (func(*list)) expands a list's elements as
+	// individual positional arguments at that call site - wrapping the expression in a
+	// BoxSpreadExpression is the exact same AST shape CFGrammar's own "...expr" spread argument
+	// produces, so the shared compiler pipeline expands it identically at compile time with no
+	// Groovy-specific handling needed downstream of this visitor.
+	private BoxArgument buildArgument( ArgumentContext argCtx ) {
+		var	pos	= tools.getPosition( argCtx );
+		var	src	= tools.getSourceText( argCtx );
+		if ( argCtx instanceof SpreadArgumentContext spreadCtx ) {
+			BoxExpression spreadExpr = new BoxSpreadExpression( spreadCtx.expression().accept( this ), pos, src );
+			return new BoxArgument( spreadExpr, pos, src );
+		}
+		PositionalArgumentContext positionalCtx = ( PositionalArgumentContext ) argCtx;
+		return new BoxArgument( positionalCtx.expression().accept( this ), pos, src );
 	}
 
 	BoxExpression toTypeExpression( TypeNameContext ctx ) {
