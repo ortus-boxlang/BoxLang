@@ -63,6 +63,7 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.BitAndExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.BitOrExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.BitXorExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.CallExprContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.CallWithTrailingClosureExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ClosureContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ClosureLiteralExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.CollectionExprContext;
@@ -76,6 +77,7 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.FloatLiteralExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.GstringContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.GstringPartContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.IdentifierExprContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.InExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.IndexExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.InstanceofExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.IntLiteralExprContext;
@@ -86,6 +88,7 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.MapEntryContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.MapLiteralContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.MemberExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.MultiplicativeExprContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.NamedArgumentContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.NewInstanceExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.NullLiteralExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ParenExprContext;
@@ -179,11 +182,35 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 
 	@Override
 	public BoxExpression visitCallExpr( CallExprContext ctx ) {
-		var					pos		= tools.getPosition( ctx );
-		var					src		= tools.getSourceText( ctx );
-		List<BoxArgument>	args	= buildArguments( ctx.argumentList() );
-		var					callee	= ctx.expression();
+		return buildCallExpression( ctx.expression(), buildArguments( ctx.argumentList() ), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+	}
 
+	// Groovy's "trailing closure after a parenthesized argument list" idiom - e.g.
+	// list.inject(0) { acc, x -> acc + x } or (1..10).step(2) { total += it } - is extremely
+	// common (unlike the no-parens form visitTrailingClosureCallExpr already handles, this one
+	// combines an explicit argument list with a closure). The closure is simply appended as the
+	// call's last BoxArgument, exactly like Groovy itself desugars it.
+	@Override
+	public BoxExpression visitCallWithTrailingClosureExpr( CallWithTrailingClosureExprContext ctx ) {
+		List<BoxArgument>	args		= new ArrayList<>( buildArguments( ctx.argumentList() ) );
+		BoxExpression		closureExpr	= visitClosure( ctx.closure() );
+		BoxArgument			closureArg	= new BoxArgument( closureExpr, tools.getPosition( ctx.closure() ), tools.getSourceText( ctx.closure() ) );
+		if ( isInjectCall( ctx.expression() ) ) {
+			// Groovy's list.inject(initial) { acc, x -> ... } aliases to BoxLang's native
+			// .reduce(callback, initial) member (see GROOVY_METHOD_ALIASES) - same semantics,
+			// but the opposite argument order, so the closure has to go first here, not last.
+			args.add( 0, closureArg );
+		} else {
+			args.add( closureArg );
+		}
+		return buildCallExpression( ctx.expression(), args, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+	}
+
+	private boolean isInjectCall( ExpressionContext calleeCtx ) {
+		return calleeCtx instanceof MemberExprContext memberCtx && "inject".equals( memberCtx.IDENTIFIER().getText() );
+	}
+
+	private BoxExpression buildCallExpression( ExpressionContext callee, List<BoxArgument> args, Position pos, String src ) {
 		if ( callee instanceof MemberExprContext memberCtx ) {
 			return buildMethodInvocation( memberCtx, args, pos, src );
 		}
@@ -201,7 +228,8 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 	private static final java.util.Map<String, String> GROOVY_METHOD_ALIASES = java.util.Map.of(
 	    "collect", "map",
 	    "any", "some",
-	    "findAll", "filter" );
+	    "findAll", "filter",
+	    "inject", "reduce" );
 
 	@Override
 	public BoxExpression visitTrailingClosureCallExpr( TrailingClosureCallExprContext ctx ) {
@@ -382,12 +410,36 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		return new BoxComparisonOperation( left, op, right, pos, src );
 	}
 
+	// Groovy's "in" membership test (e.g. "2 in list") is sugar for "list.isCase(2)", which for
+	// the common container types (Array, Set, String) collapses to a plain containment check -
+	// desugar to a ".contains(...)" method call on the right-hand side, reusing BoxLang's own
+	// native member function rather than adding new runtime machinery.
+	@Override
+	public BoxExpression visitInExpr( InExprContext ctx ) {
+		var					pos			= tools.getPosition( ctx );
+		var					src			= tools.getSourceText( ctx );
+		BoxExpression		left		= ctx.expression( 0 ).accept( this );
+		BoxExpression		right		= ctx.expression( 1 ).accept( this );
+		List<BoxArgument>	args		= List.of( new BoxArgument( left, left.getPosition(), left.getSourceText() ) );
+		BoxIdentifier		nameExpr	= new BoxIdentifier( "contains", pos, "contains" );
+		return new BoxMethodInvocation( nameExpr, right, args, false, true, pos, src );
+	}
+
 	@Override
 	public BoxExpression visitEqualityExpr( EqualityExprContext ctx ) {
 		var	pos	= tools.getPosition( ctx );
 		var	src	= tools.getSourceText( ctx );
 		if ( ctx.SPACESHIP() != null ) {
-			throw new ExpressionException( "The spaceship operator (<=>) is not yet supported by the Groovy parser", pos, src );
+			// Groovy overloads "<=>" for Comparable.compareTo(...). BoxLang's own runtime
+			// already has a general-purpose three-way compare used internally for <, >, etc
+			// (numbers compared numerically, strings case-insensitively, dates chronologically) -
+			// reuse it directly via a static call rather than adding new AST/runtime machinery.
+			List<BoxArgument>	args		= List.of(
+			    new BoxArgument( ctx.expression( 0 ).accept( this ), tools.getPosition( ctx.expression( 0 ) ), tools.getSourceText( ctx.expression( 0 ) ) ),
+			    new BoxArgument( ctx.expression( 1 ).accept( this ), tools.getPosition( ctx.expression( 1 ) ), tools.getSourceText( ctx.expression( 1 ) ) ) );
+			BoxIdentifier		nameExpr	= new BoxIdentifier( "invoke", pos, "invoke" );
+			BoxExpression		classRef	= new BoxFQN( "ortus.boxlang.runtime.operators.Compare", pos, "ortus.boxlang.runtime.operators.Compare" );
+			return new BoxStaticMethodInvocation( nameExpr, classRef, args, pos, src );
 		}
 		BoxExpression			left	= ctx.expression( 0 ).accept( this );
 		BoxExpression			right	= ctx.expression( 1 ).accept( this );
@@ -667,7 +719,26 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		if ( ctx == null ) {
 			return new ArrayList<>();
 		}
-		return ctx.argument().stream().map( this::buildArgument ).collect( java.util.stream.Collectors.toList() );
+		List<BoxArgument>	args			= new ArrayList<>();
+		List<BoxExpression>	namedEntries	= new ArrayList<>();
+		for ( ArgumentContext argCtx : ctx.argument() ) {
+			if ( argCtx instanceof NamedArgumentContext namedCtx ) {
+				// Groovy's "name: value" call arguments (e.g. foo(name: "x")) are collected into
+				// a single trailing Map/struct argument - the same flat alternating key/value
+				// shape visitMapLiteral already builds for "[a: 1]" map literals.
+				namedEntries.add( new BoxStringLiteral( namedCtx.IDENTIFIER().getText(), tools.getPosition( namedCtx.IDENTIFIER().getSymbol() ),
+				    namedCtx.IDENTIFIER().getText() ) );
+				namedEntries.add( namedCtx.expression().accept( this ) );
+			} else {
+				args.add( buildArgument( argCtx ) );
+			}
+		}
+		if ( !namedEntries.isEmpty() ) {
+			var	pos	= tools.getPosition( ctx );
+			var	src	= tools.getSourceText( ctx );
+			args.add( new BoxArgument( new BoxStructLiteral( BoxStructType.Ordered, namedEntries, pos, src ), pos, src ) );
+		}
+		return args;
 	}
 
 	// Groovy's STAR-prefixed spread argument (func(*list)) expands a list's elements as

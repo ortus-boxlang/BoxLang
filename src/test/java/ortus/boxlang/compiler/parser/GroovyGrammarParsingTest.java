@@ -256,6 +256,30 @@ public class GroovyGrammarParsingTest {
 	}
 
 	@Test
+	@DisplayName( "'in' membership operator" )
+	public void testInOperator() {
+		assertParses( "def result = 2 in [1, 2, 3]\n" );
+	}
+
+	@Test
+	@DisplayName( "named/map call arguments" )
+	public void testNamedCallArguments() {
+		assertParses( "greet(name: \"world\", loud: true)\n" );
+	}
+
+	@Test
+	@DisplayName( "trailing closure combined with a parenthesized argument list" )
+	public void testCallWithTrailingClosure() {
+		assertParses( "list.inject(0) { acc, x -> acc + x }\n" );
+	}
+
+	@Test
+	@DisplayName( "spaceship operator" )
+	public void testSpaceshipOperator() {
+		assertParses( "def result = 1 <=> 2\n" );
+	}
+
+	@Test
 	@DisplayName( "unterminated string literal is rejected" )
 	public void testUnterminatedStringFails() {
 		assertFailsToParse( "def x = \"unterminated\n" );

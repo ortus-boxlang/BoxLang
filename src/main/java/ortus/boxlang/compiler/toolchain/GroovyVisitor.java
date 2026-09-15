@@ -86,6 +86,7 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.TupleDeclStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.VarDeclStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.WhileStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammarBaseVisitor;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 /**
  * Walks GroovyGrammar's statement/declaration parse tree and builds the shared BoxLang AST
@@ -554,11 +555,37 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitCaseClause( CaseClauseContext ctx ) {
-		var					pos			= tools.getPosition( ctx );
-		var					src			= tools.getSourceText( ctx );
+		var	pos	= tools.getPosition( ctx );
+		var	src	= tools.getSourceText( ctx );
+		// Real Groovy "switch" uses subject.isCase(caseValue) semantics: a case value that is a
+		// Class means an instanceof check, a Range means containment - NOT equality. BoxSwitch
+		// (shared with CFVisitor/BoxVisitor) only ever does plain equality, so silently reusing
+		// it here would make "case String:" or "case 1..10:" compile to code that runs without
+		// error but matches the wrong cases. Failing loudly at parse time is safer than a
+		// confusing runtime behavior difference from real Groovy - rewrite as if/else with
+		// instanceof or the "in" operator instead.
+		if ( isSmartCaseValue( ctx.expression() ) ) {
+			throw new ExpressionException(
+			    "\"case\" values that match by type (a class name) or containment (a range) - Groovy's \"smart switch\" semantics - "
+			        + "are not supported; only plain equality case matching is. Rewrite this switch as an if/else chain using "
+			        + "\"instanceof\" or the \"in\" operator.",
+			    pos, src );
+		}
 		BoxExpression		condition	= ctx.expression().accept( expressionVisitor );
 		List<BoxStatement>	body		= buildStatementList( ctx.blockStatements() );
 		return new BoxSwitchCase( condition, null, body, pos, src );
+	}
+
+	private boolean isSmartCaseValue( ortus.boxlang.parser.antlr.GroovyGrammar.ExpressionContext exprCtx ) {
+		if ( exprCtx instanceof ortus.boxlang.parser.antlr.GroovyGrammar.RangeExprContext ) {
+			return true;
+		}
+		if ( exprCtx instanceof ortus.boxlang.parser.antlr.GroovyGrammar.PrimaryExprContext primaryCtx
+		    && primaryCtx.primary() instanceof ortus.boxlang.parser.antlr.GroovyGrammar.IdentifierExprContext idCtx ) {
+			String name = idCtx.IDENTIFIER().getText();
+			return !name.isEmpty() && Character.isUpperCase( name.charAt( 0 ) );
+		}
+		return false;
 	}
 
 	@Override

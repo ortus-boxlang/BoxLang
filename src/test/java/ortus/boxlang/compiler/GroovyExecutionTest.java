@@ -477,6 +477,100 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
+	@DisplayName( "'in' operator tests list membership" )
+	public void testInOperatorMembership() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def list = [1, 2, 3]\nreturn 2 in list\n", context );
+		assertThat( result ).isEqualTo( true );
+	}
+
+	@Test
+	@DisplayName( "'in' operator is false for a non-member, and negatable with '!( ... )'" )
+	public void testInOperatorNegated() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def list = [1, 2, 3]\nreturn !(9 in list)\n", context );
+		assertThat( result ).isEqualTo( true );
+	}
+
+	@Test
+	@DisplayName( "named/map call arguments are collected into a single trailing struct argument" )
+	public void testNamedCallArguments() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def greet(Map args) {\n"
+		        + "  return \"hi \" + args.name\n"
+		        + "}\n"
+		        + "return greet(name: \"world\")\n",
+		    context );
+		assertThat( result ).isEqualTo( "hi world" );
+	}
+
+	@Test
+	@DisplayName( "trailing closure combined with a parenthesized argument list, on a user-defined method" )
+	public void testCallWithTrailingClosureOnUserMethod() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def apply(n, fn) {\n"
+		        + "  return fn(n)\n"
+		        + "}\n"
+		        + "return apply(21) { it * 2 }\n",
+		    context );
+		assertThat( result.toString() ).isEqualTo( "42" );
+	}
+
+	@Test
+	@DisplayName( "'inject' aliases to BoxLang's reduce(), with the closure moved to the front to match its argument order" )
+	public void testInjectAliasesToReduceWithSwappedArgumentOrder() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def list = [1, 2, 3]\nreturn list.inject(0) { acc, x -> acc + x }\n", context );
+		assertThat( result.toString() ).isEqualTo( "6" );
+	}
+
+	@Test
+	@DisplayName( "spaceship operator returns -1/0/1 via BoxLang's own general-purpose compare" )
+	public void testSpaceshipOperator() {
+		IBoxContext context = newContext();
+		assertThat( run( "return 1 <=> 2\n", context ).toString() ).isEqualTo( "-1" );
+		assertThat( run( "return 5 <=> 5\n", context ).toString() ).isEqualTo( "0" );
+		assertThat( run( "return 2 <=> 1\n", context ).toString() ).isEqualTo( "1" );
+	}
+
+	@Test
+	@DisplayName( "spaceship operator works as a sort comparator closure" )
+	public void testSpaceshipOperatorInSortClosure() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def list = [3, 1, 2]\nreturn list.sort { a, b -> a <=> b }.toList(\",\")\n", context );
+		assertThat( result ).isEqualTo( "1,2,3" );
+	}
+
+	@Test
+	@DisplayName( "switch \"case\" matching by type or range (Groovy's smart-switch semantics) is a documented gap, not silently wrong" )
+	public void testSmartSwitchCaseIsADocumentedGap() {
+		// BoxSwitch (shared with CFVisitor/BoxVisitor) only ever compares by equality. Silently
+		// reusing it for "case String:" or "case 1..10:" would compile without error but match
+		// the wrong things, since real Groovy treats those as instanceof/range-containment
+		// checks, not equality. Failing loudly at parse time instead.
+		IBoxContext context = newContext();
+		org.junit.jupiter.api.Assertions.assertThrows( RuntimeException.class,
+		    () -> run( "def x = \"hi\"\nswitch (x) {\n case String:\n  return \"string\"\n default:\n  return \"other\"\n}\n", context ) );
+		org.junit.jupiter.api.Assertions.assertThrows( RuntimeException.class,
+		    () -> run( "def x = 5\nswitch (x) {\n case 1..10:\n  return \"in range\"\n default:\n  return \"other\"\n}\n", context ) );
+	}
+
+	@Test
+	@DisplayName( "Range.step(n) { } is a documented gap - BoxLang's Range type has no such member" )
+	public void testRangeStepWithClosureIsADocumentedGap() {
+		// Unlike the other gaps in this file, this isn't a parser limitation - "(1..10).step(2)
+		// { ... }" parses and compiles correctly (trailing-closure-after-parenthesized-args
+		// works generically), but BoxLang's native Range type simply has no "step" member to
+		// call. Adding one would be new runtime functionality, not parser/AST work - the kind
+		// of extra, Groovy-specific surface better suited to a companion module than core.
+		IBoxContext context = newContext();
+		org.junit.jupiter.api.Assertions.assertThrows( RuntimeException.class,
+		    () -> run( "total = 0\n(1..10).step(2) { total = total + it }\nreturn total\n", context ) );
+	}
+
+	@Test
 	@DisplayName( "'+' between two unknown-typed variables is a documented gap, not silently wrong" )
 	public void testPlusBetweenVariablesIsNumericOnly() {
 		// The fully general case - both sides are variables, so whether "+" means concat or

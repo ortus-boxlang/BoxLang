@@ -167,6 +167,7 @@ finallyClause: FINALLY block
 
 expression: primary                                                               # primaryExpr
     | expression LBRACKET expression RBRACKET                                     # indexExpr
+    | expression LPAREN argumentList? RPAREN closure                              # callWithTrailingClosureExpr
     | expression LPAREN argumentList? RPAREN                                      # callExpr
     | expression ( DOT | SAFE_DOT | SPREAD_DOT ) IDENTIFIER closure                # trailingClosureCallExpr
     | expression ( DOT | SAFE_DOT | SPREAD_DOT | METHOD_POINTER ) IDENTIFIER       # memberExpr
@@ -180,6 +181,7 @@ expression: primary                                                             
     | expression INSTANCEOF typeName                                              # instanceofExpr
     | expression AS typeName                                                      # asExpr
     | expression ( LT | GT | LE | GE ) expression                                 # relationalExpr
+    | expression IN expression                                                    # inExpr
     | expression ( EQUAL | NOTEQUAL | IDENTICAL | NOT_IDENTICAL | SPACESHIP ) expression # equalityExpr
     | expression BITAND expression                                                # bitAndExpr
     | expression BITXOR expression                                                # bitXorExpr
@@ -210,8 +212,11 @@ argumentList: argument ( COMMA argument )*
 
 // STAR-prefixed spread argument, e.g. foo(*list) - expands a list's elements as individual
 // positional arguments at that call site (mirrors CFGrammar's own "...expr" spread argument,
-// just with Groovy's own "*" token instead of CF's ellipsis).
+// just with Groovy's own "*" token instead of CF's ellipsis). "name: value" named arguments
+// (Groovy's map-literal-without-brackets call convention, e.g. foo(name: "x")) are collected
+// into a single trailing map argument by the visitor - see GroovyExpressionVisitor#buildArguments.
 argument: STAR expression                                                        # spreadArgument
+    | IDENTIFIER COLON expression                                                # namedArgument
     | expression                                                                 # positionalArgument
     ;
 
