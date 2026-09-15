@@ -17,9 +17,10 @@
  */
 package ortus.boxlang.compiler.javaboxpiler;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import com.github.javaparser.ast.ArrayCreationLevel;
 import com.github.javaparser.ast.CompilationUnit;
@@ -130,12 +131,12 @@ import com.github.javaparser.printer.configuration.PrinterConfiguration;
 
 public class PrettyPrintVisitor extends DefaultPrettyPrinterVisitor {
 
-	private List<Object[]>			lineNumbers	= new ArrayList<>();
+	private List<Object[]>	lineNumbers	= new ArrayList<>();
 
 	/**
 	 * Track the class we are inside of
 	 */
-	protected ArrayDeque<String>	insideClass	= new ArrayDeque<>();
+	protected Deque<String>	insideClass	= new ConcurrentLinkedDeque<>();
 
 	public PrettyPrintVisitor() {
 		super( new DefaultPrinterConfiguration() );

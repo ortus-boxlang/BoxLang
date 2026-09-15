@@ -24,12 +24,13 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
@@ -64,8 +65,8 @@ public abstract class Transpiler implements ITranspiler {
 	private int								componentOptionalCounter	= 0;
 	private int								functionBodyCounter			= 0;
 	private int								forLoopBreakCounter			= 0;
-	private ArrayDeque<String>				currentContextName			= new ArrayDeque<>();
-	private ArrayDeque<Integer>				currentforLoopBreakCounter	= new ArrayDeque<>();
+	private Deque<String>					currentContextName			= new ConcurrentLinkedDeque<>();
+	private Deque<Integer>					currentforLoopBreakCounter	= new ConcurrentLinkedDeque<>();
 	// This is a list of import metadata used to enforce reserve variable names
 	private List<ImportDefinition>			imports						= new ArrayList<ImportDefinition>();
 	// This is the actual transpiled expressions representing the java code used to define the import in the class. Gathered here so we can hoist them

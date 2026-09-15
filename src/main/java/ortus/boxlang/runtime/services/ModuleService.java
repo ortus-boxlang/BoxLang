@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
@@ -31,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.FilenameUtils;
@@ -500,7 +500,7 @@ public class ModuleService extends BaseService {
 	 *         {@code false} when any ancestor is disabled
 	 */
 	private boolean resolveAncestorChain( ModuleRecord moduleRecord, IBoxContext context ) {
-		Deque<ModuleRecord>	ancestors	= new ArrayDeque<>();
+		Deque<ModuleRecord>	ancestors	= new ConcurrentLinkedDeque<>();
 		Set<Key>			visited		= new HashSet<>();
 		Key					parentKey	= moduleRecord.parentModule;
 

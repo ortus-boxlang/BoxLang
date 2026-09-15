@@ -19,12 +19,13 @@ package ortus.boxlang.runtime.context;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
@@ -107,7 +108,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * memory since all
 	 * we really need is static data from them
 	 */
-	private ArrayDeque<ResolvedFilePath>					templates				= null;
+	private Deque<ResolvedFilePath>							templates				= null;
 
 	/**
 	 * A way to discover the imports tied to the original source of the current
@@ -119,7 +120,7 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * A way to discover the current executing componenet
 	 */
-	private ArrayDeque<IStruct>								components				= null;
+	private Deque<IStruct>									components				= null;
 
 	/**
 	 * This is a denormalized cache of how many "output" components are on the component stack. We use this information very often when flushing output
@@ -134,7 +135,7 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * A buffer to write output to
 	 */
-	private ArrayDeque<StringBuffer>						buffers					= null;
+	private Deque<StringBuffer>								buffers					= null;
 
 	/**
 	 * The function service we can use to retrieve BIFS and member methods
@@ -207,11 +208,11 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Lazy create the templates
 	 */
-	protected ArrayDeque<ResolvedFilePath> _getTemplates() {
+	protected Deque<ResolvedFilePath> _getTemplates() {
 		if ( this.templates == null ) {
 			synchronized ( this ) {
 				if ( this.templates == null ) {
-					this.templates = new ArrayDeque<>();
+					this.templates = new ConcurrentLinkedDeque<>();
 				}
 			}
 		}
@@ -264,11 +265,11 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Lazy create the components
 	 */
-	protected ArrayDeque<IStruct> _getComponents() {
+	protected Deque<IStruct> _getComponents() {
 		if ( this.components == null ) {
 			synchronized ( this ) {
 				if ( this.components == null ) {
-					this.components = new ArrayDeque<>();
+					this.components = new ConcurrentLinkedDeque<>();
 					_getOutputComponentCount();
 				}
 			}
@@ -1361,11 +1362,11 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Lazy create the buffers
 	 */
-	protected ArrayDeque<StringBuffer> _getBuffers() {
+	protected Deque<StringBuffer> _getBuffers() {
 		if ( this.buffers == null ) {
 			synchronized ( this ) {
 				if ( this.buffers == null ) {
-					this.buffers = new ArrayDeque<>();
+					this.buffers = new ConcurrentLinkedDeque<>();
 					this.buffers.push( new StringBuffer() );
 				}
 			}

@@ -147,6 +147,7 @@ public class CFLexerCustom extends CFLexer {
 
 	/**
 	 * Stack tracking whether each nested function level has output=true
+	 * Each lexer instance is only used in one thread, so not using ConcurrentLinkedDeque here.
 	 */
 	Deque<Boolean>								functionOutputStack		= new ArrayDeque<>();
 
