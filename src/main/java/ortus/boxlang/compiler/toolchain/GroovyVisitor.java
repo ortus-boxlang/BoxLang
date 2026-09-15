@@ -200,6 +200,18 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 		// accessors alongside this statement, mirroring both real Groovy's default
 		// (unmodified fields get an implicit public accessor pair) and BoxLang's own
 		// `property` mechanism, without needing to replicate BoxProperty's CF-annotation model.
+		//
+		// NOTE on "static": deliberately NOT modeled. Marking just this declaration statement
+		// with BoxAssignmentModifier.STATIC only initializes BoxLang's static scope - it does
+		// NOT make bare references to the field elsewhere in the class resolve there too.
+		// Verified empirically: native BoxLang itself requires every read/write of a static
+		// member to be explicitly scope-qualified ("static.total", never bare "total"), even
+		// inside the declaring class's own methods. Real Groovy has no such requirement (a
+		// static field reads/writes exactly like an instance one, bare, from anywhere in the
+		// class). Doing this correctly needs a symbol-table pass that rewrites every bare
+		// reference to a known static-field name throughout the whole class body into an
+		// explicit static.<name> access - out of scope for now; a `static` modifier here is
+		// silently treated the same as an unmodified field (instance-scoped, not shared).
 		BoxIdentifier	target		= new BoxIdentifier( name, tools.getPosition( ctx.IDENTIFIER().getSymbol() ), name );
 		BoxExpression	value		= ctx.expression() != null ? ctx.expression().accept( expressionVisitor ) : new BoxNull( pos, src );
 		BoxAssignment	assignment	= new BoxAssignment( target, BoxAssignmentOperator.Equal, value, List.of(), pos, src );

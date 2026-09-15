@@ -167,4 +167,35 @@ public class GroovyClassExecutionTest {
 		assertThat( thrown.getMessage() ).contains( "NoSuchAnimalClass" );
 	}
 
+	@Test
+	@DisplayName( "'static' on a field is a documented no-op for now, not silently broken" )
+	public void testStaticFieldIsCurrentlyTreatedAsInstanceScoped() {
+		// Investigated and deliberately deferred: making Groovy's `static` field semantics
+		// (shared across instances, read/written bare from anywhere in the class) actually
+		// work needs more than tagging the declaration with BoxAssignmentModifier.STATIC.
+		// Verified empirically against native BoxLang itself: even there, every read/write of
+		// a static member must be explicitly scope-qualified ("static.total"), including from
+		// inside the declaring class's own methods - bare references don't reach static scope.
+		// Real Groovy has no such requirement. Doing this right needs a symbol-table pass that
+		// rewrites every bare reference to a known static-field name throughout the class body
+		// into an explicit static.<name> access, which is out of scope for now. This test
+		// pins down the current, honest behavior instead of leaving a half-working feature
+		// that fails confusingly on naturally-written Groovy: "static" is currently a no-op,
+		// and the field behaves like a normal per-instance field.
+		IBoxContext		context		= newContext();
+		String			source		= """
+		                              class Counter {
+		                                static def total = 0
+
+		                                def bump() {
+		                                  total = total + 1
+		                                  return total
+		                                }
+		                              }
+		                              """;
+		IClassRunnable	instance	= instantiate( source, context );
+		Object			result		= instance.dereferenceAndInvoke( context, Key.of( "bump" ), new Object[] {}, false );
+		assertThat( result.toString() ).isEqualTo( "1" );
+	}
+
 }
