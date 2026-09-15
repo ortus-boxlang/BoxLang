@@ -144,6 +144,16 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 			annotations.add( new BoxAnnotation( new BoxFQN( "implements", pos, "implements" ),
 			    new BoxStringLiteral( interfaceList, pos, interfaceList ), pos, src ) );
 		}
+		// abstract/final on the class itself (e.g. "abstract class Foo {}") - flag-style
+		// annotations with a null value, mirroring how CFVisitor.visitBoxClass encodes the
+		// same two modifiers for CF's `abstract component {}` / `final component {}`.
+		for ( ClassModifierContext modCtx : ctx.classModifier() ) {
+			if ( modCtx.ABSTRACT() != null ) {
+				annotations.add( new BoxAnnotation( new BoxFQN( "abstract", pos, "abstract" ), null, pos, src ) );
+			} else if ( modCtx.FINAL() != null ) {
+				annotations.add( new BoxAnnotation( new BoxFQN( "final", pos, "final" ), null, pos, src ) );
+			}
+		}
 		return annotations;
 	}
 

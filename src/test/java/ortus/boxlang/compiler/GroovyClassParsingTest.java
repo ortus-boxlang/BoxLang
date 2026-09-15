@@ -151,4 +151,20 @@ public class GroovyClassParsingTest {
 		    .isEqualTo( "Runnable,Comparable" );
 	}
 
+	@Test
+	@DisplayName( "'abstract class' is wired into the class's annotations, not silently dropped" )
+	public void testAbstractClassBuildsAnnotation() throws IOException {
+		ParsingResult result = parseClass( """
+		                                   abstract class Shape {
+		                                     def area()
+		                                   }
+		                                   """ );
+
+		assertThat( result.isCorrect() ).isTrue();
+		BoxClass	boxClass	= ( BoxClass ) result.getRoot();
+		boolean		hasAbstract	= boxClass.getAnnotations().stream()
+		    .anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "abstract" ) );
+		assertThat( hasAbstract ).isTrue();
+	}
+
 }
