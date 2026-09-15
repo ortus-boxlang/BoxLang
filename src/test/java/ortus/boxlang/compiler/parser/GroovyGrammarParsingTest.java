@@ -246,6 +246,16 @@ public class GroovyGrammarParsingTest {
 	}
 
 	@Test
+	@DisplayName( "tuple declaration, requires at least two names" )
+	public void testTupleDeclStatement() {
+		assertParses( "def (a, b) = [1, 2]\n" );
+		assertParses( "def (a, b, c) = [1, 2, 3]\n" );
+		// A single-name "tuple" isn't valid Groovy syntax - falls back to (and fails as) a
+		// parenthesized primary expression, not this rule.
+		assertFailsToParse( "def (a) = [1]\n" );
+	}
+
+	@Test
 	@DisplayName( "unterminated string literal is rejected" )
 	public void testUnterminatedStringFails() {
 		assertFailsToParse( "def x = \"unterminated\n" );

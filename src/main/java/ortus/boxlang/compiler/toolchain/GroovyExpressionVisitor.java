@@ -288,6 +288,19 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 
 	@Override
 	public BoxExpression visitMultiplicativeExpr( MultiplicativeExprContext ctx ) {
+		if ( ctx.STAR() != null && isStringLiteralExpr( ctx.expression( 0 ) ) ) {
+			// Groovy overloads "*" for string repetition (String.multiply(Number)) - only the
+			// left side can be a string (Groovy never defines Number.multiply(String)), so
+			// unlike the "+" fix this only needs to check one side. Same bounded, syntactic-
+			// literal-only approach: desugar to a call to BoxLang's own RepeatString BIF
+			// (CF's repeatString()) rather than attempting runtime type dispatch on "*" itself.
+			var					pos		= tools.getPosition( ctx );
+			var					src		= tools.getSourceText( ctx );
+			List<BoxArgument>	args	= List.of(
+			    new BoxArgument( ctx.expression( 0 ).accept( this ), tools.getPosition( ctx.expression( 0 ) ), tools.getSourceText( ctx.expression( 0 ) ) ),
+			    new BoxArgument( ctx.expression( 1 ).accept( this ), tools.getPosition( ctx.expression( 1 ) ), tools.getSourceText( ctx.expression( 1 ) ) ) );
+			return new BoxFunctionInvocation( "RepeatString", args, pos, src );
+		}
 		var op = ctx.STAR() != null ? BoxBinaryOperator.Star : ctx.SLASH() != null ? BoxBinaryOperator.Slash : BoxBinaryOperator.Mod;
 		return binary( ctx.expression( 0 ), op, ctx.expression( 1 ), ctx );
 	}

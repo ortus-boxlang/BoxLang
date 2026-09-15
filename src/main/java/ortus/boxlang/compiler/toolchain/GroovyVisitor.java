@@ -23,6 +23,8 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
@@ -80,6 +82,7 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.ReturnStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.SwitchStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ThrowStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.TryStatementContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.TupleDeclStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.VarDeclStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.WhileStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammarBaseVisitor;
@@ -395,6 +398,27 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 		}
 
 		return declarators.size() == 1 ? declarators.get( 0 ) : new BoxStatementBlock( declarators, pos, src );
+	}
+
+	// Groovy's "def (a, b) = [1, 2]" tuple declaration reuses BoxLang's own native array-
+	// destructuring assignment AST (BoxArrayDestructuringPattern/BoxArrayDestructuringBinding) -
+	// the exact same node shape BoxParser's own "[a, b] = expr" syntax produces - so the shared
+	// BoxAssignmentTransformer (asm/java) already knows how to compile it via ArrayDestructurer,
+	// with no Groovy-specific runtime handling needed. Only simple identifier targets are built
+	// here (no nested patterns, defaults, or rest capture - Groovy's own tuple syntax doesn't
+	// have those forms either).
+	@Override
+	public BoxNode visitTupleDeclStatement( TupleDeclStatementContext ctx ) {
+		var									pos			= tools.getPosition( ctx );
+		var									src			= tools.getSourceText( ctx );
+		List<BoxArrayDestructuringBinding>	bindings	= ctx.IDENTIFIER().stream()
+		    .map( id -> new BoxArrayDestructuringBinding(
+		        new BoxIdentifier( id.getText(), tools.getPosition( id.getSymbol() ), id.getText() ),
+		        null, null, false, tools.getPosition( id.getSymbol() ), id.getText() ) )
+		    .collect( Collectors.toList() );
+		BoxArrayDestructuringPattern		pattern		= new BoxArrayDestructuringPattern( bindings, pos, src );
+		BoxExpression						value		= ctx.expression().accept( expressionVisitor );
+		return new BoxExpressionStatement( new BoxAssignment( pattern, BoxAssignmentOperator.Equal, value, List.of(), pos, src ), pos, src );
 	}
 
 	@Override

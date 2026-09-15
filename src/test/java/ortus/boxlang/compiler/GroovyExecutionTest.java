@@ -434,6 +434,49 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
+	@DisplayName( "tuple declaration destructures a list into separate variables" )
+	public void testTupleDeclaration() {
+		// "def (a, b) = [1, 2]" reuses BoxLang's own native array-destructuring assignment AST
+		// (BoxArrayDestructuringPattern) - the same node ArrayDestructurer already compiles for
+		// BoxParser's own "[a, b] = expr" syntax - so no new runtime support was needed.
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def (a, b) = [1, 2]\nreturn a + b\n", context );
+		assertThat( result.toString() ).isEqualTo( "3" );
+	}
+
+	@Test
+	@DisplayName( "tuple declaration works with more than two names and a function-returned list" )
+	public void testTupleDeclarationThreeNamesFromFunctionResult() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def pair() {\n"
+		        + "  return [1, 2, 3]\n"
+		        + "}\n"
+		        + "def (x, y, z) = pair()\n"
+		        + "return \"${x},${y},${z}\"\n",
+		    context );
+		assertThat( result ).isEqualTo( "1,2,3" );
+	}
+
+	@Test
+	@DisplayName( "'*' repeats a string when the left side is syntactically a string literal" )
+	public void testStarRepeatsStringLiteral() {
+		// Groovy overloads "*" for String.multiply(Number). Same bounded, syntactic-detection
+		// approach as the "+" concat fix - desugars to BoxLang's own RepeatString BIF.
+		IBoxContext	context	= newContext();
+		Object		result	= run( "return \"ab\" * 3\n", context );
+		assertThat( result ).isEqualTo( "ababab" );
+	}
+
+	@Test
+	@DisplayName( "'*' is still numeric multiplication for numbers" )
+	public void testStarStaysNumericForNumbers() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "return 3 * 4\n", context );
+		assertThat( result.toString() ).isEqualTo( "12" );
+	}
+
+	@Test
 	@DisplayName( "'+' between two unknown-typed variables is a documented gap, not silently wrong" )
 	public void testPlusBetweenVariablesIsNumericOnly() {
 		// The fully general case - both sides are variables, so whether "+" means concat or
