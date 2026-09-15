@@ -299,6 +299,29 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
+	@DisplayName( "labeled break exits the outer loop, not just the inner one" )
+	public void testLabeledBreak() {
+		IBoxContext	context	= newContext();
+		// Without the label reaching the outer loop, "found" would end up counting every
+		// (i, j) pair visited before the FIRST match, not stop the outer loop entirely -
+		// proving the label actually propagated from the grammar into BoxForIn.setLabel(),
+		// not just parsing without effect.
+		Object		result	= run(
+		    "found = null\n"
+		        + "outer: for (i in 1..3) {\n"
+		        + "  for (j in 1..3) {\n"
+		        + "    if (i == 2 && j == 2) {\n"
+		        + "      found = \"${i},${j}\"\n"
+		        + "      break outer\n"
+		        + "    }\n"
+		        + "  }\n"
+		        + "}\n"
+		        + "return found\n",
+		    context );
+		assertThat( result ).isEqualTo( "2,2" );
+	}
+
+	@Test
 	@DisplayName( "assert with a true condition does not throw" )
 	public void testAssertPasses() {
 		IBoxContext	context	= newContext();
@@ -313,6 +336,24 @@ public class GroovyExecutionTest {
 		var			thrown	= org.junit.jupiter.api.Assertions.assertThrows( AssertionError.class,
 		    () -> run( "def x = -5\nassert x > 0 : \"x must be positive\"\n", context ) );
 		assertThat( thrown.getMessage() ).contains( "x must be positive" );
+	}
+
+	@Test
+	@DisplayName( "'+' on strings is a documented semantic gap - it does not concatenate, unlike real Groovy" )
+	public void testPlusIsNumericOnlyNotStringConcat() {
+		// Found while debugging an unrelated test: Groovy overloads "+" for string
+		// concatenation ("a" + b), but this grammar maps "+" directly to
+		// BoxBinaryOperator.Plus, and BoxLang's own "+" is strictly numeric (matching CFML,
+		// where "&" is the concat operator - the same convention Groovy source parsed by this
+		// grammar inherits). Making "+" smart-dispatch between numeric add and string concat
+		// would need a runtime type check on every "+" evaluation, a bigger semantic-mapping
+		// decision deferred rather than made in passing. Real Groovy code that concatenates
+		// with "+" needs GString interpolation instead ("${a}${b}") - already supported and
+		// the idiomatic fix. This test pins down the current, honest failure rather than
+		// leaving it an undocumented surprise.
+		IBoxContext context = newContext();
+		org.junit.jupiter.api.Assertions.assertThrows( RuntimeException.class,
+		    () -> run( "def greeting = \"Hello, \" + \"World\"\nreturn greeting\n", context ) );
 	}
 
 }

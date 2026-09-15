@@ -219,6 +219,19 @@ public class GroovyGrammarParsingTest {
 	}
 
 	@Test
+	@DisplayName( "labeled loop with labeled break/continue" )
+	public void testLabeledLoop() {
+		assertParses( """
+		              outer: for (i in 1..3) {
+		                for (j in 1..3) {
+		                  if (j == 2) continue outer
+		                  if (i == 3) break outer
+		                }
+		              }
+		              """ );
+	}
+
+	@Test
 	@DisplayName( "assert statement, with and without a message" )
 	public void testAssertStatement() {
 		assertParses( "assert x > 0\n" );

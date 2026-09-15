@@ -120,6 +120,7 @@ blockStatements: statement ( sep statement )* sep?
     ;
 
 statement: block                                                                  # blockStatement
+    | IDENTIFIER COLON statement                                                  # labeledStatement
     | ( typeName | DEF ) IDENTIFIER ( ASSIGN expression )? ( COMMA IDENTIFIER ( ASSIGN expression )? )* # varDeclStatement
     | IF LPAREN expression RPAREN statement ( ELSE statement )?                   # ifStatement
     | WHILE LPAREN expression RPAREN statement                                    # whileStatement

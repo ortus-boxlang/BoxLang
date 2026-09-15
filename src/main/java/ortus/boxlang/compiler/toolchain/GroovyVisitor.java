@@ -70,6 +70,7 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.FieldDeclarationContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ForInControlContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ForStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.IfStatementContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.LabeledStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.MethodDeclarationContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ParameterContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.AssertStatementContext;
@@ -347,6 +348,26 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 	@Override
 	public BoxNode visitBlockStatement( BlockStatementContext ctx ) {
 		return buildBlock( ctx.block() );
+	}
+
+	@Override
+	public BoxNode visitLabeledStatement( LabeledStatementContext ctx ) {
+		String	label	= ctx.IDENTIFIER().getText();
+		BoxNode	inner	= ctx.statement().accept( this );
+		// Groovy allows labeling any statement, but only loops actually use the label (for
+		// labeled break/continue) - BoxWhile/BoxForIn/BoxForIndex/BoxDo all expose setLabel().
+		// Anything else just has its label silently ignored, matching the fact that BoxBreak/
+		// BoxContinue can only ever target a loop label in the first place.
+		if ( inner instanceof BoxWhile w ) {
+			w.setLabel( label );
+		} else if ( inner instanceof BoxForIn f ) {
+			f.setLabel( label );
+		} else if ( inner instanceof BoxForIndex f ) {
+			f.setLabel( label );
+		} else if ( inner instanceof BoxDo d ) {
+			d.setLabel( label );
+		}
+		return inner;
 	}
 
 	// -----------------------------------------------------------------------------------------
