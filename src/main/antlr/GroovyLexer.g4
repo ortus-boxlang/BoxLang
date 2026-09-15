@@ -112,6 +112,7 @@ CONTINUE:   'continue';
 SWITCH:     'switch';
 CASE:       'case';
 DEFAULT:    'default';
+ASSERT:     'assert';
 NEW:        'new';
 TRUE:       'true';
 FALSE:      'false';

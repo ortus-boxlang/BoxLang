@@ -298,4 +298,21 @@ public class GroovyExecutionTest {
 		assertThat( result ).isEqualTo( true );
 	}
 
+	@Test
+	@DisplayName( "assert with a true condition does not throw" )
+	public void testAssertPasses() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def x = 5\nassert x > 0\nreturn \"ok\"\n", context );
+		assertThat( result ).isEqualTo( "ok" );
+	}
+
+	@Test
+	@DisplayName( "assert with a false condition throws, carrying the message" )
+	public void testAssertFails() {
+		IBoxContext	context	= newContext();
+		var			thrown	= org.junit.jupiter.api.Assertions.assertThrows( AssertionError.class,
+		    () -> run( "def x = -5\nassert x > 0 : \"x must be positive\"\n", context ) );
+		assertThat( thrown.getMessage() ).contains( "x must be positive" );
+	}
+
 }

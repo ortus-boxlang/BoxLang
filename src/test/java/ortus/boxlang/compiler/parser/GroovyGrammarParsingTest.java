@@ -219,6 +219,13 @@ public class GroovyGrammarParsingTest {
 	}
 
 	@Test
+	@DisplayName( "assert statement, with and without a message" )
+	public void testAssertStatement() {
+		assertParses( "assert x > 0\n" );
+		assertParses( "assert x > 0 : \"x must be positive\"\n" );
+	}
+
+	@Test
 	@DisplayName( "unterminated string literal is rejected" )
 	public void testUnterminatedStringFails() {
 		assertFailsToParse( "def x = \"unterminated\n" );

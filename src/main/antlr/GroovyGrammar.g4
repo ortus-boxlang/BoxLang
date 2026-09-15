@@ -131,6 +131,7 @@ statement: block                                                                
     | BREAK IDENTIFIER?                                                           # breakStatement
     | CONTINUE IDENTIFIER?                                                        # continueStatement
     | SWITCH LPAREN expression RPAREN LBRACE sep? switchCase* RBRACE              # switchStatement
+    | ASSERT expression ( COLON expression )?                                     # assertStatement
     | expression                                                                  # exprStatement
     ;
 

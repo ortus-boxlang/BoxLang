@@ -33,6 +33,7 @@ import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxAssert;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
@@ -71,6 +72,7 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.ForStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.IfStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.MethodDeclarationContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ParameterContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.AssertStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.CaseClauseContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.DefaultClauseContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ReturnStatementContext;
@@ -520,6 +522,18 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 		var					src		= tools.getSourceText( ctx );
 		List<BoxStatement>	body	= buildStatementList( ctx.blockStatements() );
 		return new BoxSwitchCase( null, null, body, pos, src );
+	}
+
+	@Override
+	public BoxNode visitAssertStatement( AssertStatementContext ctx ) {
+		var				pos			= tools.getPosition( ctx );
+		var				src			= tools.getSourceText( ctx );
+		BoxExpression	condition	= ctx.expression( 0 ).accept( expressionVisitor );
+		if ( ctx.expression().size() > 1 ) {
+			BoxExpression message = ctx.expression( 1 ).accept( expressionVisitor );
+			return new BoxAssert( condition, message, pos, src );
+		}
+		return new BoxAssert( condition, pos, src );
 	}
 
 	@Override
