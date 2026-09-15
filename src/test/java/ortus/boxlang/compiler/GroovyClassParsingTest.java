@@ -61,11 +61,18 @@ public class GroovyClassParsingTest {
 		assertThat( result.isCorrect() ).isTrue();
 		assertThat( result.getRoot() ).isInstanceOf( BoxClass.class );
 		BoxClass boxClass = ( BoxClass ) result.getRoot();
-		// one field-initializing statement + one method declaration
-		assertThat( boxClass.getBody() ).hasSize( 2 );
+		// one field-initializing statement + synthesized getPrefix/setPrefix accessors + one
+		// user-declared method (see GroovyVisitor.buildFieldAccessors)
+		assertThat( boxClass.getBody() ).hasSize( 4 );
 		boolean hasGreetMethod = boxClass.getBody().stream()
 		    .anyMatch( stmt -> stmt instanceof BoxFunctionDeclaration fn && fn.getName().equals( "greet" ) );
 		assertThat( hasGreetMethod ).isTrue();
+		boolean hasGetPrefix = boxClass.getBody().stream()
+		    .anyMatch( stmt -> stmt instanceof BoxFunctionDeclaration fn && fn.getName().equals( "getPrefix" ) );
+		assertThat( hasGetPrefix ).isTrue();
+		boolean hasSetPrefix = boxClass.getBody().stream()
+		    .anyMatch( stmt -> stmt instanceof BoxFunctionDeclaration fn && fn.getName().equals( "setPrefix" ) );
+		assertThat( hasSetPrefix ).isTrue();
 	}
 
 	@Test

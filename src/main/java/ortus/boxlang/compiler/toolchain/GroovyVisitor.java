@@ -100,25 +100,71 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 	public BoxClass buildClass( ClassDeclarationContext ctx, List<BoxImport> imports ) {
 		var					pos		= tools.getPosition( ctx );
 		var					src		= tools.getSourceText( ctx );
+		List<BoxStatement>	body	= new ArrayList<>();
 
-		List<BoxStatement>	body	= ctx.classBody() == null
-		    ? new ArrayList<>()
-		    : ctx.classBody().classMember().stream().map( m -> ( BoxStatement ) m.accept( this ) ).collect( Collectors.toList() );
+		if ( ctx.classBody() != null ) {
+			java.util.Set<String> userDeclaredMethodNames = ctx.classBody().classMember().stream()
+			    .filter( m -> m.methodDeclaration() != null )
+			    .map( m -> m.methodDeclaration().IDENTIFIER().getText().toLowerCase() )
+			    .collect( java.util.stream.Collectors.toSet() );
+
+			for ( var member : ctx.classBody().classMember() ) {
+				body.add( ( BoxStatement ) member.accept( this ) );
+				if ( member.fieldDeclaration() != null ) {
+					body.addAll( buildFieldAccessors( member.fieldDeclaration().IDENTIFIER().getText(), userDeclaredMethodNames,
+					    tools.getPosition( member.fieldDeclaration() ), tools.getSourceText( member.fieldDeclaration() ) ) );
+				}
+			}
+		}
 
 		return new BoxClass( imports, body, List.of(), List.of(), List.of(), pos, src, BoxSourceType.GROOVYSCRIPT );
+	}
+
+	/**
+	 * Synthesizes get&lt;Name&gt;/set&lt;Name&gt; accessor methods for a Groovy field, mirroring
+	 * real Groovy's default behavior (an unmodified field gets an implicit public accessor
+	 * pair) and giving the field a defined path for external access - since BoxLang's external
+	 * {@code dereference} only sees declared members (methods/properties), not the private
+	 * "variables" scope a bare field assignment writes into. Skipped when the class already
+	 * declares a method with that exact name, so explicit user-written accessors always win.
+	 */
+	private List<BoxStatement> buildFieldAccessors( String fieldName, java.util.Set<String> userDeclaredMethodNames, Position pos, String src ) {
+		List<BoxStatement>	accessors	= new ArrayList<>();
+		String				capitalized	= Character.toUpperCase( fieldName.charAt( 0 ) ) + fieldName.substring( 1 );
+		String				getterName	= "get" + capitalized;
+		String				setterName	= "set" + capitalized;
+
+		if ( !userDeclaredMethodNames.contains( getterName.toLowerCase() ) ) {
+			BoxReturn returnStmt = new BoxReturn( new BoxIdentifier( fieldName, pos, fieldName ), pos, src );
+			accessors.add( new BoxFunctionDeclaration( BoxAccessModifier.Public, List.of(), getterName, null, List.of(), List.of(), List.of(),
+			    List.of( returnStmt ), pos, src ) );
+		}
+		if ( !userDeclaredMethodNames.contains( setterName.toLowerCase() ) ) {
+			BoxArgumentDeclaration	param		= new BoxArgumentDeclaration( true, "Any", "value", null, List.of(), List.of(), pos, src );
+			BoxAssignment			assign		= new BoxAssignment( new BoxIdentifier( fieldName, pos, fieldName ), BoxAssignmentOperator.Equal,
+			    new BoxIdentifier( "value", pos, "value" ), List.of(), pos, src );
+			BoxStatement			assignStmt	= new BoxExpressionStatement( assign, pos, src );
+			accessors.add( new BoxFunctionDeclaration( BoxAccessModifier.Public, List.of(), setterName, null, List.of( param ), List.of(), List.of(),
+			    List.of( assignStmt ), pos, src ) );
+		}
+		return accessors;
 	}
 
 	@Override
 	public BoxNode visitFieldDeclaration( FieldDeclarationContext ctx ) {
 		var				pos			= tools.getPosition( ctx );
 		var				src			= tools.getSourceText( ctx );
-		BoxIdentifier	target		= new BoxIdentifier( ctx.IDENTIFIER().getText(), tools.getPosition( ctx.IDENTIFIER().getSymbol() ),
-		    ctx.IDENTIFIER().getText() );
+		String			name		= ctx.IDENTIFIER().getText();
+		// A Groovy field becomes a bare (variables-scoped) assignment executed in the class's
+		// pseudo-constructor. Bare/unscoped is deliberate: it's what makes the field readable
+		// as a plain identifier from inside the class's own methods (BoxLang's default
+		// unscoped-identifier lookup chain covers "variables", not "this"). External
+		// visibility is handled separately - buildClass() synthesizes get<Name>/set<Name>
+		// accessors alongside this statement, mirroring both real Groovy's default
+		// (unmodified fields get an implicit public accessor pair) and BoxLang's own
+		// `property` mechanism, without needing to replicate BoxProperty's CF-annotation model.
+		BoxIdentifier	target		= new BoxIdentifier( name, tools.getPosition( ctx.IDENTIFIER().getSymbol() ), name );
 		BoxExpression	value		= ctx.expression() != null ? ctx.expression().accept( expressionVisitor ) : new BoxNull( pos, src );
-		// Simplification: a Groovy field becomes a plain assignment executed in the class's
-		// pseudo-constructor, establishing the member dynamically. Real BoxLang `property`
-		// semantics (getters/setters, accessor codegen) are not modeled here - deferred to a
-		// later phase.
 		BoxAssignment	assignment	= new BoxAssignment( target, BoxAssignmentOperator.Equal, value, List.of(), pos, src );
 		return new BoxExpressionStatement( assignment, pos, src );
 	}
@@ -162,7 +208,12 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 		List<BoxArgumentDeclaration>	args	= ctx.parameterList() == null
 		    ? new ArrayList<>()
 		    : ctx.parameterList().parameter().stream().map( this::buildParameterDeclaration ).collect( Collectors.toList() );
-		List<BoxStatement>				body	= applyImplicitReturn( buildStatementList( ctx.block().blockStatements() ) );
+		// No implicit return here, unlike regular methods/closures: a constructor's job is to
+		// initialize the instance, not produce a value, and invokeConstructor() expects "init"
+		// to behave that way. Applying implicit-return to the last statement (e.g. a trailing
+		// field assignment like "count = 10") would make init() return that value instead of
+		// the constructed instance, breaking DynamicObject...invokeConstructor().
+		List<BoxStatement>				body	= buildStatementList( ctx.block().blockStatements() );
 
 		// BoxLang convention (mirroring CFML): the constructor is the method named "init".
 		return new BoxFunctionDeclaration( visibility, modifiers, "init", null, args, List.of(), List.of(), body, pos, src );
