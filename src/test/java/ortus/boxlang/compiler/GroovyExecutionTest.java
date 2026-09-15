@@ -206,6 +206,14 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
+	@DisplayName( "for-in over a range literal" )
+	public void testForInRange() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "total = 0\nfor (i in 1..5) {\n  total = total + i\n}\nreturn total\n", context );
+		assertThat( result.toString() ).isEqualTo( "15" );
+	}
+
+	@Test
 	@DisplayName( "collect{} aliases to BoxLang's Array.map()" )
 	public void testCollectAliasesToMap() {
 		IBoxContext	context	= newContext();
