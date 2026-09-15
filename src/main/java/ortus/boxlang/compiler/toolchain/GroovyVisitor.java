@@ -26,9 +26,12 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
+import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
@@ -98,9 +101,10 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 	// since imports (gathered at compilationUnit level) must be threaded in from outside.
 
 	public BoxClass buildClass( ClassDeclarationContext ctx, List<BoxImport> imports ) {
-		var					pos		= tools.getPosition( ctx );
-		var					src		= tools.getSourceText( ctx );
-		List<BoxStatement>	body	= new ArrayList<>();
+		var					pos			= tools.getPosition( ctx );
+		var					src			= tools.getSourceText( ctx );
+		List<BoxStatement>	body		= new ArrayList<>();
+		List<BoxAnnotation>	annotations	= buildInheritanceAnnotations( ctx, pos, src );
 
 		if ( ctx.classBody() != null ) {
 			java.util.Set<String> userDeclaredMethodNames = ctx.classBody().classMember().stream()
@@ -117,7 +121,30 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 			}
 		}
 
-		return new BoxClass( imports, body, List.of(), List.of(), List.of(), pos, src, BoxSourceType.GROOVYSCRIPT );
+		return new BoxClass( imports, body, annotations, List.of(), List.of(), pos, src, BoxSourceType.GROOVYSCRIPT );
+	}
+
+	/**
+	 * Wires up "extends"/"implements" as annotations on the class, using the exact key names
+	 * ({@code BoxClassTransformer} looks for an annotation literally named "extends"/
+	 * "implements" with a {@code BoxStringLiteral} value - the same convention CF's
+	 * {@code component extends="Foo" implements="IBar,IBaz"} attribute syntax uses) rather than
+	 * a dedicated AST field, since that's what the shared compiler pipeline actually reads.
+	 */
+	private List<BoxAnnotation> buildInheritanceAnnotations( ClassDeclarationContext ctx, Position pos, String src ) {
+		List<BoxAnnotation> annotations = new ArrayList<>();
+		if ( ctx.EXTENDS() != null ) {
+			String superclassName = ctx.typeName().getText();
+			annotations.add( new BoxAnnotation( new BoxFQN( "extends", pos, "extends" ),
+			    new BoxStringLiteral( superclassName, pos, superclassName ), pos, src ) );
+		}
+		if ( ctx.IMPLEMENTS() != null ) {
+			String interfaceList = ctx.typeList().typeName().stream().map( org.antlr.v4.runtime.RuleContext::getText )
+			    .collect( java.util.stream.Collectors.joining( "," ) );
+			annotations.add( new BoxAnnotation( new BoxFQN( "implements", pos, "implements" ),
+			    new BoxStringLiteral( interfaceList, pos, interfaceList ), pos, src ) );
+		}
+		return annotations;
 	}
 
 	/**

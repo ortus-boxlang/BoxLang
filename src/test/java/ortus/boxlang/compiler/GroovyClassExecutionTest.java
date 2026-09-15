@@ -142,4 +142,29 @@ public class GroovyClassExecutionTest {
 		assertThat( doubled.toString() ).contains( "2" );
 	}
 
+	@Test
+	@DisplayName( "'extends' with an unresolvable class name fails at class resolution, not silently" )
+	public void testExtendsReachesClassResolution() {
+		// This proves the actual bug that was found and fixed: "extends"/"implements" parsed
+		// syntactically but were never wired into the AST, so they were silently dropped.
+		// Full end-to-end inheritance (a parent class the child can actually resolve) needs
+		// BoxLang's file-based ClassLocator/mapping resolution - pre-existing runtime
+		// infrastructure shared by every class type, not something specific to the Groovy
+		// parser - which is out of scope here. What this test verifies is narrower but
+		// concrete: the "extends" clause now reaches that resolver at all (proven by getting a
+		// real ClassNotFoundBoxLangException naming the class, from deep inside
+		// BoxClassSupport.loadSuperClass) instead of being silently ignored, which is what
+		// happened before the fix.
+		IBoxContext	context	= newContext();
+		var			thrown	= org.junit.jupiter.api.Assertions.assertThrows( RuntimeException.class,
+		    () -> instantiate( """
+		                       class Dog extends NoSuchAnimalClass {
+		                         def bark() {
+		                           return "Woof!"
+		                         }
+		                       }
+		                       """, context ) );
+		assertThat( thrown.getMessage() ).contains( "NoSuchAnimalClass" );
+	}
+
 }

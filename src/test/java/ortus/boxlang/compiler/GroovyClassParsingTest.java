@@ -121,4 +121,34 @@ public class GroovyClassParsingTest {
 		                                                           """ ) );
 	}
 
+	@Test
+	@DisplayName( "'extends'/'implements' are wired into the class's annotations, not silently dropped" )
+	public void testExtendsImplementsBuildAnnotations() throws IOException {
+		ParsingResult result = parseClass( """
+		                                   class Dog extends Animal implements Runnable, Comparable {
+		                                     def bark() {}
+		                                   }
+		                                   """ );
+
+		assertThat( result.isCorrect() ).isTrue();
+		BoxClass	boxClass			= ( BoxClass ) result.getRoot();
+
+		// BoxClassTransformer (asmboxpiler) resolves inheritance by looking for annotations
+		// literally named "extends"/"implements" with a BoxStringLiteral value - the same
+		// convention CF's `component extends="Foo" implements="IBar,IBaz"` attribute uses.
+		var			extendsAnnotation	= boxClass.getAnnotations().stream()
+		    .filter( a -> a.getKey().getValue().equalsIgnoreCase( "extends" ) )
+		    .findFirst();
+		assertThat( extendsAnnotation.isPresent() ).isTrue();
+		assertThat( ( ( ortus.boxlang.compiler.ast.expression.BoxStringLiteral ) extendsAnnotation.get().getValue() ).getValue() )
+		    .isEqualTo( "Animal" );
+
+		var implementsAnnotation = boxClass.getAnnotations().stream()
+		    .filter( a -> a.getKey().getValue().equalsIgnoreCase( "implements" ) )
+		    .findFirst();
+		assertThat( implementsAnnotation.isPresent() ).isTrue();
+		assertThat( ( ( ortus.boxlang.compiler.ast.expression.BoxStringLiteral ) implementsAnnotation.get().getValue() ).getValue() )
+		    .isEqualTo( "Runnable,Comparable" );
+	}
+
 }
