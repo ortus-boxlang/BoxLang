@@ -1098,6 +1098,20 @@ public class LoopTest {
 	}
 
 	@Test
+	public void testLoopFileLinesInvalid() throws Exception {
+		instance.executeSource(
+		    """
+		    result = [];
+		    bx:loop file="src/test/resources/loop-badchars.bin" item="line" index="row" {
+		    	result.append( row & ":" & line );
+		    }
+		    """,
+		    context );
+		assertThat( variables.getAsArray( Key.of( "result" ) ).subList( 0, 5 ) ).containsExactly( "1:one", "2:two", "3:thr\uFFFDee", "4:four", "5:five" )
+		    .inOrder();
+	}
+
+	@Test
 	public void testLoopFileCharactersWithoutIndex() throws Exception {
 		Path file = Files.createTempFile( "boxlang-loop", ".txt" );
 		try {
