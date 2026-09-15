@@ -201,6 +201,24 @@ public class GroovyGrammarParsingTest {
 	}
 
 	@Test
+	@DisplayName( "switch statement with fall-through and default" )
+	public void testSwitchStatement() {
+		assertParses( """
+		              switch (x) {
+		                case 1:
+		                  doThing()
+		                  break
+		                case 2:
+		                case 3:
+		                  doOther()
+		                  break
+		                default:
+		                  doDefault()
+		              }
+		              """ );
+	}
+
+	@Test
 	@DisplayName( "unterminated string literal is rejected" )
 	public void testUnterminatedStringFails() {
 		assertFailsToParse( "def x = \"unterminated\n" );

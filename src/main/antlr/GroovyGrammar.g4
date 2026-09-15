@@ -130,7 +130,16 @@ statement: block                                                                
     | RETURN expression?                                                          # returnStatement
     | BREAK IDENTIFIER?                                                           # breakStatement
     | CONTINUE IDENTIFIER?                                                        # continueStatement
+    | SWITCH LPAREN expression RPAREN LBRACE sep? switchCase* RBRACE              # switchStatement
     | expression                                                                  # exprStatement
+    ;
+
+// Java/CF-style switch: cases fall through unless an explicit "break" statement ends the
+// case body (matching real Groovy's own switch semantics, and CFVisitor's BoxSwitchCase
+// model - not the arrow-style "case X -> expr" form some other languages/BoxLang's own
+// switch grammar also support).
+switchCase: CASE expression COLON sep? blockStatements?                          # caseClause
+    | DEFAULT COLON sep? blockStatements?                                        # defaultClause
     ;
 
 forControl: ( typeName | DEF )? IDENTIFIER IN expression                          # forInControl

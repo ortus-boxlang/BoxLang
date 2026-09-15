@@ -45,6 +45,8 @@ import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
+import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
@@ -69,7 +71,10 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.ForStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.IfStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.MethodDeclarationContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ParameterContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.CaseClauseContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.DefaultClauseContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ReturnStatementContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.SwitchStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ThrowStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.TryStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.VarDeclStatementContext;
@@ -489,6 +494,32 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 		var		src		= tools.getSourceText( ctx );
 		String	label	= ctx.IDENTIFIER() != null ? ctx.IDENTIFIER().getText() : null;
 		return label != null ? new BoxContinue( label, pos, src ) : new BoxContinue( pos, src );
+	}
+
+	@Override
+	public BoxNode visitSwitchStatement( SwitchStatementContext ctx ) {
+		var					pos			= tools.getPosition( ctx );
+		var					src			= tools.getSourceText( ctx );
+		BoxExpression		condition	= ctx.expression().accept( expressionVisitor );
+		List<BoxSwitchCase>	cases		= ctx.switchCase().stream().map( c -> ( BoxSwitchCase ) c.accept( this ) ).collect( Collectors.toList() );
+		return new BoxSwitch( condition, cases, pos, src );
+	}
+
+	@Override
+	public BoxNode visitCaseClause( CaseClauseContext ctx ) {
+		var					pos			= tools.getPosition( ctx );
+		var					src			= tools.getSourceText( ctx );
+		BoxExpression		condition	= ctx.expression().accept( expressionVisitor );
+		List<BoxStatement>	body		= buildStatementList( ctx.blockStatements() );
+		return new BoxSwitchCase( condition, null, body, pos, src );
+	}
+
+	@Override
+	public BoxNode visitDefaultClause( DefaultClauseContext ctx ) {
+		var					pos		= tools.getPosition( ctx );
+		var					src		= tools.getSourceText( ctx );
+		List<BoxStatement>	body	= buildStatementList( ctx.blockStatements() );
+		return new BoxSwitchCase( null, null, body, pos, src );
 	}
 
 	@Override

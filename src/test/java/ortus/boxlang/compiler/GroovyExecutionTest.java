@@ -206,6 +206,67 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
+	@DisplayName( "switch statement: matching case with break" )
+	public void testSwitchMatchingCaseBreaks() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def x = 2\n"
+		        + "def result = \"none\"\n"
+		        + "switch (x) {\n"
+		        + "  case 1:\n"
+		        + "    result = \"one\"\n"
+		        + "    break\n"
+		        + "  case 2:\n"
+		        + "    result = \"two\"\n"
+		        + "    break\n"
+		        + "  default:\n"
+		        + "    result = \"other\"\n"
+		        + "}\n"
+		        + "return result\n",
+		    context );
+		assertThat( result ).isEqualTo( "two" );
+	}
+
+	@Test
+	@DisplayName( "switch statement: grouped cases fall through to a shared body" )
+	public void testSwitchFallThroughGroupedCases() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def x = 3\n"
+		        + "def result = \"none\"\n"
+		        + "switch (x) {\n"
+		        + "  case 2:\n"
+		        + "  case 3:\n"
+		        + "    result = \"two-or-three\"\n"
+		        + "    break\n"
+		        + "  default:\n"
+		        + "    result = \"other\"\n"
+		        + "}\n"
+		        + "return result\n",
+		    context );
+		assertThat( result ).isEqualTo( "two-or-three" );
+	}
+
+	@Test
+	@DisplayName( "switch statement: no matching case falls to default" )
+	public void testSwitchDefaultCase() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def x = 99\n"
+		        + "def result = \"none\"\n"
+		        + "switch (x) {\n"
+		        + "  case 1:\n"
+		        + "    result = \"one\"\n"
+		        + "    break\n"
+		        + "  default:\n"
+		        + "    result = \"other\"\n"
+		        + "}\n"
+		        + "return result\n",
+		    context );
+		assertThat( result ).isEqualTo( "other" );
+	}
+
+	@Test
 	@DisplayName( "for-in over a range literal" )
 	public void testForInRange() {
 		IBoxContext	context	= newContext();
