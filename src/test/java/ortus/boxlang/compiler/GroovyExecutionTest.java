@@ -339,21 +339,30 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
-	@DisplayName( "'+' on strings is a documented semantic gap - it does not concatenate, unlike real Groovy" )
-	public void testPlusIsNumericOnlyNotStringConcat() {
-		// Found while debugging an unrelated test: Groovy overloads "+" for string
-		// concatenation ("a" + b), but this grammar maps "+" directly to
-		// BoxBinaryOperator.Plus, and BoxLang's own "+" is strictly numeric (matching CFML,
-		// where "&" is the concat operator - the same convention Groovy source parsed by this
-		// grammar inherits). Making "+" smart-dispatch between numeric add and string concat
-		// would need a runtime type check on every "+" evaluation, a bigger semantic-mapping
-		// decision deferred rather than made in passing. Real Groovy code that concatenates
-		// with "+" needs GString interpolation instead ("${a}${b}") - already supported and
-		// the idiomatic fix. This test pins down the current, honest failure rather than
+	@DisplayName( "'+' concatenates when one side is syntactically a string literal/GString" )
+	public void testPlusConcatenatesWhenOneSideIsAStringLiteral() {
+		// Groovy overloads "+" for string concatenation, but BoxLang's own "+" is strictly
+		// numeric (matching CFML, where "&" is the concat operator). GroovyExpressionVisitor
+		// handles the common case - one side is syntactically a string literal/GString, e.g.
+		// "prefix" + var or var + "suffix" - by building a BoxStringConcat instead of a
+		// numeric BoxBinaryOperation, entirely at parse time (no runtime type check needed).
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def name = \"World\"\nreturn \"Hello, \" + name + \"!\"\n", context );
+		assertThat( result ).isEqualTo( "Hello, World!" );
+	}
+
+	@Test
+	@DisplayName( "'+' between two unknown-typed variables is a documented gap, not silently wrong" )
+	public void testPlusBetweenVariablesIsNumericOnly() {
+		// The fully general case - both sides are variables, so whether "+" means concat or
+		// add is only knowable at runtime - isn't handled: that needs an actual runtime type
+		// check on every "+" evaluation, a bigger semantic-mapping decision deliberately not
+		// made here. Real Groovy code hitting this needs GString interpolation instead
+		// ("${a}${b}"), which already works. Pinning down the honest failure rather than
 		// leaving it an undocumented surprise.
 		IBoxContext context = newContext();
 		org.junit.jupiter.api.Assertions.assertThrows( RuntimeException.class,
-		    () -> run( "def greeting = \"Hello, \" + \"World\"\nreturn greeting\n", context ) );
+		    () -> run( "def a = \"Hello, \"\ndef b = \"World\"\nreturn a + b\n", context ) );
 	}
 
 }

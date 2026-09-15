@@ -42,6 +42,7 @@ import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
+import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructType;
@@ -243,8 +244,30 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 
 	@Override
 	public BoxExpression visitAdditiveExpr( AdditiveExprContext ctx ) {
+		if ( ctx.PLUS() != null && ( isStringLiteralExpr( ctx.expression( 0 ) ) || isStringLiteralExpr( ctx.expression( 1 ) ) ) ) {
+			// Groovy overloads "+" for string concatenation, but BoxLang's own "+" is strictly
+			// numeric (see GroovyExecutionTest.testPlusIsNumericOnlyNotStringConcat for the
+			// full explanation). When one side is SYNTACTICALLY a string literal/GString -
+			// "prefix" + var or var + "suffix", by far the most common real-world case - we
+			// can tell at parse time that concatenation, not addition, is meant, and build a
+			// BoxStringConcat instead of a numeric BoxBinaryOperation. The fully general case
+			// (both sides are variables of unknown type, only known at runtime) still isn't
+			// handled - that needs actual runtime type dispatch, deliberately not built here.
+			var	pos	= tools.getPosition( ctx );
+			var	src	= tools.getSourceText( ctx );
+			return new BoxStringConcat( List.of( ctx.expression( 0 ).accept( this ), ctx.expression( 1 ).accept( this ) ), pos, src );
+		}
 		var op = ctx.PLUS() != null ? BoxBinaryOperator.Plus : BoxBinaryOperator.Minus;
 		return binary( ctx.expression( 0 ), op, ctx.expression( 1 ), ctx );
+	}
+
+	/**
+	 * True when the given expression is syntactically a string literal or GString (not merely
+	 * a value that happens to be a string at runtime - that general case needs runtime type
+	 * dispatch this method deliberately doesn't attempt).
+	 */
+	private boolean isStringLiteralExpr( ortus.boxlang.parser.antlr.GroovyGrammar.ExpressionContext ctx ) {
+		return ctx instanceof PrimaryExprContext primaryCtx && primaryCtx.primary() instanceof StringExprContext;
 	}
 
 	@Override
