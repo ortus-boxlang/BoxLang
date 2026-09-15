@@ -16,6 +16,7 @@ package ortus.boxlang.compiler.toolchain;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Position;
@@ -41,6 +42,8 @@ import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
+import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -65,6 +68,7 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.ElvisExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.EmptyListLiteralContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.EmptyMapLiteralContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.EqualityExprContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.ExpressionContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.FalseLiteralExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.FloatLiteralExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.GstringContext;
@@ -110,10 +114,44 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 
 	private final GroovyParser	tools;
 	private final GroovyVisitor	statementVisitor;
+	private Set<String>			knownStaticClassNames	= Set.of();
 
 	public GroovyExpressionVisitor( GroovyParser tools, GroovyVisitor statementVisitor ) {
 		this.tools				= tools;
 		this.statementVisitor	= statementVisitor;
+	}
+
+	// Simple names Groovy code can reference as a bare, unqualified class (java.lang is always
+	// implicitly imported, plus a handful of extremely common java.util/java.math classes) -
+	// used to recognize "Math.max(...)", "Integer.MAX_VALUE", "new BigDecimal(...)" etc. as
+	// static class access rather than an ordinary instance dot-access. GroovyParser extends this
+	// set with whatever the file explicitly imports by name before parsing the body.
+	public static final Set<String> DEFAULT_STATIC_CLASS_NAMES = Set.of(
+	    "Math", "System", "Integer", "Long", "Double", "Float", "Boolean", "Character", "Byte", "Short",
+	    "String", "Object", "Thread", "StringBuilder", "StringBuffer", "Number", "Class", "Void",
+	    "Exception", "RuntimeException", "Error", "Throwable",
+	    "Arrays", "Collections", "Optional", "UUID",
+	    "BigInteger", "BigDecimal" );
+
+	public void setKnownStaticClassNames( Set<String> knownStaticClassNames ) {
+		this.knownStaticClassNames = knownStaticClassNames;
+	}
+
+	/**
+	 * If {@code exprCtx} is a bare identifier reference (not the result of another expression)
+	 * whose text matches a known-importable class simple name, returns a {@code BoxIdentifier}
+	 * for it to use as a static-access/invocation base. Otherwise returns {@code null}, meaning
+	 * "treat this as ordinary instance access" - the common case.
+	 */
+	private BoxIdentifier staticClassBase( ExpressionContext exprCtx ) {
+		if ( exprCtx instanceof PrimaryExprContext primaryCtx && primaryCtx.primary() instanceof IdentifierExprContext idCtx ) {
+			String name = idCtx.IDENTIFIER().getText();
+			if ( knownStaticClassNames.contains( name ) ) {
+				var pos = tools.getPosition( idCtx );
+				return new BoxIdentifier( name, pos, name );
+			}
+		}
+		return null;
 	}
 
 	@Override
@@ -178,9 +216,13 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		if ( memberCtx.METHOD_POINTER() != null ) {
 			throw new ExpressionException( "Method pointer expressions (.&) are not yet supported by the Groovy parser", pos, src );
 		}
-		BoxExpression	obj			= memberCtx.expression().accept( this );
-		boolean			safe		= memberCtx.SAFE_DOT() != null;
-		BoxExpression	nameExpr	= aliasedIdentifier( memberCtx.IDENTIFIER() );
+		BoxIdentifier	nameExpr	= aliasedIdentifier( memberCtx.IDENTIFIER() );
+		BoxIdentifier	staticBase	= staticClassBase( memberCtx.expression() );
+		if ( staticBase != null ) {
+			return new BoxStaticMethodInvocation( nameExpr, staticBase, args, pos, src );
+		}
+		BoxExpression	obj		= memberCtx.expression().accept( this );
+		boolean			safe	= memberCtx.SAFE_DOT() != null;
 		return new BoxMethodInvocation( nameExpr, obj, args, safe, true, pos, src );
 	}
 
@@ -195,6 +237,10 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		var	src	= tools.getSourceText( ctx );
 		if ( ctx.METHOD_POINTER() != null ) {
 			throw new ExpressionException( "Method pointer expressions (.&) are not yet supported by the Groovy parser", pos, src );
+		}
+		BoxIdentifier staticBase = staticClassBase( ctx.expression() );
+		if ( staticBase != null ) {
+			return new BoxStaticAccess( staticBase, ctx.SAFE_DOT() != null, identifier( ctx.IDENTIFIER() ), pos, src );
 		}
 		boolean safe = ctx.SAFE_DOT() != null;
 		return new BoxDotAccess( ctx.expression().accept( this ), safe, identifier( ctx.IDENTIFIER() ), pos, src );

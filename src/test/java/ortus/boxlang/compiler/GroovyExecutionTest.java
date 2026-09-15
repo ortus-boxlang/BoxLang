@@ -352,6 +352,54 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
+	@DisplayName( "static class members resolve without an explicit import - java.lang is always implicit" )
+	public void testDefaultImportsResolveJavaLangStatics() {
+		// Real Groovy never requires "import java.lang.Math" - java.lang (plus a few other
+		// packages) is always implicitly available. GroovyParser mirrors this by prepending a
+		// fixed set of default imports (java.lang.*, java.util.*, java.io.*, BigInteger,
+		// BigDecimal) to every parsed file, and GroovyExpressionVisitor recognizes a bare
+		// capitalized identifier matching one of those classes as a static access/invocation
+		// base rather than an ordinary instance dot-access.
+		IBoxContext	context	= newContext();
+		Object		result	= run( "return Math.max(1, 2) + Integer.parseInt(\"40\")\n", context );
+		assertThat( result.toString() ).isEqualTo( "42" );
+	}
+
+	@Test
+	@DisplayName( "explicit single-class import resolves as a static base too" )
+	public void testExplicitImportResolvesStaticBase() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "import java.math.BigDecimal\ndef x = new BigDecimal(\"1.5\")\nreturn x.toString()\n", context );
+		assertThat( result ).isEqualTo( "1.5" );
+	}
+
+	@Test
+	@DisplayName( "a local variable can still shadow a known static class name" )
+	public void testLocalVariableCanShadowKnownStaticName() {
+		// The static-vs-instance decision made at parse time is a heuristic (bare capitalized
+		// identifier matching a known/imported class simple name), but BoxClassSupport.ensureClass
+		// checks for an actual variable of that name FIRST at runtime and only falls back to
+		// class-loading if none exists - so a local named the same as a known static class
+		// (unusual, but legal Groovy) still resolves correctly as the variable.
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def String = \"shadow\"\nreturn String\n", context );
+		assertThat( result ).isEqualTo( "shadow" );
+	}
+
+	@Test
+	@DisplayName( "static varargs method resolution is a documented interop gap, not silently wrong" )
+	public void testStaticVarargsMethodIsADocumentedGap() {
+		// String.format(...) resolves String as a static class correctly (same mechanism as
+		// Math.max above), but fails one layer deeper: BoxLang's Java-interop method resolver
+		// can't currently match a reflective varargs static method signature. This is a general
+		// DynamicObject/interop limitation, not specific to the Groovy parser - pinning down the
+		// honest failure rather than leaving it an undocumented surprise.
+		IBoxContext context = newContext();
+		org.junit.jupiter.api.Assertions.assertThrows( RuntimeException.class,
+		    () -> run( "return String.format(\"%d\", 5)\n", context ) );
+	}
+
+	@Test
 	@DisplayName( "'+' between two unknown-typed variables is a documented gap, not silently wrong" )
 	public void testPlusBetweenVariablesIsNumericOnly() {
 		// The fully general case - both sides are variables, so whether "+" means concat or

@@ -20,6 +20,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -28,11 +30,13 @@ import org.apache.commons.io.input.BOMInputStream;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.SourceCode;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.toolchain.GroovyExpressionVisitor;
 import ortus.boxlang.compiler.toolchain.GroovyVisitor;
 import ortus.boxlang.parser.antlr.GroovyGrammar;
 import ortus.boxlang.parser.antlr.GroovyGrammar.CompilationUnitContext;
@@ -123,9 +127,27 @@ public class GroovyParser extends AbstractParser {
 	 * script, and builds the corresponding {@code BoxClass}/{@code BoxScript} root node.
 	 */
 	private BoxNode toAst( CompilationUnitContext ctx ) {
-		var									pos				= getPosition( ctx );
-		var									src				= getSourceText( ctx );
-		List<BoxImport>						imports			= buildImports( ctx.importStatement() );
+		var				pos			= getPosition( ctx );
+		var				src			= getSourceText( ctx );
+		List<BoxImport>	userImports	= buildImports( ctx.importStatement() );
+		List<BoxImport>	imports		= new ArrayList<>( defaultImports( pos ) );
+		imports.addAll( userImports );
+
+		// Bare, unqualified references to common java.lang/java.util/java.math classes (e.g.
+		// "Math.max(...)", "new BigDecimal(...)") need to be recognized as static class access
+		// rather than an ordinary instance dot-access, so the GroovyExpressionVisitor is told
+		// which simple names to treat that way: the classes Groovy always auto-imports, plus
+		// whatever this file explicitly imports by name (wildcard imports aside - those would
+		// require enumerating a package's members, which isn't attempted here).
+		Set<String> knownStaticClassNames = new java.util.HashSet<>( GroovyExpressionVisitor.DEFAULT_STATIC_CLASS_NAMES );
+		knownStaticClassNames.addAll( userImports.stream()
+		    .filter( i -> !i.getExpression().getSourceText().endsWith( ".*" ) )
+		    .map( i -> {
+			    String fqn = i.getExpression().getSourceText();
+			    return fqn.substring( fqn.lastIndexOf( '.' ) + 1 );
+		    } )
+		    .collect( Collectors.toSet() ) );
+		statementVisitor.getExpressionVisitor().setKnownStaticClassNames( knownStaticClassNames );
 
 		List<TopLevelDeclarationContext>	declarations	= ctx.topLevelDeclarations() == null
 		    ? new ArrayList<>()
@@ -142,7 +164,7 @@ public class GroovyParser extends AbstractParser {
 			    "Mixing a class declaration with top-level script statements in the same Groovy file is not yet supported by this parser", pos, src );
 		}
 
-		List<BoxStatement> statements = new ArrayList<>();
+		List<BoxStatement> statements = new ArrayList<>( imports );
 		for ( TopLevelDeclarationContext decl : declarations ) {
 			if ( decl.methodDeclaration() != null ) {
 				statements.add( ( BoxStatement ) decl.methodDeclaration().accept( statementVisitor ) );
@@ -151,6 +173,25 @@ public class GroovyParser extends AbstractParser {
 			}
 		}
 		return new ortus.boxlang.compiler.ast.BoxScript( statements, pos, src, BoxSourceType.GROOVYSCRIPT );
+	}
+
+	// Groovy implicitly imports these packages/classes into every file, with no "import"
+	// statement required - unlike BoxLang/CFML, where every Java class reference must be either
+	// fully qualified or explicitly imported. Only the plain-Java subset is mirrored here
+	// (groovy.lang.*/groovy.util.* are out of scope - see the class header).
+	private static final List<String> DEFAULT_IMPORT_SPECS = List.of(
+	    "java.lang.*",
+	    "java.util.*",
+	    "java.io.*",
+	    "java.math.BigInteger",
+	    "java.math.BigDecimal" );
+
+	private List<BoxImport> defaultImports( Position pos ) {
+		List<BoxImport> result = new ArrayList<>();
+		for ( String spec : DEFAULT_IMPORT_SPECS ) {
+			result.add( new BoxImport( new BoxFQN( spec, pos, spec ), null, pos, spec ) );
+		}
+		return result;
 	}
 
 	private List<BoxImport> buildImports( List<ImportStatementContext> importContexts ) {
