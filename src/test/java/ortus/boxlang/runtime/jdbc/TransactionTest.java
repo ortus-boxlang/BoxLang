@@ -438,12 +438,44 @@ public class TransactionTest extends BaseJDBCTest {
 		            INSERT INTO developers ( id, name,role )
 		            VALUES ( <cfqueryparam value="33">, <cfqueryparam value="Jon Clausen">, <cfqueryparam value="Developer"> )
 		        </cfquery>
+		        <cfset variables.lookup = () => queryExecute( "SELECT * FROM developers WHERE id=33", {} ) />
+		        <cfset variables.beforeResult = futureNew( variables.lookup ).completeOnTimeout( queryNew("id"), 1000 ).get() />
 		        <cftransaction action="commit" />
-		        <cfset variables.result = queryExecute( "SELECT * FROM developers", {} ) />
+		        <cfset variables.afterResult = futureNew( variables.lookup ).completeOnTimeout( queryNew("id"), 1000 ).get() />
 		    </cftransaction>
 		    """,
 		    getContext(), BoxSourceType.CFTEMPLATE );
+
+		// Before commit: separate thread blocks on Derby's lock, times out, and
+		// completeOnTimeout returns the empty query
+		assertThat( getVariables().getAsQuery( Key.of( "beforeResult" ) ).isEmpty() ).isTrue();
+
+		// After commit: separate thread CAN see the committed row
 		assertNotNull(
+		    getVariables().getAsQuery( Key.of( "afterResult" ) )
+		        .stream()
+		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
+	@DisplayName( "Can rollback a transaction using self-closing tag syntax: action=\"rollback\"/>" )
+	@Test
+	public void testTransactionTagSyntaxRollback() {
+		getInstance().executeSource(
+		    """
+		    <cftransaction>
+		        <cfquery>
+		            INSERT INTO developers ( id, name,role )
+		            VALUES ( <cfqueryparam value="33">, <cfqueryparam value="Jon Clausen">, <cfqueryparam value="Developer"> )
+		        </cfquery>
+		        <cftransaction action="rollback" />
+		    </cftransaction>
+		    <cfset variables.result = queryExecute( "SELECT * FROM developers", {} ) />
+		    """,
+		    getContext(), BoxSourceType.CFTEMPLATE );
+		assertNull(
 		    getVariables().getAsQuery( result )
 		        .stream()
 		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
