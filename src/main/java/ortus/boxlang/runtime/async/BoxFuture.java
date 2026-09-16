@@ -697,6 +697,24 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 * This is so we can use it from BoxLang without having to pass the context explicitly, since the context will be available in the RequestBoxContext for the current thread.
 	 * The timeout will be infinite by default and in the passed executor.
 	 *
+	 * @param items  The items to apply the function to, this can be an array or a struct
+	 * @param mapper The function to apply to each item
+	 *
+	 * @return An array or struct of the results
+	 */
+	public static Object allApply(
+	    Object items,
+	    ortus.boxlang.runtime.types.Function mapper ) {
+		return RequestBoxContext.runInContext( context -> {
+			return allApply( context, items, mapper, null );
+		} );
+	}
+
+	/**
+	 * Shortcut method to call allApply() without a context, which will use the RequestBoxContext for the execution
+	 * This is so we can use it from BoxLang without having to pass the context explicitly, since the context will be available in the RequestBoxContext for the current thread.
+	 * The timeout will be infinite by default and in the passed executor.
+	 *
 	 * @param items        The items to apply the function to, this can be an array or a struct
 	 * @param mapper       The function to apply to each item
 	 * @param errorHandler The function to handle any errors that occur, this can be null
@@ -832,19 +850,11 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 		}
 
 		// Array Processing
-		if ( items instanceof Array castedArray ) {
-			return allApplyArray( context, castedArray, mapper, errorHandler, timeout, unit, executor );
-		}
-		// Process a Struct
-		else if ( items instanceof IStruct castedStruct ) {
-			return allApplyStruct( context, castedStruct, mapper, errorHandler, timeout, unit, executor );
-		}
-		// Add other types here if needed
-		// If we get here, then the items argument is not an array or a struct
-		// This is an error, so we throw an exception
-		else {
-			throw new BoxRuntimeException( "The items argument must be an array or a struct" );
-		}
+		return switch ( items ) {
+			case Array castedArray -> allApplyArray( context, castedArray, mapper, errorHandler, timeout, unit, executor );
+			case IStruct castedStruct -> allApplyStruct( context, castedStruct, mapper, errorHandler, timeout, unit, executor );
+			default -> throw new BoxRuntimeException( "The items argument must be an array or a struct" );
+		};
 	}
 
 	public static Object allApply(
