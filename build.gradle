@@ -127,7 +127,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.itadaki/bzip2
 	implementation "org.itadaki:bzip2:0.9.1"
 	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
-	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.27.1'
+	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.28.2'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 	implementation 'org.apache.commons:commons-lang3:3.20.0'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
