@@ -335,15 +335,21 @@ public class BoxClassSupport {
 		thisClass.getVariablesScope().addAll( _super.getVariablesScope().getWrapped() );
 		thisClass.getThisScope().addAll( _super.getThisScope().getWrapped() );
 
-		// merge properties that don't already exist
-		for ( var entry : _super.getProperties().entrySet() ) {
-			if ( !thisClass.getProperties().containsKey( entry.getKey() ) ) {
-				thisClass.getProperties().put( entry.getKey(), entry.getValue() );
+		// properties/getterLookup/setterLookup are static, non-thread-safe maps shared by every instance of the
+		// class. Concurrent first instantiations race here (HashMap resize can drop the child's own entries for
+		// good), so serialise the merge per class. The merge is idempotent; later calls are cheap no-ops.
+		// https://ortussolutions.atlassian.net/browse/BL-2628
+		synchronized ( thisClass.getClass() ) {
+			// merge properties that don't already exist
+			for ( var entry : _super.getProperties().entrySet() ) {
+				if ( !thisClass.getProperties().containsKey( entry.getKey() ) ) {
+					thisClass.getProperties().put( entry.getKey(), entry.getValue() );
+				}
 			}
+			// merge getterLookup and setterLookup
+			thisClass.getGetterLookup().putAll( _super.getGetterLookup() );
+			thisClass.getSetterLookup().putAll( _super.getSetterLookup() );
 		}
-		// merge getterLookup and setterLookup
-		thisClass.getGetterLookup().putAll( _super.getGetterLookup() );
-		thisClass.getSetterLookup().putAll( _super.getSetterLookup() );
 
 		// DO NOT merge annotations. They stay separate between parent/child classes and must be merged at runtime, if desired.
 		// https://ortussolutions.atlassian.net/browse/BL-677
