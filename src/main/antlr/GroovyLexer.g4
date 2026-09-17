@@ -75,7 +75,47 @@ options {
 	}
 
 	private boolean insideGStringInterpolation() {
-		return !_modeStack.isEmpty() && _modeStack.peek() == gstringMode;
+		return !_modeStack.isEmpty() && ( _modeStack.peek() == gstringMode || _modeStack.peek() == tripleGstringMode );
+	}
+
+	// Classic regex-literal-vs-division disambiguation (the same problem JavaScript's "/" has):
+	// a '/' means division only when it immediately follows something that already produced a
+	// value - an identifier, a literal, a closing ")"/"]"/quote, this/super, or postfix ++/--.
+	// Every other position (start of file, after an operator, after "(", ",", "return", etc.) is
+	// a slashy regex literal's opening delimiter. Tracking just the previous DEFAULT-channel
+	// token type (updated in nextToken() below) is enough to decide this without backtracking.
+	private int lastTokenType = -1;
+
+	@Override
+	public Token nextToken() {
+		Token t = super.nextToken();
+		if ( t.getChannel() == Token.DEFAULT_CHANNEL ) {
+			lastTokenType = t.getType();
+		}
+		return t;
+	}
+
+	private boolean isDivisionContext() {
+		switch ( lastTokenType ) {
+			case IDENTIFIER:
+			case INT_LITERAL:
+			case FLOAT_LITERAL:
+			case RPAREN:
+			case RBRACKET:
+			case CLOSE_QUOTE:
+			case CLOSE_TRIPLE_QUOTE:
+			case SQUOTE_STRING:
+			case THIS:
+			case SUPER:
+			case TRUE:
+			case FALSE:
+			case NULL_LIT:
+			case INC:
+			case DEC:
+				return true;
+			default:
+				return false;
+		}
 	}
 }
 
@@ -84,6 +124,7 @@ options {
 CLASS:      'class';
 INTERFACE:  'interface';
 TRAIT:      'trait';
+ENUM:       'enum';
 DEF:        'def';
 PUBLIC:     'public';
 PRIVATE:    'private';
@@ -147,6 +188,10 @@ SPREAD_DOT:     '*.';
 SAFE_DOT:       '?.';
 METHOD_POINTER: '.&';
 
+// Must come before RANGE_INCL: both start with '..', and ANTLR4's lexer already prefers the
+// longest match regardless of declaration order, but declaring the longer literal first here
+// keeps the "which one wins on a tie" reasoning simple to read at a glance.
+ELLIPSIS:   '...';
 RANGE_INCL: '..';
 RANGE_EXCL: '..<';
 
@@ -156,6 +201,18 @@ POWER_ASSIGN: '**=';
 PLUS:  '+';
 MINUS: '-';
 STAR:  '*';
+
+// Slashy string literal, e.g. /foo\d+/ - Groovy's alternate string syntax mainly used for
+// regex patterns with =~/==~. Declared before SLASH so it wins whenever its guard passes (a true
+// predicate makes ANTLR prefer this alternative for the same input; the predicate itself is what
+// keeps ordinary division working - see isDivisionContext()). Non-interpolated (no ${}/$name
+// support, unlike GStrings) and single-line only - both are bounded simplifications, not real
+// Groovy's full slashy-string feature set (which also has a "$/.../$" multi-line dollar-slashy
+// form this doesn't implement). "\/" is the only recognized escape (a literal "/" that doesn't
+// end the token); any other backslash sequence (e.g. "\d") is passed through untouched so regex
+// metacharacters survive into the resulting string value as-is.
+SLASHY_STRING: { !isDivisionContext() }? '/' ( '\\' . | ~[/\r\n\\] )* '/';
+
 SLASH: '/';
 PERCENT: '%';
 
@@ -179,6 +236,10 @@ NOTEQUAL:     '!=';
 IDENTICAL:    '===';
 NOT_IDENTICAL: '!==';
 SPACESHIP:    '<=>';
+// Regex match operators - '==~' (3 chars) and '=~' (2 chars) are unambiguous against '==' and
+// '=' purely by length: ANTLR4's lexer always prefers the longest match across all rules.
+REGEX_MATCH:  '==~';
+REGEX_FIND:   '=~';
 LE:           '<=';
 GE:           '>=';
 LT:           '<';
@@ -212,6 +273,13 @@ INT_LITERAL:   [0-9]+;
 // Single-quoted strings are always plain (non-interpolated) per Groovy semantics.
 SQUOTE_STRING: '\'' ( ~['\\] | '\\' . )* '\'';
 
+// Triple-quoted strings are multi-line GStrings: same ${ expr }/$identifier interpolation, but
+// the body can span multiple physical lines and contain literal (non-triple) '"' characters.
+// Declared before OPEN_QUOTE - ANTLR4's lexer always prefers the longest match across ALL rules
+// regardless of declaration order, so a genuine `"""` is matched here even though OPEN_QUOTE
+// could also start matching a single `"`; order only matters for equal-length ties.
+OPEN_TRIPLE_QUOTE: '"""' -> pushMode( tripleGstringMode );
+
 // Double-quoted strings are GStrings: they may contain ${ expr } or $identifier
 // interpolations. Pushes gstringMode so we lex the string body character-by-character.
 OPEN_QUOTE: '"' -> pushMode( gstringMode );
@@ -242,3 +310,25 @@ GSTRING_TEXT: ( ~["$\\] | '\\' . )+;
 
 // A '$' not followed by an identifier or '{' is just literal text (e.g. a lone '$' or '$$').
 GSTRING_DOLLAR_LITERAL: '$' -> type( GSTRING_TEXT );
+
+// -----------------------------------------------------------------------------------------
+// Triple-quoted string body - same interpolation forms as gstringMode (reusing its token types
+// via -> type(...) so the parser grammar/visitor only need to deal with one set of GSTRING_*
+// tokens), but newlines are ordinary content here (never suppressed/significant - we're inside
+// a string, not between statements), and a '"' or '""' that isn't the closing '"""' is literal
+// text rather than an error.
+mode tripleGstringMode;
+
+CLOSE_TRIPLE_QUOTE: '"""' -> popMode;
+
+TRIPLE_GSTRING_DOLLAR_LBRACE: '${' -> type( GSTRING_DOLLAR_LBRACE ), pushMode( DEFAULT_MODE );
+
+TRIPLE_GSTRING_DOLLAR_IDENTIFIER: '$' [a-zA-Z_][a-zA-Z0-9_]* ( '.' [a-zA-Z_][a-zA-Z0-9_]* )* -> type( GSTRING_DOLLAR_IDENTIFIER );
+
+TRIPLE_GSTRING_TEXT: ( ~["$\\] | '\\' . )+ -> type( GSTRING_TEXT );
+
+TRIPLE_GSTRING_DOLLAR_LITERAL: '$' -> type( GSTRING_TEXT );
+
+// A lone '"' or a '""' run shorter than three quotes isn't the closing delimiter - just text.
+// ANTLR's longest-match already prefers CLOSE_TRIPLE_QUOTE above whenever 3 are actually there.
+TRIPLE_GSTRING_QUOTE: '"' -> type( GSTRING_TEXT );

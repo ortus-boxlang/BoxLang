@@ -168,6 +168,8 @@ public class GroovyParser extends AbstractParser {
 		for ( TopLevelDeclarationContext decl : declarations ) {
 			if ( decl.methodDeclaration() != null ) {
 				statements.add( ( BoxStatement ) decl.methodDeclaration().accept( statementVisitor ) );
+			} else if ( decl.enumDeclaration() != null ) {
+				statements.add( ( BoxStatement ) decl.enumDeclaration().accept( statementVisitor ) );
 			} else {
 				statements.add( ( BoxStatement ) decl.statement().accept( statementVisitor ) );
 			}

@@ -74,7 +74,6 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.EqualityExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ExpressionContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.FalseLiteralExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.FloatLiteralExprContext;
-import ortus.boxlang.parser.antlr.GroovyGrammar.GstringContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.GstringPartContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.IdentifierExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.InExprContext;
@@ -97,10 +96,12 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.PostfixExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.PowerExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.PrimaryExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.RangeExprContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.RegexExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.RelationalExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ShiftExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.SpreadArgumentContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.StringExprContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.StringOrGStringContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.SuperExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.TernaryExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ThisExprContext;
@@ -425,6 +426,39 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		return new BoxMethodInvocation( nameExpr, right, args, false, true, pos, src );
 	}
 
+	private static final String PATTERN_FQN = "java.util.regex.Pattern";
+
+	// Groovy's "=~" (find) and "==~" (full match) regex operators. Real Groovy's "=~" returns a
+	// live java.util.regex.Matcher (truthy only via Groovy's own Matcher.asBoolean() override,
+	// which BoxLang has no equivalent for - an arbitrary non-null Java object is otherwise just
+	// truthy regardless of whether it matched anything). Rather than return a Matcher that would
+	// silently misbehave in the overwhelmingly common "if (str =~ pattern)" idiom, "=~" eagerly
+	// evaluates find() here and returns a plain boolean - correct for that idiom and for simple
+	// yes/no checks, but it means the richer Matcher API (group extraction, iterating multiple
+	// matches) isn't available from a "=~" result the way it is in real Groovy. "==~" needed no
+	// such compromise - it already returns a plain boolean in real Groovy too.
+	@Override
+	public BoxExpression visitRegexExpr( RegexExprContext ctx ) {
+		var				pos			= tools.getPosition( ctx );
+		var				src			= tools.getSourceText( ctx );
+		BoxExpression	left		= ctx.expression( 0 ).accept( this );
+		BoxExpression	right		= ctx.expression( 1 ).accept( this );
+		BoxExpression	patternRef	= new BoxFQN( PATTERN_FQN, pos, PATTERN_FQN );
+
+		if ( ctx.REGEX_MATCH() != null ) {
+			List<BoxArgument> args = List.of(
+			    new BoxArgument( right, right.getPosition(), right.getSourceText() ),
+			    new BoxArgument( left, left.getPosition(), left.getSourceText() ) );
+			return new BoxStaticMethodInvocation( new BoxIdentifier( "matches", pos, "matches" ), patternRef, args, pos, src );
+		}
+
+		BoxExpression	compiled	= new BoxStaticMethodInvocation( new BoxIdentifier( "compile", pos, "compile" ), patternRef,
+		    List.of( new BoxArgument( right, right.getPosition(), right.getSourceText() ) ), pos, src );
+		BoxExpression	matcher		= new BoxMethodInvocation( new BoxIdentifier( "matcher", pos, "matcher" ), compiled,
+		    List.of( new BoxArgument( left, left.getPosition(), left.getSourceText() ) ), false, true, pos, src );
+		return new BoxMethodInvocation( new BoxIdentifier( "find", pos, "find" ), matcher, List.of(), false, true, pos, src );
+	}
+
 	@Override
 	public BoxExpression visitEqualityExpr( EqualityExprContext ctx ) {
 		var	pos	= tools.getPosition( ctx );
@@ -593,18 +627,31 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 
 	@Override
 	public BoxExpression visitStringExpr( StringExprContext ctx ) {
-		if ( ctx.stringOrGString().SQUOTE_STRING() != null ) {
-			String text = ctx.stringOrGString().SQUOTE_STRING().getText();
-			return new BoxStringLiteral( unescapeSingleQuoted( stripQuotes( text, 1 ) ), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
-		}
-		return buildGString( ctx.stringOrGString().gstring() );
+		return buildStringOrGString( ctx.stringOrGString(), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
 	}
 
-	private BoxExpression buildGString( GstringContext ctx ) {
-		var					pos		= tools.getPosition( ctx );
-		var					src		= tools.getSourceText( ctx );
-		List<BoxExpression>	parts	= new ArrayList<>();
-		for ( GstringPartContext partCtx : ctx.gstringPart() ) {
+	private BoxExpression buildStringOrGString( StringOrGStringContext ctx, Position pos, String src ) {
+		if ( ctx.SQUOTE_STRING() != null ) {
+			String text = ctx.SQUOTE_STRING().getText();
+			return new BoxStringLiteral( unescapeSingleQuoted( stripQuotes( text, 1 ) ), pos, src );
+		}
+		if ( ctx.SLASHY_STRING() != null ) {
+			// Non-interpolated, single-line - see GroovyLexer's SLASHY_STRING rule header comment
+			// for exactly what's simplified. "\/" is the only recognized escape; everything else
+			// (crucially, other backslash sequences like "\d") passes through untouched so regex
+			// metacharacters reach Pattern.compile() as-is.
+			String text = stripQuotes( ctx.SLASHY_STRING().getText(), 1 );
+			return new BoxStringLiteral( text.replace( "\\/", "/" ), pos, src );
+		}
+		if ( ctx.tripleGstring() != null ) {
+			return buildGString( ctx.tripleGstring().gstringPart(), tools.getPosition( ctx.tripleGstring() ), tools.getSourceText( ctx.tripleGstring() ) );
+		}
+		return buildGString( ctx.gstring().gstringPart(), tools.getPosition( ctx.gstring() ), tools.getSourceText( ctx.gstring() ) );
+	}
+
+	private BoxExpression buildGString( List<GstringPartContext> gstringParts, Position pos, String src ) {
+		List<BoxExpression> parts = new ArrayList<>();
+		for ( GstringPartContext partCtx : gstringParts ) {
 			if ( partCtx.GSTRING_TEXT() != null ) {
 				parts.add( new BoxStringLiteral( unescapeGStringText( partCtx.GSTRING_TEXT().getText() ), tools.getPosition( partCtx ),
 				    tools.getSourceText( partCtx ) ) );
@@ -624,7 +671,7 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		}
 		// A GString with no interpolated parts at all behaves exactly like a plain string - build it
 		// as one so it doesn't pay runtime interpolation overhead for nothing.
-		boolean hasInterpolation = ctx.gstringPart().stream().anyMatch( p -> p.GSTRING_DOLLAR_LBRACE() != null || p.GSTRING_DOLLAR_IDENTIFIER() != null );
+		boolean hasInterpolation = gstringParts.stream().anyMatch( p -> p.GSTRING_DOLLAR_LBRACE() != null || p.GSTRING_DOLLAR_IDENTIFIER() != null );
 		if ( !hasInterpolation ) {
 			String text = parts.stream().map( p -> ( ( BoxStringLiteral ) p ).getValue() ).reduce( "", String::concat );
 			return new BoxStringLiteral( text, pos, src );
@@ -663,10 +710,7 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 				key = new BoxStringLiteral( entry.mapKey().IDENTIFIER().getText(), tools.getPosition( entry.mapKey() ),
 				    tools.getSourceText( entry.mapKey() ) );
 			} else if ( entry.mapKey().stringOrGString() != null ) {
-				key = entry.mapKey().stringOrGString().SQUOTE_STRING() != null
-				    ? new BoxStringLiteral( unescapeSingleQuoted( stripQuotes( entry.mapKey().stringOrGString().SQUOTE_STRING().getText(), 1 ) ),
-				        tools.getPosition( entry.mapKey() ), tools.getSourceText( entry.mapKey() ) )
-				    : buildGString( entry.mapKey().stringOrGString().gstring() );
+				key = buildStringOrGString( entry.mapKey().stringOrGString(), tools.getPosition( entry.mapKey() ), tools.getSourceText( entry.mapKey() ) );
 			} else {
 				key = entry.mapKey().expression().accept( this );
 			}

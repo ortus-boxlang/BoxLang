@@ -47,8 +47,15 @@ topLevelDeclarations: topLevelDeclaration ( sep topLevelDeclaration )* sep?
     ;
 
 topLevelDeclaration: classDeclaration
+    | enumDeclaration
     | methodDeclaration
     | statement
+    ;
+
+// A bounded enum implementation - see GroovyVisitor#visitEnumDeclaration for exactly what this
+// desugars to and what real Groovy enum semantics (ordinal(), values(), true type identity) are
+// NOT modeled. Top-level only; nesting an enum inside a class body isn't supported.
+enumDeclaration: ENUM IDENTIFIER LBRACE sep? IDENTIFIER sep? ( COMMA sep? IDENTIFIER sep? )* COMMA? sep? RBRACE
     ;
 
 packageDeclaration: PACKAGE qualifiedName sep?
@@ -101,7 +108,11 @@ constructorDeclaration: classModifier* IDENTIFIER LPAREN parameterList? RPAREN b
 parameterList: parameter ( COMMA parameter )*
     ;
 
-parameter: ( typeName | DEF )? IDENTIFIER ( ASSIGN expression )?
+// ELLIPSIS marks a variadic parameter, e.g. "int... nums" - only meaningful (and only checked)
+// on the LAST parameter of a parameterList; see GroovyVisitor#buildVarargsPreamble for exactly
+// what this desugars to. Grammar-wise it's allowed on any parameter, same as real Groovy leaves
+// putting it somewhere else as a caller-beware situation rather than a hard parse error.
+parameter: ( typeName | DEF )? ELLIPSIS? IDENTIFIER ( ASSIGN expression )?
     ;
 
 typeList: typeName ( COMMA typeName )*
@@ -183,6 +194,7 @@ expression: primary                                                             
     | expression ( LT | GT | LE | GE ) expression                                 # relationalExpr
     | expression IN expression                                                    # inExpr
     | expression ( EQUAL | NOTEQUAL | IDENTICAL | NOT_IDENTICAL | SPACESHIP ) expression # equalityExpr
+    | expression ( REGEX_FIND | REGEX_MATCH ) expression                          # regexExpr
     | expression BITAND expression                                                # bitAndExpr
     | expression BITXOR expression                                                # bitXorExpr
     | expression BITOR expression                                                 # bitOrExpr
@@ -236,10 +248,17 @@ primary: IDENTIFIER                                                             
     ;
 
 stringOrGString: gstring
+    | tripleGstring
     | SQUOTE_STRING
+    | SLASHY_STRING
     ;
 
 gstring: OPEN_QUOTE gstringPart* CLOSE_QUOTE
+    ;
+
+// Multi-line triple-quoted GString - same interpolation, but the lexer accepts embedded
+// newlines and lone/double '"' characters in its body (see GroovyLexer's tripleGstringMode).
+tripleGstring: OPEN_TRIPLE_QUOTE gstringPart* CLOSE_TRIPLE_QUOTE
     ;
 
 gstringPart: GSTRING_TEXT

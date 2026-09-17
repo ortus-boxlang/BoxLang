@@ -23,14 +23,28 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.expression.BoxArgument;
+import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
+import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
+import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
+import ortus.boxlang.compiler.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
+import ortus.boxlang.compiler.ast.expression.BoxComparisonOperator;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStructType;
+import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
+import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
@@ -67,6 +81,7 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.ClassicForControlContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ConstructorDeclarationContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ContinueStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.DoWhileStatementContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.EnumDeclarationContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ExprStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.FieldDeclarationContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ForInControlContext;
@@ -75,6 +90,7 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.IfStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.LabeledStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.MethodDeclarationContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ParameterContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.ParameterListContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.AssertStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.CaseClauseContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.DefaultClauseContext;
@@ -249,6 +265,7 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 		    : ctx.parameterList().parameter().stream().map( this::buildParameterDeclaration ).collect( Collectors.toList() );
 
 		List<BoxStatement>				body	= ctx.block() == null ? null : applyImplicitReturn( buildStatementList( ctx.block().blockStatements() ) );
+		body = withVarargsPreamble( ctx.parameterList(), body, pos, src );
 
 		return new BoxFunctionDeclaration( visibility, modifiers, ctx.IDENTIFIER().getText(), null, args, List.of(), List.of(), body, pos, src );
 	}
@@ -275,6 +292,7 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 		// field assignment like "count = 10") would make init() return that value instead of
 		// the constructed instance, breaking DynamicObject...invokeConstructor().
 		List<BoxStatement>				body	= buildStatementList( ctx.block().blockStatements() );
+		body = withVarargsPreamble( ctx.parameterList(), body, pos, src );
 
 		// BoxLang convention (mirroring CFML): the constructor is the method named "init".
 		return new BoxFunctionDeclaration( visibility, modifiers, "init", null, args, List.of(), List.of(), body, pos, src );
@@ -283,10 +301,120 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 	BoxArgumentDeclaration buildParameterDeclaration( ParameterContext ctx ) {
 		var				pos				= tools.getPosition( ctx );
 		var				src				= tools.getSourceText( ctx );
+		// A variadic parameter ("int... nums") is still declared as one ordinary named argument
+		// here - see buildVarargsPreamble for how it actually ends up bound to an array of every
+		// extra positional argument the caller passed.
 		String			type			= ctx.typeName() != null ? ctx.typeName().getText() : "Any";
 		BoxExpression	defaultValue	= ctx.expression() != null ? ctx.expression().accept( expressionVisitor ) : null;
-		boolean			required		= defaultValue == null;
+		// A variadic parameter must be callable with zero trailing arguments ("sum()" is valid
+		// Groovy for "def sum(int... nums)"), so it can never be required, regardless of whether
+		// an explicit default was also written.
+		boolean			required		= defaultValue == null && ctx.ELLIPSIS() == null;
 		return new BoxArgumentDeclaration( required, type, ctx.IDENTIFIER().getText(), defaultValue, List.of(), List.of(), pos, src );
+	}
+
+	// Groovy's "Type... name" variadic trailing parameter has no equivalent in BoxLang's own
+	// function-declaration model (which has no first-class "collect the rest into an array"
+	// parameter kind). Rather than add that to BoxLang's core function machinery - a much bigger
+	// change than this feature needs - it's desugared entirely within the method body: the
+	// parameter is declared as an ordinary single argument, and a synthesized preamble
+	// overwrites it with every positional argument from its own declared position onward,
+	// collected from the "arguments" scope (which, like CFML, holds every argument actually
+	// passed regardless of how many were declared). Equivalent to:
+	// __groovyVarargsCollected = []
+	// if ( !( arguments.len() == <declaredPosition> && isNull( arguments[ <declaredPosition> ] ) ) ) {
+	// __groovyVarargsIndex = <declaredPosition>
+	// while ( __groovyVarargsIndex <= arguments.len() ) {
+	// __groovyVarargsCollected.append( arguments[ __groovyVarargsIndex ] )
+	// __groovyVarargsIndex = __groovyVarargsIndex + 1
+	// }
+	// }
+	// nums = __groovyVarargsCollected
+	// The "if" guard exists because arguments.len() counts a declared-but-not-passed parameter
+	// as present (bound to null) rather than absent - confirmed empirically: calling a one-
+	// parameter function with zero arguments still reports arguments.len() == 1. Without the
+	// guard, "sum()" against "def sum(int... nums)" would collect a phantom [null] instead of
+	// [] - the isNull check on that exact slot filters it back out. The one known edge case this
+	// can't distinguish: explicitly passing a literal null as the SOLE variadic value
+	// ("sum(null)") is indistinguishable from passing nothing, and is treated as the latter - an
+	// accepted, documented limitation given how rare that call shape is.
+	// Only positional calls are collected correctly this way - a named-argument call style isn't
+	// handled - and only the LAST parameter being variadic makes sense, matching real Groovy.
+	private List<BoxStatement> withVarargsPreamble( ParameterListContext parameterListCtx, List<BoxStatement> body, Position pos, String src ) {
+		if ( body == null || parameterListCtx == null ) {
+			return body;
+		}
+		List<ParameterContext> params = parameterListCtx.parameter();
+		if ( params.isEmpty() ) {
+			return body;
+		}
+		ParameterContext lastParam = params.get( params.size() - 1 );
+		if ( lastParam.ELLIPSIS() == null ) {
+			return body;
+		}
+
+		String				varargsName			= lastParam.IDENTIFIER().getText();
+		int					declaredPosition	= params.size();
+		String				counterName			= "__groovyVarargsIndex";
+		// Collect into a SEPARATE temp variable, not directly into the parameter itself: a named
+		// parameter and its "arguments[N]" slot are the same underlying storage in BoxLang, so
+		// resetting the parameter to [] before the loop finishes reading "arguments" would make
+		// arguments[declaredPosition] alias the very array being built - each append would then
+		// read the array's own (still-growing) current state back into itself, corrupting it
+		// into a self-referential array (confirmed via a StackOverflowError in Array.toString()).
+		// Only overwriting the real parameter once, after every "arguments" read is done, avoids
+		// that entirely.
+		String				tempName			= "__groovyVarargsCollected";
+
+		BoxExpression		argumentsLen		= new BoxMethodInvocation( new BoxIdentifier( "len", pos, "len" ),
+		    new BoxIdentifier( "arguments", pos, "arguments" ),
+		    List.of(), false, true, pos, src );
+		BoxExpression		firstVarargSlot		= new BoxArrayAccess( new BoxIdentifier( "arguments", pos, "arguments" ), false,
+		    new BoxIntegerLiteral( String.valueOf( declaredPosition ), pos, src ), pos, src );
+		BoxExpression		nothingPassed		= new BoxBinaryOperation(
+		    new BoxComparisonOperation( argumentsLen, BoxComparisonOperator.Equal, new BoxIntegerLiteral( String.valueOf( declaredPosition ), pos, src ), pos,
+		        src ),
+		    BoxBinaryOperator.And,
+		    new BoxFunctionInvocation( "isNull", List.of( new BoxArgument( firstVarargSlot, pos, src ) ), pos, src ),
+		    pos, src );
+
+		BoxExpression		tempInit			= new BoxAssignment( new BoxIdentifier( tempName, pos, tempName ), BoxAssignmentOperator.Equal,
+		    new BoxArrayLiteral( List.of(), pos, src ), List.of(), pos, src );
+		BoxExpression		counterInit			= new BoxAssignment( new BoxIdentifier( counterName, pos, counterName ), BoxAssignmentOperator.Equal,
+		    new BoxIntegerLiteral( String.valueOf( declaredPosition ), pos, src ), List.of(), pos, src );
+		BoxExpression		condition			= new BoxComparisonOperation( new BoxIdentifier( counterName, pos, counterName ),
+		    BoxComparisonOperator.LessThanEquals,
+		    argumentsLen, pos, src );
+
+		BoxExpression		currentArg			= new BoxArrayAccess( new BoxIdentifier( "arguments", pos, "arguments" ), false,
+		    new BoxIdentifier( counterName, pos, counterName ), pos, src );
+		BoxExpression		appendCall			= new BoxMethodInvocation( new BoxIdentifier( "append", pos, "append" ),
+		    new BoxIdentifier( tempName, pos, tempName ),
+		    List.of( new BoxArgument( currentArg, pos, src ) ), false, true, pos, src );
+		BoxExpression		counterIncrement	= new BoxAssignment( new BoxIdentifier( counterName, pos, counterName ), BoxAssignmentOperator.Equal,
+		    new BoxBinaryOperation( new BoxIdentifier( counterName, pos, counterName ), BoxBinaryOperator.Plus, new BoxIntegerLiteral( "1", pos, src ), pos,
+		        src ),
+		    List.of(), pos, src );
+
+		BoxStatement		loopBody			= new BoxStatementBlock( List.of(
+		    new BoxExpressionStatement( appendCall, pos, src ),
+		    new BoxExpressionStatement( counterIncrement, pos, src ) ), pos, src );
+
+		BoxStatement		collectBlock		= new BoxStatementBlock( List.of(
+		    new BoxExpressionStatement( counterInit, pos, src ),
+		    new BoxWhile( null, condition, loopBody, pos, src ) ), pos, src );
+
+		BoxExpression		varargsAssign		= new BoxAssignment( new BoxIdentifier( varargsName, pos, varargsName ), BoxAssignmentOperator.Equal,
+		    new BoxIdentifier( tempName, pos, tempName ), List.of(), pos, src );
+
+		List<BoxStatement>	preamble			= List.of(
+		    new BoxExpressionStatement( tempInit, pos, src ),
+		    new BoxIfElse( new BoxUnaryOperation( nothingPassed, BoxUnaryOperator.Not, pos, src ), collectBlock, null, pos, src ),
+		    new BoxExpressionStatement( varargsAssign, pos, src ) );
+
+		List<BoxStatement>	newBody				= new ArrayList<>( preamble );
+		newBody.addAll( body );
+		return newBody;
 	}
 
 	private void applyModifier( ClassModifierContext modCtx, List<BoxMethodDeclarationModifier> modifiers, BoxAccessModifier currentVisibility ) {
@@ -420,6 +548,39 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 		BoxArrayDestructuringPattern		pattern		= new BoxArrayDestructuringPattern( bindings, pos, src );
 		BoxExpression						value		= ctx.expression().accept( expressionVisitor );
 		return new BoxExpressionStatement( new BoxAssignment( pattern, BoxAssignmentOperator.Equal, value, List.of(), pos, src ), pos, src );
+	}
+
+	// A deliberately bounded enum implementation - NOT real Groovy enum semantics. "enum Color {
+	// RED, GREEN, BLUE }" desugars to a struct-of-string-constants assignment:
+	// Color = { RED: "RED", GREEN: "GREEN", BLUE: "BLUE", values: ["RED","GREEN","BLUE"] }
+	// This correctly supports the overwhelmingly common patterns - Color.RED, comparing a value
+	// against Color.GREEN with "==", string interpolation, and (since BoxSwitch is equality-only
+	// anyway) even "switch (x) { case Color.RED: ... }" - without needing BoxLang's own class
+	// system to support static constant fields, which prior investigation in this codebase found
+	// disproportionately expensive (see visitFieldDeclaration's "static" no-op notes). What is
+	// NOT modeled: real type identity separate from String, ordinal(), and nesting an enum inside
+	// a class body (top-level only).
+	@Override
+	public BoxNode visitEnumDeclaration( EnumDeclarationContext ctx ) {
+		var					pos				= tools.getPosition( ctx );
+		var					src				= tools.getSourceText( ctx );
+		BoxIdentifier		enumName		= new BoxIdentifier( ctx.IDENTIFIER( 0 ).getText(), tools.getPosition( ctx.IDENTIFIER( 0 ).getSymbol() ),
+		    ctx.IDENTIFIER( 0 ).getText() );
+
+		List<BoxExpression>	entries			= new ArrayList<>();
+		List<BoxExpression>	constantNames	= new ArrayList<>();
+		for ( int i = 1; i < ctx.IDENTIFIER().size(); i++ ) {
+			String	constantName	= ctx.IDENTIFIER( i ).getText();
+			var		constantPos		= tools.getPosition( ctx.IDENTIFIER( i ).getSymbol() );
+			entries.add( new BoxStringLiteral( constantName, constantPos, constantName ) );
+			entries.add( new BoxStringLiteral( constantName, constantPos, constantName ) );
+			constantNames.add( new BoxStringLiteral( constantName, constantPos, constantName ) );
+		}
+		entries.add( new BoxStringLiteral( "values", pos, "values" ) );
+		entries.add( new BoxArrayLiteral( constantNames, pos, src ) );
+
+		BoxExpression structLiteral = new BoxStructLiteral( BoxStructType.Ordered, entries, pos, src );
+		return new BoxExpressionStatement( new BoxAssignment( enumName, BoxAssignmentOperator.Equal, structLiteral, List.of(), pos, src ), pos, src );
 	}
 
 	@Override

@@ -558,16 +558,176 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
-	@DisplayName( "Range.step(n) { } is a documented gap - BoxLang's Range type has no such member" )
-	public void testRangeStepWithClosureIsADocumentedGap() {
-		// Unlike the other gaps in this file, this isn't a parser limitation - "(1..10).step(2)
-		// { ... }" parses and compiles correctly (trailing-closure-after-parenthesized-args
-		// works generically), but BoxLang's native Range type simply has no "step" member to
-		// call. Adding one would be new runtime functionality, not parser/AST work - the kind
-		// of extra, Groovy-specific surface better suited to a companion module than core.
+	@DisplayName( "Range.step(n) { } iterates the range advancing by n, invoking the closure" )
+	public void testRangeStepWithClosure() {
+		// Previously a documented gap (BoxLang's native Range type had no "step" member callable
+		// with a closure) - fixed by adding a real RangeStep BIF/member to BoxLang core (not
+		// Groovy-specific), reusing the trailing-closure-after-parenthesized-args support already
+		// built for "list.inject(0) { ... }".
+		IBoxContext	context	= newContext();
+		Object		result	= run( "total = 0\n(1..10).step(2) { total = total + it }\nreturn total\n", context );
+		assertThat( result.toString() ).isEqualTo( "25" );
+	}
+
+	@Test
+	@DisplayName( "enum declaration: constant access, equality, values(), interpolation" )
+	public void testEnumDeclaration() {
+		// A deliberately bounded implementation, NOT real Groovy enum semantics - see
+		// GroovyVisitor#visitEnumDeclaration for exactly what this desugars to (a struct of
+		// string constants) and what isn't modeled (ordinal(), true type identity).
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "enum Color { RED, GREEN, BLUE }\n"
+		        + "def x = Color.GREEN\n"
+		        + "def matches = (x == Color.GREEN)\n"
+		        + "def all = Color.values.toList(\",\")\n"
+		        + "return \"${Color.RED},${matches},${all}\"\n",
+		    context );
+		assertThat( result ).isEqualTo( "RED,true,RED,GREEN,BLUE" );
+	}
+
+	@Test
+	@DisplayName( "enum constant used as a switch case (plain equality, since it's just a string)" )
+	public void testEnumInSwitchCase() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "enum Color { RED, GREEN, BLUE }\n"
+		        + "def x = Color.RED\n"
+		        + "def result = \"none\"\n"
+		        + "switch (x) {\n"
+		        + "  case Color.RED:\n"
+		        + "    result = \"is red\"\n"
+		        + "    break\n"
+		        + "  default:\n"
+		        + "    result = \"other\"\n"
+		        + "}\n"
+		        + "return result\n",
+		    context );
+		assertThat( result ).isEqualTo( "is red" );
+	}
+
+	@Test
+	@DisplayName( "triple-quoted string spans multiple lines" )
+	public void testTripleQuotedStringSpansLines() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def s = \"\"\"line1\nline2\"\"\"\nreturn s.contains(\"line2\")\n", context );
+		assertThat( result ).isEqualTo( true );
+	}
+
+	@Test
+	@DisplayName( "triple-quoted string tolerates embedded single/double quotes that aren't the closing delimiter" )
+	public void testTripleQuotedStringEmbeddedQuotes() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "return \"\"\"he said \"hi\" there\"\"\"\n", context );
+		assertThat( result ).isEqualTo( "he said \"hi\" there" );
+	}
+
+	@Test
+	@DisplayName( "triple-quoted string supports the same interpolation forms as a regular GString" )
+	public void testTripleQuotedStringInterpolation() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def name = \"World\"\nreturn \"\"\"Hello, ${name}!\"\"\"\n", context );
+		assertThat( result ).isEqualTo( "Hello, World!" );
+	}
+
+	@Test
+	@DisplayName( "'=~' returns a boolean, not a live Matcher (a documented simplification)" )
+	public void testRegexFindReturnsBoolean() {
+		// Real Groovy's "=~" returns a java.util.regex.Matcher (truthy only via Groovy's own
+		// Matcher.asBoolean() override that BoxLang has no equivalent for). Rather than let
+		// "if (str =~ pattern)" always be true regardless of match, this eagerly evaluates
+		// find() and returns a plain boolean - correct for the common find/no-find idiom, but
+		// deliberately not the same as real Groovy's richer Matcher-returning semantics.
 		IBoxContext context = newContext();
-		org.junit.jupiter.api.Assertions.assertThrows( RuntimeException.class,
-		    () -> run( "total = 0\n(1..10).step(2) { total = total + it }\nreturn total\n", context ) );
+		assertThat( run( "return \"hello\" =~ /l+/\n", context ) ).isEqualTo( true );
+		assertThat( run( "return \"hello\" =~ /xyz/\n", context ) ).isEqualTo( false );
+	}
+
+	@Test
+	@DisplayName( "'==~' tests a full-string regex match" )
+	public void testRegexFullMatch() {
+		IBoxContext context = newContext();
+		assertThat( run( "return \"hello\" ==~ /hello/\n", context ) ).isEqualTo( true );
+		assertThat( run( "return \"hello world\" ==~ /hello/\n", context ) ).isEqualTo( false );
+	}
+
+	@Test
+	@DisplayName( "slashy string literal: regex metacharacters pass through untouched" )
+	public void testSlashyStringLiteral() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def pattern = /\\d+/\nreturn \"abc123\" =~ pattern\n", context );
+		assertThat( result ).isEqualTo( true );
+	}
+
+	@Test
+	@DisplayName( "slashy string literal: '\\/' is the escape for a literal '/'" )
+	public void testSlashyStringEscapedSlash() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "return /a\\/b/\n", context );
+		assertThat( result ).isEqualTo( "a/b" );
+	}
+
+	@Test
+	@DisplayName( "division still works correctly - not confused with the new slashy-string/regex syntax" )
+	public void testDivisionStillWorksAfterRegexSupport() {
+		IBoxContext context = newContext();
+		assertThat( run( "return 10 / 2\n", context ).toString() ).isEqualTo( "5" );
+		assertThat( run( "def x = 10\nreturn x / 2\n", context ).toString() ).isEqualTo( "5" );
+		assertThat( run( "return (5 + 5) / 2\n", context ).toString() ).isEqualTo( "5" );
+		assertThat( run( "def list = [10, 20]\nreturn list[1] / 2\n", context ).toString() ).isEqualTo( "5" );
+		assertThat( run( "def a = 100\ndef b = 5\ndef c = 2\nreturn a / b / c\n", context ).toString() ).isEqualTo( "10" );
+		assertThat( run( "def x = 10\nx++\nreturn x / 2\n", context ).toString() ).isEqualTo( "5.5" );
+	}
+
+	@Test
+	@DisplayName( "varargs: extra positional arguments collect into an array" )
+	public void testVarargsCollectsExtraArguments() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def sum(int... nums) { return nums.toList(\",\") }\nreturn sum(1,2,3,4)\n", context );
+		assertThat( result ).isEqualTo( "1,2,3,4" );
+	}
+
+	@Test
+	@DisplayName( "varargs: works with a leading required parameter before the variadic one" )
+	public void testVarargsWithLeadingParameter() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def concat(String sep, String... parts) {\n"
+		        + "  return parts.toList(sep)\n"
+		        + "}\n"
+		        + "return concat(\",\", \"a\", \"b\", \"c\")\n",
+		    context );
+		assertThat( result ).isEqualTo( "a,b,c" );
+	}
+
+	@Test
+	@DisplayName( "varargs: callable with zero extra arguments" )
+	public void testVarargsWithZeroExtraArguments() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def sum(int... nums) { return nums.size() }\nreturn sum()\n", context );
+		assertThat( result.toString() ).isEqualTo( "0" );
+	}
+
+	@Test
+	@DisplayName( "varargs: collected values are usable, not a self-referential array from the collection preamble" )
+	public void testVarargsValuesAreUsable() {
+		// Regression test for a real bug found while building this: the parameter and its
+		// "arguments[N]" slot are the same underlying storage, so resetting the parameter to []
+		// before finishing reading "arguments" made arguments[N] alias the array being built,
+		// corrupting it into containing itself (surfaced as a StackOverflowError out of
+		// Array.toString()). Fixed by collecting into a separate temp var first.
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def sum(int... nums) {\n"
+		        + "  total = 0\n"
+		        + "  for (n in nums) {\n"
+		        + "    total = total + n\n"
+		        + "  }\n"
+		        + "  return total\n"
+		        + "}\n"
+		        + "return sum(1, 2, 3, 4)\n",
+		    context );
+		assertThat( result.toString() ).isEqualTo( "10" );
 	}
 
 	@Test

@@ -280,6 +280,45 @@ public class GroovyGrammarParsingTest {
 	}
 
 	@Test
+	@DisplayName( "top-level enum declaration" )
+	public void testEnumDeclaration() {
+		assertParses( "enum Color { RED, GREEN, BLUE }\n" );
+		assertParses( "enum Color {\n  RED,\n  GREEN,\n  BLUE\n}\n" );
+	}
+
+	@Test
+	@DisplayName( "triple-quoted multi-line string, with embedded quotes and interpolation" )
+	public void testTripleQuotedString() {
+		assertParses( "def s = \"\"\"line1\nline2\"\"\"\n" );
+		assertParses( "def s = \"\"\"he said \"hi\" there\"\"\"\n" );
+		assertParses( "def s = \"\"\"Hello, ${name}!\"\"\"\n" );
+	}
+
+	@Test
+	@DisplayName( "regex find/match operators with slashy literals" )
+	public void testRegexOperators() {
+		assertParses( "def result = \"hello\" =~ /l+/\n" );
+		assertParses( "def result = \"hello\" ==~ /hello/\n" );
+	}
+
+	@Test
+	@DisplayName( "division still parses correctly in every position a slashy-string could be confused for" )
+	public void testDivisionNotConfusedWithSlashyString() {
+		assertParses( "def x = 10 / 2\n" );
+		assertParses( "def x = 10\ndef y = x / 2\n" );
+		assertParses( "def x = (5 + 5) / 2\n" );
+		assertParses( "def a = 100\ndef b = 5\ndef c = 2\ndef result = a / b / c\n" );
+		assertParses( "def x = 10\nx++\ndef y = x / 2\n" );
+	}
+
+	@Test
+	@DisplayName( "varargs (variadic) trailing parameter" )
+	public void testVarargsParameter() {
+		assertParses( "def sum(int... nums) { return nums.size() }\n" );
+		assertParses( "def concat(String sep, String... parts) { return parts.toList(sep) }\n" );
+	}
+
+	@Test
 	@DisplayName( "unterminated string literal is rejected" )
 	public void testUnterminatedStringFails() {
 		assertFailsToParse( "def x = \"unterminated\n" );
