@@ -37,13 +37,21 @@ public class RangeStep extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.ANY, Key.range ),
 		    new Argument( true, Argument.NUMERIC, Key.amount ),
-		    new Argument( true, "function:Consumer", Key.callback )
+		    // Optional: Range already has its own step(Number) method (registered here as a
+		    // fallback-free member, this BIF is now the ONLY thing "step" resolves to - see
+		    // below), which just returns a new, re-stepped Range with no iteration at all. That
+		    // call shape ("(1..10).step(2)" with nothing further) must keep working exactly as
+		    // before; the callback is what turns this into "iterate and invoke" instead.
+		    new Argument( false, "function:Consumer", Key.callback )
 		};
 	}
 
 	/**
-	 * Iterate a range, re-stepping it by the given amount, and invoke the callback for each
-	 * resulting value - e.g. {@code (1..10).step(2) { println(it) }}.
+	 * Re-steps a range by the given amount - same as {@code Range.step(Number)} - and, if a
+	 * callback is provided, also iterates the result and invokes the callback for each value:
+	 * {@code (1..10).step(2) { println(it) } }. Without a callback, behaves exactly like the
+	 * range's own {@code step(Number)} method: {@code (1..10).step(2)} returns the re-stepped
+	 * Range itself, without iterating it.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -52,14 +60,20 @@ public class RangeStep extends BIF {
 	 *
 	 * @argument.amount The step amount to advance by.
 	 *
-	 * @argument.callback The function to invoke for each value in the stepped range.
+	 * @argument.callback Optional. The function to invoke for each value in the stepped range.
+	 *                    If omitted, the stepped range is returned without iterating it.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Range<?>	range		= ( Range<?> ) arguments.get( Key.range );
 		Number		amount		= arguments.getAsNumber( Key.amount );
-		Function	callback	= arguments.getAsFunction( Key.callback );
+		Range<?>	stepped		= range.step( amount );
 
-		for ( Object value : range.step( amount ) ) {
+		Function	callback	= arguments.getAsFunction( Key.callback );
+		if ( callback == null ) {
+			return stepped;
+		}
+
+		for ( Object value : stepped ) {
 			context.invokeFunction( callback, new Object[] { value } );
 		}
 
