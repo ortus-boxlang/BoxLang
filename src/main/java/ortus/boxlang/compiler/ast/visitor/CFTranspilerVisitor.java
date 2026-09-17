@@ -1573,12 +1573,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				        null )
 				);
 			}
-			// CF allows various "incorrect" type attribute values. If "type" is set, "write" changes to "exclusive", all other values other than "readonly" change to "readonly"
+			// CF allows various "incorrect" type attribute values. If "type" is set, "write" changes to "exclusive", "exclusive" and "readonly" are
+			// preserved, and all other values change to "readonly"
 			node.getAttributes().stream()
 			    .filter( a -> a.getKey().getValue().equalsIgnoreCase( "type" ) && a.getValue() instanceof BoxStringLiteral )
 			    .forEach( a -> {
 				    BoxStringLiteral bsl = ( BoxStringLiteral ) a.getValue();
-				    if ( bsl.getValue().equalsIgnoreCase( "write" ) ) {
+				    if ( bsl.getValue().equalsIgnoreCase( "write" ) || bsl.getValue().equalsIgnoreCase( "exclusive" ) ) {
 					    bsl.setValue( "exclusive" );
 				    } else if ( !bsl.getValue().equalsIgnoreCase( "readonly" ) ) {
 					    bsl.setValue( "readonly" );
