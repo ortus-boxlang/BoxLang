@@ -37,21 +37,28 @@ public class RangeStep extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.ANY, Key.range ),
 		    new Argument( true, Argument.NUMERIC, Key.amount ),
-		    // Optional: Range already has its own step(Number) method (registered here as a
-		    // fallback-free member, this BIF is now the ONLY thing "step" resolves to - see
-		    // below), which just returns a new, re-stepped Range with no iteration at all. That
-		    // call shape ("(1..10).step(2)" with nothing further) must keep working exactly as
-		    // before; the callback is what turns this into "iterate and invoke" instead.
-		    new Argument( false, "function:Consumer", Key.callback )
+		    // Optional, and deliberately untyped (Argument.ANY): Range already had TWO existing
+		    // overloads this single BIF must now stand in for, since registering it makes it the
+		    // ONLY thing "step" resolves to - Range.step(Number) (no third argument) and
+		    // Range.step(Number, String) (a calendar/custom unit name, e.g. "month", "chromatic"
+		    // on an IRangeable). Typing this argument as "function:Consumer" would force-cast a
+		    // unit string into a Function and fail - _invoke() below dispatches on its actual
+		    // runtime type instead.
+		    new Argument( false, Argument.ANY, Key.callback )
 		};
 	}
 
 	/**
-	 * Re-steps a range by the given amount - same as {@code Range.step(Number)} - and, if a
-	 * callback is provided, also iterates the result and invokes the callback for each value:
-	 * {@code (1..10).step(2) { println(it) } }. Without a callback, behaves exactly like the
-	 * range's own {@code step(Number)} method: {@code (1..10).step(2)} returns the re-stepped
-	 * Range itself, without iterating it.
+	 * Re-steps a range by the given amount, standing in for BOTH of {@code Range}'s own existing
+	 * step overloads, plus a third, new form:
+	 * <ul>
+	 * <li>{@code range.step(amount)} - returns the re-stepped Range, unchanged from
+	 * {@code Range.step(Number)}.</li>
+	 * <li>{@code range.step(amount, unit)} - a calendar/custom unit name, unchanged from
+	 * {@code Range.step(Number, String)}.</li>
+	 * <li>{@code range.step(amount) { ... }} - new: also iterates the re-stepped range and
+	 * invokes the callback for each value.</li>
+	 * </ul>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -60,19 +67,24 @@ public class RangeStep extends BIF {
 	 *
 	 * @argument.amount The step amount to advance by.
 	 *
-	 * @argument.callback Optional. The function to invoke for each value in the stepped range.
-	 *                    If omitted, the stepped range is returned without iterating it.
+	 * @argument.callback Optional. Either a unit name (String) to re-step by, or a function to
+	 *                    invoke for each value in the stepped range. If omitted, the stepped
+	 *                    range is returned without iterating it.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Range<?>	range		= ( Range<?> ) arguments.get( Key.range );
 		Number		amount		= arguments.getAsNumber( Key.amount );
-		Range<?>	stepped		= range.step( amount );
+		Object		callbackArg	= arguments.get( Key.callback );
 
-		Function	callback	= arguments.getAsFunction( Key.callback );
-		if ( callback == null ) {
-			return stepped;
+		if ( callbackArg == null ) {
+			return range.step( amount );
+		}
+		if ( callbackArg instanceof String unit ) {
+			return range.step( amount, unit );
 		}
 
+		Function	callback	= arguments.getAsFunction( Key.callback );
+		Range<?>	stepped		= range.step( amount );
 		for ( Object value : stepped ) {
 			context.invokeFunction( callback, new Object[] { value } );
 		}
