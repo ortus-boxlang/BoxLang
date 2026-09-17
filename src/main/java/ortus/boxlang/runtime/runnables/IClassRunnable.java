@@ -617,4 +617,25 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 		return Struct.EMPTY;
 	}
 
+	/**
+	 * Whether the super class's properties have been merged into this class.
+	 * Properties are static to the class so this only needs to happen once.
+	 * Compiled classes override this with a static field access.
+	 *
+	 * @return true if properties have already been merged from the super class
+	 */
+	default boolean getPropertiesMerged() {
+		return false;
+	}
+
+	/**
+	 * Set whether the super class's properties have been merged into this class.
+	 * Compiled classes override this with a static field assignment.
+	 *
+	 * @param propertiesMerged whether properties have been merged
+	 */
+	default void setPropertiesMerged( boolean propertiesMerged ) {
+		// Default no-op - compiled classes override with static field assignment
+	}
+
 }
