@@ -90,6 +90,14 @@ classBody: classMember ( sep classMember )* sep?
 classMember: constructorDeclaration
     | methodDeclaration
     | fieldDeclaration
+    | classDeclaration
+    | staticInitializer
+    ;
+
+// "static { ... }" class initializer block - maps directly onto BoxLang's own native
+// BoxStaticInitializer AST node (see GroovyVisitor#visitStaticInitializer), the exact same
+// construct BoxGrammar's own "static { ... }" class member already produces.
+staticInitializer: STATIC block
     ;
 
 fieldDeclaration: classModifier* ( typeName | DEF ) IDENTIFIER ( ASSIGN expression )?
@@ -133,7 +141,8 @@ blockStatements: statement ( sep statement )* sep?
 statement: block                                                                  # blockStatement
     | IDENTIFIER COLON statement                                                  # labeledStatement
     | DEF LPAREN IDENTIFIER ( COMMA IDENTIFIER )+ RPAREN ASSIGN expression        # tupleDeclStatement
-    | ( typeName | DEF ) IDENTIFIER ( ASSIGN expression )? ( COMMA IDENTIFIER ( ASSIGN expression )? )* # varDeclStatement
+    | LPAREN IDENTIFIER ( COMMA IDENTIFIER )+ RPAREN ASSIGN expression            # destructuringAssignStatement
+    | FINAL? ( typeName | DEF ) IDENTIFIER ( ASSIGN expression )? ( COMMA IDENTIFIER ( ASSIGN expression )? )* # varDeclStatement
     | IF LPAREN expression RPAREN statement ( ELSE statement )?                   # ifStatement
     | WHILE LPAREN expression RPAREN statement                                    # whileStatement
     | DO block WHILE LPAREN expression RPAREN                                     # doWhileStatement
@@ -235,6 +244,8 @@ argument: STAR expression                                                       
 primary: IDENTIFIER                                                               # identifierExpr
     | INT_LITERAL                                                                 # intLiteralExpr
     | FLOAT_LITERAL                                                               # floatLiteralExpr
+    | HEX_LITERAL                                                                 # hexLiteralExpr
+    | BINARY_LITERAL                                                              # binaryLiteralExpr
     | TRUE                                                                        # trueLiteralExpr
     | FALSE                                                                       # falseLiteralExpr
     | NULL_LIT                                                                    # nullLiteralExpr
@@ -268,11 +279,25 @@ gstringPart: GSTRING_TEXT
 
 listOrMapLiteral: LBRACKET RBRACKET                                               # emptyListLiteral
     | LBRACKET COLON RBRACKET                                                     # emptyMapLiteral
-    | LBRACKET mapEntry ( COMMA mapEntry )* RBRACKET                              # mapLiteral
-    | LBRACKET expression ( COMMA expression )* RBRACKET                         # listLiteral
+    | LBRACKET mapEntryOrSpread ( COMMA mapEntryOrSpread )* RBRACKET              # mapLiteral
+    | LBRACKET listElement ( COMMA listElement )* RBRACKET                       # listLiteral
+    ;
+
+// STAR-prefixed list element (e.g. [*listA, *listB, "extra"]) expands a collection's elements
+// in place - unambiguous against a plain element since it's a distinct leading token, exactly
+// like the STAR-prefixed spread call argument above.
+listElement: STAR expression                                                     # spreadListElement
+    | expression                                                                 # plainListElement
     ;
 
 mapEntry: mapKey COLON expression
+    ;
+
+// SPREAD_MAP-prefixed entry inside a map literal (e.g. [*: map1, *: map2, extra: 1]) expands
+// another map's entries in place - unambiguous against a plain "key: value" entry since it's a
+// distinct leading token (SPREAD_MAP, not IDENTIFIER/string/paren).
+mapEntryOrSpread: SPREAD_MAP expression                                          # spreadMapEntry
+    | mapEntry                                                                    # plainMapEntry
     ;
 
 mapKey: IDENTIFIER

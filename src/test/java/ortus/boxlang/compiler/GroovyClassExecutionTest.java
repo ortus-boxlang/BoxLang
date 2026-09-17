@@ -198,4 +198,54 @@ public class GroovyClassExecutionTest {
 		assertThat( result.toString() ).isEqualTo( "1" );
 	}
 
+	@Test
+	@DisplayName( "a nested static class is instantiable and usable from an outer class's methods" )
+	public void testNestedClassIsInstantiable() {
+		// Models a Java-style STATIC nested class - a peer type reached via "new Builder()" -
+		// not a true Groovy non-static inner class capturing an enclosing instance. Reuses
+		// BoxLang's own native BoxLocalClass AST node (the same one BoxVisitor's own nested-
+		// class syntax produces), so no new AST/runtime machinery was needed for this.
+		IBoxContext		context		= newContext();
+		IClassRunnable	instance	= instantiate( """
+		                                           class Outer {
+		                                             static class Point {
+		                                               def x
+		                                               def y
+		                                               Point(px, py) { x = px; y = py }
+		                                               def sum() { return x + y }
+		                                             }
+
+		                                             def makePoint(a, b) {
+		                                               def p = new Point(a, b)
+		                                               return p.sum()
+		                                             }
+		                                           }
+		                                           """, context );
+		Object			result		= instance.dereferenceAndInvoke( context, Key.of( "makePoint" ), new Object[] { 3, 4 }, false );
+		assertThat( result.toString() ).isEqualTo( "7" );
+	}
+
+	@Test
+	@DisplayName( "a static initializer block runs once during class loading" )
+	public void testStaticInitializerRuns() {
+		// Maps directly onto BoxLang's own native BoxStaticInitializer AST node (the same one
+		// BoxGrammar's "static { ... }" class member already produces). "static" itself is a
+		// Groovy keyword, not a usable bare identifier/expression base in this grammar (unlike
+		// native BoxLang's own "static.foo" syntax), so the block's bare assignment is read back
+		// directly off the class's static scope via Java rather than through more Groovy source -
+		// confirmed empirically that a bare assignment inside a static initializer really does
+		// land in the STATIC scope (not the instance-scoped fallback "static" fields get - see
+		// the no-op test above), since an instance method's own bare "ready" lookup does NOT find
+		// it there.
+		IBoxContext		context		= newContext();
+		IClassRunnable	instance	= instantiate( """
+		                                           class Config {
+		                                             static {
+		                                               ready = true
+		                                             }
+		                                           }
+		                                           """, context );
+		assertThat( instance.getStaticScope().get( Key.of( "ready" ) ) ).isEqualTo( true );
+	}
+
 }

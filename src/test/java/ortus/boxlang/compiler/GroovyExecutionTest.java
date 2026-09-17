@@ -744,4 +744,91 @@ public class GroovyExecutionTest {
 		    () -> run( "def a = \"Hello, \"\ndef b = \"World\"\nreturn a + b\n", context ) );
 	}
 
+	// -----------------------------------------------------------------------------------------
+	// Round 2 idiom-audit gaps
+
+	@Test
+	@DisplayName( "hex and binary integer literals, with underscore separators" )
+	public void testHexAndBinaryLiterals() {
+		IBoxContext context = newContext();
+		assertThat( run( "return 0xFF", context ).toString() ).isEqualTo( "255" );
+		assertThat( run( "return 0b1010", context ).toString() ).isEqualTo( "10" );
+		assertThat( run( "return 0xFF_00", context ).toString() ).isEqualTo( "65280" );
+	}
+
+	@Test
+	@DisplayName( "underscore digit separators and L/G/F/D type suffixes on ordinary literals" )
+	public void testUnderscoreSeparatorsAndTypeSuffixes() {
+		IBoxContext context = newContext();
+		assertThat( run( "return 1_000_000", context ).toString() ).isEqualTo( "1000000" );
+		assertThat( run( "return 10L", context ).toString() ).isEqualTo( "10" );
+		assertThat( run( "return 5G", context ).toString() ).isEqualTo( "5" );
+		assertThat( run( "return 10.5F", context ).toString() ).isEqualTo( "10.5" );
+	}
+
+	@Test
+	@DisplayName( "'final' on a local variable declaration is accepted as a no-op" )
+	public void testFinalLocalVariable() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "final int x = 5\nreturn x + 1\n", context );
+		assertThat( result.toString() ).isEqualTo( "6" );
+	}
+
+	@Test
+	@DisplayName( "tuple destructuring reassignment without 'def' swaps existing variables" )
+	public void testDestructuringReassignmentWithoutDef() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def a = 1\ndef b = 2\n(a, b) = [b, a]\nreturn \"${a},${b}\"\n", context );
+		assertThat( result ).isEqualTo( "2,1" );
+	}
+
+	@Test
+	@DisplayName( "spread operator inside list and map literals" )
+	public void testSpreadInListAndMapLiterals() {
+		IBoxContext	context	= newContext();
+		Object		list	= run( "def a = [1, 2]\ndef b = [3, 4]\nreturn [*a, *b, 5]\n", context );
+		assertThat( list.toString() ).isEqualTo( "[1, 2, 3, 4, 5]" );
+
+		Object map = run( "def m1 = [a: 1]\ndef m2 = [b: 2]\ndef merged = [*: m1, *: m2, c: 3]\nreturn merged.c\n", context );
+		assertThat( map.toString() ).isEqualTo( "3" );
+	}
+
+	@Test
+	@DisplayName( "spread-dot operator maps a property access over every element" )
+	public void testSpreadDotPropertyAccess() {
+		// Confirms the correctness fix: before it, "people*.name" silently compiled as a plain
+		// dot-access on the collection itself instead of mapping over its elements.
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def people = [[name: \"Alice\"], [name: \"Bob\"]]\nreturn people*.name\n", context );
+		assertThat( result.toString() ).isEqualTo( "[Alice, Bob]" );
+	}
+
+	@Test
+	@DisplayName( "spread-dot operator maps a method call over every element" )
+	public void testSpreadDotMethodCall() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def words = [\"ab\", \"cde\"]\nreturn words*.length()\n", context );
+		assertThat( result.toString() ).isEqualTo( "[2, 3]" );
+	}
+
+	@Test
+	@DisplayName( "import static allows referencing a class's static member bare" )
+	public void testImportStaticMember() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "import static java.lang.Math.max\nreturn max(3, 7)\n", context );
+		assertThat( result.toString() ).isEqualTo( "7" );
+	}
+
+	@Test
+	@DisplayName( "multi-line fluent method chaining with a leading-dot continuation" )
+	public void testMultiLineFluentChaining() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def list = [1, 2, 3, 4]\n"
+		        + "return list.findAll { it > 1 }\n"
+		        + "    .collect { it * 2 }\n",
+		    context );
+		assertThat( result.toString() ).isEqualTo( "[4, 6, 8]" );
+	}
+
 }

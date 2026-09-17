@@ -117,6 +117,31 @@ options {
 				return false;
 		}
 	}
+
+	// Groovy's common "fluent chain" formatting idiom puts the "."/"?."/"*." on the FOLLOWING
+	// line, e.g.:
+	//   list.findAll { it > 1 }
+	//       .collect { it * 2 }
+	// Without this, the newline after "{ it > 1 }" would end the statement right there, breaking
+	// on the leading ".". Peeks past any run of plain horizontal/vertical whitespace (spaces,
+	// tabs, blank lines) directly on the raw character stream - independent of how that
+	// whitespace would otherwise be tokenized - to see whether a continuation dot follows. A
+	// comment between the chained calls (e.g. a "// ..." line before the ".collect") is NOT
+	// skipped over and will still end the statement early - a narrow, documented gap rather than
+	// the common case this exists for.
+	private boolean isLeadingDotContinuation() {
+		int i = 1;
+		int c;
+		while ( ( c = _input.LA( i ) ) == ' ' || c == '\t' || c == '\r' || c == '\n' ) {
+			i++;
+		}
+		if ( c == '.' ) {
+			// Also covers METHOD_POINTER (".&"), which starts with the same character.
+			return true;
+		}
+		int next = _input.LA( i + 1 );
+		return ( c == '?' || c == '*' ) && next == '.';
+	}
 }
 
 // -----------------------------------------------------------------------------------------
@@ -200,6 +225,10 @@ POWER_ASSIGN: '**=';
 
 PLUS:  '+';
 MINUS: '-';
+
+// Spread-map entry inside a map literal, e.g. [*: m1, *: m2] - must be declared before STAR so
+// ANTLR's longest-match prefers it over a bare STAR followed by a separate COLON token.
+SPREAD_MAP: '*:';
 STAR:  '*';
 
 // Slashy string literal, e.g. /foo\d+/ - Groovy's alternate string syntax mainly used for
@@ -267,8 +296,24 @@ AT: '@';
 // Literals / identifiers
 IDENTIFIER: [a-zA-Z_$][a-zA-Z0-9_$]*;
 
-FLOAT_LITERAL: [0-9]+ DOT [0-9]+ ( [eE] [+-]? [0-9]+ )? | [0-9]+ [eE] [+-]? [0-9]+;
-INT_LITERAL:   [0-9]+;
+// Hex/binary literals - unambiguous by their "0x"/"0b" prefix, so they never compete with plain
+// decimal INT_LITERAL parsing (which never starts with "0" followed by "x"/"b"). Octal literals
+// (a bare leading zero, e.g. "010" meaning 8) are deliberately NOT supported - real Groovy's own
+// octal syntax is a well-known footgun and rare in practice, and supporting it would require a new
+// OCTAL_LITERAL rule to out-rank the existing INT_LITERAL rule on a same-length tie (e.g. "010"
+// would match both equally), a fragile ordering dependency not worth taking on for such a rarely-
+// used form. "_" digit separators (Groovy's 1_000_000) and the L/G/F/D/I type suffixes are
+// supported on all integer-literal forms and on FLOAT_LITERAL - see GroovyExpressionVisitor for
+// exactly how each is interpreted (the suffix is recognized and stripped so the literal parses,
+// but does not force a distinct runtime type beyond what BoxLang's own length-based int/long/
+// BigDecimal selection already produces - a documented, bounded simplification).
+HEX_LITERAL:    '0' [xX] [0-9a-fA-F] ( '_'? [0-9a-fA-F] )* [lLgGiI]?;
+BINARY_LITERAL: '0' [bB] [01] ( '_'? [01] )* [lLgGiI]?;
+
+FLOAT_LITERAL: [0-9] ( '_'? [0-9] )* DOT [0-9] ( '_'? [0-9] )* ( [eE] [+-]? [0-9]+ )? [fFdDgG]?
+    | [0-9] ( '_'? [0-9] )* [eE] [+-]? [0-9]+ [fFdDgG]?
+    | [0-9] ( '_'? [0-9] )* [fFdDgG];
+INT_LITERAL:   [0-9] ( '_'? [0-9] )* [lLiI]?;
 
 // Single-quoted strings are always plain (non-interpolated) per Groovy semantics.
 SQUOTE_STRING: '\'' ( ~['\\] | '\\' . )* '\'';
@@ -285,7 +330,7 @@ OPEN_TRIPLE_QUOTE: '"""' -> pushMode( tripleGstringMode );
 OPEN_QUOTE: '"' -> pushMode( gstringMode );
 
 NL:
-    [\r\n]+ { inParenOrBracket() }? -> channel( HIDDEN )
+    [\r\n]+ { inParenOrBracket() || isLeadingDotContinuation() }? -> channel( HIDDEN )
 ;
 NL_SIGNIFICANT:
     [\r\n]+ -> type( NL )

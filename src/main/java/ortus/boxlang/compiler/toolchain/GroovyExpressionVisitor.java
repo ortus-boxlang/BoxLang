@@ -16,9 +16,11 @@ package ortus.boxlang.compiler.toolchain;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
@@ -53,12 +55,16 @@ import ortus.boxlang.compiler.ast.expression.BoxStructType;
 import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
+import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxReturn;
+import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.parser.GroovyParser;
 import ortus.boxlang.parser.antlr.GroovyGrammar.AdditiveExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ArgumentContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ArgumentListContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.AsExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.AssignExprContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.BinaryLiteralExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.BitAndExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.BitOrExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.BitXorExprContext;
@@ -75,15 +81,18 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.ExpressionContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.FalseLiteralExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.FloatLiteralExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.GstringPartContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.HexLiteralExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.IdentifierExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.InExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.IndexExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.InstanceofExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.IntLiteralExprContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.ListElementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ListLiteralContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.LogicalAndExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.LogicalOrExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.MapEntryContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.MapEntryOrSpreadContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.MapLiteralContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.MemberExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.MultiplicativeExprContext;
@@ -91,6 +100,8 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.NamedArgumentContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.NewInstanceExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.NullLiteralExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ParenExprContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.PlainListElementContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.PlainMapEntryContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.PositionalArgumentContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.PostfixExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.PowerExprContext;
@@ -100,6 +111,8 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.RegexExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.RelationalExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ShiftExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.SpreadArgumentContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.SpreadListElementContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.SpreadMapEntryContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.StringExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.StringOrGStringContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.SuperExprContext;
@@ -123,6 +136,7 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 	private final GroovyParser	tools;
 	private final GroovyVisitor	statementVisitor;
 	private Set<String>			knownStaticClassNames	= Set.of();
+	private Map<String, String>	staticImportedMembers	= Map.of();
 
 	public GroovyExpressionVisitor( GroovyParser tools, GroovyVisitor statementVisitor ) {
 		this.tools				= tools;
@@ -143,6 +157,15 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 
 	public void setKnownStaticClassNames( Set<String> knownStaticClassNames ) {
 		this.knownStaticClassNames = knownStaticClassNames;
+	}
+
+	// "import static java.lang.Math.PI" (or "... as PIE") lets the file reference the member bare
+	// ("PI"/"PIE"), unlike a plain class import - so unlike knownStaticClassNames (a set of
+	// recognizable CLASS names for the existing "Math.max(...)" dot-access rewrite), this maps the
+	// bare MEMBER name itself to its owning class's simple name, populated by GroovyParser from
+	// each non-wildcard "import static" statement in the file.
+	public void setStaticImportedMembers( Map<String, String> staticImportedMembers ) {
+		this.staticImportedMembers = staticImportedMembers;
 	}
 
 	/**
@@ -216,7 +239,14 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 			return buildMethodInvocation( memberCtx, args, pos, src );
 		}
 		if ( callee instanceof PrimaryExprContext primaryCtx && primaryCtx.primary() instanceof IdentifierExprContext idCtx ) {
-			return new BoxFunctionInvocation( idCtx.IDENTIFIER().getText(), args, pos, src );
+			String	name		= idCtx.IDENTIFIER().getText();
+			String	ownerClass	= staticImportedMembers.get( name );
+			if ( ownerClass != null ) {
+				BoxIdentifier	nameExpr	= new BoxIdentifier( name, pos, name );
+				BoxIdentifier	ownerExpr	= new BoxIdentifier( ownerClass, pos, ownerClass );
+				return new BoxStaticMethodInvocation( nameExpr, ownerExpr, args, pos, src );
+			}
+			return new BoxFunctionInvocation( name, args, pos, src );
 		}
 		return new BoxExpressionInvocation( callee.accept( this ), args, pos, src );
 	}
@@ -238,10 +268,14 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		var					src			= tools.getSourceText( ctx );
 		BoxExpression		obj			= ctx.expression().accept( this );
 		boolean				safe		= ctx.SAFE_DOT() != null;
-		BoxExpression		nameExpr	= aliasedIdentifier( ctx.IDENTIFIER() );
+		BoxIdentifier		nameExpr	= aliasedIdentifier( ctx.IDENTIFIER() );
 		BoxExpression		closureExpr	= visitClosure( ctx.closure() );
 		List<BoxArgument>	args		= List.of(
 		    new BoxArgument( closureExpr, tools.getPosition( ctx.closure() ), tools.getSourceText( ctx.closure() ) ) );
+		if ( ctx.SPREAD_DOT() != null ) {
+			BoxExpression perElementCall = new BoxMethodInvocation( nameExpr, itIdentifier( pos ), args, false, true, pos, src );
+			return buildSpreadDot( obj, perElementCall, pos, src );
+		}
 		return new BoxMethodInvocation( nameExpr, obj, args, safe, true, pos, src );
 	}
 
@@ -249,8 +283,13 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		if ( memberCtx.METHOD_POINTER() != null ) {
 			throw new ExpressionException( "Method pointer expressions (.&) are not yet supported by the Groovy parser", pos, src );
 		}
-		BoxIdentifier	nameExpr	= aliasedIdentifier( memberCtx.IDENTIFIER() );
-		BoxIdentifier	staticBase	= staticClassBase( memberCtx.expression() );
+		BoxIdentifier nameExpr = aliasedIdentifier( memberCtx.IDENTIFIER() );
+		if ( memberCtx.SPREAD_DOT() != null ) {
+			BoxExpression	collection		= memberCtx.expression().accept( this );
+			BoxExpression	perElementCall	= new BoxMethodInvocation( nameExpr, itIdentifier( pos ), args, false, true, pos, src );
+			return buildSpreadDot( collection, perElementCall, pos, src );
+		}
+		BoxIdentifier staticBase = staticClassBase( memberCtx.expression() );
 		if ( staticBase != null ) {
 			return new BoxStaticMethodInvocation( nameExpr, staticBase, args, pos, src );
 		}
@@ -271,12 +310,35 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		if ( ctx.METHOD_POINTER() != null ) {
 			throw new ExpressionException( "Method pointer expressions (.&) are not yet supported by the Groovy parser", pos, src );
 		}
+		if ( ctx.SPREAD_DOT() != null ) {
+			BoxExpression	collection		= ctx.expression().accept( this );
+			BoxExpression	perElementDot	= new BoxDotAccess( itIdentifier( pos ), false, identifier( ctx.IDENTIFIER() ), pos, src );
+			return buildSpreadDot( collection, perElementDot, pos, src );
+		}
 		BoxIdentifier staticBase = staticClassBase( ctx.expression() );
 		if ( staticBase != null ) {
 			return new BoxStaticAccess( staticBase, ctx.SAFE_DOT() != null, identifier( ctx.IDENTIFIER() ), pos, src );
 		}
 		boolean safe = ctx.SAFE_DOT() != null;
 		return new BoxDotAccess( ctx.expression().accept( this ), safe, identifier( ctx.IDENTIFIER() ), pos, src );
+	}
+
+	// Groovy's spread-dot operator (people*.name) maps a property/method access over every
+	// element of a collection - equivalent to people.collect { it.name }. Desugaring it this way
+	// (rather than adding new runtime machinery) reuses BoxLang's existing "map" member function
+	// exactly the same way GROOVY_METHOD_ALIASES already maps a user-written ".collect(...)" call
+	// to it.
+	private BoxExpression buildSpreadDot( BoxExpression collection, BoxExpression perElementExpr, Position pos, String src ) {
+		BoxArgumentDeclaration	itParam		= new BoxArgumentDeclaration( false, "Any", "it", null, List.of(), List.of(), pos, src );
+		BoxStatement			returnStmt	= new BoxReturn( perElementExpr, pos, src );
+		BoxExpression			closure		= new BoxClosure( new ArrayList<>( List.of( itParam ) ),
+		    List.of(), new BoxStatementBlock( List.of( returnStmt ), pos, src ), pos, src );
+		BoxArgument				closureArg	= new BoxArgument( closure, pos, src );
+		return new BoxMethodInvocation( new BoxIdentifier( "map", pos, "map" ), collection, List.of( closureArg ), false, true, pos, src );
+	}
+
+	private BoxIdentifier itIdentifier( Position pos ) {
+		return new BoxIdentifier( "it", pos, "it" );
 	}
 
 	@Override
@@ -587,17 +649,67 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 
 	@Override
 	public BoxExpression visitIdentifierExpr( IdentifierExprContext ctx ) {
-		return new BoxIdentifier( ctx.getText(), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+		var		pos			= tools.getPosition( ctx );
+		var		src			= tools.getSourceText( ctx );
+		String	name		= ctx.getText();
+		String	ownerClass	= staticImportedMembers.get( name );
+		if ( ownerClass != null ) {
+			return new BoxStaticAccess( new BoxIdentifier( ownerClass, pos, ownerClass ), false, new BoxIdentifier( name, pos, name ), pos, src );
+		}
+		return new BoxIdentifier( name, pos, src );
 	}
 
 	@Override
 	public BoxExpression visitIntLiteralExpr( IntLiteralExprContext ctx ) {
-		return new BoxIntegerLiteral( ctx.getText(), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+		return new BoxIntegerLiteral( stripNumericSuffix( ctx.getText() ), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
 	}
 
 	@Override
 	public BoxExpression visitFloatLiteralExpr( FloatLiteralExprContext ctx ) {
-		return new BoxDecimalLiteral( ctx.getText(), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+		return new BoxDecimalLiteral( stripNumericSuffix( ctx.getText() ), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+	}
+
+	@Override
+	public BoxExpression visitHexLiteralExpr( HexLiteralExprContext ctx ) {
+		return buildRadixIntegerLiteral( ctx.getText(), 2, 16, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+	}
+
+	@Override
+	public BoxExpression visitBinaryLiteralExpr( BinaryLiteralExprContext ctx ) {
+		return buildRadixIntegerLiteral( ctx.getText(), 2, 2, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+	}
+
+	// A trailing L/G/F/D/I type suffix (Groovy's 100000000000L, 10.5G, 5F, etc.) is recognized and
+	// stripped here so the literal text is plain digits BoxIntegerLiteral/BoxDecimalLiteral can
+	// parse - those AST nodes have no concept of a Groovy type suffix. Underscore digit separators
+	// don't need handling here: both AST nodes already strip "_" themselves (see
+	// IBoxSimpleLiteral#removeUnderscores), the same generic support BoxLang's own literal syntax
+	// uses. Honestly documented, not silently overstated: stripping the suffix makes the literal
+	// PARSE, but doesn't force a distinct runtime type beyond what BoxLang's own length-based int/
+	// long/BigDecimal selection (see BoxIntegerLiteralTransformer) already produces for that many
+	// digits.
+	private static final String NUMERIC_SUFFIX_CHARS = "lLgGfFdDiI";
+
+	private String stripNumericSuffix( String text ) {
+		char last = text.charAt( text.length() - 1 );
+		return NUMERIC_SUFFIX_CHARS.indexOf( last ) >= 0 ? text.substring( 0, text.length() - 1 ) : text;
+	}
+
+	// HEX_LITERAL/BINARY_LITERAL's own trailing suffix set (see GroovyLexer.g4) - deliberately NOT
+	// the shared NUMERIC_SUFFIX_CHARS used by plain decimal literals below: "F"/"D" are valid HEX
+	// digits, so stripping them unconditionally would corrupt a literal like "0xFF" into "0xF".
+	private static final String RADIX_SUFFIX_CHARS = "lLgGiI";
+
+	// Converts a "0x1F_00L"/"0b1010_1010"-shaped literal into the plain decimal digit string
+	// BoxIntegerLiteral expects - BoxIntegerLiteralTransformer dispatches purely on that string's
+	// length, with no concept of a radix prefix, so hex/binary literals must be pre-converted to
+	// decimal text here rather than passed through as-is.
+	private BoxExpression buildRadixIntegerLiteral( String text, int prefixLength, int radix, Position pos, String src ) {
+		char	last	= text.charAt( text.length() - 1 );
+		String	trimmed	= RADIX_SUFFIX_CHARS.indexOf( last ) >= 0 ? text.substring( 0, text.length() - 1 ) : text;
+		String	body	= trimmed.substring( prefixLength ).replace( "_", "" );
+		var		value	= new java.math.BigInteger( body, radix );
+		return new BoxIntegerLiteral( value.toString(), pos, src );
 	}
 
 	@Override
@@ -691,8 +803,19 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 
 	@Override
 	public BoxExpression visitListLiteral( ListLiteralContext ctx ) {
-		List<BoxExpression> values = ctx.expression().stream().map( e -> e.accept( this ) ).toList();
+		List<BoxExpression> values = ctx.listElement().stream().map( this::buildListElement ).toList();
 		return new BoxArrayLiteral( values, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+	}
+
+	// STAR-prefixed spread list element (e.g. [*listA, *listB]) expands a collection's elements in
+	// place at literal-construction time - the exact same BoxSpreadExpression AST shape a spread
+	// call argument produces (see buildArgument above), so BoxArrayLiteralTransformer already knows
+	// how to expand it with no Groovy-specific handling needed downstream of this visitor.
+	private BoxExpression buildListElement( ListElementContext ctx ) {
+		if ( ctx instanceof SpreadListElementContext spreadCtx ) {
+			return new BoxSpreadExpression( spreadCtx.expression().accept( this ), tools.getPosition( spreadCtx ), tools.getSourceText( spreadCtx ) );
+		}
+		return ( ( PlainListElementContext ) ctx ).expression().accept( this );
 	}
 
 	@Override
@@ -702,10 +825,20 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 
 	@Override
 	public BoxExpression visitMapLiteral( MapLiteralContext ctx ) {
-		// BoxStructLiteral takes a flat alternating key/value list.
+		// BoxStructLiteral takes a flat alternating key/value list, except for a BoxSpreadExpression
+		// entry, which occupies a SINGLE slot (see BoxStructLiteral#isLiteral, which advances past a
+		// spread entry by 1, not 2) - the same shape a spread struct entry already produces
+		// elsewhere in the compiler, so no Groovy-specific handling is needed downstream of this
+		// visitor to expand it.
 		List<BoxExpression> values = new ArrayList<>();
-		for ( MapEntryContext entry : ctx.mapEntry() ) {
-			BoxExpression key;
+		for ( MapEntryOrSpreadContext entryCtx : ctx.mapEntryOrSpread() ) {
+			if ( entryCtx instanceof SpreadMapEntryContext spreadCtx ) {
+				values.add( new BoxSpreadExpression( spreadCtx.expression().accept( this ), tools.getPosition( spreadCtx ),
+				    tools.getSourceText( spreadCtx ) ) );
+				continue;
+			}
+			MapEntryContext	entry	= ( ( PlainMapEntryContext ) entryCtx ).mapEntry();
+			BoxExpression	key;
 			if ( entry.mapKey().IDENTIFIER() != null ) {
 				key = new BoxStringLiteral( entry.mapKey().IDENTIFIER().getText(), tools.getPosition( entry.mapKey() ),
 				    tools.getSourceText( entry.mapKey() ) );

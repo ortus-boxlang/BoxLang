@@ -127,10 +127,21 @@ public class GroovyParser extends AbstractParser {
 	 * script, and builds the corresponding {@code BoxClass}/{@code BoxScript} root node.
 	 */
 	private BoxNode toAst( CompilationUnitContext ctx ) {
-		var				pos			= getPosition( ctx );
-		var				src			= getSourceText( ctx );
-		List<BoxImport>	userImports	= buildImports( ctx.importStatement() );
-		List<BoxImport>	imports		= new ArrayList<>( defaultImports( pos ) );
+		var								pos					= getPosition( ctx );
+		var								src					= getSourceText( ctx );
+
+		// "import static" is partitioned out from ordinary imports entirely - "import static
+		// java.lang.Math.PI" doesn't name an importable class at all ("PI" is a field, not a
+		// class), so unlike a regular import, it's never added to the emitted BoxImport list.
+		// Its only effect is populating knownStaticClassNames (with the OWNING class, "Math" -
+		// not "PI") and, for a specific (non-wildcard) member, staticImportedMembers so bare
+		// references to that member can be rewritten to a qualified static access/invocation -
+		// see GroovyExpressionVisitor#visitIdentifierExpr/#buildCallExpression.
+		List<ImportStatementContext>	staticImportCtxs	= ctx.importStatement().stream().filter( i -> i.STATIC() != null ).toList();
+		List<ImportStatementContext>	regularImportCtxs	= ctx.importStatement().stream().filter( i -> i.STATIC() == null ).toList();
+
+		List<BoxImport>					userImports			= buildImports( regularImportCtxs );
+		List<BoxImport>					imports				= new ArrayList<>( defaultImports( pos ) );
 		imports.addAll( userImports );
 
 		// Bare, unqualified references to common java.lang/java.util/java.math classes (e.g.
@@ -147,7 +158,28 @@ public class GroovyParser extends AbstractParser {
 			    return fqn.substring( fqn.lastIndexOf( '.' ) + 1 );
 		    } )
 		    .collect( Collectors.toSet() ) );
+
+		java.util.Map<String, String> staticImportedMembers = new java.util.HashMap<>();
+		for ( ImportStatementContext staticImportCtx : staticImportCtxs ) {
+			String qualifiedName = staticImportCtx.qualifiedName().getText();
+			if ( staticImportCtx.STAR() != null ) {
+				// "import static java.lang.Math.*" - only the owning class is recognizable
+				// ("Math.max(...)" still resolves); enumerating every static member of an
+				// arbitrary class to support fully bare references isn't attempted, matching the
+				// same documented limitation regular wildcard imports already have.
+				knownStaticClassNames.add( qualifiedName.substring( qualifiedName.lastIndexOf( '.' ) + 1 ) );
+				continue;
+			}
+			String	owner		= qualifiedName.substring( 0, qualifiedName.lastIndexOf( '.' ) );
+			String	ownerSimple	= owner.substring( owner.lastIndexOf( '.' ) + 1 );
+			String	member		= qualifiedName.substring( qualifiedName.lastIndexOf( '.' ) + 1 );
+			String	boundName	= staticImportCtx.AS() != null ? staticImportCtx.IDENTIFIER().getText() : member;
+			knownStaticClassNames.add( ownerSimple );
+			staticImportedMembers.put( boundName, ownerSimple );
+		}
+
 		statementVisitor.getExpressionVisitor().setKnownStaticClassNames( knownStaticClassNames );
+		statementVisitor.getExpressionVisitor().setStaticImportedMembers( staticImportedMembers );
 
 		List<TopLevelDeclarationContext>	declarations	= ctx.topLevelDeclarations() == null
 		    ? new ArrayList<>()

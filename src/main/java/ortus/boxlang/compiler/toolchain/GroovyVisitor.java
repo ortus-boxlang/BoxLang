@@ -131,9 +131,45 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 	public BoxClass buildClass( ClassDeclarationContext ctx, List<BoxImport> imports ) {
 		var					pos			= tools.getPosition( ctx );
 		var					src			= tools.getSourceText( ctx );
-		List<BoxStatement>	body		= new ArrayList<>();
 		List<BoxAnnotation>	annotations	= buildInheritanceAnnotations( ctx, pos, src );
+		List<BoxStatement>	body		= buildClassMemberBody( ctx );
+		return new BoxClass( imports, body, annotations, List.of(), List.of(), pos, src, BoxSourceType.GROOVYSCRIPT );
+	}
 
+	// A class/interface/trait declaration found INSIDE another class's body (as opposed to the
+	// top-level, single-class-per-file case GroovyParser#toAst dispatches directly to buildClass())
+	// reaches here via classMember's generic visitor dispatch. Builds a BoxLocalClass instead of a
+	// top-level BoxClass - the exact same "named class defined inline, scoped to the enclosing
+	// file/class" AST node native BoxLang's own nested-class syntax already produces (see
+	// BoxVisitor#visitLocalClass) - so no new AST/runtime machinery is needed. This models a Java-
+	// style STATIC nested class (a peer type instantiated via "new Name()", with no implicit
+	// reference back to an outer instance); real Groovy's non-static inner classes (which capture
+	// an enclosing instance) are NOT modeled - the same bounded scope BoxLocalClass itself has.
+	@Override
+	public BoxNode visitClassDeclaration( ClassDeclarationContext ctx ) {
+		var					pos			= tools.getPosition( ctx );
+		var					src			= tools.getSourceText( ctx );
+		BoxIdentifier		name		= new BoxIdentifier( ctx.IDENTIFIER().getText(), tools.getPosition( ctx.IDENTIFIER().getSymbol() ),
+		    ctx.IDENTIFIER().getText() );
+		List<BoxAnnotation>	annotations	= buildInheritanceAnnotations( ctx, pos, src );
+		List<BoxStatement>	body		= buildClassMemberBody( ctx );
+		return new ortus.boxlang.compiler.ast.statement.BoxLocalClass( name, body, annotations, List.of(), List.of(), pos, src,
+		    BoxSourceType.GROOVYSCRIPT );
+	}
+
+	// "static { ... }" class initializer block - maps directly onto BoxLang's own native
+	// BoxStaticInitializer AST node, the exact same construct BoxGrammar's own "static { ... }"
+	// class member already produces (see BoxVisitor#visitStaticInitializer).
+	@Override
+	public BoxNode visitStaticInitializer( ortus.boxlang.parser.antlr.GroovyGrammar.StaticInitializerContext ctx ) {
+		var					pos		= tools.getPosition( ctx );
+		var					src		= tools.getSourceText( ctx );
+		List<BoxStatement>	body	= buildStatementList( ctx.block().blockStatements() );
+		return new ortus.boxlang.compiler.ast.BoxStaticInitializer( body, pos, src );
+	}
+
+	private List<BoxStatement> buildClassMemberBody( ClassDeclarationContext ctx ) {
+		List<BoxStatement> body = new ArrayList<>();
 		if ( ctx.classBody() != null ) {
 			java.util.Set<String> userDeclaredMethodNames = ctx.classBody().classMember().stream()
 			    .filter( m -> m.methodDeclaration() != null )
@@ -148,8 +184,7 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 				}
 			}
 		}
-
-		return new BoxClass( imports, body, annotations, List.of(), List.of(), pos, src, BoxSourceType.GROOVYSCRIPT );
+		return body;
 	}
 
 	/**
@@ -538,15 +573,27 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 	// have those forms either).
 	@Override
 	public BoxNode visitTupleDeclStatement( TupleDeclStatementContext ctx ) {
-		var									pos			= tools.getPosition( ctx );
-		var									src			= tools.getSourceText( ctx );
-		List<BoxArrayDestructuringBinding>	bindings	= ctx.IDENTIFIER().stream()
+		return buildDestructuringAssign( ctx.IDENTIFIER(), ctx.expression(), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+	}
+
+	// Groovy also allows re-assigning already-declared variables via the same tuple syntax, just
+	// without the leading "def" - e.g. "(a, b) = [b, a]" to swap two existing variables. Shares the
+	// exact same destructuring plumbing as the "def (...)" declaration form above; the only
+	// difference is the absence of DEF in the grammar alternative that reaches here.
+	@Override
+	public BoxNode visitDestructuringAssignStatement( ortus.boxlang.parser.antlr.GroovyGrammar.DestructuringAssignStatementContext ctx ) {
+		return buildDestructuringAssign( ctx.IDENTIFIER(), ctx.expression(), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+	}
+
+	private BoxNode buildDestructuringAssign( List<org.antlr.v4.runtime.tree.TerminalNode> identifiers,
+	    ortus.boxlang.parser.antlr.GroovyGrammar.ExpressionContext valueCtx, Position pos, String src ) {
+		List<BoxArrayDestructuringBinding>	bindings	= identifiers.stream()
 		    .map( id -> new BoxArrayDestructuringBinding(
 		        new BoxIdentifier( id.getText(), tools.getPosition( id.getSymbol() ), id.getText() ),
 		        null, null, false, tools.getPosition( id.getSymbol() ), id.getText() ) )
 		    .collect( Collectors.toList() );
 		BoxArrayDestructuringPattern		pattern		= new BoxArrayDestructuringPattern( bindings, pos, src );
-		BoxExpression						value		= ctx.expression().accept( expressionVisitor );
+		BoxExpression						value		= valueCtx.accept( expressionVisitor );
 		return new BoxExpressionStatement( new BoxAssignment( pattern, BoxAssignmentOperator.Equal, value, List.of(), pos, src ), pos, src );
 	}
 
