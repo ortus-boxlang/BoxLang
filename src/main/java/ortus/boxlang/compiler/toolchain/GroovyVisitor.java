@@ -136,6 +136,27 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 		return new BoxClass( imports, body, annotations, List.of(), List.of(), pos, src, BoxSourceType.GROOVYSCRIPT );
 	}
 
+	// Groovy's anonymous inner class (new Runnable() { void run() {...} }) - see
+	// GroovyExpressionVisitor#visitNewInstanceExpr for how the caller reaches this and why. Builds
+	// a synthetically-named BoxLocalClass exactly like an explicit nested classDeclaration would.
+	// <p>
+	// Deliberately does NOT emit an "implements" annotation for the named type: confirmed
+	// empirically that BoxClass's own "implements" resolution requires the resolved type to be a
+	// real BoxInterface (a BoxLang-native interface), and throws a ClassCastException for an
+	// arbitrary JDK interface like java.lang.Runnable - which is precisely the classic anonymous-
+	// class idiom this feature exists for. Since BoxLang is dynamically typed, formally declaring
+	// conformance isn't needed to call methods on the resulting object anyway (duck typing) - so
+	// the interface/superclass name from the "new" expression is intentionally unused here, and
+	// this is a plain BoxLocalClass with no declared supertype at all. It genuinely implementing a
+	// Java interface for real interop (passable to Java code expecting that exact type) would need
+	// wrapping in createDynamicProxy(), which is out of scope for this feature.
+	BoxStatement buildAnonymousLocalClass( BoxIdentifier name,
+	    ortus.boxlang.parser.antlr.GroovyGrammar.ClassBodyContext bodyCtx, Position pos, String src ) {
+		List<BoxStatement> body = bodyCtx == null ? new ArrayList<>() : buildClassMemberBody( bodyCtx );
+		return new ortus.boxlang.compiler.ast.statement.BoxLocalClass( name, body, List.of(), List.of(), List.of(), pos, src,
+		    BoxSourceType.GROOVYSCRIPT );
+	}
+
 	// A class/interface/trait declaration found INSIDE another class's body (as opposed to the
 	// top-level, single-class-per-file case GroovyParser#toAst dispatches directly to buildClass())
 	// reaches here via classMember's generic visitor dispatch. Builds a BoxLocalClass instead of a
@@ -169,21 +190,31 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 	}
 
 	private List<BoxStatement> buildClassMemberBody( ClassDeclarationContext ctx ) {
-		List<BoxStatement> body = new ArrayList<>();
-		if ( ctx.classBody() != null ) {
-			java.util.Set<String> userDeclaredMethodNames = ctx.classBody().classMember().stream()
-			    .filter( m -> m.methodDeclaration() != null )
-			    .map( m -> m.methodDeclaration().IDENTIFIER().getText().toLowerCase() )
-			    .collect( java.util.stream.Collectors.toSet() );
+		return ctx.classBody() == null ? new ArrayList<>() : buildClassMemberBody( ctx.classBody() );
+	}
 
-			for ( var member : ctx.classBody().classMember() ) {
-				body.add( ( BoxStatement ) member.accept( this ) );
-				if ( member.fieldDeclaration() != null ) {
-					body.addAll( buildFieldAccessors( member.fieldDeclaration().IDENTIFIER().getText(), userDeclaredMethodNames,
-					    tools.getPosition( member.fieldDeclaration() ), tools.getSourceText( member.fieldDeclaration() ) ) );
-				}
+	// Shared by every class-shaped body: a top-level class, an explicit nested classDeclaration,
+	// and a synthesized anonymous class - see buildAnonymousLocalClass. Drains any anonymous
+	// inner classes discovered anywhere within THIS body (including inside its own methods) and
+	// appends them as peer members here, once the body itself is fully built - this is the
+	// nearest enclosing scope that is never a function/closure/lambda, which is exactly what
+	// BoxLocalClass's own hard compiler rule requires (see GroovyExpressionVisitor#
+	// visitNewInstanceExpr for the full reasoning).
+	private List<BoxStatement> buildClassMemberBody( ortus.boxlang.parser.antlr.GroovyGrammar.ClassBodyContext classBodyCtx ) {
+		List<BoxStatement>		body					= new ArrayList<>();
+		java.util.Set<String>	userDeclaredMethodNames	= classBodyCtx.classMember().stream()
+		    .filter( m -> m.methodDeclaration() != null )
+		    .map( m -> m.methodDeclaration().IDENTIFIER().getText().toLowerCase() )
+		    .collect( java.util.stream.Collectors.toSet() );
+
+		for ( var member : classBodyCtx.classMember() ) {
+			body.add( ( BoxStatement ) member.accept( this ) );
+			if ( member.fieldDeclaration() != null ) {
+				body.addAll( buildFieldAccessors( member.fieldDeclaration().IDENTIFIER().getText(), userDeclaredMethodNames,
+				    tools.getPosition( member.fieldDeclaration() ), tools.getSourceText( member.fieldDeclaration() ) ) );
 			}
 		}
+		body.addAll( expressionVisitor.drainHoistedLocalClasses() );
 		return body;
 	}
 
@@ -821,6 +852,20 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 		var	pos	= tools.getPosition( ctx );
 		var	src	= tools.getSourceText( ctx );
 		return new BoxExpressionStatement( ctx.expression().accept( expressionVisitor ), pos, src );
+	}
+
+	// Groovy's paren-less "command-style" call (println "hi", apply plugin: 'groovy') - see
+	// GroovyParserControl#isCommandStyleCallStart for exactly which shapes this is (deliberately
+	// narrowly) gated to. Builds the exact same call node a parenthesized "name(args)" expression
+	// statement would, via the shared bare-name-call helper (which also handles a call to a
+	// statically-imported member correctly, same as the parenthesized form).
+	@Override
+	public BoxNode visitCommandCallStatement( ortus.boxlang.parser.antlr.GroovyGrammar.CommandCallStatementContext ctx ) {
+		var					pos		= tools.getPosition( ctx );
+		var					src		= tools.getSourceText( ctx );
+		List<BoxArgument>	args	= expressionVisitor.buildArguments( ctx.argumentList() );
+		BoxExpression		call	= expressionVisitor.buildBareNameCall( ctx.IDENTIFIER().getText(), args, pos, src );
+		return new BoxExpressionStatement( call, pos, src );
 	}
 
 }

@@ -248,4 +248,28 @@ public class GroovyClassExecutionTest {
 		assertThat( instance.getStaticScope().get( Key.of( "ready" ) ) ).isEqualTo( true );
 	}
 
+	@Test
+	@DisplayName( "anonymous inner class used inside a class's own method body" )
+	public void testAnonymousClassInsideMethodBody() {
+		// BoxLocalClass's hard compile-time rule against nesting inside a function body applies
+		// here too - the synthesized class is hoisted out to be a peer member of the ENCLOSING
+		// class itself (not the script top level, since there is no script here), which is a
+		// different hoisting target than testAnonymousClassInsideFunctionBody covers.
+		IBoxContext		context		= newContext();
+		IClassRunnable	instance	= instantiate( """
+		                                           class Outer {
+		                                             def makeRunnable() {
+		                                               def r = new Runnable() {
+		                                                 void run() {
+		                                                   return "hi from inside a class method"
+		                                                 }
+		                                               }
+		                                               return r.run()
+		                                             }
+		                                           }
+		                                           """, context );
+		Object			result		= instance.dereferenceAndInvoke( context, Key.of( "makeRunnable" ), new Object[] {}, false );
+		assertThat( result ).isEqualTo( "hi from inside a class method" );
+	}
+
 }

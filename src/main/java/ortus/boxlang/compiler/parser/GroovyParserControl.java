@@ -14,22 +14,87 @@
  */
 package ortus.boxlang.compiler.parser;
 
+import static ortus.boxlang.parser.antlr.GroovyGrammar.BINARY_LITERAL;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.COLON;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.FALSE;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.FLOAT_LITERAL;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.HEX_LITERAL;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.IDENTIFIER;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.INT_LITERAL;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.LBRACE;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.LBRACKET;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.NEW;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.NULL_LIT;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.OPEN_QUOTE;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.OPEN_TRIPLE_QUOTE;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.SLASHY_STRING;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.SQUOTE_STRING;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.SUPER;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.THIS;
+import static ortus.boxlang.parser.antlr.GroovyGrammar.TRUE;
+
+import java.util.Set;
+
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.TokenStream;
 
 /**
  * Base class for the generated {@code GroovyGrammar} parser (see {@code GroovyGrammar.g4}'s
  * {@code superClass} option). Mirrors {@link CFParserControl}'s role for the CF grammar.
- * <p>
- * Phase 1 of the Groovy grammar doesn't yet need any semantic predicates (unlike CFParserControl,
- * which resolves CFML's component-vs-identifier ambiguity), so this is currently a thin base.
- * Predicates for Groovy-specific ambiguities (e.g. command-style calls) will land here as the
- * grammar grows in later phases.
  */
 public abstract class GroovyParserControl extends Parser {
 
+	// The set of token types a command-style call's first argument is allowed to start with -
+	// see isCommandStyleCallStart's own header for why this set is deliberately narrow. STAR is
+	// deliberately NOT included here even though it marks a spread argument in the ordinary
+	// "argument" rule: "IDENTIFIER * expr" is ordinary multiplication (e.g. a closure body's
+	// "it * 2"), which is vastly more common than a paren-less command-style call whose sole
+	// argument is a spread - confirmed the hard way, as a real regression caught by this branch's
+	// own test suite (every closure using "it * 2"/similar was being misparsed as a command call
+	// with a spread argument). A spread-only command-style call is simply unsupported.
+	private static final Set<Integer> commandArgStartTokens = Set.of(
+	    SQUOTE_STRING, OPEN_QUOTE, OPEN_TRIPLE_QUOTE, SLASHY_STRING,
+	    INT_LITERAL, FLOAT_LITERAL, HEX_LITERAL, BINARY_LITERAL,
+	    TRUE, FALSE, NULL_LIT, THIS, SUPER,
+	    LBRACE, LBRACKET, NEW );
+
 	public GroovyParserControl( TokenStream input ) {
 		super( input );
+	}
+
+	/**
+	 * Gates Groovy's paren-less "command-style" call statement (e.g. {@code println "hi"},
+	 * {@code apply plugin: 'groovy'}) against the classic Groovy grammar ambiguity: a bare
+	 * "IDENTIFIER IDENTIFIER" is genuinely indistinguishable, with no further context, from a
+	 * Java-style typed local declaration ("Type varName" - already claimed by this grammar's own
+	 * {@code varDeclStatement}), and a leading unary {@code +}/{@code -} on the argument would
+	 * collide with reading the whole thing as a single additive/unary expression statement
+	 * instead (e.g. "x + 1" could otherwise misparse as calling "x" with argument "+1").
+	 * <p>
+	 * Deliberately bounded rather than generally solved (real Groovy resolves this with full
+	 * semantic predicates informed by symbol resolution neither this parser nor most hand-written
+	 * single-pass Groovy grammars attempt): only recognized when the argument starts with
+	 * something that can NEVER also be a second bare identifier or a unary-operator-prefixed
+	 * expression - a literal (string/number/boolean/null), {@code this}/{@code super}, a
+	 * closure/list/map literal, {@code new}, a spread argument, or a "name: value" named
+	 * argument. A bare-identifier argument (e.g. {@code println x}) is a documented, narrower gap
+	 * left unsupported for exactly this reason.
+	 *
+	 * @param input the token input stream
+	 *
+	 * @return true if this should be read as a command-style call statement
+	 */
+	protected boolean isCommandStyleCallStart( TokenStream input ) {
+		if ( input.LT( 1 ).getType() != IDENTIFIER ) {
+			return false;
+		}
+		int firstArgType = input.LT( 2 ).getType();
+		if ( commandArgStartTokens.contains( firstArgType ) ) {
+			return true;
+		}
+		// "name: value" named argument - the argument itself is a bare identifier, but only when
+		// immediately followed by a colon, which a second declaration-target identifier never is.
+		return firstArgType == IDENTIFIER && input.LT( 3 ).getType() == COLON;
 	}
 
 }

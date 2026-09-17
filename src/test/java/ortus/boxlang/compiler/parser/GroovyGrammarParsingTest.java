@@ -246,6 +246,32 @@ public class GroovyGrammarParsingTest {
 	}
 
 	@Test
+	@DisplayName( "annotations parse (and are discarded) on classes, methods, fields, constructors, and parameters" )
+	public void testAnnotationsParse() {
+		assertParses( """
+		              @Deprecated
+		              @SuppressWarnings("unchecked")
+		              class Foo {
+		                @Deprecated
+		                def name = "x"
+
+		                @Override
+		                String toString() {
+		                  return name
+		                }
+
+		                @Deprecated
+		                Foo() {
+		                }
+
+		                def greet(@Deprecated String who) {
+		                  return "hi " + who
+		                }
+		              }
+		              """ );
+	}
+
+	@Test
 	@DisplayName( "tuple declaration, requires at least two names" )
 	public void testTupleDeclStatement() {
 		assertParses( "def (a, b) = [1, 2]\n" );
@@ -341,16 +367,33 @@ public class GroovyGrammarParsingTest {
 	}
 
 	@Test
-	@DisplayName( "bare command-style call is deliberately unsupported in Phase 1" )
-	public void testBareCommandStyleCallNotYetSupported() {
-		// General command-style calls (identifier directly followed by an argument, no
-		// parens/dot - e.g. bare `println x`) are intentionally out of scope for Phase 1.
-		// Naively adding them creates a real ambiguity against unary prefix operators
-		// (`x + 1` could misparse as calling `x` with argument `+1`), which real Groovy
-		// resolves with semantic predicates (SemanticPredicates in the official grammar).
-		// This test pins the gap down as a known limitation rather than a silent one, and
-		// should start failing (in a good way) once Phase 2 adds command-call support.
-		assertFailsToParse( "println \"done\"\n" );
+	@DisplayName( "command-style call (no parens) with a literal, list, closure, or named argument" )
+	public void testCommandStyleCall() {
+		assertParses( "println \"done\"\n" );
+		assertParses( "println 42\n" );
+		assertParses( "println true\n" );
+		assertParses( "println [1, 2, 3]\n" );
+		assertParses( "apply plugin: \"groovy\"\n" );
+		assertParses( "println \"a\", \"b\"\n" );
+	}
+
+	@Test
+	@DisplayName( "command-style call ambiguities resolve in favor of the pre-existing grammar" )
+	public void testCommandStyleCallDoesNotShadowExistingAmbiguities() {
+		// A bare "IDENTIFIER IDENTIFIER" is genuinely ambiguous with a typed local declaration
+		// ("Type varName") - GroovyParserControl#isCommandStyleCallStart deliberately never
+		// recognizes a second bare identifier as a command-call argument, so this still parses as
+		// (and only as) a typed declaration, exactly as before this feature existed.
+		assertParses( "String bar\n" );
+		// A leading unary +/- must still read as a single arithmetic expression statement, not a
+		// command-style call with a unary-prefixed argument.
+		assertParses( "x + 1\n" );
+		assertParses( "x - 1\n" );
+		// A bare identifier argument (no literal/named-arg shape) is a documented, narrower gap -
+		// still unsupported as a command call, on purpose, same reasoning as the ambiguity above.
+		// This still parses, but pre-existing-grammar's own way: as a (valid, if unusual)
+		// varDeclStatement declaring "x" with type name "println" - not a command call at all.
+		assertParses( "println x\n" );
 	}
 
 	/**

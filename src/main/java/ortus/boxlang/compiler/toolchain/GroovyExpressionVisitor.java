@@ -38,6 +38,7 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
@@ -239,16 +240,24 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 			return buildMethodInvocation( memberCtx, args, pos, src );
 		}
 		if ( callee instanceof PrimaryExprContext primaryCtx && primaryCtx.primary() instanceof IdentifierExprContext idCtx ) {
-			String	name		= idCtx.IDENTIFIER().getText();
-			String	ownerClass	= staticImportedMembers.get( name );
-			if ( ownerClass != null ) {
-				BoxIdentifier	nameExpr	= new BoxIdentifier( name, pos, name );
-				BoxIdentifier	ownerExpr	= new BoxIdentifier( ownerClass, pos, ownerClass );
-				return new BoxStaticMethodInvocation( nameExpr, ownerExpr, args, pos, src );
-			}
-			return new BoxFunctionInvocation( name, args, pos, src );
+			return buildBareNameCall( idCtx.IDENTIFIER().getText(), args, pos, src );
 		}
 		return new BoxExpressionInvocation( callee.accept( this ), args, pos, src );
+	}
+
+	// A call whose target is a bare name, not a dotted/computed expression - either an ordinary
+	// "expression syntax" call (foo(...)) or Groovy's paren-less command-style call
+	// (GroovyVisitor#visitCommandCallStatement). Both need the exact same "is this actually a
+	// bare reference to a statically-imported member" rewrite (see setStaticImportedMembers), so
+	// it's shared here rather than duplicated.
+	BoxExpression buildBareNameCall( String name, List<BoxArgument> args, Position pos, String src ) {
+		String ownerClass = staticImportedMembers.get( name );
+		if ( ownerClass != null ) {
+			BoxIdentifier	nameExpr	= new BoxIdentifier( name, pos, name );
+			BoxIdentifier	ownerExpr	= new BoxIdentifier( ownerClass, pos, ownerClass );
+			return new BoxStaticMethodInvocation( nameExpr, ownerExpr, args, pos, src );
+		}
+		return new BoxFunctionInvocation( name, args, pos, src );
 	}
 
 	// Groovy collection methods that exist on BoxLang's Array type under a different member
@@ -281,7 +290,13 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 
 	private BoxExpression buildMethodInvocation( MemberExprContext memberCtx, List<BoxArgument> args, Position pos, String src ) {
 		if ( memberCtx.METHOD_POINTER() != null ) {
-			throw new ExpressionException( "Method pointer expressions (.&) are not yet supported by the Groovy parser", pos, src );
+			// "Type.&method(args)" - immediately calling the method-pointer expression itself,
+			// rather than using it as a standalone value (e.g. passed to .collect(...)) - isn't
+			// supported. Rejecting explicitly rather than silently treating ".&" as a plain "."
+			// here, which would drop the method-pointer semantics entirely without complaint.
+			throw new ExpressionException(
+			    "Calling a method pointer expression (.&) directly isn't supported - use it as a standalone value instead, e.g. \"list.collect(String.&toUpperCase)\"",
+			    pos, src );
 		}
 		BoxIdentifier nameExpr = aliasedIdentifier( memberCtx.IDENTIFIER() );
 		if ( memberCtx.SPREAD_DOT() != null ) {
@@ -308,7 +323,7 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		var	pos	= tools.getPosition( ctx );
 		var	src	= tools.getSourceText( ctx );
 		if ( ctx.METHOD_POINTER() != null ) {
-			throw new ExpressionException( "Method pointer expressions (.&) are not yet supported by the Groovy parser", pos, src );
+			return buildMethodPointer( ctx.expression(), identifier( ctx.IDENTIFIER() ), pos, src );
 		}
 		if ( ctx.SPREAD_DOT() != null ) {
 			BoxExpression	collection		= ctx.expression().accept( this );
@@ -339,6 +354,41 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 
 	private BoxIdentifier itIdentifier( Position pos ) {
 		return new BoxIdentifier( "it", pos, "it" );
+	}
+
+	// Groovy's method pointer operator (Type.&methodName / instance.&methodName) produces a
+	// standalone invokable value. Two distinct forms, both DELIBERATELY scoped to forwarding a
+	// SINGLE argument to the target method (the receiver's own no-further-args call, in the
+	// unbound case) - covering the overwhelmingly common "each/collect/find(x.&method)" idiom,
+	// where the callback receives the element as its argument:
+	// - Unbound (base is a known static class name, e.g. String.&toUpperCase): reuses BoxLang's
+	// own native BoxFunctionalMemberAccess AST node - the exact ".methodName" functional-member-
+	// access value BoxLang's own grammar already supports (see BoxExpressionVisitor#
+	// visitExprHeadless) - directly, with no new AST/runtime machinery. Its own documented
+	// contract (FunctionalMemberAccess#_invoke: "No args will be passed to the member method")
+	// is exactly this same one-argument-only scope.
+	// - Bound (any other base expression, e.g. myList.&add): the receiver is fixed; built as a
+	// one-parameter closure forwarding just that parameter. A GENERAL forward-everything version
+	// (collecting the whole "arguments" scope, mirroring GroovyVisitor#withVarargsPreamble) was
+	// tried and found to break the common case: BoxLang's own ArrayEach invokes a non-strict
+	// callback with THREE arguments (element, index, array) - not just the element - so
+	// forwarding everything silently turned "myList.each(other.&add)" into "other.add(item,
+	// index, array)", which no real method matches. Scoping to one argument sidesteps that
+	// entirely and matches the unbound case's own boundary.
+	private BoxExpression buildMethodPointer( ExpressionContext baseCtx, BoxIdentifier methodName, Position pos, String src ) {
+		BoxIdentifier staticBase = staticClassBase( baseCtx );
+		if ( staticBase != null ) {
+			return new BoxFunctionalMemberAccess( methodName.getName(), null, pos, src );
+		}
+		return buildBoundMethodPointer( baseCtx.accept( this ), methodName, pos, src );
+	}
+
+	private BoxExpression buildBoundMethodPointer( BoxExpression receiver, BoxIdentifier methodName, Position pos, String src ) {
+		BoxArgumentDeclaration	itParam	= new BoxArgumentDeclaration( false, "Any", "it", null, List.of(), List.of(), pos, src );
+		BoxExpression			call	= new BoxMethodInvocation( methodName, receiver, List.of( new BoxArgument( itIdentifier( pos ), pos, src ) ), false,
+		    true, pos, src );
+		BoxStatement			body	= new BoxStatementBlock( List.of( new BoxReturn( call, pos, src ) ), pos, src );
+		return new BoxClosure( new ArrayList<>( List.of( itParam ) ), List.of(), body, pos, src );
 	}
 
 	@Override
@@ -426,8 +476,25 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 
 	@Override
 	public BoxExpression visitShiftExpr( ShiftExprContext ctx ) {
-		var op = ctx.LSHIFT() != null ? BoxBinaryOperator.BitwiseSignedLeftShift : BoxBinaryOperator.BitwiseSignedRightShift;
-		return binary( ctx.expression( 0 ), op, ctx.expression( 1 ), ctx );
+		if ( ctx.LSHIFT() != null ) {
+			// Groovy overloads "<<" for collection append (list << item), in addition to Java's
+			// numeric left-shift - runtime type dispatch (the collection is virtually always a
+			// plain variable, not a literal, so there's no syntactic shortcut like "+"'s string-
+			// literal check above) via a dedicated Groovy-only operator class, rather than
+			// changing BitwiseSignedLeftShift itself, which every BoxLang dialect's own "<<"
+			// shares - see GroovyLeftShiftOrAppend's own header for the full reasoning.
+			var					pos			= tools.getPosition( ctx );
+			var					src			= tools.getSourceText( ctx );
+			BoxExpression		left		= ctx.expression( 0 ).accept( this );
+			BoxExpression		right		= ctx.expression( 1 ).accept( this );
+			BoxExpression		classRef	= new BoxFQN( "ortus.boxlang.runtime.operators.GroovyLeftShiftOrAppend", pos,
+			    "ortus.boxlang.runtime.operators.GroovyLeftShiftOrAppend" );
+			List<BoxArgument>	args		= List.of(
+			    new BoxArgument( left, left.getPosition(), left.getSourceText() ),
+			    new BoxArgument( right, right.getPosition(), right.getSourceText() ) );
+			return new BoxStaticMethodInvocation( new BoxIdentifier( "invoke", pos, "invoke" ), classRef, args, pos, src );
+		}
+		return binary( ctx.expression( 0 ), BoxBinaryOperator.BitwiseSignedRightShift, ctx.expression( 1 ), ctx );
 	}
 
 	@Override
@@ -873,11 +940,54 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 
 	@Override
 	public BoxExpression visitNewInstanceExpr( NewInstanceExprContext ctx ) {
-		var					pos			= tools.getPosition( ctx );
-		var					src			= tools.getSourceText( ctx );
-		BoxExpression		typeExpr	= toTypeExpression( ctx.typeName() );
-		List<BoxArgument>	args		= buildArguments( ctx.argumentList() );
-		return new BoxNew( null, typeExpr, args, pos, src );
+		var					pos		= tools.getPosition( ctx );
+		var					src		= tools.getSourceText( ctx );
+		List<BoxArgument>	args	= buildArguments( ctx.argumentList() );
+		if ( ctx.LBRACE() == null ) {
+			return new BoxNew( null, toTypeExpression( ctx.typeName() ), args, pos, src );
+		}
+		// Anonymous inner class (new Runnable() { void run() {...} }). BoxLocalClass has a hard
+		// compiler-level rule (BoxLocalClassTransformer, both backends): nesting one inside a
+		// function/closure/lambda body is a compile-time error, everywhere, not just a Groovy
+		// parser choice - and an anonymous class is almost always written INSIDE a method body.
+		// So the synthesized class can never stay where it's written: it's hoisted out to the
+		// nearest enclosing class body (or the script's own top level, for a top-level function)
+		// via GroovyVisitor#buildClassMemberBody's draining, and only a "new <synthetic-name>(...)"
+		// is left behind at this expression's own position.
+		// Scoped to (verified reliable) ONE anonymous class per nearest enclosing scope. A second
+		// one landing in the SAME drained batch was found, empirically, to break the FIRST class's
+		// own runtime resolution too (ClassNotFoundBoxLangException on a class that resolves fine
+		// on its own) - confirmed to reproduce identically regardless of where the two "new"
+		// expressions are written (same statement list, separate functions, even when only one of
+		// the two results is actually used), and NOT present in equivalent native BoxLang source
+		// with the same class-naming pattern, so it's specific to how this hoisting interacts with
+		// dynamic local-class resolution for 2+ siblings. Rather than ship that silently, a second
+		// anonymous class in the same scope is a hard, explicit error - use an explicit named
+		// nested class (this branch's own class/interface/static-init support) instead.
+		if ( !hoistedLocalClasses.isEmpty() ) {
+			throw new ExpressionException(
+			    "Only one anonymous inner class (\"new Type() { ... }\") is supported per enclosing scope in this Groovy parser - "
+			        + "a second one was found reachable from the same class/script. Use an explicit named nested class instead.",
+			    pos, src );
+		}
+		String			anonymousName	= "__GroovyAnon" + ( ++anonymousClassCounter );
+		BoxIdentifier	nameId			= new BoxIdentifier( anonymousName, pos, anonymousName );
+		hoistedLocalClasses.add( statementVisitor.buildAnonymousLocalClass( nameId, ctx.classBody(), pos, src ) );
+		return new BoxNew( null, new BoxFQN( anonymousName, pos, anonymousName ), args, pos, src );
+	}
+
+	private int							anonymousClassCounter	= 0;
+	private final List<BoxStatement>	hoistedLocalClasses		= new ArrayList<>();
+
+	/**
+	 * Drains (returns and clears) every anonymous inner class discovered since the last drain -
+	 * called by GroovyVisitor#buildClassMemberBody once it finishes building a given class body,
+	 * so each anonymous class lands as a peer member of its nearest enclosing class/script scope.
+	 */
+	public List<BoxStatement> drainHoistedLocalClasses() {
+		List<BoxStatement> drained = new ArrayList<>( hoistedLocalClasses );
+		hoistedLocalClasses.clear();
+		return drained;
 	}
 
 	// -----------------------------------------------------------------------------------------

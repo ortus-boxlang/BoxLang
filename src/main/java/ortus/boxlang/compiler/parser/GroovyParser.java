@@ -206,6 +206,10 @@ public class GroovyParser extends AbstractParser {
 				statements.add( ( BoxStatement ) decl.statement().accept( statementVisitor ) );
 			}
 		}
+		// Any anonymous inner class discovered while building the above (even nested inside a
+		// top-level function's own body) is hoisted here, at the script's own top level - see
+		// GroovyExpressionVisitor#visitNewInstanceExpr for why it can never stay where it's written.
+		statements.addAll( statementVisitor.getExpressionVisitor().drainHoistedLocalClasses() );
 		return new ortus.boxlang.compiler.ast.BoxScript( statements, pos, src, BoxSourceType.GROOVYSCRIPT );
 	}
 

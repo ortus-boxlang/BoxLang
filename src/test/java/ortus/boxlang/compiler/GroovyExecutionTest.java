@@ -831,4 +831,136 @@ public class GroovyExecutionTest {
 		assertThat( result.toString() ).isEqualTo( "[4, 6, 8]" );
 	}
 
+	// -----------------------------------------------------------------------------------------
+	// Round 3: annotations, "<<" append, method pointers, curry()
+
+	@Test
+	@DisplayName( "'<<' appends to a collection and returns it for chaining" )
+	public void testLeftShiftAppendsToCollection() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def list = [1, 2]\nlist << 3 << 4\nreturn list\n", context );
+		assertThat( result.toString() ).isEqualTo( "[1, 2, 3, 4]" );
+	}
+
+	@Test
+	@DisplayName( "'<<' is still numeric left-shift for numbers" )
+	public void testLeftShiftStillNumericForNumbers() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "return 1 << 3", context );
+		assertThat( result.toString() ).isEqualTo( "8" );
+	}
+
+	@Test
+	@DisplayName( "unbound method pointer (Type.&method) used as a collection-mapping callback" )
+	public void testUnboundMethodPointer() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def words = [\"ab\", \"cd\"]\nreturn words.collect(String.&toUpperCase)\n", context );
+		assertThat( result.toString() ).isEqualTo( "[AB, CD]" );
+	}
+
+	@Test
+	@DisplayName( "bound method pointer (instance.&method) forwards every argument" )
+	public void testBoundMethodPointer() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def sums = []\n[1, 2, 3].each(sums.&add)\nreturn sums\n", context );
+		assertThat( result.toString() ).isEqualTo( "[1, 2, 3]" );
+	}
+
+	@Test
+	@DisplayName( "closure.curry() binds leading arguments, callable with the rest later" )
+	public void testClosureCurry() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def add = { a, b -> a + b }\n"
+		        + "def add5 = add.curry(5)\n"
+		        + "return add5(3)\n",
+		    context );
+		assertThat( result.toString() ).isEqualTo( "8" );
+	}
+
+	@Test
+	@DisplayName( "command-style call (no parens) invokes a user-defined function" )
+	public void testCommandStyleCallExecutesFunctionCall() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def captured = null\n"
+		        + "def capture(msg) { captured = msg }\n"
+		        + "capture \"hello\"\n"
+		        + "return captured\n",
+		    context );
+		assertThat( result ).isEqualTo( "hello" );
+	}
+
+	@Test
+	@DisplayName( "annotations are accepted (and discarded) at runtime, not just at parse time" )
+	public void testAnnotationsAreNoOpAtRuntime() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "@Deprecated\n"
+		        + "def greet(@Deprecated String name) {\n"
+		        + "  return \"hi \" + name\n"
+		        + "}\n"
+		        + "return greet(\"world\")\n",
+		    context );
+		assertThat( result ).isEqualTo( "hi world" );
+	}
+
+	@Test
+	@DisplayName( "anonymous inner class at script top level" )
+	public void testAnonymousClassAtTopLevel() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def r = new Runnable() {\n"
+		        + "  void run() {\n"
+		        + "    return \"ran\"\n"
+		        + "  }\n"
+		        + "}\n"
+		        + "return r.run()\n",
+		    context );
+		assertThat( result ).isEqualTo( "ran" );
+	}
+
+	@Test
+	@DisplayName( "anonymous inner class used inside a top-level function body" )
+	public void testAnonymousClassInsideFunctionBody() {
+		// The interesting part: BoxLocalClass has a hard compile-time rule against being nested
+		// inside a function/closure/lambda body (see BoxLocalClassTransformer), so the synthesized
+		// class is hoisted out to the script's own top level - this proves that hoisting actually
+		// works, not just the "already at top level" case above.
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def makeRunnable() {\n"
+		        + "  def r = new Runnable() {\n"
+		        + "    void run() {\n"
+		        + "      return \"hi\"\n"
+		        + "    }\n"
+		        + "  }\n"
+		        + "  return r.run()\n"
+		        + "}\n"
+		        + "return makeRunnable()\n",
+		    context );
+		assertThat( result ).isEqualTo( "hi" );
+	}
+
+	@Test
+	@DisplayName( "a second anonymous class in the same scope is a documented, explicit error" )
+	public void testSecondAnonymousClassInSameScopeIsRejected() {
+		// Investigated and found, empirically, that a second anonymous class hoisted into the
+		// same scope breaks even the FIRST class's own runtime resolution (a
+		// ClassNotFoundBoxLangException on a class that resolves fine when it's the only one) -
+		// reproduces the same way regardless of where the two "new" expressions are written, and
+		// isn't present in equivalent native BoxLang source with the same class-naming pattern, so
+		// it's specific to this hoisting mechanism's interaction with dynamic local-class
+		// resolution for 2+ siblings, not a general BoxLang limitation. Rather than ship that
+		// silently, this is a hard, explicit error instead.
+		IBoxContext	context	= newContext();
+		var			thrown	= org.junit.jupiter.api.Assertions.assertThrows( RuntimeException.class,
+		    () -> run(
+		        "def a = new Runnable() { void run() { return \"a\" } }\n"
+		            + "def b = new Runnable() { void run() { return \"b\" } }\n"
+		            + "return a.run() + b.run()\n",
+		        context ) );
+		assertThat( thrown.getMessage() ).contains( "Only one anonymous inner class" );
+	}
+
 }

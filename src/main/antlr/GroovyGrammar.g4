@@ -68,10 +68,35 @@ qualifiedName: IDENTIFIER ( DOT IDENTIFIER )*
     ;
 
 // -----------------------------------------------------------------------------------------
+// Annotations
+
+// Parsed and then deliberately DISCARDED - see GroovyVisitor's class/method/field/parameter
+// builders, none of which read ctx.annotation() at all. A real semantic AST-transform (making
+// @ToString/@EqualsAndHashCode/@Immutable actually generate code, the way real Groovy's AST
+// transform annotations do) is out of scope; this exists purely so common annotations
+// (@Override, @Deprecated, @Test, @Grab, JUnit/Spock annotations, etc.) don't cause a hard parse
+// error, mirroring the existing "static" modifier's documented no-op treatment on fields.
+annotation: AT qualifiedName ( LPAREN annotationArgumentList? RPAREN )?
+    ;
+
+// Allows an annotation to sit on its own line before the thing it annotates (the common style,
+// e.g. "@Override\nString toString() {...}") without that newline ending the statement early -
+// same NL-suppression idea as everywhere else "sep?" appears mid-construct.
+annotationClause: ( annotation sep? )*
+    ;
+
+annotationArgumentList: annotationArgument ( COMMA annotationArgument )*
+    ;
+
+annotationArgument: IDENTIFIER ASSIGN expression                                 # namedAnnotationArgument
+    | expression                                                                 # positionalAnnotationArgument
+    ;
+
+// -----------------------------------------------------------------------------------------
 // Classes / interfaces
 
 classDeclaration:
-    classModifier* ( CLASS | INTERFACE | TRAIT ) IDENTIFIER
+    annotationClause classModifier* ( CLASS | INTERFACE | TRAIT ) IDENTIFIER
     ( EXTENDS typeName )? ( IMPLEMENTS typeList )?
     LBRACE sep? classBody? RBRACE
 ;
@@ -100,17 +125,17 @@ classMember: constructorDeclaration
 staticInitializer: STATIC block
     ;
 
-fieldDeclaration: classModifier* ( typeName | DEF ) IDENTIFIER ( ASSIGN expression )?
+fieldDeclaration: annotationClause classModifier* ( typeName | DEF ) IDENTIFIER ( ASSIGN expression )?
     ;
 
 // block is optional to allow abstract methods and interface method signatures, which have
 // no body (e.g. "def area()" inside an interface, or "abstract def area()" in a class).
 methodDeclaration:
-    classModifier* ( typeName | DEF | VOID )? IDENTIFIER LPAREN parameterList? RPAREN
+    annotationClause classModifier* ( typeName | DEF | VOID )? IDENTIFIER LPAREN parameterList? RPAREN
     ( THROWS typeList )? block?
 ;
 
-constructorDeclaration: classModifier* IDENTIFIER LPAREN parameterList? RPAREN block
+constructorDeclaration: annotationClause classModifier* IDENTIFIER LPAREN parameterList? RPAREN block
     ;
 
 parameterList: parameter ( COMMA parameter )*
@@ -120,7 +145,7 @@ parameterList: parameter ( COMMA parameter )*
 // on the LAST parameter of a parameterList; see GroovyVisitor#buildVarargsPreamble for exactly
 // what this desugars to. Grammar-wise it's allowed on any parameter, same as real Groovy leaves
 // putting it somewhere else as a caller-beware situation rather than a hard parse error.
-parameter: ( typeName | DEF )? ELLIPSIS? IDENTIFIER ( ASSIGN expression )?
+parameter: annotation* ( typeName | DEF )? ELLIPSIS? IDENTIFIER ( ASSIGN expression )?
     ;
 
 typeList: typeName ( COMMA typeName )*
@@ -154,6 +179,7 @@ statement: block                                                                
     | CONTINUE IDENTIFIER?                                                        # continueStatement
     | SWITCH LPAREN expression RPAREN LBRACE sep? switchCase* RBRACE              # switchStatement
     | ASSERT expression ( COLON expression )?                                     # assertStatement
+    | { isCommandStyleCallStart( _input ) }? IDENTIFIER argumentList              # commandCallStatement
     | expression                                                                  # exprStatement
     ;
 
@@ -255,7 +281,11 @@ primary: IDENTIFIER                                                             
     | listOrMapLiteral                                                            # collectionExpr
     | closure                                                                     # closureLiteralExpr
     | LPAREN expression RPAREN                                                    # parenExpr
-    | NEW typeName LPAREN argumentList? RPAREN                                    # newInstanceExpr
+    // The trailing class body (anonymous inner class, e.g. "new Runnable() { void run() {...} }")
+    // is optional and ungrouped-labeled deliberately - see GroovyExpressionVisitor#
+    // visitNewInstanceExpr, which checks ctx.LBRACE() directly to tell an anonymous class (body
+    // present, even if empty) from a plain "new Type(args)" (no body at all).
+    | NEW typeName LPAREN argumentList? RPAREN ( LBRACE sep? classBody? RBRACE )?  # newInstanceExpr
     ;
 
 stringOrGString: gstring
