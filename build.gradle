@@ -500,6 +500,9 @@ shadowJar {
 	archiveBaseName = "boxlang"
 	archiveClassifier = ""
     mergeServiceFiles()
+	// Exclude the IBoxpiler service file from merging — we provide a filtered
+	// version below that strips out boxpiler lines not included in this JAR
+	exclude 'META-INF/services/ortus.boxlang.compiler.IBoxpiler'
 
 	// Antlr unnecessary files
 	exclude "com/ibm/icu/**"
@@ -518,6 +521,22 @@ shadowJar {
 		exclude( dependency( "ch.qos.logback:.*:.*" ) )
 		exclude( dependency( "com.zaxxer:.*:.*" ) )
 		exclude( dependency( "com.fasterxml.jackson.jr:.*:.*" ) )
+	}
+
+	// Add filtered service file with only ASMBoxpiler and NoOpBoxpiler
+	from(file("$buildDir/tmp/shadowJar-services")) {
+		into('META-INF')
+	}
+
+	doFirst {
+		// Create filtered service file from the source, stripping JavaBoxpiler
+		def servicesDir = file("$buildDir/tmp/shadowJar-services/services")
+		servicesDir.mkdirs()
+		def serviceFile = file("$buildDir/tmp/shadowJar-services/services/ortus.boxlang.compiler.IBoxpiler")
+		serviceFile.text = project.file('src/main/resources/META-INF/services/ortus.boxlang.compiler.IBoxpiler').text
+			.readLines()
+			.findAll { !it.contains('JavaBoxpiler') }
+			.join('\n') + '\n'
 	}
 }
 
