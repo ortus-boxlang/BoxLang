@@ -6,7 +6,7 @@
 - The main entry point is `ortus.boxlang.runtime.BoxRunner` (see `build.gradle: mainClass`) for the CLI.
 - The runtime is modular, allowing for extensible components, functions, and services.
 - Core runtime logic is in `src/main/java/ortus/boxlang/runtime/`.
-- Language parsing uses ANTLR v4 with **multi-parser capabilities** supporting BoxLang, CFML, SQL, and DocBlock grammars.
+- Language parsing uses ANTLR v4 with **multi-parser capabilities** supporting BoxLang, CFML, SQL, DocBlock, and (Phase 1/2, in progress) Groovy grammars.
 - Built-in services (e.g., `ComponentService`, `FunctionService`) are in `runtime/services/` and auto-registered via the `IService` interface.
 - Components and functions are extensible via annotations (`@BoxComponent`) and service registration.
 - Modules (see `modules/`) can provide BIFs, interceptors, tags, and Java libs, and are loaded with their own classloader.
@@ -20,6 +20,8 @@
   - `CFGrammar.g4` / `CFLexer.g4` - CFML compatibility parser
   - `SQLGrammar.g4` / `SQLLexer.g4` - SQL query parser
   - `DocGrammar.g4` / `DocLexer.g4` - Documentation/JavaDoc parser
+  - `GroovyGrammar.g4` / `GroovyLexer.g4` - Groovy compatibility parser (in progress: core
+    syntax subset only - see the file headers for exact scope and known gaps)
   - Custom lexer extensions in `compiler/parser/` (e.g., `BoxLexerCustom.java`)
 
 - **`java/ortus/boxlang/compiler/`** - Compilation and transpilation layer:
@@ -237,6 +239,9 @@ BoxLang has a collection of domain-specific agent skills located in `.agents/ski
   - **CFParser** - CFML/ColdFusion compatibility mode
   - **SQLParser** - SQL query parsing for query manipulation
   - **DocParser** - JavaDoc-style documentation parsing
+  - **GroovyParser** - Groovy compatibility mode (`.groovy` files / `BoxSourceType.GROOVYSCRIPT`;
+    in progress - parses into the same shared AST as CFParser/BoxParser, so the rest of the
+    compiler pipeline (asmboxpiler/javaboxpiler) needs no Groovy-specific handling)
   - All parsers share common infrastructure via `AbstractParser` and custom lexer extensions
   - Parser selection is automatic based on file extension and source type detection
   - Generated parsers are in `build/generated-src/antlr/` and extended in `compiler/parser/`

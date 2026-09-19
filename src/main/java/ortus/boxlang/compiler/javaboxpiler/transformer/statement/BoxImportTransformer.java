@@ -61,24 +61,34 @@ public class BoxImportTransformer extends AbstractTransformer {
 		if ( boxImport.getExpression() == null ) {
 			return new EmptyStmt();
 		}
-		Expression			namespace	= ( Expression ) transpiler.transform( boxImport.getExpression(), TransformerContext.RIGHT );
-		String				alias		= boxImport.getAlias() != null
+		// An import's target is always a plain dotted name (a BoxFQN) in practice - read its raw
+		// text directly rather than going through generic transform() dispatch, which (as of
+		// BoxFQNTransformer) now returns a proper, already-quoted Java string-literal expression
+		// for a BoxFQN - correct for consumers that embed it as a real sub-expression (e.g.
+		// "instanceof"/"as"), but wrong here, where the result is substituted, unquoted, into this
+		// method's OWN "\"${namespace}\"" template (double-quoting it otherwise). Any other
+		// expression shape (not expected in practice for an import) still falls back to the
+		// generic dispatch path.
+		String				namespaceText	= boxImport.getExpression() instanceof ortus.boxlang.compiler.ast.expression.BoxFQN fqn
+		    ? fqn.getValue()
+		    : ( ( Expression ) transpiler.transform( boxImport.getExpression(), TransformerContext.RIGHT ) ).toString();
+		String				alias			= boxImport.getAlias() != null
 		    ? " as " + boxImport.getAlias().getName()
 		    : "";
 
-		Map<String, String>	values		= new HashMap<>() {
+		Map<String, String>	values			= new HashMap<>() {
 
-											{
-												put( "namespace", namespace.toString() + alias );
+												{
+													put( "namespace", namespaceText + alias );
 
-											}
-										};
-		String				template	= "ImportDefinition.parse( \"${namespace}\" )";
+												}
+											};
+		String				template		= "ImportDefinition.parse( \"${namespace}\" )";
 
-		Expression			javaStmt	= parseExpression( template, values );
+		Expression			javaStmt		= parseExpression( template, values );
 		// logger.trace( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
-		transpiler.addImport( namespace.toString() + alias );
+		transpiler.addImport( namespaceText + alias );
 		transpiler.addJImport( javaStmt );
 		// We have to return something based on how these transformers are setup, so we just return an empty statement.
 		return new EmptyStmt();
