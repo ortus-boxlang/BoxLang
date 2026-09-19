@@ -1007,4 +1007,45 @@ public class GroovyExecutionTest {
 		assertThat( result ).isEqualTo( "abc" );
 	}
 
+	@Test
+	@DisplayName( "a class declaration mixed with other top-level script statements is supported" )
+	public void testClassDeclarationMixedWithTopLevelStatements() {
+		// Previously a hard, documented error: a file was only ever "a class" (exactly one
+		// top-level class declaration, nothing else) or "a script" (zero top-level classes). Real
+		// Groovy allows both together in the same file - the class declaration becomes a
+		// BoxLocalClass peer statement in the script (the exact mechanism a named nested class or
+		// a hoisted anonymous class already use), reusing AsmTranspiler's existing scan of a
+		// BoxScript's statements for BoxLocalClass entries.
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "class Point {\n"
+		        + "  def x\n"
+		        + "  def y\n"
+		        + "  Point(px, py) { x = px; y = py }\n"
+		        + "  def sum() { return x + y }\n"
+		        + "}\n"
+		        + "def p = new Point(3, 4)\n"
+		        + "return p.sum()\n",
+		    context );
+		assertThat( result.toString() ).isEqualTo( "7" );
+	}
+
+	@Test
+	@DisplayName( "two classes mixed with top-level statements both resolve correctly" )
+	public void testTwoClassDeclarationsMixedWithTopLevelStatements() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "class Greeter {\n"
+		        + "  def greet(name) { return \"hi \" + name }\n"
+		        + "}\n"
+		        + "class Farewell {\n"
+		        + "  def bye(name) { return \"bye \" + name }\n"
+		        + "}\n"
+		        + "def g = new Greeter()\n"
+		        + "def f = new Farewell()\n"
+		        + "return \"${g.greet('a')} ${f.bye('b')}\"\n",
+		    context );
+		assertThat( result ).isEqualTo( "hi a bye b" );
+	}
+
 }

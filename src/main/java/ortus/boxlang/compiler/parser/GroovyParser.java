@@ -43,19 +43,19 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.CompilationUnitContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ImportStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.TopLevelDeclarationContext;
 import ortus.boxlang.parser.antlr.GroovyLexer;
-import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 /**
  * Parses Groovy source into the shared BoxLang AST, following the same overall shape as
  * {@code CFParser}: an ANTLR lexer/parser pair produces a parse tree, which a visitor walks
  * into {@code ortus.boxlang.compiler.ast} nodes.
  * <p>
- * Phase 2 of the Groovy parser/transpiler effort. A source is treated as a "class file" when
- * it contains exactly one top-level {@code class}/{@code interface}/{@code trait} declaration
- * and nothing else besides package/import statements; otherwise it is treated as a script.
- * Mixing top-level statements with an embedded class declaration in the same file (which real
- * Groovy allows) is a documented, deliberate Phase 2 gap - it raises a clear
- * {@link ExpressionException} rather than silently doing the wrong thing.
+ * Phase 2 of the Groovy parser/transpiler effort. A source is treated as a "class file" (its AST
+ * root is a {@code BoxClass}, the shape {@code RunnableLoader#loadClass} expects) only when it
+ * contains exactly one top-level {@code class}/{@code interface}/{@code trait} declaration and
+ * nothing else besides package/import statements. Otherwise it is treated as a script - and a
+ * class declaration mixed in among other top-level statements (which real Groovy allows) becomes
+ * a {@code BoxLocalClass} peer statement in that script, the same mechanism a named nested class
+ * or a hoisted anonymous class already use (see GroovyVisitor#visitClassDeclaration).
  */
 public class GroovyParser extends AbstractParser {
 
@@ -187,13 +187,13 @@ public class GroovyParser extends AbstractParser {
 
 		long								classCount		= declarations.stream().filter( d -> d.classDeclaration() != null ).count();
 
+		// A file that is ENTIRELY a single class declaration (no other top-level statements) is
+		// compiled as a true class-file (BoxClass), the same "the whole file's AST root IS the
+		// class" mode RunnableLoader#loadClass expects - distinct from a script that merely
+		// DEFINES a class among other statements (handled below via a BoxLocalClass, the same
+		// mechanism a named nested class or a hoisted anonymous class already use).
 		if ( classCount == 1 && declarations.size() == 1 ) {
 			return statementVisitor.buildClass( declarations.get( 0 ).classDeclaration(), imports );
-		}
-
-		if ( classCount > 0 ) {
-			throw new ExpressionException(
-			    "Mixing a class declaration with top-level script statements in the same Groovy file is not yet supported by this parser", pos, src );
 		}
 
 		// Push the script's own top-level hoist-scope frame before building any statement, so an
@@ -207,6 +207,15 @@ public class GroovyParser extends AbstractParser {
 				statements.add( ( BoxStatement ) decl.methodDeclaration().accept( statementVisitor ) );
 			} else if ( decl.enumDeclaration() != null ) {
 				statements.add( ( BoxStatement ) decl.enumDeclaration().accept( statementVisitor ) );
+			} else if ( decl.classDeclaration() != null ) {
+				// A class declaration mixed in with other top-level script statements - built as a
+				// BoxLocalClass (the exact same AST shape a nested classDeclaration inside another
+				// class's body already produces via GroovyVisitor#visitClassDeclaration), landing
+				// as a peer statement in the script's own statement list. AsmTranspiler's existing
+				// preCompileLocalClasses already scans a BoxScript's statements for BoxLocalClass
+				// entries and compiles each as an auxiliary class, so no new compiler machinery is
+				// needed for this - only lifting the restriction that used to reject this shape.
+				statements.add( ( BoxStatement ) decl.classDeclaration().accept( statementVisitor ) );
 			} else {
 				statements.add( ( BoxStatement ) decl.statement().accept( statementVisitor ) );
 			}

@@ -15,7 +15,6 @@
 package ortus.boxlang.compiler;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 
@@ -23,11 +22,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.ast.BoxClass;
+import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
-import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 /**
  * Phase 2 class-file AST-shape tests for the Groovy parser/transpiler effort.
@@ -113,12 +113,22 @@ public class GroovyClassParsingTest {
 	}
 
 	@Test
-	@DisplayName( "mixing a top-level class with script statements is a documented Phase 2 gap" )
-	public void testMixedScriptAndClassIsRejected() {
-		assertThrows( ExpressionException.class, () -> parseClass( """
-		                                                           def x = 1
-		                                                           class Foo {}
-		                                                           """ ) );
+	@DisplayName( "mixing a top-level class with script statements builds a BoxScript with a BoxLocalClass peer" )
+	public void testMixedScriptAndClassBuildsScriptWithLocalClass() throws IOException {
+		// A file with a class declaration ALONGSIDE other top-level statements is no longer a
+		// "class file" (that shape is reserved for a source that is ENTIRELY a single class
+		// declaration - see testSimpleClass) - it's a script, and the class declaration becomes a
+		// BoxLocalClass peer statement in it, the same AST shape a named nested class or a hoisted
+		// anonymous class already produce.
+		ParsingResult result = parseClass( """
+		                                   def x = 1
+		                                   class Foo {}
+		                                   """ );
+
+		assertThat( result.isCorrect() ).isTrue();
+		BoxScript boxScript = ( BoxScript ) result.getRoot();
+		assertThat( boxScript.getStatements().stream().anyMatch( s -> s instanceof BoxLocalClass localClass
+		    && localClass.getName().getName().equals( "Foo" ) ) ).isTrue();
 	}
 
 	@Test
