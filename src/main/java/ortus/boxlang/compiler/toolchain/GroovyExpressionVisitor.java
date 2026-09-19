@@ -954,40 +954,55 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		// nearest enclosing class body (or the script's own top level, for a top-level function)
 		// via GroovyVisitor#buildClassMemberBody's draining, and only a "new <synthetic-name>(...)"
 		// is left behind at this expression's own position.
-		// Scoped to (verified reliable) ONE anonymous class per nearest enclosing scope. A second
-		// one landing in the SAME drained batch was found, empirically, to break the FIRST class's
-		// own runtime resolution too (ClassNotFoundBoxLangException on a class that resolves fine
-		// on its own) - confirmed to reproduce identically regardless of where the two "new"
-		// expressions are written (same statement list, separate functions, even when only one of
-		// the two results is actually used), and NOT present in equivalent native BoxLang source
-		// with the same class-naming pattern, so it's specific to how this hoisting interacts with
-		// dynamic local-class resolution for 2+ siblings. Rather than ship that silently, a second
-		// anonymous class in the same scope is a hard, explicit error - use an explicit named
-		// nested class (this branch's own class/interface/static-init support) instead.
-		if ( !hoistedLocalClasses.isEmpty() ) {
-			throw new ExpressionException(
-			    "Only one anonymous inner class (\"new Type() { ... }\") is supported per enclosing scope in this Groovy parser - "
-			        + "a second one was found reachable from the same class/script. Use an explicit named nested class instead.",
-			    pos, src );
-		}
+		// Multiple anonymous classes ARE supported, including siblings reachable from different
+		// statements in the same enclosing scope - see pushHoistScope/popHoistScope for how each
+		// class-shaped body (script top level, a real class, or another anonymous class) gets its
+		// own isolated nesting level, so a class hoisted from an EARLIER sibling expression is never
+		// misattributed as having been discovered INSIDE this one's own body.
 		String			anonymousName	= "__GroovyAnon" + ( ++anonymousClassCounter );
 		BoxIdentifier	nameId			= new BoxIdentifier( anonymousName, pos, anonymousName );
-		hoistedLocalClasses.add( statementVisitor.buildAnonymousLocalClass( nameId, ctx.classBody(), pos, src ) );
+		BoxStatement	localClass		= statementVisitor.buildAnonymousLocalClass( nameId, ctx.classBody(), pos, src );
+		currentHoistScope().add( localClass );
 		return new BoxNew( null, new BoxFQN( anonymousName, pos, anonymousName ), args, pos, src );
 	}
 
-	private int							anonymousClassCounter	= 0;
-	private final List<BoxStatement>	hoistedLocalClasses		= new ArrayList<>();
+	private int											anonymousClassCounter	= 0;
+
+	// A STACK of pending-hoisted-class lists, one frame per class-shaped body currently being
+	// built (script top level, a real class/interface, or a synthesized anonymous class) - see
+	// pushHoistScope/popHoistScope. A flat, single list (this class's original design) is wrong
+	// for 2+ sibling anonymous classes: buildAnonymousLocalClass builds class B's own body (which
+	// drains "whatever is currently pending" to attribute it to B) BEFORE the expression visiting
+	// B itself gets a chance to add B to the list - so if sibling A was hoisted first (still
+	// pending, not yet added, since visitNewInstanceExpr only adds its result once
+	// buildAnonymousLocalClass returns), building B's body would drain and nest A INSIDE B,
+	// hiding A from the real enclosing scope entirely (confirmed empirically: this was the exact
+	// cause of a ClassNotFoundBoxLangException on the FIRST class once a second one was added, and
+	// what forced the original one-per-scope guard). A stack fixes this: each body gets its own
+	// isolated frame, so only classes genuinely discovered WITHIN that body's own construction are
+	// ever attributed to it.
+	private final java.util.Deque<List<BoxStatement>>	hoistScopes				= new java.util.ArrayDeque<>();
+
+	private List<BoxStatement> currentHoistScope() {
+		return hoistScopes.peek();
+	}
 
 	/**
-	 * Drains (returns and clears) every anonymous inner class discovered since the last drain -
-	 * called by GroovyVisitor#buildClassMemberBody once it finishes building a given class body,
-	 * so each anonymous class lands as a peer member of its nearest enclosing class/script scope.
+	 * Starts a new hoisting nesting level - call before building any class-shaped body (script top
+	 * level via GroovyParser#toAst, or a real/anonymous class body via GroovyVisitor#
+	 * buildClassMemberBody) so anonymous classes discovered while building it are attributed to
+	 * THIS body, not to whatever enclosing/sibling scope happened to still have classes pending.
 	 */
-	public List<BoxStatement> drainHoistedLocalClasses() {
-		List<BoxStatement> drained = new ArrayList<>( hoistedLocalClasses );
-		hoistedLocalClasses.clear();
-		return drained;
+	public void pushHoistScope() {
+		hoistScopes.push( new ArrayList<>() );
+	}
+
+	/**
+	 * Ends the current hoisting nesting level, returning exactly the anonymous classes discovered
+	 * directly within it (not any belonging to an enclosing or sibling scope).
+	 */
+	public List<BoxStatement> popHoistScope() {
+		return hoistScopes.pop();
 	}
 
 	// -----------------------------------------------------------------------------------------

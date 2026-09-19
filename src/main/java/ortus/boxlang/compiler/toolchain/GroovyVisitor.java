@@ -152,6 +152,10 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 	// wrapping in createDynamicProxy(), which is out of scope for this feature.
 	BoxStatement buildAnonymousLocalClass( BoxIdentifier name,
 	    ortus.boxlang.parser.antlr.GroovyGrammar.ClassBodyContext bodyCtx, Position pos, String src ) {
+		// buildClassMemberBody pushes/pops its own isolated hoist-scope frame around bodyCtx, so
+		// anonymous classes discovered while building THIS class's body land inside it, while any
+		// still pending from an enclosing/sibling scope are left untouched - see
+		// GroovyExpressionVisitor#pushHoistScope for the full reasoning.
 		List<BoxStatement> body = bodyCtx == null ? new ArrayList<>() : buildClassMemberBody( bodyCtx );
 		return new ortus.boxlang.compiler.ast.statement.BoxLocalClass( name, body, List.of(), List.of(), List.of(), pos, src,
 		    BoxSourceType.GROOVYSCRIPT );
@@ -201,6 +205,12 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 	// BoxLocalClass's own hard compiler rule requires (see GroovyExpressionVisitor#
 	// visitNewInstanceExpr for the full reasoning).
 	private List<BoxStatement> buildClassMemberBody( ortus.boxlang.parser.antlr.GroovyGrammar.ClassBodyContext classBodyCtx ) {
+		// Push a fresh hoist-scope frame before building any of this body's own members (including
+		// nested class declarations, which build their own body - and therefore their own frame -
+		// recursively): anonymous classes discovered while building THIS body must never be confused
+		// with ones still pending from an enclosing or earlier-sibling scope. See
+		// GroovyExpressionVisitor#pushHoistScope for the full reasoning.
+		expressionVisitor.pushHoistScope();
 		List<BoxStatement>		body					= new ArrayList<>();
 		java.util.Set<String>	userDeclaredMethodNames	= classBodyCtx.classMember().stream()
 		    .filter( m -> m.methodDeclaration() != null )
@@ -214,7 +224,7 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 				    tools.getPosition( member.fieldDeclaration() ), tools.getSourceText( member.fieldDeclaration() ) ) );
 			}
 		}
-		body.addAll( expressionVisitor.drainHoistedLocalClasses() );
+		body.addAll( expressionVisitor.popHoistScope() );
 		return body;
 	}
 

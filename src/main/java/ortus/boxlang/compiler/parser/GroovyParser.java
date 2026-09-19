@@ -196,6 +196,11 @@ public class GroovyParser extends AbstractParser {
 			    "Mixing a class declaration with top-level script statements in the same Groovy file is not yet supported by this parser", pos, src );
 		}
 
+		// Push the script's own top-level hoist-scope frame before building any statement, so an
+		// anonymous class discovered anywhere below (even nested inside a top-level function's own
+		// body) is attributed to the script itself, isolated from any class-shaped body built
+		// within it - see GroovyExpressionVisitor#pushHoistScope for the full reasoning.
+		statementVisitor.getExpressionVisitor().pushHoistScope();
 		List<BoxStatement> statements = new ArrayList<>( imports );
 		for ( TopLevelDeclarationContext decl : declarations ) {
 			if ( decl.methodDeclaration() != null ) {
@@ -209,7 +214,7 @@ public class GroovyParser extends AbstractParser {
 		// Any anonymous inner class discovered while building the above (even nested inside a
 		// top-level function's own body) is hoisted here, at the script's own top level - see
 		// GroovyExpressionVisitor#visitNewInstanceExpr for why it can never stay where it's written.
-		statements.addAll( statementVisitor.getExpressionVisitor().drainHoistedLocalClasses() );
+		statements.addAll( statementVisitor.getExpressionVisitor().popHoistScope() );
 		return new ortus.boxlang.compiler.ast.BoxScript( statements, pos, src, BoxSourceType.GROOVYSCRIPT );
 	}
 

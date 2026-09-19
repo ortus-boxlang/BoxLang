@@ -943,24 +943,35 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
-	@DisplayName( "a second anonymous class in the same scope is a documented, explicit error" )
-	public void testSecondAnonymousClassInSameScopeIsRejected() {
-		// Investigated and found, empirically, that a second anonymous class hoisted into the
-		// same scope breaks even the FIRST class's own runtime resolution (a
-		// ClassNotFoundBoxLangException on a class that resolves fine when it's the only one) -
-		// reproduces the same way regardless of where the two "new" expressions are written, and
-		// isn't present in equivalent native BoxLang source with the same class-naming pattern, so
-		// it's specific to this hoisting mechanism's interaction with dynamic local-class
-		// resolution for 2+ siblings, not a general BoxLang limitation. Rather than ship that
-		// silently, this is a hard, explicit error instead.
+	@DisplayName( "two sibling anonymous classes in the same scope both resolve correctly" )
+	public void testTwoAnonymousClassesInSameScope() {
+		// Previously a hard error: the hoisting mechanism drained "whatever is currently pending"
+		// to build EACH anonymous class's own body, which - since a class is only added to the
+		// pending list AFTER its own body finishes building - misattributed an earlier sibling
+		// (still pending) as having been discovered INSIDE the later one's body, nesting it there
+		// and hiding it from the real enclosing scope entirely. Fixed by giving every class-shaped
+		// body its own isolated hoist-scope stack frame (see GroovyExpressionVisitor#
+		// pushHoistScope) so siblings can never be confused with descendants.
 		IBoxContext	context	= newContext();
-		var			thrown	= org.junit.jupiter.api.Assertions.assertThrows( RuntimeException.class,
-		    () -> run(
-		        "def a = new Runnable() { void run() { return \"a\" } }\n"
-		            + "def b = new Runnable() { void run() { return \"b\" } }\n"
-		            + "return a.run() + b.run()\n",
-		        context ) );
-		assertThat( thrown.getMessage() ).contains( "Only one anonymous inner class" );
+		Object		result	= run(
+		    "def a = new Runnable() { void run() { return \"a\" } }\n"
+		        + "def b = new Runnable() { void run() { return \"b\" } }\n"
+		        + "return \"${a.run()}${b.run()}\"\n",
+		    context );
+		assertThat( result ).isEqualTo( "ab" );
+	}
+
+	@Test
+	@DisplayName( "three sibling anonymous classes in the same scope all resolve correctly" )
+	public void testThreeAnonymousClassesInSameScope() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def a = new Runnable() { void run() { return \"a\" } }\n"
+		        + "def b = new Runnable() { void run() { return \"b\" } }\n"
+		        + "def c = new Runnable() { void run() { return \"c\" } }\n"
+		        + "return \"${a.run()}${b.run()}${c.run()}\"\n",
+		    context );
+		assertThat( result ).isEqualTo( "abc" );
 	}
 
 }

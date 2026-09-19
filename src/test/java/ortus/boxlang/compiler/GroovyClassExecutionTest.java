@@ -272,4 +272,44 @@ public class GroovyClassExecutionTest {
 		assertThat( result ).isEqualTo( "hi from inside a class method" );
 	}
 
+	@Test
+	@DisplayName( "an anonymous class hoisted from one method doesn't get nested inside a later named nested class" )
+	public void testAnonymousClassDoesNotLeakIntoLaterNamedNestedClass() {
+		// Broader instance of the same hoist-scope-isolation bug testTwoAnonymousClassesInSameScope
+		// (GroovyExecutionTest) covers: before the fix, an anonymous class discovered while building
+		// an EARLIER method in this class body would still be "pending" by the time a LATER named
+		// nested class declaration finished building its own body - and that nested class's own
+		// hoist-drain would wrongly sweep it up as one of ITS OWN members, hiding it from the real
+		// enclosing (Outer) class entirely.
+		IBoxContext		context		= newContext();
+		IClassRunnable	instance	= instantiate( """
+		                                           class Outer {
+		                                             def makeRunnable() {
+		                                               def r = new Runnable() {
+		                                                 void run() {
+		                                                   return "from anon"
+		                                                 }
+		                                               }
+		                                               return r.run()
+		                                             }
+
+		                                             static class Point {
+		                                               def x
+		                                               def y
+		                                               Point(px, py) { x = px; y = py }
+		                                               def sum() { return x + y }
+		                                             }
+
+		                                             def makePoint(a, b) {
+		                                               def p = new Point(a, b)
+		                                               return p.sum()
+		                                             }
+		                                           }
+		                                           """, context );
+		Object			anonResult	= instance.dereferenceAndInvoke( context, Key.of( "makeRunnable" ), new Object[] {}, false );
+		Object			pointResult	= instance.dereferenceAndInvoke( context, Key.of( "makePoint" ), new Object[] { 3, 4 }, false );
+		assertThat( anonResult ).isEqualTo( "from anon" );
+		assertThat( pointResult.toString() ).isEqualTo( "7" );
+	}
+
 }
