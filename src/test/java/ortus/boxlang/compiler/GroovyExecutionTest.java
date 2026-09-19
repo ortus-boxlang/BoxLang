@@ -872,11 +872,30 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
-	@DisplayName( "bound method pointer (instance.&method) forwards every argument" )
+	@DisplayName( "bound method pointer (instance.&method) used as a single-argument callback" )
 	public void testBoundMethodPointer() {
 		IBoxContext	context	= newContext();
 		Object		result	= run( "def sums = []\n[1, 2, 3].each(sums.&add)\nreturn sums\n", context );
 		assertThat( result.toString() ).isEqualTo( "[1, 2, 3]" );
+	}
+
+	@Test
+	@DisplayName( "bound method pointer called directly with two arguments forwards both" )
+	public void testBoundMethodPointerForwardsTwoArguments() {
+		// Generalization beyond the single-argument callback case: when the method pointer VALUE
+		// itself is invoked directly with exactly two arguments (not via a BIF's own non-strict
+		// callback convention - see buildBoundMethodPointer's header comment), both are forwarded
+		// to the target method.
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "class Adder {\n"
+		        + "  def add(a, b) { return a + b }\n"
+		        + "}\n"
+		        + "def adder = new Adder()\n"
+		        + "def f = adder.&add\n"
+		        + "return f(3, 4)\n",
+		    context );
+		assertThat( result.toString() ).isEqualTo( "7" );
 	}
 
 	@Test

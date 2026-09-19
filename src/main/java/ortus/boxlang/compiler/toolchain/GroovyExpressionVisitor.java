@@ -57,6 +57,7 @@ import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.parser.GroovyParser;
@@ -358,37 +359,64 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 	}
 
 	// Groovy's method pointer operator (Type.&methodName / instance.&methodName) produces a
-	// standalone invokable value. Two distinct forms, both DELIBERATELY scoped to forwarding a
-	// SINGLE argument to the target method (the receiver's own no-further-args call, in the
-	// unbound case) - covering the overwhelmingly common "each/collect/find(x.&method)" idiom,
-	// where the callback receives the element as its argument:
+	// standalone invokable value.
 	// - Unbound (base is a known static class name, e.g. String.&toUpperCase): reuses BoxLang's
 	// own native BoxFunctionalMemberAccess AST node - the exact ".methodName" functional-member-
 	// access value BoxLang's own grammar already supports (see BoxExpressionVisitor#
 	// visitExprHeadless) - directly, with no new AST/runtime machinery. Its own documented
 	// contract (FunctionalMemberAccess#_invoke: "No args will be passed to the member method")
-	// is exactly this same one-argument-only scope.
-	// - Bound (any other base expression, e.g. myList.&add): the receiver is fixed; built as a
-	// one-parameter closure forwarding just that parameter. A GENERAL forward-everything version
-	// (collecting the whole "arguments" scope, mirroring GroovyVisitor#withVarargsPreamble) was
-	// tried and found to break the common case: BoxLang's own ArrayEach invokes a non-strict
-	// callback with THREE arguments (element, index, array) - not just the element - so
-	// forwarding everything silently turned "myList.each(other.&add)" into "other.add(item,
-	// index, array)", which no real method matches. Scoping to one argument sidesteps that
-	// entirely and matches the unbound case's own boundary.
+	// scopes it to a single forwarded argument - a shared-runtime limitation (this AST node backs
+	// native BoxLang's own ".methodName" syntax too, not just this Groovy feature), so widening it
+	// is out of scope here.
+	// - Bound (any other base expression, e.g. myList.&add): see buildBoundMethodPointer.
 	private BoxExpression buildMethodPointer( ExpressionContext baseCtx, BoxIdentifier methodName, Position pos, String src ) {
 		BoxIdentifier staticBase = staticClassBase( baseCtx );
 		if ( staticBase != null ) {
 			return new BoxFunctionalMemberAccess( methodName.getName(), null, pos, src );
 		}
-		return buildBoundMethodPointer( baseCtx.accept( this ), methodName, pos, src );
+		return buildBoundMethodPointer( baseCtx, methodName, pos, src );
 	}
 
-	private BoxExpression buildBoundMethodPointer( BoxExpression receiver, BoxIdentifier methodName, Position pos, String src ) {
-		BoxArgumentDeclaration	itParam	= new BoxArgumentDeclaration( false, "Any", "it", null, List.of(), List.of(), pos, src );
-		BoxExpression			call	= new BoxMethodInvocation( methodName, receiver, List.of( new BoxArgument( itIdentifier( pos ), pos, src ) ), false,
-		    true, pos, src );
-		BoxStatement			body	= new BoxStatementBlock( List.of( new BoxReturn( call, pos, src ) ), pos, src );
+	// A bound method pointer (myList.&add) is built as a closure forwarding however many
+	// arguments it's actually called with, up to two - NOT a blind "forward everything" (which
+	// was tried and found to break the common "myList.each(other.&add)" idiom: BoxLang's own
+	// ArrayEach invokes a non-strict callback with THREE arguments - element, index, array - not
+	// just the element, so forwarding all of them silently turned that into "other.add(item,
+	// index, array)", which no real method matches; ArrayReduce's own non-strict callback
+	// convention is the same shape - accumulator, item, index - so a reduce/inject-style method
+	// pointer callback still only gets its first argument forwarded, same as each/collect/find).
+	// Exactly two call-time arguments forwards both - reachable when the method pointer VALUE
+	// itself is invoked directly with two arguments (e.g. "def f = acc.&plus; f(3, 4)"), not via
+	// one of the two/three-arg-non-strict BIF callback conventions above. Any other count - one
+	// argument, or three-plus - forwards only the first. This is determined purely from
+	// "arguments.len()" at the call site, exactly like GroovyVisitor#withVarargsPreamble already
+	// does for a genuinely variadic parameter - no reflection or speculative retry needed, so a
+	// side-effecting target method is never invoked more than once.
+	private BoxExpression buildBoundMethodPointer( ExpressionContext baseCtx, BoxIdentifier methodName, Position pos, String src ) {
+		BoxArgumentDeclaration	itParam			= new BoxArgumentDeclaration( false, "Any", "it", null, List.of(), List.of(), pos, src );
+
+		BoxIdentifier			argumentsId		= new BoxIdentifier( "arguments", pos, "arguments" );
+		BoxExpression			argumentsLen	= new BoxMethodInvocation( new BoxIdentifier( "len", pos, "len" ), argumentsId, List.of(), false, true, pos,
+		    src );
+		BoxExpression			firstArgSlot	= new BoxArrayAccess( argumentsId, false, new BoxIntegerLiteral( "1", pos, src ), pos, src );
+		BoxExpression			secondArgSlot	= new BoxArrayAccess( argumentsId, false, new BoxIntegerLiteral( "2", pos, src ), pos, src );
+
+		// baseCtx is re-visited once per branch (rather than reusing one BoxExpression instance
+		// in both) so each occurrence in the rebuilt tree is an independent node instance - same
+		// reasoning as GroovyExpressionVisitor#desugarCompoundAssign. Only one branch ever
+		// executes per closure invocation, so the receiver is still evaluated exactly once per
+		// call either way.
+		BoxExpression			twoArgCall		= new BoxMethodInvocation( methodName, baseCtx.accept( this ),
+		    List.of( new BoxArgument( firstArgSlot, pos, src ), new BoxArgument( secondArgSlot, pos, src ) ), false, true, pos, src );
+		BoxExpression			oneArgCall		= new BoxMethodInvocation( methodName, baseCtx.accept( this ),
+		    List.of( new BoxArgument( firstArgSlot, pos, src ) ), false, true, pos, src );
+
+		BoxExpression			isTwoArgs		= new BoxComparisonOperation( argumentsLen, BoxComparisonOperator.Equal, new BoxIntegerLiteral( "2", pos, src ),
+		    pos, src );
+		BoxStatement			thenBranch		= new BoxStatementBlock( List.of( new BoxReturn( twoArgCall, pos, src ) ), pos, src );
+		BoxStatement			elseBranch		= new BoxStatementBlock( List.of( new BoxReturn( oneArgCall, pos, src ) ), pos, src );
+		BoxStatement			body			= new BoxStatementBlock( List.of( new BoxIfElse( isTwoArgs, thenBranch, elseBranch, pos, src ) ), pos, src );
+
 		return new BoxClosure( new ArrayList<>( List.of( itParam ) ), List.of(), body, pos, src );
 	}
 
