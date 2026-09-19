@@ -17,12 +17,12 @@ package ortus.boxlang.runtime.jdbc;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
@@ -136,7 +136,7 @@ public class QueryParameter {
 			return new QueryParameter( name, castAsStruct.getOrFail() );
 		}
 		IStruct param = Struct.of( "value", value );
-		if ( value instanceof DateTime ) {
+		if ( DateTimeCaster.isKnownDateClass( value ) ) {
 			param.put( Key.sqltype, "timestamp" );
 		}
 		return new QueryParameter( name, param );
