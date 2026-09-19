@@ -1053,7 +1053,7 @@ public class GroovyExecutionTest {
 	public void testAnonymousClassAtTopLevel() {
 		IBoxContext	context	= newContext();
 		Object		result	= run(
-		    "def r = new Runnable() {\n"
+		    "def r = new MyTask() {\n"
 		        + "  void run() {\n"
 		        + "    return \"ran\"\n"
 		        + "  }\n"
@@ -1072,15 +1072,15 @@ public class GroovyExecutionTest {
 		// works, not just the "already at top level" case above.
 		IBoxContext	context	= newContext();
 		Object		result	= run(
-		    "def makeRunnable() {\n"
-		        + "  def r = new Runnable() {\n"
+		    "def makeMyTask() {\n"
+		        + "  def r = new MyTask() {\n"
 		        + "    void run() {\n"
 		        + "      return \"hi\"\n"
 		        + "    }\n"
 		        + "  }\n"
 		        + "  return r.run()\n"
 		        + "}\n"
-		        + "return makeRunnable()\n",
+		        + "return makeMyTask()\n",
 		    context );
 		assertThat( result ).isEqualTo( "hi" );
 	}
@@ -1097,8 +1097,8 @@ public class GroovyExecutionTest {
 		// pushHoistScope) so siblings can never be confused with descendants.
 		IBoxContext	context	= newContext();
 		Object		result	= run(
-		    "def a = new Runnable() { void run() { return \"a\" } }\n"
-		        + "def b = new Runnable() { void run() { return \"b\" } }\n"
+		    "def a = new MyTask() { void run() { return \"a\" } }\n"
+		        + "def b = new MyTask() { void run() { return \"b\" } }\n"
 		        + "return \"${a.run()}${b.run()}\"\n",
 		    context );
 		assertThat( result ).isEqualTo( "ab" );
@@ -1109,9 +1109,9 @@ public class GroovyExecutionTest {
 	public void testThreeAnonymousClassesInSameScope() {
 		IBoxContext	context	= newContext();
 		Object		result	= run(
-		    "def a = new Runnable() { void run() { return \"a\" } }\n"
-		        + "def b = new Runnable() { void run() { return \"b\" } }\n"
-		        + "def c = new Runnable() { void run() { return \"c\" } }\n"
+		    "def a = new MyTask() { void run() { return \"a\" } }\n"
+		        + "def b = new MyTask() { void run() { return \"b\" } }\n"
+		        + "def c = new MyTask() { void run() { return \"c\" } }\n"
 		        + "return \"${a.run()}${b.run()}${c.run()}\"\n",
 		    context );
 		assertThat( result ).isEqualTo( "abc" );
@@ -1156,6 +1156,88 @@ public class GroovyExecutionTest {
 		        + "return \"${g.greet('a')} ${f.bye('b')}\"\n",
 		    context );
 		assertThat( result ).isEqualTo( "hi a bye b" );
+	}
+
+	// -----------------------------------------------------------------------------------------
+	// Real Java interop for anonymous classes implementing a known Java interface
+
+	@Test
+	@DisplayName( "an anonymous Runnable is a genuine java.lang.Runnable, not just duck-typed" )
+	public void testAnonymousRunnableIsRealJavaInterop() {
+		// GroovyExpressionVisitor#resolveJavaInterfaceFqn recognizes "Runnable" as a known Java
+		// interface, so the constructed instance is wrapped in a real JDK dynamic proxy via
+		// createDynamicProxy() - genuinely implementing java.lang.Runnable at the JVM level (an
+		// "instanceof" check against it succeeds), unlike the plain BoxLocalClass instance this
+		// replaced, which was never a REAL Runnable, merely an object with a same-named method.
+		// Proven twice: the "instanceof" check below, and handing it to a real java.lang.Thread's
+		// constructor (which only accepts a true Runnable) and running it synchronously (run(),
+		// not start(), so this stays deterministic with no threading involved).
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def r = new Runnable() {\n"
+		        + "  void run() {}\n"
+		        + "}\n"
+		        + "def isRealRunnable = (r instanceof Runnable)\n"
+		        + "def thread = createObject(\"java\", \"java.lang.Thread\").init(r)\n"
+		        + "thread.run()\n"
+		        + "return isRealRunnable\n",
+		    context );
+		assertThat( result ).isEqualTo( true );
+	}
+
+	@Test
+	@DisplayName( "a Runnable's own run() returns void when called directly, per real Java semantics" )
+	public void testAnonymousRunnableDirectCallReturnsVoid() {
+		// Calling .run() directly on the proxy dispatches through the REAL java.lang.Runnable
+		// interface method, which real Java declares "void" - so the return value is always
+		// null/void here, exactly like real Groovy/Java, even though the underlying method body
+		// still executes (the anonymous class's own return statement is simply discarded, which
+		// is real Java's own behavior for a void-declared interface method, not a bug).
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def r = new Runnable() {\n"
+		        + "  void run() {\n"
+		        + "    return \"ignored\"\n"
+		        + "  }\n"
+		        + "}\n"
+		        + "return r.run()\n",
+		    context );
+		assertThat( result ).isNull();
+	}
+
+	@Test
+	@DisplayName( "an anonymous Comparator's compare() returns a real int through the proxy" )
+	public void testAnonymousComparatorReturnValuePreserved() {
+		// Unlike Runnable.run(), Comparator.compare() is declared to return an int - proving that
+		// a non-void interface method's return value DOES survive the proxy round-trip correctly.
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def c = new Comparator() {\n"
+		        + "  int compare(a, b) {\n"
+		        + "    return a <=> b\n"
+		        + "  }\n"
+		        + "}\n"
+		        + "return c.compare(3, 5)\n",
+		    context );
+		assertThat( result.toString() ).isEqualTo( "-1" );
+	}
+
+	@Test
+	@DisplayName( "an anonymous class for an unrecognized type name stays a plain, un-proxied instance" )
+	public void testAnonymousClassForUnknownTypeStaysPlain() {
+		// GroovyExpressionVisitor#resolveJavaInterfaceFqn is deliberately conservative - a bare
+		// name that ISN'T a well-known Java interface (a custom/BoxLang-native type, here one
+		// that doesn't even exist as a real class at all) falls back to the plain, un-proxied
+		// instance exactly as before this feature, rather than failing trying to load a
+		// non-existent Java class.
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def w = new SomeCustomWidget() {\n"
+		        + "  def describe() { return \"a widget\" }\n"
+		        + "}\n"
+		        + "return w.describe()\n",
+		    context );
+		assertThat( result ).isEqualTo( "a widget" );
 	}
 
 }

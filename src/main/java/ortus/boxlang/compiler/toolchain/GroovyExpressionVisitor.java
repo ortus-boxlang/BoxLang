@@ -999,7 +999,49 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		BoxIdentifier	nameId			= new BoxIdentifier( anonymousName, pos, anonymousName );
 		BoxStatement	localClass		= statementVisitor.buildAnonymousLocalClass( nameId, ctx.classBody(), pos, src );
 		currentHoistScope().add( localClass );
-		return new BoxNew( null, new BoxFQN( anonymousName, pos, anonymousName ), args, pos, src );
+		BoxExpression	newExpr			= new BoxNew( null, new BoxFQN( anonymousName, pos, anonymousName ), args, pos, src );
+
+		// Real Java interop: when the anonymous class's own declared type is CONFIDENTLY a real
+		// Java interface (see resolveJavaInterfaceFqn), wrap the constructed instance in a real
+		// JDK dynamic proxy implementing it, via BoxLang's own createDynamicProxy() BIF - so the
+		// result is genuinely passable to Java code expecting that exact interface type (e.g.
+		// "new Thread(new Runnable() {...}).start()"), not just duck-typed from BoxLang's own
+		// side. The anonymous BoxLocalClass itself still declares no "implements" annotation
+		// (see buildAnonymousLocalClass's own header) - only the returned VALUE is wrapped.
+		// Deliberately conservative: a bare, unqualified type name is only treated as a Java
+		// interface when it's in the small KNOWN_JAVA_INTERFACES set below, or already fully
+		// qualified under "java."/"javax." - anything else (a custom/BoxLang-native type, or an
+		// unrecognized bare Java name) falls back to the plain, un-proxied instance exactly as
+		// before, since createDynamicProxy() would otherwise throw trying to Class.forName() a
+		// name that was never a real, loadable Java interface to begin with.
+		String			interfaceFqn	= resolveJavaInterfaceFqn( ctx.typeName().getText() );
+		if ( interfaceFqn == null ) {
+			return newExpr;
+		}
+		List<BoxArgument> proxyArgs = List.of(
+		    new BoxArgument( newExpr, pos, src ),
+		    new BoxArgument( new BoxStringLiteral( interfaceFqn, pos, interfaceFqn ), pos, src ) );
+		return new BoxFunctionInvocation( "createDynamicProxy", proxyArgs, pos, src );
+	}
+
+	// Common java.lang/java.util functional/marker interfaces real-world anonymous-class Java
+	// interop overwhelmingly targets - deliberately small and curated rather than a general
+	// bare-name-to-FQN resolver (which would need real import/classpath awareness this
+	// single-pass parser doesn't have). A fully-qualified name (containing a dot) under
+	// "java."/"javax." is trusted directly without needing to be in this map.
+	private static final java.util.Map<String, String> KNOWN_JAVA_INTERFACES = java.util.Map.of(
+	    "Runnable", "java.lang.Runnable",
+	    "Callable", "java.util.concurrent.Callable",
+	    "Comparator", "java.util.Comparator",
+	    "Comparable", "java.lang.Comparable",
+	    "Iterable", "java.lang.Iterable",
+	    "Iterator", "java.util.Iterator" );
+
+	private String resolveJavaInterfaceFqn( String rawTypeName ) {
+		if ( rawTypeName.startsWith( "java." ) || rawTypeName.startsWith( "javax." ) ) {
+			return rawTypeName;
+		}
+		return KNOWN_JAVA_INTERFACES.get( rawTypeName );
 	}
 
 	private int											anonymousClassCounter	= 0;

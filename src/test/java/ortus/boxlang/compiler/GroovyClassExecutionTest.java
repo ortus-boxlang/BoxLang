@@ -258,8 +258,8 @@ public class GroovyClassExecutionTest {
 		IBoxContext		context		= newContext();
 		IClassRunnable	instance	= instantiate( """
 		                                           class Outer {
-		                                             def makeRunnable() {
-		                                               def r = new Runnable() {
+		                                             def makeMyTask() {
+		                                               def r = new MyTask() {
 		                                                 void run() {
 		                                                   return "hi from inside a class method"
 		                                                 }
@@ -268,7 +268,7 @@ public class GroovyClassExecutionTest {
 		                                             }
 		                                           }
 		                                           """, context );
-		Object			result		= instance.dereferenceAndInvoke( context, Key.of( "makeRunnable" ), new Object[] {}, false );
+		Object			result		= instance.dereferenceAndInvoke( context, Key.of( "makeMyTask" ), new Object[] {}, false );
 		assertThat( result ).isEqualTo( "hi from inside a class method" );
 	}
 
@@ -284,8 +284,8 @@ public class GroovyClassExecutionTest {
 		IBoxContext		context		= newContext();
 		IClassRunnable	instance	= instantiate( """
 		                                           class Outer {
-		                                             def makeRunnable() {
-		                                               def r = new Runnable() {
+		                                             def makeMyTask() {
+		                                               def r = new MyTask() {
 		                                                 void run() {
 		                                                   return "from anon"
 		                                                 }
@@ -306,7 +306,7 @@ public class GroovyClassExecutionTest {
 		                                             }
 		                                           }
 		                                           """, context );
-		Object			anonResult	= instance.dereferenceAndInvoke( context, Key.of( "makeRunnable" ), new Object[] {}, false );
+		Object			anonResult	= instance.dereferenceAndInvoke( context, Key.of( "makeMyTask" ), new Object[] {}, false );
 		Object			pointResult	= instance.dereferenceAndInvoke( context, Key.of( "makePoint" ), new Object[] { 3, 4 }, false );
 		assertThat( anonResult ).isEqualTo( "from anon" );
 		assertThat( pointResult.toString() ).isEqualTo( "7" );

@@ -143,12 +143,13 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 	// empirically that BoxClass's own "implements" resolution requires the resolved type to be a
 	// real BoxInterface (a BoxLang-native interface), and throws a ClassCastException for an
 	// arbitrary JDK interface like java.lang.Runnable - which is precisely the classic anonymous-
-	// class idiom this feature exists for. Since BoxLang is dynamically typed, formally declaring
-	// conformance isn't needed to call methods on the resulting object anyway (duck typing) - so
-	// the interface/superclass name from the "new" expression is intentionally unused here, and
-	// this is a plain BoxLocalClass with no declared supertype at all. It genuinely implementing a
-	// Java interface for real interop (passable to Java code expecting that exact type) would need
-	// wrapping in createDynamicProxy(), which is out of scope for this feature.
+	// class idiom this feature exists for. This is still a plain BoxLocalClass with no declared
+	// supertype at all - real Java-interface conformance (so the CONSTRUCTED INSTANCE is genuinely
+	// passable to Java code expecting that exact type, not just duck-typed) is instead handled one
+	// layer up, by wrapping the instance in a real JDK dynamic proxy via createDynamicProxy() when
+	// the type name is confidently a known Java interface - see GroovyExpressionVisitor#
+	// visitNewInstanceExpr/resolveJavaInterfaceFqn for the full reasoning and its own scope
+	// boundary (a curated interface-name set, not general symbol resolution).
 	BoxStatement buildAnonymousLocalClass( BoxIdentifier name,
 	    ortus.boxlang.parser.antlr.GroovyGrammar.ClassBodyContext bodyCtx, Position pos, String src ) {
 		// buildClassMemberBody pushes/pops its own isolated hoist-scope frame around bodyCtx, so
