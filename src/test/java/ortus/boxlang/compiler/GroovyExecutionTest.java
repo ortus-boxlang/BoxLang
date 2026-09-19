@@ -544,17 +544,72 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
-	@DisplayName( "switch \"case\" matching by type or range (Groovy's smart-switch semantics) is a documented gap, not silently wrong" )
-	public void testSmartSwitchCaseIsADocumentedGap() {
-		// BoxSwitch (shared with CFVisitor/BoxVisitor) only ever compares by equality. Silently
-		// reusing it for "case String:" or "case 1..10:" would compile without error but match
-		// the wrong things, since real Groovy treats those as instanceof/range-containment
-		// checks, not equality. Failing loudly at parse time instead.
+	@DisplayName( "smart-switch: a Class case value matches by instanceof, not equality" )
+	public void testSmartSwitchClassCase() {
+		// BoxSwitch (shared with CFVisitor/BoxVisitor) only ever compares by equality, so a
+		// switch with at least one Class/Range/List case value is rewritten as an if/else-if
+		// chain instead - see GroovyVisitor#visitSwitchStatement.
 		IBoxContext context = newContext();
-		org.junit.jupiter.api.Assertions.assertThrows( RuntimeException.class,
-		    () -> run( "def x = \"hi\"\nswitch (x) {\n case String:\n  return \"string\"\n default:\n  return \"other\"\n}\n", context ) );
-		org.junit.jupiter.api.Assertions.assertThrows( RuntimeException.class,
-		    () -> run( "def x = 5\nswitch (x) {\n case 1..10:\n  return \"in range\"\n default:\n  return \"other\"\n}\n", context ) );
+		assertThat( run( "def x = \"hi\"\nswitch (x) {\n case String:\n  return \"string\"\n default:\n  return \"other\"\n}\n", context ) )
+		    .isEqualTo( "string" );
+		assertThat( run( "def x = 5\nswitch (x) {\n case String:\n  return \"string\"\n default:\n  return \"other\"\n}\n", context ) )
+		    .isEqualTo( "other" );
+	}
+
+	@Test
+	@DisplayName( "smart-switch: a Range case value matches by containment" )
+	public void testSmartSwitchRangeCase() {
+		IBoxContext context = newContext();
+		assertThat( run( "def x = 5\nswitch (x) {\n case 1..10:\n  return \"in range\"\n default:\n  return \"other\"\n}\n", context ) )
+		    .isEqualTo( "in range" );
+		assertThat( run( "def x = 50\nswitch (x) {\n case 1..10:\n  return \"in range\"\n default:\n  return \"other\"\n}\n", context ) )
+		    .isEqualTo( "other" );
+	}
+
+	@Test
+	@DisplayName( "smart-switch: a List case value matches by containment" )
+	public void testSmartSwitchListCase() {
+		IBoxContext context = newContext();
+		assertThat( run( "def x = 2\nswitch (x) {\n case [1, 2, 3]:\n  return \"in list\"\n default:\n  return \"other\"\n}\n", context ) )
+		    .isEqualTo( "in list" );
+		assertThat( run( "def x = 9\nswitch (x) {\n case [1, 2, 3]:\n  return \"in list\"\n default:\n  return \"other\"\n}\n", context ) )
+		    .isEqualTo( "other" );
+	}
+
+	@Test
+	@DisplayName( "smart-switch: mixing a plain equality case with a smart case in the same switch" )
+	public void testSmartSwitchMixedWithPlainEqualityCase() {
+		IBoxContext	context	= newContext();
+		String		source	= "def classify(x) {\n"
+		    + "  switch (x) {\n"
+		    + "    case \"hi\":\n"
+		    + "      return \"greeting\"\n"
+		    + "    case 1..10:\n"
+		    + "      return \"small number\"\n"
+		    + "    default:\n"
+		    + "      return \"other\"\n"
+		    + "  }\n"
+		    + "}\n"
+		    + "return \"${classify('hi')},${classify(5)},${classify(99)}\"\n";
+		assertThat( run( source, context ) ).isEqualTo( "greeting,small number,other" );
+	}
+
+	@Test
+	@DisplayName( "smart-switch: an explicit break exits after the matched case, no fallthrough" )
+	public void testSmartSwitchBreakStopsAtMatchedCase() {
+		IBoxContext	context	= newContext();
+		String		source	= "def x = 5\n"
+		    + "def hit = []\n"
+		    + "switch (x) {\n"
+		    + "  case 1..10:\n"
+		    + "    hit.add(\"first\")\n"
+		    + "    break\n"
+		    + "  case Integer:\n"
+		    + "    hit.add(\"second\")\n"
+		    + "    break\n"
+		    + "}\n"
+		    + "return hit.toList(\",\")\n";
+		assertThat( run( source, context ) ).isEqualTo( "first" );
 	}
 
 	@Test

@@ -102,7 +102,6 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.TupleDeclStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.VarDeclStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.WhileStatementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammarBaseVisitor;
-import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 /**
  * Walks GroovyGrammar's statement/declaration parse tree and builds the shared BoxLang AST
@@ -812,33 +811,126 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 		return label != null ? new BoxContinue( label, pos, src ) : new BoxContinue( pos, src );
 	}
 
+	// Real Groovy "switch" uses subject.isCase(caseValue) semantics: a Class case value means an
+	// instanceof check, a Range means containment, a List means containment - NOT plain equality.
+	// BoxSwitch (shared with CFVisitor/BoxVisitor) only ever does plain equality, so a switch with
+	// at least one such "smart" case is rewritten entirely as an if/else-if chain here rather than
+	// built as a BoxSwitch - a switch with ONLY plain-equality cases (the common case, including
+	// the existing "case Color.RED:" enum idiom, a MemberExpr rather than a bare identifier) is
+	// completely unaffected, still compiled via the native, more efficient BoxSwitch.
+	// <p>
+	// The subject is evaluated exactly once into a synthetic temp variable (so a side-effecting
+	// subject expression - "switch (computeThing()) {...}" - isn't re-evaluated once per case the
+	// way a naive chain of independent "if" conditions would), and the whole if/else-if chain is
+	// wrapped in a single-iteration "while (true) { ...; break }" purely so a matched case's own
+	// explicit "break;" (or simply falling off the end of its body) has a legal, correctly-scoped
+	// target to exit through - real switch fallthrough between cases is NOT preserved this way
+	// (a documented, narrower gap versus a plain-equality BoxSwitch, which does support it), and
+	// neither is a bare "continue;" written directly in a case body meaning to target a LOOP
+	// enclosing the switch itself (it would instead be swallowed by this synthetic loop) - both
+	// accepted, documented simplifications given how rarely either is combined with smart-switch
+	// case values specifically.
 	@Override
 	public BoxNode visitSwitchStatement( SwitchStatementContext ctx ) {
-		var					pos			= tools.getPosition( ctx );
-		var					src			= tools.getSourceText( ctx );
+		var		pos				= tools.getPosition( ctx );
+		var		src				= tools.getSourceText( ctx );
+		boolean	hasSmartCase	= ctx.switchCase().stream()
+		    .anyMatch( c -> c instanceof CaseClauseContext caseCtx && isSmartCaseValue( caseCtx.expression() ) );
+		if ( hasSmartCase ) {
+			return buildSmartSwitch( ctx, pos, src );
+		}
 		BoxExpression		condition	= ctx.expression().accept( expressionVisitor );
 		List<BoxSwitchCase>	cases		= ctx.switchCase().stream().map( c -> ( BoxSwitchCase ) c.accept( this ) ).collect( Collectors.toList() );
 		return new BoxSwitch( condition, cases, pos, src );
 	}
 
+	private BoxNode buildSmartSwitch( SwitchStatementContext ctx, Position pos, String src ) {
+		String			subjectName	= "__groovySwitchSubject";
+		BoxStatement	subjectInit	= new BoxExpressionStatement(
+		    new BoxAssignment( new BoxIdentifier( subjectName, pos, subjectName ), BoxAssignmentOperator.Equal,
+		        ctx.expression().accept( expressionVisitor ), List.of(), pos, src ),
+		    pos, src );
+
+		// Built backward so each case's "else" is the chain already built from every case after
+		// it - the trailing "default:" clause (if any) seeds the chain as its final "else". Each
+		// case gets its OWN fresh "subjectName" identifier node (never the same node instance
+		// reused across branches) - same reasoning as GroovyExpressionVisitor#
+		// desugarCompoundAssign: every occurrence in the rebuilt tree must be independent.
+		BoxStatement	chain		= null;
+		for ( int i = ctx.switchCase().size() - 1; i >= 0; i-- ) {
+			var sc = ctx.switchCase( i );
+			if ( sc instanceof DefaultClauseContext defaultCtx ) {
+				chain = new BoxStatementBlock( buildStatementList( defaultCtx.blockStatements() ), pos, src );
+				continue;
+			}
+			CaseClauseContext	caseCtx		= ( CaseClauseContext ) sc;
+			BoxExpression		matches		= buildCaseMatch( subjectName, caseCtx.expression(), pos, src );
+			BoxStatement		thenBody	= new BoxStatementBlock( buildStatementList( caseCtx.blockStatements() ), pos, src );
+			chain = new BoxIfElse( matches, thenBody, chain, pos, src );
+		}
+
+		List<BoxStatement> loopBody = new ArrayList<>();
+		if ( chain != null ) {
+			loopBody.add( chain );
+		}
+		// Always exit after the chain runs once - whether a case explicitly "break;"ed or simply
+		// fell off the end of its body - so there is never any fallthrough into a case below it.
+		loopBody.add( new BoxBreak( pos, src ) );
+		BoxStatement syntheticLoop = new BoxWhile( null, new BoxBooleanLiteral( Boolean.TRUE, pos, src ),
+		    new BoxStatementBlock( loopBody, pos, src ), pos, src );
+
+		return new BoxStatementBlock( List.of( subjectInit, syntheticLoop ), pos, src );
+	}
+
+	// Builds the match condition for one "case" value against the (already-evaluated) subject,
+	// dispatching on the case value's own syntactic shape - see visitSwitchStatement's header for
+	// the full isCase() reasoning. Any shape not specifically recognized here falls back to plain
+	// equality, exactly like BoxSwitch's own native matching - so a smart switch can freely mix
+	// smart and ordinary equality cases in the same statement.
+	private BoxExpression buildCaseMatch( String subjectName, ortus.boxlang.parser.antlr.GroovyGrammar.ExpressionContext caseExprCtx, Position pos,
+	    String src ) {
+		if ( caseExprCtx instanceof ortus.boxlang.parser.antlr.GroovyGrammar.RangeExprContext ) {
+			// Range containment ("case 1..10:") - the range's own native ".contains()" member,
+			// the exact same one visitInExpr already reuses for the "in" operator.
+			BoxExpression rangeExpr = caseExprCtx.accept( expressionVisitor );
+			return new BoxMethodInvocation( new BoxIdentifier( "contains", pos, "contains" ), rangeExpr,
+			    List.of( new BoxArgument( new BoxIdentifier( subjectName, pos, subjectName ), pos, src ) ), false, true, pos, src );
+		}
+		if ( caseExprCtx instanceof ortus.boxlang.parser.antlr.GroovyGrammar.PrimaryExprContext primaryCtx
+		    && primaryCtx.primary() instanceof ortus.boxlang.parser.antlr.GroovyGrammar.IdentifierExprContext idCtx
+		    && isCapitalized( idCtx.IDENTIFIER().getText() ) ) {
+			// Class case ("case String:") - an instanceof check against the bare (capitalized)
+			// class name, the same heuristic (and same "no real symbol resolution" boundary)
+			// GroovyParserControl#isCommandStyleCallStart's own bare-identifier recognition uses.
+			String			className	= idCtx.IDENTIFIER().getText();
+			BoxExpression	typeExpr	= new BoxFQN( className, pos, className );
+			return new BoxBinaryOperation( new BoxIdentifier( subjectName, pos, subjectName ), BoxBinaryOperator.InstanceOf, typeExpr, pos, src );
+		}
+		if ( caseExprCtx instanceof ortus.boxlang.parser.antlr.GroovyGrammar.PrimaryExprContext collPrimaryCtx
+		    && collPrimaryCtx.primary() instanceof ortus.boxlang.parser.antlr.GroovyGrammar.CollectionExprContext collCtx
+		    && isListLiteral( collCtx.listOrMapLiteral() ) ) {
+			// List containment ("case [1, 2, 3]:") - same ".contains()" member as the Range case.
+			BoxExpression listExpr = caseExprCtx.accept( expressionVisitor );
+			return new BoxMethodInvocation( new BoxIdentifier( "contains", pos, "contains" ), listExpr,
+			    List.of( new BoxArgument( new BoxIdentifier( subjectName, pos, subjectName ), pos, src ) ), false, true, pos, src );
+		}
+		BoxExpression caseValue = caseExprCtx.accept( expressionVisitor );
+		return new BoxComparisonOperation( new BoxIdentifier( subjectName, pos, subjectName ), BoxComparisonOperator.Equal, caseValue, pos, src );
+	}
+
+	private boolean isListLiteral( ortus.boxlang.parser.antlr.GroovyGrammar.ListOrMapLiteralContext ctx ) {
+		return ctx instanceof ortus.boxlang.parser.antlr.GroovyGrammar.ListLiteralContext
+		    || ctx instanceof ortus.boxlang.parser.antlr.GroovyGrammar.EmptyListLiteralContext;
+	}
+
+	private boolean isCapitalized( String name ) {
+		return !name.isEmpty() && Character.isUpperCase( name.charAt( 0 ) );
+	}
+
 	@Override
 	public BoxNode visitCaseClause( CaseClauseContext ctx ) {
-		var	pos	= tools.getPosition( ctx );
-		var	src	= tools.getSourceText( ctx );
-		// Real Groovy "switch" uses subject.isCase(caseValue) semantics: a case value that is a
-		// Class means an instanceof check, a Range means containment - NOT equality. BoxSwitch
-		// (shared with CFVisitor/BoxVisitor) only ever does plain equality, so silently reusing
-		// it here would make "case String:" or "case 1..10:" compile to code that runs without
-		// error but matches the wrong cases. Failing loudly at parse time is safer than a
-		// confusing runtime behavior difference from real Groovy - rewrite as if/else with
-		// instanceof or the "in" operator instead.
-		if ( isSmartCaseValue( ctx.expression() ) ) {
-			throw new ExpressionException(
-			    "\"case\" values that match by type (a class name) or containment (a range) - Groovy's \"smart switch\" semantics - "
-			        + "are not supported; only plain equality case matching is. Rewrite this switch as an if/else chain using "
-			        + "\"instanceof\" or the \"in\" operator.",
-			    pos, src );
-		}
+		var					pos			= tools.getPosition( ctx );
+		var					src			= tools.getSourceText( ctx );
 		BoxExpression		condition	= ctx.expression().accept( expressionVisitor );
 		List<BoxStatement>	body		= buildStatementList( ctx.blockStatements() );
 		return new BoxSwitchCase( condition, null, body, pos, src );
@@ -848,10 +940,14 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 		if ( exprCtx instanceof ortus.boxlang.parser.antlr.GroovyGrammar.RangeExprContext ) {
 			return true;
 		}
+		if ( exprCtx instanceof ortus.boxlang.parser.antlr.GroovyGrammar.PrimaryExprContext collPrimaryCtx
+		    && collPrimaryCtx.primary() instanceof ortus.boxlang.parser.antlr.GroovyGrammar.CollectionExprContext collCtx
+		    && isListLiteral( collCtx.listOrMapLiteral() ) ) {
+			return true;
+		}
 		if ( exprCtx instanceof ortus.boxlang.parser.antlr.GroovyGrammar.PrimaryExprContext primaryCtx
 		    && primaryCtx.primary() instanceof ortus.boxlang.parser.antlr.GroovyGrammar.IdentifierExprContext idCtx ) {
-			String name = idCtx.IDENTIFIER().getText();
-			return !name.isEmpty() && Character.isUpperCase( name.charAt( 0 ) );
+			return isCapitalized( idCtx.IDENTIFIER().getText() );
 		}
 		return false;
 	}
