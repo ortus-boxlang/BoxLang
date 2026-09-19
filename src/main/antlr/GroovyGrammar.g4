@@ -272,6 +272,7 @@ primary: IDENTIFIER                                                             
     | FLOAT_LITERAL                                                               # floatLiteralExpr
     | HEX_LITERAL                                                                 # hexLiteralExpr
     | BINARY_LITERAL                                                              # binaryLiteralExpr
+    | OCTAL_LITERAL                                                               # octalLiteralExpr
     | TRUE                                                                        # trueLiteralExpr
     | FALSE                                                                       # falseLiteralExpr
     | NULL_LIT                                                                    # nullLiteralExpr

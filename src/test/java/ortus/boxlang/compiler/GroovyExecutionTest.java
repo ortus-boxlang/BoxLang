@@ -757,6 +757,19 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
+	@DisplayName( "octal integer literals, with underscore separators and a type suffix" )
+	public void testOctalLiterals() {
+		IBoxContext context = newContext();
+		assertThat( run( "return 010", context ).toString() ).isEqualTo( "8" );
+		assertThat( run( "return 0777", context ).toString() ).isEqualTo( "511" );
+		assertThat( run( "return 01_000", context ).toString() ).isEqualTo( "512" );
+		assertThat( run( "return 010L", context ).toString() ).isEqualTo( "8" );
+		// A lone "0" and a leading-zero literal with a non-octal digit stay plain decimal.
+		assertThat( run( "return 0", context ).toString() ).isEqualTo( "0" );
+		assertThat( run( "return 09", context ).toString() ).isEqualTo( "9" );
+	}
+
+	@Test
 	@DisplayName( "underscore digit separators and L/G/F/D type suffixes on ordinary literals" )
 	public void testUnderscoreSeparatorsAndTypeSuffixes() {
 		IBoxContext context = newContext();

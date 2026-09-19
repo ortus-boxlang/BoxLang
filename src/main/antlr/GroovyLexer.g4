@@ -297,22 +297,28 @@ AT: '@';
 IDENTIFIER: [a-zA-Z_$][a-zA-Z0-9_$]*;
 
 // Hex/binary literals - unambiguous by their "0x"/"0b" prefix, so they never compete with plain
-// decimal INT_LITERAL parsing (which never starts with "0" followed by "x"/"b"). Octal literals
-// (a bare leading zero, e.g. "010" meaning 8) are deliberately NOT supported - real Groovy's own
-// octal syntax is a well-known footgun and rare in practice, and supporting it would require a new
-// OCTAL_LITERAL rule to out-rank the existing INT_LITERAL rule on a same-length tie (e.g. "010"
-// would match both equally), a fragile ordering dependency not worth taking on for such a rarely-
-// used form. "_" digit separators (Groovy's 1_000_000) and the L/G/F/D/I type suffixes are
-// supported on all integer-literal forms and on FLOAT_LITERAL - see GroovyExpressionVisitor for
-// exactly how each is interpreted (the suffix is recognized and stripped so the literal parses,
-// but does not force a distinct runtime type beyond what BoxLang's own length-based int/long/
-// BigDecimal selection already produces - a documented, bounded simplification).
+// decimal INT_LITERAL parsing (which never starts with "0" followed by "x"/"b"). "_" digit
+// separators (Groovy's 1_000_000) and the L/G/F/D/I type suffixes are supported on all integer-
+// literal forms and on FLOAT_LITERAL - see GroovyExpressionVisitor for exactly how each is
+// interpreted (the suffix is recognized and stripped so the literal parses, but does not force a
+// distinct runtime type beyond what BoxLang's own length-based int/long/BigDecimal selection
+// already produces - a documented, bounded simplification).
 HEX_LITERAL:    '0' [xX] [0-9a-fA-F] ( '_'? [0-9a-fA-F] )* [lLgGiI]?;
 BINARY_LITERAL: '0' [bB] [01] ( '_'? [01] )* [lLgGiI]?;
 
 FLOAT_LITERAL: [0-9] ( '_'? [0-9] )* DOT [0-9] ( '_'? [0-9] )* ( [eE] [+-]? [0-9]+ )? [fFdDgG]?
     | [0-9] ( '_'? [0-9] )* [eE] [+-]? [0-9]+ [fFdDgG]?
     | [0-9] ( '_'? [0-9] )* [fFdDgG];
+
+// Octal literal - a bare leading zero followed by one or more octal digits (e.g. "010" meaning
+// 8). Requires at least one octal digit after the leading zero so a lone "0" is never diverted
+// from INT_LITERAL. On a same-length match against INT_LITERAL (e.g. "010" matches both rules,
+// each consuming all 3 characters), ANTLR breaks the tie by picking whichever rule is declared
+// FIRST - so this rule must stay textually above INT_LITERAL below. A leading zero followed by a
+// non-octal digit (e.g. "09") simply doesn't match this rule at all (fails before consuming any
+// non-octal-digit characters), so INT_LITERAL picks it up as plain decimal instead of real
+// Groovy's own compile error for that shape - a deliberate, more forgiving simplification.
+OCTAL_LITERAL: '0' [0-7] ( '_'? [0-7] )* [lLgGiI]?;
 INT_LITERAL:   [0-9] ( '_'? [0-9] )* [lLiI]?;
 
 // Single-quoted strings are always plain (non-interpolated) per Groovy semantics.

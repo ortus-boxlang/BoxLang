@@ -100,6 +100,7 @@ import ortus.boxlang.parser.antlr.GroovyGrammar.MultiplicativeExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.NamedArgumentContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.NewInstanceExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.NullLiteralExprContext;
+import ortus.boxlang.parser.antlr.GroovyGrammar.OctalLiteralExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.ParenExprContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.PlainListElementContext;
 import ortus.boxlang.parser.antlr.GroovyGrammar.PlainMapEntryContext;
@@ -744,6 +745,13 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 	@Override
 	public BoxExpression visitBinaryLiteralExpr( BinaryLiteralExprContext ctx ) {
 		return buildRadixIntegerLiteral( ctx.getText(), 2, 2, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+	}
+
+	@Override
+	public BoxExpression visitOctalLiteralExpr( OctalLiteralExprContext ctx ) {
+		// Unlike HEX_LITERAL/BINARY_LITERAL, an octal literal has no separate prefix character to
+		// skip past - just the leading "0" itself - so prefixLength is 1, not 2.
+		return buildRadixIntegerLiteral( ctx.getText(), 1, 8, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
 	}
 
 	// A trailing L/G/F/D/I type suffix (Groovy's 100000000000L, 10.5G, 5F, etc.) is recognized and
