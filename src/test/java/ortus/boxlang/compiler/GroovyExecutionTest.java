@@ -572,9 +572,9 @@ public class GroovyExecutionTest {
 	@Test
 	@DisplayName( "enum declaration: constant access, equality, values(), interpolation" )
 	public void testEnumDeclaration() {
-		// A deliberately bounded implementation, NOT real Groovy enum semantics - see
-		// GroovyVisitor#visitEnumDeclaration for exactly what this desugars to (a struct of
-		// string constants) and what isn't modeled (ordinal(), true type identity).
+		// See GroovyVisitor#visitEnumDeclaration for exactly what this desugars to - a struct
+		// whose values are real GroovyEnumValue instances (own name/ordinal), not plain strings,
+		// but still comparable/interchangeable with a plain string for these idioms.
 		IBoxContext	context	= newContext();
 		Object		result	= run(
 		    "enum Color { RED, GREEN, BLUE }\n"
@@ -584,6 +584,42 @@ public class GroovyExecutionTest {
 		        + "return \"${Color.RED},${matches},${all}\"\n",
 		    context );
 		assertThat( result ).isEqualTo( "RED,true,RED,GREEN,BLUE" );
+	}
+
+	@Test
+	@DisplayName( "enum constant supports real ordinal() and name() member calls" )
+	public void testEnumOrdinalAndName() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "enum Color { RED, GREEN, BLUE }\n"
+		        + "def g = Color.GREEN\n"
+		        + "return \"${g.name()}:${g.ordinal()}:${Color.RED.ordinal()}:${Color.BLUE.ordinal()}\"\n",
+		    context );
+		assertThat( result ).isEqualTo( "GREEN:1:0:2" );
+	}
+
+	@Test
+	@DisplayName( "enum constants compare by ordinal via the spaceship operator" )
+	public void testEnumSpaceshipComparesByOrdinal() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "enum Color { RED, GREEN, BLUE }\n"
+		        + "return Color.RED <=> Color.BLUE\n",
+		    context );
+		assertThat( result.toString() ).isEqualTo( "-1" );
+	}
+
+	@Test
+	@DisplayName( "an enum constant equals a plain string in either comparison order" )
+	public void testEnumEqualsStringBothDirections() {
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "enum Color { RED, GREEN, BLUE }\n"
+		        + "def a = (Color.RED == \"RED\")\n"
+		        + "def b = (\"RED\" == Color.RED)\n"
+		        + "return \"${a}:${b}\"\n",
+		    context );
+		assertThat( result ).isEqualTo( "true:true" );
 	}
 
 	@Test

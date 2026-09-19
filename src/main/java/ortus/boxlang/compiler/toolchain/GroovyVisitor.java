@@ -638,37 +638,56 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 		return new BoxExpressionStatement( new BoxAssignment( pattern, BoxAssignmentOperator.Equal, value, List.of(), pos, src ), pos, src );
 	}
 
-	// A deliberately bounded enum implementation - NOT real Groovy enum semantics. "enum Color {
-	// RED, GREEN, BLUE }" desugars to a struct-of-string-constants assignment:
-	// Color = { RED: "RED", GREEN: "GREEN", BLUE: "BLUE", values: ["RED","GREEN","BLUE"] }
-	// This correctly supports the overwhelmingly common patterns - Color.RED, comparing a value
-	// against Color.GREEN with "==", string interpolation, and (since BoxSwitch is equality-only
-	// anyway) even "switch (x) { case Color.RED: ... }" - without needing BoxLang's own class
-	// system to support static constant fields, which prior investigation in this codebase found
-	// disproportionately expensive (see visitFieldDeclaration's "static" no-op notes). What is
-	// NOT modeled: real type identity separate from String, ordinal(), and nesting an enum inside
-	// a class body (top-level only).
+	// "enum Color { RED, GREEN, BLUE }" desugars to a struct-of-constants assignment:
+	// Color = { RED: <constant>, GREEN: <constant>, BLUE: <constant>, values: [<constant>, ...] }
+	// where each <constant> is a real ortus.boxlang.runtime.types.GroovyEnumValue instance (own
+	// name + ordinal), not a plain string - giving real type identity and ordinal()/name() member
+	// calls (dispatched generically via BoxLang's Java interop, since it's a plain Java object)
+	// without needing BoxLang's own class system to support static constant fields, which prior
+	// investigation in this codebase found disproportionately expensive (see
+	// visitFieldDeclaration's "static" no-op notes). GroovyEnumValue is deliberately still
+	// comparable/interchangeable with a plain string (see its own class header) so every pattern
+	// the previous plain-string desugaring supported - Color.RED, "==" against a string literal,
+	// string interpolation, and (since BoxSwitch is equality-only anyway) "switch (x) { case
+	// Color.RED: ... }" - keeps working unchanged. What is still NOT modeled: nesting an enum
+	// inside a class body (top-level only).
+	private static final String GROOVY_ENUM_VALUE_FQN = "ortus.boxlang.runtime.types.GroovyEnumValue";
+
 	@Override
 	public BoxNode visitEnumDeclaration( EnumDeclarationContext ctx ) {
 		var					pos				= tools.getPosition( ctx );
 		var					src				= tools.getSourceText( ctx );
-		BoxIdentifier		enumName		= new BoxIdentifier( ctx.IDENTIFIER( 0 ).getText(), tools.getPosition( ctx.IDENTIFIER( 0 ).getSymbol() ),
-		    ctx.IDENTIFIER( 0 ).getText() );
+		String				enumTypeName	= ctx.IDENTIFIER( 0 ).getText();
+		BoxIdentifier		enumName		= new BoxIdentifier( enumTypeName, tools.getPosition( ctx.IDENTIFIER( 0 ).getSymbol() ), enumTypeName );
 
 		List<BoxExpression>	entries			= new ArrayList<>();
-		List<BoxExpression>	constantNames	= new ArrayList<>();
+		List<BoxExpression>	constantValues	= new ArrayList<>();
 		for ( int i = 1; i < ctx.IDENTIFIER().size(); i++ ) {
 			String	constantName	= ctx.IDENTIFIER( i ).getText();
+			int		ordinal			= i - 1;
 			var		constantPos		= tools.getPosition( ctx.IDENTIFIER( i ).getSymbol() );
 			entries.add( new BoxStringLiteral( constantName, constantPos, constantName ) );
-			entries.add( new BoxStringLiteral( constantName, constantPos, constantName ) );
-			constantNames.add( new BoxStringLiteral( constantName, constantPos, constantName ) );
+			entries.add( buildEnumValueOf( enumTypeName, constantName, ordinal, constantPos, src ) );
+			constantValues.add( buildEnumValueOf( enumTypeName, constantName, ordinal, constantPos, src ) );
 		}
 		entries.add( new BoxStringLiteral( "values", pos, "values" ) );
-		entries.add( new BoxArrayLiteral( constantNames, pos, src ) );
+		entries.add( new BoxArrayLiteral( constantValues, pos, src ) );
 
 		BoxExpression structLiteral = new BoxStructLiteral( BoxStructType.Ordered, entries, pos, src );
 		return new BoxExpressionStatement( new BoxAssignment( enumName, BoxAssignmentOperator.Equal, structLiteral, List.of(), pos, src ), pos, src );
+	}
+
+	// Builds a fresh "GroovyEnumValue.of(enumTypeName, constantName, ordinal)" call expression -
+	// called TWICE per constant (once for its direct struct entry, once for the "values" array),
+	// deliberately never reusing one instance in two places in the tree, so each occurrence is an
+	// independent node - same reasoning as GroovyExpressionVisitor#desugarCompoundAssign.
+	private BoxExpression buildEnumValueOf( String enumTypeName, String constantName, int ordinal, Position pos, String src ) {
+		BoxExpression		classRef	= new BoxFQN( GROOVY_ENUM_VALUE_FQN, pos, GROOVY_ENUM_VALUE_FQN );
+		List<BoxArgument>	args		= List.of(
+		    new BoxArgument( new BoxStringLiteral( enumTypeName, pos, enumTypeName ), pos, src ),
+		    new BoxArgument( new BoxStringLiteral( constantName, pos, constantName ), pos, src ),
+		    new BoxArgument( new BoxIntegerLiteral( String.valueOf( ordinal ), pos, src ), pos, src ) );
+		return new ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation( new BoxIdentifier( "of", pos, "of" ), classRef, args, pos, src );
 	}
 
 	@Override
