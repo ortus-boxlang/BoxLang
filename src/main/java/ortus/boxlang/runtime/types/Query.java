@@ -284,7 +284,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				Object[] row = new Object[ columnCount ];
 				for ( int i = 0; i < columnCount; i++ ) {
 					// Get the data in the JDBC column based on our column map and use the corresponding SQL type
-					row[ i ] = driver.transformValue( columnSQLTypes[ i ], resultSet.getObject( columnMap[ i ] ), statement );
+					// columnSQLTypes is indexed by JDBC column position (0-based), so we use columnMap[i] - 1
+					// to look up the type for the correct JDBC column, even when duplicate column labels
+					// caused columnMap to be smaller than the original column count.
+					row[ i ] = driver.transformValue( columnSQLTypes[ columnMap[ i ] - 1 ], resultSet.getObject( columnMap[ i ] ), statement );
 				}
 				query.addRow( row );
 			}

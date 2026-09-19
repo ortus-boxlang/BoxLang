@@ -245,6 +245,28 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( query.size() ).isGreaterThan( 0 );
 	}
 
+	@DisplayName( "It can select out a bit column" )
+	@Test
+	public void testSelectBitColumn() {
+		instance.executeSource(
+		    """
+		      result = queryExecute( "
+		    	select
+		    		'a@b.c' as userEmail,
+		    		'a@b.c' as userEmail, -- duplicate col seems to throw off tracking
+		    		cast( 1 as bit ) as emailEveryReceipt,
+		    		'G8' as playerDivision -- attempts cast to boolean, fails
+		    ", {}, { "datasource" : "MSSQLdatasource" } );
+		      """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+		assertEquals( 1, query.getRowAsStruct( 0 ).get( Key.of( "emailEveryReceipt" ) ) );
+		assertEquals( "G8", query.getRowAsStruct( 0 ).get( Key.of( "playerDivision" ) ) );
+		assertEquals( "a@b.c", query.getRowAsStruct( 0 ).get( Key.of( "userEmail" ) ) );
+	}
+
 	@DisplayName( "It won't throw on DROP statements like MSSQL does" )
 	@Test
 	public void testTableDrop() {
