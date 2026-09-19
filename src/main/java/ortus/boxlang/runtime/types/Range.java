@@ -36,9 +36,12 @@ import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.RangeMeta;
@@ -1107,12 +1110,42 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 
 	@Override
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
+		MemberDescriptor memberDescriptor = getFunctionService().getMemberMethod( name, BoxLangType.RANGE );
+		if ( memberDescriptor != null ) {
+			return memberDescriptor.invoke( context, this, positionalArguments );
+		}
 		return DynamicInteropService.invoke( context, this, name.getName(), safe, positionalArguments );
 	}
 
 	@Override
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
+		MemberDescriptor memberDescriptor = getFunctionService().getMemberMethod( name, BoxLangType.RANGE );
+		if ( memberDescriptor != null ) {
+			return memberDescriptor.invoke( context, this, namedArguments );
+		}
 		return DynamicInteropService.invoke( context, this, name.getName(), safe, namedArguments );
+	}
+
+	/**
+	 * Function service, resolved lazily so Range can be loaded before the runtime's
+	 * FunctionService is fully wired during startup.
+	 */
+	private static FunctionService functionService;
+
+	/**
+	 * Gets the FunctionService, resolving it lazily on first use.
+	 *
+	 * @return The FunctionService.
+	 */
+	private static FunctionService getFunctionService() {
+		if ( functionService == null ) {
+			synchronized ( Range.class ) {
+				if ( functionService == null ) {
+					functionService = BoxRuntime.getInstance().getFunctionService();
+				}
+			}
+		}
+		return functionService;
 	}
 
 	@Override
