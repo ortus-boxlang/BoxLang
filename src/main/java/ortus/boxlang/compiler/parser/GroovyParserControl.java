@@ -52,11 +52,22 @@ public abstract class GroovyParserControl extends Parser {
 	// argument is a spread - confirmed the hard way, as a real regression caught by this branch's
 	// own test suite (every closure using "it * 2"/similar was being misparsed as a command call
 	// with a spread argument). A spread-only command-style call is simply unsupported.
-	private static final Set<Integer> commandArgStartTokens = Set.of(
+	private static final Set<Integer>	commandArgStartTokens		= Set.of(
 	    SQUOTE_STRING, OPEN_QUOTE, OPEN_TRIPLE_QUOTE, SLASHY_STRING,
 	    INT_LITERAL, FLOAT_LITERAL, HEX_LITERAL, BINARY_LITERAL,
 	    TRUE, FALSE, NULL_LIT, THIS, SUPER,
 	    LBRACE, LBRACKET, NEW );
+
+	// A curated set of call names recognized as a command-style call even with a BARE identifier
+	// argument (e.g. "println x") - see isCommandStyleCallStart's own header for why a bare
+	// identifier argument can't be recognized generally. Every name here is (a) never legitimately
+	// used as a Java/Groovy type name in a "Type varName" declaration (lowercase, verb-shaped -
+	// unlike a real type such as "String"/"int"/"long"), so it can never collide with
+	// varDeclStatement's own claim on the same "IDENTIFIER IDENTIFIER" shape, and (b) genuinely
+	// common written this way in real Groovy scripts. A general, symbol-table-informed resolution
+	// (what real Groovy actually does, distinguishing a known type from a known method) is out of
+	// scope for this single-pass parser.
+	private static final Set<String>	bareIdentifierCommandNames	= Set.of( "println", "print", "printf" );
 
 	public GroovyParserControl( TokenStream input ) {
 		super( input );
@@ -77,8 +88,12 @@ public abstract class GroovyParserControl extends Parser {
 	 * something that can NEVER also be a second bare identifier or a unary-operator-prefixed
 	 * expression - a literal (string/number/boolean/null), {@code this}/{@code super}, a
 	 * closure/list/map literal, {@code new}, a spread argument, or a "name: value" named
-	 * argument. A bare-identifier argument (e.g. {@code println x}) is a documented, narrower gap
-	 * left unsupported for exactly this reason.
+	 * argument. A bare-identifier argument (e.g. {@code println x}) is additionally recognized,
+	 * but ONLY for the small, curated {@link #bareIdentifierCommandNames} call-name set - since
+	 * without real type/symbol resolution there's no general way to tell "println x" (a command
+	 * call) apart from "int x" (a typed declaration using the primitive type name "int") from the
+	 * token stream alone. Any other bare-identifier-argument command call (a user-defined function
+	 * name, not in the curated set) remains a documented, narrower gap.
 	 *
 	 * @param input the token input stream
 	 *
@@ -92,9 +107,17 @@ public abstract class GroovyParserControl extends Parser {
 		if ( commandArgStartTokens.contains( firstArgType ) ) {
 			return true;
 		}
+		if ( firstArgType != IDENTIFIER ) {
+			return false;
+		}
 		// "name: value" named argument - the argument itself is a bare identifier, but only when
 		// immediately followed by a colon, which a second declaration-target identifier never is.
-		return firstArgType == IDENTIFIER && input.LT( 3 ).getType() == COLON;
+		if ( input.LT( 3 ).getType() == COLON ) {
+			return true;
+		}
+		// A plain bare-identifier argument (println x) - only for the curated, unambiguous
+		// call-name set (see bareIdentifierCommandNames).
+		return bareIdentifierCommandNames.contains( input.LT( 1 ).getText() );
 	}
 
 }

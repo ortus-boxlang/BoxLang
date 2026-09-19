@@ -905,6 +905,26 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
+	@DisplayName( "command-style call with a bare-identifier argument (println x) executes correctly" )
+	public void testCommandStyleCallWithBareIdentifierArgument() {
+		// Only recognized for the curated println/print/printf names (see GroovyParserControl#
+		// bareIdentifierCommandNames) - not general, since a bare "IDENTIFIER IDENTIFIER" is
+		// otherwise indistinguishable from a typed declaration like "int x" without real type
+		// resolution. Proves both that the curated case actually reaches println (not silently
+		// misparsed as a redundant var-decl) and that a same-shaped primitive-typed declaration
+		// still works unaffected.
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def message = \"hi from a bare identifier\"\n"
+		        + "println message\n"
+		        + "int x\n"
+		        + "x = 5\n"
+		        + "return x\n",
+		    context );
+		assertThat( result.toString() ).isEqualTo( "5" );
+	}
+
+	@Test
 	@DisplayName( "annotations are accepted (and discarded) at runtime, not just at parse time" )
 	public void testAnnotationsAreNoOpAtRuntime() {
 		IBoxContext	context	= newContext();

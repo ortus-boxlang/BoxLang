@@ -385,15 +385,20 @@ public class GroovyGrammarParsingTest {
 		// recognizes a second bare identifier as a command-call argument, so this still parses as
 		// (and only as) a typed declaration, exactly as before this feature existed.
 		assertParses( "String bar\n" );
+		assertParses( "int x\n" );
+		assertParses( "long total\n" );
 		// A leading unary +/- must still read as a single arithmetic expression statement, not a
 		// command-style call with a unary-prefixed argument.
 		assertParses( "x + 1\n" );
 		assertParses( "x - 1\n" );
-		// A bare identifier argument (no literal/named-arg shape) is a documented, narrower gap -
-		// still unsupported as a command call, on purpose, same reasoning as the ambiguity above.
-		// This still parses, but pre-existing-grammar's own way: as a (valid, if unusual)
-		// varDeclStatement declaring "x" with type name "println" - not a command call at all.
+		// A bare identifier argument is recognized as a command call only for a curated,
+		// unambiguous call-name set (println/print/printf - see GroovyParserControl#
+		// bareIdentifierCommandNames), since those names can never legitimately be a type name in
+		// a "Type varName" declaration. Any other bare-identifier-argument call (a user-defined
+		// function name) remains a documented, narrower gap, and still parses the pre-existing
+		// way: as a (valid, if unusual) varDeclStatement.
 		assertParses( "println x\n" );
+		assertParses( "shout x\n" );
 	}
 
 	/**
