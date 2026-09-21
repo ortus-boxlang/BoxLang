@@ -140,11 +140,18 @@ public class NumberFormat extends BIF {
 			} else if ( format.equals( "ls$" ) ) {
 				formatter = LocalizationUtil.localizedCurrencyFormatter( locale );
 			} else {
-				// Justification masks ( a leading L/C/R flag, or a floating-decimal '^' separator ) retain
-				// their padding and are justified within the width of the mask. All other masks return
-				// their values trimmed ( no justification padding ).
-				if ( isJustificationMask( format ) ) {
+				// Floating-decimal masks ( containing '^' ) use natural decimals and are padded/justified.
+				if ( format.indexOf( '^' ) >= 0 ) {
 					return formatJustified( locale, value, format );
+				}
+
+				// Capture and strip a leading justification flag ( L = left, C = center, R = right ).
+				char	justification	= 'R';
+				String	originalMask	= format;
+				if ( !format.isEmpty() && ( format.charAt( 0 ) == 'L' || format.charAt( 0 ) == 'C' || format.charAt( 0 ) == 'R' ) ) {
+					justification	= format.charAt( 0 );
+					format			= format.substring( 1 );
+					originalMask	= format;
 				}
 
 				// A leading comma (e.g. ",9") is incorrect but is parsed in other engines"
@@ -192,6 +199,20 @@ public class NumberFormat extends BIF {
 				} catch ( IllegalArgumentException e ) {
 					throw new RuntimeException( "Invalid number format pattern mask: " + arguments.getAsString( Key.mask ), e );
 				}
+
+				// Preserve the whitespace the mask reserves: pad the result to the mask's digit width
+				// and honor the requested justification ( L = left, C = center, R / default = right ).
+				// The negative sign is placed at the very start, before any padding.
+				String	result		= formatter.format( value );
+				boolean	negative	= result.startsWith( "-" );
+				if ( negative ) {
+					result = result.substring( 1 );
+				}
+				int padding = computeMaskWidth( originalMask ) - countDigitChars( result );
+				if ( padding > 0 ) {
+					result = applyJustification( result, padding, justification );
+				}
+				return negative ? "-" + result : result;
 			}
 		}
 
@@ -226,19 +247,61 @@ public class NumberFormat extends BIF {
 	}
 
 	/**
-	 * Determines whether a mask requests justification padding: a leading L/C/R flag, or a
-	 * floating-decimal '^' separator ( which is right-justified by default ).
+	 * Counts the digit width a mask reserves: digit placeholders ( '_', '9', '0' ), the decimal
+	 * point, and grouping commas. Symbol characters ( '$', '+', '-', '(', ')', 'L', 'C', 'R', '^' )
+	 * do not contribute to the width.
 	 *
 	 * @param mask The format mask
 	 *
-	 * @return true when the mask should be padded and justified
+	 * @return The number of digit positions the mask reserves
 	 */
-	private static boolean isJustificationMask( String mask ) {
-		if ( mask == null || mask.isEmpty() ) {
-			return false;
+	private static int computeMaskWidth( String mask ) {
+		int width = 0;
+		for ( int i = 0; i < mask.length(); i++ ) {
+			char c = mask.charAt( i );
+			if ( c == '_' || c == '9' || c == '0' || c == '.' ) {
+				width++;
+			}
 		}
-		char first = mask.charAt( 0 );
-		return first == 'L' || first == 'C' || first == 'R' || mask.indexOf( '^' ) >= 0;
+		return width;
+	}
+
+	/**
+	 * Counts the digit characters ( digits, decimal point, grouping separators ) in a formatted
+	 * result, ignoring any symbol characters ( '$', '+', '-', '(', ')', spaces ).
+	 *
+	 * @param result The formatted result string
+	 *
+	 * @return The number of digit characters
+	 */
+	private static int countDigitChars( String result ) {
+		int count = 0;
+		for ( int i = 0; i < result.length(); i++ ) {
+			char c = result.charAt( i );
+			if ( ( c >= '0' && c <= '9' ) || c == '.' || c == ',' ) {
+				count++;
+			}
+		}
+		return count;
+	}
+
+	/**
+	 * Applies the requested justification to pad the result to the mask width.
+	 *
+	 * @param result        The formatted result
+	 * @param padding       The number of spaces to add
+	 * @param justification The justification flag ( 'L' = left, 'C' = center, otherwise right )
+	 *
+	 * @return The justified result
+	 */
+	private static String applyJustification( String result, int padding, char justification ) {
+		if ( justification == 'L' ) {
+			return result + " ".repeat( padding );
+		} else if ( justification == 'C' ) {
+			int leftPad = padding / 2;
+			return " ".repeat( leftPad ) + result + " ".repeat( padding - leftPad );
+		}
+		return " ".repeat( padding ) + result;
 	}
 
 	/**
