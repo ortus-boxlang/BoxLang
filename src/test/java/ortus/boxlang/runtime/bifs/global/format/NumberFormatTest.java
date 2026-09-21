@@ -101,7 +101,7 @@ public class NumberFormatTest {
 		    result = numberFormat( 1, "__,___,___.__" );
 		    """,
 		    context );
-		assertEquals( "1.00", variables.getAsString( result ) );
+		assertEquals( "       1.00", variables.getAsString( result ) );
 		instance.executeSource(
 		    """
 		    result = numberFormat( round( 110.647747663711, 1 ), "_,.0");
@@ -127,14 +127,14 @@ public class NumberFormatTest {
 		    result = numberFormat( 1.2, '9999.0' );
 		    """,
 		    context );
-		assertEquals( "1.2", variables.getAsString( result ) );
+		assertEquals( "   1.2", variables.getAsString( result ) );
 
 		instance.executeSource(
 		    """
 		    result = numberFormat( 0.2, '9999.0' );
 		    """,
 		    context );
-		assertEquals( "0.2", variables.getAsString( result ) );
+		assertEquals( "   0.2", variables.getAsString( result ) );
 	}
 
 	@DisplayName( "It tests the BIF NumberFormat with common format masks" )
@@ -359,7 +359,7 @@ public class NumberFormatTest {
 		    result = numberFormat(2, "999,999,999");
 		    """,
 		    context );
-		assertEquals( "2", variables.getAsString( result ) );
+		assertEquals( "        2", variables.getAsString( result ) );
 	}
 
 	@DisplayName( "It will fix incorrect thousands separators" )
@@ -460,11 +460,10 @@ public class NumberFormatTest {
 		assertEquals( 3.9, variables.getAsNumber( Key.of( "result3" ) ).doubleValue(), 0.0001 );
 	}
 
-	// BL-2694: Adobe CF and Lucee left-pad to the mask width, but core BoxLang returns trimmed values
-	// ( no justification padding ). These cover the example masks from the story.
-	@DisplayName( "It returns trimmed values without padding to the mask width" )
+	// BL-2694: Adobe CF and Lucee left-pad to the width of the mask, right-justifying the result.
+	@DisplayName( "It preserves the mask width and pads the result" )
 	@Test
-	public void testNoPaddingToMaskWidth() {
+	public void testPaddingToMaskWidth() {
 		instance.executeSource(
 		    """
 		       result = numberFormat( 7, '_,___.__' )
@@ -475,11 +474,11 @@ public class NumberFormatTest {
 		    result6 = numberFormat( 1234567.891, '_,___.__' )
 		       """,
 		    context );
-		assertEquals( "7.00", variables.getAsString( result ) );
-		assertEquals( "7.00", variables.getAsString( Key.of( "result2" ) ) );
-		assertEquals( "12.00", variables.getAsString( Key.of( "result3" ) ) );
-		assertEquals( "-5.50", variables.getAsString( Key.of( "result4" ) ) );
-		assertEquals( "5", variables.getAsString( Key.of( "result5" ) ) );
+		assertEquals( "   7.00", variables.getAsString( result ) );
+		assertEquals( "  7.00", variables.getAsString( Key.of( "result2" ) ) );
+		assertEquals( "  12.00", variables.getAsString( Key.of( "result3" ) ) );
+		assertEquals( "-  5.50", variables.getAsString( Key.of( "result4" ) ) );
+		assertEquals( "  5", variables.getAsString( Key.of( "result5" ) ) );
 		assertEquals( "1,234,567.89", variables.getAsString( Key.of( "result6" ) ) );
 	}
 
