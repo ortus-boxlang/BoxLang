@@ -193,7 +193,7 @@ public class NumberFormatTest {
 		    context );
 		assertEquals( variables.getAsString( result ), "$12,345.00" );
 
-		java.text.NumberFormat formatter = DecimalFormat.getCurrencyInstance( Locale.getDefault() );
+		java.text.NumberFormat formatter = DecimalFormat.getCurrencyInstance( Locale.US );
 		instance.executeSource(
 		    """
 		    result = numberFormat( 12345, "ls$");
