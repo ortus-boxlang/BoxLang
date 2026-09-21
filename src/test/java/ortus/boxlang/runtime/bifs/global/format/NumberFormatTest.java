@@ -216,7 +216,13 @@ public class NumberFormatTest {
 		    result = numberFormat( 1, "C000");
 		    """,
 		    context );
-		assertEquals( variables.getAsString( result ), "1" );
+		assertEquals( "001", variables.getAsString( result ) );
+		instance.executeSource(
+		    """
+		    result = numberFormat( 3.21, "C(_^_)");
+		    """,
+		    context );
+		assertEquals( "( 3.21 )", variables.getAsString( result ) );
 	}
 
 	@DisplayName( "It tests will throw an error with an unparseable date" )
@@ -376,6 +382,105 @@ public class NumberFormatTest {
 		    """,
 		    context );
 		assertEquals( "1,234.00", variables.getAsString( result ) );
+	}
+
+	@DisplayName( "It will correctly round decimal values" )
+	@Test
+	public void testCorrectlyRoundDecimalValues() {
+		instance.executeSource(
+		    """
+		       result = numberFormat( 0.005, '0.00' )
+		    result2 = numberFormat( 12.5, '0' )
+		    result3 = numberFormat( -5.5, '0' )
+		    result4 = numberFormat( 2.675, '0.00' )
+		    result5 = lsNumberFormat( 0.005, '0.00', 'de_DE' )
+		       """,
+		    context );
+		assertEquals( "0.01", variables.getAsString( result ) );
+		assertEquals( "13", variables.getAsString( Key.of( "result2" ) ) );
+		assertEquals( "-5", variables.getAsString( Key.of( "result3" ) ) );
+		assertEquals( "2.68", variables.getAsString( Key.of( "result4" ) ) );
+		assertEquals( "0,01", variables.getAsString( Key.of( "result5" ) ) );
+	}
+
+	@DisplayName( "It rounds to an integer when no mask is specified" )
+	@Test
+	public void testDefaultMaskNoDecimals() {
+		instance.executeSource(
+		    """
+		       result = numberFormat( 1234.5 )
+		    result2 = numberFormat( 3.9 )
+		       """,
+		    context );
+		assertEquals( "1,235", variables.getAsString( result ) );
+		assertEquals( "4", variables.getAsString( Key.of( "result2" ) ) );
+	}
+
+	@DisplayName( "It retains the leading zero for fraction-only masks" )
+	@Test
+	public void testFractionOnlyMaskLeadingZero() {
+		instance.executeSource(
+		    """
+		       result = numberFormat( 0, '.__' )
+		    result2 = numberFormat( 0.5, '.00' )
+		       """,
+		    context );
+		assertEquals( "0.00", variables.getAsString( result ) );
+		assertEquals( "0.50", variables.getAsString( Key.of( "result2" ) ) );
+	}
+
+	@DisplayName( "It does not follow the request locale for numberFormat" )
+	@Test
+	public void testNumberFormatLocaleIndependent() {
+		instance.executeSource(
+		    """
+		       setLocale( 'de_DE' )
+		    result = numberFormat( 3.9, '0.00' )
+		    result2 = lsNumberFormat( 3.9, '0.00' )
+		       """,
+		    context );
+		assertEquals( "3.90", variables.getAsString( result ) );
+		assertEquals( "3,90", variables.getAsString( Key.of( "result2" ) ) );
+	}
+
+	// BL-2693 (D): numberFormat is locale independent, lsNumberFormat follows the request locale.
+	@DisplayName( "It uses US locale for numberFormat and request locale for lsNumberFormat with grouped masks" )
+	@Test
+	public void testLocaleIndependenceGroupedMask() {
+		instance.executeSource(
+		    """
+		       setLocale( 'de_DE' )
+		    result = numberFormat( 1234.5, ',0.00' )
+		    result2 = lsNumberFormat( 1234.5, ',0.00' )
+		    result3 = val( numberFormat( 3.9, '0.00' ) )
+		       """,
+		    context );
+		assertEquals( "1,234.50", variables.getAsString( result ) );
+		assertEquals( "1.234,50", variables.getAsString( Key.of( "result2" ) ) );
+		assertEquals( 3.9, variables.getAsNumber( Key.of( "result3" ) ).doubleValue(), 0.0001 );
+	}
+
+	// BL-2694: Adobe CF and Lucee left-pad to the mask width, but core BoxLang returns trimmed values
+	// ( no justification padding ). These cover the example masks from the story.
+	@DisplayName( "It returns trimmed values without padding to the mask width" )
+	@Test
+	public void testNoPaddingToMaskWidth() {
+		instance.executeSource(
+		    """
+		       result = numberFormat( 7, '_,___.__' )
+		    result2 = numberFormat( 7, '999.99' )
+		    result3 = numberFormat( 12, '____.__' )
+		    result4 = numberFormat( -5.5, ',___.__' )
+		    result5 = numberFormat( 5, '___' )
+		    result6 = numberFormat( 1234567.891, '_,___.__' )
+		       """,
+		    context );
+		assertEquals( "7.00", variables.getAsString( result ) );
+		assertEquals( "7.00", variables.getAsString( Key.of( "result2" ) ) );
+		assertEquals( "12.00", variables.getAsString( Key.of( "result3" ) ) );
+		assertEquals( "-5.50", variables.getAsString( Key.of( "result4" ) ) );
+		assertEquals( "5", variables.getAsString( Key.of( "result5" ) ) );
+		assertEquals( "1,234,567.89", variables.getAsString( Key.of( "result6" ) ) );
 	}
 
 }
