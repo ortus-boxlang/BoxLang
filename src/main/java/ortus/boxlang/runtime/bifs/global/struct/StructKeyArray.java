@@ -45,6 +45,8 @@ public class StructKeyArray extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 * 
+	 * @argument.structure The struct whose keys are returned.
+	 *
 	 * @return An array containing the keys of the structure.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

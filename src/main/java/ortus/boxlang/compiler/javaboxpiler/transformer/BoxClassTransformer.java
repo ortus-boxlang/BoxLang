@@ -178,6 +178,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private static final Key initMethod = ${initMethod};
 			private static Boolean canOutput = null;
 			private static Boolean canInvokeImplicitAccessor = null;
+			private static boolean propertiesMerged = false;
 
 			static {
 				BoxClassSupport.runStaticInitializer( ${className}::staticInitializer, ${className}.class, ${className}.staticScope, ${className}.path );
@@ -337,6 +338,14 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			public void setCanInvokeImplicitAccessor( Boolean canInvokeImplicitAccessor ) {
 				this.canInvokeImplicitAccessor = canInvokeImplicitAccessor;
+			}
+
+			public boolean getPropertiesMerged() {
+				return this.propertiesMerged;
+			}
+
+			public void setPropertiesMerged( boolean propertiesMerged ) {
+				this.propertiesMerged = propertiesMerged;
 			}
 
 			public String getBoxSuperClassName() {

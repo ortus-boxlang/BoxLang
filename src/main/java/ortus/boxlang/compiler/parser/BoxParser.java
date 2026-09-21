@@ -448,6 +448,15 @@ public class BoxParser extends AbstractParser {
 				}
 				message += " on line " + position.getStart().getLine();
 				errorListener.semanticError( message, position );
+			} else if ( modes.contains( "hashMode" ) ) {
+				Token lastHash = lexer.findPreviousToken( BoxLexer.ICHAR );
+				errorListener.semanticError( "Unterminated hash expression inside of string literal.", getPosition( lastHash ) );
+			} else if ( modes.contains( "quotesMode" ) ) {
+				Token lastQuote = lexer.findPreviousToken( BoxLexer.OPEN_QUOTE );
+				errorListener.semanticError( "Unterminated quote expression.", getPosition( lastQuote ) );
+			} else if ( modes.contains( "squotesMode" ) ) {
+				Token lastQuote = lexer.findPreviousToken( BoxLexer.OPEN_QUOTE );
+				errorListener.semanticError( "Unterminated single quote expression.", getPosition( lastQuote ) );
 			} else if ( lexer.hasMode( BoxLexerCustom.TEMPLATE_OUTPUT_MODE ) ) {
 				String	message				= "Unclosed output tag";
 				Token	outputStartToken	= lexer.findPreviousToken( BoxLexerCustom.OUTPUT_START );
@@ -486,15 +495,6 @@ public class BoxParser extends AbstractParser {
 				}
 				message += " starting on line " + position.getStart().getLine();
 				errorListener.semanticError( message, position );
-			} else if ( modes.contains( "hashMode" ) ) {
-				Token lastHash = lexer.findPreviousToken( BoxLexer.ICHAR );
-				errorListener.semanticError( "Unterminated hash expression inside of string literal.", getPosition( lastHash ) );
-			} else if ( modes.contains( "quotesMode" ) ) {
-				Token lastQuote = lexer.findPreviousToken( BoxLexer.OPEN_QUOTE );
-				errorListener.semanticError( "Unterminated quote expression.", getPosition( lastQuote ) );
-			} else if ( modes.contains( "squotesMode" ) ) {
-				Token lastQuote = lexer.findPreviousToken( BoxLexer.OPEN_QUOTE );
-				errorListener.semanticError( "Unterminated single quote expression.", getPosition( lastQuote ) );
 			} else {
 				// Catch-all. If this error is encountered, look at what modes were still on the stack, find what token was never ended, and
 				// add logic like the above to handle it. Eventually, this catch-all should never be used.
@@ -1546,6 +1546,8 @@ public class BoxParser extends AbstractParser {
 			case BoxArrayLiteral ignored -> {
 			}
 			case ortus.boxlang.compiler.ast.expression.BoxSetLiteral ignored -> {
+			}
+			case ortus.boxlang.compiler.ast.expression.BoxStringBuilderLiteral ignored -> {
 			}
 			case BoxScope ignored -> {
 			}

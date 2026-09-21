@@ -195,6 +195,19 @@ public class ConnectionManager {
 	}
 
 	/**
+	 * Enable or disable support for nested transactions for this connection manager
+	 * instance.
+	 *
+	 * @param enableNestedTransactions true to enable nested transactions, false to disable.
+	 *
+	 * @return This ConnectionManager instance.
+	 */
+	public ConnectionManager setEnableNestedTransactions( boolean enableNestedTransactions ) {
+		this.enableNestedTransactions = enableNestedTransactions;
+		return this;
+	}
+
+	/**
 	 * Create a new transaction and set it as the active transaction for this
 	 * request/thread/BoxLang context.
 	 * <p>
@@ -760,6 +773,22 @@ public class ConnectionManager {
 	 */
 	public ConnectionManager setDefaultDatasource( DataSource datasource ) {
 		this.defaultDatasource = datasource;
+		return this;
+	}
+
+	/**
+	 * Clear cached datasource lookups for this request so subsequent queries
+	 * re-resolve datasource definitions from the current request/application config.
+	 *
+	 * This is used when application settings are updated at runtime (for example via
+	 * bx:application action="update") and datasource definitions/default selection
+	 * need to reflect the new settings immediately.
+	 *
+	 * @return ConnectionManager
+	 */
+	public ConnectionManager resetDatasourceCaches() {
+		this.datasources.clear();
+		this.defaultDatasource = null;
 		return this;
 	}
 

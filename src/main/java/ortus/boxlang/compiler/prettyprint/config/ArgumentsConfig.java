@@ -38,22 +38,40 @@ public class ArgumentsConfig {
 	 * foo( arg1, arg2 );
 	 * </pre>
 	 */
-	private boolean	padding			= true;
+	private boolean		padding			= true;
+
+	/**
+	 * Separator between a named argument's name and value.
+	 *
+	 * <pre>
+	 * // separator: " = " (default)
+	 * foo( name = "Brad" );
+	 *
+	 * // separator: "="
+	 * foo( name="Brad" );
+	 *
+	 * // separator: " : "
+	 * foo( name : "Brad" );
+	 * </pre>
+	 *
+	 * @see Separator
+	 */
+	private Separator	separator		= Separator.EQUALS_BOTH_SPACE;
 
 	/**
 	 * Add a space inside empty argument parentheses.
 	 *
 	 * <pre>
-	 * 
+	 *
 	 * // emptyPadding: true
 	 * foo();
-	 * 
+	 *
 	 * // emptyPadding: false (default)
 	 * foo();
 	 * </pre>
 	 */
 	@JsonProperty( "empty_padding" )
-	private boolean	emptyPadding	= false;
+	private boolean		emptyPadding	= false;
 
 	/**
 	 * Add a trailing comma after the last argument when formatted across multiple lines.
@@ -73,21 +91,21 @@ public class ArgumentsConfig {
 	 * </pre>
 	 */
 	@JsonProperty( "comma_dangle" )
-	private boolean	commaDangle		= false;
+	private boolean		commaDangle		= false;
 
 	/**
 	 * Number of arguments that triggers multiline formatting. If the argument
 	 * count meets or exceeds this threshold, each argument is placed on its own line.
 	 */
 	@JsonProperty( "multiline_count" )
-	private int		multilineCount	= 3;
+	private int			multilineCount	= 3;
 
 	/**
 	 * Total character length of the argument list that triggers multiline formatting.
 	 * If the flat-printed argument list exceeds this length, it switches to multiline.
 	 */
 	@JsonProperty( "multiline_length" )
-	private int		multilineLength	= 50;
+	private int			multilineLength	= 50;
 
 	/** Default constructor. */
 	public ArgumentsConfig() {
@@ -199,6 +217,27 @@ public class ArgumentsConfig {
 	}
 
 	/**
+	 * Get the separator between named argument names and values.
+	 *
+	 * @return the separator
+	 */
+	public Separator getSeparator() {
+		return separator;
+	}
+
+	/**
+	 * Set the separator between named argument names and values.
+	 *
+	 * @param separator the separator to use
+	 *
+	 * @return this config for chaining
+	 */
+	public ArgumentsConfig setSeparator( Separator separator ) {
+		this.separator = separator;
+		return this;
+	}
+
+	/**
 	 * Convert this configuration to a map for JSON serialization.
 	 *
 	 * @return a map representation of this configuration
@@ -210,6 +249,7 @@ public class ArgumentsConfig {
 		map.put( "comma_dangle", commaDangle );
 		map.put( "multiline_count", multilineCount );
 		map.put( "multiline_length", multilineLength );
+		map.put( "separator", separator.getSymbol() );
 		return map;
 	}
 
@@ -225,6 +265,7 @@ public class ArgumentsConfig {
 		clone.commaDangle		= this.commaDangle;
 		clone.multilineCount	= this.multilineCount;
 		clone.multilineLength	= this.multilineLength;
+		clone.separator			= this.separator;
 		return clone;
 	}
 }

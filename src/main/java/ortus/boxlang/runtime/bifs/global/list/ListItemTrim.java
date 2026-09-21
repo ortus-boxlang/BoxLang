@@ -64,6 +64,8 @@ public class ListItemTrim extends BIF {
 	 * @argument.delimiter string the list delimiter
 	 *
 	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 *
+	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String delimiter = arguments.getAsString( Key.delimiter );

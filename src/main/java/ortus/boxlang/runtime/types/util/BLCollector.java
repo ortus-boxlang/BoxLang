@@ -155,6 +155,7 @@ public class BLCollector {
 	 *
 	 * @return The collector that collects into a Query
 	 */
+	@SuppressWarnings( "null" )
 	public static Collector<IStruct, Query, Query> toQuery( Query template, IBoxContext context ) {
 		return Collector.of(
 		    // supplier
@@ -163,6 +164,35 @@ public class BLCollector {
 		    },
 		    // accumulator
 		    ( query, row ) -> query.addRow( row, context ),
+		    // combiner
+		    ( left, right ) -> {
+			    left.addAll( right );
+			    return left;
+		    }, // combiner
+		    Collector.Characteristics.IDENTITY_FINISH,
+		    Collector.Characteristics.CONCURRENT
+		);
+	}
+
+	/**
+	 * Returns a Collector that collects the input elements into a Query, casting values to the appropriate column types
+	 * if a context is provided. This is the same as toQuery(), but it does not perform any type casting on the values, assuming that the types are already trusted.
+	 * This is more performant on a large result set, but should only be used when deconstructing a query and re-building with known good values.
+	 *
+	 * @param template The template Query to use for the new Query
+	 * @param context  The context to use for type casting, or null to skip casting
+	 *
+	 * @return The collector that collects into a Query
+	 */
+	@SuppressWarnings( "null" )
+	public static Collector<IStruct, Query, Query> toQueryTrustedTypes( Query template, IBoxContext context ) {
+		return Collector.of(
+		    // supplier
+		    () -> {
+			    return new Query( template.getColumns() );
+		    },
+		    // accumulator
+		    ( query, row ) -> query.addRow( row, null ),
 		    // combiner
 		    ( left, right ) -> {
 			    left.addAll( right );

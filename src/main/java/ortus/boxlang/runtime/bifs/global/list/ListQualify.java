@@ -74,6 +74,8 @@ public class ListQualify extends BIF {
 	 * @argument.elements The elements to qualify. If set to "char", only elements that are all alphabetic characters will be qualified.
 	 *
 	 * @argument.includeEmptyFields If true, empty fields will be qualified.
+	 *
+	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	elements			= arguments.getAsString( Key.elements );

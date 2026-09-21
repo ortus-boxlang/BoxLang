@@ -243,7 +243,10 @@ public class ChunkedArrayList<E> extends AbstractList<E> implements Serializable
 	public void add( int index, E element ) {
 		int s = this.size.get();
 		if ( index < 0 || index > s ) {
-			throw new IndexOutOfBoundsException( "Index: " + index + ", Size: " + s );
+			throw new IndexOutOfBoundsException(
+			    "Index " + index + " is out of bounds for a ChunkedArrayList of size " + s
+			        + " (valid insert range: 0 to " + s + ")"
+			);
 		}
 		this.size.incrementAndGet();
 		ensureAndGetChunk( s );
@@ -323,6 +326,29 @@ public class ChunkedArrayList<E> extends AbstractList<E> implements Serializable
 				chunk[ i ] = null;
 			}
 		}
+	}
+
+	/**
+	 * Truncate the logical size of this list and release all backing storage beyond
+	 * the new size.
+	 *
+	 * NOT thread-safe — requires external synchronization or a happens-before
+	 * guarantee that no concurrent adds are in progress.
+	 *
+	 * @param newSize the new logical size (must be >= 0)
+	 */
+	public void truncateToSize( int newSize ) {
+		if ( newSize < 0 ) {
+			throw new IndexOutOfBoundsException( "Cannot truncate a ChunkedArrayList to a negative size: " + newSize );
+		}
+
+		int currentSize = this.size.get();
+		if ( newSize >= currentSize ) {
+			return;
+		}
+
+		this.size.set( newSize );
+		trimToSize();
 	}
 
 	@Override
@@ -470,7 +496,10 @@ public class ChunkedArrayList<E> extends AbstractList<E> implements Serializable
 	 */
 	private void rangeCheck( int index ) {
 		if ( index < 0 || index >= this.size.get() ) {
-			throw new IndexOutOfBoundsException( "Index: " + index + ", Size: " + this.size.get() );
+			throw new IndexOutOfBoundsException(
+			    "Index " + index + " is out of bounds for a ChunkedArrayList of size " + this.size.get()
+			        + " (valid range: 0 to " + ( this.size.get() - 1 ) + ")"
+			);
 		}
 	}
 }

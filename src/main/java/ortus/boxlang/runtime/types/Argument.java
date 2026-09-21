@@ -21,7 +21,9 @@ import java.io.Serializable;
 import java.util.Set;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.util.ArgumentUtil;
 import ortus.boxlang.runtime.util.DuplicationUtil;
 import ortus.boxlang.runtime.validation.Validatable;
 import ortus.boxlang.runtime.validation.Validator;
@@ -33,7 +35,8 @@ import ortus.boxlang.runtime.validation.Validator;
  * @param type              The type of the argument
  * @param name              The name of the argument
  * @param defaultValue      The default value of the argument
- * @param defaultExpression The default value of the argument as a Lambda to be evaluated at runtime
+ * @param defaultExpression The default value of the argument as a Lambda to be
+ *                          evaluated at runtime
  * @param annotations       Annotations for the argument
  * @param documentation     Documentation for the argument
  * @param validators        Validators for the argument
@@ -77,6 +80,7 @@ public record Argument(
 	public static final String UDF = "udf";
 	public static final String CLOSURE = "closure";
 	public static final String LAMBDA = "lambda";
+	public static final String STRING_BUILDER = "stringBuilder";
 	public static final String XML = "xml";
 
 	public Argument( Key name ) {
@@ -107,26 +111,33 @@ public record Argument(
 		this( required, type, name, defaultValue, null, annotations, Struct.EMPTY, Set.of() );
 	}
 
-	public Argument( boolean required, String type, Key name, Object defaultValue, IStruct annotations, Set<Validator> validators ) {
+	public Argument( boolean required, String type, Key name, Object defaultValue, IStruct annotations,
+	    Set<Validator> validators ) {
 		this( required, type, name, defaultValue, null, annotations, Struct.EMPTY, validators );
 	}
 
-	public Argument( boolean required, String type, Key name, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations,
+	public Argument( boolean required, String type, Key name, Object defaultValue, DefaultExpression defaultExpression,
+	    IStruct annotations,
 	    IStruct documentation ) {
 		this( required, type, name, defaultValue, defaultExpression, annotations, documentation, Set.of() );
 	}
 
-	public Argument( boolean required, String type, Key name, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations,
+	public Argument( boolean required, String type, Key name, Object defaultValue, DefaultExpression defaultExpression,
+	    IStruct annotations,
 	    IStruct documentation, Set<Validator> validators ) {
-		this( required, type, Key.of( type ), name, defaultValue, defaultExpression, annotations, documentation, validators );
+		this( required, type, Key.of( type ), name, defaultValue, defaultExpression, annotations, documentation,
+		    validators );
 	}
 
-	public Argument( boolean required, Key typeKey, Key name, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations,
+	public Argument( boolean required, Key typeKey, Key name, Object defaultValue, DefaultExpression defaultExpression,
+	    IStruct annotations,
 	    IStruct documentation, Set<Validator> validators ) {
-		this( required, typeKey.getName(), typeKey, name, defaultValue, defaultExpression, annotations, documentation, validators );
+		this( required, typeKey.getName(), typeKey, name, defaultValue, defaultExpression, annotations, documentation,
+		    validators );
 	}
 
-	public Argument( boolean required, String type, Key typeKey, Key name, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations,
+	public Argument( boolean required, String type, Key typeKey, Key name, Object defaultValue,
+	    DefaultExpression defaultExpression, IStruct annotations,
 	    IStruct documentation, Set<Validator> validators ) {
 		this.required			= required;
 		this.type				= type;
@@ -152,6 +163,30 @@ public record Argument(
 		return defaultValue != null || defaultExpression != null;
 	}
 
+	public Object prepareValue( IBoxContext context, Key functionName, Object value ) {
+		/*
+		 * if ( value == null ) {
+		 * if ( hasDefaultValue() ) {
+		 * value = getDefaultValue( context );
+		 * } else if ( required() ) {
+		 * throw new BoxRuntimeException( "Required argument [" + name().getName() +
+		 * "] is missing for function [" + functionName.getName() + "]" );
+		 * }
+		 * }
+		 */
+		if ( true ) {
+			return GenericCaster.cast( false, context, value, typeKey(), true );
+			// return StringCaster.cast( value, null, true );
+		}
+		value = ArgumentUtil.ensureArgumentType( context, name(), value, typeKey(), functionName, true );
+		if ( !validators().isEmpty() ) {
+			IStruct records = Struct.of( name(), value );
+			validate( context, functionName, records );
+			value = records.get( name() );
+		}
+		return value;
+	}
+
 	public Boolean implementsSignature( Argument arg ) {
 		// TODO: Enforce annotations?
 		if ( arg.required() && arg.required() != required() ) {
@@ -164,7 +199,8 @@ public record Argument(
 			return false;
 		}
 		/*
-		 * if ( arg.defaultValue() != null && !arg.defaultValue().equals( defaultValue() ) ) {
+		 * if ( arg.defaultValue() != null && !arg.defaultValue().equals( defaultValue()
+		 * ) ) {
 		 * return false;
 		 * }
 		 */

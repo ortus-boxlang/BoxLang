@@ -30,12 +30,12 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 
 /**
- * AST node for a named local class defined inside a script or template.
+ * AST node for a named local class defined inline — either inside a script/template
+ * or as an inner class inside a {@link BoxClass} body.
  * <p>
  * Unlike a top-level {@link BoxClass} (which represents a {@code .bx} class file),
- * a {@code BoxLocalClass} is a named class defined inline in a {@code .bxs} script,
- * {@code .bxm} template, or {@code <bx:script>} block. Its name is scoped to the
- * enclosing script and may only be instantiated within it via {@code new Name()}.
+ * a {@code BoxLocalClass} is a named class defined inline. Its name is scoped to the
+ * enclosing file and may only be instantiated within it via {@code new Name()}.
  * <p>
  * This node extends {@link BoxClass} and adds only a {@code name} field; all other
  * class structure (body, annotations, documentation, properties) is inherited.

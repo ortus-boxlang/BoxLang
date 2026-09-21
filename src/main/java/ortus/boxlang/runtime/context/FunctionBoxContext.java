@@ -39,7 +39,6 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.util.TypeUtil;
@@ -322,9 +321,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return new ScopeSearchResult( argumentsScope, argumentsScope, key, true );
 		}
 
-		ScopeSearchResult thisSerach = scopeFindThis( key );
-		if ( thisSerach != null ) {
-			return thisSerach;
+		ScopeSearchResult thisSearch = scopeFindThis( key );
+		if ( thisSearch != null ) {
+			return thisSearch;
 		}
 
 		ScopeSearchResult superSearch = scopeFindSuper( key );
@@ -397,12 +396,19 @@ public class FunctionBoxContext extends BaseBoxContext {
 		} else {
 
 			if ( shallow ) {
-				return parent.scopeFindNearby( key, defaultScope, true );
+				// This is this shallow, we no longer want to see any scopes inside of calling functions, but we do need to climb to the next closest
+				// non-function context such as a request context so we can see the variable scope there
+				IBoxContext thisParent = getParent();
+				while ( thisParent instanceof FunctionBoxContext ) {
+					thisParent = thisParent.getParent();
+				}
+				// now we've climbed all the way to what is most likely the request. This allows us to still see things like the top variable scope or other UDFs on the page
+				return thisParent.scopeFindNearby( key, defaultScope, true, forAssign );
 			}
 
 			// A UDF is "transparent" and can see everything in the parent scope as a
 			// "local" observer
-			return parent.scopeFindNearby( key, defaultScope, forAssign );
+			return parent.scopeFindNearby( key, defaultScope, false, forAssign );
 		}
 
 	}
@@ -737,14 +743,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	protected Function findFunction( Key name ) {
-		ScopeSearchResult result = null;
-		try {
-			result = scopeFindNearby( name, null, false );
-		} catch ( KeyNotFoundException e ) {
-			// Ignore
-		}
 		// Did we find a function in a nearby scope?
-		if ( result != null ) {
+		ScopeSearchResult result = scopeFindNearby( name, BaseBoxContext.DUMMY_SCOPE, false );
+		if ( result != null && result.scope() != BaseBoxContext.DUMMY_SCOPE ) {
 			Object value = result.value();
 			if ( value instanceof Function fun ) {
 				return fun;
@@ -757,7 +758,18 @@ public class FunctionBoxContext extends BaseBoxContext {
 			}
 		}
 
-		return findFunctionInOwner( name );
+		// Look in the owner class/interface/static class if we're in one
+		Function funcResult = findFunctionInOwner( name );
+		if ( funcResult != null ) {
+			return funcResult;
+		}
+
+		// Before we give up, search for an import of this name.
+		Function importFunc = findFunctionInImport( name );
+		if ( importFunc != null ) {
+			return importFunc;
+		}
+		return null;
 	}
 
 	/**

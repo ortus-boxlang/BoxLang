@@ -60,4 +60,10 @@ public class ChainBreakCountTest extends PrettyPrintTest {
 	public void testChainBreakLengthVsCount() throws IOException {
 		printTestWithConfigFile( "chain", "chain_break_length_vs_count" );
 	}
+
+	@Test
+	@DisplayName( "Chain breaks before argument lists break by length" )
+	public void testChainFirstLengthStrategy() throws IOException {
+		printTestWithConfigFile( "chain", "chain_length_strategy_chain_first" );
+	}
 }

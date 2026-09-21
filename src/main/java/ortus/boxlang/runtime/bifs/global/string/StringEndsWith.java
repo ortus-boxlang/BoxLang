@@ -51,9 +51,13 @@ public class StringEndsWith extends BIF {
 	 * @return True if the string ends with the specified suffix, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	input	= arguments.getAsString( Key.string );
-		String	suffix	= arguments.getAsString( Key.substring );
+		return endsWith( arguments.getAsString( Key.string ), arguments.getAsString( Key.substring ) );
+	}
 
+	public static boolean endsWith( String input, String suffix ) {
+		if ( input == null ) {
+			return false;
+		}
 		return input.endsWith( suffix );
 	}
 }

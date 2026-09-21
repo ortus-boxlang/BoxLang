@@ -1,4 +1,5 @@
 {
+	"alignConsecutiveAssignments": false,
     "struct": {
         "quote_keys": true
     }

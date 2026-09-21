@@ -89,13 +89,19 @@ public class NumberFormatTest {
 		    result = numberFormat( 12345, "_.__");
 		    """,
 		    context );
-		assertEquals( variables.getAsString( result ), "12345" );
+		assertEquals( variables.getAsString( result ), "12345.00" );
 		instance.executeSource(
 		    """
 		    result = numberFormat( 12345, "9.999");
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), "12345.000" );
+		instance.executeSource(
+		    """
+		    result = numberFormat( 1, "__,___,___.__" );
+		    """,
+		    context );
+		assertEquals( "1.00", variables.getAsString( result ) );
 		instance.executeSource(
 		    """
 		    result = numberFormat( round( 110.647747663711, 1 ), "_,.0");
@@ -241,7 +247,7 @@ public class NumberFormatTest {
 		    result = numberFormat( 12345, "_.__", "German (Austrian)");
 		    """,
 		    context );
-		assertEquals( variables.getAsString( result ), "12345" );
+		assertEquals( variables.getAsString( result ), "12345,00" );
 		instance.executeSource(
 		    """
 		    result = numberFormat( 12345, "9.999", "German (Austrian)");

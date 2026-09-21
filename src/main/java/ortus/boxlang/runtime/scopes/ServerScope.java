@@ -136,7 +136,8 @@ public class ServerScope extends BaseScope {
 		        "jarMode", runtime.inJarMode(),
 		        "modules", new Struct(),
 		        "runtimeHome", runtime.getRuntimeHome().toString(),
-		        "version", versionInfo.get( "version" )
+		        "version", versionInfo.get( "version" ),
+		        "webMode", runtime.inWebMode()
 		    )
 		);
 

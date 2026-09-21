@@ -31,6 +31,7 @@ import org.apache.commons.lang3.Strings;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocation;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -490,7 +491,6 @@ public class BoxResolver extends BaseResolver {
 		    } )
 		    // Map it to a ClassLocation object
 		    .map( possibleMatch -> {
-			    // System.out.println( "found: " + possibleMatch.absolutePath().toAbsolutePath().toString() );
 			    // System.out.println( "found package: " + possibleMatch.getPackage().toString() );
 			    return new ClassLocation(
 			        possibleMatch.getBoxFQN().getClassName(),
@@ -526,15 +526,15 @@ public class BoxResolver extends BaseResolver {
 	    String name,
 	    List<ImportDefinition> imports,
 	    boolean loadClass ) {
-
 		// Check if the class exists in the directory of the currently-executing template
-		ResolvedFilePath resolvedFilePath = context.findClosestTemplate();
+		ResolvedFilePath	resolvedFilePath	= context.findClosestTemplate();
+		Path				parentPath			= null;
 		if ( resolvedFilePath != null ) {
 			Path template = resolvedFilePath.absolutePath();
 
 			if ( template != null && !template.toString().equalsIgnoreCase( "unknown" ) ) {
 				// Get the parent directory of the template, verify it exists, else we are done
-				Path parentPath = template.getParent();
+				parentPath = template.getParent();
 				if ( parentPath != null ) {
 					// See if path exists in this parent directory with a valid extension
 					Path targetPath = findExistingPathWithValidExtension( parentPath, slashName );
@@ -560,6 +560,40 @@ public class BoxResolver extends BaseResolver {
 			}
 		}
 
+		// We're not done yet! Now we check if the class exists relative to the base template path
+		RequestBoxContext requestContext = context.getRequestContext();
+		// If we have a request context...
+		if ( requestContext != null ) {
+			ResolvedFilePath baseTemplatePath = requestContext.getApplicationListener().getBaseTemplatePath();
+			// and it has a base template path...
+			if ( baseTemplatePath != null && baseTemplatePath.absolutePath() != null ) {
+				Path thisParentPath = baseTemplatePath.absolutePath().getParent();
+				// which is different from where we've already looked....
+				if ( parentPath == null || !thisParentPath.equals( parentPath ) ) {
+					// Then searchy serachy...
+					Path targetPath = findExistingPathWithValidExtension( thisParentPath, slashName );
+					if ( targetPath != null ) {
+						ResolvedFilePath newResolvedFilePath = FileSystemUtil.contractPath(
+						    context,
+						    targetPath.toString(),
+						    baseTemplatePath.mappingName()
+						);
+						return Optional.of( new ClassLocation(
+						    newResolvedFilePath.getBoxFQN().getClassName(),
+						    targetPath.toAbsolutePath().toString(),
+						    newResolvedFilePath.getBoxFQN().getPackageString(),
+						    ClassLocator.TYPE_BX,
+						    null,
+						    "",
+						    true,
+						    context.getApplicationName(),
+						    newResolvedFilePath
+						) );
+					}
+				}
+
+			}
+		}
 		return Optional.empty();
 	}
 

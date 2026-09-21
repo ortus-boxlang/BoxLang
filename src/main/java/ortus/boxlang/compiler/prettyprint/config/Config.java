@@ -1477,6 +1477,14 @@ public final class Config {
 		if ( config.containsKey( "padding" ) && config.get( "padding" ) instanceof Boolean padding ) {
 			this.arguments.setPadding( padding );
 		}
+		if ( config.containsKey( "separator" ) && config.get( "separator" ) != null ) {
+			Object separatorValue = config.get( "separator" );
+			if ( separatorValue instanceof Separator separator ) {
+				this.arguments.setSeparator( separator );
+			} else {
+				this.arguments.setSeparator( parseArgumentsSeparator( separatorValue.toString() ) );
+			}
+		}
 		if ( config.containsKey( "empty_padding" ) && config.get( "empty_padding" ) instanceof Boolean emptyPadding ) {
 			this.arguments.setEmptyPadding( emptyPadding );
 		}
@@ -1489,6 +1497,38 @@ public final class Config {
 		if ( config.containsKey( "multiline_length" ) && config.get( "multiline_length" ) instanceof Number multilineLength ) {
 			this.arguments.setMultilineLength( multilineLength.intValue() );
 		}
+	}
+
+	/**
+	 * Parse an arguments separator string into the corresponding enum value.
+	 *
+	 * @param separator the separator string
+	 *
+	 * @return the matching separator enum, or the default if unrecognized
+	 */
+	private static Separator parseArgumentsSeparator( String separator ) {
+		if ( " : ".equals( separator ) ) {
+			return Separator.COLON_BOTH_SPACE;
+		}
+		if ( ": ".equals( separator ) ) {
+			return Separator.COLON_SPACE;
+		}
+		if ( ":".equals( separator ) ) {
+			return Separator.COLON;
+		}
+		if ( " = ".equals( separator ) ) {
+			return Separator.EQUALS_BOTH_SPACE;
+		}
+		if ( " =".equals( separator ) ) {
+			return Separator.EQUALS_SPACE;
+		}
+		if ( "= ".equals( separator ) ) {
+			return Separator.EQUALS_SPACE;
+		}
+		if ( "=".equals( separator ) ) {
+			return Separator.EQUALS;
+		}
+		return Separator.EQUALS_BOTH_SPACE;
 	}
 
 	/**
@@ -1564,6 +1604,12 @@ public final class Config {
 		if ( config.containsKey( "break_length" ) && config.get( "break_length" ) instanceof Number breakLength ) {
 			this.chain.setBreakLength( breakLength.intValue() );
 		}
+		if ( config.containsKey( "keep_receiver_count" ) && config.get( "keep_receiver_count" ) instanceof Number keepReceiverCount ) {
+			this.chain.setKeepReceiverCount( keepReceiverCount.intValue() );
+		}
+		if ( config.containsKey( "length_strategy" ) && config.get( "length_strategy" ) instanceof String lengthStrategy ) {
+			this.chain.setLengthStrategy( lengthStrategy );
+		}
 	}
 
 	/**
@@ -1628,6 +1674,9 @@ public final class Config {
 		}
 		if ( config.containsKey( "member_spacing" ) && config.get( "member_spacing" ) instanceof Number memberSpacing ) {
 			this.classConfig.setMemberSpacing( memberSpacing.intValue() );
+		}
+		if ( config.containsKey( "body_spacing" ) && config.get( "body_spacing" ) instanceof Number bodySpacing ) {
+			this.classConfig.setBodySpacing( bodySpacing.intValue() );
 		}
 		if ( config.containsKey( "property_order" ) && config.get( "property_order" ) instanceof String propertyOrder ) {
 			this.classConfig.setPropertyOrder( propertyOrder );

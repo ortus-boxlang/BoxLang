@@ -32,14 +32,37 @@ import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 
+/**
+ * Shared PrettyPrint helper methods for formatting statement lists, blocks, template bodies, parenthesized expressions,
+ * and annotation-style key/value pairs.
+ * <p>
+ * This class owns formatter behavior that is reused by multiple specialized printers. It writes directly to the active
+ * {@link Visitor} document stack, so callers are responsible for invoking these helpers at the point where their output
+ * belongs in the current document model.
+ */
 public class HelperPrinter {
 
 	private Visitor visitor;
 
+	/**
+	 * Creates a helper printer bound to the active PrettyPrint visitor.
+	 *
+	 * @param visitor active visitor and document stack owner
+	 */
 	public HelperPrinter( Visitor visitor ) {
 		this.visitor = visitor;
 	}
 
+	/**
+	 * Prints a sequence of script statements, preserving configured statement spacing, class member spacing, comments,
+	 * and formatter-ignore regions.
+	 * <p>
+	 * When a formatter-ignore-start marker is encountered, statements are emitted from their original source text until
+	 * a matching formatter-ignore-end pre-comment is found. Statements outside ignore regions are delegated back to the
+	 * visitor for normal formatting.
+	 *
+	 * @param statements ordered statements to print; null or empty lists are ignored
+	 */
 	public void printStatements( List<BoxStatement> statements ) {
 		if ( statements == null || statements.isEmpty() ) {
 			return;
@@ -120,7 +143,11 @@ public class HelperPrinter {
 	}
 
 	/**
-	 * Checks if a statement has a formatter-ignore-start comment in its pre-comments.
+	 * Checks whether a statement has a formatter-ignore-start marker in its leading single-line comments.
+	 *
+	 * @param statement statement whose pre-comments should be inspected
+	 *
+	 * @return true when the statement begins a formatter-ignore region
 	 */
 	private boolean hasFormatterIgnoreStart( BoxStatement statement ) {
 		for ( BoxComment comment : statement.getComments() ) {
@@ -132,7 +159,11 @@ public class HelperPrinter {
 	}
 
 	/**
-	 * Checks if a statement has a formatter-ignore-end comment in its pre-comments.
+	 * Checks whether a statement has a formatter-ignore-end marker in its leading single-line comments.
+	 *
+	 * @param statement statement whose pre-comments should be inspected
+	 *
+	 * @return true when the statement ends a formatter-ignore region
 	 */
 	private boolean hasFormatterIgnoreEnd( BoxStatement statement ) {
 		for ( BoxComment comment : statement.getComments() ) {
@@ -147,6 +178,8 @@ public class HelperPrinter {
 	 * Emits a statement and its associated comments as raw (unformatted) text.
 	 * Used when inside a formatter-ignore region to preserve original source formatting.
 	 * Falls back to normal formatting if the node has no raw source text (e.g., transpiler-injected nodes).
+	 *
+	 * @param statement statement to emit without reformatting when raw source is available
 	 */
 	private void emitRawStatement( BoxStatement statement ) {
 		Doc		currentDoc			= visitor.getCurrentDoc();
@@ -187,12 +220,14 @@ public class HelperPrinter {
 	}
 
 	/**
-	 * Prints template body statements with indent_content support.
-	 * When indent_content is true, whitespace-only buffer outputs are filtered
-	 * and replaced with structured Line.HARD separators, indenting body content
-	 * by one level. A trailing Line.HARD is appended so the caller can follow
-	 * immediately with a closing tag at the outer indent level.
-	 * When indent_content is false, statements are visited as-is.
+	 * Prints template body statements with template indent-content support.
+	 * <p>
+	 * When {@code template.indent_content} is enabled, structural whitespace-only buffer output nodes are filtered and
+	 * replaced with {@link Line#HARD} separators. Meaningful body content is indented one level and a trailing hard line is
+	 * appended so callers can print the closing tag at the outer indentation level. When indent-content is disabled,
+	 * statements are visited as-is.
+	 *
+	 * @param statements template body statements to print
 	 */
 	public void printTemplateBody( List<? extends BoxStatement> statements ) {
 		if ( !visitor.config.getTemplate().getIndentContent() ) {
@@ -247,6 +282,16 @@ public class HelperPrinter {
 		    .append( Line.HARD );
 	}
 
+	/**
+	 * Determines whether a statement is a discardable template buffer that only contains structural whitespace.
+	 * <p>
+	 * Pure horizontal whitespace is preserved because it can be meaningful between inline template expressions. Only blank
+	 * buffers containing a newline are treated as formatting structure.
+	 *
+	 * @param statement candidate template statement
+	 *
+	 * @return true when the statement is a whitespace-only buffer that can be replaced by formatter line structure
+	 */
 	private boolean isWhitespaceOnlyBuffer( BoxStatement statement ) {
 		if ( ! ( statement instanceof BoxBufferOutput bufOutput ) ) {
 			return false;
@@ -262,11 +307,15 @@ public class HelperPrinter {
 	}
 
 	/**
-	 * Returns true if a BoxBufferOutput's string literal value starts with a newline character.
-	 * Used to detect cases where a consecutive buffer output represents content on a new source
-	 * line (e.g., "\n&lt;html lang=\"en\"&gt;"), so that a Line.HARD is emitted even though the
-	 * "inline run" optimization would otherwise suppress it. The stripped leading newline is then
-	 * compensated by the emitted Line.HARD.
+	 * Returns true if a {@link BoxBufferOutput} string literal starts with a newline character.
+	 * <p>
+	 * This preserves cases where consecutive buffer output represents content on a new source line, for example
+	 * {@code "\n<html lang=\"en\">"}. The emitted {@link Line#HARD} compensates for the leading newline that is stripped
+	 * during buffer normalization.
+	 *
+	 * @param statement candidate statement to inspect
+	 *
+	 * @return true when the statement is a buffer output whose string content begins with a newline
 	 */
 	private boolean bufferStartsWithNewline( BoxStatement statement ) {
 		if ( ! ( statement instanceof BoxBufferOutput bufOutput ) ) {
@@ -280,6 +329,16 @@ public class HelperPrinter {
 		return false;
 	}
 
+	/**
+	 * Prints a script or template block body for the supplied node.
+	 * <p>
+	 * Template nodes delegate to {@link #printTemplateBody(List)}. Script nodes emit braces according to
+	 * {@code braces.style}, indent statements one level, include inside comments, and close the block at the caller's
+	 * indentation level.
+	 *
+	 * @param node       block-owning AST node, used for brace preservation and inside comments
+	 * @param statements statements contained by the block
+	 */
 	public void printBlock( BoxNode node, List<BoxStatement> statements ) {
 		var currentDoc = visitor.getCurrentDoc();
 		if ( visitor.isTemplate() ) {
@@ -326,8 +385,11 @@ public class HelperPrinter {
 	}
 
 	/**
-	 * Check if the original source code had the opening brace on a new line.
-	 * Used for "preserve" brace style mode.
+	 * Checks whether the original source placed the opening brace on a later line than the node header.
+	 *
+	 * @param node node whose source text should be inspected
+	 *
+	 * @return true when source text contains a newline before the first opening brace
 	 */
 	private boolean hasBraceOnNewLine( BoxNode node ) {
 		String sourceText = node.getSourceText();
@@ -346,6 +408,11 @@ public class HelperPrinter {
 		return beforeBrace.contains( "\n" ) || beforeBrace.contains( "\r" );
 	}
 
+	/**
+	 * Prints an expression wrapped in parentheses while honoring the configured parenthesis padding behavior.
+	 *
+	 * @param node expression to print inside parentheses
+	 */
 	public void printParensExpression( BoxExpression node ) {
 		var	currentDoc	= visitor.getCurrentDoc();
 		var	parensDoc	= visitor.pushDoc( DocType.GROUP ).append( "(" );
@@ -359,16 +426,46 @@ public class HelperPrinter {
 		currentDoc.append( visitor.popDoc() );
 	}
 
+	/**
+	 * Prints annotation-style key/value pairs using normal line breaking and assignment alignment behavior.
+	 *
+	 * @param attrs  annotations or attributes to print
+	 * @param padded true to leave a trailing break/space after the attributes for padded contexts such as headers
+	 */
 	public void printKeyValueAnnotations( List<BoxAnnotation> attrs, boolean padded ) {
 		printKeyValueAnnotations( attrs, padded, false );
 	}
 
+	/**
+	 * Prints annotation-style key/value pairs, optionally forcing each attribute onto its own line.
+	 *
+	 * @param attrs           annotations or attributes to print
+	 * @param padded          true to leave a trailing break/space after the attributes for padded contexts such as headers
+	 * @param forceLineBreaks true to emit hard line breaks between attributes, used by single-attribute-per-line modes
+	 */
 	public void printKeyValueAnnotations( List<BoxAnnotation> attrs, boolean padded, boolean forceLineBreaks ) {
+		printKeyValueAnnotations( attrs, padded, forceLineBreaks, true );
+	}
+
+	/**
+	 * Prints annotation-style key/value pairs such as class annotations, component attributes, or template tag attributes.
+	 * <p>
+	 * Values are emitted as quoted expressions via the string printer. When assignment alignment is enabled and allowed,
+	 * keys are padded to the longest key length in the group before the {@code =}. Header contexts can pass
+	 * {@code alignAssignments=false} to avoid padding declarations such as {@code extends="..."} to match longer sibling
+	 * attributes.
+	 *
+	 * @param attrs            annotations or attributes to print
+	 * @param padded           true to leave a trailing break/space after the attributes for padded contexts such as headers
+	 * @param forceLineBreaks  true to emit hard line breaks between attributes
+	 * @param alignAssignments true to apply configured consecutive assignment alignment when script mode allows it
+	 */
+	public void printKeyValueAnnotations( List<BoxAnnotation> attrs, boolean padded, boolean forceLineBreaks, boolean alignAssignments ) {
 		var	currentDoc		= visitor.getCurrentDoc();
 		var	attrsDoc		= visitor.pushDoc( DocType.GROUP );
 		int	maxKeyLength	= 0;
 		// Alignment only applies to script mode (e.g. struct literals), not template tag attributes
-		if ( visitor.config.getAlignConsecutiveAssignments() && !visitor.isTemplate() ) {
+		if ( alignAssignments && visitor.config.getAlignConsecutiveAssignments() && !visitor.isTemplate() ) {
 			for ( var attr : attrs ) {
 				if ( attr.getValue() != null && attr.getKey() != null ) {
 					String effectiveKey = getEffectiveKeyText( attr.getKey() );
@@ -376,7 +473,7 @@ public class HelperPrinter {
 				}
 			}
 		}
-		if ( attrs.size() > 0 ) {
+		if ( !attrs.isEmpty() ) {
 			var contentsDoc = visitor.pushDoc( DocType.INDENT );
 			for ( var attr : attrs ) {
 				// Use HARD line breaks when forceLineBreaks is true (single_attribute_per_line)
@@ -389,7 +486,7 @@ public class HelperPrinter {
 					keyText = "";
 				}
 				if ( attr.getValue() != null ) {
-					if ( visitor.config.getAlignConsecutiveAssignments() && maxKeyLength > 0 ) {
+					if ( alignAssignments && visitor.config.getAlignConsecutiveAssignments() && maxKeyLength > 0 ) {
 						contentsDoc.append( " ".repeat( Math.max( 0, maxKeyLength - keyText.length() ) ) );
 					}
 					contentsDoc.append( "=\"" );
@@ -404,7 +501,7 @@ public class HelperPrinter {
 			attrsDoc.append( padded ? Line.LINE : Line.SOFT );
 		} else if ( padded ) {
 			// Only add trailing HARD/LINE for padded contexts (e.g. class declarations, not template attributes)
-			attrsDoc.append( attrs.size() > 0 ? Line.HARD : Line.LINE );
+			attrsDoc.append( !attrs.isEmpty() ? Line.HARD : Line.LINE );
 		}
 		currentDoc.append( visitor.popDoc() );
 	}
@@ -428,11 +525,15 @@ public class HelperPrinter {
 	}
 
 	/**
-	 * Print a statement body, optionally wrapping single statements in braces
-	 * based on the braces.require_for_single_statement configuration.
+	 * Prints a control-flow statement body, optionally wrapping single statements in braces according to
+	 * {@code braces.require_for_single_statement}.
+	 * <p>
+	 * Template mode prints the statement directly because template bodies do not use script braces. Script mode preserves
+	 * existing statement blocks, wraps single statements when configured, or emits an indented single statement when braces
+	 * are optional.
 	 *
-	 * @param node      The parent node (for source info if needed)
-	 * @param statement The statement to print
+	 * @param node      parent node for future source-aware behavior
+	 * @param statement statement body to print
 	 */
 	public void printStatementBody( BoxNode node, BoxStatement statement ) {
 		if ( visitor.isTemplate() ) {

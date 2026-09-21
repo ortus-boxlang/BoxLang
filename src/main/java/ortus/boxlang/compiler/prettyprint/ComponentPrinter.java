@@ -35,6 +35,8 @@ public class ComponentPrinter {
 		visitor.printPreComments( node );
 		if ( visitor.isTemplate() ) {
 			printTemplate( node );
+		} else if ( visitor.isCF() && isCFScriptCallSyntax( node ) ) {
+			printCFScriptCall( node );
 		} else {
 			printScript( node );
 		}
@@ -80,17 +82,18 @@ public class ComponentPrinter {
 		}
 	}
 
-	private void printScript( BoxComponent node ) {
-		// Use the component prefix only when the original source used it.
-		// "include" can appear both as a bare keyword (`include template="..."`) and as
-		// a prefixed component (`bx:include template="..."`), so we check the source
-		// text rather than always applying the visitor prefix.
-		String	sourceText	= node.getSourceText();
-		boolean	hadPrefix	= sourceText != null && sourceText.toLowerCase().startsWith( visitor.componentPrefix.toLowerCase() );
-		if ( hadPrefix ) {
-			visitor.print( visitor.componentPrefix );
+	private void printCFScriptCall( BoxComponent node ) {
+		visitor.print( getCFScriptCallHeader( node ) );
+
+		if ( node.getBody() != null && !node.getBody().isEmpty() ) {
+			visitor.helperPrinter.printBlock( node, node.getBody() );
+		} else {
+			visitor.print( ";" );
 		}
-		visitor.print( node.getName() );
+	}
+
+	private void printScript( BoxComponent node ) {
+		printScriptComponentName( node );
 
 		var hasBody = node.getBody() != null && !node.getBody().isEmpty();
 
@@ -109,6 +112,56 @@ public class ComponentPrinter {
 		} else {
 			visitor.print( ";" );
 		}
+	}
+
+	private void printScriptComponentName( BoxComponent node ) {
+		// Use the component prefix only when the original source used it.
+		// "include" can appear both as a bare keyword (`include template="..."`) and as
+		// a prefixed component (`bx:include template="..."`), so we check the source
+		// text rather than always applying the visitor prefix.
+		String	sourceText	= node.getSourceText();
+		boolean	hadPrefix	= sourceText != null && sourceText.toLowerCase().startsWith( visitor.componentPrefix.toLowerCase() );
+		if ( hadPrefix ) {
+			visitor.print( visitor.componentPrefix );
+		}
+		visitor.print( node.getName() );
+	}
+
+	private boolean isCFScriptCallSyntax( BoxComponent node ) {
+		String sourceText = node.getSourceText();
+		if ( sourceText == null ) {
+			return false;
+		}
+		int parenIndex = sourceText.indexOf( '(' );
+		if ( parenIndex < 0 ) {
+			return false;
+		}
+		int	braceIndex		= sourceText.indexOf( '{' );
+		int	semicolonIndex	= sourceText.indexOf( ';' );
+		int	terminatorIndex	= firstPositiveIndex( braceIndex, semicolonIndex );
+		return terminatorIndex < 0 || parenIndex < terminatorIndex;
+	}
+
+	private String getCFScriptCallHeader( BoxComponent node ) {
+		String sourceText = node.getSourceText();
+		if ( sourceText == null ) {
+			return node.getName() + "()";
+		}
+		int		braceIndex		= sourceText.indexOf( '{' );
+		int		semicolonIndex	= sourceText.indexOf( ';' );
+		int		terminatorIndex	= firstPositiveIndex( braceIndex, semicolonIndex );
+		String	headerText		= terminatorIndex >= 0 ? sourceText.substring( 0, terminatorIndex ) : sourceText;
+		return headerText.stripTrailing();
+	}
+
+	private int firstPositiveIndex( int first, int second ) {
+		if ( first < 0 ) {
+			return second;
+		}
+		if ( second < 0 ) {
+			return first;
+		}
+		return Math.min( first, second );
 	}
 
 	/**
@@ -143,12 +196,9 @@ public class ComponentPrinter {
 		}
 		// Form 3: `bx:include template="path"` — key source text is literally "template".
 		String keySrc = attr.getKey() != null ? attr.getKey().getSourceText() : null;
-		if ( keySrc != null && keySrc.equalsIgnoreCase( "template" ) ) {
-			return false;
-		}
 		// Form 1: shorthand `include "path"` — value is plain string/interpolation,
 		// key source text is the path expression source (not "template").
-		return true;
+		return keySrc == null || !keySrc.equalsIgnoreCase( "template" );
 	}
 
 	/**

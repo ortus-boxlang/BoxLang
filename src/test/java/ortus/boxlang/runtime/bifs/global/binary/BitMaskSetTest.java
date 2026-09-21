@@ -61,28 +61,35 @@ public class BitMaskSetTest {
 	@Test
 	public void testBitwiseMaskSetWithPositiveIntegers() {
 		instance.executeSource( "result = bitMaskSet(5, 3, 2, 4);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 13 );
+		assertThat( variables.get( result ) ).isEqualTo( 13L );
 	}
 
 	@DisplayName( "Bitwise Mask Set operation with negative integers" )
 	@Test
 	public void testBitwiseMaskSetWithNegativeIntegers() {
 		instance.executeSource( "result = bitMaskSet(-5, -3, 1, 3);", context );
-		assertThat( variables.get( result ) ).isEqualTo( -5 );
+		assertThat( variables.get( result ) ).isEqualTo( -5L );
 	}
 
 	@DisplayName( "Bitwise Mask Set operation with zero" )
 	@Test
 	public void testBitwiseMaskSetWithZero() {
 		instance.executeSource( "result = bitMaskSet(0, 10, 2, 4);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 40 );
+		assertThat( variables.get( result ) ).isEqualTo( 40L );
 	}
 
 	@DisplayName( "Bitwise Mask Set operation with large integers" )
 	@Test
 	public void testBitwiseMaskSetWithLargeIntegers() {
 		instance.executeSource( "result = bitMaskSet(123456789, 987654321, 5, 10);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 123442741 );
+		assertThat( variables.get( result ) ).isEqualTo( 123442741L );
+	}
+
+	@DisplayName( "Bitwise Mask Set operation with long-range values" )
+	@Test
+	public void testBitwiseMaskSetWithLongRangeValues() {
+		instance.executeSource( "result = bitMaskSet(2190225219, 1023, 4, 10);", context );
+		assertThat( variables.get( result ) ).isEqualTo( 2190229491L );
 	}
 
 	@DisplayName( "Bitwise Mask Set operation with invalid length" )

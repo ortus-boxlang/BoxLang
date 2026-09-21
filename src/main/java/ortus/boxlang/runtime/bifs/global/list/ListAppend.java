@@ -67,17 +67,37 @@ public class ListAppend extends BIF {
 	 * @argument.maxThreads number the maximum number of threads to use in the parallel filter
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Boolean	isMultiChar	= arguments.getAsBoolean( Key.multiCharacterDelimiter );
-		String	delimiter	= arguments.getAsString( Key.delimiter );
-		return ListUtil.asString(
-		    ListUtil.asDelimitedList(
-		        arguments.getAsString( Key.list ),
-		        arguments.getAsString( Key.delimiter ),
-		        arguments.getAsBoolean( Key.includeEmptyFields ),
-		        isMultiChar
-		    ).withDelimiter( delimiter, isMultiChar ).push( arguments.getAsString( Key.value ) ),
-		    delimiter
+		String	originalList	= arguments.getAsString( Key.list );
+		Boolean	isMultiChar		= arguments.getAsBoolean( Key.multiCharacterDelimiter );
+		String	delimiter		= arguments.getAsString( Key.delimiter );
+		Boolean	includeEmpty	= arguments.getAsBoolean( Key.includeEmptyFields );
+		String	value			= arguments.getAsString( Key.value );
+
+		// Short circuit if we don't need to parse the base list (which could be huge)
+		if ( includeEmpty ) {
+			// Even shorter circuit if incoming element doesn't have delimiter char presentm, just slam them together and don't parse at all
+			if ( !isMultiChar && delimiter.length() > 0 && !value.contains( delimiter ) ) {
+				return originalList + ( originalList.length() > 0 ? delimiter : "" ) + value;
+
+			}
+			return originalList + ( originalList.length() > 0 ? delimiter : "" )
+			    + ListUtil.asString( ListUtil.asList( value, delimiter, includeEmpty, isMultiChar ), delimiter );
+		}
+
+		// Tokenize both the incoming list and the value being appended with the same delimiter
+		// and empty-field policy so the two are treated consistently.
+		var list = ListUtil.asDelimitedList(
+		    originalList,
+		    delimiter,
+		    includeEmpty,
+		    isMultiChar
+		).withDelimiter( delimiter, isMultiChar );
+
+		list.addAll(
+		    ListUtil.asList( value, delimiter, includeEmpty, isMultiChar )
 		);
+
+		return ListUtil.asString( list, delimiter );
 	}
 
 }

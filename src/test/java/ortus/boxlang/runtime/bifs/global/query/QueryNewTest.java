@@ -382,4 +382,17 @@ public class QueryNewTest {
 		assertThat( qry.getCell( Key.of( "score" ), 1 ) ).isEqualTo( 87.3 );
 	}
 
+	@DisplayName( "It handles CLOB columns correctly" )
+	@Test
+	public void testHandlesClobs() {
+		// @formatter:off
+		instance.executeSource( """
+			query = queryNew( "col", "clob", [["test"]] );
+  			result = query.col[1]
+		""", context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( String.class );
+		assertThat( variables.getAsString( Key.of( result ) ) ).isEqualTo( "test" );
+	}
+
 }

@@ -1,6 +1,5 @@
 ### Script Syntax
 
-CF9+
 
 
 ```java

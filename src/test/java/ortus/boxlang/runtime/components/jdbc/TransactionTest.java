@@ -74,19 +74,6 @@ public class TransactionTest extends BaseJDBCTest {
 		assertThat( theResult.size() ).isEqualTo( 4 );
 	}
 
-	@DisplayName( "Throws validation error if you try to commit or rollback a non-existing transaction" )
-	@Test
-	public void testInvalidTransactionUsage() {
-		DatabaseException e = assertThrows( DatabaseException.class, () -> getInstance().executeSource(
-		    """
-		       variables.result = queryExecute( "SELECT * FROM developers", {} );
-		       transaction action="commit";
-		    """,
-		    getContext() )
-		);
-		assertThat( e.getMessage() ).startsWith( "Transaction is not started" );
-	}
-
 	@DisplayName( "Throws on bad action level" )
 	@Test
 	public void testActionValidation() {

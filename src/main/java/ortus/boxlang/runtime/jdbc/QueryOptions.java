@@ -21,13 +21,17 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -81,6 +85,13 @@ public class QueryOptions {
 	 * The column key to use when returning a struct.
 	 */
 	private String					columnKey;
+
+	/**
+	 * The transformer to use for custom result formatting.
+	 * Can be a Function (closure), IClassRunnable (class with transform() method), or String (registered transformer name).
+	 * If set, takes precedence over returnType.
+	 */
+	private Object					transformer;
 
 	/**
 	 * The datasource username to use for the connection, if any
@@ -199,6 +210,9 @@ public class QueryOptions {
 
 		determineReturnType();
 
+		// Transformer option: can be a Function, class instance, or registered transformer name
+		this.transformer = options.get( Key.transformer );
+
 		// If there is a username/password override along side a struct defintion, override those values in the struct
 		if ( wantsUsernameAndPassword() && this.datasource instanceof IStruct dStruct ) {
 			dStruct.put( Key.username, this.username );
@@ -245,17 +259,84 @@ public class QueryOptions {
 	/**
 	 * Get the query results as the configured return type.
 	 *
-	 * @param query The executed query
+	 * @param query   The executed query
+	 * @param context The execution context (needed for transformer invocation)
 	 *
-	 * @return The query results as the configured return type - either a query, array, or struct
+	 * @throws BoxRuntimeException if the return type is unknown or if the transformer is invalid
+	 *
+	 * @return The query results as the configured return type - either a query, array, struct, or transformer result
 	 */
-	public Object castAsReturnType( ExecutedQuery query ) {
+	public Object castAsReturnType( ExecutedQuery query, IBoxContext context ) {
+		// If transformer is set, it takes precedence over returnType
+		if ( this.transformer != null ) {
+			return invokeTransformer( this.transformer, query, context );
+		}
+
 		return switch ( this.returnType ) {
 			case "query" -> query.getResults();
 			case "array" -> query.getResultsAsArray();
 			case "struct" -> query.getResultsAsStruct( this.columnKey );
 			default -> throw new BoxRuntimeException( "Unknown return type: " + returnType );
 		};
+	}
+
+	/**
+	 * Invoke a transformer with the query results.
+	 * Supports three types of transformers:
+	 * <ul>
+	 * <li>Function (closure) - invoked directly with (query, metadata) arguments</li>
+	 * <li>IClassRunnable (class instance) - calls transform(query, metadata) method</li>
+	 * <li>String (registered name) - looks up in this.queryTransformers and invokes recursively</li>
+	 * </ul>
+	 *
+	 * @param transformer The transformer to invoke
+	 * @param query       The executed query
+	 * @param context     The execution context
+	 *
+	 * @return The result of the transformer
+	 */
+	private Object invokeTransformer( Object transformer, ExecutedQuery query, IBoxContext context ) {
+		// Case 1: Function/Closure
+		if ( transformer instanceof Function func ) {
+			return context.invokeFunction( func, new Object[] { query.getResults(), query.getResults().getMetaData() } );
+		}
+
+		// Case 2: Class instance with transform() method
+		if ( transformer instanceof IClassRunnable classInstance ) {
+			return classInstance.dereferenceAndInvoke(
+			    context,
+			    Key.transform,
+			    new Object[] { query.getResults(), query.getResults().getMetaData() },
+			    false
+			);
+		}
+
+		// Case 3: String - look up registered transformer
+		if ( transformer instanceof String transformerName ) {
+			RequestBoxContext requestContext = context.getRequestContext();
+			if ( requestContext == null ) {
+				throw new BoxRuntimeException(
+				    "No request context available. Registered query transformers are only accessible within the context of a request."
+				);
+			}
+			IStruct	queryTransformers		= StructCaster
+			    .attempt( requestContext.getConfigItems( Key.applicationSettings, Key.queryTransformers ) )
+			    .orElse( new Struct() );
+			Object	registeredTransformer	= queryTransformers.get( Key.of( transformerName ) );
+			if ( registeredTransformer == null ) {
+				throw new BoxRuntimeException(
+				    "Query transformer '" + transformerName + "' not found in this.queryTransformers."
+				);
+			}
+
+			// Recursively invoke the registered transformer
+			return invokeTransformer( registeredTransformer, query, context );
+		}
+
+		throw new BoxRuntimeException(
+		    "Invalid transformer type: " + transformer.getClass().getName() +
+		        ". Must be a Function, Class, or a registered transformer name from your Application.bx."
+		);
 	}
 
 	/**

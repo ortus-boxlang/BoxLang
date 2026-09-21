@@ -157,6 +157,6 @@ public class QueryExecute extends BIF {
 		}
 
 		// Encapsulate this into the executed query
-		return options.castAsReturnType( executedQuery );
+		return options.castAsReturnType( executedQuery, context );
 	}
 }

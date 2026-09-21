@@ -56,21 +56,20 @@ public class Find extends BIF {
 	 * @return Returns the position of the first occurrence of the substring. If the substring is not found, returns zero.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
+		Key bifMethodKey = arguments.getAsKey( BIF.__functionName );
 
-		String	substring		= arguments.getAsString( Key.substring );
-		String	input			= arguments.getAsString( Key.string );
-		int		start			= arguments.getAsInteger( Key.start );
+		return find( arguments.getAsString( Key.string ), arguments.getAsString( Key.substring ), arguments.getAsInteger( Key.start ),
+		    bifMethodKey.equals( Key.findNoCase ) );
+	}
 
-		// Check if the start position is within valid bounds
-		if ( start < 1 ) {
-			start = 1; // Adjust start to 1 if it's less than 1
+	public static int find( String input, String substring, int start, boolean noCase ) {
+		if ( input == null ) {
+			return 0;
 		}
-
-		// Find the first occurrence of the substring from the specified start position
-		int position = bifMethodKey.equals( Key.findNoCase ) ? input.toLowerCase().indexOf( substring.toLowerCase(), start - 1 ) + 1
-		    : input.indexOf( substring, start - 1 ) + 1;
-
-		return position > 0 ? position : 0; // Return position or 0 if not found
+		if ( start < 1 ) {
+			start = 1;
+		}
+		int position = noCase ? input.toLowerCase().indexOf( substring.toLowerCase(), start - 1 ) + 1 : input.indexOf( substring, start - 1 ) + 1;
+		return position > 0 ? position : 0;
 	}
 }

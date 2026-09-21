@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
@@ -696,6 +697,24 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 * This is so we can use it from BoxLang without having to pass the context explicitly, since the context will be available in the RequestBoxContext for the current thread.
 	 * The timeout will be infinite by default and in the passed executor.
 	 *
+	 * @param items  The items to apply the function to, this can be an array or a struct
+	 * @param mapper The function to apply to each item
+	 *
+	 * @return An array or struct of the results
+	 */
+	public static Object allApply(
+	    Object items,
+	    ortus.boxlang.runtime.types.Function mapper ) {
+		return RequestBoxContext.runInContext( context -> {
+			return allApply( context, items, mapper, null );
+		} );
+	}
+
+	/**
+	 * Shortcut method to call allApply() without a context, which will use the RequestBoxContext for the execution
+	 * This is so we can use it from BoxLang without having to pass the context explicitly, since the context will be available in the RequestBoxContext for the current thread.
+	 * The timeout will be infinite by default and in the passed executor.
+	 *
 	 * @param items        The items to apply the function to, this can be an array or a struct
 	 * @param mapper       The function to apply to each item
 	 * @param errorHandler The function to handle any errors that occur, this can be null
@@ -831,19 +850,11 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 		}
 
 		// Array Processing
-		if ( items instanceof Array castedArray ) {
-			return allApplyArray( context, castedArray, mapper, errorHandler, timeout, unit, executor );
-		}
-		// Process a Struct
-		else if ( items instanceof IStruct castedStruct ) {
-			return allApplyStruct( context, castedStruct, mapper, errorHandler, timeout, unit, executor );
-		}
-		// Add other types here if needed
-		// If we get here, then the items argument is not an array or a struct
-		// This is an error, so we throw an exception
-		else {
-			throw new BoxRuntimeException( "The items argument must be an array or a struct" );
-		}
+		return switch ( items ) {
+			case Array castedArray -> allApplyArray( context, castedArray, mapper, errorHandler, timeout, unit, executor );
+			case IStruct castedStruct -> allApplyStruct( context, castedStruct, mapper, errorHandler, timeout, unit, executor );
+			default -> throw new BoxRuntimeException( "The items argument must be an array or a struct" );
+		};
 	}
 
 	public static Object allApply(
@@ -888,16 +899,16 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 		    .stream()
 		    .map( item -> {
 				RequestBoxContext.registerDependentThread( context );
-				return CompletableFuture.supplyAsync( () -> {
+				return CompletableFuture.supplyAsync( () -> ThreadBoxContext.runInContext( context, true, ctx -> {
 						try {
 							// Apply the mapper function directly to each item
-							return new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ).apply( item );
+							return new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, ctx, null ).apply( item );
 						} catch ( Exception e ) {
 							allLogger.error( "Error executing mapper function on item", e );
 							// Handle error with error handler if provided, otherwise return exception struct
 							if ( errorHandler != null ) {
 								try {
-									return new ortus.boxlang.runtime.interop.proxies.Function<>( errorHandler, context, null ).apply( e );
+									return new ortus.boxlang.runtime.interop.proxies.Function<>( errorHandler, ctx, null ).apply( e );
 								} catch ( Exception handlerError ) {
 									allLogger.error( "Error in error handler", handlerError );
 									return ExceptionUtil.throwableToStruct( handlerError );
@@ -910,7 +921,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 						} finally {
 							RequestBoxContext.unregisterDependentThread( context );
 						}
-					},
+					} ),
 						// Bound the executor to the CompletableFuture
 						executor != null ? executor.executor() : ForkJoinPool.commonPool()
 					);
@@ -985,14 +996,14 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 			// and return a key-value pair with the processed value
 			// If an error occurs, it will return the key with an error struct
 		    .map( entry -> {
-				RequestBoxContext.registerDependentThread( context );
+						RequestBoxContext.registerDependentThread( context );
 				CompletableFuture<Map.Entry<Key, Object>> future = CompletableFuture
-					.supplyAsync( () -> {
+					.supplyAsync( () -> ( Map.Entry<Key, Object> ) ThreadBoxContext.runInContext( context, true, ctx -> {
 							try {
 								// Create key-value struct for the mapper function
 								IStruct itemStruct = Struct.of( Key.key, entry.getKey(), Key.value, entry.getValue() );
 								// Apply the mapper function to the itemStruct
-								Object mappedResult = (IStruct) new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ).apply( itemStruct );
+								Object mappedResult = (IStruct) new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, ctx, null ).apply( itemStruct );
 								if( !( mappedResult instanceof IStruct ) ) {
 									allLogger.error("Mapper function did not return an instance of IStruct. Returned: " + TypeUtil.getObjectName( mappedResult ));
 									throw new BoxRuntimeException( "Mapper function must return a struct, but it returned a: " + TypeUtil.getObjectName( mappedResult ) );
@@ -1008,7 +1019,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 								// Handle error with error handler if provided
 								if ( errorHandler != null ) {
 									try {
-										errorResult = new ortus.boxlang.runtime.interop.proxies.Function<>( errorHandler, context, null ).apply( e );
+										errorResult = new ortus.boxlang.runtime.interop.proxies.Function<>( errorHandler, ctx, null ).apply( e );
 									} catch ( Exception handlerError ) {
 										allLogger.error( "Error in error handler", handlerError );
 										errorResult = ExceptionUtil.throwableToStruct( handlerError );
@@ -1018,10 +1029,10 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 								}
 								// Return the key-error pair
 								return new AbstractMap.SimpleEntry<>( entry.getKey(), errorResult );
-							} finally {
-								RequestBoxContext.unregisterDependentThread( context );
+									} finally {
+										RequestBoxContext.unregisterDependentThread( context );
 							}
-						},
+						} ),
 					executor != null ? executor.executor() : ForkJoinPool.commonPool()
 				);
 				return future;
@@ -1093,7 +1104,10 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 			    }
 			    // If it's a function, then wrap it in a Proxy Supplier
 			    else if ( future instanceof ortus.boxlang.runtime.types.Function castedFunction ) {
-				    targetFuture = run( new ortus.boxlang.runtime.interop.proxies.Supplier<>( castedFunction, context, null ), executorRecord.executor() );
+				    targetFuture = run(
+				        wrapSupplier( new ortus.boxlang.runtime.interop.proxies.Supplier<>( castedFunction, context, null ), context ),
+				        executorRecord.executor()
+				    );
 			    } else {
 				    throw new BoxRuntimeException(
 				        "Invalid future type: " + future.getClass().getSimpleName() +
@@ -1121,20 +1135,24 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	}
 
 	/**
-	 * Wraps a supplier with dependent thread tracking on the request context.
-	 * Registers the dependent thread immediately on the calling thread, and
-	 * unregisters it in a finally block when the supplier completes.
+	 * Wraps a supplier so it executes in a fresh, isolated {@link ThreadBoxContext}
+	 * when it runs on the executor thread. This gives the supplier its own
+	 * {@code ConnectionManager}/transaction state instead of sharing whatever
+	 * connection/transaction is active on the calling thread, matching the
+	 * isolation the {@code thread} component already provides.
+	 * Dependent thread tracking is handled by {@link ThreadBoxContext#runInContext}.
 	 *
 	 * @param supplier The supplier to wrap
-	 * @param context  The context to track dependent threads on
+	 * @param context  The calling context to use as the parent of the isolated context
 	 *
-	 * @return A wrapped supplier that handles thread registration
+	 * @return A wrapped supplier that runs in an isolated context
 	 */
+	@SuppressWarnings( "unchecked" )
 	public static <T> Supplier<T> wrapSupplier( Supplier<T> supplier, IBoxContext context ) {
 		RequestBoxContext.registerDependentThread( context );
 		return () -> {
 			try {
-				return supplier.get();
+				return ( T ) ThreadBoxContext.runInContext( context, true, ctx -> supplier.get() );
 			} finally {
 				RequestBoxContext.unregisterDependentThread( context );
 			}

@@ -138,6 +138,29 @@ public class InterfaceTest {
 
 	}
 
+	@DisplayName( "interface default methods support lambda and closure" )
+	@Test
+	public void testInterfaceDefaultMethodWithLambdaAndClosure() {
+		BoxInterface inter = ( BoxInterface ) DynamicObject.of( RunnableLoader.getInstance().loadClass(
+		    """
+		    interface {
+		    	default function lambdaDefault() {
+		    		fn = () => "lambda-ok";
+		    		return fn();
+		    	}
+
+		    	default function closureDefault() {
+		    		fn = function() {
+		    			return "closure-ok";
+		    		};
+		    		return fn();
+		    	}
+		    }
+		    """, context, BoxSourceType.CFSCRIPT ), context ).unWrapBoxLangClass();
+
+		assertThat( inter.getMetaData().getAsArray( Key.of( "functions" ) ) ).hasSize( 2 );
+	}
+
 	@DisplayName( "moped example" )
 	@Test
 	public void testMopedExample() {

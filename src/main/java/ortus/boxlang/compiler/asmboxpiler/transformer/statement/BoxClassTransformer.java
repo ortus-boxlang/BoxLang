@@ -844,6 +844,36 @@ public class BoxClassTransformer {
 		    null,
 		    mv -> {
 		    } );
+		// propertiesMerged is a primitive boolean — manual implementation because
+		// addFieldGetterAndSetter uses ALOAD (reference types) but boolean needs ILOAD.
+		{
+			classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+			    "propertiesMerged",
+			    Type.BOOLEAN_TYPE.getDescriptor(),
+			    null,
+			    0 ).visitEnd();
+			// getPropertiesMerged() — GETSTATIC + IRETURN
+			MethodVisitor gmv = classNode.visitMethod( Opcodes.ACC_PUBLIC,
+			    "getPropertiesMerged",
+			    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
+			    null, null );
+			gmv.visitCode();
+			gmv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "propertiesMerged", Type.BOOLEAN_TYPE.getDescriptor() );
+			gmv.visitInsn( Opcodes.IRETURN );
+			gmv.visitMaxs( 0, 0 );
+			gmv.visitEnd();
+			// setPropertiesMerged(boolean) — ILOAD + PUTSTATIC
+			MethodVisitor smv = classNode.visitMethod( Opcodes.ACC_PUBLIC,
+			    "setPropertiesMerged",
+			    Type.getMethodDescriptor( Type.VOID_TYPE, Type.BOOLEAN_TYPE ),
+			    null, null );
+			smv.visitCode();
+			smv.visitVarInsn( Opcodes.ILOAD, 1 );
+			smv.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "propertiesMerged", Type.BOOLEAN_TYPE.getDescriptor() );
+			smv.visitInsn( Opcodes.RETURN );
+			smv.visitMaxs( 0, 0 );
+			smv.visitEnd();
+		}
 
 		AsmHelper.boxClassSupport( classNode, "pseudoConstructor", Type.VOID_TYPE, Type.getType( IBoxContext.class ) );
 		AsmHelper.boxClassSupport( classNode, "canOutput", Type.getType( Boolean.class ) );
@@ -1133,15 +1163,15 @@ public class BoxClassTransformer {
 			clinitNodes.add( new InsnNode( Opcodes.DUP ) );
 			clinitNodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL, Type.getInternalName( java.util.LinkedHashMap.class ), "<init>",
 			    Type.getMethodDescriptor( Type.VOID_TYPE ), false ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "udfs", Type.getDescriptor( Map.class ) ) );
 			for ( var entry : transpiler.getUDFInstantiations().entrySet() ) {
-				clinitNodes.add( new InsnNode( Opcodes.DUP ) );
+				clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, type.getInternalName(), "udfs", Type.getDescriptor( Map.class ) ) );
 				clinitNodes.addAll( transpiler.createKey( entry.getKey().getName() ) );
 				clinitNodes.addAll( entry.getValue() );
 				clinitNodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE, Type.getInternalName( Map.class ), "put",
 				    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Object.class ), Type.getType( Object.class ) ), true ) );
 				clinitNodes.add( new InsnNode( Opcodes.POP ) );
 			}
-			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "udfs", Type.getDescriptor( Map.class ) ) );
 
 			// Initialize lambdas = new ArrayList<>() and populate with Lambda instances
 			clinitNodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( ArrayList.class ) ) );

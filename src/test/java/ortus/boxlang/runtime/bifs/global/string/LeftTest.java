@@ -105,4 +105,28 @@ public class LeftTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "abc" );
 	}
+
+	@DisplayName( "It works on a BoxStringBuilder via auto-cast (global function)" )
+	@Test
+	public void testItWorksOnBoxStringBuilder() {
+		instance.executeSource(
+		    """
+		    sb = sb{"abcdef"};
+		    result = left(sb, 3);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "abc" );
+	}
+
+	@DisplayName( "It works on a BoxStringBuilder member method" )
+	@Test
+	public void testItWorksOnBoxStringBuilderMember() {
+		instance.executeSource(
+		    """
+		    sb = sb{"abcdef"};
+		    result = sb.left(3);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "abc" );
+	}
 }

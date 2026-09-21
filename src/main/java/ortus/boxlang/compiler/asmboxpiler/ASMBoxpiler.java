@@ -83,7 +83,7 @@ public class ASMBoxpiler extends Boxpiler {
 			File sourceFile = classInfo.resolvedFilePath().absolutePath().toFile();
 			// Check if the source file contains Java bytecode by reading the first few bytes
 			if ( DiskClassUtil.isJavaByteCode( sourceFile ) ) {
-				return classInfo.getClassLoader().defineClasses( FQN, sourceFile, classInfo );
+				return classInfo.getDiskClassLoader().defineClasses( FQN, sourceFile, classInfo );
 			}
 			ParsingResult result = parseOrFail( sourceFile );
 			classes = doWriteClassInfo( result.getRoot(), classInfo );
@@ -131,7 +131,7 @@ public class ASMBoxpiler extends Boxpiler {
 			// Define auxiliary class (no initialization - will be initialized on first use)
 			byte[] bytes = convertClassNodeToBytes( fqn, classNode, classInfo );
 			classes.addFirst( bytes );
-			classInfo.getClassLoader().defineClassWithoutInit( fqn, bytes );
+			classInfo.getDiskClassLoader().defineClassWithoutInit( fqn, bytes );
 
 			// Store on disk if configured
 			if ( runtime.getConfiguration().storeClassFilesOnDisk ) {
@@ -146,7 +146,7 @@ public class ASMBoxpiler extends Boxpiler {
 		if ( mainClassNode != null ) {
 			byte[] bytes = convertClassNodeToBytes( mainClassFqn, mainClassNode, classInfo );
 			classes.addFirst( bytes );
-			classInfo.getClassLoader().defineClass( mainClassFqn, bytes );
+			classInfo.getDiskClassLoader().defineClass( mainClassFqn, bytes );
 
 			// Store on disk if configured
 			if ( runtime.getConfiguration().storeClassFilesOnDisk ) {

@@ -75,6 +75,8 @@ public class StructNew extends BIF {
 	 *
 	 * @argument.sortOrder The sort order applicable to the sortType argument
 	 *
+	 * @argument.localeSensitive Sort based on local rules
+	 *
 	 * @argument.callback An optional callback to use as the sorting function. You can alternatively pass a Java Comparator.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

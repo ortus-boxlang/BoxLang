@@ -19,7 +19,6 @@
 package ortus.boxlang.runtime.bifs.global.decision;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,7 +32,6 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class IsDefinedTest {
 
@@ -114,37 +112,30 @@ public class IsDefinedTest {
 		assertThat( variables.getAsBoolean( Key.of( "result" ) ) ).isTrue();
 	}
 
-	@DisplayName( "It errors when calling function" )
+	@DisplayName( "It returns false when function invocation syntax is present" )
 	@Test
 	public void testErrorCallingFunction() {
-		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		instance.executeSource(
 		    """
 		    function foo() {}
 
-		    isDefined( "foo()" );
+		    result1 = isDefined( "foo()" );
+		    result2 = isDefined( "x[ foo() ]" );
 		    """,
-		    context ) );
-		assertThat( t.getMessage() ).contains( "Function " );
-
-		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
-		    """
-		    function foo() {}
-
-		    isDefined( "x[ foo() ]" );
-		    """,
-		    context ) );
-		assertThat( t.getMessage() ).contains( "Function " );
+		    context );
+		assertThat( variables.getAsBoolean( Key.of( "result1" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "result2" ) ) ).isFalse();
 	}
 
-	@DisplayName( "It errors on invalid chars" )
+	@DisplayName( "It returns false on invalid chars" )
 	@Test
 	public void testErrorInvalidChars() {
-		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		instance.executeSource(
 		    """
-		    isDefined( "^" );
+		    result = isDefined( "^" );
 		    """,
-		    context ) );
-		assertThat( t.getMessage() ).contains( "Invalid character " );
+		    context );
+		assertThat( variables.getAsBoolean( Key.of( "result" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works with non-string keys" )
@@ -166,15 +157,28 @@ public class IsDefinedTest {
 		assertThat( variables.getAsBoolean( Key.of( "result2" ) ) ).isTrue();
 	}
 
-	@DisplayName( "It won't run assignment expression" )
+	@DisplayName( "It returns false for assignment expression syntax" )
 	@Test
 	public void testNonStringKeysAssignment() {
-		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		instance.executeSource(
 		    """
-		    isDefined("test[ isAdmin = true ]")
+		    result = isDefined( "test[ isAdmin = true ]" );
 		    """,
-		    context ) );
-		assertThat( t.getMessage() ).contains( "Invalid character " );
+		    context );
+		assertThat( variables.getAsBoolean( Key.of( "result" ) ) ).isFalse();
+
+	}
+
+	@DisplayName( "It does not match variables with dot notation (like Adobe does)" )
+	@Test
+	public void testDotNotation() {
+		instance.executeSource(
+		    """
+		    variables[ "foo.bar" ] = "test"
+		    result = isDefined( "foo.bar" );
+		       """,
+		    context );
+		assertThat( variables.getAsBoolean( Key.of( "result" ) ) ).isFalse();
 
 	}
 

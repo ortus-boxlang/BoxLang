@@ -42,11 +42,13 @@ import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.transformer.util.AssignmentRewriteOptimizer;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
@@ -58,8 +60,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxAssignment	assignment	= ( BoxAssignment ) node;
-		Expression		key;
+		BoxAssignment assignment = ( BoxAssignment ) node;
+		AssignmentRewriteOptimizer.optimizeCompoundAssignmentPatterns( assignment );
+		Expression key;
 		if ( assignment.getOp() == null ) {
 			if ( assignment.getLeft() instanceof BoxIdentifier id ) {
 				key = createKey( id.getName() );
@@ -582,17 +585,38 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	private Node transformCompoundEquals( BoxAssignment assignment, TransformerContext context ) throws IllegalStateException {
 		// Note any var keyword is completley ignored in this code path!
 
-		Expression			right	= ( Expression ) transpiler.transform( assignment.getRight(), TransformerContext.NONE );
-		String				template;
-		Node				accessKey;
+		final String	right;
+		String			template;
+		Node			accessKey;
 
-		Map<String, String>	values	= new HashMap<>() {
+		// Special handling for ConcatEqual with BoxStringConcat to avoid nested Concat.invoke calls
+		if ( assignment.getOp() == BoxAssignmentOperator.ConcatEqual && assignment.getRight() instanceof BoxStringConcat concat ) {
+			// Get optimized values and build Object[] array directly
+			List<BoxExpression> optimized = optimizeStringLiterals( concat.getValues() );
+			if ( optimized.size() == 1 ) {
+				// Single optimized value, just transform it
+				Expression singleValue = ( Expression ) transpiler.transform( optimized.get( 0 ), TransformerContext.NONE );
+				right = singleValue.toString();
+			} else {
+				// Multiple values, build Object[] array
+				List<String> transformedValues = optimized
+				    .stream()
+				    .map( v -> transpiler.transform( v, TransformerContext.NONE ).toString() )
+				    .toList();
+				right = "new Object[]{" + String.join( ", ", transformedValues ) + "}";
+			}
+		} else {
+			Expression rightExpr = ( Expression ) transpiler.transform( assignment.getRight(), TransformerContext.NONE );
+			right = rightExpr.toString();
+		}
 
-										{
-											put( "contextName", transpiler.peekContextName() );
-											put( "right", right.toString() );
-										}
-									};
+		Map<String, String> values = new HashMap<>() {
+
+			{
+				put( "contextName", transpiler.peekContextName() );
+				put( "right", right );
+			}
+		};
 
 		if ( assignment.getLeft() instanceof BoxIdentifier id ) {
 			accessKey = createKey( id.getName() );
@@ -640,6 +664,47 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	private boolean hasFinal( List<BoxAssignmentModifier> modifiers ) {
 		return modifiers.stream().anyMatch( it -> it == BoxAssignmentModifier.FINAL );
+	}
+
+	/**
+	 * Optimizes a list of expressions by combining contiguous string literals.
+	 *
+	 * @param values the list of expressions to optimize
+	 * 
+	 * @return an optimized list with contiguous string literals combined
+	 */
+	private List<BoxExpression> optimizeStringLiterals( List<BoxExpression> values ) {
+		if ( values.isEmpty() ) {
+			return values;
+		}
+
+		List<BoxExpression>	result				= new ArrayList<>();
+		StringBuilder		combinedString		= new StringBuilder();
+		BoxExpression		firstLiteralNode	= null;
+
+		for ( BoxExpression value : values ) {
+			if ( value instanceof BoxStringLiteral literal ) {
+				if ( firstLiteralNode == null ) {
+					firstLiteralNode = value;
+				}
+				combinedString.append( literal.getValue() );
+			} else {
+				// Non-literal found, flush any accumulated string
+				if ( combinedString.length() > 0 ) {
+					result.add( new BoxStringLiteral( combinedString.toString(), firstLiteralNode.getPosition(), firstLiteralNode.getSourceText() ) );
+					combinedString		= new StringBuilder();
+					firstLiteralNode	= null;
+				}
+				result.add( value );
+			}
+		}
+
+		// Flush any remaining combined string
+		if ( combinedString.length() > 0 ) {
+			result.add( new BoxStringLiteral( combinedString.toString(), firstLiteralNode.getPosition(), firstLiteralNode.getSourceText() ) );
+		}
+
+		return result;
 	}
 
 	private String getMethodCallTemplate( BoxAssignment assignment ) {

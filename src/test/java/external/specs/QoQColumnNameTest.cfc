@@ -29,7 +29,7 @@ component extends="testbox.system.BaseSpec"{
 		
 		```
 		// remove white space
-		expect( serializeJson( local.result ).reReplace( '\s', '', 'all' ) ).toBe('{"COLUMNS":["subtype","subject"],"DATA":[["RECORD3_TEMPLATE","RECORD3_TEMPLATE"],[null,null]]}');
+		expect( serializeJson( local.result, "row" ).reReplace( '\s', '', 'all' ) ).toBe('{"COLUMNS":["subtype","subject"],"DATA":[["RECORD3_TEMPLATE","RECORD3_TEMPLATE"],[null,null]]}');
 	}
 
 	function testNullAliases (){

@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.NormalizedValue;
 import ortus.boxlang.runtime.types.util.BLCollector;
@@ -53,11 +54,23 @@ public class ArrayUnique extends BIF {
 	 *
 	 * @argument.array The array to remove duplicate entries from
 	 *
+	 * @argument.caseSensitive Whether string element comparisons are case-sensitive. Defaults to false.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		boolean caseSensitive = arguments.getAsBoolean( Key.caseSensitive );
-		return arguments.getAsArray( Key.array ).stream()
+		return invoke( arguments.getAsArray( Key.array ), arguments.getAsBoolean( Key.caseSensitive ) );
+	}
+
+	/**
+	 * Returns a new array with duplicate items removed.
+	 *
+	 * @param array         The array to remove duplicate entries from
+	 * @param caseSensitive Whether string comparisons should be case-sensitive
+	 *
+	 * @return A new array with duplicates removed
+	 */
+	public static Array invoke( Array array, boolean caseSensitive ) {
+		return array.stream()
 		    .map( v -> NormalizedValue.of( v, caseSensitive ) )
 		    .distinct()
 		    .map( NormalizedValue::getOriginalValue )

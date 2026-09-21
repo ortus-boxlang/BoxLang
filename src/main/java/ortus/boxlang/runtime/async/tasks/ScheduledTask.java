@@ -55,6 +55,8 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.types.util.StringUtil;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -475,8 +477,15 @@ public class ScheduledTask implements Runnable {
 			// Execution by type
 			switch ( task ) {
 				case DynamicObject castedTask -> {
-					this.stats.put( "lastResult", Optional
-					    .ofNullable( castedTask.invoke( this.taskContext, method ) ) );
+					Object	targetInstance	= castedTask.getTargetInstance();
+					Object	result;
+					// BoxLang classes/objects dispatch UDFs dynamically (this scope), not via JVM reflection
+					if ( targetInstance instanceof IReferenceable referenceable ) {
+						result = referenceable.dereferenceAndInvoke( this.taskContext, Key.of( method ), DynamicObject.EMPTY_ARGS, false );
+					} else {
+						result = castedTask.invoke( this.taskContext, method );
+					}
+					this.stats.put( "lastResult", Optional.ofNullable( result ) );
 				}
 				case Callable<?> castedTask -> {
 					this.stats.put( "lastResult", Optional.ofNullable( castedTask.call() ) );
@@ -531,65 +540,89 @@ public class ScheduledTask implements Runnable {
 			    () -> Struct.ofNonConcurrent( Key.task, this, Key.result, result )
 			);
 
-		} catch ( Exception e ) {
+		} catch ( AbortException e ) {
+			// Abort exceptions will be logged as successes since the user chose to interrupt the task
+			var result = ( Optional<?> ) this.stats.get( "lastResult" );
+			( ( AtomicInteger ) this.stats.get( "totalSuccess" ) ).incrementAndGet();
+			if ( onTaskSuccess != null ) {
+				onTaskSuccess.accept( this, result );
+			}
+			if ( hasScheduler() ) {
+				getScheduler().onAnyTaskSuccess( this, result );
+			}
+			this.interceptorService.announce(
+			    BoxEvent.SCHEDULER_ON_ANY_TASK_SUCCESS,
+			    () -> Struct.ofNonConcurrent( Key.task, this, Key.result, result )
+			);
+
+		} catch ( Throwable t ) {
+			Exception e = null;
+			if ( t instanceof Exception exceptionObject ) {
+				e = exceptionObject;
+			} else {
+				e = new BoxRuntimeException( "A low level exception occurred when running the scheduled task: " + t.getMessage(), t );
+			}
+
+			final Exception exception = e;
 			// store failures
 			( ( AtomicInteger ) this.stats.get( "totalFailures" ) ).incrementAndGet();
-			logger.error( "Error running task ({}) failed: {}", name, e.getMessage() );
-			logger.error( "Stacktrace for ({}) : {}", name, e.getStackTrace() );
+
+			logger.error( "Error running task (" + name + ") failed: " + exception.getMessage(), exception );
 
 			// Try to execute the error handlers. Try try try just in case.
 			try {
 				// Life Cycle onTaskFailure call : From global to local
 				if ( onTaskFailure != null ) {
-					onTaskFailure.accept( this, e );
+					onTaskFailure.accept( this, exception );
 				}
 				// If we have a scheduler attached, called the schedulers life-cycle
 				if ( hasScheduler() ) {
-					getScheduler().onAnyTaskError( this, e );
+					getScheduler().onAnyTaskError( this, exception );
 				}
 				this.interceptorService.announce(
 				    BoxEvent.SCHEDULER_ON_ANY_TASK_ERROR,
-				    () -> Struct.ofNonConcurrent( Key.task, this, Key.exception, e ) );
+				    () -> Struct.ofNonConcurrent( Key.task, this, Key.exception, exception ) );
 
 				// After Tasks Interceptor with the exception as the last result : From global
 				// to local
 				if ( afterTask != null ) {
-					afterTask.accept( this, Optional.of( e ) );
+					afterTask.accept( this, Optional.of( exception ) );
 				}
 				if ( hasScheduler() ) {
-					getScheduler().afterAnyTask( this, Optional.of( e ) );
+					getScheduler().afterAnyTask( this, Optional.of( exception ) );
 				}
 				this.interceptorService.announce(
 				    BoxEvent.SCHEDULER_AFTER_ANY_TASK,
-				    () -> Struct.ofNonConcurrent( Key.task, this, Key.result, Optional.of( e ) )
+				    () -> Struct.ofNonConcurrent( Key.task, this, Key.result, Optional.of( exception ) )
 				);
-			} catch ( Exception afterException ) {
+			} catch ( Throwable afterException ) {
 				// Log it, so it doesn't go to ether and executor doesn't die.
-				logger.error(
-				    "Error running task ({}) after/error handlers : {}",
-				    name,
-				    afterException.getMessage() );
-				logger.error(
-				    "Stacktrace for task ({}) after/error handlers : {}",
-				    name,
-				    afterException.getStackTrace() );
+				logger.error( "Error running task " + name + " after/error handlers: " + afterException.getMessage(), afterException );
 			}
 		} finally {
 			// Store finalization stats
 			this.stats.put( "lastRun", getNow() );
 			( ( AtomicLong ) this.stats.get( "lastExecutionTime" ) ).set( timer.stopAndGetMillis( timerLabel ) );
 			( ( AtomicInteger ) this.stats.get( "totalRuns" ) ).incrementAndGet();
-			// Call internal cleanups event
-			cleanupTaskRun();
-			// set next run time based on timeUnit and period
-			setNextRunTime();
-			// This cleanup is done by the runtime once a thread is done processing a request
-			RequestBoxContext.removeCurrent();
-			Thread.currentThread().setContextClassLoader( oldClassLoader );
+			try {
+				// Call internal cleanups event
+				cleanupTaskRun();
+				// set next run time based on timeUnit and period
+				setNextRunTime();
+				// This cleanup is done by the runtime once a thread is done processing a request
+				RequestBoxContext.removeCurrent();
+				Thread.currentThread().setContextClassLoader( oldClassLoader );
+			} catch ( Throwable e ) {
+				logger.error( "Error running task (" + name + ") finalization: " + e.getMessage(), e );
+			}
 
 			// Clean up an open connections from this run
 			if ( this.taskContext instanceof IJDBCCapableContext jdbcContext ) {
-				jdbcContext.shutdownConnections();
+				try {
+					jdbcContext.shutdownConnections();
+				} catch ( Throwable e ) {
+					logger.error( "Error shutting down JDBC connections for task (" + name + "): " + e.getMessage(), e );
+				}
 			}
 		}
 	}
@@ -633,6 +666,13 @@ public class ScheduledTask implements Runnable {
 			} else {
 				this.initialDelay = DateTimeHelper.timeUnitToSeconds( this.initialDelay, this.initialDelayTimeUnit );
 			}
+		}
+
+		// If this is an interval-based (every()) task with an explicit daily start time and no
+		// initial delay was set some other way, align the first execution to the next period
+		// boundary counted from that start time instead of firing immediately on registration.
+		if ( this.period > 0 && this.initialDelay == 0 && this.startTime.length() > 0 ) {
+			calculateStartTimeAlignedDelay();
 		}
 
 		// Log it
@@ -764,7 +804,10 @@ public class ScheduledTask implements Runnable {
 	 * @return The ScheduledTask instance
 	 */
 	public ScheduledTask call( DynamicObject task, String method ) {
-		return call( task, method );
+		debugLog( "call" );
+		setTask( task );
+		setMethod( method == null || method.isBlank() ? "run" : method );
+		return this;
 	}
 
 	/**
@@ -2112,6 +2155,36 @@ public class ScheduledTask implements Runnable {
 	 */
 	private void setInitialDelayPeriodAndTimeUnit( LocalDateTime now, LocalDateTime nextRun ) {
 		setInitialDelayPeriodAndTimeUnit( now, nextRun, TimeUnit.DAYS, 1 );
+	}
+
+	/**
+	 * When an interval-based task ( every() ) has an explicit daily start time
+	 * ( startOnTime() / between() ) but no initial delay was set some other way, this
+	 * calculates an initial delay that aligns the first execution to the next period
+	 * boundary counted from that start time, instead of firing immediately on registration.
+	 */
+	private void calculateStartTimeAlignedDelay() {
+		LocalDateTime	now				= getNow();
+		LocalDateTime	anchor			= now
+		    .withHour( Integer.parseInt( this.startTime.split( ":" )[ 0 ] ) )
+		    .withMinute( Integer.parseInt( this.startTime.split( ":" )[ 1 ] ) )
+		    .withSecond( 0 )
+		    .withNano( 0 );
+		long			periodSeconds	= this.timeUnit.toSeconds( this.period );
+
+		if ( periodSeconds <= 0 ) {
+			return;
+		}
+
+		long elapsedSeconds = Duration.between( anchor, now ).getSeconds();
+		if ( elapsedSeconds > 0 ) {
+			long periodsElapsed = ( elapsedSeconds / periodSeconds ) + 1;
+			anchor = anchor.plusSeconds( periodsElapsed * periodSeconds );
+		}
+
+		this.initialDelay			= this.timeUnit.convert( Duration.between( now, anchor ) );
+		this.initialDelayTimeUnit	= this.timeUnit;
+		this.stats.put( "nextRun", anchor );
 	}
 
 	/**

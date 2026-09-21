@@ -127,4 +127,24 @@ public class IsXMLTest {
 		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( false );
 	}
 
+	@DisplayName( "It obeys application settings" )
+	@Test
+	public void testObeyApplicationSettings() {
+		instance.executeSource(
+		    """
+		    xmlFeatures={
+		    	externalGeneralEntities: false,
+		    	disallowDoctypeDecl: false
+		    };
+
+		    bx:application xmlFeatures="#xmlFeatures#";
+
+		    result = isXML( '<?xml version="1.0" encoding="UTF-8"?>
+		    	<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "configure_9_3.dtd">
+		    	<root />' )
+		            """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
 }

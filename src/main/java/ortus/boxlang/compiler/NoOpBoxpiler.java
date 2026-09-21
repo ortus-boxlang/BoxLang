@@ -64,7 +64,7 @@ public class NoOpBoxpiler extends Boxpiler {
 			File sourceFile = classInfo.resolvedFilePath().absolutePath().toFile();
 			// Check if the source file contains Java bytecode by reading the first few bytes
 			if ( diskClassUtil.isJavaBytecode( sourceFile ) ) {
-				return classInfo.getClassLoader().defineClasses( FQN, sourceFile, classInfo );
+				return classInfo.getDiskClassLoader().defineClasses( FQN, sourceFile, classInfo );
 			}
 			throw new BoxRuntimeException( "NoOpBoxpiler does not support compiling source files." );
 		} else if ( classInfo.source() != null ) {

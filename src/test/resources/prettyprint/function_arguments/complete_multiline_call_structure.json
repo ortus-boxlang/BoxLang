@@ -1,0 +1,13 @@
+{
+  "maxLineLength": 70,
+  "arguments": {
+    "multiline_count": 2147483647,
+    "multiline_length": 2147483647
+  },
+  "chain": {
+    "break_count": 2147483647,
+    "break_length": 2147483647,
+    "keep_receiver_count": 1,
+    "length_strategy": "inner-first"
+  }
+}

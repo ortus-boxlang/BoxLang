@@ -16,6 +16,9 @@ package ortus.boxlang.compiler;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -568,6 +571,24 @@ public class CFTranspilerTest {
 		assertThat( variables.getAsString( result ) ).isEqualTo( "1,2,3,4,5,6" );
 	}
 
+	@DisplayName( "Can append a number in a string list with a custom delimiter" )
+	@Test
+	public void testAppendNumberWithCustomDelimiter() {
+		instance.executeSource(
+		    """
+		        result = "///Users//luis//".listAppend( "//foo///bar////baz///", "/"  )
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "///Users//luis/////foo///bar////baz///" );
+
+		instance.executeSource(
+		    """
+		        result = listAppend( "///Users//luis//", "//foo///bar////baz///", "/"  )
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "///Users//luis/////foo///bar////baz///" );
+	}
+
 	@DisplayName( "Can replace once with one in replaceNoCase" )
 	@Test
 	public void testReplaceNoCaseOnce() {
@@ -635,6 +656,53 @@ public class CFTranspilerTest {
 		             """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "readwritesdfsdf" );
+	}
+
+	@DisplayName( "It preserves an explicit exclusive lock type" )
+	@Test
+	public void testLockTypeExclusiveIsPreserved() {
+		ParsingResult parsed = instance.parse( """
+		                                       lock name="a" type="exclusive" timeout=1 {}
+		                                       lock name="b" type="EXCLUSIVE" timeout=1 {}
+		                                       lock name="c" type="write" timeout=1 {}
+		                                       lock name="d" type="readonly" timeout=1 {}
+		                                       lock name="e" type="bogus" timeout=1 {}
+		                                       """, BoxSourceType.CFSCRIPT );
+		assertThat( parsed.isCorrect() ).isTrue();
+		String transpiled = parsed.getRoot().toString();
+		assertThat( transpiled ).doesNotContain( "\"write\"" );
+		assertThat( transpiled ).doesNotContain( "\"bogus\"" );
+		// a, b and c are exclusive; d and e are readonly
+		assertThat( transpiled.split( "exclusive", -1 ).length - 1 ).isEqualTo( 3 );
+		assertThat( transpiled.split( "readonly", -1 ).length - 1 ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "An exclusive lock in CF source actually serializes access" )
+	@Test
+	public void testExclusiveLockFromCFSourceIsMutuallyExclusive() {
+		instance.executeSource(
+		    """
+		    shared = { inside: 0, maxInside: 0 };
+		    futures = [];
+		    for( i = 1; i <= 64; i++ ) {
+		    	futures.append( runAsync( function() {
+		    		lock name="probe" type="exclusive" timeout="60" {
+		    			shared.inside++;
+		    			if ( shared.inside > shared.maxInside ) {
+		    				shared.maxInside = shared.inside;
+		    			}
+		    			sleep( 5 );
+		    			shared.inside--;
+		    		}
+		    	} ) );
+		    }
+		    for( f in futures ) {
+		    	f.get();
+		    }
+		    result = shared.maxInside;
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It formats numbers with a string pattern" )
@@ -722,6 +790,131 @@ public class CFTranspilerTest {
 		    """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "098f6bcd4621d373cade4e832627b4f6" );
+	}
+
+	@Test
+	public void testLoopWithStructInsteadOfCollection() {
+		instance.executeSource(
+		    """
+		    <cfset brad = "wood">
+		    <cfset result = "">
+		    <cfloop struct="#variables#" item="key">
+		    	<cfset result &= key />
+		    </cfloop>
+		             """, context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ) ).contains( "brad" );
+		assertThat( variables.getAsString( result ) ).contains( "result" );
+	}
+
+	private static final String NESTED_STRUCT_SOURCE = """
+	                                                   data = { "alpha": "a",
+	                                                   		"beta" : {
+	                                                   			"charlie": "c",
+	                                                   			"delta": "d"
+	                                                   		},
+	                                                   		"echo" : {
+	                                                   			"foxtrot" : {
+	                                                   				"golf" : "g",
+	                                                   				"hotel" : "h"
+	                                                   			}
+	                                                   		}
+	                                                   	};
+	                                                   """;
+
+	@DisplayName( "It transpiles writeDump( top=value ) to writeDump( depth=value-1 )" )
+	@Test
+	public void testWriteDumpTopTranspilesToDepthMinusOne() {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		context.getRequestContext().setOut( new PrintStream( baos, true ) );
+		// @formatter:off
+		instance.executeSource(
+		    NESTED_STRUCT_SOURCE + """
+		    writeDump( var = data, top = 3, format = "html" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		String output = baos.toString();
+		// top=3 -> depth=2: recurse one level in
+		assertThat( output ).contains( "alpha" );
+		assertThat( output ).contains( "charlie" );
+		assertThat( output ).contains( "foxtrot" );
+		assertThat( output ).doesNotContain( "golf" );
+	}
+
+	@DisplayName( "It transpiles writeDump( top=1 ) to writeDump( depth=0 ), showing nothing" )
+	@Test
+	public void testWriteDumpTopOneTranspilesToDepthZero() {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		context.getRequestContext().setOut( new PrintStream( baos, true ) );
+		// @formatter:off
+		instance.executeSource(
+		    NESTED_STRUCT_SOURCE + """
+		    writeDump( var = data, top = 1, format = "html" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "Depth Limit reached" );
+		assertThat( output ).doesNotContain( "alpha" );
+	}
+
+	@DisplayName( "It transpiles <cfdump top=value> to <bx:dump depth=value-1>" )
+	@Test
+	public void testCfDumpTopTranspilesToDepthMinusOne() {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		context.getRequestContext().setOut( new PrintStream( baos, true ) );
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    <cfscript>
+		    """ + NESTED_STRUCT_SOURCE + """
+		    </cfscript>
+		    <cfdump var="#data#" top="3" format="html">
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
+		String output = baos.toString();
+		// top=3 -> depth=2: recurse one level in
+		assertThat( output ).contains( "alpha" );
+		assertThat( output ).contains( "charlie" );
+		assertThat( output ).contains( "foxtrot" );
+		assertThat( output ).doesNotContain( "golf" );
+	}
+
+	@Test
+	public void testArrayAppendArgs() {
+		instance.executeSource(
+		    """
+		    	arr = []
+		    	ignore = arrayAppend(arr, "asdf" & Chr(10))
+		    """, context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsArray( Key.of( "arr" ) ) ).contains( "asdf" + "\n" );
+	}
+
+	@DisplayName( "It transpiles nested CF BIFs inside args of a return-type-fixed BIF (named args)" )
+	@Test
+	public void testArrayAppendArgsNamed() {
+		instance.executeSource(
+		    """
+		    	arr = []
+		    	ignore = arrayAppend( array=arr, value="asdf" & Chr(10) )
+		    """, context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsArray( Key.of( "arr" ) ) ).contains( "asdf" + "\n" );
+	}
+
+	@DisplayName( "It transpiles nested CF BIFs inside args of a return-type-fixed BIF used in an expression" )
+	@Test
+	public void testArrayAppendArgsInExpression() {
+		instance.executeSource(
+		    """
+		    	arr = []
+		    	ignore = arrayAppend( arr, Chr(10) & "asdf" ) & "x"
+		    """, context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsArray( Key.of( "arr" ) ) ).contains( "\n" + "asdf" );
 	}
 
 }

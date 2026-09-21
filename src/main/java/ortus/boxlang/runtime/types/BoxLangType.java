@@ -58,7 +58,9 @@ public enum BoxLangType {
 	STRUCT_LOOSE( Key.structLoose ),
 	UDF( Key._UDF ),
 	XML( Key.XML ),
-	STREAM( Key.stream );
+	STREAM( Key.stream ),
+	STRING_BUILDER( Key.stringBuilder ),
+	STRING_BUILDER_STRICT( Key.stringBuilderStrict );
 
 	/**
 	 * This class is used to store the key of the enum.
@@ -135,6 +137,17 @@ public enum BoxLangType {
 			case MODIFIABLE_SET -> Key._SET;
 			default -> this.key;
 		};
+	}
+
+	/**
+	 * Detect if a type is one of our 3 cystom types
+	 * 
+	 * @param type The BoxLangType to check
+	 *
+	 * @return True if the type is one of the custom types, false otherwise
+	 */
+	public static boolean isCustomType( BoxLangType type ) {
+		return type == BoxLangType.CUSTOM || type == BoxLangType.CUSTOM2 || type == BoxLangType.CUSTOM3;
 	}
 
 }

@@ -77,7 +77,7 @@ Result: [{"path":".PERSON3.LASTNAME","owner":{"LASTNAME":"Harrison","FIRSTNAME":
 
 ### Find first match for a nested struct key using member function
 
-CF11+ calling the findKey member function on a struct.
+Calling the findKey member function on a struct.
 
 <a href="https://try.boxlang.io/?code=eJxl0MsKwjAQBdB18xVDVhVE8LVRXNT3s0rrD0QdNVATSVOkiv%2FuFBGr2Q2XcOZm%2Bihsgin04AHM24yieB3WoQMP5nmzIQ31Kk3jWRRvw2A1ooDP9VnxIl0G33CJSmnFmfesfphGmWk4zEZkicOs9gNhrML8R2qWpaYjTVCbEzrWVBgj079S7TLVdqhgt6Pd%2F1KkxeFHaZWVlqNEUp20o8SWChUMe3bZJV9gTlfvv%2B9fO0p1oMQHnojUhuJC%2FwGuFXKodNnNSIvrzF4z68OcCsRopEjkHX14S5Xi2QuE5nL8" target="_blank">Run Example</a>
 

@@ -18,6 +18,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.DatasourceService;
+import ortus.boxlang.runtime.types.Struct;
 import tools.JDBCTestUtils;
 
 public class BaseJDBCTest {
@@ -61,6 +62,9 @@ public class BaseJDBCTest {
 	@BeforeEach
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		context.getApplicationListener().updateSettings(
+		    Struct.of( Key.datasource, datasource.getOriginalName() )
+		);
 		variables	= context.getScopeNearby( VariablesScope.name );
 
 		if ( datasource != null ) {

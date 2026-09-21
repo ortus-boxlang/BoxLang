@@ -28,6 +28,7 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeAll;
 
 import ortus.boxlang.compiler.TestBase;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.compiler.prettyprint.config.Config;
@@ -101,6 +102,16 @@ public abstract class PrettyPrintTest extends TestBase {
 
 	protected void assertEqualsIgnoringLineEndings( String expected, String actual ) {
 		assertEquals( normalizeLineEndings( expected ), normalizeLineEndings( actual ) );
+	}
+
+	protected void assertPrintIdempotent( String inputFilePath, Config config ) throws IOException {
+		File			inputFile		= new File( TEST_RESOURCES_PATH + inputFilePath );
+		ParsingResult	firstResult		= parser.parse( inputFile, false );
+		String			firstFormatted	= PrettyPrint.prettyPrint( firstResult.getRoot(), config );
+		ParsingResult	secondResult	= parser.parse( firstFormatted, BoxSourceType.BOXSCRIPT );
+		String			secondFormatted	= PrettyPrint.prettyPrint( secondResult.getRoot(), config );
+
+		assertEqualsIgnoringLineEndings( firstFormatted, secondFormatted );
 	}
 
 	protected String normalizeLineEndings( String value ) {

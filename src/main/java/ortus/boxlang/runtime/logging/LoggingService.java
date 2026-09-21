@@ -803,7 +803,6 @@ public class LoggingService {
 		// Seed the properties
 		oLogger.setLevel( configLevel );
 		oLogger.setAdditive( loggerConfig.additive );
-
 		// Only build/attach appenders when the logger is not effectively disabled
 		if ( configLevel != Level.OFF ) {
 			Appender<ILoggingEvent> loggerAppender = getOrBuildAppender( loggerFilePath, targetContext, loggerConfig );

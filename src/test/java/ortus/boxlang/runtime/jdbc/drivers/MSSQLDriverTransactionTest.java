@@ -505,37 +505,42 @@ public class MSSQLDriverTransactionTest extends AbstractDriverTest {
 	@DisplayName( "Nested transactions: A rollback on the child will not roll back the parent" )
 	@Test
 	public void testChildRollback() {
-		getInstance().executeSource(
-		    """
-		    transaction{
-		      queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {}, { datasource="MSSQLdatasource" } );
-		      transaction{
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {}, { datasource="MSSQLdatasource" } );
-		        transactionRollback();
-		      }
-		    }
-		    variables.result = queryExecute( "SELECT * FROM developers", {}, { datasource="MSSQLdatasource" } );
-		    """,
-		    getContext() );
-		Query theResult = getVariables().getAsQuery( result );
+		try {
+			setNestedTransactionsEnabledForCurrentContext( true );
+			getInstance().executeSource(
+			    """
+			    transaction{
+			      queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {}, { datasource="MSSQLdatasource" } );
+			      transaction{
+			        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {}, { datasource="MSSQLdatasource" } );
+			        transactionRollback();
+			      }
+			    }
+			    variables.result = queryExecute( "SELECT * FROM developers", {}, { datasource="MSSQLdatasource" } );
+			    """,
+			    getContext() );
+			Query theResult = getVariables().getAsQuery( result );
 
-		// This insert from the outer transaction should have been committed
-		assertNotNull(
-		    theResult
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Brad Wood" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
+			// This insert from the outer transaction should have been committed
+			assertNotNull(
+			    theResult
+			        .stream()
+			        .filter( row -> row.getAsString( Key._NAME ).equals( "Brad Wood" ) )
+			        .findFirst()
+			        .orElse( null )
+			);
 
-		// This insert from the inner transaction should have been rolled back
-		assertNull(
-		    theResult
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
+			// This insert from the inner transaction should have been rolled back
+			assertNull(
+			    theResult
+			        .stream()
+			        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+			        .findFirst()
+			        .orElse( null )
+			);
+		} finally {
+			setNestedTransactionsEnabledForCurrentContext( false );
+		}
 	}
 
 	@DisplayName( "Nested transactions: A rollback on the parent will roll back the child" )
@@ -578,38 +583,48 @@ public class MSSQLDriverTransactionTest extends AbstractDriverTest {
 	@DisplayName( "Nested transactions: Savepoints do not collide between the parent and child" )
 	@Test
 	public void testNestedSavepointCollisions() {
-		getInstance().executeSource(
-		    """
-		        transaction{
-		            queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {}, { datasource="MSSQLdatasource" } );
-		            transactionSetSavepoint( 'foo' );
-		            transaction{
-		            	transactionSetSavepoint( 'foo' );
-		            	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {}, { datasource="MSSQLdatasource" } );
-		            	transactionRollback( 'foo' );
-		            }
-		        }
-		        variables.result = queryExecute( "SELECT * FROM developers", {}, { datasource="MSSQLdatasource" } );
-		    """,
-		    getContext() );
-		Query theResult = getVariables().getAsQuery( result );
+		try {
+			setNestedTransactionsEnabledForCurrentContext( true );
+			getInstance().executeSource(
+			    """
+			        transaction{
+			            queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {}, { datasource="MSSQLdatasource" } );
+			            transactionSetSavepoint( 'foo' );
+			            transaction{
+			            	transactionSetSavepoint( 'foo' );
+			            	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {}, { datasource="MSSQLdatasource" } );
+			            	transactionRollback( 'foo' );
+			            }
+			        }
+			        variables.result = queryExecute( "SELECT * FROM developers", {}, { datasource="MSSQLdatasource" } );
+			    """,
+			    getContext() );
+			Query theResult = getVariables().getAsQuery( result );
 
-		// This insert from the outer transaction should NOT be rolled back
-		assertNotNull(
-		    theResult
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Brad Wood" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
-		// This insert from the inner transaction should be rolled back
-		assertNull(
-		    theResult
-		        .stream()
-		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
-		        .findFirst()
-		        .orElse( null )
-		);
+			// This insert from the outer transaction should NOT be rolled back
+			assertNotNull(
+			    theResult
+			        .stream()
+			        .filter( row -> row.getAsString( Key._NAME ).equals( "Brad Wood" ) )
+			        .findFirst()
+			        .orElse( null )
+			);
+			// This insert from the inner transaction should be rolled back
+			assertNull(
+			    theResult
+			        .stream()
+			        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+			        .findFirst()
+			        .orElse( null )
+			);
+		} finally {
+			setNestedTransactionsEnabledForCurrentContext( false );
+		}
+	}
+
+	private void setNestedTransactionsEnabledForCurrentContext( boolean enabled ) {
+		getInstance().getConfiguration().enableNestedTransactions = enabled;
+		context.getConnectionManager().setEnableNestedTransactions( enabled );
 	}
 
 	// @Disabled( "Fails due to savepoint not existing. More testing to do here." )

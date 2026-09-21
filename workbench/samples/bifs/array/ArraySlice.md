@@ -72,7 +72,7 @@ Result: [4,5,6]
 
 ### Slice an array using member function
 
-CF11+ calling the slice member function on an array.
+Calling the slice member function on an array.
 
 <a href="https://try.boxlang.io/?code=eJxLLCpKrFSwVYhW4OI01OHiNAJiYyA2AWJTIDYDYnMgtuCKtebKSy13hKpPBNF6xTmZyakaCkY6CsYKmtZc5UWZJakppbkFGgpwpUBhAFFlGN4%3D" target="_blank">Run Example</a>
 

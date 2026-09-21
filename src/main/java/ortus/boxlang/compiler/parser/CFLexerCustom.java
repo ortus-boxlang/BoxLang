@@ -147,6 +147,7 @@ public class CFLexerCustom extends CFLexer {
 
 	/**
 	 * Stack tracking whether each nested function level has output=true
+	 * Each lexer instance is only used in one thread, so not using ConcurrentLinkedDeque here.
 	 */
 	Deque<Boolean>								functionOutputStack		= new ArrayDeque<>();
 
@@ -538,7 +539,7 @@ public class CFLexerCustom extends CFLexer {
 					        && ( ( ( nextTokenType == IF || nextTokenType == PREFIXEDIDENTIFIER || nextTokenType == SWITCH ) && nextNonWhiteSpaceCharIs( '(' ) )
 					            || ( nextTokenType == TRY && nextNonWhiteSpaceCharIs( '{' ) )
 					            || ( nextTokenType == INCLUDE || nextTokenType == THROW || nextTokenType == VAR || nextTokenType == DEFAULT
-					                || nextTokenType == CONTINUE ) ) ) ) {
+					                || nextTokenType == CONTINUE || nextTokenType == RETHROW ) ) ) ) {
 						// preceeded by a :
 						// but myLabel : for() is fine
 						// and myLabel : while()
@@ -547,6 +548,7 @@ public class CFLexerCustom extends CFLexer {
 						// but not case: try {} catch(){}
 						// and not case: include "foo"
 						// and not case: continue
+						// and not case: rethrow
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because last token was a colon" );
 						isIdentifier = true;
@@ -1025,7 +1027,7 @@ public class CFLexerCustom extends CFLexer {
 
 	/**
 	 * Recursively match characters from the input stream against an operator trie.
-	 * Walks the trie character-by-character until a complete operator is matched or matching fails.
+	 * Walks the tree character-by-character until a complete operator is matched or matching fails.
 	 *
 	 * @param input          the character stream to read from
 	 * @param pos            the current position in the input stream

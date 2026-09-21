@@ -1,0 +1,6 @@
+class {
+	@inject( "wirebox" )
+    property name="wirebox";
+
+
+}

@@ -1,0 +1,9 @@
+{
+	"name": "javaTestModule",
+	"version": "2.0.0",
+	"author": "Ortus Solutions",
+	"description": "A pure-Java test module for BoxLang Java-config detection",
+	"boxlang": {
+		"moduleName": "javaTestModule"
+	}
+}

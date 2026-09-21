@@ -25,7 +25,7 @@ writeOutput( greeting );
 
 ### Using the encodeFor argument
 
-CF2016+ Passing in `html` to the `encodeFor` argument wraps the result with a call to encodeForHTML.
+Passing in `html` to the `encodeFor` argument wraps the result with a call to encodeForHTML.
 
 <a href="https://try.boxlang.io/?code=eJzLS8xNVbBVUApILUlVsuYqL8osSfUvLSkoLdFQUPJIzcnJV1BSUFPIAyrTUVDKKMnNUVLQtOYCAOVaEGw%3D" target="_blank">Run Example</a>
 

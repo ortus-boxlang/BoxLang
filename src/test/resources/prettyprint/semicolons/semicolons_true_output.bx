@@ -3,6 +3,7 @@ class {
 
 	function init() {
 		var x = 1;
+		var myFoo;
 		import java.util.List;
 		bx:include template="header.bx";
 		return this;

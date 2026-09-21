@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "PrettyPrinter",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.compiler.PrettyPrinter",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
             "name": "PrettyPrint",
             "request": "launch",
             "mainClass": "ortus.boxlang.compiler.prettyprint.PrettyPrint",

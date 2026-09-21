@@ -82,7 +82,14 @@
 													#encodeForHTML( thisArg.name() )#
 												</td>
 												<td>
-													#writedump( var: thisArg.defaultValue(), top: isNull( top ) ? null : top - 1, expand: expand ?: null, output : "buffer", format : format )#
+													#writedump(
+														var: thisArg.defaultValue(),
+														depth: isNull( depth ) ? null : depth - 1,
+														maxRows: maxRows ?: null,
+														expand: expand ?: null,
+														output : "buffer",
+														format : format ?: null
+													)#
 												</td>
 												<td>
 													#encodeForHTML( argHint )#
@@ -127,7 +134,13 @@
 												<strong>#encodeForHTML( thisAnnotation )#</strong>
 											</td>
 											<td>
-												#writeDump( var : annotations[ thisAnnotation ], output : "buffer", format : format )#
+												#writeDump(
+															var : annotations[ thisAnnotation ],
+															depth : isNull( depth ) ? null : depth - 1,
+															maxRows : maxRows ?: null,
+															output : "buffer",
+															format : format ?: null
+														)#
 											</td>
 										</tr>
 									</bx:loop>

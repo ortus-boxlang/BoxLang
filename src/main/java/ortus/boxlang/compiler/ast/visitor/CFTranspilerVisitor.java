@@ -222,6 +222,14 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static Map<String, Map<String, String>>	BIFArgMap					= new HashMap<>();
 
 	/**
+	 * Names used when transpiling the CF writeDump()/cfdump "top" attribute/argument to BoxLang's "depth" argument
+	 */
+	private static final String						WRITEDUMP_FUNCTION_NAME		= "writedump";
+	private static final String						DUMP_COMPONENT_NAME			= "dump";
+	private static final String						DUMP_TOP_ATTRIBUTE_NAME		= "top";
+	private static final String						DUMP_DEPTH_ATTRIBUTE_NAME	= "depth";
+
+	/**
 	 * Configuration keys for transpiler settings
 	 */
 	private static Key								transpilerKey				= Key.of( "transpiler" );
@@ -309,6 +317,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		componentAttrMap.put( "procparam", Map.of( "cfsqltype", "sqltype" ) );
 		componentAttrMap.put( "queryparam", Map.of( "cfsqltype", "sqltype" ) );
 		componentAttrMap.put( "object", Map.of( "component", "className" ) );
+		componentAttrMap.put( "loop", Map.of( "struct", "collection" ) );
 
 		/*
 		 * Outer string is name of BIF (lowercase)
@@ -316,8 +325,11 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		 * Only kicks in when named args are used
 		 */
 		BIFArgMap.put( "directorylist", Map.of( "absolute_path", "path" ) );
+		BIFArgMap.put( "spreadsheetwrite", Map.of( "filepath", "filename" ) );
 		BIFArgMap.put( "hash", Map.of( "string", "input" ) );
+		BIFArgMap.put( "extract", Map.of( "target", "destination" ) );
 		BIFArgMap.put( "getsafehtml", Map.of( "inputstring", "string", "policyfile", "policy" ) );
+		BIFArgMap.put( "xmlparse", Map.of( "xmltext", "xml", "xmlstring", "xml", "parseroptions", "validator" ) );
 
 		/*
 		 * These are BIFs that return something useless like true, but would be much more useful to return the actual data structure.
@@ -655,6 +667,21 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			}
 		}
 
+		// CF's writeDump()/cfdump "top" attribute limits how many levels of recursion are shown. BoxLang's dump()
+		// separates that concept from row/item limiting (its "maxRows" argument), so a CF "top" value maps onto
+		// BoxLang's "depth" argument (recursion levels), decremented by one to account for the differing 1-based semantics.
+		// writeDump( var=data, top=value ) -> writeDump( var=data, depth=value-1 )
+		if ( name.equals( WRITEDUMP_FUNCTION_NAME ) && node.isNamedArgs() ) {
+			node.getArguments().stream()
+			    .filter( arg -> arg.getName().getAsSimpleValue().toString().equalsIgnoreCase( DUMP_TOP_ATTRIBUTE_NAME ) )
+			    .forEach( arg -> {
+				    if ( arg.getName() instanceof BoxStringLiteral bsl ) {
+					    bsl.setValue( DUMP_DEPTH_ATTRIBUTE_NAME );
+				    }
+				    arg.setValue( transpileDumpTopToDepth( arg.getValue() ) );
+			    } );
+		}
+
 		// look for "params" named arg, or 2nd positional arg, and if it's a struct literal, any of the values which are also a struct literal,
 		// rename any keys from cfsqltype to sqltype and remove "cf_sql_" from the values of any sqltype
 		if ( name.equals( "queryexecute" ) && node.getArguments().size() >= 2 ) {
@@ -784,10 +811,75 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		return super.visit( node );
 	}
 
+	/**
+	 * Transforms BoxMethodInvocation nodes for CFML compatibility.
+	 *
+	 * Currently handles:
+	 * - listAppend() member function: defaults includeEmptyFields to true (CF-compat)
+	 *
+	 * @param node The BoxMethodInvocation node to transform
+	 *
+	 * @return The transformed BoxMethodInvocation node
+	 */
+	@Override
+	public BoxNode visit( BoxMethodInvocation node ) {
+		// Only handle simple dot-access method calls like foo.listAppend(...)
+		if ( node.getName() instanceof BoxIdentifier id ) {
+			String name = id.getName().toLowerCase();
+			if ( name.equals( "listappend" ) ) {
+				return transpileListAppend( node );
+			}
+		}
+		return super.visit( node );
+	}
+
+	/**
+	 * Wraps a CF cfdump/writeDump "top" attribute/argument value expression as {@code value - 1}, for use as the
+	 * BoxLang dump "depth" argument.
+	 *
+	 * @param value The original "top" value expression
+	 *
+	 * @return A new expression representing {@code value - 1}
+	 */
+	private BoxExpression transpileDumpTopToDepth( BoxExpression value ) {
+		return new BoxBinaryOperation( value, BoxBinaryOperator.Minus, new BoxIntegerLiteral( "1", null, "1" ), null, null );
+	}
+
 	private BoxNode transpileListAppend( BoxFunctionInvocation node ) {
 		var args = node.getArguments();
 		if ( args.isEmpty() ) {
 			return super.visit( node );
+		}
+		// For a function invocation, the "list" is the 1st positional arg, so we expect up to 4 positional args total.
+		// The delimiter (positional) goes into slot 3, and includeEmptyFields goes into slot 4.
+		fixupListAppendArgs( args, /* delimiterInsertAtSize */ 2, /* maxPositional */ 4 );
+		node.setArguments( args );
+		return super.visit( node );
+	}
+
+	private BoxNode transpileListAppend( BoxMethodInvocation node ) {
+		var args = node.getArguments();
+		// For a method invocation like myList.listAppend( value, delim, includeEmptyFields ),
+		// the receiver IS the list, so the args list only contains value/delim/includeEmptyFields (up to 3).
+		// The delimiter (positional) goes into slot 2, and includeEmptyFields goes into slot 3.
+		fixupListAppendArgs( args, /* delimiterInsertAtSize */ 1, /* maxPositional */ 3 );
+		node.setArguments( args );
+		return super.visit( node );
+	}
+
+	/**
+	 * Shared logic for transpiling listAppend() calls to default the includeEmptyFields
+	 * argument to true (CF-compat behavior).
+	 *
+	 * @param args                  The mutable list of arguments to fix up
+	 * @param delimiterInsertAtSize The current size at which a missing delimiter needs to be inserted
+	 *                              (2 for BIF form, 1 for member form)
+	 * @param maxPositional         The maximum number of positional args after fixup
+	 *                              (4 for BIF form, 3 for member form)
+	 */
+	private void fixupListAppendArgs( List<BoxArgument> args, int delimiterInsertAtSize, int maxPositional ) {
+		if ( args.isEmpty() ) {
+			return;
 		}
 		// Check if named args
 		if ( args.get( 0 ).getName() != null ) {
@@ -802,13 +894,12 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				        null
 				    )
 				);
-				node.setArguments( args );
 			}
 		} else {
 			// positional args
-			if ( args.size() < 4 ) {
-				if ( args.size() == 2 ) {
-					// add delimiter as 3rd positional arg
+			if ( args.size() < maxPositional ) {
+				if ( args.size() == delimiterInsertAtSize ) {
+					// add delimiter positional arg
 					args.add(
 					    new BoxArgument(
 					        null,
@@ -818,7 +909,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 					    )
 					);
 				}
-				// add includeEmptyFields as 4th positional arg
+				// add includeEmptyFields as final positional arg
 				args.add(
 				    new BoxArgument(
 				        null,
@@ -827,11 +918,8 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				        null
 				    )
 				);
-				// Always re-set args and don't just modify the list so the AST model can be updated
-				node.setArguments( args );
 			}
 		}
-		return super.visit( node );
 	}
 
 	/**
@@ -1007,7 +1095,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		    )
 		);
 
-		var closure = new BoxClosure(
+		var						closure		= new BoxClosure(
 		    // arg1, arg2, etc for as many args to the original BIF, or the actual arg names if using named args
 		    generateIIFEArgs( args ),
 		    // annotations
@@ -1023,12 +1111,22 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		);
 
 		// wrap up the closure as an IIFE
-		return new BoxExpressionInvocation(
+		// Note: addComment() returns BoxNode, not BoxExpressionInvocation, so we build the invocation first and add the comment on a separate line.
+		BoxExpressionInvocation	invocation	= new BoxExpressionInvocation(
 		    new BoxParenthesis( closure, null, null ),
 		    args,
 		    null,
 		    null
-		).addComment( new BoxSingleLineComment( "Transpiler workaround for BIF return type", null, null ) );
+		);
+		invocation.addComment( new BoxSingleLineComment( "Transpiler workaround for BIF return type", null, null ) );
+
+		// IMPORTANT: The args (and all other children) of the new IIFE are the ORIGINAL arguments from the
+		// BoxFunctionInvocation we are replacing. Since we are returning a whole new node instead of calling
+		// super.visit( node ) on the original, those children have NOT been visited yet. We MUST route the new
+		// node back through the visitor ( visit( BoxExpressionInvocation ) ) so every argument is recursively
+		// transpiled (e.g. `Chr(10)` -> `char(10)`, identifier renames, etc.). Failure to do so leaves CF-only
+		// syntax inside the arguments untranspiled, causing runtime errors like `Function 'Chr' not found`.
+		return super.visit( invocation );
 	}
 
 	private List<BoxArgument> generateBIFArgs( List<BoxArgument> args ) {
@@ -1476,16 +1574,30 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				        null )
 				);
 			}
-			// CF allows various "incorrect" type attribute values. If "type" is set, "write" changes to "exclusive", all other values other than "readonly" change to "readonly"
+			// CF allows various "incorrect" type attribute values. If "type" is set, "write" changes to "exclusive", "exclusive" and "readonly" are
+			// preserved, and all other values change to "readonly"
 			node.getAttributes().stream()
 			    .filter( a -> a.getKey().getValue().equalsIgnoreCase( "type" ) && a.getValue() instanceof BoxStringLiteral )
 			    .forEach( a -> {
 				    BoxStringLiteral bsl = ( BoxStringLiteral ) a.getValue();
-				    if ( bsl.getValue().equalsIgnoreCase( "write" ) ) {
+				    if ( bsl.getValue().equalsIgnoreCase( "write" ) || bsl.getValue().equalsIgnoreCase( "exclusive" ) ) {
 					    bsl.setValue( "exclusive" );
 				    } else if ( !bsl.getValue().equalsIgnoreCase( "readonly" ) ) {
 					    bsl.setValue( "readonly" );
 				    }
+			    } );
+		}
+
+		// cfdump's "top" attribute limits how many levels of recursion are shown. BoxLang's dump component separates
+		// that concept from row/item limiting (its "maxRows" attribute), so a CF "top" value maps onto BoxLang's
+		// "depth" attribute (recursion levels), decremented by one to account for the differing 1-based semantics.
+		// <cfdump var="data" top="#value#"> -> <bx:dump var="data" depth="#value-1#">
+		if ( componentName.equals( DUMP_COMPONENT_NAME ) ) {
+			node.getAttributes().stream()
+			    .filter( a -> a.getKey().getValue().equalsIgnoreCase( DUMP_TOP_ATTRIBUTE_NAME ) )
+			    .forEach( a -> {
+				    a.getKey().setValue( DUMP_DEPTH_ATTRIBUTE_NAME );
+				    a.setValue( transpileDumpTopToDepth( a.getValue() ) );
 			    } );
 		}
 

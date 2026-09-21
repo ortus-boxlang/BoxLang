@@ -13,9 +13,9 @@ plugins {
 	id "application"
 	id 'antlr'
 	// For source code formatting
-	id "com.diffplug.spotless" version "8.4.0"
+	id "com.diffplug.spotless" version "8.6.0"
 	// Shadow
-	id "com.gradleup.shadow" version "9.2.2"
+	id "com.gradleup.shadow" version "9.6.1"
 	// For dependency updates
 	id 'com.github.ben-manes.versions' version '0.54.0'
 	// For building service loader files
@@ -102,14 +102,14 @@ repositories {
  */
 dependencies {
     // Testing Dependencies
-    testImplementation "org.junit.jupiter:junit-jupiter:6.0.3"
+    testImplementation "org.junit.jupiter:junit-jupiter:6.1.1"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
 	testImplementation "commons-cli:commons-cli:1.11.0"
 	testImplementation "org.wiremock:wiremock:3.13.2"
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
-	testImplementation 'io.undertow:undertow-core:2.4.0.Final'
-	testImplementation 'org.bouncycastle:bcpkix-jdk18on:1.84'
+	testImplementation 'io.undertow:undertow-core:2.4.1.Final'
+	testImplementation 'org.bouncycastle:bcpkix-jdk18on:1.85'
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 
@@ -125,8 +125,10 @@ dependencies {
 	// Implementation Dependencies
 	// https://mvnrepository.com/artifact/commons-io/commons-io
 	implementation "commons-io:commons-io:2.22.0"
+	// https://mvnrepository.com/artifact/org.itadaki/bzip2
+	implementation "org.itadaki:bzip2:0.9.1"
 	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
-	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.27.1'
+	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.28.2'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 	implementation 'org.apache.commons:commons-lang3:3.20.0'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
@@ -135,25 +137,25 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-cli
 	implementation "commons-cli:commons-cli:1.11.0"
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.21.3'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.21.4'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.21.3'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.21.4'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.21.3'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.21.4'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.21.3'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.21.4'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-	implementation 'org.slf4j:slf4j-api:2.0.17'
+	implementation 'org.slf4j:slf4j-api:2.0.18'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-	implementation 'ch.qos.logback:logback-classic:1.5.32'
+	implementation 'ch.qos.logback:logback-classic:1.6.1'
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
-	implementation 'com.zaxxer:HikariCP:6.3.0'
+	implementation 'com.zaxxer:HikariCP:7.1.0'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
-	implementation 'org.ow2.asm:asm-tree:9.9.1'
+	implementation 'org.ow2.asm:asm-tree:9.10.1'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
-	implementation 'org.ow2.asm:asm-util:9.9.1'
+	implementation 'org.ow2.asm:asm-util:9.10.1'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-commons
-	implementation 'org.ow2.asm:asm-commons:9.9.1'
+	implementation 'org.ow2.asm:asm-commons:9.10.1'
 	// https://mvnrepository.com/artifact/org.semver4j/semver4j
 	implementation 'org.semver4j:semver4j:6.0.0'
 
@@ -499,6 +501,9 @@ shadowJar {
 	archiveBaseName = "boxlang"
 	archiveClassifier = ""
     mergeServiceFiles()
+	// Exclude the IBoxpiler service file from merging — we provide a filtered
+	// version below that strips out boxpiler lines not included in this JAR
+	exclude 'META-INF/services/ortus.boxlang.compiler.IBoxpiler'
 
 	// Antlr unnecessary files
 	exclude "com/ibm/icu/**"
@@ -517,6 +522,22 @@ shadowJar {
 		exclude( dependency( "ch.qos.logback:.*:.*" ) )
 		exclude( dependency( "com.zaxxer:.*:.*" ) )
 		exclude( dependency( "com.fasterxml.jackson.jr:.*:.*" ) )
+	}
+
+	// Add filtered service file with only ASMBoxpiler and NoOpBoxpiler
+	from(file("$buildDir/tmp/shadowJar-services")) {
+		into('META-INF')
+	}
+
+	doFirst {
+		// Create filtered service file from the source, stripping JavaBoxpiler
+		def servicesDir = file("$buildDir/tmp/shadowJar-services/services")
+		servicesDir.mkdirs()
+		def serviceFile = file("$buildDir/tmp/shadowJar-services/services/ortus.boxlang.compiler.IBoxpiler")
+		serviceFile.text = project.file('src/main/resources/META-INF/services/ortus.boxlang.compiler.IBoxpiler').text
+			.readLines()
+			.findAll { !it.contains('JavaBoxpiler') }
+			.join('\n') + '\n'
 	}
 }
 
@@ -1428,7 +1449,7 @@ compileJava {
  */
 compileTestJava {
 	source sourceSets.test.java
-	dependsOn compileJava, generateTestGrammarSource, serviceLoaderBuild, ":src:modules:test:build"
+	dependsOn compileJava, generateTestGrammarSource, serviceLoaderBuild, ":src:modules:test:build", ":src:modules:javaTestModule:build"
 	options.encoding = 'UTF-8'
 }
 
@@ -1487,6 +1508,10 @@ spotless {
         removeUnusedImports()
         formatAnnotations()
     }
+}
+
+tasks.named( "spotlessJava" ) {
+	mustRunAfter( ":src:modules:javaTestModule:copyJarModuleFixture" )
 }
 
 task downloadDocGenerator( type: Download ) {

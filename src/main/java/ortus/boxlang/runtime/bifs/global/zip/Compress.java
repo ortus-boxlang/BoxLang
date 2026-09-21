@@ -36,7 +36,8 @@ public class Compress extends BIF {
 	public Compress() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.STRING, Key.format, "zip", Set.of( Validator.valueOneOf( "zip", "gzip" ) ) ),
+		    new Argument( false, Argument.STRING, Key.format,
+		        Set.of( Validator.valueOneOf( "bzip", "bzip2", "gzip", "tar", "tar.bz", "tbz", "tbz2", "tgz", "tar.gz", "zip" ) ) ),
 		    new Argument( true, Argument.STRING, Key.source ),
 		    new Argument( true, Argument.STRING, Key.destination ),
 		    new Argument( false, Argument.BOOLEAN, Key.includeBaseFolder, true ),
@@ -53,7 +54,11 @@ public class Compress extends BIF {
 	 * the specified format:
 	 * <p>
 	 * - zip
-	 * - gzip (It will all files separately to the destination folder)
+	 * - gzip
+	 * - tar
+	 * - tgz/tar.gz (gzip-compressed tar)
+	 * - bzip/bzip2 (raw bzip2 stream)
+	 * - tbz/tbz2/tar.bz (bzip2-compressed tar)
 	 * <p>
 	 * The {@code includeBaseFolder} argument is used to include the base folder as the root
 	 * of the compressed file. The default is {@code true}.
@@ -69,7 +74,7 @@ public class Compress extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.format The format to use for the compression: zip or gzip. Default is zip.
+	 * @argument.format The format to use for the compression. If omitted, it is detected from the destination extension.
 	 *
 	 * @argument.source The absolute path to the source file or folder to compress.
 	 *
@@ -90,17 +95,18 @@ public class Compress extends BIF {
 	 * @return The absolute path to the compressed file.
 	 */
 	public String _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	format				= arguments.getAsString( Key.format );
-		String	source				= arguments.getAsString( Key.source );
-		String	destination			= arguments.getAsString( Key.destination );
-		boolean	includeBaseFolder	= BooleanCaster.cast( arguments.get( Key.includeBaseFolder ) );
-		boolean	overwrite			= BooleanCaster.cast( arguments.get( Key.overwrite ) );
-		Object	prefix				= arguments.get( Key.prefix );
-		Object	filter				= arguments.get( Key.filter );
-		Integer	compressionLevel	= arguments.getAsInteger( Key.compressionLevel );
+		String						format				= arguments.getAsString( Key.format );
+		String						source				= arguments.getAsString( Key.source );
+		String						destination			= arguments.getAsString( Key.destination );
+		ZipUtil.COMPRESSION_FORMAT	compressionFormat	= ZipUtil.detectFormat( format, destination );
+		boolean						includeBaseFolder	= BooleanCaster.cast( arguments.get( Key.includeBaseFolder ) );
+		boolean						overwrite			= BooleanCaster.cast( arguments.get( Key.overwrite ) );
+		Object						prefix				= arguments.get( Key.prefix );
+		Object						filter				= arguments.get( Key.filter );
+		Integer						compressionLevel	= arguments.getAsInteger( Key.compressionLevel );
 
 		return ZipUtil.compress(
-		    ZipUtil.COMPRESSION_FORMAT.valueOf( format.toUpperCase() ),
+		    compressionFormat,
 		    source,
 		    destination,
 		    includeBaseFolder,

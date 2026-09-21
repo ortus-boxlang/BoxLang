@@ -13,7 +13,7 @@
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
 						Query:
-						<bx:if !isNull( top ) && top lt var.recordcount>#top#/</bx:if>#var.recordcount# rows
+						<bx:if !isNull( maxRows ) && maxRows lt var.recordcount>#maxRows#/</bx:if>#var.recordcount# rows
 					</strong>
 				</caption>
 				<thead
@@ -28,8 +28,9 @@
 				<tbody
 					<bx:if !expandRoot>class="d-none"</bx:if>
 				>
-					<bx:loop query="#var#" item="row" index="index">
-						<bx:if !isNull( top ) and var.currentRow gt top >
+					<bx:set maxItems = isNull( maxRows ) ? var.recordcount : min( maxRows, var.recordcount )>
+					<bx:loop query="#var#" item="row">
+						<bx:if var.currentRow gt maxItems>
 							<bx:break/>
 						</bx:if>
 						<tr>
@@ -38,7 +39,13 @@
 									<bx:if isSimpleValue( var[ column ] )>
 										#encodeForHTML( var[ column ] )#
 									<bx:else>
-										<bx:dump var="#var[ column ]#"/>
+										#writeDump(
+											var : var[ column ],
+											depth : isNull( depth ) ? null : depth - 1,
+											maxRows : maxRows ?: null,
+											output : "buffer",
+											format : format ?: null
+										)#
 									</bx:if>
 								</td>
 							</bx:loop>

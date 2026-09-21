@@ -31,6 +31,7 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
@@ -450,6 +451,12 @@ public abstract class Transpiler implements ITranspiler {
 				else if ( onlyLiteralValues ) {
 					// Runtime expressions we just put this place holder text in for
 					value = List.of( new LdcInsnNode( "<Runtime Expression>" ) );
+				} else if ( thisValue instanceof BoxStringInterpolation bsi && bsi.getValues().size() == 1 ) {
+					// A quoted attribute value with a single interpolation element isn't forced to a string.
+					// Ex: <bx:myComponent foo="#complexValue#">
+					// It's represented as a BoxStringInterpolation, but we DON'T want to use the actual string transformer
+					// as it will force the output to be a string!!
+					value = transform( bsi.getValues().get( 0 ), TransformerContext.NONE, ReturnValueContext.VALUE );
 				} else {
 					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.VALUE );
 				}

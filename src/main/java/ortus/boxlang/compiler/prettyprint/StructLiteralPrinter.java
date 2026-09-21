@@ -87,13 +87,17 @@ public class StructLiteralPrinter {
 					contentsDoc.append( "," ).append( visitor.config.getStruct().getMultiline().getLeadingComma().getPadding() ? " " : "" );
 				}
 
-				String keyText = values.get( i ).getSourceText();
+				var		key		= values.get( i );
+				String	keyText	= key.getSourceText();
 				if ( visitor.config.getStruct().getQuoteKeys() ) {
-					contentsDoc.append( visitor.config.getSingleQuote() ? "'" : "\"" );
-				}
-				values.get( i ).accept( visitor );
-				if ( visitor.config.getStruct().getQuoteKeys() ) {
-					contentsDoc.append( visitor.config.getSingleQuote() ? "'" : "\"" );
+					String quote = visitor.config.getSingleQuote() ? "'" : "\"";
+					visitor.printPreComments( key );
+					contentsDoc.append( quote );
+					visitor.stringPrinter.printQuotedExpression( key, quote );
+					contentsDoc.append( quote );
+					visitor.printPostComments( key );
+				} else {
+					key.accept( visitor );
 				}
 				int maxKeyLength = alignmentMaxByPairIndex[ i / 2 ];
 				if ( isMultiline && visitor.config.getAlignConsecutiveAssignments() && maxKeyLength > 0 && keyText != null ) {

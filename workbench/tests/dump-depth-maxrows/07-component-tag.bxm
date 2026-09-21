@@ -1,0 +1,21 @@
+<bx:script>
+	val = { "one": 1, "two": 2, "three": 3, "four": 4 };
+</bx:script>
+<!DOCTYPE html>
+<html>
+<head><title>07 - bx:dump component tag vs writeDump() BIF</title>
+<style>body{font-family:system-ui,sans-serif;max-width:1000px;margin:30px auto;padding:0 20px;} h2{border-bottom:2px solid #333;padding-bottom:4px;margin-top:40px;} .expect{background:#fffbe6;border-left:4px solid #e0a800;padding:8px 12px;margin:8px 0;}</style>
+</head>
+<body>
+<p><a href="index.bxm">&larr; back</a></p>
+<h1>07 - &lt;bx:dump&gt; component tag vs writeDump() BIF</h1>
+<p>Both should render identically for the same depth/maxRows attributes.</p>
+
+<h2>&lt;bx:dump var="#val#" maxRows="2"&gt; (component/tag)</h2>
+<bx:dump var="#val#" maxRows="2">
+
+<h2>#writeDump( var=val, maxRows=2 )# (BIF)</h2>
+<bx:output>#writeDump( var = val, maxRows = 2, output = "buffer", format = "html" )#</bx:output>
+
+</body>
+</html>

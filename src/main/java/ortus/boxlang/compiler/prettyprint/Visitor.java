@@ -58,6 +58,7 @@ import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxStringBuilderLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -83,6 +84,7 @@ import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLBinaryOpera
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLInOperation;
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLInSubQueryOperation;
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLUnaryOperation;
+import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxAssert;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
@@ -578,10 +580,13 @@ public class Visitor extends VoidBoxVisitor {
 		}
 
 		node.getLeft().accept( this );
-		currentDoc.append( " " );
-		currentDoc.append( node.getOp().getSymbol() );
-		currentDoc.append( " " );
-		node.getRight().accept( this );
+		// for var Myvar; with no initializer.
+		if ( node.getOp() != null ) {
+			currentDoc.append( " " );
+			currentDoc.append( node.getOp().getSymbol() );
+			currentDoc.append( " " );
+			node.getRight().accept( this );
+		}
 	}
 
 	@Override
@@ -753,8 +758,22 @@ public class Visitor extends VoidBoxVisitor {
 			currentNode = methodNode.getObj();
 			// Also collect any dot accesses in between
 			while ( currentNode instanceof BoxDotAccess dotAccess ) {
-				chain.add( new ChainElement( dotAccess ) );
-				currentNode = dotAccess.getContext();
+				if ( followsMethodInvocation( dotAccess ) ) {
+					chain.add( new ChainElement( dotAccess ) );
+					currentNode = dotAccess.getContext();
+					continue;
+				}
+
+				int receiverAccessesToBreak = Math.max(
+				    0,
+				    countDotAccesses( dotAccess ) - config.getChain().getKeepReceiverCount()
+				);
+				for ( int i = 0; i < receiverAccessesToBreak; i++ ) {
+					var receiverAccess = ( BoxDotAccess ) currentNode;
+					chain.add( new ChainElement( receiverAccess ) );
+					currentNode = receiverAccess.getContext();
+				}
+				break;
 			}
 		}
 
@@ -767,25 +786,31 @@ public class Visitor extends VoidBoxVisitor {
 		}
 		root.accept( this );
 
-		int		chainSize	= chain.size();
-		int		breakCount	= config.getChain().getBreakCount();
-		int		breakLength	= config.getChain().getBreakLength();
-		int		chainLength	= calculateChainLength( chain, root );
-		boolean	shouldBreak	= chainSize >= breakCount || chainLength >= breakLength;
+		int		chainSize					= chain.size();
+		int		breakCount					= config.getChain().getBreakCount();
+		int		breakLength					= config.getChain().getBreakLength();
+		int		chainLength					= calculateChainLength( chain, root );
+		long	methodCallCount				= chain.stream().filter( ChainElement::isMethodInvocation ).count();
+		boolean	chainFirstLengthStrategy	= "chain-first".equals( config.getChain().getLengthStrategy() ) && methodCallCount > 1;
+		boolean	argumentLengthRequiresBreak	= chainFirstLengthStrategy && chain.stream()
+		    .filter( ChainElement::isMethodInvocation )
+		    .map( ChainElement::asMethodInvocation )
+		    .anyMatch( method -> argumentsPrinter.wouldBreakByLength( method.getArguments() ) );
+		boolean	shouldBreak					= chainSize >= breakCount || chainLength >= breakLength || argumentLengthRequiresBreak;
 
-		var		chainGroup	= pushDoc( DocType.GROUP );
-		var		indentGroup	= pushDoc( DocType.INDENT );
+		var		chainGroup					= pushDoc( DocType.GROUP );
+		var		chainContents				= pushDoc( shouldBreak ? DocType.INDENT : DocType.ARRAY );
 
 		// Force break if chain is long enough (by count or by length)
 		if ( shouldBreak ) {
-			indentGroup.append( Line.BREAK_PARENT );
+			chainContents.append( Line.BREAK_PARENT );
 		}
 
 		for ( int i = chain.size() - 1; i >= 0; i-- ) {
 			var element = chain.get( i );
 
 			if ( shouldBreak ) {
-				indentGroup.append( Line.HARD );
+				chainContents.append( Line.HARD );
 			}
 
 			if ( element.isMethodInvocation() ) {
@@ -803,7 +828,7 @@ public class Visitor extends VoidBoxVisitor {
 					methodNode.getName().accept( this );
 					print( " ]" );
 				}
-				argumentsPrinter.print( methodNode, methodNode.getArguments() );
+				argumentsPrinter.print( methodNode, methodNode.getArguments(), shouldBreak && chainFirstLengthStrategy );
 				printPostComments( methodNode );
 			} else if ( element.isDotAccess() ) {
 				var dotAccess = element.asDotAccess();
@@ -1004,6 +1029,11 @@ public class Visitor extends VoidBoxVisitor {
 	@Override
 	public void visit( BoxStringLiteral node ) {
 		stringPrinter.printStringLiteral( node );
+	}
+
+	@Override
+	public void visit( BoxStringBuilderLiteral node ) {
+		stringPrinter.printStringBuilderLiteral( node );
 	}
 
 	@Override
@@ -1469,6 +1499,29 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	@Override
+	public void visit( BoxAnnotation node ) {
+		printPreComments( node );
+		if ( isTemplate() ) {
+			print( " " );
+			node.getKey().accept( this );
+			if ( node.getValue() != null ) {
+				print( "=\"" );
+				stringPrinter.printQuotedExpression( node.getValue() );
+				print( "\"" );
+			}
+		} else {
+			print( "@" );
+			node.getKey().accept( this );
+			if ( node.getValue() != null ) {
+				print( "( " );
+				node.getValue().accept( this );
+				print( " )" );
+			}
+		}
+		printPostComments( node );
+	}
+
+	@Override
 	public void visit( BoxProperty node ) {
 		printPreComments( node );
 		if ( isTemplate() ) {
@@ -1476,7 +1529,7 @@ public class Visitor extends VoidBoxVisitor {
 			helperPrinter.printKeyValueAnnotations( node.getAllAnnotations(), false );
 			print( ">" );
 		} else {
-			if ( config.getAlignConsecutiveProperties() && node.getSourceText() != null ) {
+			if ( ( config.getAlignConsecutiveProperties() || !node.getAnnotations().isEmpty() ) && node.getSourceText() != null ) {
 				print( node.getSourceText().trim() );
 				printPostComments( node );
 				return;
@@ -2186,6 +2239,38 @@ public class Visitor extends VoidBoxVisitor {
 			return 0;
 		}
 		return node.getSourceText().replaceAll( "\\s+", "" ).length();
+	}
+
+	/**
+	 * Determines whether a dot access follows a method invocation and is therefore
+	 * part of the fluent chain rather than part of its initial receiver path.
+	 *
+	 * @param dotAccess dot access to inspect
+	 *
+	 * @return true when the dot access is rooted in a method invocation
+	 */
+	private boolean followsMethodInvocation( BoxDotAccess dotAccess ) {
+		BoxNode context = dotAccess.getContext();
+		while ( context instanceof BoxDotAccess nestedDotAccess ) {
+			context = nestedDotAccess.getContext();
+		}
+		return context instanceof BoxMethodInvocation;
+	}
+
+	/**
+	 * Count consecutive dot accesses in a receiver path.
+	 *
+	 * @param node receiver path root
+	 *
+	 * @return the number of dot accesses
+	 */
+	private int countDotAccesses( BoxNode node ) {
+		int count = 0;
+		while ( node instanceof BoxDotAccess dotAccess ) {
+			count++;
+			node = dotAccess.getContext();
+		}
+		return count;
 	}
 
 	/**

@@ -46,7 +46,19 @@ public class Now extends BIF {
 	 * @argument.timezone A timezone to use for the DateTime object, defaults to the system default
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return new DateTime( LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context ) );
+		return invoke( arguments.getAsString( Key.timezone ), context );
+	}
+
+	/**
+	 * Returns the current DateTimeObject representing the current zoned instance
+	 * 
+	 * @param timezone A timezone to use for the DateTime object, defaults to the system default
+	 * @param context  The context in which the BIF is being invoked, used for localization purposes
+	 * 
+	 * @return A DateTime object representing the current date and time in the specified timezone
+	 */
+	public static Object invoke( String timezone, IBoxContext context ) {
+		return new DateTime( LocalizationUtil.parseZoneId( timezone, context ) );
 	}
 
 }

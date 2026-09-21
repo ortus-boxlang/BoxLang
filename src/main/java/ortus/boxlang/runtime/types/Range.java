@@ -85,6 +85,7 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 	private final boolean					strictTypeCheck;
 	private final Comparator<T>				comparator;
 	private final BiFunction<T, Number, T>	stepper;
+	private final boolean					hasDirectionStepConflict;
 	private final int						hashCode;
 
 	private transient BoxMeta<?>			$bx;
@@ -150,20 +151,25 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 	 * @param elementTypeName string type name for GenericCaster checks (nullable)
 	 * @param strictTypeCheck true when type(Class) is used — only allows exact instanceof matches
 	 */
+	@SuppressWarnings( "null" )
 	private Range( T from, T to, Number step, String unit, boolean fromExclusive, boolean toExclusive, Comparator<T> comparator,
 	    BiFunction<T, Number, T> stepper, Class<?> elementType, ElementCategory elementCategory, String elementTypeName, boolean strictTypeCheck ) {
 		Objects.requireNonNull( comparator, "Range comparator cannot be null" );
 
-		this.from				= from;
-		this.to					= to;
-		this.fromExclusive		= fromExclusive;
-		this.toExclusive		= toExclusive;
-		this.comparator			= comparator;
-		this.step				= step != null ? step : ( from != null && to != null && comparator.compare( from, to ) > 0 ? -1 : 1 );
-		this.unit				= unit;
-		this.ascending			= this.step.doubleValue() > 0;
-		this.elementTypeName	= elementTypeName;
-		this.strictTypeCheck	= strictTypeCheck;
+		this.from			= from;
+		this.to				= to;
+		this.fromExclusive	= fromExclusive;
+		this.toExclusive	= toExclusive;
+		this.comparator		= comparator;
+		this.step			= step != null ? step : ( from != null && to != null && comparator.compare( from, to ) > 0 ? -1 : 1 );
+		if ( this.step.doubleValue() == 0d ) {
+			throw new BoxRuntimeException( "Range step cannot be 0." );
+		}
+		this.unit						= unit;
+		this.ascending					= this.step.doubleValue() > 0;
+		this.hasDirectionStepConflict	= hasDirectionStepConflict( from, to, this.ascending, comparator, stepper );
+		this.elementTypeName			= elementTypeName;
+		this.strictTypeCheck			= strictTypeCheck;
 
 		// Use explicit type if provided, otherwise infer from bounds
 		if ( elementType != null ) {
@@ -338,14 +344,7 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 		if ( this.to == null ) {
 			return false;
 		}
-		int cmp = this.comparator.compare( this.from, this.to );
-		if ( this.ascending ) {
-			// If from > to, empty. If from == to and either bound is exclusive, also empty.
-			return cmp > 0 || ( cmp == 0 && ( this.fromExclusive || this.toExclusive ) );
-		} else {
-			// If from < to, empty. If from == to and either bound is exclusive, also empty.
-			return cmp < 0 || ( cmp == 0 && ( this.fromExclusive || this.toExclusive ) );
-		}
+		return isIterationEmpty( this.from, this.to, this.fromExclusive, this.toExclusive, this.ascending, this.comparator, this.stepper );
 	}
 
 	/**
@@ -485,6 +484,10 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 	 * @return true if the value is within the range
 	 */
 	public boolean contains( Object value ) {
+		if ( this.hasDirectionStepConflict ) {
+			return false;
+		}
+
 		// null is never in any range
 		if ( value == null ) {
 			return false;
@@ -819,6 +822,9 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 	 */
 	@SuppressWarnings( "unchecked" )
 	public boolean isValueBefore( Object value ) {
+		if ( this.hasDirectionStepConflict ) {
+			return false;
+		}
 		if ( value == null || this.low == null ) {
 			return false;
 		}
@@ -840,6 +846,9 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 	 */
 	@SuppressWarnings( "unchecked" )
 	public boolean isValueAfter( Object value ) {
+		if ( this.hasDirectionStepConflict ) {
+			return false;
+		}
 		if ( value == null || this.high == null ) {
 			return false;
 		}
@@ -884,6 +893,37 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 			default :
 				return null;
 		}
+	}
+
+	/**
+	 * Determine whether this range defines an unsatisfiable progression.
+	 * This includes direction-step conflicts and exclusive single-point ranges.
+	 */
+	private static <T> boolean isIterationEmpty( T from, T to, boolean fromExclusive, boolean toExclusive, boolean ascending,
+	    Comparator<T> comparator, BiFunction<T, Number, T> stepper ) {
+		if ( from == null || to == null || stepper == null ) {
+			return false;
+		}
+
+		int cmp = comparator.compare( from, to );
+		if ( ascending ) {
+			return cmp > 0 || ( cmp == 0 && ( fromExclusive || toExclusive ) );
+		}
+		return cmp < 0 || ( cmp == 0 && ( fromExclusive || toExclusive ) );
+	}
+
+	/**
+	 * Determine whether this range has a paradoxical direction-step conflict.
+	 * This only applies to iterable bounded ranges where step direction and bound ordering disagree.
+	 */
+	private static <T> boolean hasDirectionStepConflict( T from, T to, boolean ascending,
+	    Comparator<T> comparator, BiFunction<T, Number, T> stepper ) {
+		if ( from == null || to == null || stepper == null ) {
+			return false;
+		}
+
+		int cmp = comparator.compare( from, to );
+		return ascending ? cmp > 0 : cmp < 0;
 	}
 
 	/**

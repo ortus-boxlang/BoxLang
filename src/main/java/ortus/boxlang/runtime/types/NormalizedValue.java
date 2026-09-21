@@ -229,6 +229,7 @@ public class NormalizedValue implements Serializable {
 		return this.originalValue == null ? 0 : this.originalValue.hashCode();
 	}
 
+	@SuppressWarnings( "unchecked" )
 	@Override
 	public boolean equals( Object obj ) {
 		if ( this == obj ) {
@@ -257,7 +258,7 @@ public class NormalizedValue implements Serializable {
 					if ( this.normalizedValue instanceof Comparable lc && other.normalizedValue instanceof Comparable rc
 					    && ( this.normalizedValue.getClass().isAssignableFrom( other.normalizedValue.getClass() )
 					        || other.normalizedValue.getClass().isAssignableFrom( this.normalizedValue.getClass() ) ) ) {
-						yield ( ( Comparable ) this.normalizedValue ).compareTo( other.normalizedValue ) == 0;
+						yield ( lc ).compareTo( rc ) == 0;
 					}
 					yield this.normalizedValue.equals( other.normalizedValue );
 				}

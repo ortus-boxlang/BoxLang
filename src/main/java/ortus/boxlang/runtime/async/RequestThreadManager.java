@@ -17,13 +17,13 @@
  */
 package ortus.boxlang.runtime.async;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -84,7 +84,7 @@ public class RequestThreadManager {
 	/**
 	 * A list of completed threads in the order they completed. This is used for fast lookups to unregister completed threads if we get too many.
 	 */
-	protected Deque<Key>				completedThreads			= new ArrayDeque<>();
+	protected Deque<Key>				completedThreads			= new ConcurrentLinkedDeque<>();
 
 	/**
 	 * The associated context

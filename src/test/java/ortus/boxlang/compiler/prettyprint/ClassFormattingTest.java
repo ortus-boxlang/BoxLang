@@ -26,6 +26,12 @@ import org.junit.jupiter.api.Test;
 public class ClassFormattingTest extends PrettyPrintTest {
 
 	@Test
+	@DisplayName( "Body spacing adds blank lines before the first class member" )
+	public void testBodySpacing() throws IOException {
+		printTestWithConfigFile( "class", "body_spacing_1" );
+	}
+
+	@Test
 	@DisplayName( "Member spacing 1 (default) - one blank line between members" )
 	public void testMemberSpacing1() throws IOException {
 		printTestWithConfigFile( "class", "member_spacing_1" );
@@ -101,5 +107,17 @@ public class ClassFormattingTest extends PrettyPrintTest {
 	@DisplayName( "Method grouping with alphabetical - public first, then alphabetical within groups" )
 	public void testMethodGroupingWithAlphabetical() throws IOException {
 		printTestWithConfigFile( "class", "method_grouping_with_alphabetical" );
+	}
+
+	@Test
+	@DisplayName( "Component extends attribute is not alignment padded" )
+	public void testComponentExtendsAttributeIsNotAlignmentPadded() throws IOException {
+		printTestWithDefaultConfig( "class", "component_extends_attribute" );
+	}
+
+	@Test
+	@DisplayName( "Top-level class comments and annotations stay unindented" )
+	public void testTopLevelCommentsAndAnnotations() throws IOException {
+		printTestWithConfigFile( "class", "top_level_comments_annotations" );
 	}
 }

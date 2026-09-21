@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
@@ -77,7 +76,7 @@ public class LoggingInterceptorTest {
 		    Key.file, testLogFile,
 		    Key.log, "Test"
 		) );
-		assertTrue( StringCaster.cast( FileSystemUtil.read( logFilePath ) ).indexOf( "Hello" ) > -1 );
+		assertTrue( FileSystemUtil.readString( logFilePath ).indexOf( "Hello" ) > -1 );
 	}
 
 	@DisplayName( "It can log a message to an absolute path" )
@@ -89,7 +88,7 @@ public class LoggingInterceptorTest {
 		    Key.file, absoluteLogeFilePath,
 		    Key.log, "Test"
 		) );
-		assertTrue( StringCaster.cast( FileSystemUtil.read( absoluteLogeFilePath ) ).indexOf( "Hello" ) > -1 );
+		assertTrue( FileSystemUtil.readString( absoluteLogeFilePath ).indexOf( "Hello" ) > -1 );
 	}
 
 }

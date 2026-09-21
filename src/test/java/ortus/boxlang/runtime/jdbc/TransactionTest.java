@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -441,12 +440,44 @@ public class TransactionTest extends BaseJDBCTest {
 		            INSERT INTO developers ( id, name,role )
 		            VALUES ( <cfqueryparam value="33">, <cfqueryparam value="Jon Clausen">, <cfqueryparam value="Developer"> )
 		        </cfquery>
+		        <cfset variables.lookup = () => queryExecute( "SELECT * FROM developers WHERE id=33", {} ) />
+		        <cfset variables.beforeResult = futureNew( variables.lookup ).completeOnTimeout( queryNew("id"), 1000 ).get() />
 		        <cftransaction action="commit" />
-		        <cfset variables.result = queryExecute( "SELECT * FROM developers", {} ) />
+		        <cfset variables.afterResult = futureNew( variables.lookup ).completeOnTimeout( queryNew("id"), 1000 ).get() />
 		    </cftransaction>
 		    """,
 		    getContext(), BoxSourceType.CFTEMPLATE );
+
+		// Before commit: separate thread blocks on Derby's lock, times out, and
+		// completeOnTimeout returns the empty query
+		assertThat( getVariables().getAsQuery( Key.of( "beforeResult" ) ).isEmpty() ).isTrue();
+
+		// After commit: separate thread CAN see the committed row
 		assertNotNull(
+		    getVariables().getAsQuery( Key.of( "afterResult" ) )
+		        .stream()
+		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
+	@DisplayName( "Can rollback a transaction using self-closing tag syntax: action=\"rollback\"/>" )
+	@Test
+	public void testTransactionTagSyntaxRollback() {
+		getInstance().executeSource(
+		    """
+		    <cftransaction>
+		        <cfquery>
+		            INSERT INTO developers ( id, name,role )
+		            VALUES ( <cfqueryparam value="33">, <cfqueryparam value="Jon Clausen">, <cfqueryparam value="Developer"> )
+		        </cfquery>
+		        <cftransaction action="rollback" />
+		    </cftransaction>
+		    <cfset variables.result = queryExecute( "SELECT * FROM developers", {} ) />
+		    """,
+		    getContext(), BoxSourceType.CFTEMPLATE );
+		assertNull(
 		    getVariables().getAsQuery( result )
 		        .stream()
 		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
@@ -580,12 +611,12 @@ public class TransactionTest extends BaseJDBCTest {
 		assertThat( activePostTransaction ).isEqualTo( activePreTransaction );
 	}
 
-	@Disabled( "Can't change enableNestedTransactions in ConnectionManager after the request is already initialized." )
 	@DisplayName( "Nested transactions: A rollback on the child will not roll back the parent" )
 	@Test
 	public void testChildRollback() {
 		try {
 			getInstance().getConfiguration().enableNestedTransactions = true;
+			( ( IJDBCCapableContext ) getContext() ).getConnectionManager().setEnableNestedTransactions( true );
 			getInstance().executeSource(
 			    """
 			    transaction{
@@ -619,6 +650,7 @@ public class TransactionTest extends BaseJDBCTest {
 			);
 		} finally {
 			getInstance().getConfiguration().enableNestedTransactions = false;
+			( ( IJDBCCapableContext ) getContext() ).getConnectionManager().setEnableNestedTransactions( false );
 		}
 	}
 
@@ -793,34 +825,29 @@ public class TransactionTest extends BaseJDBCTest {
 	@DisplayName( "No-op Nested Transactions: A rollback on the child will rollback the parent transaction" )
 	@Test
 	public void testNoOpNestedRollback() {
-		try {
-			getInstance().getConfiguration().enableNestedTransactions = false;
-			getInstance().executeSource(
-			    """
-			    transaction{
-			    	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
-			    	transaction{
-			    		queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-			    		transactionRollback();
-			    	}
-			    	// this should not commit any changes because the entire transaction has already been rolled back
-			    	transactionCommit();
-			    }
-			    variables.brad = queryExecute( "SELECT * FROM developers WHERE id=22" );
-			    variables.jon = queryExecute( "SELECT * FROM developers WHERE id=33" );
-			        """,
-			    getContext() );
-			Query	brad	= getVariables().getAsQuery( Key.of( "brad" ) );
-			Query	jon		= getVariables().getAsQuery( Key.of( "jon" ) );
+		getInstance().executeSource(
+		    """
+		    transaction{
+		    	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
+		    	transaction{
+		    		queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		    		transactionRollback();
+		    	}
+		    	// this should not commit any changes because the entire transaction has already been rolled back
+		    	transactionCommit();
+		    }
+		    variables.brad = queryExecute( "SELECT * FROM developers WHERE id=22" );
+		    variables.jon = queryExecute( "SELECT * FROM developers WHERE id=33" );
+		        """,
+		    getContext() );
+		Query	brad	= getVariables().getAsQuery( Key.of( "brad" ) );
+		Query	jon		= getVariables().getAsQuery( Key.of( "jon" ) );
 
-			// This insert from the outer transaction should have been rolled back by the inner transaction's rollback
-			assertThat( brad.size() ).isEqualTo( 0 );
+		// This insert from the outer transaction should have been rolled back by the inner transaction's rollback
+		assertThat( brad.size() ).isEqualTo( 0 );
 
-			// This insert from the inner transaction should have been rolled back
-			assertThat( jon.size() ).isEqualTo( 0 );
-		} finally {
-			getInstance().getConfiguration().enableNestedTransactions = true;
-		}
+		// This insert from the inner transaction should have been rolled back
+		assertThat( jon.size() ).isEqualTo( 0 );
 	}
 
 }

@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
+import ortus.boxlang.runtime.jdbc.drivers.GenericJDBCDriver;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -98,6 +99,30 @@ public class QueryColumn implements IReferenceable, Serializable {
 	 * Will be null if not applicable
 	 */
 	private Integer				SQLType;
+
+	/**
+	 * Whether the column is nullable (from JDBC ResultSetMetaData)
+	 * Will be null if not applicable
+	 */
+	private Boolean				nullable;
+
+	/**
+	 * Whether the column is read-only (from JDBC ResultSetMetaData)
+	 * Will be null if not applicable
+	 */
+	private Boolean				readOnly;
+
+	/**
+	 * The number of decimal digits for numeric types (from JDBC ResultSetMetaData.getScale())
+	 * Will be null if not applicable
+	 */
+	private Integer				decimals;
+
+	/**
+	 * The maximum length of the column (from JDBC ResultSetMetaData.getColumnDisplaySize())
+	 * Will be null if not applicable
+	 */
+	private Integer				maxLength;
 
 	/**
 	 * The query this column is a part of
@@ -199,6 +224,90 @@ public class QueryColumn implements IReferenceable, Serializable {
 	}
 
 	/**
+	 * Get whether the column is nullable
+	 *
+	 * @return Whether the column is nullable, or null if not applicable
+	 */
+	public Boolean getNullable() {
+		return nullable;
+	}
+
+	/**
+	 * Set whether the column is nullable
+	 *
+	 * @param nullable Whether the column is nullable
+	 *
+	 * @return This column, for chaining
+	 */
+	public QueryColumn setNullable( Boolean nullable ) {
+		this.nullable = nullable;
+		return this;
+	}
+
+	/**
+	 * Get whether the column is read-only
+	 *
+	 * @return Whether the column is read-only, or null if not applicable
+	 */
+	public Boolean getReadOnly() {
+		return readOnly;
+	}
+
+	/**
+	 * Set whether the column is read-only
+	 *
+	 * @param readOnly Whether the column is read-only
+	 *
+	 * @return This column, for chaining
+	 */
+	public QueryColumn setReadOnly( Boolean readOnly ) {
+		this.readOnly = readOnly;
+		return this;
+	}
+
+	/**
+	 * Get the number of decimal digits for numeric types
+	 *
+	 * @return The number of decimal digits, or null if not applicable
+	 */
+	public Integer getDecimals() {
+		return decimals;
+	}
+
+	/**
+	 * Set the number of decimal digits for numeric types
+	 *
+	 * @param decimals The number of decimal digits
+	 *
+	 * @return This column, for chaining
+	 */
+	public QueryColumn setDecimals( Integer decimals ) {
+		this.decimals = decimals;
+		return this;
+	}
+
+	/**
+	 * Get the maximum length of the column
+	 *
+	 * @return The maximum length of the column, or null if not applicable
+	 */
+	public Integer getMaxLength() {
+		return maxLength;
+	}
+
+	/**
+	 * Set the maximum length of the column
+	 *
+	 * @param maxLength The maximum length of the column
+	 *
+	 * @return This column, for chaining
+	 */
+	public QueryColumn setMaxLength( Integer maxLength ) {
+		this.maxLength = maxLength;
+		return this;
+	}
+
+	/**
 	 * Get the query this column belongs to
 	 *
 	 * @return The parent query of this column
@@ -259,11 +368,20 @@ public class QueryColumn implements IReferenceable, Serializable {
 	 * @return The value of the cell
 	 */
 	public Object getCell( int row ) {
-		// Does full null support change this?
-		if ( query.isEmpty() ) {
+		// If row is invalid...
+		if ( row < 0 || row >= this.query.size() ) {
+			// Compat mode: return empty string
+			if ( Query.allowAccessToNonExistentRows ) {
+				return "";
+			}
+			query.validateRow( row );
+		}
+		Object value = this.query.getData().get( row )[ index ];
+
+		if ( Query.queryNullToEmpty && value == null ) {
 			return "";
 		}
-		return this.query.getData().get( row )[ index ];
+		return value;
 	}
 
 	/**
@@ -398,7 +516,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 		// Check if the key is numeric
 		int				index		= getIntFromKey( name, true );
 		QueryColumnType	columnType	= getType();
-		value = QueryColumnType.toSQLType( columnType, value, context, null );
+		value = GenericJDBCDriver.transformValueStatic( columnType.sqlType, QueryColumnType.toSQLType( columnType, value, context, null ), null );
 		// If assign a query column with a number like qry.col[1]='new value', then we ALWAYS get the value from that row
 		if ( index > 0 ) {
 			setCell( index - 1, value );

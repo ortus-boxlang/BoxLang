@@ -42,27 +42,34 @@ public class BitOrTest {
 	@Test
 	public void testBitwiseOrWithPositiveIntegers() {
 		instance.executeSource( "result = bitOr(5, 3);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 7 );
+		assertThat( variables.get( result ) ).isEqualTo( 7L );
 	}
 
 	@DisplayName( "Bitwise OR operation with negative integers" )
 	@Test
 	public void testBitwiseOrWithNegativeIntegers() {
 		instance.executeSource( "result = bitOr(-5, -3);", context );
-		assertThat( variables.get( result ) ).isEqualTo( -1 );
+		assertThat( variables.get( result ) ).isEqualTo( -1L );
 	}
 
 	@DisplayName( "Bitwise OR operation with zero" )
 	@Test
 	public void testBitwiseOrWithZero() {
 		instance.executeSource( "result = bitOr(0, 10);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 10 );
+		assertThat( variables.get( result ) ).isEqualTo( 10L );
 	}
 
 	@DisplayName( "Bitwise OR operation with large integers" )
 	@Test
 	public void testBitwiseOrWithLargeIntegers() {
 		instance.executeSource( "result = bitOr(123456789, 987654321);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 1071639989 );
+		assertThat( variables.get( result ) ).isEqualTo( 1071639989L );
+	}
+
+	@DisplayName( "Bitwise OR operation with long-range values" )
+	@Test
+	public void testBitwiseOrWithLongRangeValues() {
+		instance.executeSource( "result = bitOr(2190225218, 1);", context );
+		assertThat( variables.get( result ) ).isEqualTo( 2190225219L );
 	}
 }

@@ -153,6 +153,7 @@ public class RemainingConfigsTest {
 
 			assertEquals( "preserve", config.getMemberOrder() );
 			assertEquals( 1, config.getMemberSpacing() );
+			assertEquals( 0, config.getBodySpacing() );
 		}
 
 		@Test
@@ -165,6 +166,9 @@ public class RemainingConfigsTest {
 
 			config.setMemberSpacing( 2 );
 			assertEquals( 2, config.getMemberSpacing() );
+
+			config.setBodySpacing( 1 );
+			assertEquals( 1, config.getBodySpacing() );
 		}
 
 		@Test
@@ -173,11 +177,13 @@ public class RemainingConfigsTest {
 			ClassConfig config = new ClassConfig();
 			config.setMemberOrder( "methods-first" );
 			config.setMemberSpacing( 2 );
+			config.setBodySpacing( 1 );
 
 			Map<String, Object> map = config.toMap();
 
 			assertEquals( "methods-first", map.get( "member_order" ) );
 			assertEquals( 2, map.get( "member_spacing" ) );
+			assertEquals( 1, map.get( "body_spacing" ) );
 		}
 
 		@Test
@@ -186,6 +192,7 @@ public class RemainingConfigsTest {
 			Map<String, Object> classMap = new HashMap<>();
 			classMap.put( "member_order", "properties-first" );
 			classMap.put( "member_spacing", 2 );
+			classMap.put( "body_spacing", 1 );
 
 			Map<String, Object> configMap = new HashMap<>();
 			configMap.put( "class", classMap );
@@ -194,6 +201,7 @@ public class RemainingConfigsTest {
 
 			assertEquals( "properties-first", config.getClassConfig().getMemberOrder() );
 			assertEquals( 2, config.getClassConfig().getMemberSpacing() );
+			assertEquals( 1, config.getClassConfig().getBodySpacing() );
 		}
 	}
 

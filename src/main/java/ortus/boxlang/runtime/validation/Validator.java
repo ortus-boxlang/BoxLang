@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.validation.dynamic.MaxLength;
 import ortus.boxlang.runtime.validation.dynamic.Min;
 import ortus.boxlang.runtime.validation.dynamic.MinLength;
 import ortus.boxlang.runtime.validation.dynamic.Requires;
+import ortus.boxlang.runtime.validation.dynamic.RequiresOneOf;
 import ortus.boxlang.runtime.validation.dynamic.TypeOneOf;
 import ortus.boxlang.runtime.validation.dynamic.ValueOneOf;
 import ortus.boxlang.runtime.validation.dynamic.ValueRequires;
@@ -117,6 +118,17 @@ public interface Validator {
 	 */
 	public static Validator requires( Key... recordNames ) {
 		return new Requires( Set.of( recordNames ) );
+	}
+
+	/**
+	 * Builder method to create a RequiresOneOf validator
+	 *
+	 * @param recordNames The names of the records where at least one is required if this record is present
+	 *
+	 * @return The RequiresOneOf validator
+	 */
+	public static Validator requiresOneOf( Key... recordNames ) {
+		return new RequiresOneOf( Set.of( recordNames ) );
 	}
 
 	/**

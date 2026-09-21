@@ -106,7 +106,7 @@ public class FileCopyTest {
 		    """,
 		    context );
 		assertTrue( FileSystemUtil.exists( destinationFile ) );
-		assertTrue( FileSystemUtil.read( destinationFile, "utf-8", null ).equals( "copy me" ) );
+		assertTrue( FileSystemUtil.readString( destinationFile, "utf-8" ).equals( "copy me" ) );
 	}
 
 	@DisplayName( "It tests the BIF FileCopy will create the nested destinatioin paths by default" )
@@ -123,7 +123,7 @@ public class FileCopyTest {
 		    """,
 		    context );
 		assertTrue( FileSystemUtil.exists( nestedDestinationFile ) );
-		assertTrue( FileSystemUtil.read( nestedDestinationFile, "utf-8", null ).equals( "copy me" ) );
+		assertTrue( FileSystemUtil.readString( nestedDestinationFile, "utf-8" ).equals( "copy me" ) );
 	}
 
 	@DisplayName( "It tests that file copy error with createPath set to false" )

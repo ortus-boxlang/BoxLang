@@ -19,17 +19,26 @@ package ortus.boxlang.runtime.bifs.global.conversion;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.events.IInterceptorLambda;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
 
 public class JSONSerializeTest {
 
@@ -170,6 +179,53 @@ public class JSONSerializeTest {
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( expected.replaceAll( "\\s", "" ) );
 	}
 
+	@DisplayName( "It serializes BIT columns as booleans without changing numeric query values" )
+	@ParameterizedTest( name = "{0} format" )
+	@CsvSource( delimiter = '|', textBlock = """
+	                                         row    | {"columns":["flag","count"],"data":[[false,0],[true,1],[null,null]]}
+	                                         column | {"rowCount":3,"columns":["flag","count"],"data":{"flag":[false,true,null],"count":[0,1,null]}}
+	                                         struct | [{"flag":false,"count":0},{"flag":true,"count":1},{"flag":null,"count":null}]
+	                                         """ )
+	public void testSerializeBitColumnsAsBooleansWithoutMutatingQuery( String queryFormat, String expectedJSON ) {
+		instance.executeSource(
+		    """
+		    query = queryNew( "flag,count", "bit,integer", [[0,0], [1,1], [null,null]] );
+		    """,
+		    this.context );
+		Query query = this.variables.getAsQuery( Key.query );
+		assertThat( query.getColumnData( Key.of( "flag" ) ) ).asList().containsExactly( 0, 1, null ).inOrder();
+
+		this.variables.put( Key.queryFormat, queryFormat );
+		instance.executeSource( "result = JSONSerialize( query, queryFormat );", this.context );
+
+		assertThat( query.getColumnData( Key.of( "flag" ) ) ).asList().containsExactly( 0, 1, null ).inOrder();
+		assertThat( query.getColumnData( Key.count ) ).asList().containsExactly( 0, 1, null ).inOrder();
+		assertThat( this.variables.getAsString( result ) ).isEqualTo( expectedJSON );
+	}
+
+	@DisplayName( "It announces query serialization before writing JSON" )
+	@Test
+	public void testQuerySerializationInterceptorCanModifyPayload() {
+		AtomicInteger		calls				= new AtomicInteger();
+		IInterceptorLambda	interceptor			= data -> {
+													calls.incrementAndGet();
+													( ( IStruct ) data.get( Key.data ) ).put( Key.of( "intercepted" ), true );
+													return false;
+												};
+		DynamicObject		interceptorObject	= DynamicObject.of( interceptor );
+		instance.getInterceptorService().register( interceptorObject, BoxEvent.ON_JSON_QUERY_SERIALIZE.key() );
+		try {
+			instance.executeSource(
+			    "result = JSONSerialize( queryNew( \"flag\", \"bit\", [[1]] ), \"row\" );",
+			    context );
+			assertThat( calls.get() ).isEqualTo( 1 );
+			assertThat( variables.getAsString( result ) )
+			    .isEqualTo( "{\"columns\":[\"flag\"],\"data\":[[true]],\"intercepted\":true}" );
+		} finally {
+			instance.getInterceptorService().unregister( interceptorObject, BoxEvent.ON_JSON_QUERY_SERIALIZE.key() );
+		}
+	}
+
 	@DisplayName( "It can serialize a query as array of structs" )
 	@Test
 	public void testCanSerializeQueryArrayOfStructs() {
@@ -256,6 +312,100 @@ public class JSONSerializeTest {
 
 		// @formatter:on
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( expected.replaceAll( "\\s", "" ) );
+	}
+
+	@DisplayName( "It can serialize a query as array of structs with null values when queryNullToEmpty is enabled" )
+	@Test
+	public void testCanSerializeQueryArrayOfStructsWithNullValue() {
+		try {
+			Query.queryNullToEmpty = true;
+			// @formatter:off
+			instance.executeSource(
+			    """
+			         query = queryNew(
+					"col1,col2,col3",
+					"numeric,varchar,bit",
+					[
+						[1,null,true],
+						[2,"wood",false]
+					]
+				);
+				result = JSONSerialize( query, "struct" )
+			    """,
+			context );
+			// @formatter:on
+
+			Query query = variables.getAsQuery( Key.of( "query" ) );
+			assertThat( query.getData().get( 0 )[ 1 ] ).isNull();
+			assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) )
+			    .isEqualTo( "[{\"col1\":1,\"col2\":null,\"col3\":true},{\"col1\":2,\"col2\":\"wood\",\"col3\":false}]" );
+			assertThat( variables.getAsString( result ) ).doesNotContain( "\"\"" );
+		} finally {
+			Query.queryNullToEmpty = false;
+		}
+	}
+
+	@DisplayName( "It can serialize a query as row with null values when queryNullToEmpty is enabled" )
+	@Test
+	public void testCanSerializeQueryRowWithNullValue() {
+		try {
+			Query.queryNullToEmpty = true;
+			// @formatter:off
+			instance.executeSource(
+			    """
+			         query = queryNew(
+					"col1,col2,col3",
+					"numeric,varchar,bit",
+					[
+						[1,null,true],
+						[2,"wood",false]
+					]
+				);
+				result = JSONSerialize( query, "row" )
+			    """,
+			context );
+			// @formatter:on
+
+			Query query = variables.getAsQuery( Key.of( "query" ) );
+			assertThat( query.getData().get( 0 )[ 1 ] ).isNull();
+			assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) )
+			    .isEqualTo( "{\"columns\":[\"col1\",\"col2\",\"col3\"],\"data\":[[1,null,true],[2,\"wood\",false]]}" );
+			assertThat( variables.getAsString( result ) ).doesNotContain( "\"\"" );
+		} finally {
+			Query.queryNullToEmpty = false;
+		}
+	}
+
+	@DisplayName( "It can serialize a query as column with null values when queryNullToEmpty is enabled" )
+	@Test
+	public void testCanSerializeQueryColumnWithNullValue() {
+		try {
+			Query.queryNullToEmpty = true;
+			// @formatter:off
+			instance.executeSource(
+			    """
+			         query = queryNew(
+					"col1,col2,col3",
+					"numeric,varchar,bit",
+					[
+						[1,null,true],
+						[2,"wood",false]
+					]
+				);
+				result = JSONSerialize( query, "column" )
+			    """,
+			context );
+			// @formatter:on
+
+			Query query = variables.getAsQuery( Key.of( "query" ) );
+			assertThat( query.getData().get( 0 )[ 1 ] ).isNull();
+			assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) )
+			    .isEqualTo(
+			        "{\"rowCount\":2,\"columns\":[\"col1\",\"col2\",\"col3\"],\"data\":{\"col1\":[1,2],\"col2\":[null,\"wood\"],\"col3\":[true,false]}}" );
+			assertThat( variables.getAsString( result ) ).doesNotContain( "\"\"" );
+		} finally {
+			Query.queryNullToEmpty = false;
+		}
 	}
 
 	@DisplayName( "It can serialize a string Member" )
@@ -629,15 +779,15 @@ public class JSONSerializeTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-				myQry = queryNew( "col", "varchar", [["brad"]] )
-				result = jsonSerialize( [ myQry ] );
+				myQry = queryNew( "col,flag,enabled", "varchar,bit,boolean", [["brad",1,true]] )
+				result = jsonSerialize( [ myQry, { flag: myQry.flag[1] } ], "row" );
 			""",
-		    context );
+		    this.context );
 		// @formatter:on
 
-		var json = variables.getAsString( result );
+		var json = this.variables.getAsString( result );
 		assertThat( json ).isNotEmpty();
-		assertThat( json ).isEqualTo( "[{\"columns\":[\"col\"],\"data\":[[\"brad\"]]}]" );
+		assertThat( json ).isEqualTo( "[{\"columns\":[\"col\",\"flag\",\"enabled\"],\"data\":[[\"brad\",true,true]]},{\"flag\":1}]" );
 
 	}
 
@@ -798,6 +948,21 @@ public class JSONSerializeTest {
 		    context );
 		var json = variables.getAsString( result );
 		assertThat( json ).contains( "\"tags\":[\"java\",\"boxlang\"]" );
+	}
+
+	@DisplayName( "It serializes a java.util.UUID as a quoted JSON string" )
+	@Test
+	public void testSerializeUUID() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				uuid = createObject( "java", "java.util.UUID" ).randomUUID();
+				result = jsonSerialize( uuid );
+			""",
+		    context );
+		// @formatter:on
+		String json = variables.getAsString( result );
+		assertThat( json ).matches( "\"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\"" );
 	}
 
 }

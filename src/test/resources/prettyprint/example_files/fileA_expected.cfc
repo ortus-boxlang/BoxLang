@@ -5,7 +5,7 @@
  * @author  Joe Schmoe <jschmoe@example.com>
  */
 component
-	extends  ="SomeBaseComponent"
+	extends="SomeBaseComponent"
 	delegates="xxx@what,foo@bar,others"
 	accessors="true"
 	singleton

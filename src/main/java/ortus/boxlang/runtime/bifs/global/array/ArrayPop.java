@@ -46,6 +46,8 @@ public class ArrayPop extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.array The array to get the last
+	 *
+	 * @argument.defaultValue The value to return when the array is empty. If omitted, an exception is thrown for an empty array.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );

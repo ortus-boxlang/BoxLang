@@ -25,14 +25,18 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxClosure;
+import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
- * No-op transformer for {@code BoxLocalClass} statement nodes.
- *
- * Named local classes in scripts and templates (e.g. {@code class Foo {}}) are pre-compiled
- * into auxiliary JVM classes by {@code AsmTranspiler.transpile(BoxScript)} <em>before</em>
- * the {@code _invoke} method body is generated. By the time the body is compiled this
- * statement has already been handled, so the transformer simply emits nothing.
+ * Named local classes — whether in a script/template or as an inner class inside a BoxClass —
+ * are pre-compiled before body transformation. The source declaration statement itself emits
+ * no runtime instructions.
+ * If the class is nested inside a function body, a compile-time error is thrown since class
+ * definitions inside functions are not supported.
  */
 public class BoxLocalClassTransformer extends AbstractTransformer {
 
@@ -40,8 +44,16 @@ public class BoxLocalClassTransformer extends AbstractTransformer {
 		super( transpiler );
 	}
 
+	@SuppressWarnings( "unchecked" )
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
+		BoxLocalClass	localClass	= ( BoxLocalClass ) node;
+		String			localName	= localClass.getName().getName();
+		// This check is a failsafe. Our BoxVisitor also validates this at parse time.
+		if ( localClass.getFirstNodeOfTypes( BoxFunctionDeclaration.class, BoxClosure.class, BoxLambda.class ) != null ) {
+			throw new BoxRuntimeException(
+			    "Class definitions are not allowed inside function bodies. Move class [" + localName + "] outside of any function body." );
+		}
 		// Local class was already pre-compiled. Emit no instructions for the statement itself.
 		// However, callers with a non-EMPTY return context expect something on the stack (the
 		// contract of VALUE_OR_NULL). Push null so that callers like transformBodyExpressionsFromScript
@@ -51,4 +63,5 @@ public class BoxLocalClassTransformer extends AbstractTransformer {
 		}
 		return List.of();
 	}
+
 }

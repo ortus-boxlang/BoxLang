@@ -238,7 +238,7 @@ public class AsyncService extends BaseService {
 	public BoxExecutor getExecutor( String name ) {
 		if ( !hasExecutor( name ) ) {
 			throw new KeyNotFoundException( "Executor [" + name + "] does not exist. Valid executors are "
-			    + this.executors.keySet().toString() );
+			    + Struct.formatKeysForError( this.executors.keySet().stream().toList() ) );
 		}
 		return this.executors.get( name );
 	}

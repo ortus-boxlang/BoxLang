@@ -28,4 +28,15 @@ extract( "zip", "D:\test.zip", "D:\zipresult" );
 
 ```
 
+### Extract a TAR or TGZ archive
+
+Use `tar` for a raw TAR archive and `tgz` for a gzip-compressed TAR archive.
+
+```java
+extract( format="tar", source="archive.tar", destination="output-directory" );
+extract( format="tgz", source="archive.tgz", destination="output-directory" );
+```
+
+When `format` is omitted, it is detected from the source extension. An unrecognized extension requires an explicit `format`.
+
 

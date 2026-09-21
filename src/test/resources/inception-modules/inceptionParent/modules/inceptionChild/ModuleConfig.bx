@@ -1,0 +1,44 @@
+/**
+ * Test fixture: a module nested inside `inceptionParent`, which itself carries
+ * `inceptionGrandchild` to prove inception recurses to arbitrary depth.
+ *
+ * Its `overriddenByParent` setting is deliberately overwritten by the parent module,
+ * while `ownSetting` is left alone, proving the merge is additive rather than wholesale.
+ */
+class {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Module Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	this.version		= "1.0.0";
+	this.mapping		= "inceptionChild";
+	this.author			= "Ortus Solutions";
+	this.description	= "A module nested inside another module";
+	this.enabled		= true;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Module Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	function configure(){
+		settings = {
+			ownSetting			: "fromChild",
+			overriddenByParent	: "fromChild"
+		};
+
+		interceptors				= [];
+		customInterceptionPoints	= [];
+	}
+
+	function onLoad(){
+	}
+
+	function onUnload(){
+	}
+
+}

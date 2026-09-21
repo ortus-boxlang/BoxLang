@@ -47,6 +47,7 @@ import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.jdbc.BoxStatement;
+import ortus.boxlang.runtime.jdbc.drivers.GenericJDBCDriver;
 import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -89,16 +90,25 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * -----------------------------------------------------------
 	 */
 
-	private static final InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+	private static final InterceptorService	interceptorService				= BoxRuntime.getInstance().getInterceptorService();
 
-	private static final FunctionService	functionService		= BoxRuntime.getInstance().getFunctionService();
+	private static final FunctionService	functionService					= BoxRuntime.getInstance().getFunctionService();
 
-	private static final long				serialVersionUID	= 1L;
+	private static final long				serialVersionUID				= 1L;
 
 	/**
 	 * Flag to allow compat to influence the empty-string-to-null coercion when setting cell values to an empty string on a non-string-typed column.
 	 */
-	public static boolean					queryNullToEmpty	= false;
+	public static boolean					queryNullToEmpty				= false;
+
+	/**
+	 * Flag to allow compat to permit reading from row indexes beyond the current record count,
+	 * returning an empty string instead of throwing an exception. Row indexes below 1 (0-based negative)
+	 * still throw regardless of this flag. This mirrors the relaxed behavior of certain CFML engines.
+	 * 
+	 * TODO: Disable this and enable with compat, but we have bugs related to safe access that need fixed first
+	 */
+	public static boolean					allowAccessToNonExistentRows	= true;
 
 	/**
 	 * -----------------------------------------------------------
@@ -116,19 +126,19 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * This is an AtomicInteger so that it can be modified from multiple threads
 	 * safely.
 	 */
-	protected AtomicInteger					size				= new AtomicInteger( 0 );
+	protected AtomicInteger					size							= new AtomicInteger( 0 );
 
 	/**
 	 * Actual size of the data list, used to track how many rows have been added
 	 * This is volatile so that it can be updated from multiple threads
 	 * safely.
 	 */
-	private volatile int					actualSize			= 0;
+	private volatile int					actualSize						= 0;
 
 	/**
 	 * Map of column definitions
 	 */
-	private volatile Map<Key, QueryColumn>	columns				= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
+	private volatile Map<Key, QueryColumn>	columns							= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
 
 	/**
 	 * Metadata object
@@ -138,12 +148,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/**
 	 * Denormalized list of column names for fast access. Initialized on first use.
 	 */
-	private transient String				columnNameList		= null;
+	private transient String				columnNameList					= null;
 
 	/**
 	 * Denormalized array of column names for fast access. Initialized on first use.
 	 */
-	private transient Array					columnNameArray		= null;
+	private transient Array					columnNameArray					= null;
 
 	/**
 	 * Create a new query with additional metadata
@@ -248,6 +258,18 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 					columnMapList.add( i );
 					// Store the SQL type for this column (columnMapList.size() - 1 is the current column index)
 					columnSQLTypes[ i - 1 ] = resultSetMetaData.getColumnType( i );
+
+					// Capture rich JDBC metadata on the column
+					QueryColumn col = query.getColumn( colName );
+					try {
+						col.setNullable( resultSetMetaData.isNullable( i ) != ResultSetMetaData.columnNoNulls );
+						col.setReadOnly( resultSetMetaData.isReadOnly( i ) || resultSetMetaData.isAutoIncrement( i ) );
+						int scale = resultSetMetaData.getScale( i );
+						col.setDecimals( scale > 0 ? scale : null );
+						col.setMaxLength( resultSetMetaData.getColumnDisplaySize( i ) );
+					} catch ( SQLException e ) {
+						// Some JDBC drivers don't support all metadata methods — leave as null
+					}
 				}
 			}
 
@@ -255,13 +277,17 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			int[] columnMap = columnMapList.stream().mapToInt( i -> i ).toArray();
 			// Update, may be smaller now if there were duplicate column names
 			columnCount = columnMap.length;
-			int rowCount = 0;
+			QueryColumn[]	queryColumns	= query.getColumns().values().toArray( QueryColumn[]::new );
+			int				rowCount		= 0;
 			while ( resultSet.next() && ( maxRows == -1 || rowCount < maxRows ) ) {
 				rowCount++;
 				Object[] row = new Object[ columnCount ];
 				for ( int i = 0; i < columnCount; i++ ) {
 					// Get the data in the JDBC column based on our column map and use the corresponding SQL type
-					row[ i ] = driver.transformValue( columnSQLTypes[ i ], resultSet.getObject( columnMap[ i ] ), statement );
+					// columnSQLTypes is indexed by JDBC column position (0-based), so we use columnMap[i] - 1
+					// to look up the type for the correct JDBC column, even when duplicate column labels
+					// caused columnMap to be smaller than the original column count.
+					row[ i ] = driver.transformValue( columnSQLTypes[ columnMap[ i ] - 1 ], resultSet.getObject( columnMap[ i ] ), statement );
 				}
 				query.addRow( row );
 			}
@@ -322,6 +348,25 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public Map<Key, QueryColumn> getColumns() {
 		return this.columns;
+	}
+
+	/**
+	 * Here for CF compat. Returns the 1-based index of the given column name
+	 * 
+	 * @param name column name
+	 * 
+	 * @return 1-based index of the column, or 0 if not found
+	 */
+	public int findColumn( String name ) {
+		Key	keyName	= Key.of( name );
+		int	index	= 1; // 1-based index
+		for ( Key key : columns.keySet() ) {
+			if ( key.equals( keyName ) ) {
+				return index;
+			}
+			index++;
+		}
+		return 0;
 	}
 
 	/**
@@ -532,7 +577,11 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		int			index		= getColumn( name ).getIndex();
 		Object[]	columnData	= new Object[ size.get() ];
 		for ( int i = 0; i < size.get(); i++ ) {
-			columnData[ i ] = data.get( i )[ index ];
+			Object value = data.get( i )[ index ];
+			if ( queryNullToEmpty && value == null ) {
+				value = "";
+			}
+			columnData[ i ] = value;
 		}
 		return columnData;
 	}
@@ -771,7 +820,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Add a row to the query
+	 * Add a row to the query. I do NOT cast incoming values to the column types; they are added as-is.
+	 * Only call this if you have trusted data.
 	 *
 	 * @param row row data as array of objects
 	 *
@@ -964,13 +1014,29 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		Object[]	rowData	= new Object[ columns.size() ];
 		int			i		= 0;
 		for ( QueryColumn column : columns.values() ) {
-			// Missing keys in the struct go in the query as an empty string (CF compat)
-			Object value = row.containsKey( column.getName() ) ? row.get( column.getName() ) : "";
-			rowData[ i ] = context != null ? QueryColumnType.toSQLType( column.getType(), value, context, null ) : value;
+			// Missing values are null
+			Object value = row.containsKey( column.getName() ) ? row.get( column.getName() ) : null;
+			// This allows nulls which were turned into empty strings in the struct to be turned back into nulls
+			if ( queryNullToEmpty && !QueryColumnType.isStringType( column.getType() ) && value instanceof String castValue && castValue.isEmpty() ) {
+				value = null;
+			}
+			rowData[ i ] = context != null
+			    // This method will change things like Clob or Blob which we "hide" from the user to a String, byte[], etc, etc
+			    ? GenericJDBCDriver.transformValueStatic(
+			        column.getType().sqlType,
+			        // This method casts incoming values to the appropriate SQL type, but will leave things like Clob or Blob instances
+			        QueryColumnType.toSQLType(
+			            column.getType(),
+			            value,
+			            context,
+			            null
+			        ),
+			        null
+			    )
+			    : value;
 			i++;
 		}
-		// We're ignoring extra keys in the struct that aren't query columns. Lucee
-		// compat, but not CF compat.
+		// We're ignoring extra keys in the struct that aren't query columns.
 		return addRow( rowData );
 	}
 
@@ -995,7 +1061,18 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			Object[]		castRow		= new Object[ columns.size() ];
 			QueryColumn[]	colArray	= columns.values().toArray( new QueryColumn[ 0 ] );
 			for ( int i = 0; i < castRow.length; i++ ) {
-				castRow[ i ] = QueryColumnType.toSQLType( colArray[ i ].getType(), row[ i ], context, null );
+				var sqlColType = colArray[ i ].getType();
+				// This method will change things like Clob or Blob which we "hide" from the user to a String, byte[], etc, etc
+				castRow[ i ] = GenericJDBCDriver.transformValueStatic(
+				    sqlColType.sqlType,
+				    // This method casts incoming values to the appropriate SQL type, but will leave things like Clob or Blob instances
+				    QueryColumnType.toSQLType(
+				        sqlColType,
+				        row[ i ],
+				        context,
+				        null
+				    ),
+				    null );
 			}
 			return addRow( castRow );
 		}
@@ -1018,7 +1095,36 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		Object[]	row		= data.get( index );
 		int			i		= 0;
 		for ( QueryColumn column : columns.values() ) {
-			struct.put( column.getName(), row[ i ] );
+			Object value = row[ i ];
+			if ( queryNullToEmpty && value == null ) {
+				value = "";
+			}
+			struct.put( column.getName(), value );
+			i++;
+		}
+		return struct;
+	}
+
+	/**
+	 * Get data for a row as a Struct. 0-based index!
+	 * Data is copied, so re-assignments into the struct will not be reflected in
+	 * the query.
+	 * Mutating a complex object in the array will be reflected in the query.
+	 * This method does not convert null values to empty strings.
+	 *
+	 * @param index row index, starting at 0
+	 *
+	 * @return array of row data
+	 */
+	public IStruct getRowAsStructRaw( int index ) {
+		validateRow( index );
+		IStruct		struct	= new Struct( IStruct.TYPES.LINKED );
+		Object[]	row		= data.get( index );
+		int			i		= 0;
+		for ( QueryColumn column : columns.values() ) {
+			Object value = row[ i ];
+			// Do not convert null to empty string for raw access
+			struct.put( column.getName(), value );
 			i++;
 		}
 		return struct;
@@ -1034,8 +1140,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public Object getCell( Key columnName, int rowIndex ) {
 		validateRow( rowIndex );
-		int columnIndex = getColumn( columnName ).getIndex();
-		return data.get( rowIndex )[ columnIndex ];
+		int		columnIndex	= getColumn( columnName ).getIndex();
+		Object	value		= data.get( rowIndex )[ columnIndex ];
+		if ( queryNullToEmpty && value == null ) {
+			return "";
+		}
+		return value;
 	}
 
 	/**
@@ -1169,16 +1279,22 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * We eagerly allocate additional rows when adding data to optimize for performance, so this method is used to trim those extra rows when needed.
 	 */
 	public void truncateInternal() {
+		int targetSize = size.get();
+
+		// Fast path for chunked storage: truncate logical size and trim backing chunks in one operation
+		if ( data instanceof ChunkedArrayList<?> cal ) {
+			cal.truncateToSize( targetSize );
+			actualSize = cal.size();
+			return;
+		}
+
 		// loop and remove all rows over the count
-		while ( data.size() > size.get() ) {
+		while ( data.size() > targetSize ) {
 			data.remove( data.size() - 1 );
 		}
 		actualSize = data.size();
 
-		// These backing lists have a way to truncate internal allocations as well
-		if ( data instanceof ChunkedArrayList<?> cal ) {
-			cal.trimToSize();
-		} else if ( data instanceof ArrayList<?> al ) {
+		if ( data instanceof ArrayList<?> al ) {
 			al.trimToSize();
 		}
 	}
@@ -1421,7 +1537,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		if ( Query.queryNullToEmpty && !QueryColumnType.isStringType( columnType ) && value instanceof String castValue && castValue.isEmpty() ) {
 			value = null;
 		}
-		value = QueryColumnType.toSQLType( columnType, value, context, null );
+		value = GenericJDBCDriver.transformValueStatic( columnType.sqlType, QueryColumnType.toSQLType( columnType, value, context, null ), null );
 		column.setCell( getRowFromContext( context ), value );
 		return value;
 	}
@@ -1505,7 +1621,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return A copy of the current query.
 	 */
-	@Deprecated
+	@Deprecated( forRemoval = true )
 	public Query duplicate() {
 		return duplicate( RequestBoxContext.getCurrent() );
 	}
@@ -1530,7 +1646,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return A copy of the current query.
 	 */
-	@Deprecated
+	@Deprecated( forRemoval = true )
 	public Query duplicate( boolean deep ) {
 		return duplicate( deep, RequestBoxContext.getCurrent() );
 	}

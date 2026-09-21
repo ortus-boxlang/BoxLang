@@ -1,0 +1,24 @@
+<bx:script>
+	val = {
+		"alpha": "a",
+		"beta" : { "charlie": "c", "delta": "d" },
+		"echo" : { "foxtrot" : { "golf" : "g", "hotel" : "h" } },
+		"india" : "i"
+	};
+</bx:script>
+<!DOCTYPE html>
+<html>
+<head><title>06 - depth + maxRows combined</title>
+<style>body{font-family:system-ui,sans-serif;max-width:1000px;margin:30px auto;padding:0 20px;} h2{border-bottom:2px solid #333;padding-bottom:4px;margin-top:40px;} .expect{background:#fffbe6;border-left:4px solid #e0a800;padding:8px 12px;margin:8px 0;}</style>
+</head>
+<body>
+<p><a href="index.bxm">&larr; back</a></p>
+<h1>06 - depth + maxRows combined</h1>
+<p>Fixture: 4 top-level keys (alpha, beta, echo, india), with beta/echo nesting further</p>
+
+<h2>depth = 2, maxRows = 3</h2>
+<div class="expect">Expect: caption "3/4" (india dropped by maxRows); alpha/beta/echo shown; charlie/delta/foxtrot visible (depth 2); golf/hotel NOT visible</div>
+<bx:dump var="#val#" depth="2" maxRows="3">
+
+</body>
+</html>

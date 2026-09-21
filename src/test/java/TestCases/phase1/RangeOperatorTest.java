@@ -889,6 +889,58 @@ public class RangeOperatorTest {
 		assertThat( variables.get( resultKey ) ).isEqualTo( true );
 	}
 
+	@DisplayName( "step(0) throws" )
+	@Test
+	public void testZeroStepThrows() {
+		assertThrows( BoxRuntimeException.class, () -> {
+			instance.executeSource(
+			    """
+			    result = (1..5).step(0);
+			    """,
+			    context );
+		} );
+	}
+
+	@DisplayName( "paradoxical step range short-circuits value checks and contains" )
+	@Test
+	public void testParadoxicalStepRangeShortCircuitsChecks() {
+		instance.executeSource(
+		    """
+		    r = (1.3..5).step(-1);
+
+		    empty = r.isEmpty();
+
+		    after5 = r.isValueAfter( 5 );
+		    before5 = r.isValueBefore( 5 );
+		    after6 = r.isValueAfter( 6 );
+		    before6 = r.isValueBefore( 6 );
+		    after13 = r.isValueAfter( 1.3 );
+		    before13 = r.isValueBefore( 1.3 );
+		    after1 = r.isValueAfter( 1 );
+		    before1 = r.isValueBefore( 1 );
+
+		    contains5 = r.contains( 5 );
+		    contains13 = r.contains( 1.3 );
+		    contains2 = r.contains( 2 );
+		    """,
+		    context );
+
+		assertThat( variables.get( Key.of( "empty" ) ) ).isEqualTo( true );
+
+		assertThat( variables.get( Key.of( "after5" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "before5" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "after6" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "before6" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "after13" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "before13" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "after1" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "before1" ) ) ).isEqualTo( false );
+
+		assertThat( variables.get( Key.of( "contains5" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "contains13" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "contains2" ) ) ).isEqualTo( false );
+	}
+
 	@DisplayName( "step() returns new range, original unchanged" )
 	@Test
 	public void testStepReturnsNewInstance() {

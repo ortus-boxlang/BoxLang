@@ -1,0 +1,11 @@
+{
+  "arguments": {
+    "multiline_length": 40
+  },
+  "chain": {
+    "break_count": 100,
+    "break_length": 2147483647,
+    "keep_receiver_count": 1,
+    "length_strategy": "chain-first"
+  }
+}

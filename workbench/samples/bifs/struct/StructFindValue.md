@@ -60,7 +60,7 @@ Result: [{"path":".E","owner":{"A":2,"B":4,"C":8,"D":10,"E":12,"F":12,"MYSECONDS
 
 ### Find first match for a nested struct value using member function
 
-CF11+ calling the findValue member function on a struct.
+Calling the findValue member function on a struct.
 
 <a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVahW4OJ0VLBSMNLh4nQC0iZA2hlIWwBpFyBtaABkuIIYIBVuYAZXrTVXLtQIPd%2FIYFdnfz%2BX4JCgUOcQkIlAAw2B6kxBOh2NCOkAckM8PINQ9DsZwix0Auk3M4XoD0vMKU0FqoCblJaZlwIW1FBQMjRS0lFQys9LVVLQtOYKL8osSfUvLSkoLdFQ8Ar29wtOLcpMzMmsAiqFGaQJUggA0rZF7A%3D%3D" target="_blank">Run Example</a>
 

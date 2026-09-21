@@ -84,6 +84,40 @@ public class SetBIFsTest {
 		assertThat( ( ( BoxSet ) variables.get( result ) ).size() ).isEqualTo( 3 );
 	}
 
+	@DisplayName( "Array.toSet() defaults to LINKED and preserves insertion order" )
+	@Test
+	public void testArrayToSetLinkedOrder() {
+		instance.executeSource(
+		    """
+		    result = [ "a", "b", "c" ].toSet();
+		    """,
+		    context );
+		BoxSet		s	= ( BoxSet ) variables.get( result );
+		Object[]	arr	= s.toArray();
+		assertThat( s.getType() ).isEqualTo( BoxSet.Type.LINKED );
+		assertThat( arr.length ).isEqualTo( 3 );
+		assertThat( arr[ 0 ] ).isEqualTo( "a" );
+		assertThat( arr[ 1 ] ).isEqualTo( "b" );
+		assertThat( arr[ 2 ] ).isEqualTo( "c" );
+	}
+
+	@DisplayName( "Array.toSet(\"sorted\") builds a SORTED set in natural order" )
+	@Test
+	public void testArrayToSetSorted() {
+		instance.executeSource(
+		    """
+		    result = [ "c", "b", "a" ].toSet( "sorted" );
+		    """,
+		    context );
+		BoxSet		s	= ( BoxSet ) variables.get( result );
+		Object[]	arr	= s.toArray();
+		assertThat( s.getType() ).isEqualTo( BoxSet.Type.SORTED );
+		assertThat( arr.length ).isEqualTo( 3 );
+		assertThat( arr[ 0 ] ).isEqualTo( "a" );
+		assertThat( arr[ 1 ] ).isEqualTo( "b" );
+		assertThat( arr[ 2 ] ).isEqualTo( "c" );
+	}
+
 	@DisplayName( "[1,2,3] castAs Set requires a Set source (member .toSet() converts arrays)" )
 	@Test
 	public void testCastAsSet() {
@@ -105,7 +139,7 @@ public class SetBIFsTest {
 		    s = setNew();
 		    s.add( 1 );
 		    s.append( 2 );
-		    setAdd( s, 3 );
+		    boxSetAdd( s, 3 );
 		    result = s.size();
 		    """,
 		    context );
@@ -175,7 +209,7 @@ public class SetBIFsTest {
 		    """
 		    a = [1, 2, 3].toSet();
 		    b = [3, 4, 5].toSet();
-		    u = setUnion( a, b );
+		    u = boxSetUnion( a, b );
 		    i = a.intersection( b );
 		    d = a.difference( b );
 		    x = a.symmetricDifference( b );
@@ -337,6 +371,20 @@ public class SetBIFsTest {
 		assertThat( variables.get( result ) ).isEqualTo( 3 );
 	}
 
+	@DisplayName( "Struct.keySet() works on non-string keys" )
+	@Test
+	public void testStructKeySetNonStringKeys() {
+		instance.executeSource(
+		    """
+		       threadClass = createObject( "java", "java.lang.Thread" );
+		    for( mthread in threadClass.getAllStackTraces().keySet() ) {
+		    	mthread.isAlive();
+		    }
+		       """,
+		    context );
+		// Does not error
+	}
+
 	@DisplayName( "Struct.keySet() inherits case-insensitivity from default struct" )
 	@Test
 	public void testStructKeySetCaseInsensitive() {
@@ -468,6 +516,44 @@ public class SetBIFsTest {
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
+	@DisplayName( "setNew() isSynchronized=true (default) produces a synchronized set" )
+	@Test
+	public void testSetNewIsSynchronizedDefault() {
+		instance.executeSource(
+		    """
+		    s = setNew();
+		    result = s.isSynchronized();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "setNew() isSynchronized=false produces a non-synchronized set" )
+	@Test
+	public void testSetNewIsSynchronizedFalse() {
+		instance.executeSource(
+		    """
+		    s = setNew( isSynchronized=false );
+		    result = s.isSynchronized();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "setNew() isSynchronized=false with seed values still works" )
+	@Test
+	public void testSetNewIsSynchronizedFalseWithValues() {
+		instance.executeSource(
+		    """
+		    s = setNew( values=[1,2,3], isSynchronized=false );
+		    result = s.isSynchronized();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+		BoxSet s = ( BoxSet ) variables.get( Key.of( "s" ) );
+		assertThat( s.size() ).isEqualTo( 3 );
+	}
+
 	@DisplayName( "Operator + performs set union" )
 	@Test
 	public void testPlusOperatorUnion() {
@@ -556,6 +642,22 @@ public class SetBIFsTest {
 		    context );
 		BoxSet s = ( BoxSet ) variables.get( result );
 		assertThat( s.size() ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "Explicit a = a * b on a set performs intersection" )
+	@Test
+	public void testExplicitStarAssignmentIntersection() {
+		instance.executeSource(
+		    """
+		    a = set{ 1, 2, 3 };
+		    a = a * set{ 2, 3, 4 };
+		    result = a;
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 2 );
+		assertThat( s.contains( 2 ) ).isTrue();
+		assertThat( s.contains( 3 ) ).isTrue();
 	}
 
 	@DisplayName( "set{ ...array } spreads an array into the set literal" )
@@ -662,6 +764,35 @@ public class SetBIFsTest {
 		    context );
 		BoxSet s = ( BoxSet ) variables.get( result );
 		assertThat( s.size() ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "Query.toSet() produces a Set of row structs" )
+	@Test
+	public void testQueryToSet() {
+		instance.executeSource(
+		    """
+		    q = queryNew( "name,age", "varchar,integer", [ [ "Alice", 30 ], [ "Bob", 25 ] ] );
+		    result = q.toSet();
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 2 );
+		assertThat( s.iterator().next() ).isInstanceOf( ortus.boxlang.runtime.types.IStruct.class );
+	}
+
+	@DisplayName( "Query column values as a Set via query.columnData().toSet()" )
+	@Test
+	public void testQueryColumnToSet() {
+		instance.executeSource(
+		    """
+		    q = queryNew( "name", "varchar", [ [ "Alice" ], [ "Bob" ], [ "Alice" ] ] );
+		    result = q.columnData( "name" ).toSet();
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 2 );
+		assertThat( s.contains( "Alice" ) ).isTrue();
+		assertThat( s.contains( "Bob" ) ).isTrue();
 	}
 
 	@DisplayName( "duplicate() deep copies a Set" )

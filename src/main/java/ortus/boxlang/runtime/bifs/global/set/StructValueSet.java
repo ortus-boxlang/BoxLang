@@ -38,12 +38,16 @@ public class StructValueSet extends BIF {
 	}
 
 	/**
+	 * Build a Set containing the values of a Struct, deduplicating automatically. The backing variant can be
+	 * configured; use "linked" to preserve the Struct's value iteration order.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 *
 	 * @argument.struct The struct whose values should populate the set.
 	 *
-	 * @argument.type The backing variant — "default" (hash), "linked" (preserves struct
-	 *                iteration order), or "sorted".
-	 *
-	 * @return A new {@link BoxSet} of the struct's values, deduplicated.
+	 * @argument.type The backing variant: "default" / "hash" (HashSet), "linked" / "ordered" (LinkedHashSet,
+	 *                preserves Struct iteration order), or "sorted" / "tree" (TreeSet).
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct		struct	= arguments.getAsStruct( Key.struct );

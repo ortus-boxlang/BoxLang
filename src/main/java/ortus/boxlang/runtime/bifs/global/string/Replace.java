@@ -62,14 +62,23 @@ public class Replace extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	string		= arguments.getAsString( Key.string );
-		String	substring1	= arguments.getAsString( Key.substring1 );
-		Object	obj			= arguments.get( Key.obj );
-		String	scope		= arguments.getAsString( Key.scope ).toLowerCase();
+		String string = arguments.getAsString( Key.string );
+		if ( string == null ) {
+			string = "";
+		}
+		String substring1 = arguments.getAsString( Key.substring1 );
+		if ( substring1 == null ) {
+			return string;
+		}
+		Object obj = arguments.get( Key.obj );
+		if ( obj == null ) {
+			obj = "";
+		}
+		String				scope		= arguments.getAsString( Key.scope ).toLowerCase();
+		CastAttempt<String>	castAttempt	= StringCaster.attempt( obj );
 		if ( scope.equals( "one" ) ) {
 			int idx = string.indexOf( substring1 );
 			if ( idx != -1 ) {
-				CastAttempt<String> castAttempt = StringCaster.attempt( obj );
 				return castAttempt.wasSuccessful()
 				    ? string.substring( 0, idx ) + castAttempt.get() + string.substring( idx + substring1.length() )
 				    : string.substring( 0, idx )
@@ -84,7 +93,6 @@ public class Replace extends BIF {
 			StringBuilder	result	= new StringBuilder();
 			while ( i < string.length() ) {
 				if ( string.substring( i ).startsWith( substring1 ) ) {
-					CastAttempt<String> castAttempt = StringCaster.attempt( obj );
 					if ( castAttempt.wasSuccessful() ) {
 						result.append( castAttempt.get() );
 					} else {

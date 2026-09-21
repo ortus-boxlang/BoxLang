@@ -678,6 +678,23 @@ public class QoQParseTest {
 	}
 
 	@Test
+	public void testParameterizedNullValue() {
+		instance.executeSource(
+		    """
+		        q = queryNew( "id", "integer", [[1]] );
+		        q = QueryExecute("
+		        				select id from q where id IN (?)
+		       ",
+		    [{value:[], list=true}],
+		    { dbType : "query" } );
+
+		    result = q.recordcount
+		                      			                          """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsInteger( result ) ).isEqualTo( 0 );
+	}
+
+	@Test
 	@Disabled
 	public void testsdf() {
 		instance.executeSource(
@@ -947,6 +964,27 @@ public class QoQParseTest {
 		    context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.getAsQuery( result ).getColumn( Key.of( "col" ) ).getCell( 0 ) ).isEqualTo( 15.0 );
 
+	}
+
+	@Test
+	public void testInClauseWithNumericLiteralsOnVarcharColumn() {
+		instance.executeSource(
+		    """
+		    getProceeds = queryNew(
+		    	"Test,TestB,TestC,age",
+		    	"integer,varchar,varchar,integer",
+		    	[
+		    		{ Test: 1, TestB: "A", TestC: "18", age: 35 },
+		    		{ Test: 1, TestB: "W", TestC: "22", age: 28 }
+		    	]
+		    )
+		    result = queryExecute( "
+		    	SELECT * FROM getProceeds
+		    	WHERE TestC IN (18,22)
+		    ", [], { dbType : "query" } )
+		      """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 2 );
 	}
 
 }

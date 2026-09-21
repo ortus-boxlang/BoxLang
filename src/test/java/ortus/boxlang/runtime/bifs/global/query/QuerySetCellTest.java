@@ -168,9 +168,9 @@ public class QuerySetCellTest {
 		    context );
 
 		assertThat( variables.getAsQuery( result ).getData().size() ).isEqualTo( 3 );
-		assertEquals( true, variables.get( Key.of( "bit1" ) ) );
-		assertEquals( false, variables.get( Key.of( "bit2" ) ) );
-		assertEquals( true, variables.get( Key.of( "bit3" ) ) );
+		assertEquals( 1, variables.get( Key.of( "bit1" ) ) );
+		assertEquals( 0, variables.get( Key.of( "bit2" ) ) );
+		assertEquals( 1, variables.get( Key.of( "bit3" ) ) );
 	}
 
 	// BL-640 - Test that time values in queries are handled correctly and allow for comparison
@@ -243,9 +243,13 @@ public class QuerySetCellTest {
 			);
 			// @formatter:on
 
-			Query query = variables.getAsQuery( result );
-			assertThat( query.getCell( Key.of( "name" ), 0 ) ).isEqualTo( "" );
-			assertThat( query.getCell( Key.of( "createdDate" ), 0 ) ).isEqualTo( null );
+			Query		query	= variables.getAsQuery( result );
+			// We need to avoid query.getCell() for the sake of the test since it will convert nulls back to empty strings
+			Object[]	row		= query.getData().get( 0 );
+			// name
+			assertThat( row[ 0 ] ).isEqualTo( "" );
+			// createdDate
+			assertThat( row[ 1 ] ).isEqualTo( null );
 		} finally {
 			Query.queryNullToEmpty = false;
 		}
@@ -345,6 +349,31 @@ public class QuerySetCellTest {
 		Query qry = variables.getAsQuery( result );
 		assertThat( qry.size() ).isEqualTo( 1 );
 		assertThat( ( ( Number ) qry.getCell( Key.of( "calc" ), 0 ) ).intValue() ).isEqualTo( 15 );
+	}
+
+	@DisplayName( "It sets bit values via querySetCell" )
+	@Test
+	public void testSettingBit() {
+		// @formatter:off
+		instance.executeSource( """
+			myQry = queryNew( "col", "clob", [""] )
+			querySetCell( myQry, "col", "test", 1 )
+			myQry.addRow();
+			myQry.col[2]="brad"
+			result = queryExecute(
+				"SELECT col FROM myQry",
+				[],
+				{ dbType: "query" }
+			)
+			result2 = myqry.col[1];
+			result3 = myqry.col[2];
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.getCell( Key.of( "col" ), 0 ) ).isEqualTo( "test" );
+		assertThat( qry.getCell( Key.of( "col" ), 1 ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "test" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "brad" );
 	}
 
 }

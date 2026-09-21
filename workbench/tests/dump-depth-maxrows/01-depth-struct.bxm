@@ -1,0 +1,47 @@
+<bx:script>
+	nested = {
+		"alpha": "a",
+		"beta" : {
+			"charlie": "c",
+			"delta": "d"
+		},
+		"echo" : {
+			"foxtrot" : {
+				"golf" : "g",
+				"hotel" : "h"
+			}
+		}
+	};
+</bx:script>
+<!DOCTYPE html>
+<html>
+<head><title>01 - Recursion depth on nested Struct</title>
+<style>body{font-family:system-ui,sans-serif;max-width:1000px;margin:30px auto;padding:0 20px;} h2{border-bottom:2px solid #333;padding-bottom:4px;margin-top:40px;} .expect{background:#fffbe6;border-left:4px solid #e0a800;padding:8px 12px;margin:8px 0;}</style>
+</head>
+<body>
+<p><a href="index.bxm">&larr; back</a></p>
+<h1>01 - Recursion depth on nested Struct</h1>
+<p>Fixture: <code>alpha</code> (level 1) &rarr; <code>beta.charlie/delta</code> (level 2) &rarr; <code>echo.foxtrot.golf/hotel</code> (level 3)</p>
+
+<h2>depth = -1 (default / unlimited)</h2>
+<div class="expect">Expect: everything shown, including golf/hotel</div>
+<bx:dump var="#nested#" depth="-1">
+
+<h2>depth = 0 (shows nothing)</h2>
+<div class="expect">Expect: "Depth Limit reached" only</div>
+<bx:dump var="#nested#" depth="0">
+
+<h2>depth = 1 (top level only, no recursion)</h2>
+<div class="expect">Expect: alpha/beta/echo keys visible, nested values collapsed to "Depth Limit reached"</div>
+<bx:dump var="#nested#" depth="1">
+
+<h2>depth = 2 (recurse one level in)</h2>
+<div class="expect">Expect: charlie/delta/foxtrot visible, golf/hotel NOT visible</div>
+<bx:dump var="#nested#" depth="2">
+
+<h2>depth = 3 (recurse two levels in)</h2>
+<div class="expect">Expect: everything visible including golf/hotel</div>
+<bx:dump var="#nested#" depth="3">
+
+</body>
+</html>

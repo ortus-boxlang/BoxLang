@@ -27,6 +27,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
@@ -745,4 +746,35 @@ public class ClosureFunctionTest {
 
 	}
 
+	@DisplayName( "test lexical binding" )
+	@Test
+	public void testLexicalBinding() {
+
+		BaseBoxContext.nullIsUndefined = true;
+		try {
+			instance.executeSource(
+			    """
+			    function foo() {
+			    	var x = 42;
+
+			    	return () => {
+			    		// here, bar has non-lexical access to `x`
+			    		return bar()
+			    	}
+			    }
+
+			    function bar() {
+			    	return (x) => x ?: "undefined" // can climb into caller's captures
+			    }
+
+			    // lucee: 42, boxlang: 42
+			    result = foo()()();
+			        """,
+			    context );
+		} finally {
+			BaseBoxContext.nullIsUndefined = false;
+		}
+		assertThat( variables.get( result ) ).isEqualTo( "undefined" );
+
+	}
 }

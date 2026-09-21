@@ -29,7 +29,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -38,14 +37,13 @@ import org.apache.commons.lang3.Strings;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
+import ortus.boxlang.runtime.bifs.global.array.ArrayUnique;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
-import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
@@ -72,7 +70,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
-	public static final Array							EMPTY				= new UnmodifiableArray();
+	public static final Array							EMPTY	= new UnmodifiableArray();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -101,19 +99,36 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	private transient Map<Key, IChangeListener<Array>>	listeners;
 
 	/**
-	 * Function service
+	 * Function service, resolved lazily so Array can be loaded
+	 * before the runtime's FunctionService is fully wired during startup.
 	 */
-	private static FunctionService						functionService		= BoxRuntime.getInstance().getFunctionService();
+	private static FunctionService						functionService;
+
+	/**
+	 * Gets the FunctionService, resolving it lazily on first use.
+	 *
+	 * @return The FunctionService.
+	 */
+	private static FunctionService getFunctionService() {
+		if ( functionService == null ) {
+			synchronized ( Array.class ) {
+				if ( functionService == null ) {
+					functionService = BoxRuntime.getInstance().getFunctionService();
+				}
+			}
+		}
+		return functionService;
+	}
 
 	/**
 	 * Serialization ID
 	 */
-	private static final long							serialVersionUID	= 1L;
+	private static final long	serialVersionUID	= 1L;
 
 	/**
 	 * Dimension
 	 */
-	public int											dimensions			= 1;
+	public int					dimensions			= 1;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -881,17 +896,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * @return The new array
 	 */
 	public Array removeDuplicates( Boolean caseSensitive ) {
-		Array	ref			= this;
-		Array	distinct	= new Array( ref.stream()
-		    .collect( Collectors.groupingBy( item -> caseSensitive ? item : Key.of( item ), Collectors.counting() ) )
-		    .keySet()
-		    .stream()
-		    .map( item -> StringCaster.cast( item ) )
-		    .toArray()
-		);
-		// Our collector HashMap didn't maintain order so we need to restore it
-		distinct.sort( ( a, b ) -> Compare.invoke( ref.findIndex( a ), ref.findIndex( b ) ) );
-		return distinct;
+		return ArrayUnique.invoke( this, caseSensitive );
 	}
 
 	/**
@@ -990,7 +995,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 
-		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.ARRAY );
+		MemberDescriptor memberDescriptor = getFunctionService().getMemberMethod( name, BoxLangType.ARRAY );
 		if ( memberDescriptor != null ) {
 			return memberDescriptor.invoke( context, this, positionalArguments );
 		}
@@ -1010,7 +1015,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 
-		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.ARRAY );
+		MemberDescriptor memberDescriptor = getFunctionService().getMemberMethod( name, BoxLangType.ARRAY );
 		if ( memberDescriptor != null ) {
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}

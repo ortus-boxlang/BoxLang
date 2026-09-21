@@ -247,20 +247,29 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	public Component.BodyResult invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody );
 
 	/**
-	 * Invoke a template in the current context
+	 * Invoke a relative template in the current context
 	 *
-	 * @param templatePath A relateive template path
+	 * @param templatePath A relative template path
 	 */
 	public default void includeTemplate( String templatePath ) {
 		includeTemplate( templatePath, false );
 	}
 
 	/**
-	 * Invoke a template in the current context
+	 * Invoke a relative template in the current context
 	 *
-	 * @param templatePath A relateive template path
+	 * @param templatePath A relative template path
 	 */
 	public void includeTemplate( String templatePath, boolean externalOnly );
+
+	/**
+	 * Invoke a template in the current context
+	 *
+	 * @param templatePath  A relative or absolute template path (forceRelative controls how it's used)
+	 * @param externalOnly  Whether to only include external templates
+	 * @param forceRelative Whether to force the template path to be treated as relative
+	 */
+	public void includeTemplate( String templatePath, boolean externalOnly, boolean forceRelative );
 
 	/**
 	 * Register a UDF with the local context.

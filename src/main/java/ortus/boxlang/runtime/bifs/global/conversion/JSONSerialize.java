@@ -54,8 +54,7 @@ public class JSONSerialize extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.ANY, Key.data ),
 		    // NOT A BOOLEAN! Can be true, false, row, column, or struct
-		    new Argument( false, Argument.STRING, Key.queryFormat, "row", Set.of(
-		        Validator.REQUIRED,
+		    new Argument( false, Argument.STRING, Key.queryFormat, Set.of(
 		        Validator.valueOneOf( "true", "false", "row", "column", "struct" )
 		    ) ),
 		    // Don't set this to a boolean, Lucee accepts a charset here which ColdBox passes
@@ -109,7 +108,14 @@ public class JSONSerialize extends BIF {
 		// TODO useSecureJSONPrefix - Don't assume this is a boolean, Lucee accepts a charset here which ColdBox passes
 
 		Object	obj			= arguments.get( Key.data );
-		String	queryFormat	= arguments.getAsString( Key.queryFormat ).toLowerCase();
+		String	queryFormat	= arguments.getAsString( Key.queryFormat );
+
+		// If queryFormat wasn't provided (null), use the runtime default
+		if ( queryFormat == null ) {
+			queryFormat = JSONUtil.getDefaultQuerySerializationFormat( context );
+		} else {
+			queryFormat = queryFormat.toLowerCase();
+		}
 
 		// Normalize Params
 		if ( queryFormat.equals( "yes" ) ) {

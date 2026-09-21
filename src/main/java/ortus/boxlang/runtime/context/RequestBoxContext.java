@@ -20,19 +20,20 @@ package ortus.boxlang.runtime.context;
 import java.io.PrintStream;
 import java.net.URI;
 import java.time.ZoneId;
-import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Locale;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.ApplicationDefaultListener;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.async.RequestThreadManager;
+import ortus.boxlang.runtime.config.segments.XMLConfig;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
-import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThreadScope;
@@ -59,76 +60,75 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	/**
 	 * Track the current request box context for the thread. Allow more than one as a stack.
 	 */
-	private static final ThreadLocal<ArrayDeque<IBoxContext>>	current					= new ThreadLocal<>();
+	private static final ThreadLocal<Deque<IBoxContext>>	current					= new ThreadLocal<>();
 
 	/**
 	 * The locale for this request
 	 */
-	private Locale												locale					= null;
+	private Locale											locale					= null;
 
 	/**
 	 * The timezone for this request
 	 */
-	private ZoneId												timezone				= null;
+	private ZoneId											timezone				= null;
 
 	/**
 	 * The thread manager for this request
 	 */
-	private RequestThreadManager								threadManager			= null;
+	private RequestThreadManager							threadManager			= null;
 
 	/**
 	 * The request class loader
 	 */
-	private DynamicClassLoader									requestClassLoader		= null;
 
 	/**
 	 * Flag to enforce explicit output
 	 */
-	private boolean												enforceExplicitOutput	= false;
+	private boolean											enforceExplicitOutput	= false;
 
 	/**
 	 * Flag to enable/disabled debug output for a request regardless of runtime
 	 * Each runtime can provide its own implementation of this setting
 	 * It defaults to the runtime's debug mode
 	 */
-	private boolean												showDebugOutput			= getRuntime().inDebugMode();
+	private boolean											showDebugOutput			= getRuntime().inDebugMode();
 
 	/**
 	 * The request timeout in milliseconds
 	 */
-	private Long												requestTimeout			= null;
+	private Long											requestTimeout			= null;
 
 	/**
 	 * The time in milliseconds when the request started
 	 */
-	private DateTime											requestStart			= new DateTime();
+	private DateTime										requestStart			= new DateTime();
 
 	/**
 	 * The JDBC connection manager, which tracks transaction state/context and allows a thread or request to retrieve connections.
 	 */
-	private ConnectionManager									connectionManager		= null;
+	private ConnectionManager								connectionManager		= null;
 
 	/**
 	 * Application.bx listener for this request
 	 * null if there is none
 	 */
-	private BaseApplicationListener								applicationListener		= null;
+	private BaseApplicationListener							applicationListener		= null;
 
 	/**
 	 * The application service
 	 */
-	private ApplicationService									applicationService		= getRuntime().getApplicationService();
+	private ApplicationService								applicationService		= getRuntime().getApplicationService();
 
 	/**
 	 * The output buffer for the script
 	 */
-	private PrintStream											out						= System.out;
+	private PrintStream										out						= System.out;
 
 	/**
 	 * Since getting config for the request happens a lot and rarley changes, cache it to improve performance
 	 * If config is changed at any context "above" us in the chain, we'll need to clear the cache via clearConfigCache()
 	 */
-	private IStruct												configCache				= null;
+	private IStruct											configCache				= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -281,16 +281,12 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 *
 	 * @return The class loader
 	 */
-	public DynamicClassLoader getRequestClassLoader() {
-		if ( this.requestClassLoader != null ) {
-			return this.requestClassLoader;
-		}
+	public ClassLoader getRequestClassLoader() {
 		// Not using getApplicationListener() here so we don't cache a default class loader value
 		if ( this.applicationListener == null ) {
 			return getRuntime().getRuntimeLoader();
 		} else {
-			this.requestClassLoader = this.applicationListener.getRequestClassLoader( this );
-			return this.requestClassLoader;
+			return this.applicationListener.getRequestClassLoader( this );
 		}
 	}
 
@@ -396,6 +392,18 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 		/**
 		 * --------------------------------------------------------------------------
+		 * JSON Serialization Format Override from Application settings
+		 * --------------------------------------------------------------------------
+		 */
+		if ( appSettings.get( Key.serialization ) instanceof IStruct serialization ) {
+			Object queryFormatValue = serialization.get( Key.serializeQueryAs );
+			if ( queryFormatValue != null ) {
+				config.put( Key.defaultJSONQuerySerializationFormat, queryFormatValue );
+			}
+		}
+
+		/**
+		 * --------------------------------------------------------------------------
 		 * Datasource Overrides
 		 * --------------------------------------------------------------------------
 		 * - A string pointing to a datasource in the datasources struct
@@ -496,6 +504,15 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		StringCaster.attempt( appSettings.get( Key.disallowedFileOperationExtensions ) )
 		    .ifPresent( disallowedFileOperationExtensions -> config.put( Key.disallowedFileOperationExtensions,
 		        ListUtil.asList( disallowedFileOperationExtensions, ListUtil.DEFAULT_DELIMITER ) ) );
+
+		// Apply XML parsing overrides, looking in both XMLSettings and xmlFeatures. Override xml key in config, and normalize struct via XMLConfig.normalize()
+		if ( appSettings.containsKey( Key.XMLSettings ) ) {
+			config.getAsStruct( Key.xml ).putAll( XMLConfig.normalizeNoDefaults( StructCaster.cast( appSettings.get( Key.XMLSettings ) ) ) );
+		}
+
+		if ( appSettings.containsKey( Key.XMLFeatures ) ) {
+			config.getAsStruct( Key.xml ).putAll( XMLConfig.normalizeNoDefaults( StructCaster.cast( appSettings.get( Key.XMLFeatures ) ) ) );
+		}
 
 		// OTHER OVERRIDES go here
 
@@ -669,11 +686,24 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * @return The current request context or null
 	 */
 	public static IBoxContext getCurrent() {
-		ArrayDeque<IBoxContext> stack = current.get();
+		Deque<IBoxContext> stack = current.get();
 		if ( stack == null || stack.isEmpty() ) {
 			return null;
 		}
 		return stack.peek();
+	}
+
+	/**
+	 * Look at the current thread and see if it has a request context and return it
+	 * Else return the provided default context if no current context is found.
+	 * 
+	 * @param defaultContext The default context to return if no current context is found
+	 *
+	 * @return The current request context or the provided default context if no current context is found
+	 */
+	public static IBoxContext getCurrent( IBoxContext defaultContext ) {
+		IBoxContext currentContext = getCurrent();
+		return currentContext != null ? currentContext : defaultContext;
 	}
 
 	/**
@@ -682,10 +712,10 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * @param context The request context
 	 */
 	public static void setCurrent( IBoxContext context ) {
-		ArrayDeque<IBoxContext> stack = current.get();
+		Deque<IBoxContext> stack = current.get();
 		// No synchronization is needed here since only one thread can access a threadlocal var at a time.
 		if ( stack == null ) {
-			stack = new ArrayDeque<>();
+			stack = new ConcurrentLinkedDeque<IBoxContext>();
 			current.set( stack );
 		}
 		stack.push( context );
@@ -696,7 +726,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * This cleanup is done by the runtime once a thread is done processing a request
 	 */
 	public static void removeCurrent() {
-		ArrayDeque<IBoxContext> stack = current.get();
+		Deque<IBoxContext> stack = current.get();
 		if ( stack != null ) {
 			stack.pop();
 			if ( stack.isEmpty() ) {

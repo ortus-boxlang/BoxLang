@@ -159,6 +159,16 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 	}
 
 	/**
+	 * Check if impport matches a given name. Uses alias if present, otherwise class name. Case insensitive.
+	 * 
+	 * @return True if the module matches the given name, false otherwise
+	 */
+	public boolean isNamed( String name ) {
+		String nameToCheck = alias != null ? alias : className;
+		return name.equalsIgnoreCase( nameToCheck );
+	}
+
+	/**
 	 * Returns the package name of the import definition
 	 *
 	 * @return The package name

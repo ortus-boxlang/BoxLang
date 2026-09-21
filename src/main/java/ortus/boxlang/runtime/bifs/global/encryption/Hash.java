@@ -80,7 +80,7 @@ public class Hash extends BIF {
 	 *
 	 * @argument.encoding Applicable to strings ( default "utf-8" )
 	 *
-	 * @argument.iterations The number of iterations to re-digest the object ( default 1 );
+	 * @argument.numIterations The number of iterations to re-digest the object ( default 1 );
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	hashItem			= arguments.get( Key.input );

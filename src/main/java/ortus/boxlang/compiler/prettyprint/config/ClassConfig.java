@@ -58,6 +58,13 @@ public class ClassConfig {
 	private int		memberSpacing	= 1;
 
 	/**
+	 * Number of blank lines printed after the opening class or interface declaration
+	 * and before the first body member.
+	 */
+	@JsonProperty( "body_spacing" )
+	private int		bodySpacing		= 0;
+
+	/**
 	 * Strategy for ordering property declarations within a class.
 	 * Options: {@code "preserve"} (default), {@code "alphabetical"}, {@code "length"}, {@code "type"}.
 	 */
@@ -140,6 +147,27 @@ public class ClassConfig {
 	 */
 	public ClassConfig setMemberSpacing( int memberSpacing ) {
 		this.memberSpacing = memberSpacing;
+		return this;
+	}
+
+	/**
+	 * Get the number of blank lines before the first class body member.
+	 *
+	 * @return the class body spacing
+	 */
+	public int getBodySpacing() {
+		return bodySpacing;
+	}
+
+	/**
+	 * Set the number of blank lines before the first class body member.
+	 *
+	 * @param bodySpacing the class body spacing
+	 *
+	 * @return this config for chaining
+	 */
+	public ClassConfig setBodySpacing( int bodySpacing ) {
+		this.bodySpacing = bodySpacing;
 		return this;
 	}
 
@@ -236,6 +264,7 @@ public class ClassConfig {
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put( "member_order", memberOrder );
 		map.put( "member_spacing", memberSpacing );
+		map.put( "body_spacing", bodySpacing );
 		map.put( "property_order", propertyOrder );
 		map.put( "method_order", methodOrder );
 		map.put( "method_grouping", methodGrouping );
@@ -252,6 +281,7 @@ public class ClassConfig {
 		ClassConfig clone = new ClassConfig();
 		clone.memberOrder		= this.memberOrder;
 		clone.memberSpacing		= this.memberSpacing;
+		clone.bodySpacing		= this.bodySpacing;
 		clone.propertyOrder		= this.propertyOrder;
 		clone.methodOrder		= this.methodOrder;
 		clone.methodGrouping	= this.methodGrouping;

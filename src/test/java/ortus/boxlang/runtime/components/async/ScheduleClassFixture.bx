@@ -1,0 +1,34 @@
+class {
+
+	this.callOrder			= [];
+	this.shouldThrow		= false;
+	this.lastResult			= "";
+	this.lastErrorMessage	= "";
+
+	function before() {
+		this.callOrder.append( "before" );
+	}
+
+	function run() {
+		this.callOrder.append( "run" );
+		if ( this.shouldThrow ) {
+			throw( message = "boom" );
+		}
+		return "ran-ok";
+	}
+
+	function onSuccess( result ) {
+		this.callOrder.append( "onSuccess" );
+		this.lastResult = result;
+	}
+
+	function onError( exception ) {
+		this.callOrder.append( "onError" );
+		this.lastErrorMessage = exception.message;
+	}
+
+	function after( result ) {
+		this.callOrder.append( "after" );
+	}
+
+}

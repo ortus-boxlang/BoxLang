@@ -36,38 +36,51 @@ public class SetNew extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( false, Argument.STRING, Key.type, "default" ),
 		    new Argument( false, Argument.ANY, Key.values ),
-		    new Argument( false, Argument.BOOLEAN, Key.caseSensitive, false )
+		    new Argument( false, Argument.BOOLEAN, Key.caseSensitive, false ),
+		    new Argument( false, Argument.BOOLEAN, Key.isSynchronized, true )
 		};
 	}
 
 	/**
-	 * Create a new Set.
+	 * Create a new empty Set, optionally pre-seeded from an existing collection. The backing variant (hash,
+	 * linked, or sorted) and case-sensitivity can be configured. When no seed is provided, an empty Set of the
+	 * requested variant is returned.
 	 *
-	 * @argument.type The backing variant — one of "default" (HashSet), "linked" (LinkedHashSet, preserves insertion order),
-	 *                or "sorted" (TreeSet, natural ordering). Aliases: "hash" for default, "ordered" for linked, "tree" for sorted.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.values An optional seed collection (Array, Set, or anything castable to a Set). When provided, its elements
-	 *                  are deduplicated into the new set. Pass a single value to seed a one-element set.
+	 * @argument.type The backing variant: "default" / "hash" (HashSet), "linked" / "ordered" (LinkedHashSet,
+	 *                preserves insertion order), or "sorted" / "tree" (TreeSet, natural ordering).
 	 *
-	 * @return A new {@link BoxSet}.
+	 * @argument.values An optional seed collection (Array, Set, or anything castable to a Set). Its elements are
+	 *                  deduplicated into the new set. A single non-collection value seeds a one-element set.
+	 *
+	 * @argument.caseSensitive Whether string element comparisons are case-sensitive. Defaults to false.
+	 *
+	 * @argument.isSynchronized Whether the set should be thread-safe (synchronized). Default is true.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet.Type	type			= BoxSet.parseType( arguments.getAsString( Key.type ) );
 		Object		seed			= arguments.get( Key.values );
 		boolean		caseSensitive	= arguments.getAsBoolean( Key.caseSensitive );
+		boolean		isSynchronized	= arguments.getAsBoolean( Key.isSynchronized );
 		if ( seed == null ) {
-			return new BoxSet( type, true, caseSensitive );
+			return new BoxSet( type, isSynchronized, caseSensitive );
 		}
 		// Preserve iteration order for ordered seeds (Array/List) by adding directly,
 		// rather than routing through a hash-backed SetCaster which would lose order.
 		if ( seed instanceof Collection<?> coll ) {
-			return new BoxSet( type, coll, caseSensitive );
+			BoxSet result = new BoxSet( type, isSynchronized, caseSensitive );
+			result.addAll( coll );
+			return result;
 		}
 		var attempt = SetCaster.attemptLoose( seed );
 		if ( attempt.wasSuccessful() ) {
-			return new BoxSet( type, attempt.get(), caseSensitive );
+			BoxSet result = new BoxSet( type, isSynchronized, caseSensitive );
+			result.addAll( attempt.get() );
+			return result;
 		}
-		BoxSet result = new BoxSet( type, true, caseSensitive );
+		BoxSet result = new BoxSet( type, isSynchronized, caseSensitive );
 		result.add( seed );
 		return result;
 	}

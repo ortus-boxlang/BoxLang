@@ -68,6 +68,8 @@ public class ListFind extends ArrayFind {
 	 * @argument.delimiter The list delimiter(s)
 	 *
 	 * @argument.includeEmptyFields Whether to include empty fields in the search
+	 *
+	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

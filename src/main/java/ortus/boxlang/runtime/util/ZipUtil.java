@@ -14,16 +14,15 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.InputStream;
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.io.ByteArrayInputStream;
-import java.util.zip.InflaterInputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,9 +33,12 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipEntry;
 
 import org.apache.commons.lang3.StringUtils;
+import org.itadaki.bzip2.BZip2InputStream;
+import org.itadaki.bzip2.BZip2OutputStream;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -52,6 +54,9 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.util.jtar.TarEntry;
+import ortus.boxlang.runtime.util.jtar.TarInputStream;
+import ortus.boxlang.runtime.util.jtar.TarOutputStream;
 
 /**
  * This class provides zip utilities for the BoxLang runtime
@@ -61,7 +66,62 @@ public class ZipUtil {
 	// Create enum of valid compression methods: zip, gzip, tar, etc.
 	public enum COMPRESSION_FORMAT {
 		ZIP,
-		GZIP
+		GZIP,
+		TAR,
+		TGZ,
+		BZIP,
+		TBZ,
+		TBZ2
+	}
+
+	/**
+	 * Resolves an explicit archive format or detects it from a path extension.
+	 *
+	 * @param format The explicit format, or {@code null}
+	 * @param path   The archive path used for extension detection
+	 *
+	 * @return The resolved compression format
+	 *
+	 * @throws BoxRuntimeException If the format is unavailable or unsupported
+	 */
+	public static COMPRESSION_FORMAT detectFormat( String format, String path ) {
+		if ( format != null && !format.isBlank() ) {
+			String normalizedFormat = format.trim().toLowerCase();
+			if ( normalizedFormat.equals( "bz2" ) || normalizedFormat.equals( "bzip2" ) ) {
+				return COMPRESSION_FORMAT.BZIP;
+			}
+			if ( normalizedFormat.equals( "tar.bz" ) ) {
+				return COMPRESSION_FORMAT.TBZ;
+			}
+			if ( normalizedFormat.equals( "tar.gz" ) ) {
+				return COMPRESSION_FORMAT.TGZ;
+			}
+			try {
+				return COMPRESSION_FORMAT.valueOf( normalizedFormat.toUpperCase() );
+			} catch ( IllegalArgumentException e ) {
+				throw new BoxRuntimeException( "Unsupported compression format: [" + format + "]", e );
+			}
+		}
+		String lowerPath = path == null ? "" : path.trim().toLowerCase();
+		if ( lowerPath.endsWith( ".zip" ) ) {
+			return COMPRESSION_FORMAT.ZIP;
+		}
+		if ( lowerPath.endsWith( ".tgz" ) || lowerPath.endsWith( ".tar.gz" ) ) {
+			return COMPRESSION_FORMAT.TGZ;
+		}
+		if ( lowerPath.endsWith( ".tbz" ) || lowerPath.endsWith( ".tbz2" ) || lowerPath.endsWith( ".tar.bz" ) || lowerPath.endsWith( ".tar.bz2" ) ) {
+			return COMPRESSION_FORMAT.TBZ;
+		}
+		if ( lowerPath.endsWith( ".bz2" ) || lowerPath.endsWith( ".bz" ) || lowerPath.endsWith( ".bzip2" ) ) {
+			return COMPRESSION_FORMAT.BZIP;
+		}
+		if ( lowerPath.endsWith( ".gz" ) ) {
+			return COMPRESSION_FORMAT.GZIP;
+		}
+		if ( lowerPath.endsWith( ".tar" ) ) {
+			return COMPRESSION_FORMAT.TAR;
+		}
+		throw new BoxRuntimeException( "Unable to detect compression format from path: [" + path + "]. Specify the format explicitly." );
 	}
 
 	/**
@@ -122,9 +182,234 @@ public class ZipUtil {
 				return compressZip( Array.of( source ), destination, includeBaseFolder, overwrite, prefix, filter, recurse, zipCompressionLevel, context );
 			case GZIP :
 				return compressGzip( source, destination, includeBaseFolder, overwrite, zipCompressionLevel );
+			case TAR :
+				return compressTar( source, destination, includeBaseFolder, overwrite, filter, recurse, context, false );
+			case TGZ :
+				return compressTar( source, destination, includeBaseFolder, overwrite, filter, recurse, context, true );
+			case BZIP :
+				return compressBzip( source, destination, overwrite );
+			case TBZ :
+			case TBZ2 :
+				return compressTarBzip( source, destination, includeBaseFolder, overwrite, filter, recurse, context, format == COMPRESSION_FORMAT.TBZ );
 			default :
 				throw new BoxRuntimeException( "Unsupported compression format: [" + format + "]" );
 		}
+	}
+
+	/**
+	 * Compresses a file or directory into a bzip2-compressed TAR archive.
+	 *
+	 * @param source            The source file or directory
+	 * @param destination       The destination archive path
+	 * @param includeBaseFolder Whether to include the source directory as the archive root
+	 * @param overwrite         Whether to overwrite an existing archive
+	 * @param filter            A file-name filter
+	 * @param recurse           Whether to include nested directories
+	 * @param context           The BoxLang context used by function filters
+	 *
+	 * @return The absolute destination archive path
+	 */
+	private static String compressTarBzip(
+	    String source,
+	    String destination,
+	    Boolean includeBaseFolder,
+	    Boolean overwrite,
+	    Object filter,
+	    Boolean recurse,
+	    IBoxContext context,
+	    Boolean shortExtension ) {
+		Path	sourcePath		= ensurePath( source );
+		Path	destinationPath	= toPathWithExtension( destination, shortExtension ? ".tbz" : ".tbz2" );
+		if ( Files.exists( destinationPath ) && !overwrite ) {
+			throw new BoxRuntimeException( "Destination file already exists: [" + destination + "]" );
+		}
+		try ( BZip2OutputStream bzipOutputStream = new BZip2OutputStream( Files.newOutputStream( destinationPath ) );
+		    TarOutputStream tarOutputStream = new TarOutputStream( bzipOutputStream ) ) {
+			writeTarTree( sourcePath, destinationPath, includeBaseFolder, filter, recurse, context, tarOutputStream );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error compressing TBZ2 file: [" + destination + "]", e );
+		}
+		return destinationPath.toString();
+	}
+
+	/**
+	 * Compresses a file or directory as a bzip2 stream.
+	 *
+	 * @param source      The source file or directory
+	 * @param destination The destination bzip2 file
+	 * @param overwrite   Whether to overwrite an existing destination
+	 *
+	 * @return The absolute destination path
+	 */
+	private static String compressBzip( String source, String destination, Boolean overwrite ) {
+		Path	sourcePath		= ensurePath( source );
+		Path	destinationPath	= toPathWithExtension( destination, ".bz2" );
+		if ( Files.exists( destinationPath ) && !overwrite ) {
+			throw new BoxRuntimeException( "Destination file already exists: [" + destination + "]" );
+		}
+		try ( BZip2OutputStream bzipOutputStream = new BZip2OutputStream( Files.newOutputStream( destinationPath ) ) ) {
+			Files.copy( sourcePath, bzipOutputStream );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error compressing BZIP file: [" + destination + "]", e );
+		}
+		return destinationPath.toString();
+	}
+
+	/**
+	 * Writes all files and directories under a source path into a TAR stream.
+	 *
+	 * @param sourcePath        The source path
+	 * @param destinationPath   The archive path, which is skipped when inside the source
+	 * @param includeBaseFolder Whether to include the source directory name
+	 * @param filter            The archive entry filter
+	 * @param recurse           Whether to recurse into child directories
+	 * @param context           The BoxLang context
+	 * @param tarOutputStream   The destination TAR stream
+	 *
+	 * @throws IOException If an entry cannot be written
+	 */
+	private static void writeTarTree(
+	    Path sourcePath,
+	    Path destinationPath,
+	    Boolean includeBaseFolder,
+	    Object filter,
+	    Boolean recurse,
+	    IBoxContext context,
+	    TarOutputStream tarOutputStream ) throws IOException {
+		Path basePath = includeBaseFolder ? sourcePath.getParent() : sourcePath;
+		Files.walkFileTree( sourcePath, new SimpleFileVisitor<>() {
+
+			@Override
+			public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) throws IOException {
+				if ( file.toAbsolutePath().normalize().equals( destinationPath ) || !matchesArchiveFilter( basePath.relativize( file ), filter, context ) ) {
+					return FileVisitResult.CONTINUE;
+				}
+				writeTarEntry( tarOutputStream, file, basePath.relativize( file ) );
+				return FileVisitResult.CONTINUE;
+			}
+
+			@Override
+			public FileVisitResult preVisitDirectory( Path directory, BasicFileAttributes attrs ) throws IOException {
+				if ( !recurse && !directory.equals( sourcePath ) ) {
+					return FileVisitResult.SKIP_SUBTREE;
+				}
+				if ( !directory.equals( sourcePath ) || includeBaseFolder ) {
+					writeTarEntry( tarOutputStream, directory, basePath.relativize( directory ) );
+				}
+				return FileVisitResult.CONTINUE;
+			}
+		} );
+	}
+
+	/**
+	 * Compresses a file or directory into a raw TAR or gzip-compressed TAR archive.
+	 *
+	 * @param source            The source file or directory
+	 * @param destination       The destination archive path
+	 * @param includeBaseFolder Whether to include the source directory as the archive root
+	 * @param overwrite         Whether to overwrite an existing archive
+	 * @param filter            A file-name filter
+	 * @param recurse           Whether to include nested directories
+	 * @param context           The BoxLang context used by function filters
+	 * @param gzip              Whether to gzip-compress the TAR stream
+	 *
+	 * @return The absolute destination archive path
+	 */
+	private static String compressTar(
+	    String source,
+	    String destination,
+	    Boolean includeBaseFolder,
+	    Boolean overwrite,
+	    Object filter,
+	    Boolean recurse,
+	    IBoxContext context,
+	    Boolean gzip ) {
+		Path	sourcePath		= ensurePath( source );
+		String	extension		= gzip ? ".tgz" : ".tar";
+		Path	destinationPath	= toPathWithExtension( destination, extension );
+		if ( Files.exists( destinationPath ) && !overwrite ) {
+			throw new BoxRuntimeException( "Destination file already exists: [" + destination + "]" );
+		}
+		try {
+			if ( destinationPath.getParent() != null ) {
+				Files.createDirectories( destinationPath.getParent() );
+			}
+			OutputStream	fileOutputStream	= Files.newOutputStream( destinationPath );
+			OutputStream	archiveOutputStream	= gzip ? new GZIPOutputStream( fileOutputStream ) : fileOutputStream;
+			try ( TarOutputStream tarOutputStream = new TarOutputStream( archiveOutputStream ) ) {
+				Path basePath = includeBaseFolder ? sourcePath.getParent() : sourcePath;
+				Files.walkFileTree( sourcePath, new SimpleFileVisitor<>() {
+
+					@Override
+					public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) throws IOException {
+						if ( file.toAbsolutePath().normalize().equals( destinationPath )
+						    || !matchesArchiveFilter( basePath.relativize( file ), filter, context ) ) {
+							return FileVisitResult.CONTINUE;
+						}
+						writeTarEntry( tarOutputStream, file, basePath.relativize( file ) );
+						return FileVisitResult.CONTINUE;
+					}
+
+					@Override
+					public FileVisitResult preVisitDirectory( Path directory, BasicFileAttributes attrs ) throws IOException {
+						if ( !recurse && !directory.equals( sourcePath ) ) {
+							return FileVisitResult.SKIP_SUBTREE;
+						}
+						if ( !directory.equals( sourcePath ) || includeBaseFolder ) {
+							writeTarEntry( tarOutputStream, directory, basePath.relativize( directory ) );
+						}
+						return FileVisitResult.CONTINUE;
+					}
+				} );
+			}
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error compressing TAR file: [" + destination + "]", e );
+		}
+		return destinationPath.toString();
+	}
+
+	/**
+	 * Writes one file or directory to a TAR output stream.
+	 *
+	 * @param tarOutputStream The TAR output stream
+	 * @param file            The source file or directory
+	 * @param relativePath    The archive-relative entry path
+	 *
+	 * @throws IOException If the entry cannot be written
+	 */
+	private static void writeTarEntry( TarOutputStream tarOutputStream, Path file, Path relativePath ) throws IOException {
+		String entryName = relativePath.toString().replace( '\\', '/' );
+		if ( Files.isDirectory( file ) && !entryName.endsWith( "/" ) ) {
+			entryName += "/";
+		}
+		TarEntry entry = new TarEntry( file.toFile(), entryName );
+		tarOutputStream.putNextEntry( entry );
+		if ( Files.isRegularFile( file ) ) {
+			Files.copy( file, tarOutputStream );
+		}
+	}
+
+	/**
+	 * Determines whether an archive-relative path passes the configured compression filter.
+	 *
+	 * @param relativePath The archive-relative path
+	 * @param filter       A string or BoxLang function filter
+	 * @param context      The BoxLang context used by function filters
+	 *
+	 * @return {@code true} when the path should be included
+	 */
+	private static boolean matchesArchiveFilter( Path relativePath, Object filter, IBoxContext context ) {
+		if ( filter == null ) {
+			return true;
+		}
+		String entryName = relativePath.toString().replace( '\\', '/' );
+		if ( filter instanceof String filterString ) {
+			return FileSystemUtil.fileMatchesPattern( filterString, Path.of( entryName ) );
+		}
+		if ( filter instanceof Function filterFunction ) {
+			return BooleanCaster.cast( context.invokeFunction( filterFunction, new Object[] { entryName } ) );
+		}
+		return true;
 	}
 
 	/**
@@ -156,7 +441,7 @@ public class ZipUtil {
 	    IBoxContext context ) {
 
 		// Prepare destination paths
-		final Path destinationFile = toPathWithExtension( destination, ".zip" );
+		final Path destinationFile = toPathWithExtension( destination, ".zip" ).toAbsolutePath().normalize();
 
 		// Verify destination does not exist
 		if ( destinationFile.toFile().exists() && !overwrite ) {
@@ -217,6 +502,11 @@ public class ZipUtil {
 
 							@Override
 							public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) throws IOException {
+								// Skip the destination zip file if it's in the source directory
+								if ( file.toAbsolutePath().normalize().equals( destinationFile ) ) {
+									return FileVisitResult.CONTINUE;
+								}
+
 								Path	targetFile		= basePath.relativize( file.normalize() );  // Normalize the file path
 								String	zipEntryName	= finalPathPrefix + targetFile.toString().replace( "\\", "/" );
 
@@ -398,8 +688,163 @@ public class ZipUtil {
 			case GZIP :
 				extractGZip( source, destination, overwrite );
 				break;
+			case TAR :
+				extractTar( source, destination, overwrite, recurse, filter, entryPaths, false );
+				break;
+			case TGZ :
+				extractTar( source, destination, overwrite, recurse, filter, entryPaths, true );
+				break;
+			case BZIP :
+				extractBzip( source, destination, overwrite );
+				break;
+			case TBZ :
+			case TBZ2 :
+				extractTarBzip( source, destination, overwrite, recurse, filter, entryPaths );
+				break;
 			default :
 				throw new BoxRuntimeException( "Unsupported compression format: [" + format + "]" );
+		}
+	}
+
+	/**
+	 * Extracts a bzip2-compressed TAR archive.
+	 *
+	 * @param source      The source archive path
+	 * @param destination The destination directory
+	 * @param overwrite   Whether to overwrite existing files
+	 * @param recurse     Whether to extract nested entries
+	 * @param filter      A string entry-name filter
+	 * @param entryPaths  Specific entry paths to extract
+	 */
+	private static void extractTarBzip(
+	    String source,
+	    String destination,
+	    Boolean overwrite,
+	    Boolean recurse,
+	    Object filter,
+	    Array entryPaths ) {
+		try ( BZip2InputStream bzipInputStream = new BZip2InputStream( Files.newInputStream( ensurePath( source ) ), false );
+		    TarInputStream tarInputStream = new TarInputStream( bzipInputStream ) ) {
+			Path destinationPath = Paths.get( destination ).normalize().toAbsolutePath();
+			Files.createDirectories( destinationPath );
+			extractTarEntries( tarInputStream, destinationPath, source, destination, overwrite, recurse, filter, entryPaths );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error extracting TBZ2 file: [" + source + "] to destination: [" + destination + "]", e );
+		}
+	}
+
+	/**
+	 * Extracts a raw bzip2 stream to a destination directory.
+	 *
+	 * @param source      The source bzip2 file
+	 * @param destination The destination directory
+	 * @param overwrite   Whether to overwrite an existing output file
+	 */
+	private static void extractBzip( String source, String destination, Boolean overwrite ) {
+		Path	sourcePath		= ensurePath( source );
+		Path	destinationPath	= Paths.get( destination ).normalize().toAbsolutePath();
+		Path	targetPath		= destinationPath.resolve( sourcePath.getFileName().toString().replaceFirst( "(?i)\\.(bzip2|bz2|bz)$", "" ) );
+		try {
+			Files.createDirectories( destinationPath );
+			if ( Files.exists( targetPath ) && !overwrite ) {
+				throw new BoxRuntimeException( "Destination file already exists: [" + targetPath + "] and overwrite is not allowed." );
+			}
+			try ( BZip2InputStream bzipInputStream = new BZip2InputStream( Files.newInputStream( sourcePath ), false ) ) {
+				Files.copy( bzipInputStream, targetPath, StandardCopyOption.REPLACE_EXISTING );
+			}
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error extracting BZIP file: [" + source + "] to destination: [" + destination + "]", e );
+		}
+	}
+
+	/**
+	 * Extracts a raw TAR or gzip-compressed TAR archive with path traversal protection.
+	 *
+	 * @param source      The source archive path
+	 * @param destination The destination directory
+	 * @param overwrite   Whether to overwrite existing files
+	 * @param recurse     Whether to extract nested entries
+	 * @param filter      A string entry-name filter
+	 * @param entryPaths  Specific entry paths to extract
+	 * @param gzip        Whether the TAR stream is gzip-compressed
+	 */
+	private static void extractTar(
+	    String source,
+	    String destination,
+	    Boolean overwrite,
+	    Boolean recurse,
+	    Object filter,
+	    Array entryPaths,
+	    Boolean gzip ) {
+		Path	sourcePath		= ensurePath( source );
+		Path	destinationPath	= Paths.get( destination ).normalize().toAbsolutePath();
+		try {
+			Files.createDirectories( destinationPath );
+			InputStream	fileInputStream		= Files.newInputStream( sourcePath );
+			InputStream	archiveInputStream	= gzip ? new GZIPInputStream( fileInputStream ) : fileInputStream;
+			try ( TarInputStream tarInputStream = new TarInputStream( archiveInputStream ) ) {
+				extractTarEntries( tarInputStream, destinationPath, source, destination, overwrite, recurse, filter, entryPaths );
+			}
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error extracting TAR file: [" + source + "] to destination: [" + destination + "]", e );
+		}
+	}
+
+	/**
+	 * Extracts entries from an already decompressed TAR stream.
+	 *
+	 * @param tarInputStream  The TAR input stream
+	 * @param destinationPath The normalized destination directory
+	 * @param source          The source archive path for diagnostics
+	 * @param destination     The destination path for diagnostics
+	 * @param overwrite       Whether to overwrite existing files
+	 * @param recurse         Whether to extract nested entries
+	 * @param filter          The entry filter
+	 * @param entryPaths      Specific entries to extract
+	 *
+	 * @throws IOException If an archive entry cannot be read or written
+	 */
+	private static void extractTarEntries(
+	    TarInputStream tarInputStream,
+	    Path destinationPath,
+	    String source,
+	    String destination,
+	    Boolean overwrite,
+	    Boolean recurse,
+	    Object filter,
+	    Array entryPaths ) throws IOException {
+		TarEntry entry;
+		while ( ( entry = tarInputStream.getNextEntry() ) != null ) {
+			String entryName = entry.getName();
+			if ( entryName == null || entryName.isBlank() || ( !recurse && entryName.contains( "/" ) ) ) {
+				continue;
+			}
+			if ( entry.isLink() ) {
+				logger.warn( "Skipping unsupported TAR link entry [{}]", entryName );
+				continue;
+			}
+			if ( filter != null && filter instanceof String filterString && !FileSystemUtil.fileMatchesPattern( filterString, Path.of( entryName ) ) ) {
+				continue;
+			}
+			if ( entryPaths != null && !entryPaths.isEmpty() && !entryPaths.contains( entryName ) ) {
+				continue;
+			}
+			Path targetPath = destinationPath.resolve( entryName ).normalize();
+			if ( !targetPath.startsWith( destinationPath ) ) {
+				logger.warn( "Tar Slip attack detected for entry [{}], skipping extraction", entryName );
+				continue;
+			}
+			if ( Files.exists( targetPath ) && !overwrite ) {
+				continue;
+			}
+			if ( entry.isDirectory() ) {
+				Files.createDirectories( targetPath );
+			} else {
+				if ( targetPath.getParent() != null ) {
+					Files.createDirectories( targetPath.getParent() );
+				}
+				Files.copy( tarInputStream, targetPath, StandardCopyOption.REPLACE_EXISTING );
+			}
 		}
 	}
 

@@ -34,6 +34,8 @@ import ortus.boxlang.runtime.context.StaticClassBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -47,6 +49,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Property;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
@@ -55,7 +58,6 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
-import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -167,7 +169,21 @@ public class BoxClassSupport {
 	 * @return The string representation
 	 */
 	public static String asString( IClassRunnable thisClass ) {
-		return "Class: " + thisClass.bxGetName().getName();
+		StringBuilder	sb				= new StringBuilder( "Class: " ).append( thisClass.bxGetName().getName() );
+		VariablesScope	variablesScope	= thisClass.getVariablesScope();
+		for ( Map.Entry<Key, Property> entry : thisClass.getProperties().entrySet() ) {
+			Key		key		= entry.getKey();
+			Object	value	= variablesScope.getRaw( key );
+			String	valueStr;
+			if ( value == null ) {
+				valueStr = "[null]";
+			} else {
+				CastAttempt<String> attempt = StringCaster.attempt( value );
+				valueStr = attempt.wasSuccessful() ? attempt.get() : "[" + TypeUtil.getObjectName( value ) + "]";
+			}
+			sb.append( "\n    " ).append( key.getName() ).append( " = " ).append( valueStr );
+		}
+		return sb.toString();
 	}
 
 	public static Object javaMethodStub( IReferenceable obj, Key functionName, Object[] args ) {
@@ -229,9 +245,7 @@ public class BoxClassSupport {
 	public static Boolean canOutput( IStruct annotations, String className ) {
 		return castOutputAnnotation( annotations.getOrDefault(
 		    Key.output,
-		    // output defaults to true for Application.bx, but false for all others
-		    // Strip just the class name from the FQN foo.com.bar.Application
-		    ( className.length() == 11 && className.equalsIgnoreCase( "application" ) ) || StringUtil.endsWithIgnoreCase( className, ".application" )
+		    "raw"
 		) );
 	}
 
@@ -321,15 +335,25 @@ public class BoxClassSupport {
 		thisClass.getVariablesScope().addAll( _super.getVariablesScope().getWrapped() );
 		thisClass.getThisScope().addAll( _super.getThisScope().getWrapped() );
 
-		// merge properties that don't already exist
-		for ( var entry : _super.getProperties().entrySet() ) {
-			if ( !thisClass.getProperties().containsKey( entry.getKey() ) ) {
-				thisClass.getProperties().put( entry.getKey(), entry.getValue() );
+		// Properties are static to the class so this merge only needs to happen once.
+		// Use double-checked locking on the Class object (since all fields involved are static)
+		// to ensure thread safety on first instantiation.
+		if ( !thisClass.getPropertiesMerged() ) {
+			synchronized ( thisClass.getClass() ) {
+				if ( !thisClass.getPropertiesMerged() ) {
+					// merge properties that don't already exist
+					for ( var entry : _super.getProperties().entrySet() ) {
+						if ( !thisClass.getProperties().containsKey( entry.getKey() ) ) {
+							thisClass.getProperties().put( entry.getKey(), entry.getValue() );
+						}
+					}
+					// merge getterLookup and setterLookup
+					thisClass.getGetterLookup().putAll( _super.getGetterLookup() );
+					thisClass.getSetterLookup().putAll( _super.getSetterLookup() );
+					thisClass.setPropertiesMerged( true );
+				}
 			}
 		}
-		// merge getterLookup and setterLookup
-		thisClass.getGetterLookup().putAll( _super.getGetterLookup() );
-		thisClass.getSetterLookup().putAll( _super.getSetterLookup() );
 
 		// DO NOT merge annotations. They stay separate between parent/child classes and must be merged at runtime, if desired.
 		// https://ortussolutions.atlassian.net/browse/BL-677
@@ -433,8 +457,8 @@ public class BoxClassSupport {
 			return null;
 		} else {
 			throw new KeyNotFoundException(
-			    // TODO: Limit the number of keys. There could be thousands!
-			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", key.getName(), thisClass.getThisScope().getKeysAsStrings() )
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", key.getName(),
+			        Struct.formatKeysForError( thisClass.getThisScope().getKeysAsStrings() ) )
 			);
 		}
 	}
@@ -897,8 +921,8 @@ public class BoxClassSupport {
 			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
 		} else {
 			throw new KeyNotFoundException(
-			    // TODO: Limit the number of keys. There could be thousands!
-			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(), staticScope.getKeysAsStrings() )
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(),
+			        Struct.formatKeysForError( staticScope.getKeysAsStrings() ) )
 			);
 		}
 	}
@@ -925,8 +949,8 @@ public class BoxClassSupport {
 			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
 		} else {
 			throw new KeyNotFoundException(
-			    // TODO: Limit the number of keys. There could be thousands!
-			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(), staticScope.getKeysAsStrings() )
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(),
+			        Struct.formatKeysForError( staticScope.getKeysAsStrings() ) )
 			);
 		}
 	}

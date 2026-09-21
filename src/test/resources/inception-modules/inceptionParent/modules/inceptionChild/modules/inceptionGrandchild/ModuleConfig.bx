@@ -1,0 +1,41 @@
+/**
+ * Test fixture: a module nested two levels deep, inside `inceptionChild`, which is itself
+ * nested inside `inceptionParent`. Proves module inception recurses to arbitrary depth and
+ * that the class loader chain follows the folder nesting all the way up to the runtime loader.
+ */
+class {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Module Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	this.version		= "1.0.0";
+	this.mapping		= "inceptionGrandchild";
+	this.author			= "Ortus Solutions";
+	this.description	= "A module nested two levels deep";
+	this.enabled		= true;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Module Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	function configure(){
+		settings = {
+			ownSetting : "fromGrandchild"
+		};
+
+		interceptors				= [];
+		customInterceptionPoints	= [];
+	}
+
+	function onLoad(){
+	}
+
+	function onUnload(){
+	}
+
+}

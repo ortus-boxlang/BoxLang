@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
  * @param transpile     Whether or not to transpile the source code to Java
  * @param runtimeHome   The path to the runtime home
  * @param showVersion   Whether or not to show the version of the runtime
+ * @param showHelp      Whether or not to show the help message
  * @param cliArgs       The arguments to pass to the template or class
  * @param cliArgsRaw    The raw arguments passed to the CLI
  * @param targetModule  The module to execute
@@ -48,6 +49,7 @@ public record CLIOptions(
     Boolean transpile,
     String runtimeHome,
     Boolean showVersion,
+    Boolean showHelp,
     List<String> cliArgs,
     String[] cliArgsRaw,
     String targetModule,

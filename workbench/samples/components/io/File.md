@@ -186,7 +186,7 @@ Upload the file contained in the myFile field. Always upload to a directory outs
 
 ### Tag Syntax (action=upload) with accept
 
-CF10+ Checks file extensions against a whitelist of allowed file extensions. You must set `strict=false` when specifying a file extension list.
+Checks file extensions against a whitelist of allowed file extensions. You must set `strict=false` when specifying a file extension list.
 
 
 ```java

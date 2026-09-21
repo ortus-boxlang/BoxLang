@@ -22,6 +22,7 @@ import java.sql.SQLException;
 
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.jdbc.BoxStatement;
@@ -232,7 +233,7 @@ public class GenericJDBCDriver implements IJDBCDriver {
 
 	/**
 	 * Transform a value according to the driver's specific needs. This allows drivers to map custom Java classes to native BL types.
-	 * The default implementation will return the value as-is.
+	 * The default implementation will message common JDBC types into BoxLang equivalents.
 	 * 
 	 * @param sqlType   The SQL type of the value, from java.sql.Types
 	 * @param value     The value to transform
@@ -242,24 +243,47 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	 */
 	@Override
 	public Object transformValue( int sqlType, Object value, BoxStatement statement ) {
+		return transformValueStatic( sqlType, value, statement );
+	}
+
+	/**
+	 * Transform a value according to the driver's specific needs. This allows drivers to map custom Java classes to native BL types.
+	 * The default implementation will message common JDBC types into BoxLang equivalents.
+	 * 
+	 * This static version allows this logic to be used generically outside of a driver instance.
+	 * 
+	 * @param sqlType   The SQL type of the value, from java.sql.Types
+	 * @param value     The value to transform
+	 * @param statement The BoxStatement instance. Statement is only used if you have a type of ResultSet.
+	 * 
+	 * @return The transformed value
+	 */
+	public static Object transformValueStatic( int sqlType, Object value, BoxStatement statement ) {
+		if ( value == null ) {
+			return null;
+		}
+
 		// Handle common JDBC LOB and complex types
-		if ( value instanceof java.sql.Blob blob ) {
+		if ( value instanceof java.sql.NClob nclob ) {
 			try {
-				return blob.getBytes( 1, ( int ) blob.length() );
+				long length = nclob.length();
+				return length == 0 ? "" : nclob.getSubString( 1, ( int ) length );
+			} catch ( Exception e ) {
+				throw new RuntimeException( "Error reading NClob data", e );
+			}
+		} else if ( value instanceof java.sql.Blob blob ) {
+			try {
+				long length = blob.length();
+				return length == 0 ? new byte[ 0 ] : blob.getBytes( 1, ( int ) length );
 			} catch ( Exception e ) {
 				throw new RuntimeException( "Error reading Blob data", e );
 			}
 		} else if ( value instanceof java.sql.Clob clob ) {
 			try {
-				return clob.getSubString( 1, ( int ) clob.length() );
+				long length = clob.length();
+				return length == 0 ? "" : clob.getSubString( 1, ( int ) length );
 			} catch ( Exception e ) {
 				throw new RuntimeException( "Error reading Clob data", e );
-			}
-		} else if ( value instanceof java.sql.NClob nclob ) {
-			try {
-				return nclob.getSubString( 1, ( int ) nclob.length() );
-			} catch ( Exception e ) {
-				throw new RuntimeException( "Error reading NClob data", e );
 			}
 		} else if ( value instanceof java.sql.SQLXML sqlxml ) {
 			try {
@@ -291,6 +315,16 @@ public class GenericJDBCDriver implements IJDBCDriver {
 		} else if ( value instanceof java.sql.RowId rowId ) {
 			// Convert RowId to byte array
 			return rowId.getBytes();
+		} else if ( sqlType == java.sql.Types.BIT ) {
+			// JDBC drivers may return Boolean for BIT, but query cells store numeric bits.
+			// Boolean caster could handle this, but fast tracking a couple common types
+			if ( value instanceof Boolean bit ) {
+				return bit ? 1 : 0;
+			} else if ( value instanceof Number number ) {
+				return number.intValue() == 1 ? 1 : 0;
+			} else {
+				return BooleanCaster.cast( value ) ? 1 : 0;
+			}
 		} else if ( value instanceof ResultSet resultSet ) {
 			return Query.fromResultSet( statement, resultSet );
 		}

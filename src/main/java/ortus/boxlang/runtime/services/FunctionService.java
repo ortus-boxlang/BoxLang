@@ -72,6 +72,9 @@ public class FunctionService extends BaseService {
 	 * Represents the set of registered member methods.
 	 * The key is the name of the method, and the value is a map
 	 * where each entry consists of a BoxLangType and its corresponding MemberDescriptor.
+	 * 
+	 * TODO: This approach doesn't allow more than one custom type to be registered for a given member method name.
+	 * because it's only unique when taken with the custom class name.
 	 *
 	 * (@code
 	 * { "foo" : { BoxLangType.ARRAY : MemberDescriptor, BoxLangType.STRING : MemberDescriptor } }
@@ -233,8 +236,9 @@ public class FunctionService extends BaseService {
 	/**
 	 * Returns the member method with the given name and type by verifying if the passed object can be cast to that type
 	 *
-	 * @param name   The name of the member method
-	 * @param object An object to cast to the type of the member method
+	 * @param context The context to use for casting
+	 * @param name    The name of the member method
+	 * @param object  An object to cast to the type of the member method
 	 *
 	 * @return The member method with the given name and type or null if none exists
 	 */
@@ -262,7 +266,7 @@ public class FunctionService extends BaseService {
 				// System.out.println( "descriptor.type: " + descriptor.type.toString() );
 
 				// A workaround to let a member method can associate with up to 3 custom types
-				if ( descriptor.type == BoxLangType.CUSTOM || descriptor.type == BoxLangType.CUSTOM2 || descriptor.type == BoxLangType.CUSTOM3 ) {
+				if ( BoxLangType.isCustomType( descriptor.type ) ) {
 					if ( descriptor.customClass.isInstance( object.get() ) ) {
 						return descriptor;
 					}
@@ -287,11 +291,45 @@ public class FunctionService extends BaseService {
 	 * @return The member method with the given name and BoxLangType or null if none exists
 	 */
 	public MemberDescriptor getMemberMethod( Key name, BoxLangType type ) {
+		return getMemberMethod( name, type, null );
+	}
+
+	/**
+	 * Returns the member method with the given name and BoxLangType
+	 *
+	 * @param name The name of the member method
+	 * @param type The BoxLangType of the member method requested
+	 *
+	 * @return The member method with the given name and BoxLangType or null if none exists
+	 */
+	public MemberDescriptor getMemberMethod( Key name, BoxLangType type, Class<?> customClass ) {
 		// For obj.method() we first look for a registered member method of this name
 		Map<BoxLangType, MemberDescriptor> targetMethodMap = this.memberMethods.get( name );
 		if ( targetMethodMap != null ) {
 			// Then we see if this type is applicable, else returns null for the BoxLangType
-			return targetMethodMap.get( type );
+			var descriptor = targetMethodMap.get( type );
+			// If no descriptor is found for this type, return null
+			if ( descriptor == null ) {
+				return null;
+			}
+			// If the type is not a custom type, return the descriptor
+			if ( !BoxLangType.isCustomType( type ) ) {
+				return descriptor;
+			}
+			// If the descriptor has a custom type class, and our method was passed a custom type class, then check them.
+			if ( customClass != null && descriptor.customClass != null ) {
+				// This method is for the exact class we're looking for.
+				if ( descriptor.customClass.isAssignableFrom( customClass ) ) {
+					return descriptor;
+				} else {
+					// There is a method of this name, or a custom class, but not we one we want.
+					// TODO: our current design only allows one custom type per member method name which is not ideal.
+					return null;
+				}
+			} else {
+				// TODO: This maybe should error if type is custom and customClass is null, but this may be a breaking change.
+				return descriptor;
+			}
 		}
 		return null;
 	}

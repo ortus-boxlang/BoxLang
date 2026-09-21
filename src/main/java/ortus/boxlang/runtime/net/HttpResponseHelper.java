@@ -147,6 +147,12 @@ public class HttpResponseHelper {
 					    metadataValue = StringCaster.cast( DoubleCaster.cast( metadataValue ) / 60 / 60 / 24 );
 				    }
 
+				    // Ensure empty strings in keys matching all remaining columns
+				    for ( Key name : cookies.getColumns().keySet() ) {
+					    if ( !cookieStruct.containsKey( name ) ) {
+						    cookieStruct.put( name, "" );
+					    }
+				    }
 				    cookieStruct.put( metadataType, metadataValue );
 			    } );
 		}

@@ -19,7 +19,9 @@ package ortus.boxlang.compiler.prettyprint;
 
 import java.io.IOException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.compiler.prettyprint.config.Config;
 
 public class StructTest extends PrettyPrintTest {
 
@@ -46,6 +48,10 @@ public class StructTest extends PrettyPrintTest {
 	@Test
 	public void testStructQuoteKeys() throws IOException {
 		printTestWithConfigFile( "struct", "quote_keys_true" );
+		assertPrintIdempotent(
+		    "struct/quote_keys_true_input.bxs",
+		    Config.loadConfig( "src/test/resources/prettyprint/struct/quote_keys_true.json" )
+		);
 	}
 
 	@Test

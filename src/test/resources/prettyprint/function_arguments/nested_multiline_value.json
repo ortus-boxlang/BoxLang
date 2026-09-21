@@ -1,0 +1,12 @@
+{
+	"maxLineLength": 115,
+	"alignConsecutiveAssignments": false,
+	"arguments": {
+		"multiline_count": 999,
+		"multiline_length": 50
+	},
+	"chain": {
+		"break_count": 2147483647,
+		"break_length": 2147483647
+	}
+}

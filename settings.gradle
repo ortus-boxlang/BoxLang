@@ -12,3 +12,6 @@ rootProject.name = "boxlang"
 // Gradle uses ':' instead of '/' to separate the path segments
 include ":src:modules:test"
 project( ":src:modules:test" ).projectDir = new File( "src/modules/test" )
+
+include ":src:modules:javaTestModule"
+project( ":src:modules:javaTestModule" ).projectDir = new File( "src/modules/javaTestModule" )

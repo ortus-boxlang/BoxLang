@@ -1,8 +1,7 @@
 package ortus.boxlang.compiler;
 
+import java.io.Closeable;
 import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Paths;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
@@ -27,7 +26,7 @@ public record ClassInfo(
     BoxSourceType sourceType,
     String source,
     long lastModified,
-    DiskClassLoader[] diskClassLoader,
+    ClassLoader[] generatedClassLoader,
     InterfaceProxyDefinition interfaceProxyDefinition,
     IBoxpiler boxpiler,
     ResolvedFilePath resolvedFilePath,
@@ -73,7 +72,7 @@ public record ClassInfo(
 		    sourceType,
 		    source,
 		    0L,
-		    new DiskClassLoader[ 1 ],
+		    new ClassLoader[ 1 ],
 		    null,
 		    boxpiler,
 		    null,
@@ -101,7 +100,7 @@ public record ClassInfo(
 		    sourceType,
 		    source,
 		    0L,
-		    new DiskClassLoader[ 1 ],
+		    new ClassLoader[ 1 ],
 		    null,
 		    boxpiler,
 		    null,
@@ -129,7 +128,7 @@ public record ClassInfo(
 		    sourceType,
 		    null,
 		    isTrustedCache() ? 0 : resolvedFilePath.absolutePath().toFile().lastModified(),
-		    new DiskClassLoader[ 1 ],
+		    new ClassLoader[ 1 ],
 		    null,
 		    boxpiler,
 		    resolvedFilePath,
@@ -173,7 +172,7 @@ public record ClassInfo(
 		    sourceType,
 		    null,
 		    isTrustedCache() ? 0 : resolvedFilePath.absolutePath().toFile().lastModified(),
-		    new DiskClassLoader[ 1 ],
+		    new ClassLoader[ 1 ],
 		    null,
 		    boxpiler,
 		    resolvedFilePath,
@@ -201,7 +200,7 @@ public record ClassInfo(
 		    sourceType,
 		    source,
 		    0L,
-		    new DiskClassLoader[ 1 ],
+		    new ClassLoader[ 1 ],
 		    null,
 		    boxpiler,
 		    null,
@@ -229,7 +228,7 @@ public record ClassInfo(
 		    null,
 		    null,
 		    0L,
-		    new DiskClassLoader[ 1 ],
+		    new ClassLoader[ 1 ],
 		    interfaceProxyDefinition,
 		    boxpiler,
 		    null,
@@ -256,45 +255,63 @@ public record ClassInfo(
 	}
 
 	/**
-	 * Get or create the DiskClassLoader for this class.
+	 * Get or create the class loader used to resolve this generated class.
 	 * Uses double-checked locking to ensure thread-safe lazy initialization.
+	 * <p>
+	 * The concrete loader is supplied by the runtime's {@link ortus.boxlang.runtime.loader.IClassLoaderFactory}:
+	 * the default builds a {@link DiskClassLoader} (which {@code defineClass()}es bytecode and
+	 * JIT-compiles on miss), while targets that cannot {@code defineClass} at runtime (e.g. Android
+	 * AOT) supply a resolve-only loader that delegates to a parent holding the pre-compiled classes.
 	 *
-	 * @return The DiskClassLoader for this class
+	 * @return The class loader for this class
 	 */
-	public DiskClassLoader getClassLoader() {
-		if ( diskClassLoader[ 0 ] != null ) {
-			return diskClassLoader[ 0 ];
+	public ClassLoader getClassLoader() {
+		if ( generatedClassLoader[ 0 ] != null ) {
+			return generatedClassLoader[ 0 ];
 		}
 		synchronized ( this ) {
-			if ( diskClassLoader[ 0 ] != null ) {
-				return diskClassLoader[ 0 ];
+			if ( generatedClassLoader[ 0 ] != null ) {
+				return generatedClassLoader[ 0 ];
 			}
-			diskClassLoader[ 0 ] = new DiskClassLoader(
-			    new URL[] {},
-			    boxpiler().getClass().getClassLoader(),
-			    Paths.get( BoxRuntime.getInstance().getConfiguration().classGenerationDirectory ),
-			    boxpiler(),
-			    classPoolName()
-			);
-			return diskClassLoader[ 0 ];
+			generatedClassLoader[ 0 ] = BoxRuntime.getInstance()
+			    .getClassLoaderFactory()
+			    .createGeneratedClassLoader( BoxRuntime.getInstance(), boxpiler(), classPoolName() );
+			return generatedClassLoader[ 0 ];
 		}
 	}
 
 	/**
-	 * Get or create the DiskClassLoader for this class.
-	 * Uses double-checked locking to ensure thread-safe lazy initialization.
+	 * Get the loader as a {@link DiskClassLoader} for the bytecode-defining compile paths
+	 * (ASM/Java/NoOp boxpilers) that need {@code defineClass*}. These run only under the default
+	 * factory, which always yields a {@link DiskClassLoader}; on resolve-only targets the boxpiler
+	 * never reaches these calls.
 	 *
-	 * @return The DiskClassLoader for this class
+	 * @return The disk class loader for this class
+	 */
+	public DiskClassLoader getDiskClassLoader() {
+		ClassLoader loader = getClassLoader();
+		if ( loader instanceof DiskClassLoader diskLoader ) {
+			return diskLoader;
+		}
+		throw new BoxRuntimeException( "Generated class loader is not a DiskClassLoader; bytecode definition is not supported on this target." );
+	}
+
+	/**
+	 * Close and discard this class's loader, if one was created. The next {@link #getClassLoader()}
+	 * call will lazily build a fresh one.
 	 */
 	public void shutdownClassLoader() {
 		synchronized ( this ) {
-			if ( diskClassLoader[ 0 ] != null ) {
-				try {
-					diskClassLoader[ 0 ].close();
-				} catch ( IOException e ) {
-					e.printStackTrace();
+			if ( generatedClassLoader[ 0 ] != null ) {
+				// Resolve-only loaders (e.g. Android) are not Closeable; only DiskClassLoader/URLClassLoader is.
+				if ( generatedClassLoader[ 0 ] instanceof Closeable closeable ) {
+					try {
+						closeable.close();
+					} catch ( IOException e ) {
+						e.printStackTrace();
+					}
 				}
-				diskClassLoader[ 0 ] = null;
+				generatedClassLoader[ 0 ] = null;
 			}
 		}
 	}
@@ -459,8 +476,9 @@ public record ClassInfo(
 	 * Clears the in-memory cache of loaded classes.
 	 */
 	public void clearCacheClass() {
-		if ( diskClassLoader[ 0 ] != null ) {
-			diskClassLoader[ 0 ].clearClassesCache();
+		// clearClassesCache is DiskClassLoader-specific; resolve-only loaders have no JIT cache to clear.
+		if ( generatedClassLoader[ 0 ] instanceof DiskClassLoader diskLoader ) {
+			diskLoader.clearClassesCache();
 		}
 	}
 

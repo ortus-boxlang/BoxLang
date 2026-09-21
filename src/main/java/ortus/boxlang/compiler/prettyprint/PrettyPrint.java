@@ -108,7 +108,8 @@ public final class PrettyPrint {
 		"arguments" : {
 			"comma_dangle" : false,
 			"multiline_count" : 3,
-			"multiline_length" : 40
+			"multiline_length" : 40,
+			"separator" : " = "
 		},
 		"braces" : {
 			"style" : "same-line",
@@ -126,7 +127,9 @@ public final class PrettyPrint {
 		},
 		"chain" : {
 			"break_count" : 3,
-			"break_length" : 60
+			"break_length" : 60,
+			"keep_receiver_count" : 0,
+			"length_strategy" : "inner-first"
 		},
 		"template" : {
 			"enabled" : true,
@@ -146,6 +149,7 @@ public final class PrettyPrint {
 		"class" : {
 			"member_order" : "preserve",
 			"member_spacing" : 1,
+			"body_spacing" : 0,
 			"property_order" : "preserve",
 			"method_order" : "preserve",
 			"method_grouping" : false,

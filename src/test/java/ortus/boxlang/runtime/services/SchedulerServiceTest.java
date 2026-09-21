@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.time.ZoneId;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,8 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class SchedulerServiceTest {
@@ -48,6 +51,12 @@ public class SchedulerServiceTest {
 	@AfterAll
 	public static void tearDownAfterAll() {
 		// runtime.shutdown( true );
+	}
+
+	@AfterEach
+	public void tearDownEach() {
+		schedulerService.removeScheduler( Key.of( "bxschedule-watcher-test" ), true, 0L );
+		schedulerService.removeScheduler( Key.of( "bxschedule-grace-test" ), true, 0L );
 	}
 
 	@DisplayName( "Test it can get an instance of the service" )
@@ -147,5 +156,105 @@ public class SchedulerServiceTest {
 		assertThrows( BoxRuntimeException.class, () -> {
 			schedulerService.newScheduler( "testDup", null, null, false );
 		} );
+	}
+
+	// --------------------------------------------------------------------------
+	// onTasksFileChanged tests (reloadOnChange watcher)
+	// --------------------------------------------------------------------------
+
+	@Test
+	@DisplayName( "When tasks.json changes externally (outside the 5s grace window), onTasksFileChanged reloads the affected scheduler" )
+	void testExternalFileChangeTriggerReload() {
+		Key		testSchedulerKey	= Key.of( "bxschedule-watcher-test" );
+		String	schedulerName		= testSchedulerKey.getName();
+
+		// Build a minimal task definition for the test scheduler
+		Array	tasks				= new Array();
+		tasks.add( Struct.ofNonConcurrent(
+		    "task", "watcherTestTask",
+		    "scheduler", schedulerName,
+		    "url", "http://localhost/watcher-test",
+		    "interval", "3600",
+		    "cronTime", "",
+		    "startDate", "", "startTime", "",
+		    "endDate", "", "endTime", "",
+		    "repeat", 0,
+		    "exclude", "",
+		    "port", 80,
+		    "username", "", "password", "",
+		    "proxyServer", "", "proxyPort", 0,
+		    "proxyUser", "", "proxyPassword", "",
+		    "publish", false,
+		    "path", "", "file", "",
+		    "overwrite", true, "resolveURL", false,
+		    "retryCount", 0,
+		    "onException", "", "oncomplete", "", "eventhandler", "",
+		    "cluster", false, "isDaily", false, "paused", false,
+		    "group", ""
+		) );
+
+		// Write tasks to disk — saveTasksToDisk stamps lastSelfWriteMs to now
+		schedulerService.saveTasksToDisk( tasks );
+
+		// Simulate grace window elapsed by zeroing the self-write timestamp
+		schedulerService.lastSelfWriteMs = 0;
+
+		// Trigger the reload handler directly (no actual file watcher needed)
+		schedulerService.onTasksFileChanged();
+
+		// The scheduler should now be registered and started
+		assertThat( schedulerService.hasScheduler( testSchedulerKey ) ).isTrue();
+		assertThat( ( ( BaseScheduler ) schedulerService.getScheduler( testSchedulerKey ) ).hasTask( "watcherTestTask" ) ).isTrue();
+
+		// Cleanup: remove test tasks from disk
+		schedulerService.lastSelfWriteMs = 0;
+		schedulerService.saveTasksToDisk( new Array() );
+	}
+
+	@Test
+	@DisplayName( "When tasks.json changes within the 5s self-write grace window, onTasksFileChanged suppresses the reload" )
+	void testSelfWriteGracePreventsReload() {
+		Key		testSchedulerKey	= Key.of( "bxschedule-grace-test" );
+		String	schedulerName		= testSchedulerKey.getName();
+
+		// Ensure no pre-existing scheduler
+		schedulerService.removeScheduler( testSchedulerKey, true, 0L );
+
+		// Write tasks to disk — saveTasksToDisk stamps lastSelfWriteMs to now (within grace)
+		Array tasks = new Array();
+		tasks.add( Struct.ofNonConcurrent(
+		    "task", "graceTestTask",
+		    "scheduler", schedulerName,
+		    "url", "http://localhost/grace-test",
+		    "interval", "3600",
+		    "cronTime", "",
+		    "startDate", "", "startTime", "",
+		    "endDate", "", "endTime", "",
+		    "repeat", 0,
+		    "exclude", "",
+		    "port", 80,
+		    "username", "", "password", "",
+		    "proxyServer", "", "proxyPort", 0,
+		    "proxyUser", "", "proxyPassword", "",
+		    "publish", false,
+		    "path", "", "file", "",
+		    "overwrite", true, "resolveURL", false,
+		    "retryCount", 0,
+		    "onException", "", "oncomplete", "", "eventhandler", "",
+		    "cluster", false, "isDaily", false, "paused", false,
+		    "group", ""
+		) );
+		schedulerService.saveTasksToDisk( tasks );
+
+		// lastSelfWriteMs is now set to System.currentTimeMillis() — within the 5s grace window
+		// Trigger the reload handler: the event should be suppressed
+		schedulerService.onTasksFileChanged();
+
+		// The scheduler must NOT have been registered (reload was suppressed)
+		assertThat( schedulerService.hasScheduler( testSchedulerKey ) ).isFalse();
+
+		// Cleanup: remove test tasks from disk
+		schedulerService.lastSelfWriteMs = 0;
+		schedulerService.saveTasksToDisk( new Array() );
 	}
 }

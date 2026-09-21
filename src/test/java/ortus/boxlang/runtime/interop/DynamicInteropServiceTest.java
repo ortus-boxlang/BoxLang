@@ -1540,4 +1540,43 @@ public class DynamicInteropServiceTest {
 		assertThat( result ).isEqualTo( "brad" );
 	}
 
+	@DisplayName( "A Java exception with a null message exposes an empty string - BL-2569" )
+	@Test
+	void testJavaExceptionNullMessageIsEmptyString() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			try {
+				throw( createObject( "java", "java.lang.RuntimeException" ).init() );
+			} catch( any e ) {
+				result = e.message;
+				wasNull = isNull( e.message );
+				concatenated = "[" & e.message & "]";
+			}
+			""", context);
+		// @formatter:on
+
+		// Lucee and ACF always surface an empty string here, never null
+		assertThat( variables.get( Key.result ) ).isEqualTo( "" );
+		assertThat( variables.get( Key.of( "wasNull" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "concatenated" ) ) ).isEqualTo( "[]" );
+	}
+
+	@DisplayName( "A Java exception with a real message still passes it through - BL-2569" )
+	@Test
+	void testJavaExceptionMessageStillPassesThrough() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			try {
+				throw( createObject( "java", "java.lang.RuntimeException" ).init( "boom" ) );
+			} catch( any e ) {
+				result = e.message;
+			}
+			""", context);
+		// @formatter:on
+
+		assertThat( variables.get( Key.result ) ).isEqualTo( "boom" );
+	}
+
 }

@@ -19,7 +19,7 @@ Result: This array has 4 elements.
 
 ### Member function version.
 
-Using the member function. This version also works in ACF2018.
+Using the member function.
 
 <a href="https://try.boxlang.io/?code=eJxLLCpSsFWIVuDiNNTh4jQCYmOuWGuuxBygaGJRkV5BaXGGhoKJkYKmNVd5UWZJqn9pSUFpiYaCUkhGZjFISWKlQkZisYKSgpoCUJcakJGak5qbmldSrKcE0gUA358aew%3D%3D" target="_blank">Run Example</a>
 

@@ -22,6 +22,10 @@ package ortus.boxlang.runtime.bifs.global.encryption;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -240,6 +244,28 @@ public class HashTest {
 		          """,
 		    context );
 
+	}
+
+	@DisplayName( "It hashes the raw bytes from a self-extracting file" )
+	@Test
+	public void hashSelfExtractingFileBytes() throws IOException {
+		Path	selfExtractingFile	= Files.createTempFile( "boxlang-self-extracting", ".bin" );
+		byte[]	textHeader			= "#!/bin/sh\necho launcher\n".getBytes( "UTF-8" );
+		byte[]	binaryPayload		= new byte[] { 0, 1, 2, ( byte ) 0xFF, 3, 4 };
+		byte[]	contents			= new byte[ textHeader.length + binaryPayload.length ];
+		System.arraycopy( textHeader, 0, contents, 0, textHeader.length );
+		System.arraycopy( binaryPayload, 0, contents, textHeader.length, binaryPayload.length );
+		Files.write( selfExtractingFile, contents );
+
+		variables.put( Key.of( "testFile" ), selfExtractingFile.toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    result = hash( fileReadBinary( variables.testFile ), "MD5" );
+		    """,
+		    context );
+
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "006d22594c086707b7eec8fc67071850" );
+		Files.deleteIfExists( selfExtractingFile );
 	}
 
 }

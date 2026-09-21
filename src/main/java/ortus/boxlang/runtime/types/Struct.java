@@ -76,6 +76,11 @@ import ortus.boxlang.runtime.util.RegexBuilder;
 public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 
 	/**
+	 * Maximum number of keys to show in key-not-found error messages.
+	 */
+	public static final int							KEYS_ERROR_DISPLAY_LIMIT			= 20;
+
+	/**
 	 * This is to help prevent endless recursion when converting a struct to a string. Technically, this approach only applies to structs
 	 * and would not prevent two arrays with circular references. If we run into that, we can probably move this static field to the
 	 * IType interface and add the same logic to the Array class and any other type that might have circular references like query.
@@ -193,7 +198,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 
 	/**
 	 * Create a default struct
-	 * 
+	 *
 	 * @param concurrent Whether to use a concurrent map implementation
 	 */
 	public Struct( boolean concurrent ) {
@@ -589,7 +594,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 
 	/**
 	 * Set a value in the struct by a Key object.
-	 * 
+	 *
 	 * I exist since I can be used internally to bypass overridden put() methods in subclasses
 	 * such as ArgumentScope, which have undesirable behaviors in scenarios such as putAll().
 	 *
@@ -747,7 +752,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	@Override
 	public Collection<Object> values() {
 		return wrapped.values().stream()
-		    .map( entry -> unWrapNullInternal( entry ) )
+		    .map( this::unWrapNullInternal )
 		    .collect( Collectors.toList() );
 	}
 
@@ -879,7 +884,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 
 	/**
 	 * Get the BoxLang type name for this type
-	 * 
+	 *
 	 * @return The BoxLang type name
 	 */
 	@Override
@@ -969,11 +974,31 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 		Object value = getRaw( key );
 		if ( value == null && !safe ) {
 			throw new KeyNotFoundException(
-			    // TODO: Limit the number of keys. There could be thousands!
-			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", key.getName(), getKeysAsStrings() ), this
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", key.getName(), formatKeysForError( getKeysAsStrings() ) ), this
 			);
 		}
 		return unWrapNullInternal( value );
+	}
+
+	/**
+	 * Format keys for inclusion in error messages, truncating when the list is large.
+	 *
+	 * @param keys The key names to format
+	 *
+	 * @return A string representation of the key list with overflow marker when truncated
+	 */
+	public static String formatKeysForError( List<String> keys ) {
+		if ( keys == null || keys.isEmpty() ) {
+			return "[]";
+		}
+
+		if ( keys.size() <= KEYS_ERROR_DISPLAY_LIMIT ) {
+			return keys.toString();
+		}
+
+		int				overflow	= keys.size() - KEYS_ERROR_DISPLAY_LIMIT;
+		List<String>	displayKeys	= keys.subList( 0, KEYS_ERROR_DISPLAY_LIMIT );
+		return displayKeys.toString() + " ... +" + overflow + " more";
 	}
 
 	/**

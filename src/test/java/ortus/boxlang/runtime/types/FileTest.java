@@ -22,12 +22,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileTest {
@@ -37,6 +40,11 @@ public class FileTest {
 	private static String	emptyFile		= "src/test/resources/tmp/FileTest/file-write-test.txt";
 	private static BoxFile	readFile		= null;
 	private static BoxFile	writeFile		= null;
+
+	@BeforeAll
+	public static void setup() {
+		BoxRuntime.getInstance( true );
+	}
 
 	@AfterAll
 	public static void teardown() throws IOException {
@@ -68,6 +76,8 @@ public class FileTest {
 		readFile = new BoxFile( testFile );
 		assertThat( readFile.filename ).isEqualTo( "file-test.txt" );
 		assertThat( readFile.mode ).isEqualTo( BoxFile.Mode.NONE );
+		BoxFile relativeFile = new BoxFile( "file-test.txt" );
+		assertThat( relativeFile.directory ).isEqualTo( Path.of( "file-test.txt" ).toAbsolutePath().getParent().toString() );
 		readFile.openAs( BoxFile.Mode.READ );
 		assertFalse( readFile.isEOF() );
 		readFile.close();
@@ -91,6 +101,15 @@ public class FileTest {
 		assertThat( writeFile.filename ).isEqualTo( "file-test.txt" );
 		assertThat( writeFile.mode ).isEqualTo( BoxFile.Mode.APPEND );
 		writeFile.close();
+	}
+
+	@DisplayName( "Uses the filesystem root as the directory for files in the root" )
+	@Test
+	void testFileInFilesystemRootDirectory() {
+		Path	root		= Path.of( "" ).toAbsolutePath().getRoot();
+		BoxFile	rootFile	= new BoxFile( root.resolve( "file.txt" ) );
+
+		assertThat( rootFile.directory ).isEqualTo( root.toString() );
 	}
 
 }

@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.util.conversion.serializers;
 
 import java.io.IOException;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -26,11 +27,14 @@ import com.fasterxml.jackson.jr.ob.api.ValueWriter;
 import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
+import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -41,11 +45,10 @@ public class BoxQuerySerializer implements ValueWriter {
 
 	// ThreadLocal to keep track of seen structs in the current thread
 	private static final ThreadLocal<IdentityHashMap<Query, Boolean>>	visitedQuerys		= ThreadLocal.withInitial( IdentityHashMap::new );
+	private static final BoxRuntime										runtime				= BoxRuntime.getInstance();
 
 	// ThreadLocal for query format
 	public static final ThreadLocal<String>								currentQueryFormat	= new ThreadLocal<>();
-
-	private static BoxRuntime											runtime				= BoxRuntime.getInstance();
 
 	/**
 	 * Custom BoxLang Query Serializer
@@ -68,44 +71,65 @@ public class BoxQuerySerializer implements ValueWriter {
 				if ( queryFormat == null ) {
 					queryFormat = "row";
 				}
-				final Object valueToSerialize;
-
-				// "row" is the same as "false". Top level struct with columns (array of strings), data (array of arrays)
-				if ( queryFormat.equals( "row" ) || queryFormat.equals( "false" ) ) {
-					valueToSerialize = Struct.linkedOf(
-					    "columns", bxQuery.getColumns().keySet().stream().map( c -> c.getName() ).toArray( String[]::new ),
-					    "data", bxQuery.getData()
-					);
-					runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, valueToSerialize ) );
-					context.writeValue( valueToSerialize );
-					// "column" is the same as "true". Top level struct with rowcount, columns (array of strings), data (struct with column name as key and array of
-					// values as value)
-				} else if ( queryFormat.equals( "column" ) || queryFormat.equals( "true" ) ) {
-					var						data	= new Struct( IStruct.TYPES.LINKED );
-					Map<Key, QueryColumn>	cols	= bxQuery.getColumns();
-					for ( var col : cols.keySet() ) {
-						data.put( col, cols.get( col ).getColumnData() );
-					}
-					valueToSerialize = Struct.linkedOf(
-					    "rowCount", bxQuery.size(),
-					    "columns", bxQuery.getColumns().keySet().stream().map( c -> c.getName() ).toArray( String[]::new ),
-					    "data", data
-					);
-					runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, valueToSerialize ) );
-					context.writeValue( valueToSerialize );
-					// "struct" is what we get by default (array of structs)
-				} else if ( queryFormat.equals( "struct" ) ) {
-					valueToSerialize = bxQuery.toArrayOfStructs();
-					runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, valueToSerialize ) );
-					context.writeValue( valueToSerialize );
-				} else {
-					throw new BoxRuntimeException( "Invalid queryFormat: " + queryFormat );
+				Map<Key, QueryColumn>	cols			= bxQuery.getColumns();
+				// Read raw values to preserve nulls regardless of queryNullToEmpty.
+				List<Object[]>			rows			= bxQuery.getData();
+				Object					serializedQuery	= createInterceptedValue( queryFormat, cols, rows, bxQuery );
+				if ( runtime.getInterceptorService().hasState( BoxEvent.ON_JSON_QUERY_SERIALIZE ) ) {
+					runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, serializedQuery ) );
 				}
+				context.writeValue( serializedQuery );
 			} finally {
 				// Remove the query from the set of seen queries
 				visited.remove( bxQuery );
 			}
 		}
+	}
+
+	private static Object createInterceptedValue( String queryFormat, Map<Key, QueryColumn> columns, List<Object[]> rows, Query query ) {
+		if ( queryFormat.equals( "row" ) || queryFormat.equals( "false" ) ) {
+			List<Object[]> serializedRows = rows.stream()
+			    .map( row -> serializeRow( columns, row ) )
+			    .toList();
+			return Struct.linkedOf(
+			    "columns", columns.keySet().stream().map( Key::getName ).toArray( String[]::new ),
+			    "data", serializedRows
+			);
+		}
+		if ( queryFormat.equals( "column" ) || queryFormat.equals( "true" ) ) {
+			var data = new Struct( IStruct.TYPES.LINKED );
+			for ( var entry : columns.entrySet() ) {
+				QueryColumn column = entry.getValue();
+				data.put( entry.getKey(), rows.stream().map( row -> serializedValue( column, row[ column.getIndex() ] ) ).toArray() );
+			}
+			return Struct.linkedOf(
+			    "rowCount", query.size(),
+			    "columns", columns.keySet().stream().map( Key::getName ).toArray( String[]::new ),
+			    "data", data
+			);
+		}
+		if ( queryFormat.equals( "struct" ) ) {
+			Array serializedData = new Array();
+			for ( Object[] row : rows ) {
+				IStruct serializedRow = new Struct( IStruct.TYPES.LINKED );
+				columns.forEach( ( name, column ) -> serializedRow.put( name, serializedValue( column, row[ column.getIndex() ] ) ) );
+				serializedData.add( serializedRow );
+			}
+			return serializedData;
+		}
+		throw new BoxRuntimeException( "Invalid queryFormat: " + queryFormat );
+	}
+
+	private static Object[] serializeRow( Map<Key, QueryColumn> columns, Object[] row ) {
+		Object[] serializedRow = new Object[ row.length ];
+		for ( QueryColumn column : columns.values() ) {
+			serializedRow[ column.getIndex() ] = serializedValue( column, row[ column.getIndex() ] );
+		}
+		return serializedRow;
+	}
+
+	private static Object serializedValue( QueryColumn column, Object value ) {
+		return column.getType() == QueryColumnType.BIT && value != null ? BooleanCaster.cast( value ) : value;
 	}
 
 	@Override

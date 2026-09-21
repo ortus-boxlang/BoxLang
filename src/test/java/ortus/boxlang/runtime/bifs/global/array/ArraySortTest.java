@@ -323,22 +323,24 @@ public class ArraySortTest {
 	@DisplayName( "It should work on native arrays" )
 	@Test
 	public void testNativeArray() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		         threadList = createObject("java", "java.lang.Thread")
-		         	.getAllStackTraces().keySet().toArray();
+			// Get Java array
+			threadList = ["B","C","A"].toArray();
 
-		    result = threadList.toList();
+			result = threadList.toList();
 
-		         // Sort the list
-		         arraySort( threadList, (a, b)  => {
-		         	return a.compareTo(b);
-		         });
+			// Sort the list
+			arraySort( threadList, (a, b)  => {
+				return a.compareTo(b);
+			});
 
-		      result2 = threadList.toList();
+			result2 = threadList.toList();
 
-		      """,
+		         """,
 		    context );
+		// @formatter:on
 		assertThat( variables.getAsString( result ) ).isNotEqualTo( variables.getAsString( Key.of( "result2" ) ) );
 
 	}

@@ -1,0 +1,37 @@
+/**
+ * Test fixture: a nested module that its parent switches off via `this.modules`.
+ * It declares itself enabled so the test proves the parent's override is what disables it.
+ */
+class {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Module Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	this.version		= "1.0.0";
+	this.mapping		= "disabledChild";
+	this.author			= "Ortus Solutions";
+	this.description	= "A nested module disabled by its parent";
+	this.enabled		= true;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Module Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	function configure(){
+		settings					= {};
+		interceptors				= [];
+		customInterceptionPoints	= [];
+	}
+
+	function onLoad(){
+	}
+
+	function onUnload(){
+	}
+
+}

@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.loader;
 
 import java.net.URL;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -41,7 +40,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ClassNotFoundBoxLangException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.util.BLCollector;
-import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.ClassLoaderUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -252,7 +251,7 @@ public class ClassLocator extends ClassLoader {
 			    String.format(
 			        "The resolver [%s] was not found in the registered resolvers. Valid resolvers are [%s]",
 			        prefix,
-			        getResolvedPrefixes()
+			        Struct.formatKeysForError( getResolvedPrefixes() )
 			    ) );
 		}
 		return target;
@@ -662,7 +661,7 @@ public class ClassLocator extends ClassLoader {
 		        .map( item -> FileSystemUtil.expandPath( context, ( String ) item ).absolutePath().toString() )
 		        .collect( BLCollector.toArray() )
 		);
-		String				loaderCacheKey	= EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );
+		String				loaderCacheKey	= ClassLoaderUtil.hashSorted( loadPathsUrls );
 		DynamicClassLoader	classLoader		= this.classLoaders.computeIfAbsent(
 		    loaderCacheKey,
 		    key -> {
@@ -930,6 +929,23 @@ public class ClassLocator extends ClassLoader {
 	 */
 	public void clearClassLoaders() {
 		this.classLoaders.clear();
+	}
+
+	/**
+	 * Remove all cached {@code ClassLocation} entries from the resolver cache whose
+	 * underlying {@code Class<?>} was loaded by the given {@code ClassLoader}.
+	 *
+	 * This is used when a {@link DynamicClassLoader} is closed or removed, to ensure
+	 * stale class references are purged from the global resolver cache and will be
+	 * re-resolved on the next request.
+	 *
+	 * @param classLoader The class loader whose cached classes should be removed
+	 */
+	public void clearForClassLoader( ClassLoader classLoader ) {
+		this.resolverCache.values().removeIf( location -> {
+			Class<?> clazz = location.clazz();
+			return clazz != null && clazz.getClassLoader() == classLoader;
+		} );
 	}
 
 }

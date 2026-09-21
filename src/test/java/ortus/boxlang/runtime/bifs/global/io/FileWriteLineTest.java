@@ -95,7 +95,7 @@ public class FileWriteLineTest {
 		      fileObj.close();
 		            """,
 		    context );
-		String		fileContents	= ( String ) FileSystemUtil.read( emptyFile );
+		String		fileContents	= FileSystemUtil.readString( emptyFile );
 		Object[]	lines			= fileContents.split( System.getProperty( "line.separator" ) );
 		assertThat( lines.length ).isEqualTo( 4 );
 	}
@@ -118,7 +118,7 @@ public class FileWriteLineTest {
 		         fileObj.close();
 		               """,
 		    context );
-		String		fileContents	= ( String ) FileSystemUtil.read( emptyFile );
+		String		fileContents	= FileSystemUtil.readString( emptyFile );
 		Object[]	lines			= fileContents.split( System.getProperty( "line.separator" ) );
 		assertThat( lines.length ).isEqualTo( 5 );
 	}
@@ -138,7 +138,7 @@ public class FileWriteLineTest {
 		      fileObj.close();
 		            """,
 		    context );
-		String		fileContents	= ( String ) FileSystemUtil.read( emptyFile );
+		String		fileContents	= FileSystemUtil.readString( emptyFile );
 		Object[]	lines			= fileContents.split( System.getProperty( "line.separator" ) );
 		assertThat( lines.length ).isEqualTo( 4 );
 	}
@@ -156,7 +156,7 @@ public class FileWriteLineTest {
 		    	    FileWriteLine( testFile, "awesome" );
 		    """,
 		    context );
-		String		fileContents	= ( String ) FileSystemUtil.read( emptyFile );
+		String		fileContents	= FileSystemUtil.readString( emptyFile );
 		Object[]	lines			= fileContents.split( System.getProperty( "line.separator" ) );
 		assertThat( lines.length ).isEqualTo( 4 );
 	}

@@ -83,7 +83,11 @@ public class QueryMeta extends BoxMeta<Query> {
 			        Key._NAME, col.getKey().toString(),
 			        Key.type, col.getValue().getType().toString(),
 			        Key.sqltype, col.getValue().getSQLType(),
-			        Key.index, col.getValue().getIndex()
+			        Key.index, col.getValue().getIndex(),
+			        Key.nullable, col.getValue().getNullable(),
+			        Key.readOnly, col.getValue().getReadOnly(),
+			        Key.decimals, col.getValue().getDecimals(),
+			        Key.maxLength, col.getValue().getMaxLength()
 			    ) );
 		}
 		this.columnsMeta = colMeta.toUnmodifiable();

@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.components.jdbc;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,6 +38,7 @@ import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.QueryOptions;
 import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.jdbc.drivers.JDBCDriverFeature;
+import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -264,6 +266,12 @@ public class StoredProc extends Component {
 			int				sqlType		= queryType.sqlType;
 			Object			value		= attr.get( Key.value );
 			if ( varType.contains( "in" ) ) {
+				boolean isNull = BooleanCaster.cast( attr.getOrDefault( Key.nulls, false ) );
+				if ( isNull ) {
+					value = null;
+				} else {
+					value = QueryColumnType.toSQLType( queryType, value, context, procedure.getConnection() );
+				}
 				if ( debug ) {
 					String paramName = attr.getAsString( Key.DBVarName );
 					if ( paramName != null ) {
@@ -271,17 +279,18 @@ public class StoredProc extends Component {
 					} else {
 						paramName = "";
 					}
-					QueryColumnType typeInfo = QueryColumnType.fromSQLType( sqlType );
+					QueryColumnType	typeInfo	= QueryColumnType.fromSQLType( sqlType );
+					String			debugValue	= value == null ? null : value.toString();
+					if ( debugValue != null && debugValue.length() > 100 ) {
+						debugValue = debugValue.substring( 0, 100 ) + "...";
+					}
 					System.out.println(
 					    "Procedure [" + procedureName + "] Setting IN param " + paramName +
 					        "in position " + ( i + 1 + paramOffset ) +
-					        " (type: " + typeInfo + ")"
+					        " (type: " + typeInfo + ")" +
+					        " (null: " + isNull + ")" +
+					        " (value: " + debugValue + ")"
 					);
-				}
-				if ( BooleanCaster.cast( attr.getOrDefault( Key.nulls, false ) ) ) {
-					value = null;
-				} else {
-					value = QueryColumnType.toSQLType( queryType, value, context, procedure.getConnection() );
 				}
 				procedure.setObject( i + 1 + paramOffset, value, sqlType );
 			}
@@ -349,35 +358,38 @@ public class StoredProc extends Component {
 	}
 
 	/**
-	 * Validate that all ProcResult components either have a resultSet attribute, or don't. Positional vs indexed.
-	 * Throw an exception if there is a mix of both.
-	 *
-	 * Return a map of resultSet index to ProcResult attribute struct. If they were positional, then assign them indexes starting at 1.
-	 * If they were indexed, then use the provided index. There may be gaps in the indexes. If more than one procresult used the same index, the last one wins (overwrite)
+	 * Return a map of resultSet index to ProcResult attribute struct. Explicit resultSet indexes are preserved, while missing
+	 * resultSet attributes are assigned the next available unused result-set index.
+	 * If more than one procresult uses the same explicit index, the last one wins (overwrite).
 	 *
 	 * @param procResults The array of proc result definitions
 	 *
 	 * @return Map of resultSet index to ProcResult attribute struct.
 	 */
 	private Map<Integer, IStruct> processProcResults( Array procResults ) {
-		boolean					hasPositional	= false;
-		boolean					hasIndexed		= false;
-		Map<Integer, IStruct>	resultMap		= new HashMap<>();
+		Map<Integer, IStruct>	resultMap				= new HashMap<>();
+		Set<Integer>			usedResultSetIndexes	= new HashSet<>();
+
+		// Reserve explicit indexes first so positional results never overwrite an explicitly indexed result.
 		for ( int i = 0; i < procResults.size(); i++ ) {
-			IStruct	attr		= ( IStruct ) procResults.get( i );
-			boolean	thisIndexed	= attr.containsKey( Key.resultSet );
-			if ( thisIndexed ) {
-				hasIndexed = true;
-				resultMap.put( IntegerCaster.cast( attr.get( Key.resultSet ) ), attr );
-			} else {
-				hasPositional = true;
-				resultMap.put( i + 1, attr );
+			IStruct attr = ( IStruct ) procResults.get( i );
+			if ( attr.containsKey( Key.resultSet ) ) {
+				int resultSetIndex = IntegerCaster.cast( attr.get( Key.resultSet ) );
+				resultMap.put( resultSetIndex, attr );
+				usedResultSetIndexes.add( resultSetIndex );
 			}
-			if ( hasPositional && hasIndexed ) {
-				// World's best error message. So descriptive!
-				throw new BoxRuntimeException( "Cannot mix positional and indexed ProcResult components in a StoredProc. "
-				    + " ProcParm [" + attr.getAsString( Key._name ) + "] is " + ( thisIndexed ? "indexed" : "positional" ) + ","
-				    + " but the " + ( resultMap.size() - 1 ) + " ProcResult component(s) above it are " + ( thisIndexed ? "positional" : "indexed" ) + "." );
+		}
+
+		int nextAvailableResultSetIndex = 1;
+		for ( int i = 0; i < procResults.size(); i++ ) {
+			IStruct attr = ( IStruct ) procResults.get( i );
+			if ( !attr.containsKey( Key.resultSet ) ) {
+				while ( usedResultSetIndexes.contains( nextAvailableResultSetIndex ) ) {
+					nextAvailableResultSetIndex++;
+				}
+				resultMap.put( nextAvailableResultSetIndex, attr );
+				usedResultSetIndexes.add( nextAvailableResultSetIndex );
+				nextAvailableResultSetIndex++;
 			}
 		}
 		return resultMap;
@@ -401,14 +413,21 @@ public class StoredProc extends Component {
 			    && attr.getAsString( Key.variable ) != null && !attr.getAsString( Key.variable ).isEmpty() ) {
 
 				// Get the out sql type, default to OBJECT if not specified
-				QueryColumnType BLType = QueryColumnType.fromString( ( String ) attr.getOrDefault( Key.sqltype, "OBJECT" ) );
+				QueryColumnType	BLType	= QueryColumnType.fromString( ( String ) attr.getOrDefault( Key.sqltype, "OBJECT" ) );
 
 				// Get the value from the procedure, transform it if needed
-				Object value = driver.transformValue(
+				Object			value	= driver.transformValue(
 				    BLType.sqlType,
 				    procedure.getObject( i + 1 + paramOffset ),
 				    procedure
 				);
+				// Oracle uses refcursor type out params for proc results. In that case, null needs to stay undefined
+				if ( value == null && BLType == QueryColumnType.REFCURSOR ) {
+					continue;
+				}
+				if ( value == null && Compare.nullEqualsEmptyString ) {
+					value = "";
+				}
 
 				// Set the variable in the context
 				ExpressionInterpreter.setVariable( context, attr.getAsString( Key.variable ), value );

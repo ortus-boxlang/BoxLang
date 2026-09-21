@@ -95,7 +95,7 @@ public class FileAppendTest {
 		      fileObj.close();
 		            """,
 		    context );
-		assertThat( FileSystemUtil.read( emptyFile, null, null ) ).isEqualTo( "abcde" );
+		assertThat( FileSystemUtil.readString( emptyFile ) ).isEqualTo( "abcde" );
 	}
 
 	@DisplayName( "It tests the BIF FileAppend on an existing file object opened in append mode" )
@@ -115,7 +115,7 @@ public class FileAppendTest {
 		            """,
 		    context );
 		testFileObj.close();
-		assertThat( FileSystemUtil.read( emptyFile, null, null ) ).isEqualTo( "abcde" );
+		assertThat( FileSystemUtil.readString( emptyFile ) ).isEqualTo( "abcde" );
 	}
 
 	@DisplayName( "It tests the BIF FileAppend with a string path" )
@@ -132,7 +132,7 @@ public class FileAppendTest {
 		    fileAppend( testFile, "e" );
 		            """,
 		    context );
-		assertThat( FileSystemUtil.read( emptyFile, null, null ) ).isEqualTo( "abcde" );
+		assertThat( FileSystemUtil.readString( emptyFile ) ).isEqualTo( "abcde" );
 	}
 
 }

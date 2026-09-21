@@ -64,6 +64,8 @@ import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
+import ortus.boxlang.runtime.loader.DynamicClassLoaderFactory;
+import ortus.boxlang.runtime.loader.IClassLoaderFactory;
 import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
@@ -180,9 +182,18 @@ public class BoxRuntime implements java.io.Closeable {
 	private Set<String>							runtimeFileExtensions	= new HashSet<>( Arrays.asList( ".bx", ".bxm", ".bxs" ) );
 
 	/**
-	 * The runtime class loader
+	 * The runtime class loader. Typed as {@link ClassLoader} so deployment targets can supply
+	 * a non-{@code URLClassLoader} implementation via {@link #setClassLoaderFactory}.
 	 */
-	private DynamicClassLoader					runtimeLoader;
+	private ClassLoader							runtimeLoader;
+
+	/**
+	 * The factory used to build the runtime + module class loaders. Defaults to the standard
+	 * JVM {@link DynamicClassLoaderFactory}. Must be set BEFORE the runtime is booted
+	 * ({@code getInstance(...)}); alternative targets (e.g. Android) swap it to avoid the
+	 * JVM-only {@code URLClassLoader}.
+	 */
+	private static volatile IClassLoaderFactory	classLoaderFactory		= new DynamicClassLoaderFactory();
 
 	/**
 	 * The CLI Options that where used to start the runtime, if any.
@@ -374,6 +385,11 @@ public class BoxRuntime implements java.io.Closeable {
 
 		this.configuration.process( loader.mergeEnvironmentOverrides( overrideConfig ) );
 
+		// This is a temp workaround for the bx-plus module which needs the seed to be on disk
+		this.configuration.security.ensureSeedFile();
+		// Materialize the seed after all overrides are applied so legacy integrations can read the runtime-home seed file during startup.
+		this.configuration.security.getSecretSeed();
+
 		// Announce so any runtime additions - after all configuration settings have been applied
 		this.interceptorService.announce(
 		    BoxEvent.ON_CONFIGURATION_LOAD,
@@ -428,16 +444,6 @@ public class BoxRuntime implements java.io.Closeable {
 		// Global Directories to ensure
 		List<String> globalDirectories = Arrays.asList( "classes", "components", "schedulers" );
 		globalDirectories.forEach( dir -> FileSystemUtil.createDirectoryIfMissing( this.runtimeHome.resolve( "global" ).resolve( dir ) ) );
-
-		// Generate a seed file if missing
-		Path seedPath = this.runtimeHome.resolve( "config" ).resolve( ".seed" );
-		if ( Files.notExists( seedPath ) ) {
-			try {
-				Files.write( seedPath, EncryptionUtil.generateKeyAsString().getBytes() );
-			} catch ( IOException e ) {
-				throw new BoxRuntimeException( "Could not create runtime home seed file at [" + seedPath + "]", e );
-			}
-		}
 
 		// Copy config/boxlang.json if missing
 		FileSystemUtil.copyResourceToPath(
@@ -513,12 +519,9 @@ public class BoxRuntime implements java.io.Closeable {
 		// Ensure home assets
 		ensureHomeAssets();
 
-		// Load the Dynamic Class Loader for the runtime
-		this.runtimeLoader = new DynamicClassLoader(
-		    Key.runtime,
-		    getConfiguration().getJavaLibraryPaths(),
-		    this.getClass().getClassLoader(),
-		    true );
+		// Build the runtime class loader via the configured factory (default = DynamicClassLoader).
+		// Targets that cannot use URLClassLoader (e.g. Android) install a factory before boot.
+		this.runtimeLoader = classLoaderFactory.createRuntimeClassLoader( this, this.getClass().getClassLoader() );
 
 		// Announce it to the services
 		this.interceptorService.onConfigurationLoad();
@@ -589,6 +592,18 @@ public class BoxRuntime implements java.io.Closeable {
 		// Announce it baby! Runtime is up
 		this.interceptorService.announce(
 		    BoxEvent.ON_RUNTIME_START );
+
+		// One-shot, fire-and-forget cleanup of stale temp JAR files in the shared
+		// temp directory. Deferred to a virtual thread so it never blocks startup, and
+		// only runs now - after the runtime, its services, modules, and global services
+		// have fully started - so it cannot race against any JARs they load.
+		// Only runs when JAR temp file caching is enabled; when disabled there are no
+		// temp JAR files to clean up.
+		if ( DynamicClassLoader.isJarTempFileCachingEnabled() ) {
+			Thread.ofVirtual()
+			    .name( "dynamic-classloader-cleanup" )
+			    .start( () -> DynamicClassLoader.cleanupStaleJarTempFiles() );
+		}
 
 		// Setting this to a non-null value is the flag that lets everyone know the instance is fully started
 		this.startTime = Instant.now();
@@ -874,10 +889,32 @@ public class BoxRuntime implements java.io.Closeable {
 	/**
 	 * Get runtime class loader
 	 *
-	 * @return {@link DynamicClassLoader} or null if the runtime has not started
+	 * @return The runtime {@link ClassLoader} or null if the runtime has not started
 	 */
-	public DynamicClassLoader getRuntimeLoader() {
+	public ClassLoader getRuntimeLoader() {
 		return instance.runtimeLoader;
+	}
+
+	/**
+	 * Get the factory used to build the runtime + module class loaders.
+	 *
+	 * @return the class loader factory
+	 */
+	public IClassLoaderFactory getClassLoaderFactory() {
+		return classLoaderFactory;
+	}
+
+	/**
+	 * Set the factory used to build the runtime + module class loaders. MUST be called BEFORE
+	 * the runtime is booted ({@code getInstance(...)}) for the runtime loader to honor it; it
+	 * has no effect on an already-built runtime loader. Alternative deployment targets (e.g.
+	 * Android) install their own factory here at boot to avoid the JVM-only
+	 * {@code URLClassLoader}.
+	 *
+	 * @param factory the factory to use
+	 */
+	public static void setClassLoaderFactory( IClassLoaderFactory factory ) {
+		classLoaderFactory = java.util.Objects.requireNonNull( factory, "ClassLoaderFactory cannot be null" );
 	}
 
 	/**
@@ -999,6 +1036,20 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
+	 * Check if the runtime has web support loaded (boxlang-web-support on classpath)
+	 *
+	 * @return true if web support is available, false otherwise
+	 */
+	public boolean inWebMode() {
+		try {
+			Class.forName( "ortus.boxlang.web.WebRequestExecutor", false, instance.runtimeLoader );
+			return true;
+		} catch ( ClassNotFoundException e ) {
+			return false;
+		}
+	}
+
+	/**
 	 * Announce an event with the provided {@link IStruct} of data short-hand for
 	 * {@link #getInterceptorService()}.announce()
 	 *
@@ -1096,6 +1147,9 @@ public class BoxRuntime implements java.io.Closeable {
 		// Watcher service must shut down BEFORE asyncService so virtual-thread loops
 		// can be cancelled before their executor is terminated
 		instance.watcherService.onShutdown( force );
+		// Parser DFA cache eviction must shut down BEFORE asyncService so no
+		// unmanaged virtual threads block shutdown
+		Parser.shutdown();
 		instance.asyncService.onShutdown( force );
 		instance.functionService.onShutdown( force );
 		instance.componentService.onShutdown( force );
@@ -1270,7 +1324,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 * If it's a class the args will be passed to the main method
 	 * <p>
 	 *
-	 * @param templatePath The absolute path to the template to execute
+	 * @param templatePath The absolute or relative path to the template to execute
 	 * @param context      The context to execute the template in
 	 * @param args         The arguments to pass to the template
 	 */
@@ -1292,10 +1346,10 @@ public class BoxRuntime implements java.io.Closeable {
 			executeClass( targetClass, templatePath, context, args );
 		} else {
 			// Load the template
-			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateRelative(
+			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute(
 			    context,
-			    templatePath,
-			    false );
+			    FileSystemUtil.expandPath( context, templatePath )
+			);
 			executeTemplate( targetTemplate, templatePath, context );
 		}
 	}
@@ -1421,7 +1475,7 @@ public class BoxRuntime implements java.io.Closeable {
 					// Opps, an error while handling onAbort
 					errorToHandle = ae;
 				}
-				scriptingContext.flushBuffer( true );
+				scriptingContext.flushBuffer( false );
 				if ( e.getCause() != null ) {
 					// This will always be an instance of CustomException
 					throw ( RuntimeException ) e.getCause();
@@ -1469,7 +1523,7 @@ public class BoxRuntime implements java.io.Closeable {
 						ExceptionUtil.throwException( t );
 					}
 				}
-				scriptingContext.flushBuffer( false );
+				scriptingContext.flushBuffer( shutdownContext );
 				RequestBoxContext.removeCurrent();
 				Thread.currentThread().setContextClassLoader( oldClassLoader );
 				if ( shutdownContext ) {
@@ -1477,6 +1531,7 @@ public class BoxRuntime implements java.io.Closeable {
 				}
 			}
 		} else {
+			scriptingContext.flushBuffer( shutdownContext );
 			RequestBoxContext.removeCurrent();
 			if ( shutdownContext ) {
 				scriptingContext.getRequestContext().shutdown();
@@ -1532,7 +1587,7 @@ public class BoxRuntime implements java.io.Closeable {
 				// Opps, an error while handling onAbort
 				errorToHandle = ae;
 			}
-			scriptingContext.flushBuffer( true );
+			scriptingContext.flushBuffer( false );
 			if ( e.getCause() != null ) {
 				// This will always be an instance of CustomException
 				throw ( RuntimeException ) e.getCause();
@@ -1581,7 +1636,7 @@ public class BoxRuntime implements java.io.Closeable {
 					ExceptionUtil.throwException( t );
 				}
 			}
-			scriptingContext.flushBuffer( false );
+			scriptingContext.flushBuffer( shutdownContext );
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
 			if ( shutdownContext ) {
@@ -1648,14 +1703,14 @@ public class BoxRuntime implements java.io.Closeable {
 			// is responsible for signaling if needed.
 			return scriptRunnable.invoke( scriptingContext );
 		} catch ( AbortException e ) {
-			scriptingContext.flushBuffer( true );
+			scriptingContext.flushBuffer( false );
 			if ( e.getCause() != null ) {
 				// This will always be an instance of CustomException
 				throw ( RuntimeException ) e.getCause();
 			}
 			return null;
 		} finally {
-			scriptingContext.flushBuffer( false );
+			scriptingContext.flushBuffer( shutdownContext );
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
 			if ( shutdownContext ) {
@@ -1729,13 +1784,13 @@ public class BoxRuntime implements java.io.Closeable {
 			// Fire!!!
 			results = scriptRunnable.invoke( scriptingContext );
 		} catch ( AbortException e ) {
-			scriptingContext.flushBuffer( true );
+			scriptingContext.flushBuffer( false );
 			if ( e.getCause() != null ) {
 				// This will always be an instance of CustomException
 				throw ( RuntimeException ) e.getCause();
 			}
 		} finally {
-			scriptingContext.flushBuffer( false );
+			scriptingContext.flushBuffer( shutdownContext );
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
 			if ( shutdownContext ) {
@@ -1755,6 +1810,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public Object executeSource( InputStream sourceStream, IBoxContext context ) {
 		IBoxContext		scriptingContext	= ensureRequestTypeContext( context );
+		boolean			shutdownContext		= context != scriptingContext;
 		BufferedReader	reader				= new BufferedReader( new InputStreamReader( sourceStream ) );
 		String			source;
 		ClassLoader		oldClassLoader		= Thread.currentThread().getContextClassLoader();
@@ -1768,7 +1824,7 @@ public class BoxRuntime implements java.io.Closeable {
 
 				try {
 
-					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( context, source,
+					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( scriptingContext, source,
 					    BoxSourceType.BOXSCRIPT );
 
 					// Fire!!!
@@ -1789,7 +1845,7 @@ public class BoxRuntime implements java.io.Closeable {
 						System.out.println();
 					}
 				} catch ( AbortException e ) {
-					scriptingContext.flushBuffer( true );
+					scriptingContext.flushBuffer( false );
 					if ( e.getCause() != null ) {
 						System.out.println( "Abort: " + e.getCause().getMessage() );
 					}
@@ -1802,6 +1858,10 @@ public class BoxRuntime implements java.io.Closeable {
 		} finally {
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
+			scriptingContext.flushBuffer( shutdownContext );
+			if ( shutdownContext ) {
+				scriptingContext.shutdown();
+			}
 		}
 
 		return null;

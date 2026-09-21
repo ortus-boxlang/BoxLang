@@ -81,6 +81,20 @@ public class BoxCacheProviderTest {
 	}
 
 	@Test
+	@DisplayName( "Shutdown cancels the reaping future" )
+	void testShutdownCancelsReaper() {
+		BoxCacheProvider cache = new BoxCacheProvider();
+		cache.configure( cacheService, new CacheConfig( Key.of( "shutdown-reaper-test" ) ) );
+		assertThat( cache.getReapingFuture() ).isNotNull();
+		assertThat( cache.getReapingFuture().isCancelled() ).isFalse();
+
+		cache.shutdown();
+
+		assertThat( cache.getReapingFuture().isCancelled() ).isTrue();
+		assertThat( cache.isEnabled() ).isFalse();
+	}
+
+	@Test
 	@DisplayName( "Get the cache store metdata key map" )
 	void testGetCacheStoreMetadataKeyMap() {
 		assertThat( boxCache.getStoreMetadataKeyMap() ).isNotNull();
@@ -290,6 +304,48 @@ public class BoxCacheProviderTest {
 		boxCache.set( "testKey", "test", "", "" );
 		assertThat( boxCache.lookup( "testKey" ) ).isTrue();
 		assertThat( boxCache.get( "testKey" ).get() ).isEqualTo( "test" );
+	}
+
+	@Test
+	@DisplayName( "It updates the per-entry hits metadata when calling get()" )
+	void testGetUpdatesHitsMetadata() {
+		boxCache.set( "testKey", "test" );
+		assertThat( boxCache.getCachedObjectMetadata( "testKey" ).get( "hits" ) ).isEqualTo( 0L );
+
+		boxCache.get( "testKey" );
+		boxCache.get( "testKey" );
+		boxCache.get( "testKey" );
+
+		assertThat( boxCache.getCachedObjectMetadata( "testKey" ).get( "hits" ) ).isEqualTo( 3L );
+	}
+
+	@Test
+	@DisplayName( "It updates the per-entry lastAccessed metadata when calling get()" )
+	void testGetUpdatesLastAccessedMetadata() throws InterruptedException {
+		boxCache.set( "testKey", "test" );
+		var originalLastAccessed = boxCache.getCachedObjectMetadata( "testKey" ).get( "lastAccessed" );
+
+		// Ensure the clock moves forward before the next access
+		Thread.sleep( 10 );
+		boxCache.get( "testKey" );
+
+		var updatedLastAccessed = boxCache.getCachedObjectMetadata( "testKey" ).get( "lastAccessed" );
+		assertThat( updatedLastAccessed ).isNotEqualTo( originalLastAccessed );
+	}
+
+	@Test
+	@DisplayName( "It does not update hits metadata when using quiet lookup/metadata accessors" )
+	void testQuietAccessorsDoNotUpdateHits() {
+		boxCache.set( "testKey", "test" );
+
+		// None of these should be tracked as a "hit" on the entry
+		boxCache.getCachedObjectMetadata( "testKey" );
+		boxCache.getQuiet( "testKey" );
+		boxCache.lookupQuiet( "testKey" );
+		boxCache.getCacheEntry( "testKey" );
+		boxCache.lookup( "testKey" );
+
+		assertThat( boxCache.getCachedObjectMetadata( "testKey" ).get( "hits" ) ).isEqualTo( 0L );
 	}
 
 }

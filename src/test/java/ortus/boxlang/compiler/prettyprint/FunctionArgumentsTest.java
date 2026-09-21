@@ -22,6 +22,8 @@ import java.io.IOException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.prettyprint.config.Config;
+
 @DisplayName( "Function Arguments Formatting Tests" )
 public class FunctionArgumentsTest extends PrettyPrintTest {
 
@@ -44,9 +46,42 @@ public class FunctionArgumentsTest extends PrettyPrintTest {
 	}
 
 	@Test
+	@DisplayName( "Arguments break as a complete call structure when the group does not fit" )
+	public void testCompleteMultilineCallStructure() throws IOException {
+		printTestWithConfigFile( "function_arguments", "complete_multiline_call_structure" );
+	}
+
+	@Test
+	@DisplayName( "Nested multiline argument values do not add indentation to the argument list" )
+	public void testNestedMultilineArgumentValueIndentation() throws IOException {
+		printTestWithConfigFile( "function_arguments", "nested_multiline_value" );
+	}
+
+	@Test
+	@DisplayName( "Nested function and lambda arguments are formatted idempotently" )
+	public void testNestedArgumentIdempotence() throws IOException {
+		assertPrintIdempotent(
+		    "function_arguments/nested_argument_idempotence_input.bxs",
+		    Config.loadConfig( TEST_RESOURCES_PATH + "function_arguments/nested_multiline_value.json" )
+		);
+	}
+
+	@Test
 	@DisplayName( "Trailing comma added when comma_dangle is true and multiline" )
 	public void testCommaDangleTrue() throws IOException {
 		printTestWithConfigFile( "function_arguments", "comma_dangle_true" );
+	}
+
+	@Test
+	@DisplayName( "Default named argument separator is spaced equals" )
+	public void testDefaultSeparator() throws IOException {
+		printTestWithDefaultConfig( "function_arguments", "separator_default" );
+	}
+
+	@Test
+	@DisplayName( "Named argument separator can be customized" )
+	public void testSeparatorEquals() throws IOException {
+		printTestWithConfigFile( "function_arguments", "separator_equals" );
 	}
 
 	@Test
