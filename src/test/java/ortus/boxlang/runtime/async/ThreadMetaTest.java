@@ -109,12 +109,15 @@ public class ThreadMetaTest {
 
 	@DisplayName( "It keeps an INTERRUPTED status set by the manager while the thread is alive" )
 	@Test
-	public void testInterruptedStatusIsPreserved() {
+	public void testInterruptedStatusIsPreserved() throws InterruptedException {
 		Thread		thread	= sleeper();
 		ThreadMeta	meta	= new ThreadMeta( Key.of( "sleeper" ), thread, System.currentTimeMillis() );
 		try {
 			meta.put( Key.status, "INTERRUPTED" );
 			assertThat( meta.get( Key.status ) ).isEqualTo( "INTERRUPTED" );
+			// give the freshly-started thread a moment to reach Thread.sleep, or its
+			// stack trace is empty and the assertion below is flaky on a slow box
+			Thread.sleep( 200 );
 			assertThat( meta.getAsString( Key.stackTrace ) ).contains( "Thread.sleep" );
 		} finally {
 			thread.interrupt();
