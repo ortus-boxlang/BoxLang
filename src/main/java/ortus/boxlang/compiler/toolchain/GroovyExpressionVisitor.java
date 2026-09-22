@@ -216,7 +216,8 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 	// list.inject(0) { acc, x -> acc + x } or (1..10).step(2) { total += it } - is extremely
 	// common (unlike the no-parens form visitTrailingClosureCallExpr already handles, this one
 	// combines an explicit argument list with a closure). The closure is simply appended as the
-	// call's last BoxArgument, exactly like Groovy itself desugars it.
+	// call's last BoxArgument, exactly like Groovy itself desugars it - except for a couple of
+	// specific method names (see isInjectCall/isStepCall) that need a different rewrite entirely.
 	@Override
 	public BoxExpression visitCallWithTrailingClosureExpr( CallWithTrailingClosureExprContext ctx ) {
 		List<BoxArgument>	args		= new ArrayList<>( buildArguments( ctx.argumentList() ) );
@@ -227,14 +228,45 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 			// .reduce(callback, initial) member (see GROOVY_METHOD_ALIASES) - same semantics,
 			// but the opposite argument order, so the closure has to go first here, not last.
 			args.add( 0, closureArg );
-		} else {
-			args.add( closureArg );
+			return buildCallExpression( ctx.expression(), args, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
 		}
+		if ( isStepCall( ctx.expression() ) ) {
+			return buildRangeStepWithClosure( ( MemberExprContext ) ctx.expression(), args, closureArg, tools.getPosition( ctx ),
+			    tools.getSourceText( ctx ) );
+		}
+		args.add( closureArg );
 		return buildCallExpression( ctx.expression(), args, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
 	}
 
 	private boolean isInjectCall( ExpressionContext calleeCtx ) {
 		return calleeCtx instanceof MemberExprContext memberCtx && "inject".equals( memberCtx.IDENTIFIER().getText() );
+	}
+
+	private boolean isStepCall( ExpressionContext calleeCtx ) {
+		return calleeCtx instanceof MemberExprContext memberCtx && "step".equals( memberCtx.IDENTIFIER().getText() );
+	}
+
+	// Groovy's "range.step(amount) { closure }" trailing-closure idiom does NOT mean "call a
+	// two/three-argument step() with the closure tacked on" - BoxLang's own native
+	// Range.step(Number)/Range.step(Number, String) are plain BUILDER methods (return a new,
+	// re-stepped Range; never iterate), and stay that way for every BoxLang dialect. A prior
+	// attempt to teach core Range a THIRD "step(amount, closure)" meaning that eagerly iterated
+	// and invoked the callback was reverted after review: it collided with the builder meaning
+	// under the same overloaded member name and even returned the wrong (unstepped) range.
+	// Instead, this rewrites the whole call into three ordinary, already-existing method calls:
+	// "range.step(amount)" (the ordinary builder - args here already excludes the closure, since
+	// it came from the separate trailing-closure grammar alternative, not argumentList), then
+	// ".stream()" (Range's own native Java method, returning a lazy java.util.stream.Stream -
+	// never materializes the whole range into a collection), then ".forEach(closure)" (an
+	// ordinary Stream method - BoxLang's interop layer casts the closure to Consumer). Like
+	// isInjectCall above, this is a syntactic, name-only heuristic with no real receiver-type
+	// checking - calling some unrelated user class's own differently-behaved "step" method this
+	// way would be misinterpreted the same way "inject" already is, a documented, bounded gap.
+	private BoxExpression buildRangeStepWithClosure( MemberExprContext stepCallCtx, List<BoxArgument> stepArgs, BoxArgument closureArg, Position pos,
+	    String src ) {
+		BoxExpression	stepCall	= buildMethodInvocation( stepCallCtx, stepArgs, pos, src );
+		BoxExpression	streamCall	= new BoxMethodInvocation( new BoxIdentifier( "stream", pos, "stream" ), stepCall, List.of(), false, true, pos, src );
+		return new BoxMethodInvocation( new BoxIdentifier( "forEach", pos, "forEach" ), streamCall, List.of( closureArg ), false, true, pos, src );
 	}
 
 	private BoxExpression buildCallExpression( ExpressionContext callee, List<BoxArgument> args, Position pos, String src ) {

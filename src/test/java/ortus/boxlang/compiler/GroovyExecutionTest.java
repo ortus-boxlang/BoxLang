@@ -615,10 +615,12 @@ public class GroovyExecutionTest {
 	@Test
 	@DisplayName( "Range.step(n) { } iterates the range advancing by n, invoking the closure" )
 	public void testRangeStepWithClosure() {
-		// Previously a documented gap (BoxLang's native Range type had no "step" member callable
-		// with a closure) - fixed by adding a real RangeStep BIF/member to BoxLang core (not
-		// Groovy-specific), reusing the trailing-closure-after-parenthesized-args support already
-		// built for "list.inject(0) { ... }".
+		// Desugars entirely at parse time into "(1..10).step(2).stream().forEach { ... }" - see
+		// GroovyExpressionVisitor#buildRangeStepWithClosure. No core Range/BIF changes: an
+		// earlier attempt to teach core Range.step() a third "eagerly iterate with a callback"
+		// meaning (alongside its two existing builder-only overloads) was reverted after review -
+		// it collided with the builder meaning under the same overloaded member name, and the
+		// same result is achievable with Range's own existing, unmodified builder/stream methods.
 		IBoxContext	context	= newContext();
 		Object		result	= run( "total = 0\n(1..10).step(2) { total = total + it }\nreturn total\n", context );
 		assertThat( result.toString() ).isEqualTo( "25" );
