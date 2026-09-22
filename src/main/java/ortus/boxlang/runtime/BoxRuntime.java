@@ -1408,7 +1408,9 @@ public class BoxRuntime implements java.io.Closeable {
 		// Verify module exists or throw an exception
 		Key moduleName = Key.of( module );
 		if ( !getModuleService().hasModule( moduleName ) ) {
-			throw new BoxRuntimeException( "Can't execute module [" + module + "] as it does not exist." );
+			throw new BoxRuntimeException(
+			    "Can't execute module [" + module + "] as it does not exist. Runtime home is [" + getRuntimeHome() + "]. Loaded modules are: "
+			        + getModuleService().getModuleNames() );
 		}
 
 		// Signal to debugger that user code is about to start (only in debug mode)
