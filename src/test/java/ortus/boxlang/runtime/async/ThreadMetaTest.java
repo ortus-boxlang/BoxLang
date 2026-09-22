@@ -126,10 +126,13 @@ public class ThreadMetaTest {
 
 	@DisplayName( "It refreshes the live keys when the struct is read as a whole" )
 	@Test
-	public void testIterationRefreshesLiveKeys() {
+	public void testIterationRefreshesLiveKeys() throws InterruptedException {
 		Thread		thread	= sleeper();
 		ThreadMeta	meta	= new ThreadMeta( Key.of( "sleeper" ), thread, System.currentTimeMillis() );
 		try {
+			// give the freshly-started thread a moment to reach Thread.sleep, or its
+			// stack trace is empty and the assertion below is flaky on a slow box
+			Thread.sleep( 200 );
 			assertThat( meta.values().stream().anyMatch( v -> v instanceof String s && s.contains( "Thread.sleep" ) ) ).isTrue();
 			assertThat( meta.getWrapped().get( Key.status ) ).isAnyOf( "WAITING", "RUNNNG" );
 		} finally {
