@@ -539,8 +539,8 @@ class ScheduledTaskTest {
 			serverB.getStats().put( "inetHost", "server-b-host" );
 			serverB.getStats().put( "localIp", "10.0.0.2" );
 
-			boolean			aCanRun		= serverA.canRunOnThisServer();
-			boolean			bCanRun		= serverB.canRunOnThisServer();
+			boolean	aCanRun	= serverA.canRunOnThisServer();
+			boolean	bCanRun	= serverB.canRunOnThisServer();
 
 			// Exactly one of the two servers must win the lock
 			assertThat( aCanRun ).isNotEqualTo( bCanRun );
