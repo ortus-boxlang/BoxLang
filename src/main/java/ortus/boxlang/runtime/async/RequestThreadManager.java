@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.stream.Collectors;
@@ -33,7 +32,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThreadScope;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -98,11 +96,6 @@ public class RequestThreadManager {
 	private static final ThreadGroup	THREAD_GROUP				= new ThreadGroup( "BL-Threads" );
 
 	/**
-	 * The states that a thread can be in where we update valid statuses
-	 */
-	private static final Set<String>	ACTION_STATES				= Set.of( "NOT_STARTED", "RUNNNG", "WAITING" );
-
-	/**
 	 * Constructor
 	 *
 	 * @param name
@@ -127,48 +120,15 @@ public class RequestThreadManager {
 		if ( threads.containsKey( name ) ) {
 			throw new RuntimeException( "Thread name [" + name + "] already in use for this request." );
 		}
-		// The actual thread
-		Thread	targetThread	= context.getThread();
-		// Create a thread meta struct
-		IStruct	threadMeta		= Struct.of(
-		    Key.targetThread, targetThread,
-		    Key.id, targetThread.threadId(),
-		    Key._NAME, name,
-		    Key.elapsedTime, 0,
-		    Key.error, null,
-		    Key.virtual, targetThread.isVirtual(),
-		    Key.daemon, targetThread.isDaemon(),
-		    Key.threadGroup, targetThread.getThreadGroup().getName(),
-		    Key.output, "",
-		    Key.stackTrace, "",
-		    Key.interrupted, false,
-		    Key.priority, switch ( context.getThread().getPriority() ) {
-			    case Thread.MIN_PRIORITY -> "LOW";
-			    case Thread.NORM_PRIORITY -> "NORMAL";
-			    case Thread.MAX_PRIORITY -> "HIGH";
-			    default -> "UNKNOWN";
-		    },
-		    Key.startTime, new DateTime(),
-		    /**
-		     * NOT_STARTED: The thread has been queued but is not processing yet.
-		     * RUNNNG: The thread is running normally.
-		     * BLOCKED: The thread is blocked waiting for a monitor lock.
-		     * INTERRUPTED: The thread was interrupted.
-		     * TERMINATED: The thread stopped running due to a bxthread tag with a terminate action, an error, or an administrator action.
-		     * COMPLETED: The thread ended normally.
-		     * WAITING: The thread has executed a bxthread tag with action="join", but one or more threads being joined has not completed.
-		     */
-		    Key.status, "NOT_STARTED"
-		);
-
+		long		startTicks	= System.currentTimeMillis();
+		ThreadMeta	threadMeta	= new ThreadMeta( name, context.getThread(), startTicks );
 		// Add the thread meta by reference to the bxthread scope
 		// This struct is what the actual threads "see" when they access "thread" or "threadName" or "bxthread.threadName"
 		this.threadScope.put( name, threadMeta );
-
 		return this.threads.put( name, Struct.of(
 		    Key.context, context,
 		    Key._NAME, name,
-		    Key.startTicks, System.currentTimeMillis(),
+		    Key.startTicks, startTicks,
 		    Key.metadata, threadMeta
 		) );
 	}
@@ -194,56 +154,7 @@ public class RequestThreadManager {
 	 */
 	public IStruct getThreadMeta( Key name ) {
 		IStruct threadData = getThreadDataSafe( name );
-		if ( threadData == null ) {
-			return null;
-		}
-
-		// Only valid threads here
-		IStruct	threadMeta		= threadData.getAsStruct( Key.metadata );
-		String	threadStatus	= threadMeta.getAsString( Key.status );
-
-		// If the thread was not complete last time we looked at it, let's update the status
-		if ( ACTION_STATES.contains( threadStatus ) ) {
-			Thread	thread		= ( ( ThreadComponentBoxContext ) threadData.get( Key.context ) ).getThread();
-			IStruct	exception	= threadMeta.getAsStruct( Key.error );
-			// Update status
-			threadStatus = switch ( thread.getState() ) {
-				case NEW -> "NOT_STARTED";
-				case RUNNABLE -> "RUNNNG";
-				case TERMINATED -> ( exception == null ? "COMPLETED" : "TERMINATED" );
-				case BLOCKED -> "BLOCKED";
-				case WAITING, TIMED_WAITING -> "WAITING";
-				default -> "UNKNOWN";
-			};
-			threadMeta.put( Key.status, threadStatus );
-			// Update elapsed time
-			threadMeta.put( Key.elapsedTime, System.currentTimeMillis() - threadData.getAsLong( Key.startTicks ) );
-			// Grab stack trace, only if thread is running OR waiting OR blocked
-			switch ( threadStatus ) {
-				case "RUNNNG", "WAITING", "BLOCKED" -> {
-					threadMeta.put( Key.stackTrace, getStackTraceAsString( thread ) );
-				}
-				default -> threadMeta.put( Key.stackTrace, "" );
-			}
-		}
-
-		return threadMeta;
-	}
-
-	/**
-	 * Gets the stack trace for a thread as a string.
-	 *
-	 * @param thread The thread to get the stack trace for
-	 *
-	 * @return The stack trace as a string
-	 */
-	private String getStackTraceAsString( Thread thread ) {
-		StringBuilder		stackTraceBuilder	= new StringBuilder();
-		StackTraceElement[]	stackTrace			= thread.getStackTrace();
-		for ( StackTraceElement element : stackTrace ) {
-			stackTraceBuilder.append( element.toString() ).append( "\n" );
-		}
-		return stackTraceBuilder.toString();
+		return threadData == null ? null : threadData.getAsStruct( Key.metadata );
 	}
 
 	/**
@@ -299,19 +210,7 @@ public class RequestThreadManager {
 		if ( threadData == null ) {
 			return;
 		}
-		IStruct				threadMeta		= threadData.getAsStruct( Key.metadata );
-		java.lang.Thread	targetThread	= ( ( ThreadComponentBoxContext ) threadData.get( Key.context ) ).getThread();
-
-		threadMeta.put( Key.interrupted, interrupted );
-		threadMeta.put( Key.error, exception );
-		threadMeta.put( Key.output, output );
-		threadMeta.put( Key.status, ( exception == null ? "COMPLETED" : "TERMINATED" ) );
-		threadMeta.put( Key.elapsedTime, System.currentTimeMillis() - threadData.getAsLong( Key.startTicks ) );
-		if ( interrupted && targetThread.isAlive() ) {
-			threadMeta.put( Key.stackTrace, getStackTraceAsString( targetThread ) );
-		} else {
-			threadMeta.put( Key.stackTrace, "" );
-		}
+		( ( ThreadMeta ) threadData.getAsStruct( Key.metadata ) ).complete( output, exception, interrupted );
 
 		// Track this completed thread
 		completedThreads.add( name );

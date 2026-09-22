@@ -264,16 +264,11 @@ public class ThreadComponentBoxContext extends BaseBoxContext implements IJDBCCa
 	 */
 	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
-		IStruct				threadMeta	= threadManager.getThreadMeta( threadName );
-		ScopeSearchResult	parentSearchResult;
+		ScopeSearchResult parentSearchResult;
 
-		// access thread.foo inside a thread
-		if ( key.equals( Key.thread ) ) {
-			return new ScopeSearchResult( threadMeta, threadMeta, key, true );
-		}
-
-		// access threadName.foo inside a thread
-		if ( key.equals( threadName ) ) {
+		// access thread.foo or threadName.foo inside a thread
+		if ( key.equals( Key.thread ) || key.equals( threadName ) ) {
+			IStruct threadMeta = threadManager.getThreadMeta( threadName );
 			return new ScopeSearchResult( threadMeta, threadMeta, key, true );
 		}
 
@@ -301,7 +296,9 @@ public class ThreadComponentBoxContext extends BaseBoxContext implements IJDBCCa
 			}
 		}
 		if ( !isKeyVisibleScope( key ) ) {
-			Object result = threadMeta.getRaw( key );
+			// Unscoped access to a metadata key (status, elapsedTime, ...) inside the thread
+			IStruct	threadMeta	= threadManager.getThreadMeta( threadName );
+			Object	result		= threadMeta.getRaw( key );
 			// Null means not found
 			if ( isDefined( result, forAssign ) ) {
 				return new ScopeSearchResult( threadMeta, Struct.unWrapNull( result ), key );
