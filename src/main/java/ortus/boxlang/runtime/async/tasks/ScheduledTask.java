@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
+import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
@@ -49,6 +50,7 @@ import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.net.NetworkUtil;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -73,6 +75,23 @@ public class ScheduledTask implements Runnable {
 
 	/**
 	 * --------------------------------------------------------------------------
+	 * Static Constants
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The prefix used to build the server fixation cache key: {@code {prefix}{taskName}-{schedulerName}}
+	 */
+	private static final String						SERVER_FIXATION_CACHE_KEY_PREFIX	= "bxtasks-server-fixation-";
+
+	/**
+	 * The default lock timeout (in minutes) used by {@link #calculateLockTimeout()} when no better
+	 * estimate can be determined. Mirrors ColdBox's default of 60 minutes.
+	 */
+	private static final long						DEFAULT_LOCK_TIMEOUT_MINUTES		= 60L;
+
+	/**
+	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
@@ -90,7 +109,7 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * The executor to use for this task
 	 */
-	private BoxExecutor								executor			= null;
+	private BoxExecutor								executor							= null;
 
 	/**
 	 * The task as a {@link DynamicObject} or a
@@ -103,12 +122,12 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * The method to execute in the DynamicObject, by default it is run()
 	 */
-	private String									method				= "run";
+	private String									method								= "run";
 
 	/**
 	 * The delay or time to wait before we execute the task in the scheduler
 	 */
-	private long									initialDelay		= 0L;
+	private long									initialDelay						= 0L;
 
 	/**
 	 * The time unit string used when there is a delay requested for the task
@@ -120,28 +139,28 @@ public class ScheduledTask implements Runnable {
 	 * wait for tasks to finish,
 	 * tasks are fired exactly at that time period.
 	 */
-	private long									period				= 0L;
+	private long									period								= 0L;
 
 	/**
 	 * The delay to use when using scheduleWithFixedDelay(), so tasks execute after
 	 * this delay once completed
 	 */
-	private long									spacedDelay			= 0L;
+	private long									spacedDelay							= 0L;
 
 	/**
 	 * The time unit used to schedule the task
 	 */
-	private TimeUnit								timeUnit			= TimeUnit.MILLISECONDS;
+	private TimeUnit								timeUnit							= TimeUnit.MILLISECONDS;
 
 	/**
 	 * A handy boolean that is set when the task is annually scheduled
 	 */
-	private Boolean									annually			= false;
+	private Boolean									annually							= false;
 
 	/**
 	 * A handy boolean that disables the scheduling of this task
 	 */
-	private Boolean									disabled			= false;
+	private Boolean									disabled							= false;
 
 	/**
 	 * A lambda, that if registered, determines if this task will be sent for
@@ -153,32 +172,46 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Constraint of what day of the month we need to run on: 1-31
 	 */
-	private int										dayOfTheMonth		= 0;
+	private int										dayOfTheMonth						= 0;
 
 	/**
 	 * Constraint of what day of the week this runs on: 1-7
 	 */
-	private int										dayOfTheWeek		= 0;
+	private int										dayOfTheWeek						= 0;
 
 	/**
 	 * Constraint to run only on weekends
 	 */
-	private Boolean									weekends			= false;
+	private Boolean									weekends							= false;
 
 	/**
 	 * Constraint to run only on weekdays
 	 */
-	private Boolean									weekdays			= false;
+	private Boolean									weekdays							= false;
 
 	/**
 	 * Constraint to run only on the first business day of the month
 	 */
-	private Boolean									firstBusinessDay	= false;
+	private Boolean									firstBusinessDay					= false;
 
 	/**
 	 * Constraint to run only on the last business day of the month
 	 */
-	private Boolean									lastBusinessDay		= false;
+	private Boolean									lastBusinessDay						= false;
+
+	/**
+	 * Server fixation: when true, and this task is running in a clustered/multi-server deployment
+	 * sharing the same cache, only ONE server in the cluster will actually execute this task. This is
+	 * enforced via a distributed mutual-exclusion lock stored in the cache named by {@link #cacheName}.
+	 * Ported from ColdBox's {@code onOneServer()} scheduled task feature.
+	 */
+	private Boolean									serverFixation						= false;
+
+	/**
+	 * The name of the cache to use for server fixation locking. Defaults to whatever is configured
+	 * on the owning scheduler (see {@code SchedulerConfig.cacheName}), or "default" when unbound.
+	 */
+	private String									cacheName							= "default";
 
 	/**
 	 * By default tasks execute in an interval frequency which can cause tasks to
@@ -187,49 +220,49 @@ public class ScheduledTask implements Runnable {
 	 * With this boolean flag turned on, the schedulers don't kick off the
 	 * intervals until the tasks finish executing. Meaning no stacking.
 	 */
-	private Boolean									noOverlaps			= false;
+	private Boolean									noOverlaps							= false;
 
 	/**
 	 * Used by first and last business day constraints to
 	 * log the time of day for use in setNextRunTime()
 	 */
-	private String									taskTime			= "";
+	private String									taskTime							= "";
 
 	/**
 	 * Constraint of when the task can start execution.
 	 */
-	private LocalDateTime							startOnDateTime		= null;
+	private LocalDateTime							startOnDateTime						= null;
 
 	/**
 	 * Constraint of when the task must not continue to execute
 	 */
-	private LocalDateTime							endOnDateTime		= null;
+	private LocalDateTime							endOnDateTime						= null;
 
 	/**
 	 * Constraint to limit the task to run after a specified time of day.
 	 */
-	private String									startTime			= "";
+	private String									startTime							= "";
 
 	/**
 	 * Constraint to limit the task to run before a specified time of day.
 	 */
-	private String									endTime				= "";
+	private String									endTime								= "";
 
 	/**
 	 * The boolean value that lets us know if this task has been scheduled
 	 */
-	private Boolean									scheduled			= false;
+	private Boolean									scheduled							= false;
 
 	/**
 	 * This task can be assigned to a task scheduler or be executed on its own at
 	 * runtime
 	 */
-	private BaseScheduler							scheduler			= null;
+	private BaseScheduler							scheduler							= null;
 
 	/**
 	 * A struct for the task that can be used to store any metadata
 	 */
-	private IStruct									meta				= new Struct();
+	private IStruct									meta								= new Struct();
 
 	/**
 	 * The collection of stats for the task: { name, created, lastRun, nextRun,
@@ -242,7 +275,7 @@ public class ScheduledTask implements Runnable {
 	 * The timezone this task runs under, by default we use the timezone defined in
 	 * the schedulers
 	 */
-	private ZoneId									timezone			= ZoneId.systemDefault();
+	private ZoneId									timezone							= ZoneId.systemDefault();
 
 	/**
 	 * The before task lambda
@@ -272,12 +305,12 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * BoxLang Timer utility
 	 */
-	private final Timer								timer				= new Timer();
+	private final Timer								timer								= new Timer();
 
 	/**
 	 * Interceptor Service
 	 */
-	private InterceptorService						interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+	private InterceptorService						interceptorService					= BoxRuntime.getInstance().getInterceptorService();
 
 	/**
 	 * The initial request context for this task
@@ -974,6 +1007,12 @@ public class ScheduledTask implements Runnable {
 			}
 		}
 
+		// Server fixation: in a clustered deployment, only the server holding the distributed lock
+		// may run this task. All other servers are constrained.
+		if ( serverFixation && !canRunOnThisServer() ) {
+			return true;
+		}
+
 		return false;
 	}
 
@@ -987,6 +1026,25 @@ public class ScheduledTask implements Runnable {
 		debugLog( "when" );
 		this.whenPredicate = target;
 		return this;
+	}
+
+	/**
+	 * Enable server fixation for this task. When a multi-server/clustered deployment runs the same
+	 * scheduler configuration on every node, this makes the task actually execute on only ONE server
+	 * in the cluster, using a distributed cache as a mutual-exclusion lock, instead of firing
+	 * redundantly on every node.
+	 *
+	 * Ported from ColdBox's {@code onOneServer()} scheduled task feature.
+	 *
+	 * Note: cluster schedule synchronization (realigning a newly-joined server's initial delay to
+	 * match an already-established lock anchor) is not yet implemented; each server currently
+	 * schedules its own polling independently and simply defers execution to the lock holder.
+	 *
+	 * @return The ScheduledTask instance
+	 */
+	public ScheduledTask onOneServer() {
+		debugLog( "onOneServer" );
+		return setServerFixation( true );
 	}
 
 	/**
@@ -1488,7 +1546,8 @@ public class ScheduledTask implements Runnable {
 		setInitialDelayPeriodAndTimeUnit( now, nextRun );
 
 		// Set constraints
-		this.dayOfTheMonth = day;
+		this.dayOfTheMonth	= day;
+		this.taskTime		= validatedTime;
 
 		return this;
 	}
@@ -2035,6 +2094,152 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * Server Fixation / Clustering
+	 * --------------------------------------------------------------------------
+	 * These methods support running the same scheduler configuration on every node of a
+	 * multi-server/clustered deployment while only actually executing a given task on ONE
+	 * of those servers, using a shared cache as a distributed mutual-exclusion lock.
+	 */
+
+	/**
+	 * Checks if this server is allowed to run this task right now. This is the actual gate behind
+	 * {@link #onOneServer()}: it atomically get-or-sets a lock entry in the configured cache
+	 * ({@link #cacheName}) and compares the entry's recorded host/IP against this JVM's own, as
+	 * tracked in {@code stats.inetHost}/{@code stats.localIp}.
+	 *
+	 * The lock is deliberately NOT actively cleared after a successful run. It is left to expire
+	 * naturally per its TTL (see {@link #calculateLockTimeout()}), so that a failed/crashed server's
+	 * lock releases automatically (failover) without another server racing to grab it mid-cycle.
+	 *
+	 * @return true if this server holds the lock and may run the task, false if it is constrained
+	 */
+	public boolean canRunOnThisServer() {
+		ICacheProvider	cache			= getServerFixationCache();
+		String			cacheKey		= getServerFixationCacheKey();
+		long			timeoutSeconds	= calculateLockTimeout() * 60L;
+
+		// Atomic get-or-set: the first server to reach this "wins" the lock for the TTL window
+		IStruct			lockInfo		= ( IStruct ) cache.getOrSet(
+		    cacheKey,
+		    () -> buildServerFixationEntry( null ),
+		    timeoutSeconds
+		);
+
+		String			myHost			= ( String ) this.stats.get( "inetHost" );
+		String			myIp			= ( String ) this.stats.get( "localIp" );
+		boolean			weHoldTheLock	= myHost.equals( lockInfo.get( "serverHost" ) )
+		    && myIp.equals( lockInfo.get( "serverIp" ) );
+
+		// If we already hold the lock, refresh/extend it, preserving the original schedule anchor
+		if ( weHoldTheLock ) {
+			cache.set(
+			    cacheKey,
+			    buildServerFixationEntry( ( LocalDateTime ) lockInfo.get( "scheduleStart" ) ),
+			    timeoutSeconds
+			);
+		}
+
+		return weHoldTheLock;
+	}
+
+	/**
+	 * Builds the struct stored in the cache to represent this server's claim on the task's lock.
+	 *
+	 * @param existingAnchor The original {@code scheduleStart} anchor to preserve across a lock
+	 *                       refresh, or null to anchor it to right now (first time the lock is set)
+	 *
+	 * @return The lock entry struct
+	 */
+	private IStruct buildServerFixationEntry( LocalDateTime existingAnchor ) {
+		return Struct.ofNonConcurrent(
+		    "name", getName(),
+		    "lockOn", getNow(),
+		    "serverHost", this.stats.get( "inetHost" ),
+		    "serverIp", this.stats.get( "localIp" ),
+		    "nextRun", this.stats.get( "nextRun" ),
+		    "scheduleStart", existingAnchor != null ? existingAnchor : getNow(),
+		    "period", this.period,
+		    "timeUnit", this.timeUnit.toString()
+		);
+	}
+
+	/**
+	 * Builds the cache key used to store this task's server fixation lock entry.
+	 *
+	 * @return The cache key
+	 */
+	private String getServerFixationCacheKey() {
+		return SERVER_FIXATION_CACHE_KEY_PREFIX + getName() + "-" + ( hasScheduler() ? getScheduler().getSchedulerName() : "" );
+	}
+
+	/**
+	 * Resolves the cache provider to use for server fixation locking, using the configured
+	 * {@link #cacheName}, falling back to the runtime's default cache if it doesn't exist.
+	 *
+	 * @return The cache provider to use for locking
+	 */
+	private ICacheProvider getServerFixationCache() {
+		CacheService cacheService = BoxRuntime.getInstance().getCacheService();
+		return cacheService.hasCache( this.cacheName ) ? cacheService.getCache( this.cacheName ) : cacheService.getDefaultCache();
+	}
+
+	/**
+	 * Sizes the server fixation lock's TTL in minutes.
+	 *
+	 * For date-based constraints (monthly {@code dayOfTheMonth}, {@code firstBusinessDay},
+	 * {@code lastBusinessDay}) this task is internally polled far more often than its real cadence
+	 * and gated by {@link #isConstrained()}, so {@link #period}/{@link #timeUnit} reflects the poll
+	 * interval, NOT the real ~monthly gap. This computes the REAL next occurrence instead and sizes
+	 * the TTL as the minutes until that real occurrence.
+	 *
+	 * Otherwise, it falls back to converting {@link #period}/{@link #timeUnit} (or
+	 * {@link #spacedDelay}/{@link #timeUnit}) to minutes directly, which is correct for non-date-based
+	 * tasks (hourly, daily, weekly, {@code every()}) since their poll interval IS their real cadence.
+	 *
+	 * @return The lock timeout in minutes
+	 */
+	public long calculateLockTimeout() {
+		LocalDateTime	now				= getNow();
+		String			validatedTime	= this.taskTime.length() > 0 ? this.taskTime : "00:00";
+
+		if ( this.dayOfTheMonth > 0 ) {
+			LocalDateTime nextOccurrence = DateTimeHelper.getNextDayOfMonthOccurrence( this.dayOfTheMonth, validatedTime, false, now );
+			if ( now.compareTo( nextOccurrence ) >= 0 ) {
+				nextOccurrence = DateTimeHelper.getNextDayOfMonthOccurrence( this.dayOfTheMonth, validatedTime, true, now );
+			}
+			return Duration.between( now, nextOccurrence ).toMinutes();
+		}
+
+		if ( this.firstBusinessDay ) {
+			LocalDateTime nextOccurrence = DateTimeHelper.getFirstBusinessDayOfTheMonth( validatedTime, false, now );
+			if ( now.compareTo( nextOccurrence ) >= 0 ) {
+				nextOccurrence = DateTimeHelper.getFirstBusinessDayOfTheMonth( validatedTime, true, now );
+			}
+			return Duration.between( now, nextOccurrence ).toMinutes();
+		}
+
+		if ( this.lastBusinessDay ) {
+			LocalDateTime nextOccurrence = DateTimeHelper.getLastBusinessDayOfTheMonth( validatedTime, false, now );
+			if ( now.compareTo( nextOccurrence ) >= 0 ) {
+				nextOccurrence = DateTimeHelper.getLastBusinessDayOfTheMonth( validatedTime, true, now );
+			}
+			return Duration.between( now, nextOccurrence ).toMinutes();
+		}
+
+		// Non-date-based tasks: the poll interval IS the real cadence
+		long amount = this.spacedDelay != 0 ? this.spacedDelay : this.period;
+		if ( amount > 0 ) {
+			long minutes = TimeUnit.MINUTES.convert( amount, this.timeUnit );
+			if ( minutes > 0 ) {
+				return minutes;
+			}
+		}
+
+		return DEFAULT_LOCK_TIMEOUT_MINUTES;
+	}
+
+	/**
 	 * This method calculates the next run date according to initial and recurrent
 	 * scenarios.
 	 */
@@ -2576,6 +2781,36 @@ public class ScheduledTask implements Runnable {
 	 */
 	public ScheduledTask setLastBusinessDay( Boolean lastBusinessDay ) {
 		this.lastBusinessDay = lastBusinessDay;
+		return this;
+	}
+
+	/**
+	 * Get whether server fixation is enabled for this task. See {@link #onOneServer()}.
+	 */
+	public Boolean getServerFixation() {
+		return this.serverFixation;
+	}
+
+	/**
+	 * Set whether server fixation is enabled for this task. See {@link #onOneServer()}.
+	 */
+	public ScheduledTask setServerFixation( Boolean serverFixation ) {
+		this.serverFixation = serverFixation;
+		return this;
+	}
+
+	/**
+	 * Get the name of the cache used for server fixation locking.
+	 */
+	public String getCacheName() {
+		return this.cacheName;
+	}
+
+	/**
+	 * Set the name of the cache used for server fixation locking.
+	 */
+	public ScheduledTask setCacheName( String cacheName ) {
+		this.cacheName = cacheName;
 		return this;
 	}
 
