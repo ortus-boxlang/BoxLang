@@ -912,12 +912,11 @@ public class ScheduledTask implements Runnable {
 
 		// Do we have a day of the month constraint? and the same as the running
 		// date/time? Else skip it
-		// If the day assigned is greater than the days in the month, then we let it
-		// thru
-		// as the user intended to run it at the end of the month
+		// If the day assigned is greater than the days in the month, then we clamp it
+		// to the last day of the month, as the user intended to run it at the end of
+		// the month
 		if ( dayOfTheMonth > 0 &&
-		    now.getDayOfMonth() != dayOfTheMonth &&
-		    dayOfTheMonth <= DateTimeHelper.daysInMonth( now ) ) {
+		    now.getDayOfMonth() != Math.min( dayOfTheMonth, DateTimeHelper.daysInMonth( now ) ) ) {
 			return true;
 		}
 
