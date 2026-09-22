@@ -51,7 +51,6 @@ public enum BoxLangType {
 	MODIFIABLE_SET( Key.modifiableSet ),
 	NUMERIC( Key._NUMERIC ),
 	QUERY( Key._QUERY ),
-	RANGE( Key._RANGE ),
 	SET( Key._SET ),
 	STRING( Key._STRING ),
 	STRING_STRICT( Key.string_strict ),

@@ -75,7 +75,6 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		_NUMERIC							= Key.of( "numeric" );
 	public static final Key		_PACKAGE							= Key.of( "package" );
 	public static final Key		_QUERY								= Key.of( "query" );
-	public static final Key		_RANGE								= Key.of( "range" );
 	public static final Key		_SET								= Key.of( "set" );
 	public static final Key		_short								= Key.of( "short" );
 	public static final Key		_STATIC								= Key.of( "static" );
@@ -101,7 +100,6 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		allow								= Key.of( "allow" );
 	public static final Key		allowedFileOperationExtensions		= Key.of( "allowedFileOperationExtensions" );
 	public static final Key		allowRealPath						= Key.of( "allowRealPath" );
-	public static final Key		amount								= Key.of( "amount" );
 	public static final Key		ancestorLevels						= Key.of( "ancestorLevels" );
 	public static final Key		annotations							= Key.of( "annotations" );
 	public static final Key		announce							= Key.of( "announce" );
@@ -780,7 +778,6 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		queries								= Key.of( "queries" );
 	public static final Key		queryTimeout						= Key.of( "queryTimeout" );
 	public static final Key		radix								= Key.of( "radix" );
-	public static final Key		range								= Key.of( "range" );
 	public static final Key		Raw_Trace							= Key.of( "Raw_Trace" );
 	public static final Key		read								= Key.of( "read" );
 	public static final Key		readOnly							= Key.of( "readOnly" );
