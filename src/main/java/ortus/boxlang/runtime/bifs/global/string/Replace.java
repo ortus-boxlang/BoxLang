@@ -89,17 +89,23 @@ public class Replace extends BIF {
 				return string;
 			}
 		} else if ( scope.equals( "all" ) ) {
+			int	strLen	= string.length();
+			int	subLen	= substring1.length();
+			// Fast early-out: if the needle never appears, return the original string unchanged
+			if ( string.indexOf( substring1 ) == -1 ) {
+				return string;
+			}
+			StringBuilder	result	= new StringBuilder( strLen );
 			int				i		= 0;
-			StringBuilder	result	= new StringBuilder();
-			while ( i < string.length() ) {
-				if ( string.substring( i ).startsWith( substring1 ) ) {
+			while ( i < strLen ) {
+				if ( string.startsWith( substring1, i ) ) {
 					if ( castAttempt.wasSuccessful() ) {
 						result.append( castAttempt.get() );
 					} else {
 						result.append( context.invokeFunction( FunctionCaster.cast( obj ),
-						    new Object[] { string.substring( i, i + substring1.length() ), i + 1, string } ) );
+						    new Object[] { string.substring( i, i + subLen ), i + 1, string } ) );
 					}
-					i += substring1.length();
+					i += subLen;
 				} else {
 					result.append( string.charAt( i ) );
 					i++;

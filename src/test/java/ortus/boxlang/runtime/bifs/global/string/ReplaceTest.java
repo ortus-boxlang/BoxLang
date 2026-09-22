@@ -128,6 +128,26 @@ public class ReplaceTest {
 	}
 
 	@Test
+	public void testReplaceAllLargeStringPerf() {
+		// Build a large string in BoxLang, then replace on it, all inside the timed
+		// call. The single-character needle matches at every position, so the "all"
+		// hot loop runs ~input-length iterations.
+		long start = System.nanoTime();
+		instance.executeSource(
+		    """
+		    bigString = repeatString( "a", 1_000_000 );
+		    result = replace( bigString, "a", "b", "all" );
+		    """,
+		    context );
+		long elapsedMillis = ( System.nanoTime() - start ) / 1_000_000;
+
+		assertThat( variables.get( result ) ).isEqualTo( "b".repeat( 1_000_000 ) );
+		// The optimized (linear) implementation must complete well under this bound.
+		// The buggy O(n^2) version that allocates a substring each iteration will far exceed it.
+		assertThat( elapsedMillis ).isLessThan( 2_000L );
+	}
+
+	@Test
 	public void testHandlesNullValuesAsEmptyStrings() {
 		instance.executeSource(
 		    """
