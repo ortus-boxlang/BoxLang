@@ -382,6 +382,28 @@ class ScheduledTaskTest {
 			assertThat( task.isConstrained() ).isFalse();
 		}
 
+		@DisplayName( "clamps a day of the month constraint that doesn't exist in the running month to the last day" )
+		@Test
+		void testDayOfTheMonthConstraintClampsToLastDayOfShortMonth() {
+			// April only has 30 days, so a constraint of the 31st must clamp to the 30th
+			task.setDayOfTheMonth( 31 );
+
+			LocalDateTime midMonth = LocalDateTime.of( 2026, 4, 15, 10, 0 );
+			Mockito.when( task.getNow() ).thenReturn( midMonth );
+			assertThat( task.isConstrained() ).isTrue();
+
+			LocalDateTime lastDay = LocalDateTime.of( 2026, 4, 30, 10, 0 );
+			Mockito.when( task.getNow() ).thenReturn( lastDay );
+			assertThat( task.isConstrained() ).isFalse();
+
+			// Every other day of the month must still be constrained, not just skipped entirely
+			for ( int day = 1; day < 30; day++ ) {
+				LocalDateTime otherDay = LocalDateTime.of( 2026, 4, day, 10, 0 );
+				Mockito.when( task.getNow() ).thenReturn( otherDay );
+				assertThat( task.isConstrained() ).isTrue();
+			}
+		}
+
 		@DisplayName( "can have a last business day of the month constraint" )
 		@Test
 		@Disabled( "This fails every time CI runs on the last actual day of the actual month." )
