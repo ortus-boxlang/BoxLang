@@ -863,13 +863,15 @@ public class BoxRunner {
 
 	/**
 	 * Helper method to parse environment variables and set options accordingly.
+	 * <p>
+	 * Package-private so it can be unit tested directly.
 	 *
 	 * @param options The CLIOptions object with the parsed options
 	 *
 	 * @return A new CLIOptions object with the parsed options + environment
 	 *         overrides
 	 */
-	private static CLIOptions parseEnvironmentVariables( CLIOptions options ) {
+	static CLIOptions parseEnvironmentVariables( CLIOptions options ) {
 		Map<String, String>	envVars		= System.getenv();
 		Boolean				debug		= options.debug();
 		Boolean				printAST	= options.printAST();
@@ -890,11 +892,21 @@ public class BoxRunner {
 			printAST = Boolean.parseBoolean( envVars.get( "BOXLANG_PRINTAST" ) );
 		}
 		// Custom Config File
-		String	configFile	= envVars.containsKey( "BOXLANG_CONFIG" ) ? envVars.get( "BOXLANG_CONFIG" )
+		String configFile = envVars.containsKey( "BOXLANG_CONFIG" ) ? envVars.get( "BOXLANG_CONFIG" )
 		    : options.configFile();
 
+		// Convention: auto-detect a .boxlang.json in the current working directory.
+		// Only applies if no config file was already supplied via BOXLANG_CONFIG or --bx-config,
+		// so an explicit override always wins over the cwd convention.
+		if ( configFile == null ) {
+			Path cwdConfig = Paths.get( System.getProperty( "user.dir" ), ".boxlang.json" );
+			if ( Files.exists( cwdConfig ) ) {
+				configFile = cwdConfig.toAbsolutePath().toString();
+			}
+		}
+
 		// Runtime Home
-		String	runtimeHome	= envVars.containsKey( "BOXLANG_HOME" ) ? envVars.get( "BOXLANG_HOME" ) : options.runtimeHome();
+		String runtimeHome = envVars.containsKey( "BOXLANG_HOME" ) ? envVars.get( "BOXLANG_HOME" ) : options.runtimeHome();
 
 		return new CLIOptions(
 		    options.templatePath(),
