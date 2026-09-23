@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.Struct;
 import tools.JDBCTestUtils;
 
+@EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
 class JDBCStoreTest extends BaseStoreTest {
 
 	static String		datasourceName		= "jdbcStoreTest";
@@ -73,8 +74,7 @@ class JDBCStoreTest extends BaseStoreTest {
 		    .getDataSourceService()
 		    .register(
 		        keyDatasourceName,
-		        datasource
-		    );
+		        datasource );
 		runtime.getConfiguration().datasources.put( datasourceName, datasource.getConfiguration() );
 
 		// Drop any existing table to ensure clean schema

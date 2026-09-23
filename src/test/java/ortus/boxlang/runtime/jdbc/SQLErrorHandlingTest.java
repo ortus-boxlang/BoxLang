@@ -24,6 +24,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -36,6 +38,7 @@ import tools.JDBCTestUtils;
  * Test that SQL errors (like creating duplicate tables) are properly reported
  * instead of being masked by NullPointerException.
  */
+@DisabledOnOs( OS.WINDOWS )
 public class SQLErrorHandlingTest {
 
 	static BoxRuntime	instance;

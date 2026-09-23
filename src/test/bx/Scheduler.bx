@@ -18,13 +18,6 @@ class {
 		// Setup Scheduler Properties
 		scheduler.setSchedulerName( "My-Scheduler" )
 		scheduler.setTimezone( "UTC" )
-
-		// Define a lambda task
-		scheduler.task( "My test Task" )
-			.call( () -> {
-				println( "I am a lambda task: #dateFormat( now(), "full" )#" );
-			} )
-			.every( 2, "second" );
 	}
 
 	/**
@@ -37,14 +30,12 @@ class {
 	 * Called after the scheduler has registered all schedules
 	 */
 	void function onStartup(){
-		println( "I have started!" & scheduler.getSchedulerName() );
 	}
 
 	/**
 	 * Called before the scheduler is going to be shutdown
 	 */
 	void function onShutdown(){
-		println( "I have shutdown!" & scheduler.getSchedulerName() );
 	}
 
 	/**
@@ -64,8 +55,6 @@ class {
 	 * @result The result (if any) that the task produced as an Optional
 	 */
 	function onAnyTaskSuccess( task, result ){
-		println( "on any task success [#task.getName()#]"  );
-		println( "results for task are: " & result.orElse( "No result" ) );
 	}
 
 	/**
@@ -74,7 +63,6 @@ class {
 	 * @task The task about to be executed
 	 */
 	function beforeAnyTask( task ){
-		println( "before any task [#task.getName()#]"  );
 	}
 
 	/**
@@ -84,8 +72,6 @@ class {
 	 * @result The result (if any) that the task produced as an Optional
 	 */
 	function afterAnyTask( task, result ){
-		println( "after any task completed [#task.getName()#]"  );
-		println( "results for task are: " & result.orElse( "No result" ) );
 	}
 
 }

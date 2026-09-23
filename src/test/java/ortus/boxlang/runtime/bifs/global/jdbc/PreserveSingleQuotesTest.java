@@ -3,10 +3,12 @@ package ortus.boxlang.runtime.bifs.global.jdbc;
 import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.scopes.Key;
 
+@EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
 public class PreserveSingleQuotesTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );
