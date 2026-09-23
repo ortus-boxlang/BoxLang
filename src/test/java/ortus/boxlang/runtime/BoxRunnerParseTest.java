@@ -464,6 +464,67 @@ public class BoxRunnerParseTest {
 	}
 
 	// ---------------------------------------------------------------------------
+	// parseEnvironmentVariables - cwd .boxlang.json discovery
+	// ---------------------------------------------------------------------------
+
+	@DisplayName( "It auto-detects a .boxlang.json in the current working directory when no config file was supplied" )
+	@Test
+	void testCwdConfigConventionDetected( @TempDir Path tempDir ) throws IOException {
+		Path cwdConfig = tempDir.resolve( ".boxlang.json" );
+		Files.writeString( cwdConfig, "{}" );
+
+		String originalUserDir = System.getProperty( "user.dir" );
+		try {
+			System.setProperty( "user.dir", tempDir.toString() );
+
+			CLIOptions options = BoxRunner.parseEnvironmentVariables(
+			    BoxRunner.parseCommandLineOptions( new String[] { "module:cli" } )
+			);
+
+			assertThat( options.configFile() ).isEqualTo( cwdConfig.toAbsolutePath().toString() );
+		} finally {
+			System.setProperty( "user.dir", originalUserDir );
+		}
+	}
+
+	@DisplayName( "It does not auto-detect a cwd .boxlang.json when none exists" )
+	@Test
+	void testCwdConfigConventionAbsent( @TempDir Path tempDir ) {
+		String originalUserDir = System.getProperty( "user.dir" );
+		try {
+			System.setProperty( "user.dir", tempDir.toString() );
+
+			CLIOptions options = BoxRunner.parseEnvironmentVariables(
+			    BoxRunner.parseCommandLineOptions( new String[] { "module:cli" } )
+			);
+
+			assertThat( options.configFile() ).isNull();
+		} finally {
+			System.setProperty( "user.dir", originalUserDir );
+		}
+	}
+
+	@DisplayName( "An explicit --bx-config wins over a cwd .boxlang.json convention file" )
+	@Test
+	void testCwdConfigConventionYieldsToExplicitFlag( @TempDir Path tempDir ) throws IOException {
+		Path cwdConfig = tempDir.resolve( ".boxlang.json" );
+		Files.writeString( cwdConfig, "{}" );
+
+		String originalUserDir = System.getProperty( "user.dir" );
+		try {
+			System.setProperty( "user.dir", tempDir.toString() );
+
+			CLIOptions options = BoxRunner.parseEnvironmentVariables(
+			    BoxRunner.parseCommandLineOptions( new String[] { "--bx-config", "/explicit/config.json", "module:cli" } )
+			);
+
+			assertThat( options.configFile() ).isEqualTo( "/explicit/config.json" );
+		} finally {
+			System.setProperty( "user.dir", originalUserDir );
+		}
+	}
+
+	// ---------------------------------------------------------------------------
 	// resolveExecutionTarget
 	// ---------------------------------------------------------------------------
 
