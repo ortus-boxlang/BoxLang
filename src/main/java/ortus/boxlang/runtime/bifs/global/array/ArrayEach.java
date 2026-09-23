@@ -79,7 +79,8 @@ public class ArrayEach extends BIF {
 		    arguments.getAsBoolean( Key.parallel ),
 		    settings.maxThreads(),
 		    arguments.getAsBoolean( Key.ordered ),
-		    settings.virtual()
+		    settings.virtual(),
+		    null
 		);
 		return null;
 	}

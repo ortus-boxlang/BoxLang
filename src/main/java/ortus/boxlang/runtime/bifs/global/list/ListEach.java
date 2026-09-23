@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.ListUtil.ParallelSettings;
 
 @BoxBIF( description = "Execute a callback function for each item in a list" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listEach" )
@@ -82,16 +83,23 @@ public class ListEach extends ArrayEach {
 	 * @argument.virtual If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		arguments.put(
-		    Key.array,
+		ParallelSettings settings = ListUtil.resolveParallelSettings( arguments );
+		ListUtil.each(
 		    ListUtil.asList(
 		        arguments.getAsString( Key.list ),
 		        arguments.getAsString( Key.delimiter ),
 		        arguments.getAsBoolean( Key.includeEmptyFields ),
 		        arguments.getAsBoolean( Key.multiCharacterDelimiter )
-		    )
+		    ),
+		    arguments.getAsFunction( Key.callback ),
+		    context,
+		    arguments.getAsBoolean( Key.parallel ),
+		    settings.maxThreads(),
+		    arguments.getAsBoolean( Key.ordered ),
+		    settings.virtual(),
+		    arguments.getAsString( Key.list )
 		);
-		return super._invoke( context, arguments );
+		return null;
 	}
 
 }

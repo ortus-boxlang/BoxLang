@@ -34,6 +34,8 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 
 public class ListEachTest {
 
@@ -104,6 +106,31 @@ public class ListEachTest {
 		assertThat( indexes.get( 2 ) ).isEqualTo( "3" );
 		assertThat( indexes.get( 3 ) ).isEqualTo( "4" );
 		assertThat( indexes.get( 4 ) ).isEqualTo( "5" );
+	}
+
+	@DisplayName( "It should ensure the third argument is the original list" )
+	@Test
+	public void testOriginalListArgument() {
+		//@formatter:off
+		instance.executeSource(
+		    """
+		        tempNumericList = "";
+				originalAgeList = "22,21,12";
+				listEach( originalAgeList, function( elem, index, orig ) {
+					if ( isNumeric( elem ) ) {
+						tempNumericList = listAppend( tempNumericList, elem );
+						orig = listSetAt( orig, index, "x" );
+					}
+				} );
+
+		    """,
+		    context );
+		//@formatter:on
+		Array tempNumericList = ListUtil.asList( StringCaster.cast( variables.get( Key.of( "tempNumericList" ) ) ), ListUtil.DEFAULT_DELIMITER );
+		assertThat( tempNumericList.size() ).isEqualTo( 3 );
+		assertThat( tempNumericList.get( 0 ) ).isEqualTo( "22" );
+		assertThat( tempNumericList.get( 1 ) ).isEqualTo( "21" );
+		assertThat( tempNumericList.get( 2 ) ).isEqualTo( "12" );
 	}
 
 }
