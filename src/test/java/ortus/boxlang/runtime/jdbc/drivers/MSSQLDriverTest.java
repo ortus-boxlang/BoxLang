@@ -1141,4 +1141,48 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		// @formatter:on
 	}
 
+	@DisplayName( "It can match a decimal value with a scale on a queryparam" )
+	@Test
+	public void testSelectDecimalParamWithScale() {
+		// Ensure the test table exists and is empty
+		instance.executeStatement(
+		    """
+		    queryExecute( "
+		    	IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'decimal_scale_test') AND type in (N'U'))
+		    	CREATE TABLE decimal_scale_test ( id INT PRIMARY KEY, amount DECIMAL(10,2) )
+		    ",{}, { "datasource" : "MSSQLdatasource" }
+		    );
+		    	queryExecute( "TRUNCATE TABLE decimal_scale_test", {}, { "datasource" : "MSSQLdatasource" } );
+		    """,
+		    context );
+		instance.executeStatement(
+		    """
+		    	queryExecute(
+		    		"INSERT INTO decimal_scale_test ( id, amount ) VALUES ( 1, :amount )",
+		    		{ "amount" : { value: "100.24", sqltype: "cf_sql_decimal", scale: 2 } },
+		    		{ "datasource" : "MSSQLdatasource" }
+		    	);
+		    """,
+		    context );
+		// @formatter:off
+		instance.executeSource(
+		    """
+			<cfquery name="result" datasource="MSSQLdatasource">
+				SELECT id, amount FROM decimal_scale_test
+				WHERE amount = <cfqueryparam value="100.24" cfsqltype="CF_SQL_DECIMAL" scale="2">
+			</cfquery>
+			""",
+		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+
+		IStruct row = query.getRowAsStruct( 0 );
+		assertEquals( 1, row.get( Key.of( "id" ) ) );
+
+		// Clean up
+		instance.executeStatement( "queryExecute( \"DROP TABLE decimal_scale_test\", {}, { \"datasource\" : \"MSSQLdatasource\" } );", context );
+	}
+
 }
