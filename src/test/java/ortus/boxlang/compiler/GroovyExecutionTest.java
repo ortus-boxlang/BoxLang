@@ -700,6 +700,28 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
+	@DisplayName( "an enum declared inside a class body is usable from that class's own methods" )
+	public void testEnumNestedInClassBody() {
+		// enumDeclaration is now a valid classMember (see GroovyGrammar.g4/GroovyVisitor#
+		// visitEnumDeclaration's own header for the nested-form scoping trade-off: this runs once
+		// per constructed instance, into that instance's own "variables" scope, exactly like an
+		// ordinary field would - so it's reachable bare from the class's own methods, but NOT as
+		// "TrafficLight.Color.RED" without an instance.
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "class TrafficLight {\n"
+		        + "  enum Color { RED, GREEN, BLUE }\n"
+		        + "  def current() { return Color.GREEN }\n"
+		        + "  def compare(other) { return current() <=> other }\n"
+		        + "}\n"
+		        + "def t = new TrafficLight()\n"
+		        + "def c = t.current()\n"
+		        + "return \"${c}:${c.ordinal()}:${t.compare(c)}\"\n",
+		    context );
+		assertThat( result ).isEqualTo( "GREEN:1:0" );
+	}
+
+	@Test
 	@DisplayName( "triple-quoted string spans multiple lines" )
 	public void testTripleQuotedStringSpansLines() {
 		IBoxContext	context	= newContext();

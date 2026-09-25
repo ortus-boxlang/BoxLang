@@ -649,8 +649,16 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 	// comparable/interchangeable with a plain string (see its own class header) so every pattern
 	// the previous plain-string desugaring supported - Color.RED, "==" against a string literal,
 	// string interpolation, and (since BoxSwitch is equality-only anyway) "switch (x) { case
-	// Color.RED: ... }" - keeps working unchanged. What is still NOT modeled: nesting an enum
-	// inside a class body (top-level only).
+	// Color.RED: ... }" - keeps working unchanged.
+	//
+	// Nested-in-a-class form (enumDeclaration as a classMember): this same assignment statement
+	// is simply added to the enclosing class's body, exactly like an ordinary field (see
+	// visitFieldDeclaration) - so it runs once per CONSTRUCTED INSTANCE, into that instance's own
+	// "variables" scope, not once as a shared/static type the way real Groovy's (and Java's)
+	// nested enums are - "Outer.Color.RED" is NOT modeled; only "new Outer().Color.RED", or a bare
+	// "Color.RED" reference from inside the outer class's own methods, works. This is the exact
+	// same static/instance-scoping trade-off already accepted for ordinary fields, applied
+	// consistently here rather than inventing separate machinery for one enum-specific case.
 	private static final String GROOVY_ENUM_VALUE_FQN = "ortus.boxlang.runtime.types.GroovyEnumValue";
 
 	@Override

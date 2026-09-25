@@ -54,7 +54,8 @@ topLevelDeclaration: classDeclaration
 
 // A bounded enum implementation - see GroovyVisitor#visitEnumDeclaration for exactly what this
 // desugars to and what real Groovy enum semantics (ordinal(), values(), true type identity) are
-// NOT modeled. Top-level only; nesting an enum inside a class body isn't supported.
+// NOT modeled. Usable both at the top level and nested inside a class body (classMember) - see
+// visitEnumDeclaration's own header for what nesting does and doesn't model.
 enumDeclaration: ENUM IDENTIFIER LBRACE sep? IDENTIFIER sep? ( COMMA sep? IDENTIFIER sep? )* COMMA? sep? RBRACE
     ;
 
@@ -116,6 +117,7 @@ classMember: constructorDeclaration
     | methodDeclaration
     | fieldDeclaration
     | classDeclaration
+    | enumDeclaration
     | staticInitializer
     ;
 
