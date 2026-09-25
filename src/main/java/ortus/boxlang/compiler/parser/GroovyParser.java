@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -180,6 +181,23 @@ public class GroovyParser extends AbstractParser {
 
 		statementVisitor.getExpressionVisitor().setKnownStaticClassNames( knownStaticClassNames );
 		statementVisitor.getExpressionVisitor().setStaticImportedMembers( staticImportedMembers );
+
+		// A bare, unqualified type name used as an anonymous class's declared type (e.g. "new
+		// Foo() {...}") is recognized as a real Java interface - and so wrapped in a genuine JDK
+		// dynamic proxy, see GroovyExpressionVisitor#resolveJavaInterfaceFqn - whenever this file
+		// itself explicitly imports it by that exact simple name (wildcard imports aside - same
+		// documented limitation as knownStaticClassNames above), not just for the small curated
+		// set of common java.lang/java.util interfaces: an explicit "import
+		// java.util.function.Supplier" is every bit as much a promise that "Supplier" names a
+		// real, loadable interface as the curated names are, and is honored the same way.
+		Map<String, String> importedTypeFqns = userImports.stream()
+		    .filter( i -> ( ( BoxFQN ) i.getExpression() ).getValue().endsWith( ".*" ) == false )
+		    .collect( Collectors.toMap(
+		        i -> i.getAlias() != null ? i.getAlias().getName()
+		            : ( ( BoxFQN ) i.getExpression() ).getValue().substring( ( ( BoxFQN ) i.getExpression() ).getValue().lastIndexOf( '.' ) + 1 ),
+		        i -> ( ( BoxFQN ) i.getExpression() ).getValue(),
+		        ( first, second ) -> first ) );
+		statementVisitor.getExpressionVisitor().setImportedTypeFqns( importedTypeFqns );
 
 		List<TopLevelDeclarationContext>	declarations	= ctx.topLevelDeclarations() == null
 		    ? new ArrayList<>()

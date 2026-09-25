@@ -1261,6 +1261,27 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
+	@DisplayName( "an anonymous class for an explicitly imported (non-curated) Java interface is also proxied" )
+	public void testAnonymousClassForExplicitlyImportedInterfaceIsRealJavaInterop() {
+		// GroovyExpressionVisitor#resolveJavaInterfaceFqn isn't limited to the small curated
+		// KNOWN_JAVA_INTERFACES set - "Supplier" isn't in it, but this file's own explicit
+		// "import java.util.function.Supplier" is itself a strong signal the name is real, so it
+		// still gets wrapped in a genuine JDK dynamic proxy purely because of that import. The
+		// instanceof check uses the FULLY qualified name deliberately - resolving a bare name on
+		// instanceof's own right-hand side is a separate, pre-existing limitation unrelated to
+		// this proxying feature (see toTypeExpression), not something this test means to exercise.
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "import java.util.function.Supplier\n"
+		        + "def s = new Supplier() {\n"
+		        + "  def get() { return \"hi\" }\n"
+		        + "}\n"
+		        + "return (s instanceof java.util.function.Supplier)\n",
+		    context );
+		assertThat( result ).isEqualTo( true );
+	}
+
+	@Test
 	@DisplayName( "an anonymous class for an unrecognized type name stays a plain, un-proxied instance" )
 	public void testAnonymousClassForUnknownTypeStaysPlain() {
 		// GroovyExpressionVisitor#resolveJavaInterfaceFqn is deliberately conservative - a bare

@@ -139,6 +139,7 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 	private final GroovyVisitor	statementVisitor;
 	private Set<String>			knownStaticClassNames	= Set.of();
 	private Map<String, String>	staticImportedMembers	= Map.of();
+	private Map<String, String>	importedTypeFqns		= Map.of();
 
 	public GroovyExpressionVisitor( GroovyParser tools, GroovyVisitor statementVisitor ) {
 		this.tools				= tools;
@@ -168,6 +169,16 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 	// each non-wildcard "import static" statement in the file.
 	public void setStaticImportedMembers( Map<String, String> staticImportedMembers ) {
 		this.staticImportedMembers = staticImportedMembers;
+	}
+
+	// Maps a bare, explicitly-imported simple type name (or its "as" alias) to the FQN the file's
+	// own "import" statement named - populated by GroovyParser from each non-wildcard regular
+	// import. Consulted by resolveJavaInterfaceFqn so anonymous-class Java interop isn't limited
+	// to the small curated KNOWN_JAVA_INTERFACES set: an explicit import is itself a strong,
+	// file-authored signal that the name is real, same as already trusted for a fully-qualified
+	// "java."/"javax." name.
+	public void setImportedTypeFqns( Map<String, String> importedTypeFqns ) {
+		this.importedTypeFqns = importedTypeFqns;
 	}
 
 	/**
@@ -1087,11 +1098,13 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		// side. The anonymous BoxLocalClass itself still declares no "implements" annotation
 		// (see buildAnonymousLocalClass's own header) - only the returned VALUE is wrapped.
 		// Deliberately conservative: a bare, unqualified type name is only treated as a Java
-		// interface when it's in the small KNOWN_JAVA_INTERFACES set below, or already fully
-		// qualified under "java."/"javax." - anything else (a custom/BoxLang-native type, or an
-		// unrecognized bare Java name) falls back to the plain, un-proxied instance exactly as
-		// before, since createDynamicProxy() would otherwise throw trying to Class.forName() a
-		// name that was never a real, loadable Java interface to begin with.
+		// interface when it's already fully qualified under "java."/"javax.", explicitly imported
+		// by the file itself (see importedTypeFqns), or in the small KNOWN_JAVA_INTERFACES
+		// fallback below for the common cases written without an import at all - anything else (a
+		// custom/BoxLang-native type, or an unrecognized bare Java name) falls back to the plain,
+		// un-proxied instance exactly as before, since createDynamicProxy() would otherwise throw
+		// trying to Class.forName() a name that was never a real, loadable Java interface to begin
+		// with.
 		String			interfaceFqn	= resolveJavaInterfaceFqn( ctx.typeName().getText() );
 		if ( interfaceFqn == null ) {
 			return newExpr;
@@ -1102,11 +1115,12 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		return new BoxFunctionInvocation( "createDynamicProxy", proxyArgs, pos, src );
 	}
 
-	// Common java.lang/java.util functional/marker interfaces real-world anonymous-class Java
-	// interop overwhelmingly targets - deliberately small and curated rather than a general
-	// bare-name-to-FQN resolver (which would need real import/classpath awareness this
-	// single-pass parser doesn't have). A fully-qualified name (containing a dot) under
-	// "java."/"javax." is trusted directly without needing to be in this map.
+	// Fallback for the common java.lang/java.util functional/marker interfaces real-world
+	// anonymous-class Java interop overwhelmingly targets, written WITHOUT their own explicit
+	// import (Groovy, like Java, always implicitly imports java.lang). Anything else needs either
+	// a full "java."/"javax." qualification or the file's own explicit import - see
+	// resolveJavaInterfaceFqn and importedTypeFqns - rather than being guessed here, since this
+	// single-pass parser has no real classpath awareness to verify an arbitrary bare name against.
 	private static final java.util.Map<String, String> KNOWN_JAVA_INTERFACES = java.util.Map.of(
 	    "Runnable", "java.lang.Runnable",
 	    "Callable", "java.util.concurrent.Callable",
@@ -1118,6 +1132,10 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 	private String resolveJavaInterfaceFqn( String rawTypeName ) {
 		if ( rawTypeName.startsWith( "java." ) || rawTypeName.startsWith( "javax." ) ) {
 			return rawTypeName;
+		}
+		String imported = importedTypeFqns.get( rawTypeName );
+		if ( imported != null ) {
+			return imported;
 		}
 		return KNOWN_JAVA_INTERFACES.get( rawTypeName );
 	}
