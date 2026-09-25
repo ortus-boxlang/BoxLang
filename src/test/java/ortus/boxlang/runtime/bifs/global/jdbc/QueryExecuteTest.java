@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
@@ -275,6 +276,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	@Test
 	public void testMissingDefaultDataSource() {
 		context.getConnectionManager().setDefaultDatasource( null );
+		context.getApplicationListener().updateSettings( Struct.of( Key.datasource, "" ) );
 		DatabaseException e = assertThrows( DatabaseException.class, () -> instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers" );

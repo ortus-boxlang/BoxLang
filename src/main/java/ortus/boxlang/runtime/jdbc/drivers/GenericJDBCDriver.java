@@ -46,9 +46,16 @@ import ortus.boxlang.runtime.types.util.StructUtil;
 public class GenericJDBCDriver implements IJDBCDriver {
 
 	/**
+	 * Boolean flag to determine how we represent a bit value internally.
+	 * i.e. 1/0 or true/false. This is not a feature flag, since it's a global Boxlang
+	 * behavior that controls what's in a boxlang query object, regardless of what JDBC driver supplied the data and how.
+	 */
+	public static boolean	representBitAsBoolean	= false;
+
+	/**
 	 * Bitfield to store enabled features (supports up to 64 flags).
 	 */
-	private long featureFlags = 0L;
+	private long			featureFlags			= 0L;
 
 	@Override
 	public void setFeatures( JDBCDriverFeature... features ) {
@@ -318,12 +325,18 @@ public class GenericJDBCDriver implements IJDBCDriver {
 		} else if ( sqlType == java.sql.Types.BIT ) {
 			// JDBC drivers may return Boolean for BIT, but query cells store numeric bits.
 			// Boolean caster could handle this, but fast tracking a couple common types
+			boolean bitValue;
 			if ( value instanceof Boolean bit ) {
-				return bit ? 1 : 0;
+				bitValue = bit;
 			} else if ( value instanceof Number number ) {
-				return number.intValue() == 1 ? 1 : 0;
+				bitValue = number.intValue() == 1;
 			} else {
-				return BooleanCaster.cast( value ) ? 1 : 0;
+				bitValue = BooleanCaster.cast( value );
+			}
+			if ( representBitAsBoolean ) {
+				return bitValue;
+			} else {
+				return bitValue ? 1 : 0;
 			}
 		} else if ( value instanceof ResultSet resultSet ) {
 			return Query.fromResultSet( statement, resultSet );

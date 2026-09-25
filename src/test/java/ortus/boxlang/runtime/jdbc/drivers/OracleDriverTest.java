@@ -984,4 +984,60 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( variables.containsKey( Key.of( "extraResult" ) ) ).isFalse();
 	}
 
+	@DisplayName( "It can match a decimal value with a scale on a queryparam" )
+	@Test
+	public void testSelectDecimalParamWithScale() {
+		// Ensure the test table exists and is empty
+		instance.executeStatement(
+		    """
+		    queryExecute(
+		    	"BEGIN EXECUTE IMMEDIATE 'DROP TABLE decimal_scale_test'; EXCEPTION WHEN OTHERS THEN NULL; END;",
+		    	{},
+		    	{ "datasource" : "OracleDatasource" }
+		    );
+		    	queryExecute(
+		    		"CREATE TABLE decimal_scale_test ( id NUMBER(10) PRIMARY KEY, amount NUMBER(10,2) )",
+		    		{},
+		    		{ "datasource" : "OracleDatasource" }
+		    	);
+		    """,
+		    context );
+		instance.executeStatement(
+		    """
+		    	queryExecute(
+		    		"INSERT INTO decimal_scale_test ( id, amount ) VALUES ( 1, :amount )",
+		    		{ "amount" : { value: "100.24", sqltype: "cf_sql_decimal", scale: 2 } },
+		    		{ "datasource" : "OracleDatasource" }
+		    	);
+		    """,
+		    context );
+		// @formatter:off
+		instance.executeSource(
+		    """
+			<cfquery name="result" datasource="OracleDatasource">
+				SELECT id, amount FROM decimal_scale_test
+				WHERE amount = <cfqueryparam value="100.24" cfsqltype="CF_SQL_DECIMAL" scale="2">
+			</cfquery>
+			""",
+		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+
+		IStruct row = query.getRowAsStruct( 0 );
+		assertEquals( 1, row.getAsNumber( Key.of( "id" ) ).intValue() );
+
+		// Clean up
+		instance.executeStatement(
+		    """
+		    queryExecute(
+		    	"BEGIN EXECUTE IMMEDIATE 'DROP TABLE decimal_scale_test'; EXCEPTION WHEN OTHERS THEN NULL; END;",
+		    	{},
+		    	{ "datasource" : "OracleDatasource" }
+		    );
+		    """,
+		    context );
+	}
+
 }

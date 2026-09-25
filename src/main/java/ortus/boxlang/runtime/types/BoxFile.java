@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.types;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -28,6 +29,8 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -343,7 +346,11 @@ public class BoxFile implements IType, IReferenceable, IBoxBinaryRepresentable {
 						throw new BoxRuntimeException( "The file [" + this.path.toAbsolutePath().toString() + "] does not exist or is not readable." );
 					}
 					this.size = Files.size( this.path );
-					this.reader = Files.newBufferedReader( this.path, Charset.forName( this.charset ) );
+					CharsetDecoder decoder = Charset.forName( this.charset )
+					    .newDecoder()
+					    .onMalformedInput( CodingErrorAction.REPLACE )
+					    .onUnmappableCharacter( CodingErrorAction.REPLACE );
+					this.reader = new BufferedReader( new InputStreamReader( Files.newInputStream( this.path ), decoder ) );
 					break;
 				case READBINARY :
 					if ( !Files.isReadable( this.path ) ) {
@@ -412,7 +419,9 @@ public class BoxFile implements IType, IReferenceable, IBoxBinaryRepresentable {
 				isEOF = this.reader.read() == -1l;
 				this.reader.reset();
 			} catch ( IOException e ) {
-				isEOF = true;
+				// If we hit a decoding error (e.g. MalformedInputException from binary data),
+				// propagate it — we're NOT at EOF, the data is just corrupt for this charset.
+				throw new BoxIOException( e );
 			}
 		} else {
 			throw new BoxRuntimeException( "This file object is in write or append mode.  Unable to determine EOF." );
