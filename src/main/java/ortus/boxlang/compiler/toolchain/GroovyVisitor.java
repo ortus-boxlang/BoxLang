@@ -823,22 +823,27 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 	// Real Groovy "switch" uses subject.isCase(caseValue) semantics: a Class case value means an
 	// instanceof check, a Range means containment, a List means containment - NOT plain equality.
 	// BoxSwitch (shared with CFVisitor/BoxVisitor) only ever does plain equality, so a switch with
-	// at least one such "smart" case is rewritten entirely as an if/else-if chain here rather than
-	// built as a BoxSwitch - a switch with ONLY plain-equality cases (the common case, including
-	// the existing "case Color.RED:" enum idiom, a MemberExpr rather than a bare identifier) is
-	// completely unaffected, still compiled via the native, more efficient BoxSwitch.
+	// at least one such "smart" case is rewritten entirely into a sequence of guarded ifs here
+	// rather than built as a BoxSwitch - a switch with ONLY plain-equality cases (the common case,
+	// including the existing "case Color.RED:" enum idiom, a MemberExpr rather than a bare
+	// identifier) is completely unaffected, still compiled via the native, more efficient BoxSwitch.
 	// <p>
 	// The subject is evaluated exactly once into a synthetic temp variable (so a side-effecting
 	// subject expression - "switch (computeThing()) {...}" - isn't re-evaluated once per case the
-	// way a naive chain of independent "if" conditions would), and the whole if/else-if chain is
-	// wrapped in a single-iteration "while (true) { ...; break }" purely so a matched case's own
-	// explicit "break;" (or simply falling off the end of its body) has a legal, correctly-scoped
-	// target to exit through - real switch fallthrough between cases is NOT preserved this way
-	// (a documented, narrower gap versus a plain-equality BoxSwitch, which does support it), and
-	// neither is a bare "continue;" written directly in a case body meaning to target a LOOP
-	// enclosing the switch itself (it would instead be swallowed by this synthetic loop) - both
-	// accepted, documented simplifications given how rarely either is combined with smart-switch
-	// case values specifically.
+	// way a naive chain of independent "if" conditions would), and the whole dispatch is wrapped in
+	// a single-iteration "while (true) { ...; break }" purely so a matched case's own explicit
+	// "break;" (or simply falling off the end of its body) has a legal, correctly-scoped target to
+	// exit through - see buildSmartSwitch for how real fallthrough between cases (unlike a naive
+	// if/else-if chain, which can only ever run ONE case body) is still preserved through that
+	// single loop iteration. A bare "continue;" written directly in a case body, meaning to target
+	// a LOOP enclosing the switch itself, is NOT correctly supported (it would instead be swallowed
+	// by this synthetic loop, restarting dispatch rather than continuing the real outer loop) - an
+	// accepted, documented gap: giving a case's own "break;" a legal target requires SOME enclosing
+	// loop construct, and unlike "break" (which should always target the nearest loop-or-switch,
+	// exactly matching this synthetic one), "continue" specifically needs to skip past it to
+	// whatever loop truly encloses the switch in the user's source - which isn't a rewrite this
+	// visitor can safely make from here, since it only sees the switch's own children, not its
+	// enclosing statement.
 	@Override
 	public BoxNode visitSwitchStatement( SwitchStatementContext ctx ) {
 		var		pos				= tools.getPosition( ctx );
@@ -853,42 +858,70 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 		return new BoxSwitch( condition, cases, pos, src );
 	}
 
+	// Real fallthrough (a case body without its own "break;" continues running the NEXT case's
+	// body too, regardless of whether ITS OWN condition matches) is fundamentally impossible to
+	// express as an if/else-if chain, since exactly one branch of an if/else-if can ever run. This
+	// instead tracks a single "matched" flag: once any case (or an unconditional "default") sets
+	// it, every case's body from that point on runs UNCONDITIONALLY, in source order, one after
+	// another - which is exactly what real switch fallthrough means, and gives a case's own
+	// explicit "break;" (still targeting the enclosing synthetic loop, same as before) its usual
+	// meaning of stopping that fall-through early. "default" participates as an ordinary entry
+	// whose own guard is unconditionally true (matching real Java/Groovy: default doesn't have to
+	// be the last case, and if it's not, cases physically after it still run in order once nothing
+	// earlier has matched) rather than being special-cased as a trailing fallback the way the
+	// previous backward-chained implementation required.
 	private BoxNode buildSmartSwitch( SwitchStatementContext ctx, Position pos, String src ) {
-		String			subjectName	= "__groovySwitchSubject";
-		BoxStatement	subjectInit	= new BoxExpressionStatement(
+		String				subjectName	= "__groovySwitchSubject";
+		String				matchedName	= "__groovySwitchMatched";
+		BoxStatement		subjectInit	= new BoxExpressionStatement(
 		    new BoxAssignment( new BoxIdentifier( subjectName, pos, subjectName ), BoxAssignmentOperator.Equal,
 		        ctx.expression().accept( expressionVisitor ), List.of(), pos, src ),
 		    pos, src );
+		BoxStatement		matchedInit	= new BoxExpressionStatement(
+		    new BoxAssignment( new BoxIdentifier( matchedName, pos, matchedName ), BoxAssignmentOperator.Equal,
+		        new BoxBooleanLiteral( Boolean.FALSE, pos, src ), List.of(), pos, src ),
+		    pos, src );
 
-		// Built backward so each case's "else" is the chain already built from every case after
-		// it - the trailing "default:" clause (if any) seeds the chain as its final "else". Each
-		// case gets its OWN fresh "subjectName" identifier node (never the same node instance
-		// reused across branches) - same reasoning as GroovyExpressionVisitor#
-		// desugarCompoundAssign: every occurrence in the rebuilt tree must be independent.
-		BoxStatement	chain		= null;
-		for ( int i = ctx.switchCase().size() - 1; i >= 0; i-- ) {
-			var sc = ctx.switchCase( i );
+		List<BoxStatement>	loopBody	= new ArrayList<>();
+		for ( var sc : ctx.switchCase() ) {
+			BoxStatement	body;
+			BoxExpression	ownCondition;
 			if ( sc instanceof DefaultClauseContext defaultCtx ) {
-				chain = new BoxStatementBlock( buildStatementList( defaultCtx.blockStatements() ), pos, src );
-				continue;
+				body			= new BoxStatementBlock( buildStatementList( defaultCtx.blockStatements() ), pos, src );
+				ownCondition	= null;
+			} else {
+				CaseClauseContext caseCtx = ( CaseClauseContext ) sc;
+				body			= new BoxStatementBlock( buildStatementList( caseCtx.blockStatements() ), pos, src );
+				ownCondition	= buildCaseMatch( subjectName, caseCtx.expression(), pos, src );
 			}
-			CaseClauseContext	caseCtx		= ( CaseClauseContext ) sc;
-			BoxExpression		matches		= buildCaseMatch( subjectName, caseCtx.expression(), pos, src );
-			BoxStatement		thenBody	= new BoxStatementBlock( buildStatementList( caseCtx.blockStatements() ), pos, src );
-			chain = new BoxIfElse( matches, thenBody, chain, pos, src );
+			// "if (!matched) { if (default OR matches) { matched = true } }" - each occurrence of
+			// "matched" is its own fresh identifier node, never reused - same reasoning as
+			// GroovyExpressionVisitor#desugarCompoundAssign.
+			BoxStatement	setMatched		= new BoxExpressionStatement(
+			    new BoxAssignment( matchedIdentifier( matchedName, pos ), BoxAssignmentOperator.Equal, new BoxBooleanLiteral( Boolean.TRUE, pos, src ),
+			        List.of(), pos, src ),
+			    pos, src );
+			BoxStatement	setMatchedBlock	= new BoxStatementBlock( List.of( setMatched ), pos, src );
+			BoxStatement	tryMatch		= ownCondition == null
+			    ? setMatchedBlock
+			    : new BoxIfElse( ownCondition, setMatchedBlock, null, pos, src );
+			BoxExpression	notYetMatched	= new BoxUnaryOperation( matchedIdentifier( matchedName, pos ), BoxUnaryOperator.Not, pos, src );
+			loopBody.add( new BoxIfElse( notYetMatched, new BoxStatementBlock( List.of( tryMatch ), pos, src ), null, pos, src ) );
+			// "if (matched) { <body> }" - runs this case's body once matched, whether matched HERE
+			// or by an earlier case falling through into it.
+			loopBody.add( new BoxIfElse( matchedIdentifier( matchedName, pos ), body, null, pos, src ) );
 		}
-
-		List<BoxStatement> loopBody = new ArrayList<>();
-		if ( chain != null ) {
-			loopBody.add( chain );
-		}
-		// Always exit after the chain runs once - whether a case explicitly "break;"ed or simply
-		// fell off the end of its body - so there is never any fallthrough into a case below it.
+		// Always exit once every case has had a chance to run (via fallthrough or not) - a case's
+		// own explicit "break;" exits earlier, through this same loop.
 		loopBody.add( new BoxBreak( pos, src ) );
 		BoxStatement syntheticLoop = new BoxWhile( null, new BoxBooleanLiteral( Boolean.TRUE, pos, src ),
 		    new BoxStatementBlock( loopBody, pos, src ), pos, src );
 
-		return new BoxStatementBlock( List.of( subjectInit, syntheticLoop ), pos, src );
+		return new BoxStatementBlock( List.of( subjectInit, matchedInit, syntheticLoop ), pos, src );
+	}
+
+	private BoxIdentifier matchedIdentifier( String matchedName, Position pos ) {
+		return new BoxIdentifier( matchedName, pos, matchedName );
 	}
 
 	// Builds the match condition for one "case" value against the (already-evaluated) subject,
@@ -923,6 +956,15 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 			return new BoxMethodInvocation( new BoxIdentifier( "contains", pos, "contains" ), listExpr,
 			    List.of( new BoxArgument( new BoxIdentifier( subjectName, pos, subjectName ), pos, src ) ), false, true, pos, src );
 		}
+		if ( isPatternCaseValue( caseExprCtx ) ) {
+			// Regex Pattern case ("case ~/foo.*/:") - real Groovy's Pattern.isCase(value) is a full
+			// match (matcher(value).matches()), matching the existing "==~" operator's own
+			// semantics (see GroovyExpressionVisitor#visitRegexExpr) rather than "=~"'s find().
+			BoxExpression	patternExpr	= caseExprCtx.accept( expressionVisitor );
+			BoxExpression	matcher		= new BoxMethodInvocation( new BoxIdentifier( "matcher", pos, "matcher" ), patternExpr,
+			    List.of( new BoxArgument( new BoxIdentifier( subjectName, pos, subjectName ), pos, src ) ), false, true, pos, src );
+			return new BoxMethodInvocation( new BoxIdentifier( "matches", pos, "matches" ), matcher, List.of(), false, true, pos, src );
+		}
 		BoxExpression caseValue = caseExprCtx.accept( expressionVisitor );
 		return new BoxComparisonOperation( new BoxIdentifier( subjectName, pos, subjectName ), BoxComparisonOperator.Equal, caseValue, pos, src );
 	}
@@ -930,6 +972,16 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 	private boolean isListLiteral( ortus.boxlang.parser.antlr.GroovyGrammar.ListOrMapLiteralContext ctx ) {
 		return ctx instanceof ortus.boxlang.parser.antlr.GroovyGrammar.ListLiteralContext
 		    || ctx instanceof ortus.boxlang.parser.antlr.GroovyGrammar.EmptyListLiteralContext;
+	}
+
+	// A case value shaped like "~/regex/" or "~\"regex\"" - the same syntactic, string-literal-
+	// only "~" Pattern-literal recognition GroovyExpressionVisitor#visitUnaryExpr already applies
+	// generally (accepting it here reuses that same visitor, so the actual Pattern.compile(...)
+	// call is built exactly once, in one place).
+	private boolean isPatternCaseValue( ortus.boxlang.parser.antlr.GroovyGrammar.ExpressionContext exprCtx ) {
+		return exprCtx instanceof ortus.boxlang.parser.antlr.GroovyGrammar.UnaryExprContext unaryCtx
+		    && unaryCtx.TILDE() != null
+		    && expressionVisitor.isStringLiteralExpr( unaryCtx.expression() );
 	}
 
 	private boolean isCapitalized( String name ) {
@@ -957,6 +1009,9 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 		if ( exprCtx instanceof ortus.boxlang.parser.antlr.GroovyGrammar.PrimaryExprContext primaryCtx
 		    && primaryCtx.primary() instanceof ortus.boxlang.parser.antlr.GroovyGrammar.IdentifierExprContext idCtx ) {
 			return isCapitalized( idCtx.IDENTIFIER().getText() );
+		}
+		if ( isPatternCaseValue( exprCtx ) ) {
+			return true;
 		}
 		return false;
 	}

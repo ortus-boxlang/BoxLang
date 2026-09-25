@@ -613,6 +613,69 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
+	@DisplayName( "smart-switch: a case without break falls through into the next case's body" )
+	public void testSmartSwitchFallsThroughWithoutBreak() {
+		// GroovyVisitor#buildSmartSwitch rewrites the whole dispatch as a sequence of guarded ifs
+		// tracking a single "matched" flag - once any case matches, every case's body from that
+		// point on runs, in order, exactly like real Groovy/Java switch fallthrough (this couldn't
+		// be expressed by a naive if/else-if chain, which only ever runs ONE branch).
+		IBoxContext	context	= newContext();
+		String		source	= "def x = 5\n"
+		    + "def hit = []\n"
+		    + "switch (x) {\n"
+		    + "  case 1..10:\n"
+		    + "    hit.add(\"first\")\n"
+		    + "  case Integer:\n"
+		    + "    hit.add(\"second\")\n"
+		    + "    break\n"
+		    + "  case String:\n"
+		    + "    hit.add(\"third\")\n"
+		    + "}\n"
+		    + "return hit.toList(\",\")\n";
+		assertThat( run( source, context ) ).isEqualTo( "first,second" );
+	}
+
+	@Test
+	@DisplayName( "smart-switch: a non-trailing default still falls through into cases physically after it" )
+	public void testSmartSwitchNonTrailingDefaultFallsThrough() {
+		IBoxContext	context	= newContext();
+		String		source	= "def x = 99\n"
+		    + "def hit = []\n"
+		    + "switch (x) {\n"
+		    + "  case 1..10:\n"
+		    + "    hit.add(\"small\")\n"
+		    + "    break\n"
+		    + "  default:\n"
+		    + "    hit.add(\"default\")\n"
+		    + "  case Integer:\n"
+		    + "    hit.add(\"integer\")\n"
+		    + "}\n"
+		    + "return hit.toList(\",\")\n";
+		assertThat( run( source, context ) ).isEqualTo( "default,integer" );
+	}
+
+	@Test
+	@DisplayName( "smart-switch: a regex Pattern case matches by full match, not plain equality" )
+	public void testSmartSwitchPatternCase() {
+		// "~/regex/" is Groovy's Pattern-literal operator (see GroovyExpressionVisitor#
+		// visitUnaryExpr) - as a case value, real Groovy's Pattern.isCase() is a full match
+		// (matcher(value).matches()), the same semantics as the existing "==~" operator.
+		IBoxContext context = newContext();
+		assertThat( run( "def x = \"hello\"\nswitch (x) {\n case ~/h.*o/:\n  return \"matches\"\n default:\n  return \"other\"\n}\n", context ) )
+		    .isEqualTo( "matches" );
+		assertThat( run( "def x = \"goodbye\"\nswitch (x) {\n case ~/h.*o/:\n  return \"matches\"\n default:\n  return \"other\"\n}\n", context ) )
+		    .isEqualTo( "other" );
+	}
+
+	@Test
+	@DisplayName( "'~' compiles a string/GString literal operand to a Pattern, distinct from bitwise complement" )
+	public void testTildeStringLiteralIsPatternCompile() {
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def p = ~/a.c/\nreturn p.matcher(\"abc\").matches()\n", context );
+		assertThat( result ).isEqualTo( true );
+	}
+
+	@Test
 	@DisplayName( "Range.step(n) { } iterates the range advancing by n, invoking the closure" )
 	public void testRangeStepWithClosure() {
 		// Desugars entirely at parse time into "(1..10).step(2).stream().forEach { ... }" - see

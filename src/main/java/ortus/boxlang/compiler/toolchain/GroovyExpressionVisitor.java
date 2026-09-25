@@ -520,8 +520,16 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 
 	@Override
 	public BoxExpression visitUnaryExpr( UnaryExprContext ctx ) {
-		var					pos		= tools.getPosition( ctx );
-		var					src		= tools.getSourceText( ctx );
+		var	pos	= tools.getPosition( ctx );
+		var	src	= tools.getSourceText( ctx );
+		if ( ctx.TILDE() != null && isStringLiteralExpr( ctx.expression() ) ) {
+			// Groovy overloads "~" for a string/GString operand as the "Pattern literal" operator
+			// (~/regex/ or ~"regex" compiles to a java.util.regex.Pattern), completely unrelated to
+			// its other meaning (bitwise complement on a number). Same bounded, syntactic-literal-
+			// only approach as the "+"/"*" string overloads above: only recognized when the operand
+			// is SYNTACTICALLY a string literal/GString, not a variable of unknown runtime type.
+			return buildPatternCompile( ctx.expression().accept( this ), pos, src );
+		}
 		BoxExpression		expr	= ctx.expression().accept( this );
 		BoxUnaryOperator	op;
 		if ( ctx.INC() != null ) {
@@ -538,6 +546,14 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 			op = BoxUnaryOperator.BitwiseComplement;
 		}
 		return new BoxUnaryOperation( expr, op, pos, src );
+	}
+
+	// Builds "Pattern.compile(regexExpr)" - shared by "~regex" (visitUnaryExpr) and reusable by
+	// anything else that needs a compiled Pattern from a source expression.
+	BoxExpression buildPatternCompile( BoxExpression regexExpr, Position pos, String src ) {
+		BoxExpression patternRef = new BoxFQN( PATTERN_FQN, pos, PATTERN_FQN );
+		return new BoxStaticMethodInvocation( new BoxIdentifier( "compile", pos, "compile" ), patternRef,
+		    List.of( new BoxArgument( regexExpr, regexExpr.getPosition(), regexExpr.getSourceText() ) ), pos, src );
 	}
 
 	@Override
@@ -588,7 +604,7 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 	 * a value that happens to be a string at runtime - that general case needs runtime type
 	 * dispatch this method deliberately doesn't attempt).
 	 */
-	private boolean isStringLiteralExpr( ortus.boxlang.parser.antlr.GroovyGrammar.ExpressionContext ctx ) {
+	boolean isStringLiteralExpr( ortus.boxlang.parser.antlr.GroovyGrammar.ExpressionContext ctx ) {
 		return ctx instanceof PrimaryExprContext primaryCtx && primaryCtx.primary() instanceof StringExprContext;
 	}
 
