@@ -167,6 +167,15 @@ statement: block                                                                
     | IDENTIFIER COLON statement                                                  # labeledStatement
     | DEF LPAREN IDENTIFIER ( COMMA IDENTIFIER )+ RPAREN ASSIGN expression        # tupleDeclStatement
     | LPAREN IDENTIFIER ( COMMA IDENTIFIER )+ RPAREN ASSIGN expression            # destructuringAssignStatement
+    // Listed BEFORE varDeclStatement on purpose: for the genuinely ambiguous "IDENTIFIER
+    // IDENTIFIER" shape (e.g. "capture message" could be a command-style call OR a declaration
+    // "Type varName"), ANTLR4's ambiguity resolution favors the LOWEST-numbered alt among all
+    // configs that remain viable after predicates are applied - a later, predicated alt can never
+    // win a tie against an earlier, unpredicated (trivially-always-viable) alt. Putting this
+    // predicated alt first means: when isCommandStyleCallStart is true, this alt wins the tie;
+    // when it's false, this alt's configs are eliminated entirely and varDeclStatement proceeds
+    // normally, so ordinary declarations are completely unaffected either way.
+    | { isCommandStyleCallStart( _input ) }? IDENTIFIER argumentList              # commandCallStatement
     | FINAL? ( typeName | DEF ) IDENTIFIER ( ASSIGN expression )? ( COMMA IDENTIFIER ( ASSIGN expression )? )* # varDeclStatement
     | IF LPAREN expression RPAREN statement ( ELSE statement )?                   # ifStatement
     | WHILE LPAREN expression RPAREN statement                                    # whileStatement
@@ -179,7 +188,6 @@ statement: block                                                                
     | CONTINUE IDENTIFIER?                                                        # continueStatement
     | SWITCH LPAREN expression RPAREN LBRACE sep? switchCase* RBRACE              # switchStatement
     | ASSERT expression ( COLON expression )?                                     # assertStatement
-    | { isCommandStyleCallStart( _input ) }? IDENTIFIER argumentList              # commandCallStatement
     | expression                                                                  # exprStatement
     ;
 

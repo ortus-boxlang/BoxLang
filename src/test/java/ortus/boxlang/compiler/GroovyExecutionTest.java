@@ -1019,12 +1019,11 @@ public class GroovyExecutionTest {
 	@Test
 	@DisplayName( "command-style call with a bare-identifier argument (println x) executes correctly" )
 	public void testCommandStyleCallWithBareIdentifierArgument() {
-		// Only recognized for the curated println/print/printf names (see GroovyParserControl#
-		// bareIdentifierCommandNames) - not general, since a bare "IDENTIFIER IDENTIFIER" is
-		// otherwise indistinguishable from a typed declaration like "int x" without real type
-		// resolution. Proves both that the curated case actually reaches println (not silently
-		// misparsed as a redundant var-decl) and that a same-shaped primitive-typed declaration
-		// still works unaffected.
+		// Recognized via GroovyParserControl#isLikelyMethodName's naming-convention heuristic
+		// (lowercase-leading call name => not a type name) - not general symbol resolution. Proves
+		// both that "println x" actually reaches println (not silently misparsed as a redundant
+		// var-decl) and that a same-shaped, uppercase-typed declaration ("int x" uses the primitive
+		// keyword token, a separate grammar path entirely) still works unaffected.
 		IBoxContext	context	= newContext();
 		Object		result	= run(
 		    "def message = \"hi from a bare identifier\"\n"
@@ -1034,6 +1033,27 @@ public class GroovyExecutionTest {
 		        + "return x\n",
 		    context );
 		assertThat( result.toString() ).isEqualTo( "5" );
+	}
+
+	@Test
+	@DisplayName( "command-style call with a bare-identifier argument works for any lowercase-named user function, not just println/print/printf" )
+	public void testCommandStyleCallWithBareIdentifierArgumentGeneralizesToUserFunctions() {
+		// GroovyParserControl#isLikelyMethodName is a general naming-convention heuristic (any
+		// lowercase-leading call name), not a curated list of built-in names - this proves a
+		// user-defined function ("capture", never special-cased anywhere) works the same way, while
+		// an uppercase-typed declaration ("String other") in the same script still parses as a
+		// declaration, unaffected.
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def captured = null\n"
+		        + "def capture(msg) { captured = msg }\n"
+		        + "def message = \"hi from a user function\"\n"
+		        + "capture message\n"
+		        + "String other\n"
+		        + "other = captured\n"
+		        + "return other\n",
+		    context );
+		assertThat( result ).isEqualTo( "hi from a user function" );
 	}
 
 	@Test
