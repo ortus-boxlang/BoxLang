@@ -312,4 +312,31 @@ public class GroovyClassExecutionTest {
 		assertThat( pointResult.toString() ).isEqualTo( "7" );
 	}
 
+	@Test
+	@DisplayName( "a file with two top-level classes and nothing else still loads and runs as a real class" )
+	public void testTwoTopLevelClassesOnlyLoadsAndRuns() {
+		// See GroovyParser#toAst: a source that is ENTIRELY class declarations (2+, nothing else)
+		// used to fall through to the script path instead of building a BoxClass root - meaning
+		// RunnableLoader.loadClass on a source shaped exactly like this would previously have
+		// gotten back a BoxScript, not the loadable class this test now proves it correctly does.
+		// The file's first class ("Greeter") becomes the loaded class itself; the second
+		// ("Farewell") is a peer in its own body, unreachable from outside this test (same as the
+		// "static class Point" peer above), so only Greeter's own behavior is exercised here.
+		IBoxContext		context		= newContext();
+		IClassRunnable	instance	= instantiate( """
+		                                           class Greeter {
+		                                             def greet(String name) {
+		                                               return "hi " + name
+		                                             }
+		                                           }
+		                                           class Farewell {
+		                                             def bye(String name) {
+		                                               return "bye " + name
+		                                             }
+		                                           }
+		                                           """, context );
+		Object			result		= instance.dereferenceAndInvoke( context, Key.of( "greet" ), new Object[] { "World" }, false );
+		assertThat( result ).isEqualTo( "hi World" );
+	}
+
 }

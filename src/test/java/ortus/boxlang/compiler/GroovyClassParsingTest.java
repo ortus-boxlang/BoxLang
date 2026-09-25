@@ -32,8 +32,9 @@ import ortus.boxlang.compiler.parser.ParsingResult;
 /**
  * Phase 2 class-file AST-shape tests for the Groovy parser/transpiler effort.
  * <p>
- * Groovy "class files" (source containing exactly one top-level class/interface/trait
- * declaration) build a {@code BoxClass} root, mirroring how CFParser handles .cfc files.
+ * Groovy "class files" (source containing one or more top-level class/interface/trait
+ * declarations and nothing else) build a {@code BoxClass} root, mirroring how CFParser handles
+ * .cfc files - see testTwoTopLevelClassesOnlyBuildsClassRoot for the 2+-class shape.
  * Unlike {@code GroovyExecutionTest}, these tests check the AST shape rather than running the
  * class through the runtime - {@code executeSource} explicitly rejects class-shaped compiled
  * output, and full class instantiation (ClassLocator wiring, module resolution) is out of
@@ -129,6 +130,35 @@ public class GroovyClassParsingTest {
 		BoxScript boxScript = ( BoxScript ) result.getRoot();
 		assertThat( boxScript.getStatements().stream().anyMatch( s -> s instanceof BoxLocalClass localClass
 		    && localClass.getName().getName().equals( "Foo" ) ) ).isTrue();
+	}
+
+	@Test
+	@DisplayName( "two top-level classes and nothing else still build a BoxClass root, not a script" )
+	public void testTwoTopLevelClassesOnlyBuildsClassRoot() throws IOException {
+		// A file with 2+ top-level classes and NO other statements is still entirely "a class
+		// file" (unlike testMixedScriptAndClassBuildsScriptWithLocalClass, there's no script
+		// statement here at all) - the textually first class ("Greeter") becomes the BoxClass
+		// root itself, and the second ("Farewell") becomes a BoxLocalClass peer in its own body,
+		// the exact same shape a class nested inside another class's body already produces.
+		// Previously this fell through to the script path instead, silently defining both classes
+		// as script-local symbols with no statement left in that (otherwise-empty) script to ever
+		// reach either of them.
+		ParsingResult result = parseClass( """
+		                                   class Greeter {
+		                                     def greet() { return "hi" }
+		                                   }
+		                                   class Farewell {
+		                                     def bye() { return "bye" }
+		                                   }
+		                                   """ );
+
+		assertThat( result.isCorrect() ).isTrue();
+		BoxClass	boxClass		= ( BoxClass ) result.getRoot();
+		boolean		hasGreetMethod	= boxClass.getBody().stream()
+		    .anyMatch( stmt -> stmt instanceof BoxFunctionDeclaration fn && fn.getName().equals( "greet" ) );
+		assertThat( hasGreetMethod ).isTrue();
+		assertThat( boxClass.getBody().stream().anyMatch( s -> s instanceof BoxLocalClass localClass
+		    && localClass.getName().getName().equals( "Farewell" ) ) ).isTrue();
 	}
 
 	@Test

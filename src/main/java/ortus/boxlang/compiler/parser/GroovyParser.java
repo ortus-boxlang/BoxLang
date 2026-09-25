@@ -29,6 +29,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
+import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
@@ -51,12 +52,14 @@ import ortus.boxlang.parser.antlr.GroovyLexer;
  * into {@code ortus.boxlang.compiler.ast} nodes.
  * <p>
  * Phase 2 of the Groovy parser/transpiler effort. A source is treated as a "class file" (its AST
- * root is a {@code BoxClass}, the shape {@code RunnableLoader#loadClass} expects) only when it
- * contains exactly one top-level {@code class}/{@code interface}/{@code trait} declaration and
- * nothing else besides package/import statements. Otherwise it is treated as a script - and a
- * class declaration mixed in among other top-level statements (which real Groovy allows) becomes
- * a {@code BoxLocalClass} peer statement in that script, the same mechanism a named nested class
- * or a hoisted anonymous class already use (see GroovyVisitor#visitClassDeclaration).
+ * root is a {@code BoxClass}, the shape {@code RunnableLoader#loadClass} expects) when it contains
+ * one or more top-level {@code class}/{@code interface}/{@code trait} declarations and nothing
+ * else besides package/import statements - the file's textually first class becomes the
+ * {@code BoxClass} itself, and any further top-level classes become {@code BoxLocalClass} peers in
+ * its own body. Otherwise (any other top-level statement is present) it is treated as a script -
+ * and a class declaration mixed in among other top-level statements (which real Groovy allows)
+ * becomes a {@code BoxLocalClass} peer statement in that script instead, the same mechanism a named
+ * nested class or a hoisted anonymous class already use (see GroovyVisitor#visitClassDeclaration).
  */
 public class GroovyParser extends AbstractParser {
 
@@ -205,13 +208,32 @@ public class GroovyParser extends AbstractParser {
 
 		long								classCount		= declarations.stream().filter( d -> d.classDeclaration() != null ).count();
 
-		// A file that is ENTIRELY a single class declaration (no other top-level statements) is
+		// A file that is ENTIRELY class declarations (no other top-level statements at all) is
 		// compiled as a true class-file (BoxClass), the same "the whole file's AST root IS the
 		// class" mode RunnableLoader#loadClass expects - distinct from a script that merely
 		// DEFINES a class among other statements (handled below via a BoxLocalClass, the same
-		// mechanism a named nested class or a hoisted anonymous class already use).
-		if ( classCount == 1 && declarations.size() == 1 ) {
-			return statementVisitor.buildClass( declarations.get( 0 ).classDeclaration(), imports );
+		// mechanism a named nested class or a hoisted anonymous class already use). The file's
+		// textually FIRST class becomes this BoxClass itself; any additional top-level classes
+		// (2+ classes, still nothing else) are appended as BoxLocalClass peers in its own body -
+		// the exact same shape a nested classDeclaration inside a class body, or an extra class
+		// mixed with script statements below, already produces - so AsmTranspiler/JavaTranspiler's
+		// existing preCompileLocalClasses scan of a BoxClass's own body (already relied on for a
+		// class-nested-in-a-class) compiles each of them as its own separately-loadable auxiliary
+		// class, with no new compiler machinery needed. Previously this exact shape (2+ classes,
+		// nothing else) fell through to the script path below instead, silently defining the
+		// classes as script-local symbols with no statement left to reference them - executable,
+		// but with no way to actually reach any of them from outside that (otherwise-empty)
+		// script's own execution.
+		if ( classCount > 0 && declarations.size() == classCount ) {
+			BoxClass boxClass = statementVisitor.buildClass( declarations.get( 0 ).classDeclaration(), imports );
+			if ( declarations.size() > 1 ) {
+				List<BoxStatement> bodyWithPeers = new ArrayList<>( boxClass.getBody() );
+				for ( int i = 1; i < declarations.size(); i++ ) {
+					bodyWithPeers.add( ( BoxStatement ) declarations.get( i ).classDeclaration().accept( statementVisitor ) );
+				}
+				boxClass.setBody( bodyWithPeers );
+			}
+			return boxClass;
 		}
 
 		// Push the script's own top-level hoist-scope frame before building any statement, so an
