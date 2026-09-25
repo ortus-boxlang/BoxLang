@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- New `afterBoxClassCreation` interception point: fires when a BoxLang class instance is fully defined (pseudo-constructor ran, interfaces and abstract methods validated) but before `init()` is called. Data: `instance`, `className`, `noInit`, `context`. Also fires for `noInit` creations like `createObject()` and deserialization. Never fires for super classes in an `extends` chain.
+- New `afterBoxClassInit` interception point: fires after `init()` (or the implicit constructor) completes. Data: `instance`, `result`, `className`, `context`. Does not fire for `noInit` creations or when `init()` throws.
+
 ## [1.17.5] - 2026-09-14
 
 ### Fixed

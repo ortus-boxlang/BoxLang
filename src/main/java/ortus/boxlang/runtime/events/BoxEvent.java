@@ -59,6 +59,12 @@ public enum BoxEvent {
 	AFTER_DYNAMIC_OBJECT_CREATION( "afterDynamicObjectCreation" ),
 
 	/**
+	 * BoxLang Class Instance Events
+	 */
+	AFTER_BOX_CLASS_CREATION( "afterBoxClassCreation" ),
+	AFTER_BOX_CLASS_INIT( "afterBoxClassInit" ),
+
+	/**
 	 * Application Related Events
 	 */
 	ON_APPLICATION_START( "onApplicationStart" ),

@@ -1,0 +1,8 @@
+class {
+
+	function init() {
+		variables.parentInit = true;
+		return this;
+	}
+
+}

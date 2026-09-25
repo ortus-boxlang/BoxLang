@@ -109,7 +109,8 @@ public class BoxClassSupport {
 	public static void pseudoConstructor( IClassRunnable thisClass, IBoxContext context ) {
 		context.pushTemplate( thisClass );
 		try {
-			// TODO: pre/post interceptor announcements here
+			// Instance creation is announced by DynamicInteropService.bootstrapBLClass() via
+			// BoxEvent.AFTER_BOX_CLASS_CREATION and BoxEvent.AFTER_BOX_CLASS_INIT
 			thisClass._pseudoConstructor( context );
 		} finally {
 			context.popTemplate();
