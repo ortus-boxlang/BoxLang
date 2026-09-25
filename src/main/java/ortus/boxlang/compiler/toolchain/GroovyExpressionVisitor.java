@@ -38,7 +38,6 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
-import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
@@ -390,66 +389,113 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 		return new BoxIdentifier( "it", pos, "it" );
 	}
 
+	// The forwarded-argument count a method pointer closure will fully forward, via an
+	// "arguments.len() == N" dispatch (see buildMethodPointerClosure). Deliberately stops at 2,
+	// NOT raised to match BoxLang's own 3-arg (ArrayEach/ArrayMap/ArrayFilter/ArrayReduce/
+	// StructEach/QueryEach/etc.) or 4-arg (StructReduce/QueryReduce) non-strict callback
+	// conventions - confirmed the hard way, as a real regression this exact PR caught in its own
+	// test suite: raising this to 3 broke both "list.each(other.&add)" (ArrayEach forwarding
+	// element/index/array, so "add" - a 1-arg method - was suddenly called with 3 args) and
+	// "list.collect(String.&toUpperCase)" (an unbound pointer forwarding index/array as bogus
+	// extra arguments to the receiver's own 0-arg "toUpperCase"). 3 and 4 are exactly the arg
+	// counts those real, common conventions use, so there is no count above 2 this parser can
+	// safely assume is a "genuine direct call" rather than "one of those conventions" - 2 remains
+	// the highest count reachable ONLY by directly invoking the pointer value itself with that
+	// many real arguments (e.g. "def f = acc.&plus; f(3, 4)"), never by any non-strict BIF
+	// convention in this codebase.
+	private static final int METHOD_POINTER_MAX_FORWARDED_ARGS = 2;
+
 	// Groovy's method pointer operator (Type.&methodName / instance.&methodName) produces a
 	// standalone invokable value.
-	// - Unbound (base is a known static class name, e.g. String.&toUpperCase): reuses BoxLang's
-	// own native BoxFunctionalMemberAccess AST node - the exact ".methodName" functional-member-
-	// access value BoxLang's own grammar already supports (see BoxExpressionVisitor#
-	// visitExprHeadless) - directly, with no new AST/runtime machinery. Its own documented
-	// contract (FunctionalMemberAccess#_invoke: "No args will be passed to the member method")
-	// scopes it to a single forwarded argument - a shared-runtime limitation (this AST node backs
-	// native BoxLang's own ".methodName" syntax too, not just this Groovy feature), so widening it
-	// is out of scope here.
+	// - Unbound (base is a known static class name, e.g. String.&toUpperCase): see
+	// buildUnboundMethodPointer.
 	// - Bound (any other base expression, e.g. myList.&add): see buildBoundMethodPointer.
 	private BoxExpression buildMethodPointer( ExpressionContext baseCtx, BoxIdentifier methodName, Position pos, String src ) {
 		BoxIdentifier staticBase = staticClassBase( baseCtx );
 		if ( staticBase != null ) {
-			return new BoxFunctionalMemberAccess( methodName.getName(), null, pos, src );
+			return buildUnboundMethodPointer( methodName, pos, src );
 		}
 		return buildBoundMethodPointer( baseCtx, methodName, pos, src );
 	}
 
 	// A bound method pointer (myList.&add) is built as a closure forwarding however many
-	// arguments it's actually called with, up to two - NOT a blind "forward everything" (which
-	// was tried and found to break the common "myList.each(other.&add)" idiom: BoxLang's own
-	// ArrayEach invokes a non-strict callback with THREE arguments - element, index, array - not
-	// just the element, so forwarding all of them silently turned that into "other.add(item,
-	// index, array)", which no real method matches; ArrayReduce's own non-strict callback
-	// convention is the same shape - accumulator, item, index - so a reduce/inject-style method
-	// pointer callback still only gets its first argument forwarded, same as each/collect/find).
-	// Exactly two call-time arguments forwards both - reachable when the method pointer VALUE
-	// itself is invoked directly with two arguments (e.g. "def f = acc.&plus; f(3, 4)"), not via
-	// one of the two/three-arg-non-strict BIF callback conventions above. Any other count - one
-	// argument, or three-plus - forwards only the first. This is determined purely from
-	// "arguments.len()" at the call site, exactly like GroovyVisitor#withVarargsPreamble already
-	// does for a genuinely variadic parameter - no reflection or speculative retry needed, so a
-	// side-effecting target method is never invoked more than once.
+	// arguments it's actually called with (up to METHOD_POINTER_MAX_FORWARDED_ARGS) as the
+	// target method's own arguments, on a fixed, already-known receiver (baseCtx).
 	private BoxExpression buildBoundMethodPointer( ExpressionContext baseCtx, BoxIdentifier methodName, Position pos, String src ) {
-		BoxArgumentDeclaration	itParam			= new BoxArgumentDeclaration( false, "Any", "it", null, List.of(), List.of(), pos, src );
+		return buildMethodPointerClosure( pos, src, ( argumentsId, forwardedCount ) -> new BoxMethodInvocation(
+		    methodName, baseCtx.accept( this ), argSlotArguments( argumentsId, 1, forwardedCount, pos, src ), false, true, pos, src ) );
+	}
 
+	// An unbound method pointer (String.&toUpperCase) is built the same way as the bound form,
+	// except the receiver ISN'T already known - real Groovy semantics for this shape are that
+	// the first forwarded argument itself becomes the receiver, and any remaining arguments are
+	// the target method's own arguments (e.g. "String.&startsWith" called with ("hello", "he")
+	// means "hello".startsWith("he")). Previously this returned BoxLang's own native
+	// BoxFunctionalMemberAccess AST node directly (the exact ".methodName" functional-member-
+	// access value BoxLang's own grammar already supports) - correct in spirit, but that shared
+	// runtime node's own documented contract ("no args will be passed to the member method")
+	// hard-caps it at a single (receiver-only) argument; widening THAT node is out of scope here
+	// since it also backs native BoxLang's own ".methodName" syntax, not just this Groovy
+	// feature. Building an explicit closure here instead (mirroring the bound form) reaches the
+	// same forwarding depth without touching shared runtime code.
+	private BoxExpression buildUnboundMethodPointer( BoxIdentifier methodName, Position pos, String src ) {
+		return buildMethodPointerClosure( pos, src, ( argumentsId, forwardedCount ) -> {
+			BoxExpression receiver = argSlot( argumentsId, 1, pos, src );
+			return new BoxMethodInvocation( methodName, receiver, argSlotArguments( argumentsId, 2, forwardedCount, pos, src ), false, true, pos, src );
+		} );
+	}
+
+	// Shared builder for both method-pointer forms: a closure whose body dispatches on
+	// "arguments.len()" (exactly like GroovyVisitor#withVarargsPreamble already does for a
+	// genuinely variadic parameter - no reflection or speculative retry needed, so a
+	// side-effecting target method is never invoked more than once) and forwards every argument
+	// it was actually called with, from METHOD_POINTER_MAX_FORWARDED_ARGS down to 2 - NOT a
+	// blind "forward everything" (which was tried and found to break the common
+	// "myList.each(other.&add)" idiom before this dispatch existed at all: BoxLang's own
+	// ArrayEach invokes a non-strict callback with 3 arguments unconditionally - element, index,
+	// array - so forwarding all of them to a 2-arg method like "add" would throw). The fallback
+	// (arguments.len() outside [2, MAX], including exactly 1) forwards only the first argument -
+	// this is also what arguments.len() itself reports when the closure is invoked with truly
+	// ZERO arguments, since its sole declared parameter is optional and ArgumentsScope pads a
+	// missing-but-declared argument rather than reporting the true (lower) call-time count.
+	//
+	// @param callForArgCount given the arguments identifier and a forwarded-argument count N (2..MAX,
+	// then 1 for the fallback), builds the call expression that forwards exactly N arguments.
+	private BoxExpression buildMethodPointerClosure( Position pos, String src,
+	    java.util.function.BiFunction<BoxIdentifier, Integer, BoxExpression> callForArgCount ) {
+		BoxArgumentDeclaration	itParam			= new BoxArgumentDeclaration( false, "Any", "it", null, List.of(), List.of(), pos, src );
 		BoxIdentifier			argumentsId		= new BoxIdentifier( "arguments", pos, "arguments" );
 		BoxExpression			argumentsLen	= new BoxMethodInvocation( new BoxIdentifier( "len", pos, "len" ), argumentsId, List.of(), false, true, pos,
 		    src );
-		BoxExpression			firstArgSlot	= new BoxArrayAccess( argumentsId, false, new BoxIntegerLiteral( "1", pos, src ), pos, src );
-		BoxExpression			secondArgSlot	= new BoxArrayAccess( argumentsId, false, new BoxIntegerLiteral( "2", pos, src ), pos, src );
 
-		// baseCtx is re-visited once per branch (rather than reusing one BoxExpression instance
-		// in both) so each occurrence in the rebuilt tree is an independent node instance - same
-		// reasoning as GroovyExpressionVisitor#desugarCompoundAssign. Only one branch ever
-		// executes per closure invocation, so the receiver is still evaluated exactly once per
-		// call either way.
-		BoxExpression			twoArgCall		= new BoxMethodInvocation( methodName, baseCtx.accept( this ),
-		    List.of( new BoxArgument( firstArgSlot, pos, src ), new BoxArgument( secondArgSlot, pos, src ) ), false, true, pos, src );
-		BoxExpression			oneArgCall		= new BoxMethodInvocation( methodName, baseCtx.accept( this ),
-		    List.of( new BoxArgument( firstArgSlot, pos, src ) ), false, true, pos, src );
-
-		BoxExpression			isTwoArgs		= new BoxComparisonOperation( argumentsLen, BoxComparisonOperator.Equal, new BoxIntegerLiteral( "2", pos, src ),
-		    pos, src );
-		BoxStatement			thenBranch		= new BoxStatementBlock( List.of( new BoxReturn( twoArgCall, pos, src ) ), pos, src );
-		BoxStatement			elseBranch		= new BoxStatementBlock( List.of( new BoxReturn( oneArgCall, pos, src ) ), pos, src );
-		BoxStatement			body			= new BoxStatementBlock( List.of( new BoxIfElse( isTwoArgs, thenBranch, elseBranch, pos, src ) ), pos, src );
+		BoxStatement			body			= new BoxStatementBlock(
+		    List.of( new BoxReturn( callForArgCount.apply( argumentsId, 1 ), pos, src ) ), pos, src );
+		for ( int forwardedCount = METHOD_POINTER_MAX_FORWARDED_ARGS; forwardedCount >= 2; forwardedCount-- ) {
+			BoxExpression	isThisManyArgs	= new BoxComparisonOperation( argumentsLen, BoxComparisonOperator.Equal,
+			    new BoxIntegerLiteral( String.valueOf( forwardedCount ), pos, src ), pos, src );
+			BoxStatement	thenBranch		= new BoxStatementBlock(
+			    List.of( new BoxReturn( callForArgCount.apply( argumentsId, forwardedCount ), pos, src ) ), pos, src );
+			body = new BoxStatementBlock( List.of( new BoxIfElse( isThisManyArgs, thenBranch, body, pos, src ) ), pos, src );
+		}
 
 		return new BoxClosure( new ArrayList<>( List.of( itParam ) ), List.of(), body, pos, src );
+	}
+
+	// Builds "arguments[from]", "arguments[from+1]", ..., "arguments[to]" as a list of positional
+	// BoxArguments (to < from yields an empty list). argumentsId (a simple leaf identifier with no
+	// side effects) is deliberately reused across every slot and branch here - unlike a full
+	// expression subtree, sharing a single leaf node instance across sibling positions is already
+	// established practice in this class.
+	private List<BoxArgument> argSlotArguments( BoxIdentifier argumentsId, int from, int to, Position pos, String src ) {
+		List<BoxArgument> args = new ArrayList<>();
+		for ( int i = from; i <= to; i++ ) {
+			args.add( new BoxArgument( argSlot( argumentsId, i, pos, src ), pos, src ) );
+		}
+		return args;
+	}
+
+	private BoxExpression argSlot( BoxIdentifier argumentsId, int index, Position pos, String src ) {
+		return new BoxArrayAccess( argumentsId, false, new BoxIntegerLiteral( String.valueOf( index ), pos, src ), pos, src );
 	}
 
 	@Override

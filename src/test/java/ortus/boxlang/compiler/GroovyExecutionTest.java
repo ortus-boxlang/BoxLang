@@ -973,6 +973,22 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
+	@DisplayName( "unbound method pointer called directly with two arguments treats the first as the receiver and forwards the second" )
+	public void testUnboundMethodPointerForwardsTwoArguments() {
+		// Generalization beyond the receiver-only (0 forwarded args) callback case: when the
+		// pointer VALUE itself is invoked directly with exactly two arguments (not via a BIF's own
+		// non-strict callback convention - see buildUnboundMethodPointer's header comment), the
+		// first becomes the receiver and the second is forwarded as the target method's own
+		// argument - matching real Groovy's own unbound-method-reference semantics.
+		IBoxContext	context	= newContext();
+		Object		result	= run(
+		    "def f = String.&startsWith\n"
+		        + "return f(\"hello\", \"he\")\n",
+		    context );
+		assertThat( result ).isEqualTo( true );
+	}
+
+	@Test
 	@DisplayName( "bound method pointer called directly with two arguments forwards both" )
 	public void testBoundMethodPointerForwardsTwoArguments() {
 		// Generalization beyond the single-argument callback case: when the method pointer VALUE
