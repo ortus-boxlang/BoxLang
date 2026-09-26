@@ -636,8 +636,37 @@ public class GroovyExecutionTest {
 	}
 
 	@Test
-	@DisplayName( "smart-switch: a non-trailing default still falls through into cases physically after it" )
+	@DisplayName( "smart-switch: a non-trailing default still falls through into cases physically after it, only when nothing actually matches" )
 	public void testSmartSwitchNonTrailingDefaultFallsThrough() {
+		// x matches NEITHER real case (1..10 nor 900..910) - only then does default legitimately
+		// apply, and cases physically after it still run via fallthrough regardless of their own
+		// condition. A real case that DOES match anywhere in the switch must always win over
+		// "default" no matter which is positioned first - see GroovyVisitor#buildSmartSwitch's own
+		// two-phase header comment (this exact scenario, with a differently-shaped later case that
+		// always matched, was a real bug this test previously encoded as the expected behavior).
+		IBoxContext	context	= newContext();
+		String		source	= "def x = 999\n"
+		    + "def hit = []\n"
+		    + "switch (x) {\n"
+		    + "  case 1..10:\n"
+		    + "    hit.add(\"small\")\n"
+		    + "    break\n"
+		    + "  default:\n"
+		    + "    hit.add(\"default\")\n"
+		    + "  case 900..910:\n"
+		    + "    hit.add(\"in-900s\")\n"
+		    + "}\n"
+		    + "return hit.toList(\",\")\n";
+		assertThat( run( source, context ) ).isEqualTo( "default,in-900s" );
+	}
+
+	@Test
+	@DisplayName( "smart-switch: a later, genuinely matching case always wins over an earlier-positioned default" )
+	public void testSmartSwitchLaterMatchingCaseWinsOverEarlierDefault() {
+		// The exact bug the previous version of testSmartSwitchNonTrailingDefaultFallsThrough
+		// accidentally encoded as "expected" behavior: with "default" positioned BEFORE a case
+		// that genuinely matches the subject, real switch dispatch must still pick the matching
+		// case - "default" only applies when NO case matches anywhere in the switch.
 		IBoxContext	context	= newContext();
 		String		source	= "def x = 99\n"
 		    + "def hit = []\n"
@@ -651,7 +680,7 @@ public class GroovyExecutionTest {
 		    + "    hit.add(\"integer\")\n"
 		    + "}\n"
 		    + "return hit.toList(\",\")\n";
-		assertThat( run( source, context ) ).isEqualTo( "default,integer" );
+		assertThat( run( source, context ) ).isEqualTo( "integer" );
 	}
 
 	@Test
@@ -963,6 +992,36 @@ public class GroovyExecutionTest {
 		IBoxContext	context	= newContext();
 		Object		result	= run( "final int x = 5\nreturn x + 1\n", context );
 		assertThat( result.toString() ).isEqualTo( "6" );
+	}
+
+	@Test
+	@DisplayName( "a multi-declarator declaration assigns each initializer to its OWN declarator, even when an earlier one has none" )
+	public void testMultiDeclaratorAssignsInitializersToCorrectDeclarator() {
+		// Each declarator has its own independent "(= expr)?" - "def a, b = 5" must leave "a"
+		// null and assign 5 to "b", not misread b's initializer as a's (a real bug: since
+		// ctx.expression() is one flat list across every declarator that has an initializer,
+		// blindly indexing it by declarator position previously assigned b's value to a, then
+		// ran out of expressions and assigned null to b instead - see
+		// GroovyVisitor#visitVarDeclStatement's own header comment).
+		IBoxContext	context	= newContext();
+		Object		result	= run( "def a, b = 5\nreturn \"${a == null},${b}\"\n", context );
+		assertThat( result ).isEqualTo( "true,5" );
+	}
+
+	@Test
+	@DisplayName( "standard string escapes (\\n, \\t, etc.) are interpreted, not left as literal backslash sequences" )
+	public void testStandardStringEscapesAreInterpreted() {
+		// Previously only "\\", the string's own quote character, and (for GStrings) "\$" were
+		// recognized - "\n"/"\t" etc. passed through as a literal two-character backslash+letter
+		// sequence instead of an actual control character. See GroovyExpressionVisitor#
+		// unescapeGroovyString.
+		IBoxContext	context			= newContext();
+		Object		doubleQuoted	= run( "return \"a\\nb\\tc\"\n", context );
+		assertThat( doubleQuoted ).isEqualTo( "a\nb\tc" );
+		Object singleQuoted = run( "return 'a\\nb\\tc'\n", context );
+		assertThat( singleQuoted ).isEqualTo( "a\nb\tc" );
+		Object unicode = run( "return \"\\u0041\\u0042\"\n", context );
+		assertThat( unicode ).isEqualTo( "AB" );
 	}
 
 	@Test

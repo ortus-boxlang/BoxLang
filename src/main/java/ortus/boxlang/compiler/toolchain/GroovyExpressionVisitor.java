@@ -1258,11 +1258,78 @@ public class GroovyExpressionVisitor extends GroovyGrammarBaseVisitor<BoxExpress
 	}
 
 	private String unescapeSingleQuoted( String text ) {
-		return text.replace( "\\'", "'" ).replace( "\\\\", "\\" );
+		return unescapeGroovyString( text );
 	}
 
 	private String unescapeGStringText( String text ) {
-		return text.replace( "\\\"", "\"" ).replace( "\\\\", "\\" ).replace( "\\$", "$" );
+		return unescapeGroovyString( text );
+	}
+
+	// A single left-to-right scan (never a chain of String#replace calls, which can misfire on
+	// adjacent backslashes - e.g. a literal "\\'" in source, backslash-backslash-quote, must
+	// unescape to a single backslash followed by a literal quote character, not get its "\'"
+	// tail mistaken for an escaped quote by an earlier replace pass). Handles every standard
+	// Groovy/Java string escape (previously only "\\", "\'"/"\"" and "\$" were recognized - "\n",
+	// "\t", etc. passed through as a literal two-character backslash+letter sequence instead of
+	// the intended control character). An unrecognized escape (e.g. "\d" - meaningful in a regex,
+	// not a string escape) is left untouched, both characters intact, matching how SLASHY_STRING
+	// already treats every escape sequence other than its own "\/".
+	private String unescapeGroovyString( String text ) {
+		StringBuilder	result	= new StringBuilder( text.length() );
+		int				i		= 0;
+		while ( i < text.length() ) {
+			char c = text.charAt( i );
+			if ( c != '\\' || i + 1 >= text.length() ) {
+				result.append( c );
+				i++;
+				continue;
+			}
+			char next = text.charAt( i + 1 );
+			switch ( next ) {
+				case 'n' -> {
+					result.append( '\n' );
+					i += 2;
+				}
+				case 't' -> {
+					result.append( '\t' );
+					i += 2;
+				}
+				case 'r' -> {
+					result.append( '\r' );
+					i += 2;
+				}
+				case 'b' -> {
+					result.append( '\b' );
+					i += 2;
+				}
+				case 'f' -> {
+					result.append( '\f' );
+					i += 2;
+				}
+				case '\\', '\'', '"', '$' -> {
+					result.append( next );
+					i += 2;
+				}
+				case 'u' -> {
+					if ( i + 5 < text.length() ) {
+						try {
+							result.append( ( char ) Integer.parseInt( text.substring( i + 2, i + 6 ), 16 ) );
+							i += 6;
+							continue;
+						} catch ( NumberFormatException e ) {
+							// Not 4 valid hex digits - fall through to the unrecognized-escape case.
+						}
+					}
+					result.append( c );
+					i++;
+				}
+				default -> {
+					result.append( c );
+					i++;
+				}
+			}
+		}
+		return result.toString();
 	}
 
 }

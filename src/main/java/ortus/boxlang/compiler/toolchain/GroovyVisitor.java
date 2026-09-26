@@ -581,24 +581,41 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 	// -----------------------------------------------------------------------------------------
 	// Statements
 
+	// Each declarator has its OWN independent optional "(ASSIGN expression)?" (grammar:
+	// "IDENTIFIER (ASSIGN expression)? (COMMA IDENTIFIER (ASSIGN expression)?)*"), so
+	// ctx.expression() (a single FLAT list across every declarator that happens to have an
+	// initializer) can NOT be indexed by declarator position - ctx.expression(i) is only the
+	// i-th declarator's own value when EVERY earlier declarator also had one. Confirmed the hard
+	// way: "def a, b = 5" has IDENTIFIER() = [a, b] but expression() = [5] (only b's own value
+	// is present), so blindly reading ctx.expression(0) for "a" would wrongly assign b's value 5
+	// to a, then fall past the end of the (size-1) expression list and assign null to b instead
+	// of 5 - both declarators' values landing on the wrong variable. Walking ctx.children in
+	// original source order instead (an IDENTIFIER optionally immediately followed by its own
+	// ASSIGN + expression pair) reconstructs exactly which declarator each initializer actually
+	// belongs to.
 	@Override
 	public BoxNode visitVarDeclStatement( VarDeclStatementContext ctx ) {
-		var					pos			= tools.getPosition( ctx );
-		var					src			= tools.getSourceText( ctx );
-		List<BoxStatement>	declarators	= new ArrayList<>();
+		var											pos			= tools.getPosition( ctx );
+		var											src			= tools.getSourceText( ctx );
+		List<BoxStatement>							declarators	= new ArrayList<>();
 
-		// First declarator carries the (optional) type/def prefix, the rest are bare
-		// "IDENTIFIER (= expr)?" per Groovy's comma-separated declaration syntax.
-		BoxIdentifier		firstTarget	= new BoxIdentifier( ctx.IDENTIFIER( 0 ).getText(), tools.getPosition( ctx.IDENTIFIER( 0 ).getSymbol() ),
-		    ctx.IDENTIFIER( 0 ).getText() );
-		BoxExpression		firstValue	= ctx.expression().isEmpty() ? new BoxNull( pos, src ) : ctx.expression( 0 ).accept( expressionVisitor );
-		declarators.add( new BoxExpressionStatement( new BoxAssignment( firstTarget, BoxAssignmentOperator.Equal, firstValue, List.of(), pos, src ), pos,
-		    src ) );
-
-		for ( int i = 1; i < ctx.IDENTIFIER().size(); i++ ) {
-			BoxIdentifier	target	= new BoxIdentifier( ctx.IDENTIFIER( i ).getText(), tools.getPosition( ctx.IDENTIFIER( i ).getSymbol() ),
-			    ctx.IDENTIFIER( i ).getText() );
-			BoxExpression	value	= i < ctx.expression().size() ? ctx.expression( i ).accept( expressionVisitor ) : new BoxNull( pos, src );
+		List<org.antlr.v4.runtime.tree.ParseTree>	children	= ctx.children;
+		for ( int i = 0; i < children.size(); i++ ) {
+			org.antlr.v4.runtime.tree.ParseTree child = children.get( i );
+			if ( ! ( child instanceof org.antlr.v4.runtime.tree.TerminalNode term )
+			    || term.getSymbol().getType() != ortus.boxlang.parser.antlr.GroovyGrammar.IDENTIFIER ) {
+				continue;
+			}
+			BoxIdentifier	target	= new BoxIdentifier( term.getText(), tools.getPosition( term.getSymbol() ), term.getText() );
+			BoxExpression	value;
+			if ( i + 2 < children.size()
+			    && children.get( i + 1 ) instanceof org.antlr.v4.runtime.tree.TerminalNode assignTerm
+			    && assignTerm.getSymbol().getType() == ortus.boxlang.parser.antlr.GroovyGrammar.ASSIGN ) {
+				value	= ( ( ortus.boxlang.parser.antlr.GroovyGrammar.ExpressionContext ) children.get( i + 2 ) ).accept( expressionVisitor );
+				i		+= 2;
+			} else {
+				value = new BoxNull( pos, src );
+			}
 			declarators.add( new BoxExpressionStatement( new BoxAssignment( target, BoxAssignmentOperator.Equal, value, List.of(), pos, src ), pos, src ) );
 		}
 
@@ -860,68 +877,105 @@ public class GroovyVisitor extends GroovyGrammarBaseVisitor<BoxNode> {
 
 	// Real fallthrough (a case body without its own "break;" continues running the NEXT case's
 	// body too, regardless of whether ITS OWN condition matches) is fundamentally impossible to
-	// express as an if/else-if chain, since exactly one branch of an if/else-if can ever run. This
-	// instead tracks a single "matched" flag: once any case (or an unconditional "default") sets
-	// it, every case's body from that point on runs UNCONDITIONALLY, in source order, one after
-	// another - which is exactly what real switch fallthrough means, and gives a case's own
-	// explicit "break;" (still targeting the enclosing synthetic loop, same as before) its usual
-	// meaning of stopping that fall-through early. "default" participates as an ordinary entry
-	// whose own guard is unconditionally true (matching real Java/Groovy: default doesn't have to
-	// be the last case, and if it's not, cases physically after it still run in order once nothing
-	// earlier has matched) rather than being special-cased as a trailing fallback the way the
-	// previous backward-chained implementation required.
+	// express as an if/else-if chain, since exactly one branch of an if/else-if can ever run.
+	// This is built in two phases instead:
+	// <p>
+	// Phase 1 determines, BEFORE running any body at all, whether any real (non-default) case
+	// matches - scanning every case in source order, short-circuited (the first match wins), with
+	// no regard for where "default" sits among them. This has to be its own separate, complete
+	// pass: real switch dispatch picks its entry point by VALUE first, and only falls back to
+	// "default" if nothing matched, so "default"'s own applicability can only be decided once
+	// every other case has already been checked - a "default" positioned before a later case that
+	// would actually match must never preempt it.
+	// <p>
+	// Phase 2 walks every case again in source order, tracking a single "started" flag: it flips
+	// on at whichever entry point phase 1 identified (a matching case, or - only when phase 1
+	// found no match at all - "default", wherever it's textually positioned), and every body from
+	// that point on runs unconditionally, one after another, which is exactly what real switch
+	// fallthrough means. A case's own explicit "break;" (targeting the enclosing synthetic loop)
+	// still stops that fall-through early, same as before.
 	private BoxNode buildSmartSwitch( SwitchStatementContext ctx, Position pos, String src ) {
-		String				subjectName	= "__groovySwitchSubject";
-		String				matchedName	= "__groovySwitchMatched";
-		BoxStatement		subjectInit	= new BoxExpressionStatement(
+		String				subjectName			= "__groovySwitchSubject";
+		String				anyCaseMatchedName	= "__groovySwitchAnyCaseMatched";
+		String				startedName			= "__groovySwitchStarted";
+		BoxStatement		subjectInit			= new BoxExpressionStatement(
 		    new BoxAssignment( new BoxIdentifier( subjectName, pos, subjectName ), BoxAssignmentOperator.Equal,
 		        ctx.expression().accept( expressionVisitor ), List.of(), pos, src ),
 		    pos, src );
-		BoxStatement		matchedInit	= new BoxExpressionStatement(
-		    new BoxAssignment( new BoxIdentifier( matchedName, pos, matchedName ), BoxAssignmentOperator.Equal,
-		        new BoxBooleanLiteral( Boolean.FALSE, pos, src ), List.of(), pos, src ),
-		    pos, src );
+		BoxStatement		anyCaseMatchedInit	= declareFalse( anyCaseMatchedName, pos, src );
+		BoxStatement		startedInit			= declareFalse( startedName, pos, src );
 
-		List<BoxStatement>	loopBody	= new ArrayList<>();
+		// Phase 1 - see this method's own header. Runs once, ahead of the dispatch loop, not
+		// inside it - it must finish deciding the entry point before phase 2 runs any body.
+		List<BoxStatement>	matchDetermination	= new ArrayList<>();
+		for ( var sc : ctx.switchCase() ) {
+			if ( sc instanceof DefaultClauseContext ) {
+				continue;
+			}
+			CaseClauseContext	caseCtx			= ( CaseClauseContext ) sc;
+			BoxExpression		matches			= buildCaseMatch( subjectName, caseCtx.expression(), pos, src );
+			BoxStatement		setMatched		= new BoxStatementBlock(
+			    List.of( assignTrue( anyCaseMatchedName, pos, src ) ), pos, src );
+			BoxStatement		tryMatch		= new BoxIfElse( matches, setMatched, null, pos, src );
+			BoxExpression		notYetMatched	= new BoxUnaryOperation( identifier( anyCaseMatchedName, pos ), BoxUnaryOperator.Not, pos, src );
+			matchDetermination.add( new BoxIfElse( notYetMatched, new BoxStatementBlock( List.of( tryMatch ), pos, src ), null, pos, src ) );
+		}
+
+		// Phase 2 - see this method's own header. Each case's own match condition is rebuilt
+		// fresh here (a second, independent call to buildCaseMatch, per the same "never reuse a
+		// node instance in two places" rule everywhere else in this visitor) rather than reusing
+		// a value cached from phase 1, since that would need one extra temp variable per case for
+		// no real benefit - case values are virtually always pure (literals/ranges/class refs/
+		// regex), so evaluating a case's own condition twice is an accepted, low-risk trade-off.
+		List<BoxStatement> loopBody = new ArrayList<>();
 		for ( var sc : ctx.switchCase() ) {
 			BoxStatement	body;
-			BoxExpression	ownCondition;
+			BoxExpression	entryCondition;
 			if ( sc instanceof DefaultClauseContext defaultCtx ) {
 				body			= new BoxStatementBlock( buildStatementList( defaultCtx.blockStatements() ), pos, src );
-				ownCondition	= null;
+				// Only the entry point when NO real case matched at all (see phase 1 above).
+				entryCondition	= new BoxUnaryOperation( identifier( anyCaseMatchedName, pos ), BoxUnaryOperator.Not, pos, src );
 			} else {
 				CaseClauseContext caseCtx = ( CaseClauseContext ) sc;
 				body			= new BoxStatementBlock( buildStatementList( caseCtx.blockStatements() ), pos, src );
-				ownCondition	= buildCaseMatch( subjectName, caseCtx.expression(), pos, src );
+				entryCondition	= buildCaseMatch( subjectName, caseCtx.expression(), pos, src );
 			}
-			// "if (!matched) { if (default OR matches) { matched = true } }" - each occurrence of
-			// "matched" is its own fresh identifier node, never reused - same reasoning as
-			// GroovyExpressionVisitor#desugarCompoundAssign.
-			BoxStatement	setMatched		= new BoxExpressionStatement(
-			    new BoxAssignment( matchedIdentifier( matchedName, pos ), BoxAssignmentOperator.Equal, new BoxBooleanLiteral( Boolean.TRUE, pos, src ),
-			        List.of(), pos, src ),
-			    pos, src );
-			BoxStatement	setMatchedBlock	= new BoxStatementBlock( List.of( setMatched ), pos, src );
-			BoxStatement	tryMatch		= ownCondition == null
-			    ? setMatchedBlock
-			    : new BoxIfElse( ownCondition, setMatchedBlock, null, pos, src );
-			BoxExpression	notYetMatched	= new BoxUnaryOperation( matchedIdentifier( matchedName, pos ), BoxUnaryOperator.Not, pos, src );
-			loopBody.add( new BoxIfElse( notYetMatched, new BoxStatementBlock( List.of( tryMatch ), pos, src ), null, pos, src ) );
-			// "if (matched) { <body> }" - runs this case's body once matched, whether matched HERE
+			// "if (!started) { if (entryCondition) { started = true } }"
+			BoxStatement	setStarted		= new BoxStatementBlock( List.of( assignTrue( startedName, pos, src ) ), pos, src );
+			BoxStatement	tryStart		= new BoxIfElse( entryCondition, setStarted, null, pos, src );
+			BoxExpression	notYetStarted	= new BoxUnaryOperation( identifier( startedName, pos ), BoxUnaryOperator.Not, pos, src );
+			loopBody.add( new BoxIfElse( notYetStarted, new BoxStatementBlock( List.of( tryStart ), pos, src ), null, pos, src ) );
+			// "if (started) { <body> }" - runs this case's body once started, whether started HERE
 			// or by an earlier case falling through into it.
-			loopBody.add( new BoxIfElse( matchedIdentifier( matchedName, pos ), body, null, pos, src ) );
+			loopBody.add( new BoxIfElse( identifier( startedName, pos ), body, null, pos, src ) );
 		}
 		// Always exit once every case has had a chance to run (via fallthrough or not) - a case's
 		// own explicit "break;" exits earlier, through this same loop.
 		loopBody.add( new BoxBreak( pos, src ) );
-		BoxStatement syntheticLoop = new BoxWhile( null, new BoxBooleanLiteral( Boolean.TRUE, pos, src ),
+		BoxStatement		syntheticLoop	= new BoxWhile( null, new BoxBooleanLiteral( Boolean.TRUE, pos, src ),
 		    new BoxStatementBlock( loopBody, pos, src ), pos, src );
 
-		return new BoxStatementBlock( List.of( subjectInit, matchedInit, syntheticLoop ), pos, src );
+		List<BoxStatement>	statements		= new ArrayList<>( List.of( subjectInit, anyCaseMatchedInit ) );
+		statements.addAll( matchDetermination );
+		statements.add( startedInit );
+		statements.add( syntheticLoop );
+		return new BoxStatementBlock( statements, pos, src );
 	}
 
-	private BoxIdentifier matchedIdentifier( String matchedName, Position pos ) {
-		return new BoxIdentifier( matchedName, pos, matchedName );
+	private BoxIdentifier identifier( String name, Position pos ) {
+		return new BoxIdentifier( name, pos, name );
+	}
+
+	private BoxStatement declareFalse( String name, Position pos, String src ) {
+		return new BoxExpressionStatement(
+		    new BoxAssignment( identifier( name, pos ), BoxAssignmentOperator.Equal, new BoxBooleanLiteral( Boolean.FALSE, pos, src ), List.of(), pos, src ),
+		    pos, src );
+	}
+
+	private BoxStatement assignTrue( String name, Position pos, String src ) {
+		return new BoxExpressionStatement(
+		    new BoxAssignment( identifier( name, pos ), BoxAssignmentOperator.Equal, new BoxBooleanLiteral( Boolean.TRUE, pos, src ), List.of(), pos, src ),
+		    pos, src );
 	}
 
 	// Builds the match condition for one "case" value against the (already-evaluated) subject,
