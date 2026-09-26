@@ -911,6 +911,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		statusText							= Key.of( "statusText" );
 	public static final Key		step								= Key.of( "step" );
 	public static final Key		storeClassFilesOnDisk				= Key.of( "storeClassFilesOnDisk" );
+	public static final Key		codeProfilerEnabled					= Key.of( "codeProfilerEnabled" );
 	public static final Key		storedproc							= Key.of( "storedproc" );
 	public static final Key		stream								= Key.of( "stream" );
 	public static final Key		strict								= Key.of( "strict" );
@@ -1173,6 +1174,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		watchRoot							= Key.of( "watchRoot" );
 	public static final Key		relativePath						= Key.of( "relativePath" );
 	public static final Key		kind								= Key.of( "kind" );
+	public static final Key		codeProfilerService					= Key.of( "codeProfilerService" );
 	public static final Key		paths								= Key.of( "paths" );
 	public static final Key		debounce							= Key.of( "debounce" );
 	public static final Key		throttle							= Key.of( "throttle" );

@@ -518,6 +518,12 @@ public interface IBoxpiler {
 	void clearPagePool();
 
 	/**
+	 * Wipe all compiled class files from the class generation directory on disk.
+	 * Any cached bytecode is removed so the next compile happens fresh.
+	 */
+	void clearClassFiles();
+
+	/**
 	 * Gets the unique name identifier for this Boxpiler implementation.
 	 * This is used by the runtime to distinguish between different compiler implementations
 	 * (e.g., ASM-based compiler vs. Java source compiler).

@@ -1,0 +1,22 @@
+// Profiler disk-file class test: static block, pseudo-constructor body,
+// member method, and property default — each tracked under THIS file's key.
+// CFSCRIPT component version of ProfilerComplex.bx (CF uses `component`, not `class`).
+component {
+
+	property name="threshold" default=40;
+
+	static {
+		staticInitRan = true;
+	}
+
+	instanceInit = 0;
+
+	function doubleIt( n ) {
+		return n * 2;
+	}
+
+	function member( x ) {
+		sleep( 100 );
+		return x * 3;
+	}
+}

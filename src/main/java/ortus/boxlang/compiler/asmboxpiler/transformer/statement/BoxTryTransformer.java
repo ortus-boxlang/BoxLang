@@ -39,6 +39,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.runtime.context.CatchBoxContext;
@@ -76,7 +77,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 		// causes a ClassFormatError ("Illegal exception table range") when the JVM verifies the class.
 		nodes.add( new InsnNode( Opcodes.NOP ) );
 
-		nodes.addAll( generateBodyNodesWithInlinedFinally( context, returnValueContext, boxTry.getTryBody(), boxTry.getFinallyBody(), () -> tryEndLabel ) );
+		nodes.addAll( generateBodyNodesWithInlinedFinally( context, returnValueContext, boxTry.getTryBody(), boxTry.getFinallyBody(), finallyKeyword( boxTry ),
+		    () -> tryEndLabel ) );
 
 		// if we hit this instruction we have successfully executed the try body and inlined finally code
 		// we can skip to the end of this construct
@@ -131,6 +133,9 @@ public class BoxTryTransformer extends AbstractTransformer {
 		var errorVarStore = tracker.storeNewVariable( Opcodes.ASTORE );
 		nodes.addAll( errorVarStore.nodes() );
 
+		// The finally braces are batch-marked when the finally runs.
+		emitBraceGroupMark( nodes, finallyKeyword( boxTry ), false );
+
 		nodes.addAll( AsmHelper.transformBodyExpressions( transpiler, boxTry.getFinallyBody(), context, returnValueContext ) );
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, errorVarStore.index() ) );
@@ -151,6 +156,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 	    ReturnValueContext returnValueContext,
 	    List<BoxStatement> codeBody,
 	    List<BoxStatement> finallyBody,
+	    Point finallyKeyword,
 	    Supplier<AbstractInsnNode> inBetween ) {
 		MethodContextTracker	tracker	= transpiler.getCurrentMethodContextTracker().get();
 		List<AbstractInsnNode>	nodes	= new ArrayList<AbstractInsnNode>();
@@ -185,6 +191,17 @@ public class BoxTryTransformer extends AbstractTransformer {
 			nodes.add( inBetweenNode );
 		}
 
+		// The finally body is compiled twice: here (inline, after normal try-body
+		// completion) and again in the exception handler (see transform() above).
+		// Only one path executes at runtime, so the profiler mark for each finally
+		// statement must exist in BOTH copies. Snapshot the claimed marks before
+		// transforming the inline copy, then restore after, so the exception-handler
+		// copy can reclaim (and thus re-emit) the same marks.
+		var finallyMarksSnapshot = transpiler.snapshotEmittedMarks();
+
+		// The finally braces are batch-marked when the finally runs (inline path).
+		emitBraceGroupMark( nodes, finallyKeyword, false );
+
 		nodes.addAll( AsmHelper.transformBodyExpressions(
 		    transpiler,
 		    finallyBody,
@@ -192,9 +209,111 @@ public class BoxTryTransformer extends AbstractTransformer {
 		    returnValueContext
 		) );
 
+		transpiler.restoreEmittedMarks( finallyMarksSnapshot );
+
 		AsmHelper.addDebugLabel( nodes, "BoxTryBlock - END" );
 
 		return nodes;
+	}
+
+	/**
+	 * Emit a {@code mark(fileId, ...braceGroup)} for a try/catch/finally construct's
+	 * braces. Pass A registered the construct's header + closing brace as a span
+	 * GROUP keyed by the construct keyword position. The group is consumed for a
+	 * catch (each catch handler runs at most once); for a finally it is PEEKED
+	 * (non-consuming) because the finally body — and thus its brace mark — is
+	 * compiled into BOTH the inline and exception-handler bytecode copies, and only
+	 * one runs at runtime.
+	 *
+	 * @param nodes      the instruction list to append to
+	 * @param keywordPos the construct keyword start position (group key)
+	 * @param consume    whether to consume the group (catch) or peek (finally)
+	 */
+	private void emitBraceGroupMark( List<AbstractInsnNode> nodes, Point keywordPos, boolean consume ) {
+		// No-op when profiling is disabled — never emit mark instructions otherwise.
+		if ( !transpiler.isProfilingEnabled() || transpiler.getFileId() < 0 ) {
+			return;
+		}
+		if ( keywordPos == null ) {
+			return;
+		}
+		long	packed	= ( ( long ) keywordPos.getLine() << 32 ) | ( keywordPos.getColumn() & 0xFFFFFFFFL );
+		int		spanId	= transpiler.getSpanId( packed );
+		int[]	group	= spanId < 0 ? null : ( consume ? transpiler.takeSpanGroup( spanId ) : transpiler.peekSpanGroup( spanId ) );
+		if ( group != null ) {
+			// Only emit if no member has been claimed yet (dedup across copies).
+			boolean anyClaimed = false;
+			for ( int member : group ) {
+				if ( transpiler.claimSpanMark( member ) ) {
+					anyClaimed = true;
+				}
+			}
+			if ( anyClaimed ) {
+				nodes.addAll( AsmHelper.invokeStaticMarkVarargs( transpiler.getFileId(), group ) );
+			}
+		}
+	}
+
+	/**
+	 * Locate the {@code finally} keyword position for a try, by scanning the source
+	 * back from the first finally body statement past the preceding construct's
+	 * closing brace. Mirrors Pass A's {@code findKeywordBraceStart}.
+	 *
+	 * @param boxTry the try node
+	 *
+	 * @return the finally keyword point, or null
+	 */
+	private Point finallyKeyword( BoxTry boxTry ) {
+		if ( boxTry.getFinallyBody().isEmpty() || boxTry.getPosition() == null || boxTry.getPosition().getSource() == null ) {
+			return null;
+		}
+		Point	first	= boxTry.getFinallyBody().get( 0 ).getStart();
+		String	source	= boxTry.getPosition().getSource().getCode();
+		int		offset	= offsetOf( source, first );
+		for ( int i = offset - 1; i >= 0; i-- ) {
+			if ( source.charAt( i ) == '{' ) {
+				int kwEnd = i;
+				while ( kwEnd > 0 && source.charAt( kwEnd - 1 ) == ' ' ) {
+					kwEnd--;
+				}
+				int kwStart = kwEnd;
+				while ( kwStart > 0 && Character.isLetterOrDigit( source.charAt( kwStart - 1 ) ) ) {
+					kwStart--;
+				}
+				if ( source.substring( kwStart, kwEnd ).equalsIgnoreCase( "finally" ) ) {
+					return pointAt( source, kwStart );
+				}
+			}
+		}
+		return null;
+	}
+
+	/** Convert a Point to a character offset in the source. */
+	private int offsetOf( String source, Point p ) {
+		int	line	= 1;
+		int	offset	= 0;
+		while ( line < p.getLine() && offset < source.length() ) {
+			if ( source.charAt( offset ) == '\n' ) {
+				line++;
+			}
+			offset++;
+		}
+		return offset + p.getColumn();
+	}
+
+	/** Convert a character offset back to a Point. */
+	private Point pointAt( String source, int offset ) {
+		int	line	= 1;
+		int	col		= 0;
+		for ( int i = 0; i < offset && i < source.length(); i++ ) {
+			if ( source.charAt( i ) == '\n' ) {
+				line++;
+				col = 0;
+			} else {
+				col++;
+			}
+		}
+		return new Point( line, col );
 	}
 
 	private List<AbstractInsnNode> generateCatchBodyNodes(
@@ -214,6 +333,9 @@ public class BoxTryTransformer extends AbstractTransformer {
 		nodes.addAll( generateCatchIfGuard( context, boxCatch.getCatchTypes(), tracker, startHandlerLabel, endHandlerLabel, eVarIndex ) );
 
 		nodes.add( startHandlerLabel );
+
+		// The catch braces are batch-marked only when this catch actually runs.
+		emitBraceGroupMark( nodes, boxCatch.getPosition().getStart(), true );
 
 		nodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( CatchBoxContext.class ) ) );
 
@@ -237,10 +359,11 @@ public class BoxTryTransformer extends AbstractTransformer {
 		nodes.addAll( tracker.trackNewContext() );
 		// end catch context
 
-		nodes.addAll( generateBodyNodesWithInlinedFinally( context, returnValueContext, boxCatch.getCatchBody(), boxTry.getFinallyBody(), () -> {
-			tracker.popContext();
-			return null;
-		} ) );
+		nodes.addAll( generateBodyNodesWithInlinedFinally( context, returnValueContext, boxCatch.getCatchBody(), boxTry.getFinallyBody(),
+		    finallyKeyword( boxTry ), () -> {
+			    tracker.popContext();
+			    return null;
+		    } ) );
 
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
 		nodes.add( endHandlerLabel );

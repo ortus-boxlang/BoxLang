@@ -87,9 +87,18 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 			    if ( boxLambda.getBody().getChildren().size() == 0 ) {
 				    return List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 			    }
-			    return boxLambda.getBody().getChildren().stream()
+			    List<AbstractInsnNode> bodyNodes = boxLambda.getBody().getChildren().stream()
 			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ).stream() )
-			        .toList();
+			        .collect( java.util.stream.Collectors.toList() );
+
+			    // Close the probe-charging interval after the lambda body's last
+			    // statement so the final body span's self-time is charged (mirrors
+			    // the script-body and UDF-body markEnd).
+			    if ( transpiler.isProfilingEnabled() && transpiler.getFileId() >= 0 ) {
+				    bodyNodes.addAll( AsmHelper.invokeStaticMarkEnd( transpiler.getFileId() ) );
+			    }
+
+			    return bodyNodes;
 		    } );
 		transpiler.decrementfunctionBodyCounter();
 		transpiler.setComponentCounter( componentCounter );

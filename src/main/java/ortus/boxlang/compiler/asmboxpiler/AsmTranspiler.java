@@ -543,6 +543,11 @@ public class AsmTranspiler extends Transpiler {
 			        returnType == Type.VOID_TYPE ? ReturnValueContext.EMPTY : ReturnValueContext.VALUE_OR_NULL );
 			    nodes.addAll( getUDFRegistrations() );
 			    nodes.addAll( body );
+			    // Close the probe-charging interval after the last statement so the
+			    // final span's self-time is charged, not lost.
+			    if ( isProfilingEnabled() && getFileId() >= 0 ) {
+				    nodes.addAll( AsmHelper.invokeStaticMarkEnd( getFileId() ) );
+			    }
 			    return nodes;
 		    }
 		);
@@ -767,10 +772,19 @@ public class AsmTranspiler extends Transpiler {
 				}
 
 				// Compile with enclosing imports only - sibling visibility is handled by classRef imports
-				BoxClass	asBoxClass			= new BoxClass( enclosingImports, localClass.getBody(),
+				BoxClass asBoxClass = new BoxClass( enclosingImports, localClass.getBody(),
 				    localClass.getAnnotations(), localClass.getDocumentation(), localClass.getProperties(),
 				    localClass.getPosition(), localClass.getSourceText(),
 				    BoxSourceType.valueOf( getProperty( "sourceType" ).toUpperCase() ) );
+
+				// Pass A for the local class: when coverage is enabled, the child
+				// transpiler must emit marks against the OUTER source's fileId and
+				// span registry (the parent's Pass A already walked the whole tree,
+				// so the class's spans are in the outer blueprint). From the user's
+				// perspective the class lives inside the container script.
+				if ( isProfilingEnabled() ) {
+					child.adoptProfilingContext( this );
+				}
 
 				ClassNode	localClassNode		= BoxClassTransformer.transpile( child, asBoxClass );
 
@@ -894,6 +908,39 @@ public class AsmTranspiler extends Transpiler {
 
 				if ( isUnsplittable( node ) ) {
 					nodes = nodes.stream().filter( n -> ! ( n instanceof DividerNode ) ).collect( Collectors.toList() );
+				}
+
+				// PASS B (profiling): emit a mark for any node whose start position maps to a
+				// registered span (span registry built in Pass A). Generic — no per-construct
+				// knowledge here. When a ternary translator transforms each operand, the
+				// operand's node lands here and its branch mark is emitted, so only the
+				// operands that actually evaluated get profiled.
+				// NOTE: BoxStaticInitializer is EXCLUDED — its braces are batch-marked by
+				// the class transformer's staticInitializer method (emitStaticInitMark),
+				// NOT at the pseudo-constructor site where this node is otherwise
+				// transformed (which would wrongly tie the static braces to instantiation).
+				if ( isProfilingEnabled() && node.getPosition() != null && ! ( node instanceof BoxStaticInitializer ) ) {
+					long	packed	= ( ( long ) node.getPosition().getStart().getLine() << 32 )
+					    | ( node.getPosition().getStart().getColumn() & 0xFFFFFFFFL );
+					int		spanId	= getSpanId( packed );
+					if ( spanId >= 0 ) {
+						int		fileId	= getFileId();
+						// If this span heads an atomic shell group (a declaration
+						// shell split at lazy defaults), batch the ENTIRE group into
+						// one varargs mark call — the whole shell runs atomically, so
+						// one probe-charging interval and one count increment for all
+						// its fragments. The lazy-default spans are NOT in the group
+						// (they run later at call time).
+						int[]	group	= takeSpanGroup( spanId );
+						if ( group != null ) {
+							for ( int member : group ) {
+								claimSpanMark( member );
+							}
+							nodes.addAll( 0, AsmHelper.invokeStaticMarkVarargs( fileId, group ) );
+						} else if ( claimSpanMark( spanId ) ) {
+							nodes.addAll( 0, AsmHelper.invokeStaticMark( fileId, spanId ) );
+						}
+					}
 				}
 
 				if ( returnValueContext == ReturnValueContext.EMPTY && nodes.size() > 0 ) {

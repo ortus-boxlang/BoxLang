@@ -26,6 +26,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.IntInsnNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
@@ -65,6 +66,7 @@ import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.CodeProfilerService;
 import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DefaultExpression;
@@ -89,6 +91,85 @@ public class AsmHelper {
 		    List.of( start, new LineNumberNode( node.getPosition().getStart().getLine(), start ) ),
 		    List.of( end, new LineNumberNode( node.getPosition().getEnd().getLine(), end ) )
 		);
+	}
+
+	/**
+	 * Emit the bytecode for a code-coverage mark call:
+	 * {@code CodeProfilerService.mark( fileId, spanId )}.
+	 *
+	 * @param fileId the profiler fileId for this compilation's blueprint
+	 * @param spanId the span id within that blueprint
+	 *
+	 * @return the instructions: LDC fileId, LDC spanId, INVOKESTATIC mark(II)V
+	 */
+	public static List<AbstractInsnNode> invokeStaticMark( int fileId, int spanId ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add( new LdcInsnNode( fileId ) );
+		nodes.add( new LdcInsnNode( spanId ) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( CodeProfilerService.class ),
+		    "mark",
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.INT_TYPE, Type.INT_TYPE ),
+		    false
+		) );
+		return nodes;
+	}
+
+	/**
+	 * Emit the bytecode for closing the probe-charging interval at the end of a body:
+	 * {@code CodeProfilerService.markEnd( fileId )}.
+	 *
+	 * @param fileId the profiler fileId for this compilation's blueprint
+	 *
+	 * @return the instructions: LDC fileId, INVOKESTATIC markEnd(I)V
+	 */
+	public static List<AbstractInsnNode> invokeStaticMarkEnd( int fileId ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add( new LdcInsnNode( fileId ) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( CodeProfilerService.class ),
+		    "markEnd",
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.INT_TYPE ),
+		    false
+		) );
+		return nodes;
+	}
+
+	/**
+	 * Emit the bytecode for a single code-coverage varargs mark call:
+	 * {@code CodeProfilerService.mark( fileId, int... spanIds )}. This collapses
+	 * SEVERAL atomic shell spans (fragments of one declaration split at lazy
+	 * defaults) into a single {@code mark(I[I)V} invocation — the whole shell runs
+	 * or does not run together, so it opens exactly ONE probe-charging interval and
+	 * increments all its spans' counts together.
+	 *
+	 * @param fileId  the profiler fileId for this compilation's blueprint
+	 * @param spanIds the shell spans to batch, in source order; the last owns the
+	 *                next interval
+	 *
+	 * @return the instructions: LDC fileId, int[] spanIds, INVOKESTATIC mark(I[I)V
+	 */
+	public static List<AbstractInsnNode> invokeStaticMarkVarargs( int fileId, int[] spanIds ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add( new LdcInsnNode( fileId ) );
+		nodes.add( new LdcInsnNode( spanIds.length ) );
+		nodes.add( new IntInsnNode( Opcodes.NEWARRAY, Opcodes.T_INT ) );
+		for ( int i = 0; i < spanIds.length; i++ ) {
+			nodes.add( new InsnNode( Opcodes.DUP ) );
+			nodes.add( new LdcInsnNode( i ) );
+			nodes.add( new LdcInsnNode( spanIds[ i ] ) );
+			nodes.add( new InsnNode( Opcodes.IASTORE ) );
+		}
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( CodeProfilerService.class ),
+		    "mark",
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.INT_TYPE, Type.getType( int[].class ) ),
+		    false
+		) );
+		return nodes;
 	}
 
 	/**

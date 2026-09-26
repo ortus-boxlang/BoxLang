@@ -76,7 +76,13 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	left		= operation.getLeft() != null
 		    ? transpiler.transform( operation.getLeft(), safe, ReturnValueContext.VALUE )
 		    : List.of( new org.objectweb.asm.tree.InsnNode( org.objectweb.asm.Opcodes.ACONST_NULL ) );
-		List<AbstractInsnNode>	right		= operation.getRight() != null
+		// The Elvis operator wraps its right operand in a lazily-invoked producer
+		// lambda (the right may not run). Transforming it here eagerly would claim
+		// its profiler mark into instructions that are DISCARDED for elvis (the
+		// lambda re-transforms it), leaving the running copy unmarked. So skip the
+		// eager right transform for elvis — the lambda's transform emits the mark.
+		boolean					isElvis		= operation.getOperator() == BoxBinaryOperator.Elvis;
+		List<AbstractInsnNode>	right		= operation.getRight() != null && !isElvis
 		    ? transpiler.transform( operation.getRight(), context, ReturnValueContext.VALUE )
 		    : List.of( new org.objectweb.asm.tree.InsnNode( org.objectweb.asm.Opcodes.ACONST_NULL ) );
 		MethodContextTracker	tracker		= transpiler.getCurrentMethodContextTracker().get();

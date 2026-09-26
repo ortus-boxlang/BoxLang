@@ -55,6 +55,8 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
+import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
@@ -927,7 +929,27 @@ public class BoxClassTransformer {
 			        )
 			    );
 
+			    // Property defaults are HOISTED: defaultProperties() just applied
+			    // them all, so mark the whole set as run with ONE varargs mark.
+			    // (This is where property-default spans get their coverage — the
+			    // pseudo-constructor, not the clinit Property construction.)
+			    if ( transpiler.isProfilingEnabled() && transpiler.getFileId() >= 0 ) {
+				    int[] propSpans = transpiler.getPropertyDefaultSpans();
+				    if ( propSpans != null && propSpans.length > 0 ) {
+					    for ( int member : propSpans ) {
+						    transpiler.claimSpanMark( member );
+					    }
+					    psuedoBody.addAll( AsmHelper.invokeStaticMarkVarargs( transpiler.getFileId(), propSpans ) );
+				    }
+			    }
+
 			    psuedoBody.addAll( body );
+
+			    // Close the probe-charging interval after the pseudo-constructor's
+			    // last statement so the final span's self-time is charged.
+			    if ( transpiler.isProfilingEnabled() && transpiler.getFileId() >= 0 ) {
+				    psuedoBody.addAll( AsmHelper.invokeStaticMarkEnd( transpiler.getFileId() ) );
+			    }
 
 			    return psuedoBody;
 		    }
@@ -956,6 +978,12 @@ public class BoxClassTransformer {
 		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, transpiler, false,
 		    () -> {
 			    List<AbstractInsnNode> staticNodes = new ArrayList<>();
+
+			    // The static { ... } braces are batch-marked when the static
+			    // initializer RUNS (class load). Pass A registered the static brace
+			    // group keyed by the "static" keyword; emit it at static-init entry.
+			    emitStaticInitMark( transpiler, staticNodes, boxClass );
+
 			    boxClass.getDescendantsOfType( BoxFunctionDeclaration.class, ( expr ) -> {
 				    BoxFunctionDeclaration func = ( BoxFunctionDeclaration ) expr;
 
@@ -980,6 +1008,12 @@ public class BoxClassTransformer {
 			        .flatMap( s -> s.stream() )
 			        .collect( Collectors.toList() ) );
 
+			    // Close the probe-charging interval after the static initializer's
+			    // last statement so the final span's self-time is charged.
+			    if ( transpiler.isProfilingEnabled() && transpiler.getFileId() >= 0 ) {
+				    staticNodes.addAll( AsmHelper.invokeStaticMarkEnd( transpiler.getFileId() ) );
+			    }
+
 			    return staticNodes;
 		    }
 		);
@@ -992,6 +1026,11 @@ public class BoxClassTransformer {
 			List<AbstractInsnNode>	clinitNodes				= new ArrayList<>();
 			String					outerClassInternal		= transpiler.getProperty( "outerClassInternal" );
 			boolean					isInnerClassDelegate	= outerClassInternal != null;
+
+			// The CLASS SHELL + closing "}" are batch-marked when the class is
+			// LOADED (clinit). Pass A registered the shell group keyed by the first
+			// annotation (or the "class" keyword); emit it at clinit entry.
+			emitClassShellMark( transpiler, clinitNodes, boxClass );
 
 			if ( isInnerClassDelegate ) {
 				// Inner class: path, sourceType, imports fields are not declared on this class.
@@ -1326,6 +1365,80 @@ public class BoxClassTransformer {
 		} );
 
 		return classNode;
+	}
+
+	/**
+	 * Emit the {@code mark(fileId, ...classShell)} for the class shell (pre/post
+	 * annotations + "class" keyword + opening "{") and its closing "}" at class
+	 * LOAD time (clinit). Pass A registered the shell span group keyed by the
+	 * first annotation (or the "class" keyword). No-op when profiling is disabled.
+	 *
+	 * @param transpiler  the transpiler
+	 * @param clinitNodes the clinit instruction list to append to
+	 * @param boxClass    the class
+	 */
+	private static void emitClassShellMark( Transpiler transpiler, List<AbstractInsnNode> clinitNodes, BoxClass boxClass ) {
+		if ( !transpiler.isProfilingEnabled() || transpiler.getFileId() < 0 ) {
+			return;
+		}
+		Point shellStart = null;
+		if ( boxClass.getAnnotations() != null && !boxClass.getAnnotations().isEmpty() ) {
+			// A CF component's annotations (component attributes) may have a null
+			// position — guard and fall back to the class start.
+			Point annStart = boxClass.getAnnotations().get( 0 ).getPosition() == null
+			    ? null
+			    : boxClass.getAnnotations().get( 0 ).getPosition().getStart();
+			if ( annStart != null ) {
+				shellStart = annStart;
+			}
+		}
+		if ( shellStart == null ) {
+			shellStart = boxClass.getStart();
+		}
+		if ( shellStart == null ) {
+			return;
+		}
+		long	packed	= ( ( long ) shellStart.getLine() << 32 ) | ( shellStart.getColumn() & 0xFFFFFFFFL );
+		int		spanId	= transpiler.getSpanId( packed );
+		int[]	group	= spanId < 0 ? null : transpiler.takeSpanGroup( spanId );
+		if ( group != null ) {
+			for ( int member : group ) {
+				transpiler.claimSpanMark( member );
+			}
+			clinitNodes.addAll( AsmHelper.invokeStaticMarkVarargs( transpiler.getFileId(), group ) );
+		}
+	}
+
+	/**
+	 * Emit the {@code mark(fileId, ...staticBraces)} for a class's {@code static {
+	 * ... }} initializer braces at static-init entry. Pass A registered the static
+	 * brace group keyed by the {@code static} keyword. No-op when profiling is
+	 * disabled.
+	 *
+	 * @param staticNodes the staticInitializer instruction list to append to
+	 * @param boxClass    the class
+	 */
+	private static void emitStaticInitMark( Transpiler transpiler, List<AbstractInsnNode> staticNodes, BoxClass boxClass ) {
+		if ( !transpiler.isProfilingEnabled() || transpiler.getFileId() < 0 ) {
+			return;
+		}
+		for ( var stmt : boxClass.getBody() ) {
+			if ( stmt instanceof BoxStaticInitializer init ) {
+				Point kw = init.getStart();
+				if ( kw == null ) {
+					continue;
+				}
+				long	packed	= ( ( long ) kw.getLine() << 32 ) | ( kw.getColumn() & 0xFFFFFFFFL );
+				int		spanId	= transpiler.getSpanId( packed );
+				int[]	group	= spanId < 0 ? null : transpiler.takeSpanGroup( spanId );
+				if ( group != null ) {
+					for ( int member : group ) {
+						transpiler.claimSpanMark( member );
+					}
+					staticNodes.addAll( AsmHelper.invokeStaticMarkVarargs( transpiler.getFileId(), group ) );
+				}
+			}
+		}
 	}
 
 	private static void defineLookupPrivateMethod( Transpiler transpiler, ClassNode classNode, Type thisType ) {

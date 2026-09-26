@@ -39,6 +39,7 @@ import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.CodeProfilerService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -100,6 +101,34 @@ public abstract class Transpiler implements ITranspiler {
 	private Map<String, LabelNode>							continues				= new LinkedHashMap<>();
 
 	/**
+	 * Whether code-profiling instrumentation is enabled for this compilation.
+	 * Set by the boxpiler from {@code Configuration.codeProfilerEnabled}. When false,
+	 * no span registry is built and no {@code mark} instructions are emitted.
+	 */
+	private boolean											profilingEnabled		= false;
+
+	/**
+	 * The code profiler fileId assigned to this compilation's blueprint by
+	 * {@link CodeProfilerService#registerBlueprintForFile}. Emitted as the first
+	 * arg of each {@code mark(fileId, spanId)} instruction.
+	 */
+	private int												fileId					= -1;
+
+	/**
+	 * Source-position -> span id map, built during Pass A (span detection).
+	 * Keyed by packed start position (line/col). Pass B looks up a node's span id
+	 * from its start position to emit the matching mark.
+	 */
+	private Map<Long, Integer>								spanIds					= new HashMap<>();
+
+	/**
+	 * Span ids already given a {@code mark} instruction in this compilation. Several
+	 * AST nodes can share a span's start position (e.g. a statement and the call
+	 * inside it), so we emit at most one mark per span to keep counts exact.
+	 */
+	private Set<Integer>									emittedMarks			= new HashSet<>();
+
+	/**
 	 * Set a property
 	 *
 	 * @param key   key of the Property
@@ -115,6 +144,212 @@ public abstract class Transpiler implements ITranspiler {
 
 	public ClassNode getOwningClass() {
 		return owningClassNode;
+	}
+
+	/**
+	 * Whether profiling instrumentation is enabled for this compilation.
+	 *
+	 * @return {@code true} if instrumentation is on
+	 */
+	public boolean isProfilingEnabled() {
+		return profilingEnabled;
+	}
+
+	/**
+	 * Set whether profiling instrumentation is enabled for this compilation.
+	 *
+	 * @param profilingEnabled enable/disable
+	 */
+	public void setProfilingEnabled( boolean profilingEnabled ) {
+		this.profilingEnabled = profilingEnabled;
+	}
+
+	/**
+	 * The code profiler fileId for this compilation's blueprint.
+	 *
+	 * @return the fileId, or -1 if not registered
+	 */
+	public int getFileId() {
+		return fileId;
+	}
+
+	/**
+	 * Set the code profiler fileId for this compilation's blueprint.
+	 *
+	 * @param fileId the fileId returned by the code profiler service
+	 */
+	public void setFileId( int fileId ) {
+		this.fileId = fileId;
+	}
+
+	/**
+	 * Register a source span (by its packed start position) for this compilation.
+	 * Assigns the next sequential span id.
+	 *
+	 * @param packedStart packed (line, col) start position
+	 *
+	 * @return the assigned span id
+	 */
+	public int registerSpan( long packedStart ) {
+		int spanId = spanIds.size();
+		spanIds.put( packedStart, spanId );
+		return spanId;
+	}
+
+	/**
+	 * Look up the span id for a node's source start position.
+	 *
+	 * @param packedStart packed (line, col) start position
+	 *
+	 * @return the span id, or -1 if the position is not a span start
+	 */
+	public int getSpanId( long packedStart ) {
+		return spanIds.getOrDefault( packedStart, -1 );
+	}
+
+	/**
+	 * Claim a span for mark emission. Returns {@code true} the first time a span's
+	 * mark is emitted for this compilation, {@code false} for every later request.
+	 * Several AST nodes can share a span's start position (e.g. a statement and the
+	 * call inside it), so only the first gets a mark instruction — keeping counts exact.
+	 *
+	 * @param spanId the span id
+	 *
+	 * @return true if this compilation has not yet emitted a mark for the span
+	 */
+	public boolean claimSpanMark( int spanId ) {
+		return emittedMarks.add( spanId );
+	}
+
+	/**
+	 * Span ids grouped into an atomic shell unit. The identified group — the head +
+	 * interstitial + tail span fragments of a declaration shell split at lazy
+	 * defaults — runs all-or-nothing at declaration, so the transformer emits a
+	 * single varargs {@code mark(fileId, ...group)} instead of N marks. Keyed by the
+	 * first (head) span id.
+	 */
+	private Map<Integer, int[]> spanGroups = new java.util.HashMap<>();
+
+	/**
+	 * Register an atomic shell span group. The group's first span id becomes the key
+	 * so the transform hook for the statement (whose start lands on the head shell
+	 * span) can look it up and batch the whole group.
+	 *
+	 * @param spanIds the shell span ids, in source order (head first)
+	 */
+	public void registerSpanGroup( int[] spanIds ) {
+		if ( spanIds != null && spanIds.length > 0 ) {
+			this.spanGroups.put( spanIds[ 0 ], spanIds );
+		}
+	}
+
+	/**
+	 * Look up and consume an atomic shell span group whose first span is the given id.
+	 * Returns the full group (or null if the id is not a group head).
+	 *
+	 * @param spanId the first span id of the group
+	 *
+	 * @return the full group, or null if not a group head
+	 */
+	public int[] takeSpanGroup( int spanId ) {
+		return this.spanGroups.remove( spanId );
+	}
+
+	/**
+	 * Look up an atomic span group WITHOUT consuming it. Used when the same group
+	 * must be emitted in MULTIPLE bytecode copies (e.g. a finally block compiled
+	 * both inline and in the exception handler — only one runs at runtime, so both
+	 * copies need the mark).
+	 *
+	 * @param spanId the first span id of the group
+	 *
+	 * @return the full group, or null if not a group head
+	 */
+	public int[] peekSpanGroup( int spanId ) {
+		return this.spanGroups.get( spanId );
+	}
+
+	/**
+	 * The property-DEFAULT span ids of the current class, collected in Pass A.
+	 * Property defaults are HOISTED — {@code BoxClassSupport.defaultProperties()}
+	 * applies them in the pseudo-constructor — so the class transformer emits ONE
+	 * varargs {@code mark(fileId, ...propertyDefaults)} at that call site.
+	 */
+	private int[] propertyDefaultSpans;
+
+	/**
+	 * Register the class's property-default span ids (atomic hoisted group).
+	 *
+	 * @param spanIds the property default span ids, in source order
+	 */
+	public void registerPropertyDefaultSpans( int[] spanIds ) {
+		this.propertyDefaultSpans = spanIds;
+	}
+
+	/**
+	 * The registered property-default span ids (or null if none).
+	 *
+	 * @return the property default span ids
+	 */
+	public int[] getPropertyDefaultSpans() {
+		return this.propertyDefaultSpans;
+	}
+
+	/**
+	 * Snapshot the set of span marks claimed so far in this compilation. Used by
+	 * transformers that duplicate the same AST (e.g. a {@code finally} body, which
+	 * is compiled both inline and in the exception handler) so the duplicated copy
+	 * can reclaim the marks and emit them on its own execution path.
+	 *
+	 * @return a defensive copy of the claimed-mark ids
+	 */
+	public Set<Integer> snapshotEmittedMarks() {
+		return new HashSet<>( this.emittedMarks );
+	}
+
+	/**
+	 * Restore the claimed-mark set to a prior snapshot, releasing any marks claimed
+	 * since. Call with the snapshot taken before transforming a duplicated AST body
+	 * so the duplicate copy's marks can be re-claimed and emitted.
+	 *
+	 * @param snapshot the set previously returned by {@link #snapshotEmittedMarks()}
+	 */
+	public void restoreEmittedMarks( Set<Integer> snapshot ) {
+		this.emittedMarks.clear();
+		this.emittedMarks.addAll( snapshot );
+	}
+
+	/**
+	 * Adopt the profiling context of another transpiler (the OUTER script/class).
+	 * A local class compiles as a separate auxiliary JVM class, but from the
+	 * USER's perspective its code is part of the container script — so its marks
+	 * must land on the SAME fileId and span-id mapping as the outer source, not a
+	 * synthetic per-class blueprint.
+	 * <p>
+	 * After this call, the child's {@code mark} emission targets the outer file's
+	 * counters: {@link #getFileId()} returns the outer fileId, and
+	 * {@link #getSpanId(long)} resolves positions through the OUTER span registry
+	 * (which already includes the local class's spans from the parent's Pass A).
+	 *
+	 * @param outer the transpiler whose profiling context to share
+	 */
+	public void adoptProfilingContext( Transpiler outer ) {
+		this.fileId					= outer.fileId;
+		this.spanIds				= outer.spanIds;
+		this.profilingEnabled		= outer.profilingEnabled;
+		// Marks claimed by the outer compilation already cover the class's spans
+		// (the parent's Pass A walked the whole tree). Share the dedup set so the
+		// child doesn't emit duplicate marks for the same span positions.
+		this.emittedMarks			= outer.emittedMarks;
+		// Property defaults are hoisted into the class's pseudo-constructor; the
+		// child transforms that method, so it needs the span group the parent's
+		// Pass A collected.
+		this.propertyDefaultSpans	= outer.propertyDefaultSpans;
+		// Span GROUPS (atomic shell/brace units) are also registered by the
+		// parent's Pass A (e.g. the class shell + closing "}" group keyed by the
+		// first annotation). The child's clinit emits those marks, so share the
+		// group map too.
+		this.spanGroups				= outer.spanGroups;
 	}
 
 	public boolean canReturn() {

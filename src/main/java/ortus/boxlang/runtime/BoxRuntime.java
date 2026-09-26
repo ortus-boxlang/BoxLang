@@ -76,6 +76,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.services.CodeProfilerService;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -272,6 +273,12 @@ public class BoxRuntime implements java.io.Closeable {
 	 * The HTTP Service that manages all HTTP clients and operations
 	 */
 	private HttpService							httpService;
+
+	/**
+	 * The Code Profiler service in charge of collecting per-source-range execution
+	 * data (coverage + timing) from instrumented bytecode
+	 */
+	private CodeProfilerService					codeProfilerService;
 
 	/**
 	 * Startup Exception. Used to track a startup failure so this instance knows it failed to start.
@@ -493,21 +500,22 @@ public class BoxRuntime implements java.io.Closeable {
 		this.loggingService.getRootLogger().info( "+ Starting up BoxLang Runtime" );
 
 		// Create the Runtime Services
-		this.interceptorService	= new InterceptorService( this );
-		this.asyncService		= new AsyncService( this );
-		this.cacheService		= new CacheService( this );
-		this.functionService	= new FunctionService( this );
-		this.componentService	= new ComponentService( this );
-		this.applicationService	= new ApplicationService( this );
-		this.moduleService		= new ModuleService( this );
-		this.schedulerService	= new SchedulerService( this );
-		this.watcherService		= new WatcherService( this );
-		this.dataSourceService	= new DatasourceService( this );
-		this.httpService		= new HttpService( this );
+		this.interceptorService		= new InterceptorService( this );
+		this.asyncService			= new AsyncService( this );
+		this.cacheService			= new CacheService( this );
+		this.functionService		= new FunctionService( this );
+		this.componentService		= new ComponentService( this );
+		this.applicationService		= new ApplicationService( this );
+		this.moduleService			= new ModuleService( this );
+		this.schedulerService		= new SchedulerService( this );
+		this.watcherService			= new WatcherService( this );
+		this.dataSourceService		= new DatasourceService( this );
+		this.httpService			= new HttpService( this );
+		this.codeProfilerService	= new CodeProfilerService( this );
 
 		// Initiate the Class Locator Service in charge of doing all the class
 		// resolutions
-		this.classLocator		= ClassLocator.getInstance( this );
+		this.classLocator			= ClassLocator.getInstance( this );
 
 		// Load the configurations and overrides
 		loadConfiguration( this.configPath );
@@ -535,6 +543,7 @@ public class BoxRuntime implements java.io.Closeable {
 		this.watcherService.onConfigurationLoad();
 		this.dataSourceService.onConfigurationLoad();
 		this.httpService.onConfigurationLoad();
+		this.codeProfilerService.onConfigurationLoad();
 
 		// Seed Mathematical Precision for the runtime
 		MathUtil.setHighPrecisionMath( getConfiguration().useHighPrecisionMath );
@@ -565,6 +574,8 @@ public class BoxRuntime implements java.io.Closeable {
 		// Now the HTTP service can be started, this allows for modules to register
 		// HTTP clients or settings
 		this.httpService.onStartup();
+		// Now the Code Profiler Service can be started
+		this.codeProfilerService.onStartup();
 
 		// Global Services are now available, start them up
 		this.globalServices.values()
@@ -881,6 +892,15 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
+	 * Get the code profiler service
+	 *
+	 * @return {@link CodeProfilerService} or null if the runtime has not started
+	 */
+	public CodeProfilerService getCodeProfilerService() {
+		return codeProfilerService;
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Methods
 	 * --------------------------------------------------------------------------
@@ -1156,6 +1176,7 @@ public class BoxRuntime implements java.io.Closeable {
 		instance.interceptorService.onShutdown( force );
 		instance.schedulerService.onShutdown( force );
 		instance.dataSourceService.onShutdown( force );
+		instance.codeProfilerService.onShutdown( force );
 
 		// Shutdown logging
 		instance.logger.debug( "+ BoxLang Runtime has been shutdown" );
