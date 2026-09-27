@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -41,6 +42,7 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import tools.JDBCTestUtils;
 
+@EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
 public class TransactionTest extends BaseJDBCTest {
 
 	static Key			result	= new Key( "result" );
