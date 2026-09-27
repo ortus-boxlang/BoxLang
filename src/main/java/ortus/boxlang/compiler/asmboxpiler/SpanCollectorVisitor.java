@@ -51,6 +51,7 @@ import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 import ortus.boxlang.runtime.services.Blueprint;
 
@@ -77,7 +78,15 @@ import ortus.boxlang.runtime.services.Blueprint;
 public class SpanCollectorVisitor extends VoidBoxVisitor {
 
 	private final Transpiler				transpiler;
-	private final List<Blueprint.SpanDef>	spanDefs	= new ArrayList<>();
+	private final List<Blueprint.SpanDef>	spanDefs			= new ArrayList<>();
+
+	/**
+	 * Start positions of close tags already registered via {@link #registerTagClose}
+	 * — each {@code </bx:name>} / {@code </cf...>} may only be registered ONCE (a
+	 * nested construct inside another can otherwise claim the same close tag, e.g.
+	 * multiple nested if-components all seeing the same {@code </cfif>}).
+	 */
+	private final java.util.Set<Long>		registeredTagCloses	= new java.util.HashSet<>();
 
 	/**
 	 * The start of the currently-open running span, or {@code null} if none.
@@ -133,6 +142,62 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				child.accept( this );
 			}
 		}
+	}
+
+	/**
+	 * A generic OPEN/CLOSE tag component ({@code <bx:loop>...</bx:loop>},
+	 * {@code <bx:output>...</bx:output>}, etc.) executes its body between the two
+	 * tags. The OPEN tag is its own span (opened by visitChildren at the statement
+	 * start); the CLOSE tag {@code </bx:name>} is grouped with it so both are
+	 * marked when the component's body runs. Self-closing / single-tag components
+	 * ({@code <bx:set>}, {@code <bx:throw>}) have no close tag — the existing
+	 * statement span covers the whole tag.
+	 */
+	@Override
+	public void visit( BoxComponent node ) {
+		if ( isTagContext( node ) ) {
+			String name = node.getName() == null ? "" : node.getName().toLowerCase();
+			// BRANCH components (<bx:else>, <bx:elseif>, <cfelse>, <cfelseif>) are
+			// self-closing — no close tag to register. Their open tag is registered
+			// as the running span so the whole tag is tracked; the body (if any)
+			// follows. The Pass B transformer marks these when the branch runs.
+			if ( name.equals( "else" ) || name.equals( "elseif" ) ) {
+				if ( node.getBody() != null && !node.getBody().isEmpty() ) {
+					this.runningStart = node.getStart();
+					closeRunningSpan( node.getBody().get( 0 ).getStart() );
+					for ( BoxStatement stmt : node.getBody() ) {
+						this.runningStart = stmt.getStart();
+						stmt.accept( this );
+						closeRunningSpan( stmt.getEnd() );
+					}
+					this.runningStart = null;
+				} else {
+					this.runningStart = node.getStart();
+					closeRunningSpan( node.getEnd() );
+				}
+				return;
+			}
+
+			// CONSTRUCT components (<bx:while>, <bx:loop>, <bx:if>, <cfif>, ...):
+			// the open tag is the running span, grouped with the close tag.
+			if ( node.getBody() != null && !node.getBody().isEmpty() ) {
+				int headerId = -1;
+				headerId = closeRunningSpan( node.getBody().get( 0 ).getStart() );
+				for ( BoxStatement stmt : node.getBody() ) {
+					this.runningStart = stmt.getStart();
+					stmt.accept( this );
+					closeRunningSpan( stmt.getEnd() );
+				}
+				this.runningStart = null;
+				Point afterBody = node.getBody().get( node.getBody().size() - 1 ).getEnd();
+				registerTagClose( node, afterBody, name, headerId );
+				return;
+			}
+		}
+
+		// Default: let the generic child walker handle it (each body statement opens
+		// its own span; the component tag itself threads the running span).
+		visitChildren( node );
 	}
 
 	/**
@@ -237,6 +302,24 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 */
 	@Override
 	public void visit( BoxIfElse node ) {
+		// An ELSEIF is a BoxIfElse whose source is the "<bx:elseif ...>" /
+		// "<cfelseif ...>" tag (the parser's node starts at the "bx:" prefix, one
+		// column PAST the "<"). Register the FULL tag as the running span so the
+		// whole branch tag is tracked, marked when the branch is evaluated. The
+		// tag's condition continues the running span; the branch body breaks out.
+		boolean isElseIf = isElseIfNode( node );
+		if ( isElseIf && node.getStart() != null ) {
+			Point	tagOpen	= new Point( node.getStart().getLine(), Math.max( 0, node.getStart().getColumn() - 1 ) );
+			Point	tagEnd	= findTagCloseAfter( node, node.getStart() );
+			if ( tagEnd != null ) {
+				// Close whatever the enclosing block opened at the elseif "<".
+				this.runningStart = tagOpen;
+				closeRunningSpan( new Point( tagEnd.getLine(), tagEnd.getColumn() + 1 ) );
+				// Condition continues a FRESH span at the condition start.
+				this.runningStart = null;
+			}
+		}
+
 		// Condition continues the running span.
 		node.getCondition().accept( this );
 
@@ -246,13 +329,14 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// other single statement body is opened/closed here as its own executable
 		// span (e.g. `if( x ) foo();` gives `foo()` its own span). This handles
 		// any statement type — block, expression, assignment, etc.
+		int headerId = -1;
 		if ( node.getThenBody() != null ) {
 			if ( node.getThenBody() instanceof BoxStatementBlock ) {
-				closeRunningSpan( node.getThenBody().getStart() );
+				headerId = closeRunningSpan( node.getThenBody().getStart() );
 				node.getThenBody().accept( this );
 			} else {
-				closeRunningSpan( node.getThenBody().getStart() );
-				this.runningStart = node.getThenBody().getStart();
+				headerId			= closeRunningSpan( node.getThenBody().getStart() );
+				this.runningStart	= node.getThenBody().getStart();
 				node.getThenBody().accept( this );
 				closeRunningSpan( node.getThenBody().getEnd() );
 			}
@@ -264,7 +348,21 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// "else" keyword and the body (e.g. the space in "else if") never becomes a
 		// phantom span. Same block-vs-single-statement handling as the then body.
 		if ( node.getElseBody() != null ) {
+			// In template markup, the branch keyword is the FULL tag (<bx:else>,
+			// <bx:elseif ...>, <cfelse>, <cfelseif ...>). Find the whole tag so the
+			// "<bx:" prefix is part of the span.
 			Point elseKw = findKeywordBefore( node, node.getElseBody().getStart(), "else" );
+			if ( isTagContext( node ) ) {
+				Point fullTag = findBranchTagBefore( node, node.getElseBody().getStart() );
+				if ( fullTag != null ) {
+					Point tagEnd = findTagCloseAfter( node, fullTag );
+					if ( tagEnd != null ) {
+						this.runningStart = fullTag;
+						closeRunningSpan( new Point( tagEnd.getLine(), tagEnd.getColumn() + 1 ) );
+						elseKw = null; // full tag handled
+					}
+				}
+			}
 			if ( elseKw != null ) {
 				this.runningStart = elseKw;
 				closeRunningSpan( new Point( elseKw.getLine(), elseKw.getColumn() + 4 ) );
@@ -282,6 +380,60 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// Reset so the enclosing statement close doesn't mint a phantom span over
 		// the trailing ";" / newline after the last branch body.
 		this.runningStart = null;
+
+		// Tag-based if: the closing </bx:if> / </cfif> is marked together with the
+		// opening <bx:if> tag when the if is entered. (Elseif nodes are nested
+		// BoxIfElses — their sourceText starts with the elseif prefix; only the
+		// TOP-LEVEL if's own close tag is registered here, keyed by its header.)
+		// Scan for the close tag after the LAST body (else body if present, else
+		// then body).
+		if ( isTagContext( node ) && !isElseIfNode( node ) ) {
+			Point afterBody = node.getEnd();
+			if ( node.getElseBody() != null && node.getElseBody().getEnd() != null ) {
+				afterBody = node.getElseBody().getEnd();
+			} else if ( node.getThenBody() != null && node.getThenBody().getEnd() != null ) {
+				afterBody = node.getThenBody().getEnd();
+			}
+			registerTagClose( node, afterBody, "if", headerId );
+		}
+	}
+
+	/**
+	 * Whether this node's source is template tag markup ({@code <bx:...>} /
+	 * {@code <cf...>} / {@code <...>}), as opposed to script syntax.
+	 *
+	 * @param node the node
+	 *
+	 * @return true if the source text starts with a tag-open
+	 */
+	private boolean isTagContext( BoxNode node ) {
+		if ( node == null || node.getSourceText() == null ) {
+			return false;
+		}
+		String src = node.getSourceText().trim();
+		// The parser's elseif nodes start at the "bx:"/"cf" prefix (missing the "<"),
+		// so also treat those prefixes as tag context.
+		return ( src.startsWith( "<" ) && !src.startsWith( "<!" ) )
+		    || src.startsWith( "bx:" )
+		    || src.startsWith( "cf" );
+	}
+
+	/**
+	 * Whether this node is an ELSEIF tag ({@code <bx:elseif ...>} /
+	 * {@code <cfelseif ...>}). The parser's node source starts at the {@code bx:}
+	 * / {@code cf} prefix (one column past the {@code <}), so detect by the
+	 * source text beginning with the prefix followed by {@code elseif}.
+	 *
+	 * @param node the node
+	 *
+	 * @return true if the node is an elseif tag
+	 */
+	private boolean isElseIfNode( BoxNode node ) {
+		if ( node == null || node.getSourceText() == null ) {
+			return false;
+		}
+		String src = node.getSourceText().trim();
+		return src.startsWith( "bx:elseif" ) || src.startsWith( "cfelseif" ) || src.startsWith( "elseif" );
 	}
 
 	/**
@@ -297,9 +449,16 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		node.getCondition().accept( this );
 
 		// The (single) body statement breaks into its own span (may not run).
+		int headerId = -1;
 		if ( node.getBody() != null ) {
-			closeRunningSpan( node.getBody().getStart() );
+			headerId = closeRunningSpan( node.getBody().getStart() );
 			node.getBody().accept( this );
+		}
+
+		// Tag-based while (<bx:while ...>...</bx:while>): the CLOSE tag is marked
+		// together with the OPEN tag when the loop is entered.
+		if ( isTagContext( node ) ) {
+			registerTagClose( node, node.getBody() == null ? node.getEnd() : node.getBody().getEnd(), "while", headerId );
 		}
 	}
 
@@ -383,6 +542,25 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 */
 	@Override
 	public void visit( BoxForIndex node ) {
+		// TAG-based loop (<bx:loop from=... to=...>...</bx:loop>): the header tag
+		// is the running span (opened at the statement start), and the </bx:loop>
+		// close tag is grouped with it, marked once at loop entry.
+		if ( isTagContext( node ) ) {
+			int headerId = -1;
+			if ( node.getBody() != null ) {
+				headerId = closeRunningSpan( node.getBody().getStart() );
+			} else {
+				headerId = closeRunningSpan( node.getEnd() );
+			}
+			if ( node.getBody() != null ) {
+				node.getBody().accept( this );
+			}
+			Point afterBody = node.getBody() == null ? node.getEnd() : node.getBody().getEnd();
+			registerTagClose( node, afterBody, "loop", headerId );
+			this.runningStart = null;
+			return;
+		}
+
 		// The header (initializer, condition, step) continues the running span.
 		if ( node.getInitializer() != null ) {
 			node.getInitializer().accept( this );
@@ -410,6 +588,25 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 */
 	@Override
 	public void visit( BoxForIn node ) {
+		// TAG-based loop (<bx:loop array=...>...</bx:loop>): the header tag is the
+		// running span (opened at the statement start), and the </bx:loop> close
+		// tag is grouped with it, marked once at loop entry.
+		if ( isTagContext( node ) ) {
+			int headerId = -1;
+			if ( node.getBody() != null ) {
+				headerId = closeRunningSpan( node.getBody().getStart() );
+			} else {
+				headerId = closeRunningSpan( node.getEnd() );
+			}
+			if ( node.getBody() != null ) {
+				node.getBody().accept( this );
+			}
+			Point afterBody = node.getBody() == null ? node.getEnd() : node.getBody().getEnd();
+			registerTagClose( node, afterBody, "loop", headerId );
+			this.runningStart = null;
+			return;
+		}
+
 		// The collection and loop variables continue the running span.
 		if ( node.getVariable() != null ) {
 			node.getVariable().accept( this );
@@ -476,6 +673,13 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			}
 		}
 
+		// Tag-based switch: the closing </bx:switch> / </cfswitch> is marked with
+		// the opening tag when the switch is entered.
+		if ( isTagContext( node ) && end != null && ( sourceText == null || !sourceText.endsWith( "}" ) ) ) {
+			Point afterBody = node.getCases().isEmpty() ? end : node.getCases().get( node.getCases().size() - 1 ).getEnd();
+			registerTagClose( node, afterBody, "switch", headerId );
+		}
+
 		// Reset so the enclosing statement close doesn't mint a phantom span over
 		// the trailing semicolon / newline gap.
 		this.runningStart = null;
@@ -526,6 +730,17 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			transpiler.registerSpanGroup( new int[] { firstBodyId, labelId } );
 		}
 
+		// Tag-based case/defaultcase: the closing </bx:case> / </cfcase> (or
+		// </bx:defaultcase> / </cfdefaultcase>) is marked together with the case
+		// label when the case is evaluated. A default case has no condition — its
+		// label is batched with the first body statement (keyed by firstBodyId), so
+		// group the close tag with THAT so it fires when the default runs.
+		if ( isTagContext( node ) ) {
+			Point	afterBody	= node.getBody().isEmpty() ? node.getEnd() : node.getBody().get( node.getBody().size() - 1 ).getEnd();
+			boolean	isDefault	= node.getCondition() == null;
+			registerTagClose( node, afterBody, isDefault ? "defaultcase" : "case", isDefault ? firstBodyId : labelId );
+		}
+
 		// Reset so the next case / closing brace starts clean.
 		this.runningStart = null;
 	}
@@ -552,6 +767,14 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 */
 	@Override
 	public void visit( BoxTry node ) {
+		// TAG-based try (<bx:try>...</bx:try>): the open/close tags of try, each
+		// catch, and finally are registered as tag groups (marked with their
+		// construct's entry). Script tries use braces instead.
+		if ( isTagContext( node ) ) {
+			visitTagTry( node );
+			return;
+		}
+
 		// TRY: the header (try {) is the running span; close it at the first body
 		// statement, and group it with the closing "}".
 		int		headerId	= -1;
@@ -650,6 +873,249 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		if ( ids.size() > 1 ) {
 			transpiler.registerSpanGroup( ids.stream().mapToInt( Integer::intValue ).toArray() );
 		}
+	}
+
+	/**
+	 * Visit a TAG-based try ({@code <bx:try>...</bx:try>}): register the try open
+	 * tag (grouped with its {@code </bx:try>} close), each catch open tag (grouped
+	 * with its {@code </bx:catch>} close), and the finally open + close tags
+	 * (grouped together), plus all body statements. Body statements open/close
+	 * their own spans; the running span is reset after each construct.
+	 *
+	 * @param node the try statement
+	 */
+	private void visitTagTry( BoxTry node ) {
+		// TRY open tag is the running span (opened by visitChildren at the "<bx:try"
+		// statement start); close it at the first body statement and group with the
+		// closing </bx:try>.
+		int headerId = -1;
+		if ( !node.getTryBody().isEmpty() ) {
+			headerId = closeRunningSpan( node.getTryBody().get( 0 ).getStart() );
+		} else {
+			headerId = closeRunningSpan( node.getEnd() );
+		}
+		for ( BoxStatement stmt : node.getTryBody() ) {
+			this.runningStart = stmt.getStart();
+			stmt.accept( this );
+			closeRunningSpan( stmt.getEnd() );
+		}
+		this.runningStart = null;
+		// </bx:try> close grouped with the try open tag — scan BACKWARD from the
+		// node end (the close tag sits after the catch/finally bodies).
+		if ( isTagContext( node ) ) {
+			registerTagCloseBackward( node, node.getEnd(), "try", headerId );
+		}
+
+		// CATCHES: each catch open tag grouped with its </bx:catch> close.
+		for ( BoxTryCatch catchNode : node.getCatches() ) {
+			int catchHeader = -1;
+			this.runningStart = catchNode.getStart();
+			if ( !catchNode.getCatchBody().isEmpty() ) {
+				catchHeader = closeRunningSpan( catchNode.getCatchBody().get( 0 ).getStart() );
+			} else {
+				catchHeader = closeRunningSpan( catchNode.getEnd() );
+			}
+			for ( BoxStatement stmt : catchNode.getCatchBody() ) {
+				this.runningStart = stmt.getStart();
+				stmt.accept( this );
+				closeRunningSpan( stmt.getEnd() );
+			}
+			this.runningStart = null;
+			Point catchEnd = catchNode.getCatchBody().isEmpty()
+			    ? catchNode.getEnd()
+			    : catchNode.getCatchBody().get( catchNode.getCatchBody().size() - 1 ).getEnd();
+			// </bx:catch> is right after the catch body — forward scan.
+			registerTagClose( node, catchEnd, "catch", catchHeader );
+		}
+
+		// FINALLY: BOTH the <bx:finally> open and </bx:finally> close tags are
+		// registered and grouped — marked when the finally runs.
+		if ( !node.getFinallyBody().isEmpty() ) {
+			int finallyHeader = -1;
+			this.runningStart = findFinallyOpenTag( node );
+			if ( !node.getFinallyBody().isEmpty() ) {
+				finallyHeader = closeRunningSpan( node.getFinallyBody().get( 0 ).getStart() );
+			}
+			for ( BoxStatement stmt : node.getFinallyBody() ) {
+				this.runningStart = stmt.getStart();
+				stmt.accept( this );
+				closeRunningSpan( stmt.getEnd() );
+			}
+			this.runningStart = null;
+			Point finallyEnd = node.getFinallyBody().get( node.getFinallyBody().size() - 1 ).getEnd();
+			registerTagClose( node, finallyEnd, "finally", finallyHeader );
+		}
+	}
+
+	/**
+	 * Find the position of the {@code <bx:finally>} / {@code <cffinally>} open tag
+	 * before the finally body (scanning back from the first finally body
+	 * statement).
+	 *
+	 * @param node the try statement
+	 *
+	 * @return the finally open tag's {@code <} position, or null
+	 */
+	private Point findFinallyOpenTag( BoxTry node ) {
+		if ( node.getFinallyBody().isEmpty() || node.getPosition() == null || node.getPosition().getSource() == null ) {
+			return null;
+		}
+		String	source	= node.getPosition().getSource().getCode();
+		Point	first	= node.getFinallyBody().get( 0 ).getStart();
+		int		offset	= offsetOf( source, first );
+		if ( offset < 0 ) {
+			return null;
+		}
+		for ( int i = offset - 1; i >= 0; i-- ) {
+			if ( source.charAt( i ) == '<' ) {
+				String rest = source.substring( i, Math.min( source.length(), i + 30 ) );
+				if ( rest.matches( "<(?:bx:|cf)?finally[\\s\\S]*" ) ) {
+					return pointAt( source, i );
+				}
+				// Previous tag — the finally tag must be after it.
+				return null;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Find the {@code <} of the closing tag {@code </bx:name>} / {@code </cf...>}
+	 * for the given tag name, scanning BACKWARD from the given point (the node's
+	 * end) for the LAST occurrence. Used when the close tag is BEFORE the point
+	 * (e.g. the {@code </bx:try>} which sits after the finally/catch bodies but
+	 * before the node end).
+	 *
+	 * @param node    the construct node (for source access)
+	 * @param from    the point to scan back from
+	 * @param tagName the tag name to match
+	 *
+	 * @return the closing tag's {@code <} position, or null
+	 */
+	private Point findTagCloseOpenBackward( BoxNode node, Point from, String tagName ) {
+		if ( from == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+			return null;
+		}
+		String	source	= node.getPosition().getSource().getCode();
+		int		offset	= offsetOf( source, from );
+		if ( offset < 0 ) {
+			return null;
+		}
+		String	close1	= "</bx:" + tagName;
+		String	close2	= "</cf" + tagName;
+		for ( int i = offset - 1; i >= 0; i-- ) {
+			if ( source.startsWith( close1, i ) || source.startsWith( close2, i ) ) {
+				return pointAt( source, i );
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * For a TAG-based construct ({@code <bx:while>...</bx:while>}, etc.), find the
+	 * closing {@code </bx:name>} / {@code </cf...>} tag that follows the given
+	 * point and register it as a span GROUPED with the construct's header span, so
+	 * Pass B marks BOTH the open and close tag when the construct's entry fires.
+	 * If the header span is absent (no header id) or no close tag is found, no
+	 * group is registered (the close tag, if found, is still registered so it has
+	 * a span).
+	 *
+	 * @param node      the construct node (for source access)
+	 * @param afterBody the point just after the construct's body (scan forward)
+	 * @param tagName   the tag name to match (e.g. "while", "if", "switch")
+	 * @param headerId  the construct's header/entry span id (or -1)
+	 */
+	private void registerTagClose( BoxNode node, Point afterBody, String tagName, int headerId ) {
+		Point closeOpen = findTagCloseOpen( node, afterBody, tagName );
+		if ( closeOpen == null ) {
+			return;
+		}
+		// Dedup: a given close tag is registered only once (nested constructs may
+		// all see the same enclosing close tag).
+		long packed = ( ( long ) closeOpen.getLine() << 32 ) | ( closeOpen.getColumn() & 0xFFFFFFFFL );
+		if ( !registeredTagCloses.add( packed ) ) {
+			return;
+		}
+		// The close-tag span runs from "<" through ">" (the whole </bx:name>).
+		Point closeEnd = findTagCloseAfter( node, closeOpen );
+		if ( closeEnd == null ) {
+			return;
+		}
+		int closeId = addSpan( closeOpen, new Point( closeEnd.getLine(), closeEnd.getColumn() + 1 ) );
+		if ( closeId < 0 ) {
+			return;
+		}
+		List<Integer> ids = new ArrayList<>();
+		if ( headerId >= 0 ) {
+			ids.add( headerId );
+		}
+		if ( !ids.contains( closeId ) ) {
+			ids.add( closeId );
+		}
+		if ( ids.size() > 1 ) {
+			transpiler.registerSpanGroup( ids.stream().mapToInt( Integer::intValue ).toArray() );
+		}
+	}
+
+	/**
+	 * Same as {@link #registerTagClose} but finds the closing tag by scanning
+	 * BACKWARD from the given point (used when the close tag precedes the point,
+	 * e.g. {@code </bx:try>} after the finally body).
+	 */
+	private void registerTagCloseBackward( BoxNode node, Point from, String tagName, int headerId ) {
+		Point closeOpen = findTagCloseOpenBackward( node, from, tagName );
+		if ( closeOpen == null ) {
+			return;
+		}
+		Point closeEnd = findTagCloseAfter( node, closeOpen );
+		if ( closeEnd == null ) {
+			return;
+		}
+		int closeId = addSpan( closeOpen, new Point( closeEnd.getLine(), closeEnd.getColumn() + 1 ) );
+		if ( closeId < 0 ) {
+			return;
+		}
+		List<Integer> ids = new ArrayList<>();
+		if ( headerId >= 0 ) {
+			ids.add( headerId );
+		}
+		if ( !ids.contains( closeId ) ) {
+			ids.add( closeId );
+		}
+		if ( ids.size() > 1 ) {
+			transpiler.registerSpanGroup( ids.stream().mapToInt( Integer::intValue ).toArray() );
+		}
+	}
+
+	/**
+	 * Find the {@code <} of the closing tag {@code </bx:name>} / {@code </cf...>}
+	 * for the given tag name, scanning forward from the given point (the end of
+	 * the construct's body).
+	 *
+	 * @param node    the construct node (for source access)
+	 * @param from    the point to scan forward from
+	 * @param tagName the tag name to match
+	 *
+	 * @return the closing tag's {@code <} position, or null
+	 */
+	private Point findTagCloseOpen( BoxNode node, Point from, String tagName ) {
+		if ( from == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+			return null;
+		}
+		String	source	= node.getPosition().getSource().getCode();
+		int		offset	= offsetOf( source, from );
+		if ( offset < 0 ) {
+			return null;
+		}
+		// Match "</bx:tagName>" or "</cfTagName>".
+		String	close1	= "</bx:" + tagName;
+		String	close2	= "</cf" + ( tagName.equalsIgnoreCase( "defaultcase" ) ? "defaultcase" : tagName );
+		for ( int i = offset; i < source.length() - close1.length(); i++ ) {
+			if ( source.startsWith( close1, i ) || source.startsWith( close2, i ) ) {
+				return pointAt( source, i );
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -770,7 +1236,14 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			return null;
 		}
 		for ( int i = offset - 1; i >= 0; i-- ) {
-			if ( Character.isLetterOrDigit( source.charAt( i ) ) ) {
+			char c = source.charAt( i );
+			// In template markup, a "<" begins a tag and a ">" ends one — do not
+			// scan past them for a keyword (prevents grabbing "else" out of a
+			// comment or a different tag above).
+			if ( c == '<' || c == '>' ) {
+				return null;
+			}
+			if ( Character.isLetterOrDigit( c ) ) {
 				// Walk back to the start of this word.
 				int	wordEnd		= i + 1;
 				int	wordStart	= i;
@@ -784,6 +1257,127 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Find the opening {@code <} of a template tag that precedes (or contains) the
+	 * given point — scanning back from the point for the nearest {@code <}. Used
+	 * to capture the FULL tag markup (e.g. {@code <bx:else>}, {@code <cfelse>})
+	 * rather than just the keyword word inside it. Returns null if no {@code <} is
+	 * found before the point.
+	 *
+	 * @param node   the containing node (for source access)
+	 * @param before the point to scan back from
+	 *
+	 * @return the {@code <} position, or null
+	 */
+	private Point findTagOpenBefore( BoxNode node, Point before ) {
+		if ( before == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+			return null;
+		}
+		String	source	= node.getPosition().getSource().getCode();
+		int		offset	= offsetOf( source, before );
+		if ( offset < 0 ) {
+			return null;
+		}
+		for ( int i = offset - 1; i >= 0; i-- ) {
+			char c = source.charAt( i );
+			if ( c == '<' ) {
+				return pointAt( source, i );
+			}
+			// A statement boundary before the tag means the tag starts elsewhere.
+			if ( c == '\n' || c == '>' ) {
+				return null;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Find the closing {@code >} of a template tag that begins at (or before) the
+	 * given point — scanning forward for the nearest {@code >}. Used to end a full
+	 * tag span (e.g. {@code <bx:elseif x EQ 2>}) right after the {@code >}.
+	 *
+	 * @param node the containing node (for source access)
+	 * @param from the point to scan forward from
+	 *
+	 * @return the {@code >} position (the tag's closing angle), or null
+	 */
+	private Point findTagCloseAfter( BoxNode node, Point from ) {
+		if ( from == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+			return null;
+		}
+		String	source	= node.getPosition().getSource().getCode();
+		int		offset	= offsetOf( source, from );
+		if ( offset < 0 ) {
+			return null;
+		}
+		for ( int i = offset; i < source.length(); i++ ) {
+			char c = source.charAt( i );
+			if ( c == '>' ) {
+				return pointAt( source, i );
+			}
+			// A newline before the > means this is not a single-line tag.
+			if ( c == '\n' ) {
+				return null;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Find the opening {@code <} of the branch tag ({@code <bx:else>},
+	 * {@code <bx:elseif ...>}, {@code <cfelse>}, {@code <cfelseif ...>}) that
+	 * immediately precedes the given point, scanning back past the else-body
+	 * content and stopping at the previous tag's {@code >}. Returns the {@code <}
+	 * position of the branch tag, or null.
+	 *
+	 * @param node   the containing node (for source access)
+	 * @param before the else-body start (scan back from here)
+	 *
+	 * @return the branch tag {@code <} position, or null
+	 */
+	private Point findBranchTagBefore( BoxNode node, Point before ) {
+		if ( before == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+			return null;
+		}
+		String	source	= node.getPosition().getSource().getCode();
+		int		offset	= offsetOf( source, before );
+		if ( offset < 0 ) {
+			return null;
+		}
+		// Scan back for the LAST else/elseif tag whose ">" is closest to "before":
+		// find each "<", resolve its tag, and keep the nearest one that precedes
+		// the else-body start.
+		Point	best	= null;
+		int		bestEnd	= -1;
+		for ( int i = offset - 1; i >= 0; i-- ) {
+			if ( source.charAt( i ) == '<' ) {
+				String rest = source.substring( i, Math.min( source.length(), i + 50 ) );
+				// ONLY a plain else tag (<bx:else> / <cfelse>) is handled here — an
+				// elseif tag is registered by the elseif node's own visit(). This
+				// prevents the previous elseif's else-path from double-registering
+				// the next elseif tag.
+				if ( rest.matches( "<(?:bx:|cf)?else(?!if)[\\s\\S]*" ) ) {
+					// Resolve this tag's close.
+					int j = i + 1;
+					while ( j < source.length() && source.charAt( j ) != '>' ) {
+						j++;
+					}
+					if ( j < source.length() && j > bestEnd ) {
+						bestEnd	= j;
+						best	= pointAt( source, i );
+					}
+				}
+				// The immediate previous tag boundary — keep scanning past it for
+				// older tags is pointless (best is already the nearest), so if this
+				// was a non-else tag we can stop: the branch tag must be AFTER it.
+				if ( !rest.matches( "<(?:bx:|cf)?else(?!if)[\\s\\S]*" ) && best == null ) {
+					return null;
+				}
+			}
+		}
+		return best;
 	}
 
 	/**
@@ -1038,6 +1632,9 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			closeRunningSpan( node.getBody().get( 0 ).getStart() );
 		}
 		postCollectAndRegisterShell();
+		// Capture the shell HEAD id NOW (before body statements may collect nested
+		// shells) so the tag close can group with the declaration shell.
+		int shellHead = shellHeadId();
 
 		if ( node.getBody() != null ) {
 			for ( BoxStatement stmt : node.getBody() ) {
@@ -1054,9 +1651,32 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			registerOpenCloseBraceGroup( openBrace, closeBrace );
 		}
 
+		// Tag-based function (<bx:function ...>...</bx:function>): no braces — the
+		// shell's last span and the closing </bx:function> tag are marked together
+		// at declaration. The shell tail span (from the shell group) is the entry.
+		if ( isTagContext( node ) && openBrace == null ) {
+			Point afterBody = node.getBody() != null && !node.getBody().isEmpty() && node.getBody().get( node.getBody().size() - 1 ).getEnd() != null
+			    ? node.getBody().get( node.getBody().size() - 1 ).getEnd()
+			    : node.getEnd();
+			registerTagClose( node, afterBody, "function", shellHead );
+		}
+
 		// Reset so the enclosing statement close doesn't mint a phantom span over
 		// the trailing ";" / newline before the closing brace.
 		this.runningStart = null;
+	}
+
+	/**
+	 * The registered span id of the function's shell HEAD (the first span of the
+	 * declaration shell group), used to group the tag close with the declaration.
+	 *
+	 * @return the shell head span id, or -1 if none was captured
+	 */
+	private int shellHeadId() {
+		if ( !shellAccumulator.isEmpty() ) {
+			return shellAccumulator.get( 0 );
+		}
+		return -1;
 	}
 
 	/**

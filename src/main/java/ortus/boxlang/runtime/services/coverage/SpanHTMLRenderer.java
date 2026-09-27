@@ -88,16 +88,22 @@ public final class SpanHTMLRenderer {
 		}
 		spans.sort( Comparator.comparingInt( a -> ( int ) a[ 0 ] ) );
 
-		// Per-line mouse-over metrics (tooltip): covered flag, total count, and total
-		// time. Aggregated across every span touching each line so hovering a line
-		// shows the profiler numbers (parity with LineCoverageHTMLRenderer).
-		Map<Integer, long[]>	lineMetrics	= new LinkedHashMap<>(); // line -> [covered01, count, totalNanos]
+		// Per-line mouse-over metrics (tooltip): covered flag, the FIRST/OUTERMOST span's
+		// count (same semantics as CodeProfilerService.lineAt, so hovering a line
+		// shows the line's coverage count, not a summed total across all its spans),
+		// and the total time summed across touching spans. Iterate the SORTED spans
+		// so "first" = earliest/outermost in source.
+		Map<Integer, long[]>	lineMetrics	= new LinkedHashMap<>(); // line -> [covered01, count, 0]
 		Map<Integer, Long>		lineNanos	= new LinkedHashMap<>();
-		for ( CodeProfilerService.Span s : allSpans ) {
+		for ( Object[] sp : spans ) {
+			CodeProfilerService.Span s = ( CodeProfilerService.Span ) sp[ 2 ];
 			for ( int ln = s.startLine(); ln <= s.endLine(); ln++ ) {
-				long[] m = lineMetrics.computeIfAbsent( ln, k -> new long[] { 0, 0, 0 } );
-				m[ 0 ]	= m[ 0 ] == 1 || s.stats().count() > 0 ? 1 : 0;
-				m[ 1 ]	+= s.stats().count();
+				long[] m = lineMetrics.computeIfAbsent( ln, k -> new long[] { 0, Long.MIN_VALUE, 0 } );
+				m[ 0 ] = m[ 0 ] == 1 || s.stats().count() > 0 ? 1 : 0;
+				// Keep the FIRST span's count (smallest start) to match lineAt.
+				if ( m[ 1 ] == Long.MIN_VALUE ) {
+					m[ 1 ] = s.stats().count();
+				}
 				long nanos = lineNanos.getOrDefault( ln, 0L ) + s.stats().totalNanos();
 				lineNanos.put( ln, nanos );
 			}

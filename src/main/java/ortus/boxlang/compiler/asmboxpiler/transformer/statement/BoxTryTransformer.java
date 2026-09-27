@@ -270,6 +270,19 @@ public class BoxTryTransformer extends AbstractTransformer {
 		Point	first	= boxTry.getFinallyBody().get( 0 ).getStart();
 		String	source	= boxTry.getPosition().getSource().getCode();
 		int		offset	= offsetOf( source, first );
+		// Tag-based finally (<bx:finally> / <cffinally>): the open tag is a "<",
+		// and Pass A keyed its span group at that "<". Return the "<" position.
+		for ( int i = offset - 1; i >= 0; i-- ) {
+			if ( source.charAt( i ) == '<' ) {
+				String rest = source.substring( i, Math.min( source.length(), i + 30 ) );
+				if ( rest.matches( "<(?:bx:|cf)?finally[\\s\\S]*" ) ) {
+					return pointAt( source, i );
+				}
+				// A different tag — the finally tag must be after it.
+				return null;
+			}
+		}
+		// Script finally: scan back past the preceding "}" for the keyword.
 		for ( int i = offset - 1; i >= 0; i-- ) {
 			if ( source.charAt( i ) == '{' ) {
 				int kwEnd = i;

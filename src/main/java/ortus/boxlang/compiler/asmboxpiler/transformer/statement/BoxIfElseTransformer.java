@@ -55,6 +55,10 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 		AsmHelper.addDebugLabel( nodes, "BoxIf" );
+		// An ELSEIF tag (<bx:elseif ...> / <cfelseif ...>) is evaluated when the
+		// chain reaches it — mark its tag span at that point (the tag opens at the
+		// "<" one column before the node start, matching Pass A registration).
+		emitElseIfTagMark( nodes, ifElse );
 		nodes.addAll( transpiler.transform( ifElse.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 		if ( !ifElse.getCondition().returnsBoolean() ) {
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
@@ -183,6 +187,38 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 	}
 
 	/**
+	 * Emit a {@code mark(fileId, spanId)} for an ELSEIF tag when its condition is
+	 * evaluated. Pass A registered the full {@code <bx:elseif ...>} tag as a span
+	 * whose start is one column PAST the {@code <} (the parser's node starts at the
+	 * {@code bx:} prefix); the tag span begins at (line, col-1). Only when the
+	 * chain reaches this elseif does the tag "run". No-op when profiling is
+	 * disabled.
+	 *
+	 * @param nodes  the instruction list to append to
+	 * @param ifElse the if statement (an elseif if its source starts with the
+	 *               else-if tag prefix)
+	 */
+	private void emitElseIfTagMark( List<AbstractInsnNode> nodes, BoxIfElse ifElse ) {
+		// No-op when profiling is disabled — never emit mark instructions otherwise.
+		if ( !transpiler.isProfilingEnabled() || transpiler.getFileId() < 0 ) {
+			return;
+		}
+		if ( ifElse.getStart() == null ) {
+			return;
+		}
+		String src = ifElse.getSourceText() == null ? null : ifElse.getSourceText().trim();
+		if ( src == null || ! ( src.startsWith( "bx:elseif" ) || src.startsWith( "cfelseif" ) || src.startsWith( "elseif" ) ) ) {
+			return;
+		}
+		// The tag's "<" is one column before the node start.
+		long	packed	= ( ( long ) ifElse.getStart().getLine() << 32 ) | ( ( ifElse.getStart().getColumn() - 1 ) & 0xFFFFFFFFL );
+		int		spanId	= transpiler.getSpanId( packed );
+		if ( spanId >= 0 && transpiler.claimSpanMark( spanId ) ) {
+			nodes.addAll( AsmHelper.invokeStaticMark( transpiler.getFileId(), spanId ) );
+		}
+	}
+
+	/**
 	 * Emit a {@code mark(fileId, elseSpanId)} for the {@code else} keyword when the
 	 * else branch runs. Pass A registered the keyword as its own span; this fires
 	 * only at the else branch entry — never when the if branch is taken. No-op when
@@ -200,11 +236,56 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		if ( kw == null ) {
 			return;
 		}
-		long	packed	= ( ( long ) kw.getLine() << 32 ) | ( kw.getColumn() & 0xFFFFFFFFL );
-		int		spanId	= transpiler.getSpanId( packed );
+		// In template markup the branch span is the FULL <bx:else> tag, registered
+		// at its "<" (before the "else" keyword). Locate the actual "<" so the
+		// else-tag span gets marked when the else branch runs; otherwise key the
+		// keyword position (script else).
+		long	packed;
+		Point	tagOpen	= findElseTagOpen( ifElse, kw );
+		if ( tagOpen != null ) {
+			packed = ( ( long ) tagOpen.getLine() << 32 ) | ( tagOpen.getColumn() & 0xFFFFFFFFL );
+		} else {
+			packed = ( ( long ) kw.getLine() << 32 ) | ( kw.getColumn() & 0xFFFFFFFFL );
+		}
+		int spanId = transpiler.getSpanId( packed );
 		if ( spanId >= 0 && transpiler.claimSpanMark( spanId ) ) {
 			nodes.addAll( AsmHelper.invokeStaticMark( transpiler.getFileId(), spanId ) );
 		}
+	}
+
+	/**
+	 * If the source immediately before the {@code else} keyword is a template else
+	 * tag ({@code <bx:else>} / {@code <cfelse>}), return the tag's {@code <}
+	 * position — the key Pass A registered the full tag span at. Otherwise null
+	 * (script else-if, keyword-keyed span).
+	 *
+	 * @param ifElse the if statement (for source access)
+	 * @param kw     the else keyword position
+	 *
+	 * @return the else tag's {@code <} position, or null
+	 */
+	private Point findElseTagOpen( BoxIfElse ifElse, Point kw ) {
+		if ( ifElse.getPosition() == null || ifElse.getPosition().getSource() == null ) {
+			return null;
+		}
+		String	source	= ifElse.getPosition().getSource().getCode();
+		int		offset	= offsetOf( source, kw );
+		if ( offset <= 0 ) {
+			return null;
+		}
+		// Walk back from the keyword to the tag's "<".
+		int i = offset - 1;
+		while ( i >= 0 && source.charAt( i ) != '<' ) {
+			i--;
+		}
+		if ( i < 0 ) {
+			return null;
+		}
+		String tag = source.substring( i, Math.min( source.length(), i + 20 ) );
+		if ( !tag.matches( "<(?:bx:|cf)?else(?!if)[\\s\\S]*" ) ) {
+			return null;
+		}
+		return pointAt( source, i );
 	}
 
 	/**

@@ -271,7 +271,20 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		}
 		long	packed	= ( ( long ) c.getPosition().getStart().getLine() << 32 ) | ( c.getPosition().getStart().getColumn() & 0xFFFFFFFFL );
 		int		spanId	= transpiler.getSpanId( packed );
-		if ( spanId >= 0 && transpiler.claimSpanMark( spanId ) ) {
+		int[]	group	= spanId < 0 ? null : transpiler.takeSpanGroup( spanId );
+		if ( group != null ) {
+			// Batch-mark the label AND any grouped members (e.g. the case's
+			// </bx:case> close tag) together.
+			boolean anyClaimed = false;
+			for ( int member : group ) {
+				if ( transpiler.claimSpanMark( member ) ) {
+					anyClaimed = true;
+				}
+			}
+			if ( anyClaimed ) {
+				nodes.addAll( AsmHelper.invokeStaticMarkVarargs( transpiler.getFileId(), group ) );
+			}
+		} else if ( spanId >= 0 && transpiler.claimSpanMark( spanId ) ) {
 			nodes.addAll( AsmHelper.invokeStaticMark( transpiler.getFileId(), spanId ) );
 		}
 	}
@@ -304,6 +317,11 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 
 			AsmHelper.addDebugLabel( nodes, "BoxSwitch (breaking) - case start" );
 			LabelNode endOfCase = new LabelNode();
+
+			// The case label (case/default keyword + value + colon) is its own span,
+			// marked when this case is evaluated — emit a manual mark before testing
+			// the condition (the condition node's own mark only covers the value).
+			emitCaseLabelMark( nodes, c );
 
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, switchConditionVarStore.index() ) );
 
