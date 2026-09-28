@@ -25,7 +25,9 @@ import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
+import ortus.boxlang.runtime.application.Session;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
 import ortus.boxlang.runtime.async.watchers.WatcherInstance;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
@@ -43,6 +46,9 @@ import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.context.SessionBoxContext;
+import ortus.boxlang.runtime.events.IInterceptorLambda;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -52,17 +58,27 @@ import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.util.ConfigSecretUtil;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class ApplicationTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
 	IScope				variables;
-	static Key			result	= new Key( "result" );
+	static Key			result					= new Key( "result" );
+
+	static String		sessionStoreDirectory	= "src/test/resources/tmp/ApplicationTestSessionStore";
 
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
+	}
+
+	@AfterAll
+	public static void teardown() {
+		if ( FileSystemUtil.exists( sessionStoreDirectory ) ) {
+			FileSystemUtil.deleteDirectory( sessionStoreDirectory, true );
+		}
 	}
 
 	@BeforeEach
@@ -504,6 +520,103 @@ public class ApplicationTest {
 		assertThat( result.getAsStruct( Key.mappings ).getAsString( Key.of( "/UpdateApplicationWithoutName" ) ) )
 		    .isEqualTo( "/src/test/resources/libs/" );
 		assertThat( variables.get( Key.of( "firstSessionID" ) ) ).isEqualTo( variables.get( Key.of( "secondSessionID" ) ) );
+	}
+
+	@DisplayName( "An application update keeps the request's session when the sessions cache serializes entries" )
+	@Test
+	public void testUpdateApplicationKeepsSessionWithSerializingCache() {
+		AtomicInteger		sessionStarts	= new AtomicInteger();
+		IInterceptorLambda	counter			= data -> {
+												sessionStarts.incrementAndGet();
+												return false;
+											};
+		DynamicObject		interceptor		= DynamicObject.of( counter );
+		variables.put( Key.of( "sessionDirectory" ), sessionStoreDirectory );
+		instance.getInterceptorService().register( interceptor, Key.onSessionStart );
+		try {
+			// @formatter:off
+			instance.executeSource(
+			    """
+			        bx:application
+						name="testUpdateApplicationKeepsSessionWithSerializingCache"
+						sessionmanagement="true"
+						caches = {
+							fileSessions = {
+								provider : "BoxCacheProvider",
+								properties : { objectStore : "FileSystemStore", directory : sessionDirectory }
+							}
+						}
+						sessionStorage="fileSessions";
+
+					session.writtenBeforeUpdate = true;
+
+					bx:application
+						action   ="update"
+						mappings ={ "/UpdateApplicationKeepsSession" : "/src/test/resources/libs/" };
+
+					result = session.keyExists( "writtenBeforeUpdate" );
+				""", context );
+			// @formatter:on
+
+			assertThat( variables.getAsBoolean( result ) ).isTrue();
+			assertThat( sessionStarts.get() ).isEqualTo( 1 );
+		} finally {
+			instance.getInterceptorService().unregister( interceptor, Key.onSessionStart );
+		}
+	}
+
+	@DisplayName( "An application update replaces a session that has ended" )
+	@Test
+	public void testUpdateApplicationReplacesEndedSession() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        bx:application
+					name="testUpdateApplicationReplacesEndedSession"
+					sessionmanagement="true";
+			""", context );
+		// @formatter:on
+		Session ended = context.getParentOfType( SessionBoxContext.class ).getSession();
+		ended.shutdown( context.getRequestContext().getApplicationListener() );
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+				bx:application
+					action   ="update"
+					mappings ={ "/UpdateApplicationReplacesEndedSession" : "/src/test/resources/libs/" };
+
+				session.writtenAfterUpdate = true;
+			""", context );
+		// @formatter:on
+
+		Session current = context.getParentOfType( SessionBoxContext.class ).getSession();
+		assertThat( current ).isNotSameInstanceAs( ended );
+		assertThat( current.isShutdown() ).isFalse();
+		assertThat( current.getSessionScope().containsKey( Key.of( "writtenAfterUpdate" ) ) ).isTrue();
+	}
+
+	@DisplayName( "Switching the application name moves the request to that application's session" )
+	@Test
+	public void testSwitchingApplicationNameSwapsSession() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        bx:application
+					name="testSwitchingApplicationNameSwapsSessionA"
+					sessionmanagement="true";
+
+				session.fromFirstApp = true;
+
+				bx:application
+					name="testSwitchingApplicationNameSwapsSessionB"
+					sessionmanagement="true";
+
+				result = session.keyExists( "fromFirstApp" );
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.getAsBoolean( result ) ).isFalse();
 	}
 
 	@DisplayName( "Create this.caches for an application" )
