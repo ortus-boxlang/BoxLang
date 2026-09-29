@@ -1,7 +1,6 @@
 <cfcomponent extends="ProfilerSuper">
 
-	<cfproperty name="threshold" default="#throw("boom")#">
-	<cfproperty name="other" default="#( 40 + 2 )#">
+	<cfproperty name="threshold" default="#complexSeed#">
 
 	<cfset instanceInit = 0>
 
@@ -14,6 +13,10 @@
 		<cfargument name="x">
 		<cfset sleep( 100 )>
 		<cfreturn x * 3>
+	</cffunction>
+
+	<cffunction modifier="static" name="staticMethod" static>
+		<cfreturn 42>
 	</cffunction>
 
 </cfcomponent>

@@ -1,7 +1,3 @@
-// Profiler disk-file integration test script (comprehensive mix of constructs).
-// Kept as a standalone sample so span definitions can be eyeballed in the HTML
-// renderer: covered spans green, missed spans red.
-
 // --- Plain statements, one per line
 i = 0;
 j = 0;
@@ -239,3 +235,34 @@ class ghost {
         return 3;
     }
 }
+
+// --- param: default is set when the variable is missing ... (complex default,
+// compiled to a deferred closure — its span shows GREEN when run, RED when skipped)
+param name="paramMissing" default=( now() );
+// ... and is a no-op (default skipped — RED) when the variable already exists.
+paramMissing = 1;
+param name="paramMissing" default=( now() );
+
+// --- param with the shorthand syntax: name=default
+param paramShorthand=( now() );
+
+// --- param with a LITERAL default stays fused inline (always covered)
+param name="paramLiteral" default="bar";
+
+// --- DISK class interactions (ProfilerComplex.bx on disk)
+// INSTANTIATED class: static block + pseudo-constructor run; members only on
+// call. The `other` property default is APPLIED at instantiation (USED → GREEN);
+// the `threshold` default is SKIPPED (ProfilerSuper presets it → RED).
+diskInst = new src.test.resources.profiler.ProfilerComplex();
+diskVal = diskInst.member( 5 );
+
+// STATIC-ONLY class: class loads and its static init runs, but no instance is
+// created — its COMPLEX property default is NEVER evaluated (NOT used → RED).
+diskStatic = src.test.resources.profiler.ProfilerStaticOnly::staticInitRan;
+
+```
+foo 
+<bx:output>
+    #now()#
+</bx:output>
+```

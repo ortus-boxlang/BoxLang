@@ -1,9 +1,7 @@
 component accessors=true extends="ProfilerSuper" {
 
-	// SKIPPED: super already set `threshold` into the variables scope.
+	// COMPLEX property default — evaluated lazily on first instance access.
 	property name="threshold" default=complexSeed;
-	// RUNS: no preset exists, so defaultProperties() applies this default.
-	property name="other" default=complexSeed;
 
 	static {
 		complexSeed = 42;

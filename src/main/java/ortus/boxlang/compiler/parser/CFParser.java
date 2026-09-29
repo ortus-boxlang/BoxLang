@@ -1229,6 +1229,43 @@ public class CFParser extends AbstractParser {
 			}
 		}
 
+		// The `modifier` attribute carries the BoxLang method declaration
+		// modifiers (static / final / abstract / default) on a <cffunction>.
+		// It may be a single identifier or a comma-delimited list, mirroring how
+		// BoxVisitor resolves script modifiers onto the function's modifiers list.
+		String modifierText = getBoxExprAsString( findExprInAnnotations( annotations, "modifier", false, null, null, null ), "modifier", true );
+		if ( modifierText != null ) {
+			String[] parts = modifierText.split( "," );
+			for ( String part : parts ) {
+				switch ( part.trim().toUpperCase() ) {
+					case "STATIC" :
+						if ( !modifiers.contains( BoxMethodDeclarationModifier.STATIC ) ) {
+							modifiers.add( BoxMethodDeclarationModifier.STATIC );
+						}
+						break;
+					case "FINAL" :
+						if ( !modifiers.contains( BoxMethodDeclarationModifier.FINAL ) ) {
+							modifiers.add( BoxMethodDeclarationModifier.FINAL );
+						}
+						break;
+					case "ABSTRACT" :
+						if ( !modifiers.contains( BoxMethodDeclarationModifier.ABSTRACT ) ) {
+							modifiers.add( BoxMethodDeclarationModifier.ABSTRACT );
+						}
+						break;
+					case "DEFAULT" :
+						if ( !modifiers.contains( BoxMethodDeclarationModifier.DEFAULT ) ) {
+							modifiers.add( BoxMethodDeclarationModifier.DEFAULT );
+						}
+						break;
+					default :
+						// Unknown modifier tokens are ignored, matching CFML's
+						// permissive attribute handling.
+						break;
+				}
+			}
+		}
+
 		BoxExpression	returnTypeSearch	= findExprInAnnotations( annotations, "returnType", false, null, null, null );
 		String			returnTypeText		= getBoxExprAsString( returnTypeSearch, "returnType", true );
 		if ( returnTypeText != null ) {
@@ -1385,8 +1422,13 @@ public class CFParser extends AbstractParser {
 				stopIndex	= node.elseThenBody.get( i ).template_statement( node.elseThenBody.get( i ).template_statement().size() - 1 ).getStop()
 				    .getStopIndex();
 			}
+			// The elseif tag's open "<" token. Index i+1 because COMPONENT_OPEN(0) is
+			// the <cfif> opener; each elseif iteration consumes its own
+			// COMPONENT_OPEN. Using the real token instead of a hardcoded -3 offset
+			// keeps the position correct regardless of the prefix length.
+			Token			elseifOpen		= node.COMPONENT_OPEN( i + 1 ).getSymbol();
 			Position		pos				= new Position(
-			    new Point( node.TEMPLATE_ELSEIF( i ).getSymbol().getLine(), node.TEMPLATE_ELSEIF( i ).getSymbol().getCharPositionInLine() - 3 ),
+			    new Point( elseifOpen.getLine(), elseifOpen.getCharPositionInLine() ),
 			    end, sourceToParse );
 			BoxExpression	thisCondition	= expressionVisitor.visit( node.elseIfCondition.get( i ) );
 			elseBodyStatements	= List.of(
@@ -1396,11 +1438,11 @@ public class CFParser extends AbstractParser {
 			        new BoxStatementBlock( toAst( file, node.elseThenBody.get( i ) ), pos, getSourceText( node.elseThenBody.get( i ) ) ),
 			        elseBody,
 			        pos,
-			        getSourceText( node, node.TEMPLATE_ELSEIF().get( i ).getSymbol().getStartIndex() - 3, stopIndex )
+			        getSourceText( node, elseifOpen.getStartIndex(), stopIndex )
 			    )
 			);
 			elseBody			= new BoxStatementBlock( elseBodyStatements, pos,
-			    getSourceText( node, node.TEMPLATE_ELSEIF().get( i ).getSymbol().getStartIndex() - 3, stopIndex ) );
+			    getSourceText( node, elseifOpen.getStartIndex(), stopIndex ) );
 		}
 
 		BoxStatement thenBody = new BoxStatementBlock( thenBodyStatements, getPosition( node.thenBody ), getSourceText( node.thenBody ) );

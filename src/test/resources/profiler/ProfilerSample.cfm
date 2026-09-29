@@ -1,8 +1,3 @@
-<!--- Profiler disk-file integration test template (CFML tags).
-      Tag-based mirror of the CodeProfilerCFTemplateTest constructs.
-      Kept as a standalone sample so span definitions can be eyeballed in the
-      HTML renderer: covered spans green, missed spans red. --->
-
 <!--- Plain statements, one per line --->
 <cfset i = 0>
 <cfset j = 0>
@@ -146,3 +141,18 @@ foo
 #x#
 bar
 </cfoutput>
+
+<!--- param: default is set when the variable is missing ... (complex default,
+      compiled to a deferred closure — GREEN when run, RED when skipped) --->
+<cfparam name="paramMissing" default=#now()#>
+<!--- ... and is a no-op (default skipped — RED) when the variable already exists. --->
+<cfset paramMissing = 1>
+<cfparam name="paramMissing" default=#now()#>
+
+<!--- param with a LITERAL default stays fused inline (always covered) --->
+<cfparam name="paramLiteral" default="bar">
+
+<bx:script>
+	foo = "bar"
+	now();
+</bx:script>

@@ -1,7 +1,6 @@
 <cfcomponent extends="ProfilerSuper">
 
-	<cfproperty name="threshold" default="#throw("boom")#">
-	<cfproperty name="other" default="#( 40 + 2 )#">
+	<cfproperty name="threshold" default="#complexSeed#">
 
 	<cfset instanceInit = 0>
 

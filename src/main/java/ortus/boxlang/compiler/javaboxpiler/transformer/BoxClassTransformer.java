@@ -986,13 +986,30 @@ public class BoxClassTransformer extends AbstractTransformer {
 			String				defaultExpression	= "null";
 			if ( defaultAnnotation != null && defaultAnnotation.getValue() != null ) {
 
-				if ( defaultAnnotation.getValue().isLiteral() ) {
-					Node defaultValueExpr = transpiler.transform( defaultAnnotation.getValue() );
+				// A property default written as a BARE IDENTIFIER
+				// (e.g. `property name="x" default=someVar;`) is a COMPLEX
+				// expression to be evaluated at runtime — even though the parser
+				// folds it into a BoxStringLiteral for CFML annotation semantics.
+				// Detect it by sourceText: a quoted default ("foo" / 'foo') starts
+				// with a quote; a bare identifier does not. Bare identifiers MUST be
+				// deferred so the default is only evaluated when defaultProperties()
+				// actually applies it (a super class may have already preset the
+				// value → the default never runs).
+				BoxExpression	defValue		= defaultAnnotation.getValue();
+				String			srcText			= defValue.getSourceText();
+				boolean			bareIdentifier	= defValue instanceof BoxStringLiteral
+				    && srcText != null
+				    && !srcText.isEmpty()
+				    && !srcText.startsWith( "\"" )
+				    && !srcText.startsWith( "'" );
+
+				if ( defValue.isLiteral() && !bareIdentifier ) {
+					Node defaultValueExpr = transpiler.transform( defValue );
 					defaultValue = defaultValueExpr.toString();
 				} else {
 					String lambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
 					transpiler.pushContextName( lambdaContextName );
-					Node initExpr = transpiler.transform( defaultAnnotation.getValue() );
+					Node initExpr = transpiler.transform( defValue );
 					transpiler.popContextName();
 
 					LambdaExpr lambda = new LambdaExpr();

@@ -116,42 +116,44 @@ public final class SpanHTMLRenderer {
 		// For each line we compute a list of colored segments: untracked leading
 		// code gets the first span's colour, untracked code between spans gets the
 		// previous span's colour, untracked trailing code gets the last span's
-		// colour, and we PAD the tail with a colored run so the background reaches
-		// the end of the table cell.
-		Map<Integer, List<int[]>> lineSpans = new LinkedHashMap<>(); // line -> [ [startChar,endChar,covered01], ... ]
+		// colour.
+		// The code cell is a flex container; a final GROWING pad span stretches to
+		// fill whatever horizontal space remains in the row, so the colour ALWAYS
+		// reaches the right edge of the rendered line — no brittle nbsp counting
+		// against a guessed max width (which miscounts tabs, since white-space:pre
+		// renders a tab wider than one monospace column).
+		Map<Integer, List<Object[]>> lineSpans = new LinkedHashMap<>(); // line -> [ [startChar,endChar,covered01,count,spanNanos], ... ]
 		for ( Object[] sp : spans ) {
 			int							start	= ( int ) sp[ 0 ];
 			int							end		= ( int ) sp[ 1 ];
 			CodeProfilerService.Span	span	= ( CodeProfilerService.Span ) sp[ 2 ];
 			int							cov		= span.stats().count() > 0 ? 1 : 0;
 			for ( int ln = span.startLine(); ln <= span.endLine(); ln++ ) {
-				lineSpans.computeIfAbsent( ln, k -> new ArrayList<>() ).add( new int[] { start, end, cov } );
+				lineSpans.computeIfAbsent( ln, k -> new ArrayList<>() )
+				    .add( new Object[] { start, end, cov, span.stats().count(), span.stats().totalNanos() } );
 			}
 		}
-		lineSpans.values().forEach( l -> l.sort( Comparator.comparingInt( a -> a[ 0 ] ) ) );
+		lineSpans.values().forEach( l -> l.sort( Comparator.comparingInt( a -> ( int ) a[ 0 ] ) ) );
 
-		String[]	srcLines	= splitLines( source );
-		// Longest line length: used to pad short lines' tails with nbsp so the pad
-		// fill reaches the table cell's right edge (aligned with the longest line).
-		int			maxLen		= 0;
-		for ( String ln : srcLines ) {
-			maxLen = Math.max( maxLen, ln.length() );
-		}
+		String[]		srcLines	= splitLines( source );
 		// Each line with an executable span renders as inline spans: REAL spans
 		// coloured exactly over their source text (boundaries precise), plus PAD
 		// spans that carry the fill over untracked leading/between/trailing code and
 		// right-edge nbsp so the fill reaches the edges. Hiding ".pad" (fill toggle)
 		// leaves only the exact spans.
 		// Build the full code-cell HTML per source line.
-		List<String> lineCells = new ArrayList<>();
+		List<String>	lineCells	= new ArrayList<>();
 		for ( int i = 0; i < srcLines.length; i++ ) {
-			int			lineNum		= i + 1;
-			int			lineStart	= offset( bounds, lineNum, 0 );
-			List<int[]>	ls			= lineSpans.get( lineNum );
-			String		escaped		= escape( srcLines[ i ] );
+			int				lineNum		= i + 1;
+			int				lineStart	= offset( bounds, lineNum, 0 );
+			List<Object[]>	ls			= lineSpans.get( lineNum );
+			String			escaped		= escape( srcLines[ i ] );
 			if ( ls == null || ls.isEmpty() || srcLines[ i ].isEmpty() ) {
-				// No executable spans on this line (or it's empty) — plain + uncolored.
-				lineCells.add( "<td class=\"c\">" + escaped + "</td>" );
+				// No executable spans on this line (or it's empty) — plain and
+				// uncolored. A transparent fill span keeps the flex row's code
+				// columns aligned with the spanned lines' real spans (both start
+				// at the same left edge) and pushes nothing extra.
+				lineCells.add( "<td class=\"c\">" + escaped + "<span class=\"fill\"></span></td>" );
 				continue;
 			}
 			// Mouse-over tooltip: covered, total count, total time for this line.
@@ -168,14 +170,14 @@ public final class SpanHTMLRenderer {
 			// preceding colour, so the whole line resolves to one of the two.
 			int[]	charColor	= new int[ lineEnd ];
 			java.util.Arrays.fill( charColor, -1 );
-			for ( int[] spg : ls ) {
-				int	sLocal	= Math.max( 0, spg[ 0 ] - lineStart );
-				int	eLocal	= Math.min( lineEnd, spg[ 1 ] - lineStart );
+			for ( Object[] spg : ls ) {
+				int	sLocal	= Math.max( 0, ( int ) spg[ 0 ] - lineStart );
+				int	eLocal	= Math.min( lineEnd, ( int ) spg[ 1 ] - lineStart );
 				for ( int c = sLocal; c < eLocal; c++ ) {
-					charColor[ c ] = spg[ 2 ];
+					charColor[ c ] = ( int ) spg[ 2 ];
 				}
 			}
-			int prevCov = ls.get( 0 )[ 2 ];
+			int prevCov = ( int ) ls.get( 0 )[ 2 ];
 			for ( int c = 0; c < lineEnd; c++ ) {
 				if ( charColor[ c ] == -1 ) {
 					charColor[ c ] = prevCov;
@@ -187,9 +189,9 @@ public final class SpanHTMLRenderer {
 			// so their boundaries are exact) from PAD characters (untracked leading
 			// / between / trailing code that merely carries the fill to the edges).
 			boolean[] isReal = new boolean[ lineEnd ];
-			for ( int[] spg : ls ) {
-				int	sLocal	= Math.max( 0, spg[ 0 ] - lineStart );
-				int	eLocal	= Math.min( lineEnd, spg[ 1 ] - lineStart );
+			for ( Object[] spg : ls ) {
+				int	sLocal	= Math.max( 0, ( int ) spg[ 0 ] - lineStart );
+				int	eLocal	= Math.min( lineEnd, ( int ) spg[ 1 ] - lineStart );
 				for ( int c = sLocal; c < eLocal; c++ ) {
 					isReal[ c ] = true;
 				}
@@ -200,30 +202,53 @@ public final class SpanHTMLRenderer {
 			// leading/between/trailing code + trailing nbsp) extending the fill to
 			// the right edge. The "pad" class lets the toggle hide just the pads so
 			// you can see the exact real-span boundaries. Every colour is solid.
+			// Each REAL span carries a per-span tooltip (its own count + time) so
+			// hovering "i < 3" shows the condition ran 4x even though the line's
+			// cell tooltip shows the FIRST/outermost span's count (lineAt semantics).
+			// charOwner[c] = index into ls of the span that owns this real char (-1 = pad).
+			int[] charOwner = new int[ lineEnd ];
+			java.util.Arrays.fill( charOwner, -1 );
+			for ( int si = 0; si < ls.size(); si++ ) {
+				Object[]	spg		= ls.get( si );
+				int			sLocal	= Math.max( 0, ( int ) spg[ 0 ] - lineStart );
+				int			eLocal	= Math.min( lineEnd, ( int ) spg[ 1 ] - lineStart );
+				for ( int c = sLocal; c < eLocal; c++ ) {
+					charOwner[ c ] = si;
+				}
+			}
 			StringBuilder	sb		= new StringBuilder();
 			int				cursor	= 0;
 			while ( cursor < lineEnd ) {
 				int		color	= charColor[ cursor ];
 				boolean	real	= isReal[ cursor ];
+				int		owner	= charOwner[ cursor ];
 				int		runEnd	= cursor + 1;
-				while ( runEnd < lineEnd && charColor[ runEnd ] == color && isReal[ runEnd ] == real ) {
+				// Break runs on BOTH color/pad changes AND span-owner changes so
+				// adjacent real spans (e.g. a while header and its condition) keep
+				// their own elements and per-span tooltips.
+				while ( runEnd < lineEnd && charColor[ runEnd ] == color && isReal[ runEnd ] == real
+				    && ( !real || charOwner[ runEnd ] == owner ) ) {
 					runEnd++;
 				}
 				String	cls		= color == 1 ? "cov" : "miss";
 				String	extra	= real ? "" : " pad";
-				sb.append( "<span class=\"" ).append( cls ).append( extra ).append( "\">" )
+				String	tt		= "";
+				if ( real && charOwner[ cursor ] >= 0 ) {
+					Object[]	spg	= ls.get( charOwner[ cursor ] );
+					long		cnt	= ( long ) spg[ 3 ];
+					long		ns	= ( long ) spg[ 4 ];
+					tt = " title=\"count=" + cnt + ", time=" + formatDuration( ns ) + "\"";
+				}
+				sb.append( "<span class=\"" ).append( cls ).append( extra ).append( "\"" ).append( tt ).append( ">" )
 				    .append( escape( srcLines[ i ].substring( cursor, runEnd ) ) ).append( "</span>" );
 				cursor = runEnd;
 			}
-			// Trailing pad: nbsp fill to the cell's right edge, in the line's last
-			// colour, so short lines still fill the full width.
-			if ( lineEnd < maxLen ) {
+			// Trailing pad: a growth span that the flex CSS stretches to fill the
+			// rest of the row, in the line's last colour. flex-grow guarantees the
+			// colour reaches the right edge regardless of tabs or browser width.
+			{
 				String tailCls = prevCov == 1 ? "cov" : "miss";
-				sb.append( "<span class=\"" ).append( tailCls ).append( " pad\">" );
-				for ( int p = lineEnd; p < maxLen; p++ ) {
-					sb.append( "&nbsp;" );
-				}
-				sb.append( "</span>" );
+				sb.append( "<span class=\"" ).append( tailCls ).append( " pad fill\"></span>" );
 			}
 			lineCells.add( "<td class=\"c\"" + tooltip + ">" + sb + "</td>" );
 		}
@@ -240,10 +265,15 @@ public final class SpanHTMLRenderer {
 		    // Two-tone: REAL spans get a saturated color; PAD spans (the untracked
 		    // fill to the line edges) get a LIGHTER shade of the same hue so you can
 		    // tell exact span boundaries from the fill. All solid colors.
-		    // inline-block + height:100% makes the CODE cell spans' backgrounds fill the
-		    // FULL row height (no white gap at the top/bottom of a row). Scoped to
-		    // td.c so the legend spans above the table stay normal-sized.
-		    .append( "td.c span.cov,td.c span.miss,td.c span.pad{display:inline-block;height:100%;} " )
+		    // The code cell is a FLEX ROW; the trailing `fill` span flex-grows to fill
+		    // the remaining row width, so the colour ALWAYS reaches the right edge
+		    // (tabs / browser width no longer matter). `align-items:stretch` makes the
+		    // fill span's background fill the full row HEIGHT (fixing the earlier
+		    // height:0px — children use fit-content height, not 100% of an auto-height
+		    // flex parent).
+		    .append( "td.c{display:flex;align-items:stretch;} " )
+		    .append( "td.c span.cov,td.c span.miss,td.c span.pad{display:inline-block;} " )
+		    .append( "td.c span.fill{flex:1 1 auto;} " )
 		    .append( "span.cov{background:rgba(10,220,90,.32);} " )
 		    .append( "span.miss{background:rgba(230,60,60,.30);} " )
 		    .append( "span.pad.cov{background:rgba(10,220,90,.18);} " )

@@ -74,11 +74,10 @@ public final class LineCoverageHTMLRenderer {
 		    .append( "tr.miss td.c{background:rgba(230,60,60,.25);} " )
 		    .append( "span.cov{background:rgba(10,220,90,.28);} " )
 		    .append( "span.miss{background:rgba(230,60,60,.25);} " )
-		    .append( "</style>" ).append( '\n' ).append( "</head>" ).append( '\n' ).append( "<body>" ).append( '\n' )
-		    .append( "<h3>" ).append( escape( fileKey ) ).append( "</h3>" ).append( '\n' )
+		    .append( "</style></head><body><h3>" ).append( escape( fileKey ) ).append( "</h3>" )
 		    .append(
 		        "<p style=\"padding-left:8px\"><span class=\"cov\">covered</span>&nbsp;&nbsp;<span class=\"miss\">missed</span>&nbsp;(uncolored = no executable spans)</p>" )
-		    .append( '\n' ).append( "<table class=\"code\">" ).append( '\n' );
+		    .append( "<table class=\"code\">" );
 
 		for ( int i = 0; i < srcLines.length; i++ ) {
 			int									lineNum	= i + 1;
@@ -90,12 +89,11 @@ public final class LineCoverageHTMLRenderer {
 				state	= " title=\"" + ( lc.covered() ? "covered" : "missed" ) + ", count=" + lc.count() + ", time="
 				    + SpanHTMLRenderer.formatDuration( lc.totalNanos() ) + "\"";
 			}
-			html.append( "  <tr class=\"" ).append( rowCls ).append( "\">" )
+			html.append( "<tr class=\"" ).append( rowCls ).append( "\">" )
 			    .append( "<td class=\"ln\">" ).append( lineNum ).append( "</td>" )
-			    .append( "<td class=\"c\"" ).append( state ).append( ">" ).append( escape( srcLines[ i ] ) ).append( "</td></tr>" )
-			    .append( '\n' );
+			    .append( "<td class=\"c\"" ).append( state ).append( ">" ).append( escape( srcLines[ i ] ) ).append( "</td></tr>" );
 		}
-		html.append( "</table>" ).append( '\n' ).append( "</body>" ).append( '\n' ).append( "</html>" ).append( '\n' );
+		html.append( "</table></body></html>" );
 		return html.toString();
 	}
 

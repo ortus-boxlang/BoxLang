@@ -1,8 +1,3 @@
-<!--- Profiler disk-file integration test template (BoxLang bx: tags).
-      Tag-based mirror of the CodeProfilerTemplateTest constructs.
-      Kept as a standalone sample so span definitions can be eyeballed in the
-      HTML renderer: covered spans green, missed spans red. --->
-
 <!--- Plain statements, one per line --->
 <bx:set i = 0>
 <bx:set j = 0>
@@ -139,3 +134,26 @@
 <bx:set baz = 1>
 <bx:set bum = 2>
 <bx:set x = bar ? baz : bum>
+
+<!--- Text output + variable interpolation: the static "foo"/"bar" buffers and
+      the #x# interpolation expression are each tracked (rendered output) --->
+<bx:output>
+foo
+#x#
+bar
+</bx:output>
+
+<!--- param: default is set when the variable is missing ... (complex default,
+      compiled to a deferred closure — GREEN when run, RED when skipped) --->
+<bx:param name="paramMissing" default=#now()#>
+<!--- ... and is a no-op (default skipped — RED) when the variable already exists. --->
+<bx:set paramMissing = 1>
+<bx:param name="paramMissing" default=#now()#>
+
+<!--- param with a LITERAL default stays fused inline (always covered) --->
+<bx:param name="paramLiteral" default="bar">
+
+<bx:script>
+	foo = "bar"
+	now();
+</bx:script>

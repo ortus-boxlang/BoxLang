@@ -515,19 +515,22 @@ class CodeProfilerCFScriptTest {
 		// System.out.println( "=== testWhile dump" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// Pass A: i=0, the while condition, the body i++, and the two loop braces
-		// ({ and }) are each their own span.
+		// Pass A: i=0, the while header, the condition (its own span), the body
+		// i++, and the two loop braces ({ and }) are each their own span.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 5 );
+		assertThat( spanDefs ).hasSize( 6 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 5, true ) );   // "i = 0"
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 15, true ) );  // "while( i < 3 ) "
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 3, true ) );   // "i++"
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 2, 15, 2, 16, true ) ); // "{" open brace
-		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 1, true ) );   // "}" close brace
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 7, true ) );   // "while( " header
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 7, 2, 15, true ) );  // " i < 3 )" condition
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 3, true ) );   // "i++"
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 2, 15, 2, 16, true ) ); // "{" open brace
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 1, true ) );   // "}" close brace
 
-		// Pass B: the loop condition ran once (header), body ran 3 times.
+		// Pass B: the loop header ran once; the CONDITION re-evaluated every
+		// iteration (3 true + 1 false exit = 4); body ran 3 times.
 		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );   // i = 0
-		assertThat( CodeProfilerService.spanAt( key, 2, 1 ).stats().count() ).isEqualTo( 1 );   // while condition
+		assertThat( CodeProfilerService.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 1 );   // while( header
+		assertThat( CodeProfilerService.spanAt( key, 2, 7 ).stats().count() ).isEqualTo( 4 );   // condition: 3 true + 1 false
 		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 3 );   // i++ ran 3x
 		assertThat( CodeProfilerService.spanAt( key, 2, 15 ).stats().count() ).isEqualTo( 3 );  // open brace ran 3x
 		assertThat( CodeProfilerService.spanAt( key, 4, 0 ).stats().count() ).isEqualTo( 3 );   // close brace ran 3x
@@ -560,9 +563,9 @@ class CodeProfilerCFScriptTest {
 		// System.out.println( "=== testWhileTiming dump" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// Pass A: i=0, while cond, sleep(100), i++, { and } braces.
+		// Pass A: i=0, while header, condition, sleep(100), i++, { and } braces.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 6 );
+		assertThat( spanDefs ).hasSize( 7 );
 
 		// Pass B: body ran 3x — sleep and i++ each counted 3 times.
 		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 3 );   // sleep( 100 ) ran 3x
@@ -662,28 +665,32 @@ class CodeProfilerCFScriptTest {
 		// System.out.println( "=== testTry dump" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// Pass A: try keyword, the try body's three statements, the catch body, the
-		// finally keyword, the finally body, and their braces. (CFSCRIPT emits NO
-		// span for the catch keyword/clause — only for try and finally keywords.)
+		// Pass A: try keyword, the try body's three statements, the catch header
+		// (catch( any e ) {), the catch body, the finally keyword, the finally
+		// body, and their braces — 11 spans.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 10 );
+		assertThat( spanDefs ).hasSize( 11 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 2, 0, true ) );  // "try {\n"
 		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 5, true ) );   // "a = 1"
 		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 12, true ) );  // "sleep( 100 )"
 		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 5, true ) );   // "b = 2"
-		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 5, 0, 5, 1, true ) );   // "}"
-		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 6, 0, 6, 5, true ) );   // "c = 3"
-		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 7, 0, 7, 1, true ) );   // "}"
-		assertThat( spanDefs.get( 7 ) ).isEqualTo( new Blueprint.SpanDef( 7, 2, 8, 0, true ) );   // "finally {\n"
-		assertThat( spanDefs.get( 8 ) ).isEqualTo( new Blueprint.SpanDef( 8, 0, 8, 5, true ) );   // "d = 4"
-		assertThat( spanDefs.get( 9 ) ).isEqualTo( new Blueprint.SpanDef( 9, 0, 9, 1, true ) );   // "}"
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 5, 0, 5, 1, true ) );   // "}" (try close)
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 5, 2, 6, 0, true ) );   // "catch( any e ) {\n" header
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 6, 0, 6, 5, true ) );   // "c = 3"
+		assertThat( spanDefs.get( 7 ) ).isEqualTo( new Blueprint.SpanDef( 7, 0, 7, 1, true ) );   // "}" (catch close)
+		assertThat( spanDefs.get( 8 ) ).isEqualTo( new Blueprint.SpanDef( 7, 2, 8, 0, true ) );   // "finally {\n"
+		assertThat( spanDefs.get( 9 ) ).isEqualTo( new Blueprint.SpanDef( 8, 0, 8, 5, true ) );   // "d = 4"
+		assertThat( spanDefs.get( 10 ) ).isEqualTo( new Blueprint.SpanDef( 9, 0, 9, 1, true ) );  // "}" (finally close)
 
-		// Pass B: try body ran (a=1, sleep, b=2); catch did NOT (no throw); finally
-		// ALWAYS ran (d=4). The sleep span was charged ~100ms.
+		// Pass B: try body ran (a=1, sleep, b=2); catch did NOT (no throw) — its
+		// header and body are RED (count 0); finally ALWAYS ran (d=4). The sleep
+		// span was charged ~100ms.
 		assertThat( CodeProfilerService.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 1 );   // a = 1
 		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 1 );   // sleep( 100 )
 		assertThat( CodeProfilerService.spanAt( key, 4, 0 ).stats().count() ).isEqualTo( 1 );   // b = 2
+		assertThat( CodeProfilerService.spanAt( key, 5, 2 ).stats().count() ).isEqualTo( 0 );   // catch header missed
 		assertThat( CodeProfilerService.spanAt( key, 6, 0 ).stats().count() ).isEqualTo( 0 );   // c = 3 missed
+		assertThat( CodeProfilerService.spanAt( key, 7, 2 ).stats().count() ).isEqualTo( 1 );   // finally container ran
 		assertThat( CodeProfilerService.spanAt( key, 8, 0 ).stats().count() ).isEqualTo( 1 );   // d = 4 ran
 
 		// Timing: the sleep(100) span was charged at least the 100ms sleep.
@@ -812,20 +819,28 @@ class CodeProfilerCFScriptTest {
 		// System.out.println( "=== testForIndex dump" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// Pass A: j=0, the for header, the body j = j + i (2 spans: LHS+RHS), and the
-		// loop braces { and } are each their own span.
+		// Pass A: j=0, then the for header splits into its THREE independent
+		// run-count parts — the initializer "for( i = 0;" (runs once), the
+		// condition "i < 3" (re-evaluated every iteration, n+1 times), and the
+		// step "i++" (runs n times) — plus the body j = j + i (2 spans: LHS+RHS)
+		// and the loop braces { and }.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 6 );
+		assertThat( spanDefs ).hasSize( 8 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 5, true ) );   // "j = 0"
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 25, true ) );  // "for( i = 0; i < 3; i++ ) "
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 8, true ) );   // "j = j + "
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 8, 3, 9, true ) );   // "i"
-		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 2, 25, 2, 26, true ) ); // "{" open brace
-		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 1, true ) );   // "}" close brace
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 12, true ) );  // "for( i = 0;"
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 12, 2, 19, true ) ); // "i < 3" (condition)
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 2, 19, 2, 25, true ) ); // "i++" (step)
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 8, true ) );   // "j = j + "
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 3, 8, 3, 9, true ) );   // "i"
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 2, 25, 2, 26, true ) ); // "{" open brace
+		assertThat( spanDefs.get( 7 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 1, true ) );   // "}" close brace
 
-		// Pass B: header ran once; body ran 3 times (i: 0,1,2).
+		// Pass B: the initializer ran once; the CONDITION ran 4 times (i: 0,1,2
+		// true + i=3 false to exit); the STEP ran 3 times; body ran 3 times.
 		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );   // j = 0
-		assertThat( CodeProfilerService.spanAt( key, 2, 1 ).stats().count() ).isEqualTo( 1 );   // for header
+		assertThat( CodeProfilerService.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 1 );   // for initializer
+		assertThat( CodeProfilerService.spanAt( key, 2, 12 ).stats().count() ).isEqualTo( 4 );  // condition: 3 true + 1 false
+		assertThat( CodeProfilerService.spanAt( key, 2, 19 ).stats().count() ).isEqualTo( 3 );  // step i++ ran 3x
 		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 3 );   // j = j + ran 3x
 		assertThat( CodeProfilerService.spanAt( key, 3, 8 ).stats().count() ).isEqualTo( 3 );   // i ran 3x
 		assertThat( CodeProfilerService.spanAt( key, 2, 25 ).stats().count() ).isEqualTo( 3 );  // { ran 3x
@@ -973,22 +988,26 @@ class CodeProfilerCFScriptTest {
 		// System.out.println( "=== testNestedWhile dump" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// Pass A: 10 spans (including the brace spans and the nested-loop headers).
+		// Pass A: 12 spans — i=0, outer header, outer cond, j=0, inner header,
+		// inner cond, j++, i++, and the four loop braces ({ and } each for inner
+		// and outer).
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 10 );
+		assertThat( spanDefs ).hasSize( 12 );
 
 		// Outer while ran 3x: j=0 (line 3) and inner header (line 4) each 3x;
 		// inner body j++ (line 5) ran 3x2=6; outer body i++ (line 7) ran 3x.
-		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );  // i = 0
-		assertThat( CodeProfilerService.spanAt( key, 2, 1 ).stats().count() ).isEqualTo( 1 );  // outer cond
-		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 3 );  // j = 0
-		assertThat( CodeProfilerService.spanAt( key, 4, 1 ).stats().count() ).isEqualTo( 3 );  // inner cond
-		assertThat( CodeProfilerService.spanAt( key, 5, 0 ).stats().count() ).isEqualTo( 6 );  // j++ ran 6x
-		assertThat( CodeProfilerService.spanAt( key, 4, 15 ).stats().count() ).isEqualTo( 6 ); // inner { ran 6x
-		assertThat( CodeProfilerService.spanAt( key, 6, 0 ).stats().count() ).isEqualTo( 6 );  // inner } ran 6x
-		assertThat( CodeProfilerService.spanAt( key, 7, 0 ).stats().count() ).isEqualTo( 3 );  // i++ ran 3x
-		assertThat( CodeProfilerService.spanAt( key, 2, 15 ).stats().count() ).isEqualTo( 3 ); // outer { ran 3x
-		assertThat( CodeProfilerService.spanAt( key, 8, 0 ).stats().count() ).isEqualTo( 3 );  // outer } ran 3x
+		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );   // i = 0
+		assertThat( CodeProfilerService.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 1 );   // outer header
+		assertThat( CodeProfilerService.spanAt( key, 2, 8 ).stats().count() ).isEqualTo( 4 );   // outer cond 3 true + 1 false
+		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 3 );   // j = 0
+		assertThat( CodeProfilerService.spanAt( key, 4, 0 ).stats().count() ).isEqualTo( 3 );   // inner header
+		assertThat( CodeProfilerService.spanAt( key, 4, 8 ).stats().count() ).isEqualTo( 9 );   // inner cond 3 checks x 3 outer = 9
+		assertThat( CodeProfilerService.spanAt( key, 5, 0 ).stats().count() ).isEqualTo( 6 );   // j++ ran 6x
+		assertThat( CodeProfilerService.spanAt( key, 4, 15 ).stats().count() ).isEqualTo( 6 );  // inner { ran 6x
+		assertThat( CodeProfilerService.spanAt( key, 6, 0 ).stats().count() ).isEqualTo( 6 );   // inner } ran 6x
+		assertThat( CodeProfilerService.spanAt( key, 7, 0 ).stats().count() ).isEqualTo( 3 );   // i++ ran 3x
+		assertThat( CodeProfilerService.spanAt( key, 2, 15 ).stats().count() ).isEqualTo( 3 );  // outer { ran 3x
+		assertThat( CodeProfilerService.spanAt( key, 8, 0 ).stats().count() ).isEqualTo( 3 );   // outer } ran 3x
 
 		// Line-based.
 		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();
@@ -1082,7 +1101,7 @@ class CodeProfilerCFScriptTest {
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
 		// Condition ran once; body never ran.
-		assertThat( CodeProfilerService.spanAt( key, 2, 1 ).stats().count() ).isEqualTo( 1 );   // cond
+		assertThat( CodeProfilerService.spanAt( key, 2, 8 ).stats().count() ).isEqualTo( 1 );   // cond (once, then exit)
 		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 0 );   // i++
 
 		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isTrue();
@@ -2480,32 +2499,139 @@ class CodeProfilerCFScriptTest {
 		var blueprint = CodeProfilerService.trackedBlueprints().get( fileKey );
 		assertThat( blueprint.spans() ).isNotEmpty();
 
-		// High-level line coverage of the class file (comment lines 1-4 shift lines):
-		// 6 : default=40 (property default ran at class load)
-		// 9 : staticInitRan = true (static block ran at class load)
-		// 12 : instanceInit = 0 (pseudo-constructor ran at instantiation)
-		assertThat( CodeProfilerService.lineAt( fileKey, 9 ).covered() ).isTrue();   // static block ran
+		// High-level line coverage of the class file (see ProfilerComplexCF.cfc):
+		// 4 : property threshold default=complexSeed — SKIPPED (super preset it)
+		// 6 : property other default=complexSeed — applied (no preset)
+		// 9 : complexSeed = 42 (static block ran at class load)
+		// 10 : staticInitRan = true (static block ran at class load)
+		// 13 : instanceInit = 0 (pseudo-constructor ran at instantiation)
+		assertThat( CodeProfilerService.lineAt( fileKey, 9 ).covered() ).isTrue();   // static block: complexSeed
 		assertThat( CodeProfilerService.lineAt( fileKey, 9 ).count() ).isEqualTo( 1 );
-		assertThat( CodeProfilerService.lineAt( fileKey, 12 ).covered() ).isTrue();  // pseudo-constructor body
-		assertThat( CodeProfilerService.lineAt( fileKey, 12 ).count() ).isEqualTo( 1 );
-		// The property default (line 6, col 35) ran at class load, count 1.
-		assertThat( CodeProfilerService.spanAt( fileKey, 6, 35 ).stats().count() ).isEqualTo( 1 );  // property default ran
+		assertThat( CodeProfilerService.lineAt( fileKey, 10 ).covered() ).isTrue();  // static block: staticInitRan
+		assertThat( CodeProfilerService.lineAt( fileKey, 10 ).count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.lineAt( fileKey, 13 ).covered() ).isTrue();  // pseudo-constructor body
+		assertThat( CodeProfilerService.lineAt( fileKey, 13 ).count() ).isEqualTo( 1 );
+		// The SKIPPED `threshold` default (line 4, value at col 35) — never ran
+		// because ProfilerSuper presets `threshold`. Count 0 = RED.
+		assertThat( CodeProfilerService.spanAt( fileKey, 4, 35 ).stats().count() ).isEqualTo( 0 );  // property default SKIPPED
+		// The APPLIED `other` default (line 6, value at col 31) ran once = GREEN.
+		assertThat( CodeProfilerService.spanAt( fileKey, 6, 31 ).stats().count() ).isEqualTo( 1 );  // property default USED
 
 		// No method has been invoked yet, so the member function body statement
-		// (line 19: "sleep( 100 )", at col 2 after the tab) has NOT run — its count
-		// is 0 and its line is not covered. (Line 18 is the member function shell.)
-		assertThat( CodeProfilerService.spanAt( fileKey, 19, 2 ).stats().count() ).isEqualTo( 0 );  // member body missed
-		assertThat( CodeProfilerService.lineAt( fileKey, 19 ).covered() ).isFalse();
+		// (line 20: "sleep( 100 )", at col 2 after the tab) has NOT run — its count
+		// is 0 and its line is not covered. (Line 19 is the member function shell.)
+		assertThat( CodeProfilerService.spanAt( fileKey, 20, 2 ).stats().count() ).isEqualTo( 0 );  // member body missed
+		assertThat( CodeProfilerService.lineAt( fileKey, 20 ).covered() ).isFalse();
 
 		// Now invoke the member method on the SAME instance in a second script (the
 		// shared context keeps pc in the variables scope); its body should run.
 		runtime.executeSource( "result = pc.member( 5 );", context, BoxSourceType.CFSCRIPT );
 
 		// The member body slept ~100ms, so its span is covered with the sleep charged.
-		assertThat( CodeProfilerService.spanAt( fileKey, 19, 2 ).stats().count() ).isEqualTo( 1 );  // sleep ran
-		assertThat( CodeProfilerService.spanAt( fileKey, 19, 2 ).stats().totalNanos() ).isAtLeast( 100L * 1_000_000L );
-		assertThat( CodeProfilerService.spanAt( fileKey, 19, 2 ).stats().totalNanos() ).isAtMost( 400L * 1_000_000L );
-		assertThat( CodeProfilerService.lineAt( fileKey, 19 ).covered() ).isTrue();
-		assertThat( CodeProfilerService.lineAt( fileKey, 19 ).count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.spanAt( fileKey, 20, 2 ).stats().count() ).isEqualTo( 1 );  // sleep ran
+		assertThat( CodeProfilerService.spanAt( fileKey, 20, 2 ).stats().totalNanos() ).isAtLeast( 100L * 1_000_000L );
+		assertThat( CodeProfilerService.spanAt( fileKey, 20, 2 ).stats().totalNanos() ).isAtMost( 400L * 1_000_000L );
+		assertThat( CodeProfilerService.lineAt( fileKey, 20 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( fileKey, 20 ).count() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It profiles the named-argument param statement (cfscript)" )
+	@Test
+	void testParamNamed() {
+		// Variable does NOT exist yet — the param runs and sets the default.
+		// The default is a COMPLEX expression (now()), so it breaks into its own
+		// span (deferred closure, evaluated only when the variable is missing).
+		String source = "param name=\"foo\" default=now();";
+		executeCFScript( source );
+		String	key			= IBoxpiler.MD5( BoxSourceType.CFSCRIPT.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testParamNamed dump" );
+		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
+
+		// Pass A: the statement head "param name=\"foo\" default=" (runs every
+		// time) and the default expression now() (runs ONLY when foo is missing)
+		// are separate spans.
+		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
+		assertThat( spanDefs ).hasSize( 2 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 25, true ) );  // param head
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 25, 1, 30, true ) ); // now() default
+		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );
+		// foo is missing, so the deferred default ran.
+		assertThat( CodeProfilerService.spanAt( key, 1, 25 ).stats().count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 1 ).count() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It profiles the named-argument param statement when the variable already exists (cfscript)" )
+	@Test
+	void testParamNamedExists() {
+		// The variable EXISTS, so the param statement still executes (it just skips
+		// the default assignment) — the DEFAULT EXPRESSION is NOT evaluated, so its
+		// span stays at count 0 (RED in the HTML).
+		String source = "foo = 1;\nparam name=\"foo\" default=now();";
+		executeCFScript( source );
+		String	key			= IBoxpiler.MD5( BoxSourceType.CFSCRIPT.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testParamNamedExists dump" );
+		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
+
+		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
+		assertThat( spanDefs ).hasSize( 3 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 7, true ) );   // foo = 1
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 25, true ) );  // param head
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 25, 2, 30, true ) ); // now() default
+		assertThat( CodeProfilerService.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 1 );
+		// foo exists — the default expression was NEVER evaluated (count 0, RED).
+		assertThat( CodeProfilerService.spanAt( key, 2, 25 ).stats().count() ).isEqualTo( 0 );
+		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 2 ).count() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It profiles the param=default script syntax (cfscript)" )
+	@Test
+	void testParamEquals() {
+		// The shorthand form `param foo=now();` is normalized to
+		// name="foo" default=now() — the complex default breaks into its own span.
+		String source = "param foo=now();";
+		executeCFScript( source );
+		String	key			= IBoxpiler.MD5( BoxSourceType.CFSCRIPT.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testParamEquals dump" );
+		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
+
+		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
+		assertThat( spanDefs ).hasSize( 2 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 10, true ) );  // "param foo="
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 10, 1, 15, true ) ); // now() default
+		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.spanAt( key, 1, 10 ).stats().count() ).isEqualTo( 1 );   // default ran (foo missing)
+		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 1 ).count() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It profiles the param=default script syntax when the variable already exists (cfscript)" )
+	@Test
+	void testParamEqualsExists() {
+		// foo EXISTS — the default now() is never evaluated (count 0, RED).
+		String source = "foo = 1;\nparam foo=now();";
+		executeCFScript( source );
+		String	key			= IBoxpiler.MD5( BoxSourceType.CFSCRIPT.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testParamEqualsExists dump" );
+		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
+
+		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
+		assertThat( spanDefs ).hasSize( 3 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 7, true ) );   // foo = 1
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 10, true ) );  // "param foo="
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 10, 2, 15, true ) ); // now() default
+		assertThat( CodeProfilerService.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.spanAt( key, 2, 10 ).stats().count() ).isEqualTo( 0 );   // default MISSED (foo exists)
+		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 2 ).count() ).isEqualTo( 1 );
 	}
 }

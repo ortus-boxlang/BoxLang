@@ -57,7 +57,7 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		AsmHelper.addDebugLabel( nodes, "BoxIf" );
 		// An ELSEIF tag (<bx:elseif ...> / <cfelseif ...>) is evaluated when the
 		// chain reaches it — mark its tag span at that point (the tag opens at the
-		// "<" one column before the node start, matching Pass A registration).
+		// node start, matching Pass A registration).
 		emitElseIfTagMark( nodes, ifElse );
 		nodes.addAll( transpiler.transform( ifElse.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 		if ( !ifElse.getCondition().returnsBoolean() ) {
@@ -189,8 +189,7 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 	/**
 	 * Emit a {@code mark(fileId, spanId)} for an ELSEIF tag when its condition is
 	 * evaluated. Pass A registered the full {@code <bx:elseif ...>} tag as a span
-	 * whose start is one column PAST the {@code <} (the parser's node starts at the
-	 * {@code bx:} prefix); the tag span begins at (line, col-1). Only when the
+	 * starting at its {@code <} (the parser fixes tag positions). Only when the
 	 * chain reaches this elseif does the tag "run". No-op when profiling is
 	 * disabled.
 	 *
@@ -210,8 +209,8 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		if ( src == null || ! ( src.startsWith( "bx:elseif" ) || src.startsWith( "cfelseif" ) || src.startsWith( "elseif" ) ) ) {
 			return;
 		}
-		// The tag's "<" is one column before the node start.
-		long	packed	= ( ( long ) ifElse.getStart().getLine() << 32 ) | ( ( ifElse.getStart().getColumn() - 1 ) & 0xFFFFFFFFL );
+		// The tag's "<" IS the node start.
+		long	packed	= ( ( long ) ifElse.getStart().getLine() << 32 ) | ( ifElse.getStart().getColumn() & 0xFFFFFFFFL );
 		int		spanId	= transpiler.getSpanId( packed );
 		if ( spanId >= 0 && transpiler.claimSpanMark( spanId ) ) {
 			nodes.addAll( AsmHelper.invokeStaticMark( transpiler.getFileId(), spanId ) );

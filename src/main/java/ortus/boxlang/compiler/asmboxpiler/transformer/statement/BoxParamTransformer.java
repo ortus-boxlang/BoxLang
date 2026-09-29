@@ -23,15 +23,15 @@ import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
-import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxExpression;
-import ortus.boxlang.compiler.ast.expression.BoxClosure;
-import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
-import ortus.boxlang.compiler.ast.statement.BoxReturn;
+import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
+import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 
 public class BoxParamTransformer extends AbstractTransformer {
@@ -98,8 +98,15 @@ public class BoxParamTransformer extends AbstractTransformer {
 			} else if ( value == null ) {
 				value = new BoxBooleanLiteral( true, attribute.getPosition(), attribute.getSourceText() );
 			}
+			// The deferred closure is created at the component invocation site (which
+			// ALWAYS runs), but its BODY only runs when the variable is missing. The
+			// closure's own position must therefore be NULL so the generic span-mark
+			// hook cannot claim the default-value span at closure creation — only the
+			// body's BoxReturn (positioned at the value) claims it, and its mark
+			// lands inside the closure invoker method, which runs only when the
+			// default is actually evaluated.
 			BoxClosure deferred = new BoxClosure( List.of(), List.of(),
-			    new BoxReturn( value, value.getPosition(), value.getSourceText() ), value.getPosition(), value.getSourceText() );
+			    new BoxReturn( value, value.getPosition(), value.getSourceText() ), null, value.getSourceText() );
 			attributes.add( new BoxAnnotation( attribute.getKey(), deferred, attribute.getPosition(), attribute.getSourceText() ) );
 		}
 		BoxComponent wrapped = new BoxComponent( component.getName(), attributes, component.getBody(), component.getSourceStartIndex(),

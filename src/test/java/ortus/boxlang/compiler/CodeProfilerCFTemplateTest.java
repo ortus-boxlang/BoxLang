@@ -196,25 +196,28 @@ class CodeProfilerCFTemplateTest {
 		// System.out.println( "=== dump BufferOutputTextAndInterpolation" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// The <cfoutput> body produces four spans:
-		// 0: (1,11)-(1,16) the "\nfoo\n" text buffer (foo rendered output)
-		// 1: (3,0)-(3,7) the #now()# interpolation (real expression)
-		// 2: (3,7)-(3,12) the "\nbar\n" text buffer (bar rendered output)
-		// 3: (3,12)-(5,12) spillover to the </cfoutput> close
+		// The <cfoutput> body produces five spans:
+		// 0: (1,0)-(1,10) the <cfoutput> open tag
+		// 1: (1,10)-(1,15) the "\nfoo\n" text buffer (foo rendered output)
+		// 2: (3,0)-(3,7) the #now()# interpolation (real expression)
+		// 3: (3,7)-(3,12) the "\nbar\n" text buffer (bar rendered output)
+		// 4: (5,0)-(5,11) the </cfoutput> close tag
 		// The blank "\n" buffer after </cfoutput> is NOT tracked.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 4 );
-		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 10, 1, 15, true ) ); // "\nfoo\n"
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 7, true ) );    // #now()#
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 7, 3, 12, true ) );   // "\nbar\n"
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 12, 5, 11, true ) );  // spillover
+		assertThat( spanDefs ).hasSize( 5 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 10, true ) ); // <cfoutput>
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 10, 1, 15, true ) ); // "\nfoo\n"
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 7, true ) );    // #now()#
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 7, 3, 12, true ) );   // "\nbar\n"
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 5, 0, 5, 11, true ) );   // </cfoutput>
 
 		// Pass B: foo text, the interpolation, and bar text all executed once; the
-		// spillover and the blank trailing buffer never ran.
+		// <cfoutput> open/close tags each ran once.
+		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );   // <cfoutput>
 		assertThat( CodeProfilerService.spanAt( key, 1, 10 ).stats().count() ).isEqualTo( 1 );  // foo
 		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 1 );   // #now()#
 		assertThat( CodeProfilerService.spanAt( key, 3, 7 ).stats().count() ).isEqualTo( 1 );   // bar
-		assertThat( CodeProfilerService.spanAt( key, 3, 12 ).stats().count() ).isEqualTo( 0 );  // spillover
+		assertThat( CodeProfilerService.spanAt( key, 5, 0 ).stats().count() ).isEqualTo( 1 );   // </cfoutput>
 
 		// Line-based: the interpolation line 3 is covered once. The text buffers' spans
 		// are attributed to their source-line coordinates (line 1 for "\nfoo\n", line
@@ -338,16 +341,17 @@ class CodeProfilerCFTemplateTest {
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
 		// Pass A: 2 <cfset> assignments + the chain splits into foo / the IIFE
-		// (whose body throw is its own span) / bar. 7 spans in source order.
+		// (whose body throw is its own span) / bar. 8 spans in source order.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 7 );
+		assertThat( spanDefs ).hasSize( 8 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 17, true ) ); // <cfset foo = "a">
 		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 17, true ) ); // <cfset bar = "b">
 		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 22, true ) ); // head + foo + " & ("
 		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 22, 3, 35, true ) ); // closure shell
 		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 37, 3, 52, true ) ); // throw body
-		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 3, 52, 3, 62, true ) ); // } )() &
-		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 3, 62, 3, 66, true ) ); // bar>
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 3, 35, 3, 36, true ) ); // ")"
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 3, 54, 3, 55, true ) ); // "&"
+		assertThat( spanDefs.get( 7 ) ).isEqualTo( new Blueprint.SpanDef( 3, 62, 3, 66, true ) ); // bar>
 
 		// Pass B: foo ran, the IIFE threw (so it counts as started), bar never ran.
 		assertThat( CodeProfilerService.spanAt( key, 3, 18 ).stats().count() ).isEqualTo( 1 );  // "foo" ran
@@ -374,21 +378,23 @@ class CodeProfilerCFTemplateTest {
 		// System.out.println( "=== dump IfBlock" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// Pass A: the <cfif> head (line 1), the then-body <cfset a = 1> (line 2),
-		// and the spillover to </cfif> (lines 2-3).
+		// Pass A: the <cfif> head, the then-body <cfset a = 1>, the </cfif> close
+		// tag, plus the \r newline buffer spans after each line.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 3 );
+		assertThat( spanDefs ).hasSize( 5 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 11, true ) ); // <cfif true>
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 13, true ) ); // <cfset a = 1>
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 13, 3, 7, true ) );  // spillover to </cfif>
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 11, 1, 12, true ) ); // \r
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 13, true ) ); // <cfset a = 1>
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 2, 13, 2, 14, true ) ); // \r
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 7, true ) );  // </cfif>
 
-		// Pass B: condition true, so the then-body ran once; the spillover (which
-		// includes the executing </cfif> close) also ran.
-		assertThat( CodeProfilerService.spanAt( key, 1, 1 ).stats().count() ).isEqualTo( 1 ); // if condition
+		// Pass B: condition true, so the then-body ran once; the </cfif> close
+		// tag also ran.
+		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 ); // if head
 		assertThat( CodeProfilerService.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 1 ); // a = 1
-		assertThat( CodeProfilerService.spanAt( key, 2, 13 ).stats().count() ).isEqualTo( 1 ); // spillover to </cfif>
+		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 1 ); // </cfif>
 
-		// Line-based: lines 1-2 covered once; line 3 covered via the spillover.
+		// Line-based: lines 1-3 covered once.
 		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( key, 1 ).count() ).isEqualTo( 1 );
 		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isTrue();
@@ -413,29 +419,36 @@ class CodeProfilerCFTemplateTest {
 		// System.out.println( "=== dump While" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// Pass A: i=0, the while head, the body i++, and the spillover to </cfwhile>.
+		// Pass A: i=0, the while HEADER (up to the condition), the CONDITION (its
+		// own span so it can be marked per-iteration), the body i++, the </cfwhile>
+		// close tag, plus the \r newline buffer spans after each tag.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 4 );
+		assertThat( spanDefs ).hasSize( 7 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 13, true ) ); // <cfset i = 0>
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 27, true ) ); // <cfwhile condition="i < 3">
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 11, true ) ); // <cfset i++>
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 11, 4, 10, true ) );// spillover to </cfwhile>
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 19, true ) ); // <cfwhile condition= (header)
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 19, 2, 27, true ) );// "i < 3"> (condition)
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 2, 27, 2, 28, true ) );// \r
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 11, true ) ); // <cfset i++>
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 3, 11, 3, 12, true ) );// \r
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 10, true ) ); // </cfwhile>
 
-		// Pass B: the loop condition ran once (header); body i++ ran 3 times (i:0->1->2).
+		// Pass B: the while header ran once (open tag entry); the CONDITION ran 4
+		// times (i:0->1->2 true, then i=3 false to exit); body i++ ran 3 times.
 		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 ); // i = 0
-		assertThat( CodeProfilerService.spanAt( key, 2, 1 ).stats().count() ).isEqualTo( 1 ); // while head
+		assertThat( CodeProfilerService.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 1 ); // while header
+		assertThat( CodeProfilerService.spanAt( key, 2, 19 ).stats().count() ).isEqualTo( 4 ); // condition per iteration
 		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 3 ); // i++ ran 3x
-		assertThat( CodeProfilerService.spanAt( key, 3, 11 ).stats().count() ).isEqualTo( 3 ); // spillover executes per iteration
+		assertThat( CodeProfilerService.spanAt( key, 4, 0 ).stats().count() ).isEqualTo( 1 ); // </cfwhile> close
 
-		// Line-based: lines 1-4 covered; line 1 and 2 count 1, line 3 count 3.
+		// Line-based: lines 1-4 covered; line 1 header 1, condition line 2, body 3.
 		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( key, 1 ).count() ).isEqualTo( 1 );
 		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isTrue();
-		assertThat( CodeProfilerService.lineAt( key, 2 ).count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.lineAt( key, 2 ).count() ).isEqualTo( 1 ); // header is FIRST span on line 2
 		assertThat( CodeProfilerService.lineAt( key, 3 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( key, 3 ).count() ).isEqualTo( 3 );
 		assertThat( CodeProfilerService.lineAt( key, 4 ).covered() ).isTrue();
-		assertThat( CodeProfilerService.lineAt( key, 4 ).count() ).isEqualTo( 3 );
+		assertThat( CodeProfilerService.lineAt( key, 4 ).count() ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It accumulates per-iteration timing inside a loop body (tag)" )
@@ -455,14 +468,19 @@ class CodeProfilerCFTemplateTest {
 		// System.out.println( "=== dump WhileTiming" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// Pass A: i=0, the while head, sleep(100), i++, and the </cfwhile> spillover.
+		// Pass A: i=0, the while header, the condition, sleep(100), i++, the
+		// </cfwhile> close tag, plus \r newline buffer spans after each tag.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 5 );
+		assertThat( spanDefs ).hasSize( 9 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 13, true ) ); // <cfset i = 0>
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 27, true ) ); // <cfwhile condition="i < 3">
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 20, true ) ); // <cfset sleep( 100 )>
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 11, true ) ); // <cfset i++>
-		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 4, 11, 5, 10, true ) );// spillover to </cfwhile>
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 19, true ) ); // <cfwhile condition= (header)
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 19, 2, 27, true ) );// "i < 3"> (condition)
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 2, 27, 2, 28, true ) );// \r
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 20, true ) ); // <cfset sleep( 100 )>
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 3, 20, 3, 21, true ) );// \r
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 11, true ) ); // <cfset i++>
+		assertThat( spanDefs.get( 7 ) ).isEqualTo( new Blueprint.SpanDef( 4, 11, 4, 12, true ) );// \r
+		assertThat( spanDefs.get( 8 ) ).isEqualTo( new Blueprint.SpanDef( 5, 0, 5, 10, true ) ); // </cfwhile>
 
 		// Pass B: body ran 3x — sleep and i++ each 3 times.
 		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 3 );
@@ -473,7 +491,7 @@ class CodeProfilerCFTemplateTest {
 		assertThat( sleepNanos ).isAtLeast( 300L * 1_000_000L );
 		assertThat( sleepNanos ).isAtMost( 900L * 1_000_000L );
 
-		// Line-based: lines 1-4 covered; line 5 (spillover) covered.
+		// Line-based: lines 1-4 covered; line 5 (close tag) covered.
 		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( key, 1 ).count() ).isEqualTo( 1 );
 		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isTrue();
@@ -483,7 +501,7 @@ class CodeProfilerCFTemplateTest {
 		assertThat( CodeProfilerService.lineAt( key, 4 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( key, 4 ).count() ).isEqualTo( 3 );
 		assertThat( CodeProfilerService.lineAt( key, 5 ).covered() ).isTrue();
-		assertThat( CodeProfilerService.lineAt( key, 5 ).count() ).isEqualTo( 3 );
+		assertThat( CodeProfilerService.lineAt( key, 5 ).count() ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It splits a switch into condition, case, and body spans (tag)" )
@@ -510,47 +528,50 @@ class CodeProfilerCFTemplateTest {
 		// System.out.println( "=== dump Switch" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// Pass A: x=2, then the switch head + each case/default label and body
-		// span, ending with the </cfswitch> close. No <cfbreak> needed in tags.
+		// Pass A: x=2, the switch head (which runs into the first case label), each
+		// case/default label, each body span, the </cfcase>/</cfdefaultcase>
+		// close tags, the </cfswitch> close, plus the \r newline buffer spans.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 11 );
+		assertThat( spanDefs ).hasSize( 18 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 13, true ) );   // <cfset x = 2>
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 3, 18, true ) );   // switch head + case 1 label
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 18, 4, 0, true ) );   // case 1 label tail
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 14, true ) );   // a = 10 (case 1 body)
-		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 4, 14, 6, 18, true ) );  // case 1 close + case 2 label
-		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 6, 18, 7, 0, true ) );   // case 2 label tail
-		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 7, 0, 7, 14, true ) );   // a = 20 (case 2 body)
-		assertThat( spanDefs.get( 7 ) ).isEqualTo( new Blueprint.SpanDef( 7, 14, 9, 15, true ) );  // case 2 close + default label
-		assertThat( spanDefs.get( 8 ) ).isEqualTo( new Blueprint.SpanDef( 9, 15, 10, 0, true ) );  // default label tail
-		assertThat( spanDefs.get( 9 ) ).isEqualTo( new Blueprint.SpanDef( 10, 0, 10, 14, true ) ); // a = 30 (default body)
-		assertThat( spanDefs.get( 10 ) ).isEqualTo( new Blueprint.SpanDef( 10, 14, 12, 11, true ) );// default close + </cfswitch>
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 3, 14, true ) );   // switch head + case 1 label start
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 18, true ) );   // <cfcase value="1">
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 18, 3, 19, true ) );  // \r
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 14, true ) );   // a = 10 (case 1 body)
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 4, 14, 4, 15, true ) );  // \r
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 5, 0, 5, 9, true ) );    // </cfcase> (case 1 close)
+		assertThat( spanDefs.get( 7 ) ).isEqualTo( new Blueprint.SpanDef( 6, 0, 6, 18, true ) );   // <cfcase value="2">
+		assertThat( spanDefs.get( 8 ) ).isEqualTo( new Blueprint.SpanDef( 6, 18, 6, 19, true ) );  // \r
+		assertThat( spanDefs.get( 9 ) ).isEqualTo( new Blueprint.SpanDef( 7, 0, 7, 14, true ) );   // a = 20 (case 2 body)
+		assertThat( spanDefs.get( 10 ) ).isEqualTo( new Blueprint.SpanDef( 7, 14, 7, 15, true ) ); // \r
+		assertThat( spanDefs.get( 11 ) ).isEqualTo( new Blueprint.SpanDef( 8, 0, 8, 9, true ) );   // </cfcase> (case 2 close)
+		assertThat( spanDefs.get( 12 ) ).isEqualTo( new Blueprint.SpanDef( 9, 0, 9, 15, true ) );  // <cfdefaultcase>
+		assertThat( spanDefs.get( 13 ) ).isEqualTo( new Blueprint.SpanDef( 9, 15, 9, 16, true ) ); // \r
+		assertThat( spanDefs.get( 14 ) ).isEqualTo( new Blueprint.SpanDef( 10, 0, 10, 14, true ) );// a = 30 (default body)
+		assertThat( spanDefs.get( 15 ) ).isEqualTo( new Blueprint.SpanDef( 10, 14, 10, 15, true ) );// \r
+		assertThat( spanDefs.get( 16 ) ).isEqualTo( new Blueprint.SpanDef( 11, 0, 11, 16, true ) );// </cfdefaultcase>
+		assertThat( spanDefs.get( 17 ) ).isEqualTo( new Blueprint.SpanDef( 12, 0, 12, 11, true ) );// </cfswitch>
 
 		// Pass B: x=2 matches case 2, so case 2 ran (a=20); case 1 and default did
 		// not. a=10 (case 1) and a=30 (default) stayed missed.
 		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );    // x = 2
-		assertThat( CodeProfilerService.spanAt( key, 2, 1 ).stats().count() ).isEqualTo( 1 );    // switch cond (reached)
+		assertThat( CodeProfilerService.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 1 );    // switch head (reached)
 		assertThat( CodeProfilerService.spanAt( key, 4, 0 ).stats().count() ).isEqualTo( 0 );    // a = 10 missed (case 1)
 		assertThat( CodeProfilerService.spanAt( key, 7, 0 ).stats().count() ).isEqualTo( 1 );    // a = 20 ran (case 2)
 		assertThat( CodeProfilerService.spanAt( key, 10, 0 ).stats().count() ).isEqualTo( 0 );   // a = 30 missed (default)
 
-		// The spillover/label spans that merely carry execution from the switch
-		// head into the eventually-matched case 2 all ran exactly once.
-		assertThat( CodeProfilerService.spanAt( key, 3, 18 ).stats().count() ).isEqualTo( 0 );   // case 1 label tail (never entered case 1)
-		assertThat( CodeProfilerService.spanAt( key, 4, 14 ).stats().count() ).isEqualTo( 0 );   // case 1 close + case 2 label (not marked)
-		assertThat( CodeProfilerService.spanAt( key, 6, 18 ).stats().count() ).isEqualTo( 1 );   // case 2 label tail (matched case 2 label)
-		// After case 2's body, the auto-break fires as execution reaches the default
-		// label, so the case-2-close + default-label span is entered (count 1) but
-		// a=30 never runs.
-		assertThat( CodeProfilerService.spanAt( key, 7, 14 ).stats().count() ).isEqualTo( 1 );   // case 2 close + default label (entered, then breaks)
-		// After case 2 auto-breaks, execution jumps past the default and the
-		// </cfswitch> close, so the default tail + switch-close spillover (line 10
-		// col 14) never runs.
-		assertThat( CodeProfilerService.spanAt( key, 10, 14 ).stats().count() ).isEqualTo( 0 );
+		// Case labels are entered (probe-charged) as the switch scans for a match,
+		// but only the matched case's BODY runs. Case 1 body and default body missed.
+		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 1 );    // case 1 label (probed, body missed)
+		assertThat( CodeProfilerService.spanAt( key, 6, 0 ).stats().count() ).isEqualTo( 1 );    // case 2 label (matched)
+		assertThat( CodeProfilerService.spanAt( key, 5, 0 ).stats().count() ).isEqualTo( 1 );    // </cfcase> (case 1 close, entered via probe)
+		assertThat( CodeProfilerService.spanAt( key, 8, 0 ).stats().count() ).isEqualTo( 1 );    // </cfcase> (case 2 close)
+		assertThat( CodeProfilerService.spanAt( key, 11, 0 ).stats().count() ).isEqualTo( 0 );   // </cfdefaultcase> (auto-broke before it)
+		assertThat( CodeProfilerService.spanAt( key, 12, 0 ).stats().count() ).isEqualTo( 1 );   // </cfswitch>
 
 		// Line-based: x=2 (line 1) and switch head (line 2) covered once; the
 		// matched case 2 body (line 7) covered once. Case 1 body (line 4), default
-		// body (line 10), and the </cfswitch> spillover (line 12) are not covered.
+		// body (line 10) are not covered.
 		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( key, 1 ).count() ).isEqualTo( 1 );
 		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isTrue();
@@ -559,7 +580,8 @@ class CodeProfilerCFTemplateTest {
 		assertThat( CodeProfilerService.lineAt( key, 7 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( key, 7 ).count() ).isEqualTo( 1 );
 		assertThat( CodeProfilerService.lineAt( key, 10 ).covered() ).isFalse(); // default body (a=30) missed
-		assertThat( CodeProfilerService.lineAt( key, 12 ).covered() ).isFalse(); // </cfswitch> spillover not reached
+		assertThat( CodeProfilerService.lineAt( key, 12 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 12 ).count() ).isEqualTo( 1 ); // </cfswitch> reached
 	}
 
 	@DisplayName( "It profiles try/catch/finally block statements (tag)" )
@@ -585,17 +607,32 @@ class CodeProfilerCFTemplateTest {
 		// System.out.println( "=== dump Try" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// Pass A: the try body's three statements, the catch body, the finally
-		// body, and their closing-tag spillovers are each their own span.
+		// Pass A: the try tag, the try body's three statements, the catch tag+body,
+		// the finally tag+body, the </cfcatch>/</cffinally>/</cftry> close tags,
+		// plus the \r newline buffer spans after each tag/statement.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 7 );
-		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 13, true ) );   // a = 1
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 20, true ) );   // sleep( 100 )
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 13, true ) );   // b = 2
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 6, 0, 6, 13, true ) );   // c = 3 catch
-		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 6, 13, 7, 10, true ) );  // catch spillover
-		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 9, 0, 9, 13, true ) );   // d = 4 finally
-		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 9, 13, 11, 8, true ) );  // finally spillover to </cftry>
+		assertThat( spanDefs ).hasSize( 21 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 7, true ) );    // <cftry>
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 7, 1, 8, true ) );    // \r
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 13, true ) );   // a = 1
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 2, 13, 2, 14, true ) );  // \r
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 20, true ) );   // sleep( 100 )
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 3, 20, 3, 21, true ) );  // \r
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 13, true ) );   // b = 2
+		assertThat( spanDefs.get( 7 ) ).isEqualTo( new Blueprint.SpanDef( 4, 13, 4, 14, true ) );  // \r
+		assertThat( spanDefs.get( 8 ) ).isEqualTo( new Blueprint.SpanDef( 7, 10, 7, 11, true ) );  // \r after </cfcatch>
+		assertThat( spanDefs.get( 9 ) ).isEqualTo( new Blueprint.SpanDef( 10, 12, 10, 13, true ) );// \r after </cffinally>
+		assertThat( spanDefs.get( 10 ) ).isEqualTo( new Blueprint.SpanDef( 11, 0, 11, 8, true ) ); // </cftry>
+		assertThat( spanDefs.get( 11 ) ).isEqualTo( new Blueprint.SpanDef( 5, 0, 7, 10, true ) );  // <cfcatch> through </cfcatch> (open tag span)
+		assertThat( spanDefs.get( 12 ) ).isEqualTo( new Blueprint.SpanDef( 5, 9, 5, 10, true ) );  // \r after <cfcatch>
+		assertThat( spanDefs.get( 13 ) ).isEqualTo( new Blueprint.SpanDef( 6, 0, 6, 13, true ) );  // c = 3 catch
+		assertThat( spanDefs.get( 14 ) ).isEqualTo( new Blueprint.SpanDef( 6, 13, 6, 14, true ) ); // \r
+		assertThat( spanDefs.get( 15 ) ).isEqualTo( new Blueprint.SpanDef( 7, 0, 7, 10, true ) );  // </cfcatch>
+		assertThat( spanDefs.get( 16 ) ).isEqualTo( new Blueprint.SpanDef( 8, 0, 8, 11, true ) );  // <cffinally>
+		assertThat( spanDefs.get( 17 ) ).isEqualTo( new Blueprint.SpanDef( 8, 11, 8, 12, true ) ); // \r
+		assertThat( spanDefs.get( 18 ) ).isEqualTo( new Blueprint.SpanDef( 9, 0, 9, 13, true ) );  // d = 4 finally
+		assertThat( spanDefs.get( 19 ) ).isEqualTo( new Blueprint.SpanDef( 9, 13, 9, 14, true ) ); // \r
+		assertThat( spanDefs.get( 20 ) ).isEqualTo( new Blueprint.SpanDef( 10, 0, 10, 12, true ) );// </cffinally>
 
 		// Pass B: try body ran (a=1, sleep, b=2); catch did NOT (no throw); finally
 		// ALWAYS ran (d=4). The sleep span was charged ~100ms.
@@ -632,14 +669,16 @@ class CodeProfilerCFTemplateTest {
 		// System.out.println( "=== dump ForIn" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// Pass A: arr=[...] (line 1), the body y = x (line 3), and the spillover to
-		// </cfloop> (lines 3-4). The <cfloop> header itself merges into the
-		// running span.
+		// Pass A: arr=[...], the <cfloop> header, the body y = x, and the
+		// </cfloop> close tag, plus the \r newline buffer spans.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 3 );
+		assertThat( spanDefs ).hasSize( 6 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 28, true ) ); // <cfset arr = [ 10, 20, 30 ]>
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 13, true ) ); // <cfset y = x>
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 13, 4, 9, true ) );// spillover to </cfloop>
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 31, true ) ); // <cfloop array="#arr#" item="x">
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 31, 2, 32, true ) ); // \r
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 13, true ) ); // <cfset y = x>
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 13, 3, 14, true ) ); // \r
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 9, true ) );  // </cfloop>
 
 		// Pass B: header ran once (arr set); body y = x ran 3 times (10, 20, 30).
 		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );  // arr = [...]
@@ -668,15 +707,18 @@ class CodeProfilerCFTemplateTest {
 		// System.out.println( "=== dump ForIndex" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// Pass A: j=0, then the body j = j + i splits into left+right spans (the +
-		// right operand i may throw), and the spillover to </cfloop>. The <cfloop>
-		// header merges into the running span.
+		// Pass A: j=0, the <cfloop> header, then the body j = j + i splits into
+		// left+right spans (the + right operand i may throw), the </cfloop> close,
+		// plus the \r newline buffer spans.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 4 );
+		assertThat( spanDefs ).hasSize( 7 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 13, true ) ); // <cfset j = 0>
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 15, true ) ); // j = j +
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 15, 3, 17, true ) ); // i>
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 17, 4, 9, true ) );// spillover to </cfloop>
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 34, true ) ); // <cfloop from="0" to="2" index="i">
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 34, 2, 35, true ) ); // \r
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 15, true ) ); // j = j +
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 15, 3, 17, true ) ); // i> (right operand)
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 3, 17, 3, 18, true ) ); // \r
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 9, true ) );  // </cfloop>
 
 		// Pass B: header ran once; body ran 3 times (i: 0,1,2) — both parts of j+j+i.
 		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );  // j = 0
@@ -887,15 +929,17 @@ class CodeProfilerCFTemplateTest {
 		// L5 <cfset result = foo()> 23
 
 		// Pass A: the function shell (line 1), the body x = 1 (line 2), the return
-		// (line 3), their tails, and the foo() call site (line 5).
+		// (line 3), the </cffunction> close tag (line 4), the foo() call site
+		// (line 5), plus the \r newline buffer spans.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 6 );
+		assertThat( spanDefs ).hasSize( 7 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 2, 0, true ) );   // function shell
 		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 13, true ) );  // x = 1 body
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 13, 3, 0, true ) );  // x=1 tail
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 13, 2, 14, true ) ); // \r
 		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 12, true ) );  // return x
-		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 12, 4, 13, true ) ); // return tail + </cffunction>
-		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 5, 0, 5, 22, true ) ); // foo() call
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 12, 3, 13, true ) ); // \r
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 13, true ) );  // </cffunction>
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 5, 0, 5, 22, true ) ); // foo() call
 
 		// Pass B: the shell ran at declaration; the body x=1 ran on invocation; the
 		// return ran; the call site ran.
@@ -926,26 +970,24 @@ class CodeProfilerCFTemplateTest {
 		var blueprint = CodeProfilerService.trackedBlueprints().get( fileKey );
 		assertThat( blueprint.spans() ).isNotEmpty();
 
-		// High-level line coverage of the CFML tag file (comment/blank lines shift
-		// the executable lines; see ProfilerSample.cfm):
-		// 3-4 : i = 0, j = 0 (ran once each)
-		// 7 : <cfwhile condition="i < 3"> (header ran once)
-		// 8 : i++ (ran 3x)
-		// 16 : doubled = doubleIt( 21 ) (ran once)
-		// 20 : j = 1 (if taken) (ran once)
-		// 22 : j = 2 (else, not taken) (MISSED)
-		// 26 : k = j EQ 1 ? (ternary cond ran once); "small" (untaken) missed
+		// High-level line coverage of the CFML tag file (see ProfilerSample.cfm):
+		// 2 : i = 0 (ran once)
+		// 3 : j = 0 (ran once)
+		// 7 : i++ (ran 3x, inside cfwhile i<3)
+		// 32 : doubled = 100 (ran once)
+		// 34 : j = 1 (if taken, doubled GT 40) (ran once)
+		// 37 : j = 2 (else, not taken) (MISSED)
+		assertThat( CodeProfilerService.lineAt( fileKey, 2 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( fileKey, 2 ).count() ).isEqualTo( 1 );
 		assertThat( CodeProfilerService.lineAt( fileKey, 3 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( fileKey, 3 ).count() ).isEqualTo( 1 );
-		assertThat( CodeProfilerService.lineAt( fileKey, 4 ).covered() ).isTrue();
-		assertThat( CodeProfilerService.lineAt( fileKey, 4 ).count() ).isEqualTo( 1 );
-		assertThat( CodeProfilerService.lineAt( fileKey, 8 ).covered() ).isTrue();
-		assertThat( CodeProfilerService.lineAt( fileKey, 8 ).count() ).isEqualTo( 3 );   // i++ ran 3x
-		assertThat( CodeProfilerService.lineAt( fileKey, 20 ).covered() ).isTrue();
-		assertThat( CodeProfilerService.lineAt( fileKey, 20 ).count() ).isEqualTo( 1 );
-		assertThat( CodeProfilerService.lineAt( fileKey, 22 ).covered() ).isFalse();     // else branch missed
-		assertThat( CodeProfilerService.lineAt( fileKey, 26 ).covered() ).isTrue();
-		assertThat( CodeProfilerService.lineAt( fileKey, 26 ).count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.lineAt( fileKey, 7 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( fileKey, 7 ).count() ).isEqualTo( 3 );   // i++ ran 3x
+		assertThat( CodeProfilerService.lineAt( fileKey, 32 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( fileKey, 32 ).count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.lineAt( fileKey, 34 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( fileKey, 34 ).count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.lineAt( fileKey, 36 ).covered() ).isFalse();     // else branch (j = 2) missed
 	}
 
 	@DisplayName( "It profiles a CFML tag class file on disk keyed by its file path" )
@@ -969,29 +1011,86 @@ class CodeProfilerCFTemplateTest {
 		var blueprint = CodeProfilerService.trackedBlueprints().get( fileKey );
 		assertThat( blueprint.spans() ).isNotEmpty();
 
-		// High-level line coverage of the tag class file (comment/blank lines shift
-		// the executable lines; see ProfilerComplexTag.cfc):
-		// 6 : <cfproperty name="threshold" default="40"> (property default ran at class load)
-		// 8 : instanceInit = 0 (pseudo-constructor ran at instantiation)
-		assertThat( CodeProfilerService.lineAt( fileKey, 8 ).covered() ).isTrue();   // pseudo-constructor body
-		assertThat( CodeProfilerService.lineAt( fileKey, 8 ).count() ).isEqualTo( 1 );
-		// The property default (line 6, col 38) ran at class load, count 1.
-		assertThat( CodeProfilerService.spanAt( fileKey, 6, 38 ).stats().count() ).isEqualTo( 1 );  // property default ran
+		// High-level line coverage of the tag class file (see ProfilerComplexTag.cfc):
+		// 3 : <cfproperty name="threshold" default="#throw("boom")#"> — SKIPPED
+		// because ProfilerSuper presets `threshold` (its default never runs,
+		// so the throw never fires → count 0, RED).
+		// 4 : <cfproperty name="other" default="#( 40 + 2 )#"> — applied (GREEN).
+		// 6 : instanceInit = 0 (pseudo-constructor body ran at instantiation)
+		assertThat( CodeProfilerService.lineAt( fileKey, 6 ).covered() ).isTrue();  // pseudo-constructor body
+		assertThat( CodeProfilerService.lineAt( fileKey, 6 ).count() ).isEqualTo( 1 );
+		// The SKIPPED threshold default (line 3, value at col 38) — never ran
+		// (the throw inside it would have fired otherwise). Count 0 = RED.
+		assertThat( CodeProfilerService.spanAt( fileKey, 3, 38 ).stats().count() ).isEqualTo( 0 );  // property default SKIPPED
+		// The APPLIED other default (line 4, value at col 34) ran once = GREEN.
+		assertThat( CodeProfilerService.spanAt( fileKey, 4, 34 ).stats().count() ).isEqualTo( 1 );  // property default USED
 
-		// No method has been invoked yet, so the member function body statements
-		// (lines 17-18: sleep/return) have NOT run — count 0.
-		assertThat( CodeProfilerService.spanAt( fileKey, 17, 2 ).stats().count() ).isEqualTo( 0 );  // member body missed
-		assertThat( CodeProfilerService.lineAt( fileKey, 17 ).covered() ).isFalse();
+		// No method has been invoked yet, so the member function body's sleep/return
+		// statements have NOT run (count 0). The function SHELL span overlaps line 15
+		// (it ends at the body start col 2), so lineAt(15) is covered by the shell;
+		// the sleep/return SPANS themselves are missed.
+		assertThat( CodeProfilerService.spanAt( fileKey, 15, 2 ).stats().count() ).isEqualTo( 0 );  // sleep( 100 ) missed
+		assertThat( CodeProfilerService.spanAt( fileKey, 16, 2 ).stats().count() ).isEqualTo( 0 );  // return x * 3 missed
 
 		// Now invoke the member method on the SAME instance in a second script (the
 		// shared context keeps pc in the variables scope); its body should run.
 		runtime.executeSource( "result = pc.member( 5 );", context, BoxSourceType.CFSCRIPT );
 
 		// The member body slept ~100ms, so its span is covered with the sleep charged.
-		assertThat( CodeProfilerService.spanAt( fileKey, 17, 2 ).stats().count() ).isEqualTo( 1 );  // sleep ran
-		assertThat( CodeProfilerService.spanAt( fileKey, 17, 2 ).stats().totalNanos() ).isAtLeast( 100L * 1_000_000L );
-		assertThat( CodeProfilerService.spanAt( fileKey, 17, 2 ).stats().totalNanos() ).isAtMost( 400L * 1_000_000L );
-		assertThat( CodeProfilerService.lineAt( fileKey, 17 ).covered() ).isTrue();
-		assertThat( CodeProfilerService.lineAt( fileKey, 17 ).count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.spanAt( fileKey, 15, 2 ).stats().count() ).isEqualTo( 1 );  // sleep ran
+		assertThat( CodeProfilerService.spanAt( fileKey, 15, 2 ).stats().totalNanos() ).isAtLeast( 100L * 1_000_000L );
+		assertThat( CodeProfilerService.spanAt( fileKey, 15, 2 ).stats().totalNanos() ).isAtMost( 400L * 1_000_000L );
+		assertThat( CodeProfilerService.lineAt( fileKey, 15 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( fileKey, 15 ).count() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It profiles the <cfparam> tag (CFTEMPLATE)" )
+	@Test
+	void testParamTag() {
+		// Variable does NOT exist — the param runs and sets the default.
+		// The default is a COMPLEX expression (#now()#), so it breaks into its own
+		// span (deferred closure, evaluated only when the variable is missing).
+		String source = "<cfparam name=\"foo\" default=#now()#>";
+		runtime.executeSource( source, new ScriptingRequestBoxContext( runtime.getRuntimeContext() ), BoxSourceType.CFTEMPLATE );
+		String	key			= IBoxpiler.MD5( BoxSourceType.CFTEMPLATE.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testParamTag dump" );
+		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
+
+		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
+		assertThat( spanDefs ).hasSize( 2 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 29, true ) );  // tag head incl. "default=#"
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 29, 1, 34, true ) ); // now() default
+		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );
+		// foo is missing, so the deferred default ran.
+		assertThat( CodeProfilerService.spanAt( key, 1, 29 ).stats().count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 1 ).count() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It profiles the <cfparam> tag when the variable already exists (CFTEMPLATE)" )
+	@Test
+	void testParamTagExists() {
+		// The variable EXISTS, so the param statement still executes (skips the
+		// default) — the DEFAULT EXPRESSION is NOT evaluated (count 0, RED).
+		String source = "<cfset foo = 1>\n<cfparam name=\"foo\" default=#now()#>";
+		runtime.executeSource( source, new ScriptingRequestBoxContext( runtime.getRuntimeContext() ), BoxSourceType.CFTEMPLATE );
+		String	key			= IBoxpiler.MD5( BoxSourceType.CFTEMPLATE.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testParamTagExists dump" );
+		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
+
+		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
+		assertThat( spanDefs ).hasSize( 3 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 15, true ) );  // <cfset foo = 1>
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 29, true ) );  // param tag head
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 29, 2, 34, true ) ); // now() default
+		assertThat( CodeProfilerService.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 1 );
+		// foo exists — the default expression was NEVER evaluated (count 0, RED).
+		assertThat( CodeProfilerService.spanAt( key, 2, 29 ).stats().count() ).isEqualTo( 0 );
+		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 2 ).count() ).isEqualTo( 1 );
 	}
 }

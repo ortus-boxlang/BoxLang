@@ -1,9 +1,3 @@
-// Profiler disk-file integration test script (CFSCRIPT version).
-// Kept as a standalone sample so span definitions can be eyeballed in the HTML
-// renderer: covered spans green, missed spans red.
-// NOTE: BoxLang-only syntax (annotations, classes, static {}, lambdas, elvis)
-// is omitted — CF doesn't support those.
-
 // --- Plain statements, one per line
 i = 0;
 j = 0;
@@ -138,3 +132,45 @@ st = {
     one: 1,
     two: 2
 };
+
+// --- param: default is set when the variable is missing ... (complex default,
+// compiled to a deferred closure — its span shows GREEN when run, RED when skipped)
+param name="paramMissing" default=( now() );
+// ... and is a no-op (default skipped — RED) when the variable already exists.
+paramMissing = 1;
+param name="paramMissing" default=( now() );
+
+// --- param with the shorthand syntax: name=default
+param paramShorthand=( now() );
+
+// --- param with a LITERAL default stays fused inline (always covered)
+param name="paramLiteral" default="bar";
+
+// --- DISK class interactions (ProfilerComplexCF.cfc on disk, CFSCRIPT form)
+// INSTANTIATED class: static block + pseudo-constructor run; members only on
+// call. The `other` property default is APPLIED at instantiation (USED → GREEN);
+// the `threshold` default is SKIPPED (ProfilerSuper presets it → RED).
+diskInst = new src.test.resources.profiler.ProfilerComplexCF();
+diskVal = diskInst.member( 5 );
+
+// STATIC-ONLY class: class loads and its static init runs, but no instance is
+// created — its COMPLEX property default is NEVER evaluated (NOT used → RED).
+diskStatic = src.test.resources.profiler.ProfilerStaticOnlyCF::staticInitRan;
+
+// --- DISK class interactions (ProfilerComplexCF.cfc on disk, CFSCRIPT form)
+// INSTANTIATED class: static block + pseudo-constructor run; members only on
+// call. The `other` property default is APPLIED at instantiation (USED → GREEN);
+// the `threshold` default is SKIPPED (ProfilerSuper presets it → RED).
+diskInstTag = new src.test.resources.profiler.ProfilerComplexTag();
+diskVal = diskInstTag.member( 5 );
+
+// STATIC-ONLY class: class loads and its static init runs, but no instance is
+// created — its COMPLEX property default is NEVER evaluated (NOT used → RED).
+result = src.test.resources.profiler.ProfilerStaticOnlyTag::staticMethod();
+
+```
+foo 
+<cfoutput>
+    #now()#
+</cfoutput>
+```

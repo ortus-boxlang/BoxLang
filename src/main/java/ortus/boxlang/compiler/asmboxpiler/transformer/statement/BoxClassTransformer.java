@@ -929,19 +929,15 @@ public class BoxClassTransformer {
 			        )
 			    );
 
-			    // Property defaults are HOISTED: defaultProperties() just applied
-			    // them all, so mark the whole set as run with ONE varargs mark.
-			    // (This is where property-default spans get their coverage — the
-			    // pseudo-constructor, not the clinit Property construction.)
-			    if ( transpiler.isProfilingEnabled() && transpiler.getFileId() >= 0 ) {
-				    int[] propSpans = transpiler.getPropertyDefaultSpans();
-				    if ( propSpans != null && propSpans.length > 0 ) {
-					    for ( int member : propSpans ) {
-						    transpiler.claimSpanMark( member );
-					    }
-					    psuedoBody.addAll( AsmHelper.invokeStaticMarkVarargs( transpiler.getFileId(), propSpans ) );
-				    }
-			    }
+			    // Property-default spans are marked at the RIGHT moment by their own
+			    // compiled code — do NOT batch-mark them here:
+			    // - literal defaults are evaluated inline at CLINIT (Property
+			    // construction), so their mark is baked at class load;
+			    // - non-literal defaults compile to a lazy defaultExpr_N method
+			    // whose mark fires ONLY when getDefaultValue() runs — which
+			    // defaultProperties() skips when the variable already exists
+			    // (e.g. a super class preset it). Batch-marking them here would
+			    // falsely count SKIPPED defaults as run (GREEN).
 
 			    psuedoBody.addAll( body );
 
