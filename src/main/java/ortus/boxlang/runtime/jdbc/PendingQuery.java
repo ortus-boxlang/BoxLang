@@ -22,6 +22,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -554,6 +555,73 @@ public class PendingQuery {
 	 */
 	public @NonNull String getSQLWithParamValues() {
 		return this.SQLWithParamValues;
+	}
+
+	/**
+	 * Whether the SQL of this query carries a {@code RETURNING} clause, i.e. the statement
+	 * itself asks the database for rows ( PostgreSQL, SQLite, MariaDB, Firebird, ... ).
+	 * <p>
+	 * String literals, quoted identifiers and comments are ignored, so a column or value
+	 * that merely contains the word does not count. The check is a plain keyword scan, it
+	 * does not validate where the clause sits.
+	 *
+	 * @return true if a RETURNING keyword is present outside of literals and comments
+	 */
+	public boolean hasReturningClause() {
+		return RETURNING_PATTERN.matcher( stripLiteralsAndComments( this.sql ) ).find();
+	}
+
+	/**
+	 * Matches the RETURNING keyword as a whole word, case-insensitive.
+	 */
+	private static final Pattern RETURNING_PATTERN = Pattern.compile( "(?i)\\bRETURNING\\b" );
+
+	/**
+	 * Blanks out single-quoted string literals ( with doubled-quote escapes ), double-quoted
+	 * identifiers, double-dash line comments and slash-star block comments so keyword scans
+	 * only see real SQL tokens. Everything removed is replaced by a single space.
+	 *
+	 * @param sql The SQL to clean
+	 *
+	 * @return The SQL with literals and comments replaced by spaces
+	 */
+	static String stripLiteralsAndComments( String sql ) {
+		StringBuilder	out	= new StringBuilder( sql.length() );
+		int				i	= 0;
+		int				n	= sql.length();
+		while ( i < n ) {
+			char c = sql.charAt( i );
+			if ( c == '\'' || c == '"' ) {
+				char quote = c;
+				i++;
+				while ( i < n ) {
+					if ( sql.charAt( i ) == quote ) {
+						// doubled quote inside the literal
+						if ( i + 1 < n && sql.charAt( i + 1 ) == quote ) {
+							i += 2;
+							continue;
+						}
+						i++;
+						break;
+					}
+					i++;
+				}
+				out.append( ' ' );
+			} else if ( c == '-' && i + 1 < n && sql.charAt( i + 1 ) == '-' ) {
+				while ( i < n && sql.charAt( i ) != '\n' ) {
+					i++;
+				}
+				out.append( ' ' );
+			} else if ( c == '/' && i + 1 < n && sql.charAt( i + 1 ) == '*' ) {
+				int end = sql.indexOf( "*/", i + 2 );
+				i = end < 0 ? n : end + 2;
+				out.append( ' ' );
+			} else {
+				out.append( c );
+				i++;
+			}
+		}
+		return out.toString();
 	}
 
 	/**
