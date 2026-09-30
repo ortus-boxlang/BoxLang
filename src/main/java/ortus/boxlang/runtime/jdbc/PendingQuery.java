@@ -22,6 +22,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -568,7 +569,46 @@ public class PendingQuery {
 	 * @return true if a RETURNING keyword is present outside of literals and comments
 	 */
 	public boolean hasReturningClause() {
-		return RETURNING_PATTERN.matcher( stripLiteralsAndComments( this.sql ) ).find();
+		String	cleaned	= stripLiteralsAndComments( this.sql );
+		Matcher	matcher	= RETURNING_PATTERN.matcher( cleaned );
+		while ( matcher.find() ) {
+			if ( isReturningClause( cleaned, matcher.start(), matcher.end() ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Tells a RETURNING clause apart from a column or table that merely bears that name on
+	 * databases where the word is not reserved ( MySQL, H2, Derby, ... ): a clause is never
+	 * preceded by {@code (} or {@code ,} ( a column list ), never followed by {@code ,},
+	 * {@code )} or {@code =} ( a column list or an assignment ) and always has a target list
+	 * after it.
+	 *
+	 * @param sql   The cleaned SQL
+	 * @param start Index of the keyword
+	 * @param end   Index right after the keyword
+	 *
+	 * @return true if the keyword at this position reads as a RETURNING clause
+	 */
+	private static boolean isReturningClause( String sql, int start, int end ) {
+		int before = start - 1;
+		while ( before >= 0 && Character.isWhitespace( sql.charAt( before ) ) ) {
+			before--;
+		}
+		if ( before >= 0 && ( sql.charAt( before ) == '(' || sql.charAt( before ) == ',' ) ) {
+			return false;
+		}
+		int after = end;
+		while ( after < sql.length() && Character.isWhitespace( sql.charAt( after ) ) ) {
+			after++;
+		}
+		if ( after >= sql.length() ) {
+			return false;
+		}
+		char next = sql.charAt( after );
+		return next != ',' && next != ')' && next != '=' && next != ';';
 	}
 
 	/**
@@ -577,9 +617,10 @@ public class PendingQuery {
 	private static final Pattern RETURNING_PATTERN = Pattern.compile( "(?i)\\bRETURNING\\b" );
 
 	/**
-	 * Blanks out single-quoted string literals ( with doubled-quote escapes ), double-quoted
-	 * identifiers, double-dash line comments and slash-star block comments so keyword scans
-	 * only see real SQL tokens. Everything removed is replaced by a single space.
+	 * Blanks out single-quoted string literals ( with doubled-quote escapes ), quoted
+	 * identifiers ( double quotes, MySQL backticks, SQL Server square brackets ), double-dash
+	 * line comments and slash-star block comments so keyword scans only see real SQL tokens.
+	 * Everything removed is replaced by a single space.
 	 *
 	 * @param sql The SQL to clean
 	 *
@@ -591,8 +632,8 @@ public class PendingQuery {
 		int				n	= sql.length();
 		while ( i < n ) {
 			char c = sql.charAt( i );
-			if ( c == '\'' || c == '"' ) {
-				char quote = c;
+			if ( c == '\'' || c == '"' || c == '`' || c == '[' ) {
+				char quote = c == '[' ? ']' : c;
 				i++;
 				while ( i < n ) {
 					if ( sql.charAt( i ) == quote ) {
