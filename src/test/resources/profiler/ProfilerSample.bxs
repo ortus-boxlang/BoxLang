@@ -177,11 +177,13 @@ st = {
     two: 2
 };
 
-// --- A class: static runs at load, body at instantiation, member at invocation
 @foo
 @bar( baz )
-class brad luis="majano" {
+class brad luis="majano" extends=ProfilerSuper {
+    property name="threshold" default=localSeed;
+    property name="other" default=localSeed;
     static {
+        localSeed = 42;
         s = 1;
         if( false ) {
             println( "This should never run" )

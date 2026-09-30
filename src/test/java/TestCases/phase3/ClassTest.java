@@ -1351,6 +1351,24 @@ public class ClassTest {
 	}
 
 	@Test
+	public void testStaticBlockInScriptIslandTagCFC() {
+		// A TAG-based CFC whose static block is written inside a <cfscript> island.
+		// The static block must run ONCE at CLASS LOAD — its static-scope values
+		// must be set before any instance is created, and instance code must see
+		// them — mirroring testStaticInstance but for tag-based CFC source.
+		instance.executeSource(
+		    """
+		             clazz = new src.test.java.TestCases.phase3.StaticInScriptIsland();
+		    result1 = clazz.getFoo();
+		    result2 = clazz.getScoped();
+		    result3 = clazz.getInstanceVar();
+		               """, context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "instance" );
+	}
+
+	@Test
 	public void testStaticStatic() {
 		instance.executeSource( """
 		                        result1 = src.test.java.TestCases.phase3.StaticTest::foo;

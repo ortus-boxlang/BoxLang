@@ -102,21 +102,24 @@ class CodeProfilerTemplateTest {
 		String	key			= IBoxpiler.MD5( BoxSourceType.BOXTEMPLATE.toString() + source );
 
 		// Three <bx:set> statements; the binary z = x + y splits left/right around
-		// the RHS. Static newline buffer outputs are not tracked, so no noise spans.
+		// the RHS, and the tag's closing ">" is its own span grouped with the head
+		// (always GREEN). Static newline buffer outputs are not tracked.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 4 );
+		assertThat( spanDefs ).hasSize( 5 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 14, true ) );  // <bx:set x = 1>
 		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 14, true ) );  // <bx:set y = 2>
 		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 16, true ) );  // <bx:set z = x + >
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 16, 3, 18, true ) ); // y>
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 16, 3, 17, true ) ); // y (RHS)
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 17, 3, 18, true ) ); // > (tag close)
 
 		assertThat( CodeProfilerService.spansOnLine( key, 1 ) ).hasSize( 1 );
 		assertThat( CodeProfilerService.spansOnLine( key, 1 ).get( 0 ).stats().count() ).isEqualTo( 1 );
 		assertThat( CodeProfilerService.spansOnLine( key, 2 ) ).hasSize( 1 );
 		assertThat( CodeProfilerService.spansOnLine( key, 2 ).get( 0 ).stats().count() ).isEqualTo( 1 );
-		assertThat( CodeProfilerService.spansOnLine( key, 3 ) ).hasSize( 2 );
+		assertThat( CodeProfilerService.spansOnLine( key, 3 ) ).hasSize( 3 );
 		assertThat( CodeProfilerService.spansOnLine( key, 3 ).get( 0 ).stats().count() ).isEqualTo( 1 );
 		assertThat( CodeProfilerService.spansOnLine( key, 3 ).get( 1 ).stats().count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.spansOnLine( key, 3 ).get( 2 ).stats().count() ).isEqualTo( 1 );
 
 		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( key, 1 ).count() ).isEqualTo( 1 );
@@ -140,22 +143,24 @@ class CodeProfilerTemplateTest {
 		String	key			= IBoxpiler.MD5( BoxSourceType.BOXTEMPLATE.toString() + source );
 
 		// Pass A: 3 <bx:set> assignments (one span each) + the ternary statement
-		// splits into 3 spans: "<bx:set x = bar ? " | "baz : " | "bum".
+		// splits into 4 spans: "<bx:set x = bar ? " | "baz : " | "bum" | ">".
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 6 );
+		assertThat( spanDefs ).hasSize( 7 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 19, true ) );  // <bx:set bar = true>
 		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 16, true ) );  // <bx:set baz = 1>
 		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 16, true ) );  // <bx:set bum = 2>
 		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 18, true ) );  // <bx:set x = bar ? >
 		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 4, 18, 4, 24, true ) ); // baz : (whenTrue)
-		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 4, 24, 4, 28, true ) ); // bum (whenFalse)
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 4, 24, 4, 27, true ) ); // bum (whenFalse)
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 4, 27, 4, 28, true ) ); // > (tag close)
 
 		// Pass B: bar=true so the whenTrue branch (baz) ran once; whenFalse (bum)
-		// is MISSED (count 0).
+		// is MISSED (count 0). The tag's closing ">" ran with the tag (GREEN).
 		assertThat( CodeProfilerService.spanAt( key, 1, 1 ).stats().count() ).isEqualTo( 1 );
 		assertThat( CodeProfilerService.spanAt( key, 4, 1 ).stats().count() ).isEqualTo( 1 );   // x = bar ? cond
 		assertThat( CodeProfilerService.spanAt( key, 4, 19 ).stats().count() ).isEqualTo( 1 );  // baz ran
 		assertThat( CodeProfilerService.spanAt( key, 4, 25 ).stats().count() ).isEqualTo( 0 );  // bum missed
+		assertThat( CodeProfilerService.spanAt( key, 4, 27 ).stats().count() ).isEqualTo( 1 );  // > ran
 
 		// Line-based: lines 1-4 covered once.
 		for ( int line : new int[] { 1, 2, 3, 4 } ) {
@@ -180,17 +185,17 @@ class CodeProfilerTemplateTest {
 
 		// The <bx:output> body produces five spans:
 		// 0: (1,0)-(1,11) the <bx:output> open tag
-		// 1: (1,11)-(1,16) the "\nfoo\n" text buffer (foo rendered output)
+		// 1: (1,11)-(3,0) the "\nfoo\n" text buffer (foo rendered output)
 		// 2: (3,0)-(3,7) the #now()# interpolation (real expression)
-		// 3: (3,7)-(3,12) the "\nbar\n" text buffer (bar rendered output)
+		// 3: (3,7)-(5,0) the "\nbar\n" text buffer (bar rendered output)
 		// 4: (5,0)-(5,12) the </bx:output> close tag
 		// The blank "\n" buffer after </bx:output> is NOT tracked.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
 		assertThat( spanDefs ).hasSize( 5 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 11, true ) ); // <bx:output>
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 11, 1, 16, true ) ); // "\nfoo\n"
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 11, 3, 0, true ) ); // "\nfoo\n"
 		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 7, true ) );    // #now()#
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 7, 3, 12, true ) );   // "\nbar\n"
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 7, 5, 0, true ) );   // "\nbar\n"
 		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 5, 0, 5, 12, true ) );   // </bx:output>
 
 		// Pass B: foo text, the interpolation, and bar text all executed once; the
@@ -660,22 +665,24 @@ class CodeProfilerTemplateTest {
 		String	key			= IBoxpiler.MD5( BoxSourceType.BOXTEMPLATE.toString() + source );
 
 		// Pass A: j=0, the <bx:loop> header, then the body j = j + i splits into
-		// left+right spans (the + right operand i may throw), the </bx:loop> close,
-		// plus the \r newline buffer spans.
+		// left+right spans (the + right operand i may throw) plus the tag's ">"
+		// (grouped with the head), the </bx:loop> close, and the \r buffer spans.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 7 );
+		assertThat( spanDefs ).hasSize( 8 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 14, true ) ); // <bx:set j = 0>
 		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 35, true ) ); // <bx:loop from="0" to="2" index="i">
 		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 35, 2, 36, true ) ); // \r
 		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 16, true ) ); // j = j +
-		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 16, 3, 18, true ) ); // i> (right operand)
-		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 3, 18, 3, 19, true ) ); // \r
-		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 10, true ) );  // </bx:loop>
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 16, 3, 17, true ) ); // i (right operand)
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 3, 17, 3, 18, true ) ); // > (tag close)
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 3, 18, 3, 19, true ) ); // \r
+		assertThat( spanDefs.get( 7 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 10, true ) );  // </bx:loop>
 
 		// Pass B: header ran once; body ran 3 times (i: 0,1,2) — both parts of j+j+i.
 		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );  // j = 0
 		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 3 );  // j = j + ran 3x
 		assertThat( CodeProfilerService.spanAt( key, 3, 16 ).stats().count() ).isEqualTo( 3 ); // i ran 3x
+		assertThat( CodeProfilerService.spanAt( key, 3, 17 ).stats().count() ).isEqualTo( 3 ); // > ran 3x
 
 		// Line-based: line 1 covered once; line 3 covered 3 times.
 		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();
@@ -697,17 +704,21 @@ class CodeProfilerTemplateTest {
 		String	key			= IBoxpiler.MD5( BoxSourceType.BOXTEMPLATE.toString() + source );
 
 		// Pass A: a=false, b=1, and the x = a && b statement splits into left
-		// ("x = a && ") and right ("b>") spans because the right operand may throw.
+		// ("x = a && "), right ("b"), and the tag's closing ">" (grouped with the
+		// always-run head).
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 4 );
+		assertThat( spanDefs ).hasSize( 5 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 18, true ) ); // <bx:set a = false>
 		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 14, true ) ); // <bx:set b = 1>
 		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 17, true ) ); // x = a &&
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 17, 3, 19, true ) ); // b> (right operand)
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 17, 3, 18, true ) ); // b (right operand)
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 18, 3, 19, true ) ); // > (tag close)
 
-		// Pass B: a is false so b never ran (MISSED); the left side ran once.
+		// Pass B: a is false so b never ran (MISSED); the left side and the tag's
+		// ">" ran once (GREEN).
 		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 1 );  // left ran
 		assertThat( CodeProfilerService.spanAt( key, 3, 17 ).stats().count() ).isEqualTo( 0 ); // b never ran
+		assertThat( CodeProfilerService.spanAt( key, 3, 18 ).stats().count() ).isEqualTo( 1 ); // > ran
 
 		// Line-based: lines 1-3 covered (line 3 via the left span).
 		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();
@@ -732,15 +743,17 @@ class CodeProfilerTemplateTest {
 
 		// Pass A: same span layout as testAndShortCircuit; a=true so both run.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 4 );
+		assertThat( spanDefs ).hasSize( 5 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 17, true ) ); // <bx:set a = true>
 		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 14, true ) ); // <bx:set b = 1>
 		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 17, true ) ); // x = a &&
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 17, 3, 19, true ) ); // b> (right operand)
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 17, 3, 18, true ) ); // b (right operand)
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 18, 3, 19, true ) ); // > (tag close)
 
-		// Pass B: a=true so BOTH operands ran.
+		// Pass B: a=true so BOTH operands ran, plus the ">" (GREEN).
 		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 1 );  // left ran
 		assertThat( CodeProfilerService.spanAt( key, 3, 17 ).stats().count() ).isEqualTo( 1 ); // b ran
+		assertThat( CodeProfilerService.spanAt( key, 3, 18 ).stats().count() ).isEqualTo( 1 ); // > ran
 
 		assertThat( CodeProfilerService.lineAt( key, 3 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( key, 3 ).count() ).isEqualTo( 1 );
@@ -760,15 +773,17 @@ class CodeProfilerTemplateTest {
 
 		// Pass A: same span layout; a=true so b short-circuits.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 4 );
+		assertThat( spanDefs ).hasSize( 5 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 17, true ) ); // <bx:set a = true>
 		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 14, true ) ); // <bx:set b = 1>
 		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 17, true ) ); // x = a ||
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 17, 3, 19, true ) ); // b> (right operand)
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 17, 3, 18, true ) ); // b (right operand)
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 18, 3, 19, true ) ); // > (tag close)
 
-		// Pass B: a=true (truthy) so b never ran (MISSED).
+		// Pass B: a=true (truthy) so b never ran (MISSED); the ">" ran (GREEN).
 		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 1 );  // left ran
 		assertThat( CodeProfilerService.spanAt( key, 3, 17 ).stats().count() ).isEqualTo( 0 ); // b never ran
+		assertThat( CodeProfilerService.spanAt( key, 3, 18 ).stats().count() ).isEqualTo( 1 ); // > ran
 
 		assertThat( CodeProfilerService.lineAt( key, 3 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( key, 3 ).count() ).isEqualTo( 1 );
@@ -856,18 +871,19 @@ class CodeProfilerTemplateTest {
 		String	key			= IBoxpiler.MD5( BoxSourceType.BOXTEMPLATE.toString() + source );
 
 		// tag lengths:
-		// L1 <bx:function name="foo"> 23
+		// L1 <bx:function name="foo"> 24
 		// L2 <bx:set x = 1> 14
 		// L3 <bx:return x> 13
 		// L4 </bx:function> 14
 		// L5 <bx:set result = foo()> 23
 
-		// Pass A: the function shell (line 1), the body x = 1 (line 2), the return
-		// (line 3), the </bx:function> close tag (line 4), the foo() call site
-		// (line 5), plus the \r newline buffer spans.
+		// Pass A: the function shell (line 1, ending at its ">" — it must NOT
+		// swallow the whitespace onto line 2's body), the body x = 1 (line 2), the
+		// return (line 3), the </bx:function> close tag (line 4), the foo() call
+		// site (line 5), plus the \r newline buffer spans.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
 		assertThat( spanDefs ).hasSize( 7 );
-		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 2, 0, true ) );   // function shell
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 24, true ) );  // function shell (open tag)
 		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 14, true ) );  // x = 1 body
 		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 14, 2, 15, true ) ); // \r
 		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 13, true ) );  // return x
@@ -904,12 +920,13 @@ class CodeProfilerTemplateTest {
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 2 );
-		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 30, true ) );  // tag head incl. "default=#"
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 30, 1, 35, true ) ); // now() default
+		assertThat( spanDefs ).hasSize( 3 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 29, true ) );  // tag head incl. "default="
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 29, 1, 36, true ) ); // #now()# default (pounds included)
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 1, 36, 1, 37, true ) ); // > tag close
 		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );
 		// foo is missing, so the deferred default ran.
-		assertThat( CodeProfilerService.spanAt( key, 1, 30 ).stats().count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.spanAt( key, 1, 29 ).stats().count() ).isEqualTo( 1 );
 		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( key, 1 ).count() ).isEqualTo( 1 );
 	}
@@ -928,13 +945,14 @@ class CodeProfilerTemplateTest {
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 3 );
+		assertThat( spanDefs ).hasSize( 4 );
 		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 16, true ) );  // <bx:set foo = 1>
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 30, true ) );  // param tag head
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 30, 2, 35, true ) ); // now() default
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 29, true ) );  // param tag head
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 29, 2, 36, true ) ); // #now()# default (pounds included)
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 2, 36, 2, 37, true ) ); // > tag close
 		assertThat( CodeProfilerService.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 1 );
 		// foo exists — the default expression was NEVER evaluated (count 0, RED).
-		assertThat( CodeProfilerService.spanAt( key, 2, 30 ).stats().count() ).isEqualTo( 0 );
+		assertThat( CodeProfilerService.spanAt( key, 2, 29 ).stats().count() ).isEqualTo( 0 );
 		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( key, 2 ).count() ).isEqualTo( 1 );
 	}

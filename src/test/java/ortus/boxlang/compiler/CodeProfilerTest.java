@@ -1473,15 +1473,15 @@ class CodeProfilerTest {
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
 		// Pass A: foo=null, bar=2, and the elvis splits: "x = foo ?: " then
-		// "( bar = 99 )" (paren unwrapped to the inner assignment).
+		// "( bar = 99 )" — the parens are PART of the right operand's span.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
 		assertThat( spanDefs ).hasSize( 4 );
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 13, true ) );  // "x = foo ?: "
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 13, 3, 23, true ) ); // "bar = 99"
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 11, true ) );  // "x = foo ?: "
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 11, 3, 23, true ) ); // "( bar = 99 )"
 
 		// Pass B: foo is null so the right RAN and its mark fired.
 		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 1 );
-		assertThat( CodeProfilerService.spanAt( key, 3, 13 ).stats().count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.spanAt( key, 3, 11 ).stats().count() ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It short-circuits the elvis right span when the left is set" )
@@ -1498,7 +1498,7 @@ class CodeProfilerTest {
 
 		// foo is set so the right never ran — its span is MISSED.
 		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 1 );
-		assertThat( CodeProfilerService.spanAt( key, 3, 13 ).stats().count() ).isEqualTo( 0 );
+		assertThat( CodeProfilerService.spanAt( key, 3, 11 ).stats().count() ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It short-circuits && so the right span is missed" )

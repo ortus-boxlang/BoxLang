@@ -36,7 +36,6 @@ import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
-import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
@@ -166,11 +165,49 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			if ( child instanceof BoxStatement stmt ) {
 				this.runningStart = stmt.getStart();
 				child.accept( this );
-				closeRunningSpan( stmt.getEnd() );
+				// The parser reports a multi-line buffer output's END on the same
+				// line as its START (it does not account for embedded newlines in a
+				// text token). That collapses the span so only the first `` `\r` `` is
+				// covered, leaving the rendered text ("foo"/"bar") untracked. Recompute
+				// the true end from the source when it genuinely spans newlines.
+				closeRunningSpan( bufferOutputEnd( stmt ) );
 			} else {
 				child.accept( this );
 			}
 		}
+	}
+
+	/**
+	 * The true end point of a statement for span registration. Ordinary statements
+	 * use their computed end; a {@link BoxBufferOutput} whose source text spans
+	 * multiple lines gets a corrected end so its rendered text is fully covered.
+	 *
+	 * @param stmt the statement
+	 *
+	 * @return the end point to close the span at
+	 */
+	private Point bufferOutputEnd( BoxStatement stmt ) {
+		if ( stmt instanceof BoxBufferOutput buf && buf.getExpression() instanceof BoxStringLiteral lit ) {
+			String	text	= lit.getValue();
+			Point	start	= stmt.getStart();
+			// Only expand NON-BLANK rendered text. Whitespace-only buffers (the raw
+			// newlines between tags) are pure formatting — leave them collapsed (and
+			// they are skipped entirely by visitChildren's blank check).
+			if ( start != null && text != null && !text.isBlank() && text.contains( "\n" ) ) {
+				String[]	lines	= text.split( "\n", -1 );
+				int			endLine	= start.getLine() + ( lines.length - 1 );
+				String		last	= lines[ lines.length - 1 ];
+				if ( last.endsWith( "\r" ) ) {
+					last = last.substring( 0, last.length() - 1 );
+				}
+				int		endCol	= text.endsWith( "\n" ) ? 0 : last.length();
+				Point	p		= new Point( endLine, endCol );
+				if ( p.getLine() != start.getLine() || p.getColumn() != start.getColumn() ) {
+					return p;
+				}
+			}
+		}
+		return stmt.getEnd();
 	}
 
 	/**
@@ -188,28 +225,190 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	}
 
 	/**
-	 * A {@code <bx:script>} island inside a template: descend in script mode.
+	 * A {@code <bx:script>} island inside a template: descend in script mode. The
+	 * {@code <bx:script>} OPEN tag is its own span, and the {@code </bx:script>}
+	 * CLOSE tag is grouped with it so both are marked executed when the island
+	 * runs (they are atomic with the statements). The trailing semicolon after the
+	 * last statement is NOT executable — runningStart is reset so the enclosing
+	 * statement cannot mint a phantom span over it and the close tag.
 	 *
 	 * @param node the script island
 	 */
 	@Override
 	public void visit( BoxScriptIsland node ) {
 		this.currentSourceType.push( BoxSourceType.BOXSCRIPT );
-		visitChildren( node );
+		int		openId	= -1;
+		Point	openEnd	= node.getStart() == null ? null : findTagCloseAfter( node, node.getStart() );
+		if ( openEnd != null ) {
+			openId = addSpan( node.getStart(), new Point( openEnd.getLine(), openEnd.getColumn() + 1 ) );
+		}
+		for ( BoxStatement stmt : node.getStatements() ) {
+			if ( stmt instanceof BoxStaticInitializer init ) {
+				// A static initializer inside a <cfscript> island: use the SAME
+				// header + brace-group handling as the class body branch so the
+				// "static {" header (with its opening brace) and the closing "}"
+				// are batch-marked — the generic statement wrap would otherwise
+				// mint a phantom span over the trailing ";" + "}".
+				Point	initOpen	= findOpenBraceBefore( node, init.getBody().isEmpty() ? init.getEnd() : init.getBody().get( 0 ).getStart() );
+				Point	initClose	= init.getEnd() == null ? null : new Point( init.getEnd().getLine(), init.getEnd().getColumn() - 1 );
+				int		initHeader	= -1;
+				this.runningStart = init.getStart();
+				if ( initOpen != null ) {
+					initHeader = closeRunningSpan( new Point( initOpen.getLine(), initOpen.getColumn() + 1 ) );
+				}
+				for ( BoxStatement s : init.getBody() ) {
+					this.runningStart = s.getStart();
+					s.accept( this );
+					closeRunningSpan( bufferOutputEnd( s ) );
+				}
+				if ( initHeader >= 0 && initClose != null ) {
+					registerBraceGroup( initHeader, initClose );
+				}
+				this.runningStart = null;
+				continue;
+			}
+			this.runningStart = stmt.getStart();
+			stmt.accept( this );
+			closeRunningSpan( bufferOutputEnd( stmt ) );
+		}
+		// The close tag </bx:script> / </cfscript> is grouped with the open tag so
+		// both are marked when the island's entry fires.
+		if ( openId >= 0 && !node.getStatements().isEmpty() ) {
+			Point	afterLast	= node.getStatements().get( node.getStatements().size() - 1 ).getEnd();
+			Point	closeOpen	= findTagCloseOpen( node, afterLast, "script" );
+			if ( closeOpen != null ) {
+				Point closeEnd = findTagCloseAfter( node, closeOpen );
+				if ( closeEnd != null ) {
+					int closeId = addSpan( closeOpen, new Point( closeEnd.getLine(), closeEnd.getColumn() + 1 ) );
+					if ( closeId >= 0 ) {
+						transpiler.registerSpanGroup( new int[] { openId, closeId } );
+					}
+				}
+			}
+		}
+		this.runningStart = null;
 		this.currentSourceType.pop();
 	}
 
 	/**
-	 * A template island (template content nested inside a script context): descend
-	 * in template mode.
+	 * A template island (nested {@code ```...```} template content inside a script
+	 * context): descend in template mode. The OPENING {@code ```} and CLOSING
+	 * {@code ```} delimiters are part of the island markup and are registered as a
+	 * span GROUP so both are marked executed when the island runs. The parser's
+	 * island node spans only the template content BETWEEN the delimiters, so the
+	 * backticks themselves are located in source and added here.
 	 *
 	 * @param node the template island
 	 */
 	@Override
 	public void visit( BoxTemplateIsland node ) {
 		this.currentSourceType.push( BoxSourceType.BOXTEMPLATE );
+		// Opening delimiter ``` (immediately preceding the island's content start).
+		int		openId		= -1;
+		Point	delimOpen	= findDelimiterBefore( node, node.getStart() );
+		if ( delimOpen != null ) {
+			openId = addSpan( delimOpen, new Point( delimOpen.getLine(), delimOpen.getColumn() + 3 ) );
+		}
+		// Capture the FIRST content span created while descending, so the delimiters
+		// can be grouped with it (its mark fires when the island runs).
+		final int[] firstContentId = { -1 };
+		shellSpanConsumers.add( ( spanId, start ) -> {
+			if ( firstContentId[ 0 ] < 0 ) {
+				firstContentId[ 0 ] = spanId;
+			}
+		} );
 		visitChildren( node );
+		shellSpanConsumers.remove( shellSpanConsumers.size() - 1 );
+		// Closing delimiter ``` (after the island's content end). Group BOTH
+		// delimiters with the first content span so they are marked when the island
+		// actually executes (count 1), rather than sitting RED.
+		int		closeId		= -1;
+		Point	delimClose	= findDelimiterAfter( node, node.getEnd() );
+		if ( delimClose != null ) {
+			closeId = addSpan( delimClose, new Point( delimClose.getLine(), delimClose.getColumn() + 3 ) );
+		}
+		if ( openId >= 0 || closeId >= 0 ) {
+			List<Integer> ids = new ArrayList<>();
+			if ( firstContentId[ 0 ] >= 0 ) {
+				ids.add( firstContentId[ 0 ] );
+			}
+			if ( openId >= 0 && !ids.contains( openId ) ) {
+				ids.add( openId );
+			}
+			if ( closeId >= 0 && !ids.contains( closeId ) ) {
+				ids.add( closeId );
+			}
+			if ( ids.size() > 1 ) {
+				transpiler.registerSpanGroup( ids.stream().mapToInt( Integer::intValue ).toArray() );
+			}
+		}
 		this.currentSourceType.pop();
+	}
+
+	/**
+	 * Find the position of an opening {@code ```} delimiter immediately BEFORE the
+	 * given point (the start of a template island's content). Scans backward for a
+	 * run of three backticks.
+	 *
+	 * @param node   the containing node (for source access)
+	 * @param before the island content start
+	 *
+	 * @return the position of the first backtick, or null
+	 */
+	private Point findDelimiterBefore( BoxNode node, Point before ) {
+		if ( before == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+			return null;
+		}
+		String	source	= node.getPosition().getSource().getCode();
+		int		offset	= offsetOf( source, before );
+		if ( offset < 0 ) {
+			return null;
+		}
+		// Scan back to the start of the line containing (or before) the point.
+		for ( int i = offset - 1; i >= 0; i-- ) {
+			if ( source.charAt( i ) == '`' ) {
+				// Walk to the start of the backtick run.
+				int start = i;
+				while ( start > 0 && source.charAt( start - 1 ) == '`' ) {
+					start--;
+				}
+				return pointAt( source, start );
+			}
+			if ( source.charAt( i ) == '\n' ) {
+				return null;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Find the position of the closing {@code ```} delimiter immediately AFTER the
+	 * given point (the end of a template island's content). Scans forward for a run
+	 * of three backticks.
+	 *
+	 * @param node  the containing node (for source access)
+	 * @param after the island content end
+	 *
+	 * @return the position of the first backtick, or null
+	 */
+	private Point findDelimiterAfter( BoxNode node, Point after ) {
+		if ( after == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+			return null;
+		}
+		String	source	= node.getPosition().getSource().getCode();
+		int		offset	= offsetOf( source, after );
+		if ( offset < 0 ) {
+			return null;
+		}
+		for ( int i = offset; i < source.length(); i++ ) {
+			if ( source.charAt( i ) == '`' ) {
+				return pointAt( source, i );
+			}
+			if ( source.charAt( i ) == '\n' && i > offset ) {
+				return null;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -245,7 +444,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 					for ( BoxStatement stmt : node.getBody() ) {
 						this.runningStart = stmt.getStart();
 						stmt.accept( this );
-						closeRunningSpan( stmt.getEnd() );
+						closeRunningSpan( bufferOutputEnd( stmt ) );
 					}
 					this.runningStart = null;
 				} else {
@@ -253,6 +452,71 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 					closeRunningSpan( node.getEnd() );
 				}
 				return;
+			}
+
+			// CONDITIONAL LOOP components (<bx:loop condition="i < 3"> /
+			// <cfloop condition="i < 3">): the condition is re-evaluated EVERY
+			// iteration (n true + 1 false exit), so — exactly like a script while
+			// loop — it must break out of the always-run header span into its OWN
+			// span covering the WHOLE quoted attribute value ("i < 3" INCLUDING the
+			// quotes — they are part of the attribute's source). Pass B marks it
+			// inside the loop's closure invoker (which runs per-iteration).
+			if ( name.equals( "loop" ) ) {
+				Point[] condSpan = findLoopConditionSpan( node );
+				if ( condSpan != null ) {
+					// Header runs once at loop entry: "<bx:loop condition=".
+					int headerId = closeRunningSpan( condSpan[ 0 ] );
+					// The condition span: the full quoted value ("i < 3"), closed at
+					// its end (after the closing quote).
+					this.runningStart = condSpan[ 0 ];
+					closeRunningSpan( condSpan[ 1 ] );
+					// Body statements each open/close their own span; BLANK buffer
+					// outputs (the raw newlines between tags) are formatting noise
+					// and are skipped, exactly like visitChildren does.
+					if ( node.getBody() != null ) {
+						for ( BoxStatement stmt : node.getBody() ) {
+							if ( stmt instanceof BoxBufferOutput bufOut
+							    && bufOut.getExpression() instanceof BoxStringLiteral lit
+							    && lit.getValue().isBlank() ) {
+								continue;
+							}
+							this.runningStart = stmt.getStart();
+							stmt.accept( this );
+							closeRunningSpan( bufferOutputEnd( stmt ) );
+						}
+					}
+					this.runningStart = null;
+					// The tag's closing ">" and the </bx:loop> / </cfloop> close both
+					// run when the loop is entered — group BOTH with the header so
+					// they are GREEN (and merging prevents the second registration
+					// from overwriting the first, keyed by the same headerId).
+					List<Integer> group = new ArrayList<>();
+					group.add( headerId );
+					Point tagClose = findTagCloseAfter( node, condSpan[ 1 ] );
+					if ( tagClose != null ) {
+						int closeId = addSpan( condSpan[ 1 ], new Point( tagClose.getLine(), tagClose.getColumn() + 1 ) );
+						if ( closeId >= 0 && !group.contains( closeId ) ) {
+							group.add( closeId );
+						}
+					}
+					Point	afterBody	= node.getBody() == null || node.getBody().isEmpty()
+					    ? node.getEnd()
+					    : node.getBody().get( node.getBody().size() - 1 ).getEnd();
+					Point	closeOpen	= findTagCloseOpen( node, afterBody, name );
+					if ( closeOpen != null ) {
+						Point closeEnd = findTagCloseAfter( node, closeOpen );
+						if ( closeEnd != null ) {
+							int closeId = addSpan( closeOpen, new Point( closeEnd.getLine(), closeEnd.getColumn() + 1 ) );
+							if ( closeId >= 0 && !group.contains( closeId ) ) {
+								group.add( closeId );
+							}
+						}
+					}
+					if ( group.size() > 1 ) {
+						transpiler.registerSpanGroup( group.stream().mapToInt( Integer::intValue ).toArray() );
+					}
+					return;
+				}
 			}
 
 			// CONSTRUCT components (<bx:while>, <bx:loop>, <bx:if>, <cfif>, ...):
@@ -263,7 +527,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				for ( BoxStatement stmt : node.getBody() ) {
 					this.runningStart = stmt.getStart();
 					stmt.accept( this );
-					closeRunningSpan( stmt.getEnd() );
+					closeRunningSpan( bufferOutputEnd( stmt ) );
 				}
 				this.runningStart = null;
 				Point afterBody = node.getBody().get( node.getBody().size() - 1 ).getEnd();
@@ -275,6 +539,74 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// Default: let the generic child walker handle it (each body statement opens
 		// its own span; the component tag itself threads the running span).
 		visitChildren( node );
+	}
+
+	/**
+	 * Extract the CONDITION expression from a conditional loop component
+	 * ({@code <bx:loop condition=...>} / {@code <cfloop condition=...>}). The
+	 * parser wraps it as {@code BoxClosure( BoxReturn( expr ) )}; unwrap to the
+	 * real expression (which carries the condition's source position).
+	 *
+	 * @param node the loop component
+	 *
+	 * @return the condition expression, or null
+	 */
+	/**
+	 * Find the [start, end) span of a conditional loop's WHOLE quoted attribute
+	 * value (e.g. {@code "i < 3"} INCLUDING both quotes) in the source. The
+	 * condition runs per-iteration, so its span must cover the full attribute
+	 * source — the quotes are part of it — not just the inner expression text
+	 * (which would truncate at {@code i < 3} and leave the closing quote + ">"
+	 * untracked).
+	 *
+	 * @param node the loop component
+	 *
+	 * @return a two-point array {valueStart, valueEnd}, or null if no condition
+	 */
+	private Point[] findLoopConditionSpan( BoxComponent node ) {
+		if ( node.getPosition() == null || node.getPosition().getSource() == null ) {
+			return null;
+		}
+		String	source	= node.getPosition().getSource().getCode();
+		Point	start	= node.getStart();
+		if ( start == null ) {
+			return null;
+		}
+		int offset = offsetOf( source, start );
+		if ( offset < 0 ) {
+			return null;
+		}
+		// Scan forward from the tag start for "condition=", then the opening quote.
+		int		i		= offset;
+		boolean	found	= false;
+		for ( ; i < source.length() - "condition=".length(); i++ ) {
+			if ( source.regionMatches( true, i, "condition=", 0, "condition=".length() ) ) {
+				found = true;
+				break;
+			}
+		}
+		if ( !found ) {
+			return null;
+		}
+		i += "condition=".length();
+		// Skip whitespace, then expect the opening quote.
+		while ( i < source.length() && Character.isWhitespace( source.charAt( i ) ) ) {
+			i++;
+		}
+		if ( i >= source.length() || ( source.charAt( i ) != '"' && source.charAt( i ) != '\'' ) ) {
+			return null;
+		}
+		int		openQuote	= i;
+		char	quote		= source.charAt( i );
+		// Find the closing quote.
+		int		j			= i + 1;
+		while ( j < source.length() && source.charAt( j ) != quote ) {
+			j++;
+		}
+		if ( j >= source.length() ) {
+			return null;
+		}
+		return new Point[] { pointAt( source, openQuote ), pointAt( source, j + 1 ) };
 	}
 
 	/**
@@ -292,7 +624,9 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// The statement span was opened by the enclosing statement at the tag start.
 		// Find the "default" attribute; if its value is a non-literal expression,
 		// break the running span right before it and visit it as its own span.
-		boolean broke = false;
+		boolean	broke	= false;
+		int		headId	= -1;
+		Point	lastEnd	= null;
 		for ( BoxAnnotation attr : node.getAttributes() ) {
 			if ( !attr.getKey().getValue().equalsIgnoreCase( "default" ) ) {
 				continue;
@@ -301,17 +635,18 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			if ( value == null ) {
 				continue;
 			}
-			// Mirror BoxParamTransformer: a quoted attribute with a single
-			// interpolation element unwraps to the raw expression.
-			if ( value instanceof BoxStringInterpolation bsi && bsi.getValues().size() == 1 ) {
-				value = bsi.getValues().get( 0 );
-			}
 			if ( couldThrow( value ) ) {
-				BoxExpression inner = unwrapParens( value );
-				closeRunningSpan( inner.getStart() );
-				inner.accept( this );
-				closeRunningSpan( inner.getEnd() );
-				broke = true;
+				// The DEFAULT VALUE'S span includes its own outermost parentheses
+				// (e.g. `default=( now() )`) and its interpolation pounds (e.g.
+				// `default=#now()#`) — both are part of the deferred expression, not
+				// the always-running statement head. Do NOT unwrap them, so the
+				// SKIPPED case shows the WHOLE `( now() )` / `#now()#` RED, and the
+				// used case shows it all GREEN.
+				headId = closeRunningSpan( value.getStart() );
+				value.accept( this );
+				closeRunningSpan( value.getEnd() );
+				lastEnd	= value.getEnd();
+				broke	= true;
 			}
 		}
 		// A broken-out default leaves a trailing ";" / ">" that is not executable —
@@ -320,6 +655,19 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// enclosing statement close still registers the whole statement span.
 		if ( broke ) {
 			this.runningStart = null;
+			// TAG form (<bx:param ...> / <cfparam ...>): the tag's closing ">" is
+			// not executable markup of its own, but it must be COVERED — group it
+			// with the always-running head span so it is GREEN whenever the tag runs
+			// (not left untracked, and not glued to the deferred default).
+			if ( isTagContext( node ) && headId >= 0 && lastEnd != null ) {
+				Point tagClose = findTagCloseAfter( node, lastEnd );
+				if ( tagClose != null ) {
+					int closeId = addSpan( lastEnd, new Point( tagClose.getLine(), tagClose.getColumn() + 1 ) );
+					if ( closeId >= 0 ) {
+						transpiler.registerSpanGroup( new int[] { headId, closeId } );
+					}
+				}
+			}
 		}
 	}
 
@@ -354,7 +702,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		for ( BoxStatement stmt : node.getBody() ) {
 			this.runningStart = stmt.getStart();
 			stmt.accept( this );
-			closeRunningSpan( stmt.getEnd() );
+			closeRunningSpan( bufferOutputEnd( stmt ) );
 		}
 
 		// A curly-brace block { ... }: batch-mark both braces as one atomic group.
@@ -388,15 +736,35 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// Condition continues the running span.
 		node.getCondition().accept( this );
 
-		// whenTrue breaks into its own span (may not run).
-		BoxExpression whenTrue = unwrapParens( node.getWhenTrue() );
-		closeRunningSpan( whenTrue.getStart() );
+		// whenTrue breaks into its own span (may not run). Do NOT unwrap parens:
+		// a `( expr )` branch's span starts at the `(` so the whole parenthesized
+		// expression is GREEN/RED together.
+		BoxExpression	whenTrue	= node.getWhenTrue();
+		int				headId		= closeRunningSpan( leftmostStart( whenTrue ) );
 		whenTrue.accept( this );
 
 		// whenFalse breaks into its own span (may not run).
-		BoxExpression whenFalse = unwrapParens( node.getWhenFalse() );
-		closeRunningSpan( whenFalse.getStart() );
+		BoxExpression whenFalse = node.getWhenFalse();
+		closeRunningSpan( leftmostStart( whenFalse ) );
 		whenFalse.accept( this );
+
+		// TAG context: a self-closing tag like `<cfset x = bar ? baz : bum>` must
+		// not glue its closing ">" onto the UNTAKEN false branch (that would show
+		// the ">" RED even though the tag itself ran). Close the false branch at its
+		// own end, then register the trailing ">" as its own span GROUPED with the
+		// ternary's always-run head so it is GREEN.
+		if ( isTagContext( node ) ) {
+			Point whenFalseEnd = leftmostEnd( whenFalse );
+			closeRunningSpan( whenFalseEnd );
+			Point tagClose = findTagCloseAfter( node, whenFalseEnd );
+			if ( tagClose != null && headId >= 0 ) {
+				int closeId = addSpan( whenFalseEnd, new Point( tagClose.getLine(), tagClose.getColumn() + 1 ) );
+				if ( closeId >= 0 ) {
+					transpiler.registerSpanGroup( new int[] { headId, closeId } );
+				}
+			}
+			this.runningStart = null;
+		}
 	}
 
 	/**
@@ -435,10 +803,14 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		BoxExpression	defaultValue	= node.getDefaultValue();
 		boolean			broke			= false;
 		if ( defaultValue != null && couldThrow( defaultValue ) ) {
-			BoxExpression inner = unwrapParens( defaultValue );
-			closeRunningSpan( inner.getStart() );
-			inner.accept( this );
-			closeRunningSpan( inner.getEnd() );
+			// The default's span includes its own outermost parentheses (e.g.
+			// `default=( now() )`) — those parens belong to the deferred expression,
+			// not the always-running statement head. Do NOT unwrap them, so the
+			// skipped case shows the WHOLE `( now() )` RED and the used case all
+			// GREEN.
+			closeRunningSpan( defaultValue.getStart() );
+			defaultValue.accept( this );
+			closeRunningSpan( defaultValue.getEnd() );
 			broke = true;
 		}
 		// The variable name/type and literal defaults continue the running span.
@@ -1407,10 +1779,14 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		if ( offset < 0 ) {
 			return null;
 		}
-		// Match "</bx:tagName>" or "</cfTagName>".
+		// Match "</bx:tagName>" or "</cfTagName>". The CF form is SHORTER (</cf vs
+		// </bx:), so the scan bound must use the shorter pattern — otherwise a
+		// `</cfloop>` sitting at the very END of the file (no trailing newline)
+		// falls past `source.length() - "</bx:loop".length()` and is never found.
 		String	close1	= "</bx:" + tagName;
 		String	close2	= "</cf" + ( tagName.equalsIgnoreCase( "defaultcase" ) ? "defaultcase" : tagName );
-		for ( int i = offset; i < source.length() - close1.length(); i++ ) {
+		int		maxLen	= Math.min( close1.length(), close2.length() );
+		for ( int i = offset; i <= source.length() - maxLen; i++ ) {
 			if ( source.startsWith( close1, i ) || source.startsWith( close2, i ) ) {
 				return pointAt( source, i );
 			}
@@ -1626,6 +2002,38 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	}
 
 	/**
+	 * Find the closing {@code >} of a self-closing tag when ONLY WHITESPACE sits
+	 * between the given point and the {@code >} (the point is the end of the tag's
+	 * last operand). Used to decide whether a right operand is the LAST expression
+	 * in the tag — if more expression text follows, it is not.
+	 *
+	 * @param node the containing node (for source access)
+	 * @param from the operand's end (scan forward from here)
+	 *
+	 * @return the {@code >} position, or null if none / non-whitespace intervenes
+	 */
+	private Point tagCloseAfterWhitespaceOnly( BoxNode node, Point from ) {
+		if ( from == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+			return null;
+		}
+		String	source	= node.getPosition().getSource().getCode();
+		int		offset	= offsetOf( source, from );
+		if ( offset < 0 ) {
+			return null;
+		}
+		for ( int i = offset; i < source.length(); i++ ) {
+			char c = source.charAt( i );
+			if ( c == '>' ) {
+				return pointAt( source, i );
+			}
+			if ( !Character.isWhitespace( c ) ) {
+				return null;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Find the opening {@code <} of the branch tag ({@code <bx:else>},
 	 * {@code <bx:elseif ...>}, {@code <cfelse>}, {@code <cfelseif ...>}) that
 	 * immediately precedes the given point, scanning back past the else-body
@@ -1744,6 +2152,37 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	}
 
 	/**
+	 * Find the opening {@code {} that occurs AFTER the given point in the source —
+	 * scanning forward for the first {@code {} character. Used to locate a body's
+	 * opening brace (e.g. a class's {@code {} after its header keyword). Unlike
+	 * {@link #findOpenBraceBefore}, this cannot be derailed by a property
+	 * declaration's {@code ;} that sits between the class header and its first
+	 * body statement.
+	 *
+	 * @param node the containing node (for source access)
+	 * 
+	 * @param from the point to scan forward from (the class keyword)
+	 *
+	 * @return the opening brace point, or null
+	 */
+	private Point findOpenBraceAfter( BoxNode node, Point from ) {
+		if ( from == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+			return null;
+		}
+		String	source	= node.getPosition().getSource().getCode();
+		int		offset	= offsetOf( source, from );
+		if ( offset < 0 ) {
+			return null;
+		}
+		for ( int i = offset; i < source.length(); i++ ) {
+			if ( source.charAt( i ) == '{' ) {
+				return pointAt( source, i );
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Convert a Point to a character offset in the source.
 	 */
 	private int offsetOf( String source, Point p ) {
@@ -1793,7 +2232,9 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// Use the LEFTMOIST start of the right operand — an invocation reports its
 		// start at the trailing call parens, AFTER its own callee; closing at that
 		// point would produce an inverted span when the callee's body opens earlier.
-		BoxExpression right = unwrapParens( node.getRight() );
+		// Do NOT unwrap parens: a `( expr )` right operand's span starts at the `(`
+		// so the whole parenthesized expression is GREEN/RED together.
+		BoxExpression right = node.getRight();
 		if ( couldThrow( right ) ) {
 			closeRunningSpan( leftmostStart( right ) );
 		}
@@ -1815,7 +2256,10 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		}
 		parts.get( 0 ).accept( this );
 		for ( int i = 1; i < parts.size(); i++ ) {
-			BoxExpression part = unwrapParens( parts.get( i ) );
+			// Do NOT unwrap parens: the parens are part of the operand's span. A
+			// `( expr )` operand's span must start at the `(`, so the WHOLE parenthesized
+			// expression is GREEN/RED together — not with the `(` left in the running span.
+			BoxExpression part = parts.get( i );
 			if ( couldThrow( part ) ) {
 				closeRunningSpan( leftmostStart( part ) );
 			}
@@ -1848,17 +2292,39 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// Left continues the running span.
 		node.getLeft().accept( this );
 
-		// Right breaks into its own span when it may not run.
-		BoxExpression		right			= unwrapParens( node.getRight() );
+		// Right breaks into its own span when it may not run. Do NOT unwrap parens:
+		// a `( expr )` right operand's span starts at the `(` so the WHOLE
+		// parenthesized expression is GREEN/RED together (the parens are part of the
+		// expression, not the always-run head).
+		BoxExpression		right			= node.getRight();
 		BoxBinaryOperator	op				= node.getOperator();
 		// Short-circuit operators (&&, ||, ?:) skip the right operand when the
 		// left decides the result — so the right must be its own span, marked only
 		// when actually reached.
 		boolean				shortCircuit	= op == BoxBinaryOperator.And || op == BoxBinaryOperator.Or || op == BoxBinaryOperator.Elvis;
+		int					headId			= -1;
 		if ( shortCircuit || couldThrow( right ) ) {
-			closeRunningSpan( leftmostStart( right ) );
+			headId = closeRunningSpan( leftmostStart( right ) );
 		}
 		right.accept( this );
+		// TAG context: a self-closing tag like `<bx:set x = a && b>` must not glue
+		// its closing ">" onto the right operand (which may be short-circuited and
+		// show RED). If the right operand is the LAST expression before the tag's
+		// ">", register the ">" as its own span grouped with the always-run head so
+		// it is GREEN. Only the OUTERMOST operand ends immediately (whitespace-only)
+		// before the ">" — nested operands have more expression text after them.
+		if ( isTagContext( node ) && headId >= 0 ) {
+			Point	rightEnd	= leftmostEnd( right );
+			Point	tagClose	= tagCloseAfterWhitespaceOnly( node, rightEnd );
+			if ( tagClose != null ) {
+				closeRunningSpan( rightEnd );
+				int closeId = addSpan( rightEnd, new Point( tagClose.getLine(), tagClose.getColumn() + 1 ) );
+				if ( closeId >= 0 ) {
+					transpiler.registerSpanGroup( new int[] { headId, closeId } );
+				}
+				this.runningStart = null;
+			}
+		}
 	}
 
 	/**
@@ -1905,7 +2371,29 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// but have no AST node to carry a mark. They are grouped and registered so
 		// the transformer can emit ONE varargs mark(fileId, ...shell) for the shell.
 		preCollectShell( node );
+		if ( isTagContext( node ) ) {
+			// TAG functions (<cffunction>/<bx:function>): the shell is just the
+			// OPEN TAG, ending at its ">". Close it FIRST (before any arguments),
+			// so the whitespace between the open tag and the first <cfargument>
+			// is never covered. Each <cfargument> is then its OWN span below.
+			Point openTagEnd = findTagCloseAfter( node, node.getStart() );
+			if ( openTagEnd != null ) {
+				closeRunningSpan( new Point( openTagEnd.getLine(), openTagEnd.getColumn() + 1 ) );
+				this.runningStart = null;
+			}
+		}
 		for ( BoxArgumentDeclaration arg : node.getArgs() ) {
+			// TAG functions (<cffunction>/<bx:function>): each <cfargument> tag is
+			// its OWN executable span (open at its tag start, close at its end),
+			// so the whitespace around it is not covered.
+			if ( isTagContext( node ) ) {
+				if ( arg.getStart() != null ) {
+					this.runningStart = arg.getStart();
+					closeRunningSpan( arg.getEnd() );
+					this.runningStart = null;
+				}
+				continue;
+			}
 			BoxExpression defaultValue = arg.getValue();
 			if ( defaultValue != null && couldThrow( defaultValue ) ) {
 				BoxExpression inner = unwrapParens( defaultValue );
@@ -1922,11 +2410,26 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// closing "}"). Still part of the atomic shell, so capture it before
 		// registering the group. Then the consumer is removed so the body spans are
 		// NOT swept into the shell group.
+		//
+		// TAG functions (<cffunction>/<bx:function>) have no braces: the shell is
+		// the open tag + any <cfargument> tags, and it must close right after the
+		// LAST ARGUMENT — NOT at the first body statement. Closing at the body
+		// start would swallow the whitespace between the arguments and the body
+		// into the shell span, falsely claiming the body's line as run.
 		Point openBrace = node.getBody() != null && !node.getBody().isEmpty()
 		    ? findOpenBraceBefore( node, node.getBody().get( 0 ).getStart() )
 		    : ( node.getBody() != null ? findOpenBraceBefore( node, node.getEnd() ) : null );
 		if ( openBrace != null ) {
 			closeRunningSpan( openBrace );
+		} else if ( isTagContext( node ) ) {
+			// TAG function (<cffunction>/<bx:function>): no braces. The shell is
+			// just the OPEN TAG, ending at its ">" — each <cfargument> is its own
+			// span (registered above), so the whitespace between the open tag and
+			// the first argument must NOT be covered.
+			Point openTagEnd = findTagCloseAfter( node, node.getStart() );
+			if ( openTagEnd != null ) {
+				closeRunningSpan( new Point( openTagEnd.getLine(), openTagEnd.getColumn() + 1 ) );
+			}
 		} else if ( node.getBody() != null && !node.getBody().isEmpty() ) {
 			closeRunningSpan( node.getBody().get( 0 ).getStart() );
 		}
@@ -2084,28 +2587,70 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		if ( node.getAnnotations() != null && !node.getAnnotations().isEmpty() ) {
 			// A CF component's annotations (component attributes) may have a null
 			// position — guard and fall back to the class start.
-			Point annStart = node.getAnnotations().get( 0 ).getPosition() == null
+			Point	annStart	= node.getAnnotations().get( 0 ).getPosition() == null
 			    ? null
 			    : node.getAnnotations().get( 0 ).getPosition().getStart();
-			if ( annStart != null ) {
+			// The shell must start at the EARLIEST source point: the class keyword
+			// (`node.getStart()`) OR the first pre-annotation. A post-annotation
+			// like `extends=ProfilerSuper` starts AFTER the `class` keyword, so it
+			// must not shrink the shell away from the keyword.
+			Point	classStart	= node.getStart();
+			if ( annStart != null && classStart != null ) {
+				shellStart = ( annStart.getLine() < classStart.getLine()
+				    || ( annStart.getLine() == classStart.getLine() && annStart.getColumn() < classStart.getColumn() ) )
+				        ? annStart
+				        : classStart;
+			} else if ( annStart != null ) {
 				shellStart = annStart;
 			}
 		}
 		if ( shellStart == null ) {
 			shellStart = node.getStart();
 		}
-		Point	openBrace	= node.getBody() == null || node.getBody().isEmpty()
-		    ? findOpenBraceBefore( node, node.getEnd() )
-		    : findOpenBraceBefore( node, node.getBody().get( 0 ).getStart() );
+		// The CLASS SHELL runs at class load. For a SCRIPT class the shell is the
+		// header text through the opening "{"; for a TAG class (<cfcomponent> /
+		// <bx:component>) it is the OPEN tag. The opening brace is found by a
+		// FORWARD scan from the class keyword — a backward scan aborts at the
+		// first property declaration's ";" (properties sit between the "{" and the
+		// first body statement), losing the outer class shell entirely.
+		boolean	isTagClass	= isTemplate();
 		int		shellId		= -1;
-		if ( openBrace != null && shellStart != null ) {
-			this.runningStart	= shellStart;
-			// Close AFTER the "{" so the opening brace is part of the shell span.
-			shellId				= closeRunningSpan( new Point( openBrace.getLine(), openBrace.getColumn() + 1 ) );
-		}
-		Point closeBrace = node.getEnd() == null ? null : new Point( node.getEnd().getLine(), node.getEnd().getColumn() - 1 );
-		if ( shellId >= 0 ) {
-			registerBraceGroup( shellId, closeBrace );
+		if ( isTagClass ) {
+			// Tag class: the open tag <cfcomponent ...> is the shell header.
+			Point tagEnd = findTagCloseAfter( node, node.getStart() );
+			if ( tagEnd != null && shellStart != null ) {
+				this.runningStart	= shellStart;
+				shellId				= closeRunningSpan( new Point( tagEnd.getLine(), tagEnd.getColumn() + 1 ) );
+			}
+			// The </cfcomponent> close tag is grouped with the open tag.
+			if ( shellId >= 0 ) {
+				Point closeOpen = findTagCloseOpen( node, node.getBody() == null || node.getBody().isEmpty()
+				    ? node.getEnd()
+				    : node.getBody().get( node.getBody().size() - 1 ).getEnd(), "component" );
+				if ( closeOpen != null ) {
+					Point closeEnd = findTagCloseAfter( node, closeOpen );
+					if ( closeEnd != null ) {
+						int closeId = addSpan( closeOpen, new Point( closeEnd.getLine(), closeEnd.getColumn() + 1 ) );
+						if ( closeId >= 0 ) {
+							transpiler.registerSpanGroup( new int[] { shellId, closeId } );
+						}
+					}
+				}
+			}
+		} else {
+			// Script class: header text through the opening "{", grouped with "}".
+			Point openBrace = node.getBody() == null || node.getBody().isEmpty()
+			    ? findOpenBraceAfter( node, shellStart )
+			    : findOpenBraceAfter( node, shellStart );
+			if ( openBrace != null && shellStart != null ) {
+				this.runningStart	= shellStart;
+				// Close AFTER the "{" so the opening brace is part of the shell span.
+				shellId				= closeRunningSpan( new Point( openBrace.getLine(), openBrace.getColumn() + 1 ) );
+			}
+			Point closeBrace = node.getEnd() == null ? null : new Point( node.getEnd().getLine(), node.getEnd().getColumn() - 1 );
+			if ( shellId >= 0 ) {
+				registerBraceGroup( shellId, closeBrace );
+			}
 		}
 
 		for ( BoxStatement stmt : node.getBody() ) {
@@ -2117,12 +2662,14 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			} else if ( stmt instanceof BoxStaticInitializer init ) {
 				// Static initializer: the "static {" header + closing "}" are a
 				// group, batch-marked at static load (Pass B emits at static init).
+				// The header span includes the OPENING "{" (close AFTER it), so the
+				// "static {" text is one span — the "{" is executable markup too.
 				Point	initOpen	= findOpenBraceBefore( node, init.getBody().isEmpty() ? init.getEnd() : init.getBody().get( 0 ).getStart() );
 				Point	initClose	= init.getEnd() == null ? null : new Point( init.getEnd().getLine(), init.getEnd().getColumn() - 1 );
 				int		initHeader	= -1;
 				this.runningStart = init.getStart();
 				if ( initOpen != null ) {
-					initHeader = closeRunningSpan( initOpen );
+					initHeader = closeRunningSpan( new Point( initOpen.getLine(), initOpen.getColumn() + 1 ) );
 				}
 				for ( BoxStatement s : init.getBody() ) {
 					this.runningStart = s.getStart();
@@ -2144,14 +2691,45 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// load, complex lazily on first access). They are HOISTED — the whole set
 		// is applied by defaultProperties() in the pseudo-constructor — so collect
 		// them as ONE atomic span group emitted as a single varargs mark there.
-		List<Integer> propDefaults = new ArrayList<>();
+		// The property DECLARATION text (everything before the default value, e.g.
+		// `property name="threshold" default=`) is metadata applied at class load —
+		// its span is grouped with the CLASS SHELL so it is always GREEN.
+		List<Integer>	propDefaults	= new ArrayList<>();
+		List<Integer>	propTexts		= new ArrayList<>();
+		List<Integer>	propCloses		= new ArrayList<>();
 		shellSpanConsumers.add( ( spanId, start ) -> propDefaults.add( spanId ) );
 		for ( BoxProperty prop : node.getProperties() ) {
-			visitPropertyDefaults( prop );
+			visitPropertyDefaults( prop, propTexts, propCloses );
 		}
 		shellSpanConsumers.remove( shellSpanConsumers.size() - 1 );
 		if ( !propDefaults.isEmpty() ) {
 			transpiler.registerPropertyDefaultSpans( propDefaults.stream().mapToInt( Integer::intValue ).toArray() );
+		}
+		// Group the property-declaration text spans (and their closing ">")
+		// with the class shell header so they are marked (GREEN) when the class
+		// loads. Merge with any EXISTING shell group (e.g. the tag class's
+		// </cfcomponent> close) so it is not lost.
+		if ( shellId >= 0 && ( !propTexts.isEmpty() || !propCloses.isEmpty() ) ) {
+			List<Integer>	group		= new ArrayList<>();
+			int[]			existing	= transpiler.peekSpanGroup( shellId );
+			if ( existing != null ) {
+				for ( int e : existing ) {
+					group.add( e );
+				}
+			} else {
+				group.add( shellId );
+			}
+			for ( int pid : propTexts ) {
+				if ( !group.contains( pid ) ) {
+					group.add( pid );
+				}
+			}
+			for ( int pid : propCloses ) {
+				if ( !group.contains( pid ) ) {
+					group.add( pid );
+				}
+			}
+			transpiler.registerSpanGroup( group.stream().mapToInt( Integer::intValue ).toArray() );
 		}
 
 		// Reset so the enclosing statement close doesn't mint a phantom span over
@@ -2165,20 +2743,50 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * emits no bytecode (it's metadata), but the default expression may execute:
 	 * literal defaults inline at class load, non-literal defaults lazily via a
 	 * {@code defaultExpr_N} method on first access. Each default opens its own
-	 * span at the expression's start.
+	 * span at the expression's start. The property declaration TEXT (up to the
+	 * default value) is registered as its own span — applied at class load, so it
+	 * is grouped with the class shell.
 	 *
-	 * @param prop the property
+	 * @param prop      the property
+	 * @param propTexts collector for the property-declaration-text span ids
 	 */
-	private void visitPropertyDefaults( BoxProperty prop ) {
+	private void visitPropertyDefaults( BoxProperty prop, List<Integer> propTexts, List<Integer> propCloses ) {
 		for ( var annotation : prop.getAllAnnotations() ) {
 			if ( annotation.getKey().getValue().equalsIgnoreCase( "default" ) && annotation.getValue() != null ) {
-				BoxExpression	value	= annotation.getValue();
+				BoxExpression	value		= annotation.getValue();
+				// The declaration text BEFORE the default expression (e.g.
+				// `property name="threshold" default=`) — metadata applied at class
+				// load. Register it as its own span (GREEN via the class shell group).
+				Point			propStart	= prop.getStart();
+				if ( propStart != null ) {
+					BoxExpression	inner		= unwrapParens( value );
+					Point			valueStart	= inner.getStart();
+					if ( valueStart != null && ( valueStart.getLine() > propStart.getLine()
+					    || ( valueStart.getLine() == propStart.getLine() && valueStart.getColumn() > propStart.getColumn() ) ) ) {
+						int textId = addSpan( propStart, valueStart );
+						if ( textId >= 0 ) {
+							propTexts.add( textId );
+						}
+					}
+				}
 				// Non-literal defaults run lazily (may not run) — break into their
 				// own span; literal defaults run inline at load (still tracked).
-				BoxExpression	inner	= unwrapParens( value );
+				BoxExpression inner = unwrapParens( value );
 				this.runningStart = inner.getStart();
 				inner.accept( this );
 				closeRunningSpan( inner.getEnd() );
+				// The tag's closing ">" (e.g. `...#( 40 + 2 )#>`) is metadata markup
+				// applied at class load — register it so it is GREEN (not left
+				// untracked). Its id is collected into propCloses and grouped with
+				// the class shell (NOT a group keyed at the property text — that
+				// group never fires because the shell mark takes the shellId group).
+				Point tagClose = findTagCloseAfter( prop, inner.getEnd() );
+				if ( tagClose != null ) {
+					int closeId = addSpan( inner.getEnd(), new Point( tagClose.getLine(), tagClose.getColumn() + 1 ) );
+					if ( closeId >= 0 ) {
+						propCloses.add( closeId );
+					}
+				}
 			}
 		}
 	}
@@ -2281,6 +2889,32 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				Point candidate = leftmostStart( childExpr );
 				if ( candidate != null && ( candidate.getLine() < best.getLine()
 				    || ( candidate.getLine() == best.getLine() && candidate.getColumn() < best.getColumn() ) ) ) {
+					best = candidate;
+				}
+			}
+		}
+		return best;
+	}
+
+	/**
+	 * The rightmost (maximum) END point across an expression's subtree. Used where
+	 * a span must extend through the LAST source character of the whole operand
+	 * (e.g. the closing paren of a parenthesized ternary branch).
+	 *
+	 * @param expr the expression
+	 *
+	 * @return the rightmost end point, or the expression's own end if none
+	 */
+	private Point leftmostEnd( BoxExpression expr ) {
+		Point best = expr.getEnd();
+		if ( best == null ) {
+			return null;
+		}
+		for ( BoxNode child : expr.getChildren() ) {
+			if ( child instanceof BoxExpression childExpr ) {
+				Point candidate = leftmostEnd( childExpr );
+				if ( candidate != null && ( candidate.getLine() > best.getLine()
+				    || ( candidate.getLine() == best.getLine() && candidate.getColumn() > best.getColumn() ) ) ) {
 					best = candidate;
 				}
 			}

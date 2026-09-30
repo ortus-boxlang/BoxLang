@@ -118,6 +118,17 @@ b = 1;
 x = a && b;
 y = ( false || ( true || false ) ) || ( false && true )
 
+// --- Elvis: right side runs when left is null
+foo = null;
+bar = 2;
+x = foo ?: ( bar = 99 );
+
+// --- Elvis: right side doesn't run
+foo = "brad";
+bar = 2;
+x = foo ?: ( bar = 99 );
+
+
 // --- Array + struct literals
 arr2 = [ 10, 20, 30 ];
 st = { one: 1, two: 2 };
@@ -167,6 +178,7 @@ diskVal = diskInstTag.member( 5 );
 // STATIC-ONLY class: class loads and its static init runs, but no instance is
 // created — its COMPLEX property default is NEVER evaluated (NOT used → RED).
 result = src.test.resources.profiler.ProfilerStaticOnlyTag::staticMethod();
+foo = src.test.resources.profiler.ProfilerStaticOnlyTag::myStaticVar;
 
 ```
 foo 

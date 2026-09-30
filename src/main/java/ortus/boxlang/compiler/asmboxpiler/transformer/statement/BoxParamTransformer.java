@@ -28,7 +28,6 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
-import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
@@ -93,9 +92,7 @@ public class BoxParamTransformer extends AbstractTransformer {
 				continue;
 			}
 			BoxExpression value = attribute.getValue();
-			if ( value instanceof BoxStringInterpolation interpolation && interpolation.getValues().size() == 1 ) {
-				value = interpolation.getValues().get( 0 );
-			} else if ( value == null ) {
+			if ( value == null ) {
 				value = new BoxBooleanLiteral( true, attribute.getPosition(), attribute.getSourceText() );
 			}
 			// The deferred closure is created at the component invocation site (which
@@ -105,6 +102,9 @@ public class BoxParamTransformer extends AbstractTransformer {
 			// body's BoxReturn (positioned at the value) claims it, and its mark
 			// lands inside the closure invoker method, which runs only when the
 			// default is actually evaluated.
+			// NOTE: the value is NOT unwrapped from a single-element interpolation —
+			// `default=#now()#` keeps its `#...#` position so the span (and the
+			// mark) cover the WHOLE interpolation, including the pounds.
 			BoxClosure deferred = new BoxClosure( List.of(), List.of(),
 			    new BoxReturn( value, value.getPosition(), value.getSourceText() ), null, value.getSourceText() );
 			attributes.add( new BoxAnnotation( attribute.getKey(), deferred, attribute.getPosition(), attribute.getSourceText() ) );

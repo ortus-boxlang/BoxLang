@@ -777,7 +777,14 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 
 	@Override
 	public BoxExpression visitExprOutString( ExprOutStringContext ctx ) {
-		return ctx.el2().accept( this );
+		// `#el2#` OUTSIDE a string literal (e.g. a tag attribute value like
+		// `default=#now()#`, or template output `#x#`). The interpolation marks are
+		// PART of the expression's source: wrap the inner expression in a
+		// BoxStringInterpolation whose position covers the WHOLE `#...#` — the inner
+		// el2 alone would report its start AFTER the opening `#`, losing the
+		// delimiters from the AST (and thus from any span/coverage over them).
+		BoxExpression inner = ctx.el2().accept( this );
+		return new BoxStringInterpolation( List.of( inner ), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
 	}
 
 	@Override

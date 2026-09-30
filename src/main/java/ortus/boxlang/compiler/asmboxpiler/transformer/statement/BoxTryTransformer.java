@@ -278,8 +278,12 @@ public class BoxTryTransformer extends AbstractTransformer {
 				if ( rest.matches( "<(?:bx:|cf)?finally[\\s\\S]*" ) ) {
 					return pointAt( source, i );
 				}
-				// A different tag — the finally tag must be after it.
-				return null;
+				// A different tag — the finally tag must be after it. A "<" that is
+				// NOT followed by a tag-name letter (e.g. the less-than operator in
+				// `i < 3`) is not a tag and must not stop the scan.
+				if ( rest.length() > 1 && Character.isLetter( rest.charAt( 1 ) ) ) {
+					return null;
+				}
 			}
 		}
 		// Script finally: scan back past the preceding "}" for the keyword.

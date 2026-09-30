@@ -864,7 +864,13 @@ public class BoxParser extends AbstractParser {
 		if ( name.equalsIgnoreCase( "loop" ) ) {
 			for ( var attr : attributes ) {
 				if ( attr.getKey().getValue().equalsIgnoreCase( "condition" ) ) {
-					BoxExpression condition = attr.getValue();
+					BoxExpression	condition	= attr.getValue();
+					// The ORIGINAL attribute value (e.g. `"i < 3"`) carries the
+					// position covering the WHOLE quoted source. After re-parsing
+					// the inner expression, that quoted position is retained on the
+					// BoxReturn so the profiler's condition span covers the full
+					// attribute text (quotes included), not just the inner expr.
+					Position		valuePos	= condition.getPosition();
 					// parse as BX script expression and update value
 					// In reality, we could just re-parse the source text for all expression types, but there's really no need unless it was a string or interpolated string.
 					if ( condition instanceof BoxStringLiteral str ) {
@@ -876,7 +882,7 @@ public class BoxParser extends AbstractParser {
 					BoxExpression newCondition = new BoxClosure(
 					    List.of(),
 					    List.of(),
-					    new BoxReturn( condition, null, null ),
+					    new BoxReturn( condition, valuePos, condition.getSourceText() ),
 					    null,
 					    condition.getSourceText() );
 					attr.setValue( newCondition );
@@ -1183,7 +1189,17 @@ public class BoxParser extends AbstractParser {
 		if ( node.stringLiteral() != null ) {
 			return expressionVisitor.visit( node.stringLiteral() );
 		} else if ( node.el2() != null ) {
-			return expressionVisitor.visit( node.el2() );
+			BoxExpression	inner	= expressionVisitor.visit( node.el2() );
+			// `ICHAR el2 ICHAR` — an interpolated attribute value like
+			// `default=#now()#`. The pounds are PART of the expression's source:
+			// wrap in a BoxStringInterpolation whose position covers the whole
+			// `#...#` so the delimiters are not lost from the AST (and thus from any
+			// span/coverage over them).
+			String			src		= getSourceText( node );
+			if ( src != null && src.startsWith( "#" ) && src.endsWith( "#" ) ) {
+				return new BoxStringInterpolation( java.util.List.of( inner ), getPosition( node ), src );
+			}
+			return inner;
 		} else {
 			throw new BoxRuntimeException( "Unexpected attribute value type " + node.getText() );
 		}

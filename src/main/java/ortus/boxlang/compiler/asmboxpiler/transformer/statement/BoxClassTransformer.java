@@ -55,6 +55,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Source;
@@ -67,6 +68,7 @@ import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
+import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -1381,10 +1383,20 @@ public class BoxClassTransformer {
 		if ( boxClass.getAnnotations() != null && !boxClass.getAnnotations().isEmpty() ) {
 			// A CF component's annotations (component attributes) may have a null
 			// position — guard and fall back to the class start.
-			Point annStart = boxClass.getAnnotations().get( 0 ).getPosition() == null
+			Point	annStart	= boxClass.getAnnotations().get( 0 ).getPosition() == null
 			    ? null
 			    : boxClass.getAnnotations().get( 0 ).getPosition().getStart();
-			if ( annStart != null ) {
+			// The shell must start at the EARLIEST source point: the class keyword
+			// (`boxClass.getStart()`) OR the first pre-annotation. A post-annotation
+			// like `extends=ProfilerSuper` starts AFTER the `class` keyword, so it
+			// must not shrink the shell away from the keyword.
+			Point	classStart	= boxClass.getStart();
+			if ( annStart != null && classStart != null ) {
+				shellStart = ( annStart.getLine() < classStart.getLine()
+				    || ( annStart.getLine() == classStart.getLine() && annStart.getColumn() < classStart.getColumn() ) )
+				        ? annStart
+				        : classStart;
+			} else if ( annStart != null ) {
 				shellStart = annStart;
 			}
 		}
@@ -1419,7 +1431,14 @@ public class BoxClassTransformer {
 			return;
 		}
 		for ( var stmt : boxClass.getBody() ) {
-			if ( stmt instanceof BoxStaticInitializer init ) {
+			// A static initializer may be a DIRECT class body statement, or it may
+			// be wrapped in a <cfscript> BoxScriptIsland (e.g. a CF tag component
+			// whose static block is written in a script island). Unwrap islands.
+			List<BoxStatement> candidates = stmt instanceof BoxScriptIsland island ? island.getStatements() : List.of( stmt );
+			for ( BoxStatement candidate : candidates ) {
+				if ( ! ( candidate instanceof BoxStaticInitializer init ) ) {
+					continue;
+				}
 				Point kw = init.getStart();
 				if ( kw == null ) {
 					continue;

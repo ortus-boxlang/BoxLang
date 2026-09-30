@@ -152,7 +152,13 @@ bar
 <!--- param with a LITERAL default stays fused inline (always covered) --->
 <cfparam name="paramLiteral" default="bar">
 
-<bx:script>
+<cfscript>
 	foo = "bar"
 	now();
-</bx:script>
+</cfscript>
+
+<cfset i = 0>
+<!--- A loop with condition --->
+<cfloop condition="i < 3">    
+	<cfset i++>
+</cfloop>

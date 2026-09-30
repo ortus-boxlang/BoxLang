@@ -157,3 +157,9 @@ bar
 	foo = "bar"
 	now();
 </bx:script>
+
+<bx:set i = 0>
+<!--- A loop with condition --->
+<bx:loop condition="i < 3">    
+	<bx:set i++>
+</bx:loop>
