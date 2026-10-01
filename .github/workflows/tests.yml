@@ -43,7 +43,7 @@ jobs:
         run: echo "DOCKER_API_VERSION=1.44" >> $GITHUB_ENV
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: ${{ matrix.jdkProvider }}
           java-version: ${{ matrix.jdkVersion }}
