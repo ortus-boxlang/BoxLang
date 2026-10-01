@@ -823,7 +823,10 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// there — so it would be registered as an unmarked span and stay RED. Close
 		// the running span at the struct's `}`, then scan forward for the enclosing
 		// call's `)` and close there too. Group that tail with the LAST value's
-		// span, so the last value's mark covers it.
+		// span, so the last value's mark covers it. IMPORTANT: merge with any
+		// EXISTING group keyed by the last value (the separator group registered
+		// above) instead of overwriting — a plain registerSpanGroup would replace
+		// the separator group, leaving the `,\n key: ` separator RED.
 		if ( lastValueId >= 0 && node.getEnd() != null ) {
 			Point	tailEnd		= node.getEnd();
 			Point	callClose	= findParenAfter( node, tailEnd );
@@ -832,7 +835,21 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			}
 			int tailId = closeRunningSpan( tailEnd );
 			if ( tailId >= 0 && tailId != lastValueId ) {
-				transpiler.registerSpanGroup( new int[] { lastValueId, tailId } );
+				List<Integer>	group		= new ArrayList<>();
+				int[]			existing	= transpiler.peekSpanGroup( lastValueId );
+				if ( existing != null ) {
+					for ( int e : existing ) {
+						if ( !group.contains( e ) ) {
+							group.add( e );
+						}
+					}
+				} else {
+					group.add( lastValueId );
+				}
+				if ( !group.contains( tailId ) ) {
+					group.add( tailId );
+				}
+				transpiler.registerSpanGroup( group.stream().mapToInt( Integer::intValue ).toArray() );
 			}
 		}
 	}

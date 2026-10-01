@@ -1749,6 +1749,46 @@ class CodeProfilerTest {
 		assertThat( CodeProfilerService.lineAt( key, 6 ).covered() ).isTrue();   // };
 	}
 
+	@DisplayName( "It covers each multi-line struct value key and its separator (regression)" )
+	@Test
+	void testMultiLineStructSeparatorAndKeyCovered() {
+		// REGRESSION: the closing-delimiter tail grouping overwrote the separator
+		// group keyed by the same last-value span, so the `,\n key: ` separator
+		// span (registered between values) stayed RED even though it always runs
+		// when the struct is built. Every value key + separator must be GREEN.
+		String source = """
+		                st = {
+		                one: 1,
+		                two: 2
+		                };
+		                """;
+		runtime.executeSource( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testMultiLineStructSeparatorAndKeyCovered dump" );
+		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
+
+		// Span model for this struct (line-oriented):
+		// line 1 `st = {` statement head
+		// line 2 `one: 1,` value one + trailing separator
+		// line 3 `two: 2` separator + key two + value two (the regression span)
+		// line 4 `};` closing tail
+		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isTrue();  // "one: 1," GREEN
+		assertThat( CodeProfilerService.lineAt( key, 3 ).covered() ).isTrue();  // "two: 2" GREEN
+		assertThat( CodeProfilerService.lineAt( key, 3 ).count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();  // "st = {" GREEN
+		assertThat( CodeProfilerService.lineAt( key, 4 ).covered() ).isTrue();  // "};" GREEN
+		// Every executable span in the struct is covered (the separator + key two
+		// must NOT be RED) — the structural assertion that guards the regression.
+		for ( Blueprint.SpanDef def : CodeProfilerService.trackedBlueprints().get( key ).spans() ) {
+			if ( def.executable() ) {
+				assertThat( CodeProfilerService.spanAt( key, def.startLine(), def.startCol() ).stats().count() ).isEqualTo( 1 );
+			}
+		}
+	}
+
 	@DisplayName( "It marks a spread array literal as one span when all run" )
 	@Test
 	void testSpreadAllRun() {
