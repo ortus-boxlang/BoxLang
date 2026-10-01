@@ -937,13 +937,14 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	@Override
 	public BoxExpression visitExprOutString( ExprOutStringContext ctx ) {
 		// `#el2#` OUTSIDE a string literal (e.g. a tag attribute value like
-		// `default=#now()#`, or template output `#x#`). The interpolation marks are
-		// PART of the expression's source: wrap the inner expression in a
-		// BoxStringInterpolation whose position covers the WHOLE `#...#` — the inner
-		// el2 alone would report its start AFTER the opening `#`, losing the
-		// delimiters from the AST (and thus from any span/coverage over them).
+		// `default=#now()#`, or template output `#x#`). The pounds are markers
+		// around the inner expression, NOT a string interpolation — so preserve the
+		// inner expression's AST node (e.g. `#result#` stays a BoxIdentifier and can
+		// still be an assignment LHS). Only widen the SOURCE TEXT to cover the full
+		// `#...#` so the source/span text is correct.
 		BoxExpression inner = ctx.el2().accept( this );
-		return new BoxStringInterpolation( new ArrayList<>( List.of( inner ) ), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+		inner.setSourceText( tools.getSourceText( ctx ) );
+		return inner;
 	}
 
 	@Override
