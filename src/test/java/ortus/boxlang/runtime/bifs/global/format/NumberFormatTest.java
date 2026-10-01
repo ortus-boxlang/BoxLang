@@ -477,7 +477,7 @@ public class NumberFormatTest {
 		assertEquals( "   7.00", variables.getAsString( result ) );
 		assertEquals( "  7.00", variables.getAsString( Key.of( "result2" ) ) );
 		assertEquals( "  12.00", variables.getAsString( Key.of( "result3" ) ) );
-		assertEquals( "-  5.50", variables.getAsString( Key.of( "result4" ) ) );
+		assertEquals( "  -5.50", variables.getAsString( Key.of( "result4" ) ) );
 		assertEquals( "  5", variables.getAsString( Key.of( "result5" ) ) );
 		assertEquals( "1,234,567.89", variables.getAsString( Key.of( "result6" ) ) );
 	}
