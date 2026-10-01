@@ -1197,7 +1197,7 @@ public class BoxParser extends AbstractParser {
 			// span/coverage over them).
 			String			src		= getSourceText( node );
 			if ( src != null && src.startsWith( "#" ) && src.endsWith( "#" ) ) {
-				return new BoxStringInterpolation( java.util.List.of( inner ), getPosition( node ), src );
+				return new BoxStringInterpolation( new ArrayList<>( List.of( inner ) ), getPosition( node ), src );
 			}
 			return inner;
 		} else {

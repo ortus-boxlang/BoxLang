@@ -263,7 +263,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 	 */
 	private void emitCaseLabelMark( List<AbstractInsnNode> nodes, BoxSwitchCase c ) {
 		// No-op when profiling is disabled — never emit mark instructions otherwise.
-		if ( !transpiler.isProfilingEnabled() || transpiler.getFileId() < 0 ) {
+		if ( !transpiler.hasProfilerId() ) {
 			return;
 		}
 		if ( c.getPosition() == null || c.getPosition().getStart() == null ) {
@@ -282,10 +282,10 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				}
 			}
 			if ( anyClaimed ) {
-				nodes.addAll( AsmHelper.invokeStaticMarkVarargs( transpiler.getFileId(), group ) );
+				nodes.addAll( transpiler.emitMarkVarargs( group ) );
 			}
 		} else if ( spanId >= 0 && transpiler.claimSpanMark( spanId ) ) {
-			nodes.addAll( AsmHelper.invokeStaticMark( transpiler.getFileId(), spanId ) );
+			nodes.addAll( transpiler.emitMark( spanId ) );
 		}
 	}
 

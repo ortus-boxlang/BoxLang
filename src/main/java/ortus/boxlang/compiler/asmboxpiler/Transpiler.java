@@ -39,7 +39,7 @@ import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.CodeProfilerService;
+import ortus.boxlang.runtime.services.Blueprint;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -108,11 +108,12 @@ public abstract class Transpiler implements ITranspiler {
 	private boolean											profilingEnabled		= false;
 
 	/**
-	 * The code profiler fileId assigned to this compilation's blueprint by
-	 * {@link CodeProfilerService#registerBlueprintForFile}. Emitted as the first
-	 * arg of each {@code mark(fileId, spanId)} instruction.
+	 * The code profiler blueprint KEY for this compilation — the normalized file
+	 * path (or source hash for adhoc source). This String IS the blueprint's id;
+	 * it is stored as a static field on the instrumented class and passed as the
+	 * first arg of every {@code mark(id, spanId)} instruction.
 	 */
-	private int												fileId					= -1;
+	private String											fileId					= null;
 
 	/**
 	 * Source-position -> span id map, built during Pass A (span detection).
@@ -165,21 +166,155 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	/**
-	 * The code profiler fileId for this compilation's blueprint.
+	 * The code profiler blueprint KEY for this compilation's blueprint.
 	 *
-	 * @return the fileId, or -1 if not registered
+	 * @return the blueprint key (file path or source hash), or null if not registered
 	 */
-	public int getFileId() {
+	public String getFileId() {
 		return fileId;
 	}
 
 	/**
-	 * Set the code profiler fileId for this compilation's blueprint.
+	 * Set the code profiler blueprint KEY for this compilation's blueprint.
 	 *
-	 * @param fileId the fileId returned by the code profiler service
+	 * @param fileId the blueprint key (file path or source hash) returned by the
+	 *               code profiler service registration
 	 */
-	public void setFileId( int fileId ) {
+	public void setFileId( String fileId ) {
 		this.fileId = fileId;
+	}
+
+	/**
+	 * The name of the static field that holds this class's profiler blueprint key
+	 * (id). Added to every instrumented class so the {@code mark} bytecode can
+	 * load the id WITHOUT a per-file LDC — the field is the single, canonical store.
+	 */
+	public static final String PROFILER_ID_FIELD = "codeProfilerId";
+
+	/**
+	 * Whether this compilation currently has a registered blueprint key (profiling on).
+	 *
+	 * @return true if profiling is enabled AND a blueprint key is set
+	 */
+	public boolean hasProfilerId() {
+		return profilingEnabled && fileId != null;
+	}
+
+	/**
+	 * Emit a single-span {@code mark}: {@code CodeProfilerService.mark(id, spanId)}
+	 * where {@code id} is this class's {@link #PROFILER_ID_FIELD} static field.
+	 *
+	 * @param spanId the span id within this blueprint
+	 *
+	 * @return the instructions, or an empty list when profiling is off
+	 */
+	public List<AbstractInsnNode> emitMark( int spanId ) {
+		if ( !hasProfilerId() ) {
+			return List.of();
+		}
+		return AsmHelper.invokeStaticMark( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, spanId );
+	}
+
+	/**
+	 * Emit the markEnd close-interval instruction:
+	 * {@code CodeProfilerService.markEnd(id)}.
+	 *
+	 * @return the instructions, or an empty list when profiling is off
+	 */
+	public List<AbstractInsnNode> emitMarkEnd() {
+		if ( !hasProfilerId() ) {
+			return List.of();
+		}
+		return AsmHelper.invokeStaticMarkEnd( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD );
+	}
+
+	/**
+	 * Emit an atomic shell mark covering several spans:
+	 * {@code CodeProfilerService.mark(id, int... spanIds)}.
+	 *
+	 * @param spanIds the shell spans to batch, in source order
+	 *
+	 * @return the instructions, or an empty list when profiling is off
+	 */
+	public List<AbstractInsnNode> emitMarkVarargs( int[] spanIds ) {
+		if ( !hasProfilerId() ) {
+			return List.of();
+		}
+		return AsmHelper.invokeStaticMarkVarargs( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, spanIds );
+	}
+
+	/**
+	 * The {@link Blueprint.SpanDef} list discovered in Pass A (span detection).
+	 * Embedded into the generated class's {@code <clinit>} so the class can
+	 * self-register its blueprint on first LOAD (not just at compile time),
+	 * surviving a runtime restart where in-memory blueprints are cleared.
+	 */
+	private List<Blueprint.SpanDef> spanDefs = List.of();
+
+	/**
+	 * Store the Pass A span definitions for embedding into {@code <clinit>}.
+	 *
+	 * @param spanDefs the ordered list of executable span definitions
+	 */
+	public void setSpanDefs( List<Blueprint.SpanDef> spanDefs ) {
+		this.spanDefs = spanDefs != null ? spanDefs : List.of();
+	}
+
+	/**
+	 * The Pass A span definitions to embed into the compiled class's {@code <clinit>}.
+	 *
+	 * @return the ordered executable span definitions
+	 */
+	public List<Blueprint.SpanDef> getSpanDefs() {
+		return this.spanDefs;
+	}
+
+	/**
+	 * The total source line count for this compilation (from the Blueprint),
+	 * used when embedding the blueprint into {@code <clinit>}.
+	 */
+	private int totalLines = 1;
+
+	/**
+	 * Store the total source line count for embedding into {@code <clinit>}.
+	 *
+	 * @param totalLines the source line count
+	 */
+	public void setTotalLines( int totalLines ) {
+		this.totalLines = totalLines;
+	}
+
+	/**
+	 * The total source line count to embed with the blueprint.
+	 *
+	 * @return the source line count
+	 */
+	public int getTotalLines() {
+		return this.totalLines;
+	}
+
+	/**
+	 * The source file's last-modified time for this compilation, used to detect a
+	 * newer blueprint (recompiled file) and replace stale span data on load.
+	 */
+	private long lastModified = 0L;
+
+	/**
+	 * Store the source file's last-modified time for embedding into {@code <clinit>}.
+	 *
+	 * @param lastModified the file mtime (0 for adhoc/source-hash blueprints)
+	 */
+	public void setLastModified( long lastModified ) {
+		this.lastModified = lastModified;
+	}
+
+	/**
+	 * The source file's last-modified time to embed with the blueprint.
+	 *
+	 * @return the file mtime
+	 */
+	public long getLastModified() {
+		return this.lastModified;
 	}
 
 	/**

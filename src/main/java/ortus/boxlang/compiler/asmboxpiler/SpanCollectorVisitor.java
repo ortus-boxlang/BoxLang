@@ -37,6 +37,7 @@ import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
@@ -764,6 +765,72 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				}
 			}
 			this.runningStart = null;
+		}
+	}
+
+	/**
+	 * A struct literal's values are interleaved [key, value, key, value, ...].
+	 * Pass B emits a mark at each VALUE's start, so each value must START its own
+	 * span or it can never be counted. The `, key: ` SEPARATOR between the
+	 * previous value's end and this value's start runs unconditionally when the
+	 * struct is built, but it is pure text — no node starts there, so nothing
+	 * would mark it. To keep it GREEN, we group each separator span with the
+	 * VALUE that follows it: the value's mark increments both.
+	 *
+	 * @param node the struct literal
+	 */
+	@Override
+	public void visit( BoxStructLiteral node ) {
+		List<BoxExpression>	values		= node.getValues();
+		int					lastValueId	= -1;
+		for ( int i = 0; i < values.size(); i += 2 ) {
+			// Visit the key (fused into whatever span is running).
+			values.get( i ).accept( this );
+			if ( i + 1 >= values.size() ) {
+				break;
+			}
+			BoxExpression	value	= values.get( i + 1 );
+			// Break the value out of the running head at its start.
+			int				sepId	= closeRunningSpan( leftmostStart( value ) );
+			// Visit the value — its internal ternary/throw logic further subdivides
+			// it, and Pass B marks the span starting at its start.
+			value.accept( this );
+			// Close the value's span at its end so the NEXT separator starts fresh.
+			closeRunningSpan( leftmostEnd( value ) );
+			// Remember the value span that Pass B resolves at the value's start (for
+			// the LAST value this is what the closing-delimiter tail gets grouped
+			// with).
+			Point	valueStart	= leftmostStart( value );
+			long	packed		= ( ( long ) valueStart.getLine() << 32 ) | ( valueStart.getColumn() & 0xFFFFFFFFL );
+			lastValueId = transpiler.getSpanId( packed );
+			// Group the separator + value so the value's mark covers both. The
+			// separator ALWAYS runs when the value runs. Key the group by the VALUE
+			// span (the one Pass B looks up at the value node's start) — resolved
+			// AFTER the value's own visit, because a value with internal subdivides
+			// (ternary/elvis) creates its value-span during that visit, not before.
+			// The FIRST value's separator IS the statement head — it is already
+			// marked by the assignment statement's own transform — so grouping it
+			// would double-count.
+			if ( i > 0 && sepId >= 0 && lastValueId >= 0 && lastValueId != sepId ) {
+				transpiler.registerSpanGroup( new int[] { lastValueId, sepId } );
+			}
+		}
+		// The struct's CLOSING `}` (and any `)` of an enclosing call that trails
+		// after the last value) runs whenever the struct runs, but no node starts
+		// there — so it would be registered as an unmarked span and stay RED. Close
+		// the running span at the struct's `}`, then scan forward for the enclosing
+		// call's `)` and close there too. Group that tail with the LAST value's
+		// span, so the last value's mark covers it.
+		if ( lastValueId >= 0 && node.getEnd() != null ) {
+			Point	tailEnd		= node.getEnd();
+			Point	callClose	= findParenAfter( node, tailEnd );
+			if ( callClose != null ) {
+				tailEnd = new Point( callClose.getLine(), callClose.getColumn() + 1 );
+			}
+			int tailId = closeRunningSpan( tailEnd );
+			if ( tailId >= 0 && tailId != lastValueId ) {
+				transpiler.registerSpanGroup( new int[] { lastValueId, tailId } );
+			}
 		}
 	}
 
@@ -2289,14 +2356,29 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 */
 	@Override
 	public void visit( BoxBinaryOperation node ) {
+		// An OPEN-ENDED range (`..10` or `1..`) models the missing bound as a null
+		// operand. That absent bound has no source span and can't emit bytecode, so
+		// we visit whatever operand IS present and skip the null side.
+		BoxExpression	left	= node.getLeft();
+		BoxExpression	right	= node.getRight();
+		if ( left == null && right == null ) {
+			return;
+		}
+
 		// Left continues the running span.
-		node.getLeft().accept( this );
+		if ( left != null ) {
+			left.accept( this );
+		}
+
+		// If there's no right operand, there is nothing more to split out.
+		if ( right == null ) {
+			return;
+		}
 
 		// Right breaks into its own span when it may not run. Do NOT unwrap parens:
 		// a `( expr )` right operand's span starts at the `(` so the WHOLE
 		// parenthesized expression is GREEN/RED together (the parens are part of the
 		// expression, not the always-run head).
-		BoxExpression		right			= node.getRight();
 		BoxBinaryOperator	op				= node.getOperator();
 		// Short-circuit operators (&&, ||, ?:) skip the right operand when the
 		// left decides the result — so the right must be its own span, marked only
@@ -2739,53 +2821,64 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	}
 
 	/**
-	 * Visit a property's DEFAULT value expression. The property declaration text
-	 * emits no bytecode (it's metadata), but the default expression may execute:
-	 * literal defaults inline at class load, non-literal defaults lazily via a
-	 * {@code defaultExpr_N} method on first access. Each default opens its own
-	 * span at the expression's start. The property declaration TEXT (up to the
-	 * default value) is registered as its own span — applied at class load, so it
-	 * is grouped with the class shell.
+	 * Visit a property declaration. The declaration TEXT (the {@code property}
+	 * keyword, its name/type/annotations) emits no bytecode — it's metadata applied
+	 * at class load — so the WHOLE declaration text is registered as ONE span and
+	 * grouped with the class shell so it is always GREEN. The only attribute with
+	 * special treatment is {@code default}: its VALUE is an expression that
+	 * executes (literal inline at class load, non-literal lazily on first access),
+	 * so it opens its OWN span. Every other attribute stays in the declaration-text
+	 * span.
 	 *
 	 * @param prop      the property
 	 * @param propTexts collector for the property-declaration-text span ids
 	 */
 	private void visitPropertyDefaults( BoxProperty prop, List<Integer> propTexts, List<Integer> propCloses ) {
+		Point	propStart	= prop.getStart();
+		Point	propEnd		= prop.getEnd();
+		if ( propStart == null ) {
+			return;
+		}
+
+		// Find the default value expression, if any.
+		BoxExpression defaultValue = null;
 		for ( var annotation : prop.getAllAnnotations() ) {
 			if ( annotation.getKey().getValue().equalsIgnoreCase( "default" ) && annotation.getValue() != null ) {
-				BoxExpression	value		= annotation.getValue();
-				// The declaration text BEFORE the default expression (e.g.
-				// `property name="threshold" default=`) — metadata applied at class
-				// load. Register it as its own span (GREEN via the class shell group).
-				Point			propStart	= prop.getStart();
-				if ( propStart != null ) {
-					BoxExpression	inner		= unwrapParens( value );
-					Point			valueStart	= inner.getStart();
-					if ( valueStart != null && ( valueStart.getLine() > propStart.getLine()
-					    || ( valueStart.getLine() == propStart.getLine() && valueStart.getColumn() > propStart.getColumn() ) ) ) {
-						int textId = addSpan( propStart, valueStart );
-						if ( textId >= 0 ) {
-							propTexts.add( textId );
-						}
-					}
-				}
-				// Non-literal defaults run lazily (may not run) — break into their
-				// own span; literal defaults run inline at load (still tracked).
-				BoxExpression inner = unwrapParens( value );
-				this.runningStart = inner.getStart();
-				inner.accept( this );
-				closeRunningSpan( inner.getEnd() );
-				// The tag's closing ">" (e.g. `...#( 40 + 2 )#>`) is metadata markup
-				// applied at class load — register it so it is GREEN (not left
-				// untracked). Its id is collected into propCloses and grouped with
-				// the class shell (NOT a group keyed at the property text — that
-				// group never fires because the shell mark takes the shellId group).
-				Point tagClose = findTagCloseAfter( prop, inner.getEnd() );
-				if ( tagClose != null ) {
-					int closeId = addSpan( inner.getEnd(), new Point( tagClose.getLine(), tagClose.getColumn() + 1 ) );
-					if ( closeId >= 0 ) {
-						propCloses.add( closeId );
-					}
+				defaultValue = annotation.getValue();
+				break;
+			}
+		}
+
+		// The declaration-text span runs from the property start to the start of the
+		// default value, or to the end of the declaration if there's no default.
+		Point textEnd = propEnd;
+		if ( defaultValue != null ) {
+			Point valueStart = unwrapParens( defaultValue ).getStart();
+			if ( valueStart != null ) {
+				textEnd = valueStart;
+			}
+		}
+		int textId = addSpan( propStart, textEnd );
+		if ( textId >= 0 ) {
+			propTexts.add( textId );
+		}
+
+		// If there IS a default value, it opens its own span (it may or may not run).
+		if ( defaultValue != null ) {
+			BoxExpression inner = unwrapParens( defaultValue );
+			this.runningStart = inner.getStart();
+			inner.accept( this );
+			closeRunningSpan( inner.getEnd() );
+			// The tag's closing ">" (e.g. `...#( 40 + 2 )#>`) is metadata markup
+			// applied at class load — register it so it is GREEN (not left
+			// untracked). Its id is collected into propCloses and grouped with
+			// the class shell (NOT a group keyed at the property text — that
+			// group never fires because the shell mark takes the shellId group).
+			Point tagClose = findTagCloseAfter( prop, inner.getEnd() );
+			if ( tagClose != null ) {
+				int closeId = addSpan( inner.getEnd(), new Point( tagClose.getLine(), tagClose.getColumn() + 1 ) );
+				if ( closeId >= 0 ) {
+					propCloses.add( closeId );
 				}
 			}
 		}

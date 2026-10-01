@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.services.Blueprint;
 import ortus.boxlang.runtime.services.CodeProfilerService;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * Tests for the ASM boxpiler's code-profiling instrumentation: run a block with
@@ -1661,6 +1662,91 @@ class CodeProfilerTest {
 		assertThat( CodeProfilerService.lineAt( key, 3 ).covered() ).isTrue();
 	}
 
+	@DisplayName( "It covers the closing delimiters of nested struct/call/lambda literals" )
+	@Test
+	void testNestedStructClosingDelimiters() {
+		// Simplified from StreamingService.cfc: a struct argument closed with `} );`
+		// on its own line, and a struct of lambda callbacks where each lambda closes
+		// with `},` and the outer call with `);`. All these closing-delimiter lines
+		// must be covered because they execute when the enclosing construct runs.
+		String source = """
+		                service = { add: function( x ) { return x; } };
+		                function q( data ) {
+		                service.add( {
+		                "eventType" : data.type,
+		                "data"      : data.payload
+		                } );
+		                }
+		                result = {
+		                "cb1" : ( target, results ) => {
+		                var name = target.getName();
+		                service.add(
+		                "evt",
+		                {
+		                "id"   : name,
+		                "name" : target.name
+		                }
+		                );
+		                },
+		                "cb2" : ( x ) => {
+		                return x * 2;
+		                }
+		                };
+		                ok = q( { type: "t", payload: "p" } );
+		                ok2 = result.cb1( { getName: () => "n", name: "x" }, {} );
+		                ok3 = result.cb2( 5 );
+		                """;
+		runtime.executeSource( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testNestedStructClosingDelimiters dump" );
+		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
+
+		// The `} );` closing the struct argument to add() (line 6) runs (q is called).
+		assertThat( CodeProfilerService.lineAt( key, 6 ).covered() ).isTrue();
+		// The struct literal's closing `}` inside the call (line 16) runs.
+		assertThat( CodeProfilerService.lineAt( key, 16 ).covered() ).isTrue();
+		// The call's closing `);` (line 17) runs.
+		assertThat( CodeProfilerService.lineAt( key, 17 ).covered() ).isTrue();
+		// The first lambda's closing `},` (line 18) runs.
+		assertThat( CodeProfilerService.lineAt( key, 18 ).covered() ).isTrue();
+		// The second lambda's closing `}` (line 21) runs when invoked.
+		assertThat( CodeProfilerService.lineAt( key, 21 ).covered() ).isTrue();
+		// The outer struct's closing `};` (line 22) runs.
+		assertThat( CodeProfilerService.lineAt( key, 22 ).covered() ).isTrue();
+	}
+
+	@DisplayName( "It keeps struct values after a ternary value covered (multi-line)" )
+	@Test
+	void testMultiLineStructTernary() {
+		String source = """
+		                spec = { id: 1, displayName: "hi", name: "n", timestamp: 2 };
+		                result = {
+		                "id"          : spec.id,
+		                "label"       : spec.displayName ?: spec.id,
+		                "name"        : spec.name,
+		                "timestamp"   : spec.timestamp
+		                };
+		                """;
+		runtime.executeSource( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testMultiLineStructTernary dump" );
+		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
+
+		// Every struct value line must be covered; the ternary branches may be, but
+		// the surrounding `name`/`timestamp` values must NOT be left red.
+		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isTrue();   // { "id"
+		assertThat( CodeProfilerService.lineAt( key, 3 ).covered() ).isTrue();   // "label" : ternary
+		assertThat( CodeProfilerService.lineAt( key, 4 ).covered() ).isTrue();   // "name" (AFTER ternary)
+		assertThat( CodeProfilerService.lineAt( key, 5 ).covered() ).isTrue();   // "timestamp" getTickCount (AFTER ternary)
+		assertThat( CodeProfilerService.lineAt( key, 6 ).covered() ).isTrue();   // };
+	}
+
 	@DisplayName( "It marks a spread array literal as one span when all run" )
 	@Test
 	void testSpreadAllRun() {
@@ -2725,6 +2811,33 @@ class CodeProfilerTest {
 		assertThat( CodeProfilerService.spanAt( scriptKey, 5, 0 ).stats().count() ).isEqualTo( 1 );   // v = b.x
 	}
 
+	@DisplayName( "It covers a property declaration with no default value" )
+	@Test
+	void testPropertyNoDefault() {
+		// A `property name="x";` with NO default has no lazy/default expression, but
+		// the declaration text is still metadata applied at class load — so its line
+		// must be covered when the class loads (mimics TestBox's option/testbox props).
+		String source = """
+		                class brad {
+		                property name="options";
+		                property name="testbox";
+		                y = 2;
+		                }
+		                b = new brad();
+		                """;
+		runtime.executeSource( source );
+
+		String scriptKey = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testPropertyNoDefault dump" );
+		// System.out.print( CodeProfilerService.dumpSpans( scriptKey, source ) );
+
+		assertThat( CodeProfilerService.lineAt( scriptKey, 2 ).covered() ).isTrue();   // property name="options";
+		assertThat( CodeProfilerService.lineAt( scriptKey, 3 ).covered() ).isTrue();   // property name="testbox";
+		assertThat( CodeProfilerService.spanAt( scriptKey, 6, 0 ).stats().count() ).isEqualTo( 1 );  // new brad()
+	}
+
 	@DisplayName( "It tracks a complex array-literal property default at class load" )
 	@Test
 	void testPropertyArrayLiteralDefault() {
@@ -3061,6 +3174,242 @@ class CodeProfilerTest {
 		assertThat( CodeProfilerService.lineAt( fileKey, 56 ).count() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It registers the full span model for the BX disk class files" )
+	@Test
+	void testDiskClassSpanDefs() {
+		// One shared context so the SAME instance/variables scope persists.
+		IBoxContext context = new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+
+		// Load ProfilerSuper (implicitly via the children) and instantiate
+		// ProfilerComplex; reference ProfilerStaticOnly statically (load + static
+		// init, NO instance); compile ProfilerGhost WITHOUT running it (all RED).
+		runtime.executeSource( "pc = new src.test.resources.profiler.ProfilerComplex();", context );
+		runtime.executeSource( "ps = src.test.resources.profiler.ProfilerStaticOnly::staticInitRan;", context );
+		Path ghostPath = Paths.get( "src/test/resources/profiler/ProfilerGhost.bx" ).toAbsolutePath().normalize();
+		RunnableLoader.getInstance().getBoxpiler().compileClass( ResolvedFilePath.of( ghostPath ) );
+
+		// ---- ProfilerSuper.bx : minimal class shell (3 spans, all covered) ----
+		String	superKey	= keyFor( "src/test/resources/profiler/ProfilerSuper.bx" );
+		var		superBlue	= CodeProfilerService.trackedBlueprints().get( superKey );
+		assertThat( superBlue.spans().stream().filter( Blueprint.SpanDef::executable ).count() ).isEqualTo( 3 );
+		assertThat( superBlue.spans().get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 7, true ) );   // "class {"
+		assertThat( superBlue.spans().get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 1, true ) );   // "}"
+		assertThat( superBlue.spans().get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 1, 3, 27, true ) ); // 'threshold = "preset value"'
+		assertThat( CodeProfilerService.spanAt( superKey, 3, 1 ).stats().count() ).isEqualTo( 1 );       // ran for the single Complex instance
+		assertThat( CodeProfilerService.lineAt( superKey, 3 ).covered() ).isTrue();
+
+		// ---- ProfilerComplex.bx : full span model (58 exec spans) ----
+		String	complexKey	= keyFor( "src/test/resources/profiler/ProfilerComplex.bx" );
+		var		complexBlue	= CodeProfilerService.trackedBlueprints().get( complexKey );
+		assertThat( complexBlue.spans().stream().filter( Blueprint.SpanDef::executable ).count() ).isEqualTo( 58 );
+		assertThat( complexBlue.spans().get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 29, true ) );  // "class extends=ProfilerSuper {"
+		assertThat( complexBlue.spans().get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 59, 0, 59, 1, true ) ); // final "}"
+		assertThat( complexBlue.spans().get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 8, 1, 8, 9, true ) );   // "static {"
+		assertThat( complexBlue.spans().get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 9, 2, 9, 18, true ) );  // "complexSeed = 42"
+		assertThat( complexBlue.spans().get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 10, 2, 10, 22, true ) );// "staticInitRan = true"
+		assertThat( complexBlue.spans().get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 11, 2, 11, 15, true ) );// "staticOnly::s"
+		assertThat( complexBlue.spans().get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 12, 1, 12, 2, true ) ); // static "}"
+		assertThat( complexBlue.spans().get( 7 ) ).isEqualTo( new Blueprint.SpanDef( 14, 1, 14, 17, true ) );// "instanceInit = 0"
+		assertThat( complexBlue.spans().get( 8 ) ).isEqualTo( new Blueprint.SpanDef( 16, 1, 16, 13, true ) );// "class luis {"
+		assertThat( complexBlue.spans().get( 9 ) ).isEqualTo( new Blueprint.SpanDef( 28, 1, 28, 2, true ) ); // luis "}"
+		assertThat( complexBlue.spans().get( 10 ) ).isEqualTo( new Blueprint.SpanDef( 17, 2, 17, 10, true ) );// luis "static {"
+		assertThat( complexBlue.spans().get( 11 ) ).isEqualTo( new Blueprint.SpanDef( 18, 3, 18, 8, true ) ); // "s = 1"
+		assertThat( complexBlue.spans().get( 12 ) ).isEqualTo( new Blueprint.SpanDef( 19, 3, 19, 15, true ) );// "if( false ) "
+		assertThat( complexBlue.spans().get( 13 ) ).isEqualTo( new Blueprint.SpanDef( 20, 4, 20, 38, true ) );// print never runs
+		assertThat( complexBlue.spans().get( 14 ) ).isEqualTo( new Blueprint.SpanDef( 19, 15, 19, 16, true ) );// if "{"
+		assertThat( complexBlue.spans().get( 15 ) ).isEqualTo( new Blueprint.SpanDef( 21, 3, 21, 4, true ) ); // if "}"
+		assertThat( complexBlue.spans().get( 16 ) ).isEqualTo( new Blueprint.SpanDef( 22, 2, 22, 3, true ) ); // luis static "}"
+		assertThat( complexBlue.spans().get( 17 ) ).isEqualTo( new Blueprint.SpanDef( 23, 2, 23, 7, true ) ); // "y = 2"
+		assertThat( complexBlue.spans().get( 18 ) ).isEqualTo( new Blueprint.SpanDef( 24, 2, 24, 20, true ) );// "function member() "
+		assertThat( complexBlue.spans().get( 19 ) ).isEqualTo( new Blueprint.SpanDef( 25, 3, 25, 14, true ) );// "a = "b" ?: "
+		assertThat( complexBlue.spans().get( 20 ) ).isEqualTo( new Blueprint.SpanDef( 25, 14, 25, 17, true ) );// '"c"'
+		assertThat( complexBlue.spans().get( 21 ) ).isEqualTo( new Blueprint.SpanDef( 26, 3, 26, 11, true ) );// "return 3"
+		assertThat( complexBlue.spans().get( 22 ) ).isEqualTo( new Blueprint.SpanDef( 24, 20, 24, 21, true ) );// "function member() {" brace
+		assertThat( complexBlue.spans().get( 23 ) ).isEqualTo( new Blueprint.SpanDef( 27, 2, 27, 3, true ) ); // luis fn "}"
+		assertThat( complexBlue.spans().get( 24 ) ).isEqualTo( new Blueprint.SpanDef( 29, 1, 29, 18, true ) );// "inst = new luis()"
+		assertThat( complexBlue.spans().get( 25 ) ).isEqualTo( new Blueprint.SpanDef( 31, 1, 31, 19, true ) );// "class staticOnly {"
+		assertThat( complexBlue.spans().get( 26 ) ).isEqualTo( new Blueprint.SpanDef( 39, 1, 39, 2, true ) ); // staticOnly "}"
+		assertThat( complexBlue.spans().get( 27 ) ).isEqualTo( new Blueprint.SpanDef( 32, 2, 32, 10, true ) );// staticOnly "static {"
+		assertThat( complexBlue.spans().get( 28 ) ).isEqualTo( new Blueprint.SpanDef( 33, 3, 33, 8, true ) ); // "s = 1"
+		assertThat( complexBlue.spans().get( 29 ) ).isEqualTo( new Blueprint.SpanDef( 34, 2, 34, 3, true ) ); // staticOnly static "}"
+		assertThat( complexBlue.spans().get( 30 ) ).isEqualTo( new Blueprint.SpanDef( 35, 2, 35, 7, true ) ); // "y = 2"
+		assertThat( complexBlue.spans().get( 31 ) ).isEqualTo( new Blueprint.SpanDef( 36, 2, 36, 20, true ) );// "function member() "
+		assertThat( complexBlue.spans().get( 32 ) ).isEqualTo( new Blueprint.SpanDef( 37, 3, 37, 11, true ) );// "return 3"
+		assertThat( complexBlue.spans().get( 33 ) ).isEqualTo( new Blueprint.SpanDef( 36, 20, 36, 21, true ) );// brace
+		assertThat( complexBlue.spans().get( 34 ) ).isEqualTo( new Blueprint.SpanDef( 38, 2, 38, 3, true ) ); // staticOnly fn "}"
+		assertThat( complexBlue.spans().get( 35 ) ).isEqualTo( new Blueprint.SpanDef( 41, 1, 41, 14, true ) );// "class ghost {"
+		assertThat( complexBlue.spans().get( 36 ) ).isEqualTo( new Blueprint.SpanDef( 49, 1, 49, 2, true ) ); // ghost "}"
+		assertThat( complexBlue.spans().get( 37 ) ).isEqualTo( new Blueprint.SpanDef( 42, 2, 42, 10, true ) );// ghost "static {"
+		assertThat( complexBlue.spans().get( 38 ) ).isEqualTo( new Blueprint.SpanDef( 43, 3, 43, 8, true ) ); // "s = 1"
+		assertThat( complexBlue.spans().get( 39 ) ).isEqualTo( new Blueprint.SpanDef( 44, 2, 44, 3, true ) ); // ghost static "}"
+		assertThat( complexBlue.spans().get( 40 ) ).isEqualTo( new Blueprint.SpanDef( 45, 2, 45, 7, true ) ); // "y = 2"
+		assertThat( complexBlue.spans().get( 41 ) ).isEqualTo( new Blueprint.SpanDef( 46, 2, 46, 20, true ) );// "function member() "
+		assertThat( complexBlue.spans().get( 42 ) ).isEqualTo( new Blueprint.SpanDef( 47, 3, 47, 11, true ) );// "return 3"
+		assertThat( complexBlue.spans().get( 43 ) ).isEqualTo( new Blueprint.SpanDef( 46, 20, 46, 21, true ) );// brace
+		assertThat( complexBlue.spans().get( 44 ) ).isEqualTo( new Blueprint.SpanDef( 48, 2, 48, 3, true ) ); // ghost fn "}"
+		assertThat( complexBlue.spans().get( 45 ) ).isEqualTo( new Blueprint.SpanDef( 51, 1, 51, 24, true ) );// "function doubleIt( n ) "
+		assertThat( complexBlue.spans().get( 46 ) ).isEqualTo( new Blueprint.SpanDef( 52, 2, 52, 14, true ) );// "return n * 2"
+		assertThat( complexBlue.spans().get( 47 ) ).isEqualTo( new Blueprint.SpanDef( 51, 24, 51, 25, true ) );// doubleIt brace
+		assertThat( complexBlue.spans().get( 48 ) ).isEqualTo( new Blueprint.SpanDef( 53, 1, 53, 2, true ) ); // doubleIt "}"
+		assertThat( complexBlue.spans().get( 49 ) ).isEqualTo( new Blueprint.SpanDef( 55, 1, 55, 22, true ) );// "function member( x ) "
+		assertThat( complexBlue.spans().get( 50 ) ).isEqualTo( new Blueprint.SpanDef( 56, 2, 56, 14, true ) );// "sleep( 100 )"
+		assertThat( complexBlue.spans().get( 51 ) ).isEqualTo( new Blueprint.SpanDef( 57, 2, 57, 14, true ) );// "return x * 3"
+		assertThat( complexBlue.spans().get( 52 ) ).isEqualTo( new Blueprint.SpanDef( 55, 22, 55, 23, true ) );// member brace
+		assertThat( complexBlue.spans().get( 53 ) ).isEqualTo( new Blueprint.SpanDef( 58, 1, 58, 2, true ) ); // member "}"
+		assertThat( complexBlue.spans().get( 54 ) ).isEqualTo( new Blueprint.SpanDef( 4, 1, 4, 35, true ) );  // threshold property head
+		assertThat( complexBlue.spans().get( 55 ) ).isEqualTo( new Blueprint.SpanDef( 4, 35, 4, 46, true ) );// complexSeed (SKIPPED)
+		assertThat( complexBlue.spans().get( 56 ) ).isEqualTo( new Blueprint.SpanDef( 6, 1, 6, 31, true ) ); // other property head
+		assertThat( complexBlue.spans().get( 57 ) ).isEqualTo( new Blueprint.SpanDef( 6, 31, 6, 42, true ) );// complexSeed (USED)
+
+		// Complex coverage: static + pseudo-ctor ran; members only on call; the
+		// skipped threshold default is count 0 while the applied other is count 1.
+		assertThat( CodeProfilerService.spanAt( complexKey, 9, 2 ).stats().count() ).isEqualTo( 1 );   // static complexSeed
+		assertThat( CodeProfilerService.spanAt( complexKey, 14, 1 ).stats().count() ).isEqualTo( 1 );  // instanceInit
+		assertThat( CodeProfilerService.spanAt( complexKey, 4, 35 ).stats().count() ).isEqualTo( 0 );  // threshold default SKIPPED
+		assertThat( CodeProfilerService.spanAt( complexKey, 6, 31 ).stats().count() ).isEqualTo( 1 );  // other default USED
+		assertThat( CodeProfilerService.spanAt( complexKey, 56, 2 ).stats().count() ).isEqualTo( 0 );  // sleep NOT yet run
+		assertThat( CodeProfilerService.lineAt( complexKey, 9 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( complexKey, 9 ).count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.lineAt( complexKey, 56 ).covered() ).isFalse();   // member body line missed
+		assertThat( CodeProfilerService.lineAt( complexKey, 4 ).covered() ).isTrue();     // property head RUNS
+		// The property default value column alone is NOT covered because the value
+		// skipped; but the line is still "covered" since the head ran.
+
+		// ---- ProfilerStaticOnly.bx : instance body + members stay RED ----
+		String	staticKey	= keyFor( "src/test/resources/profiler/ProfilerStaticOnly.bx" );
+		var		staticBlue	= CodeProfilerService.trackedBlueprints().get( staticKey );
+		assertThat( staticBlue.spans().stream().filter( Blueprint.SpanDef::executable ).count() ).isEqualTo( 56 );
+		// static block ran
+		assertThat( CodeProfilerService.spanAt( staticKey, 7, 2 ).stats().count() ).isEqualTo( 1 );  // complexSeed
+		assertThat( CodeProfilerService.spanAt( staticKey, 8, 2 ).stats().count() ).isEqualTo( 1 );  // staticInitRan
+		assertThat( CodeProfilerService.spanAt( staticKey, 9, 2 ).stats().count() ).isEqualTo( 1 );  // staticOnly::s
+		// no instance created -> instance body and members stay RED. The nested
+		// `class staticOnly` SHELL + static init still run at class load, but its
+		// instance body (`y = 2`) and member bodies are never hit.
+		assertThat( CodeProfilerService.spanAt( staticKey, 12, 1 ).stats().count() ).isEqualTo( 0 ); // instanceInit (no instance)
+		assertThat( CodeProfilerService.spanAt( staticKey, 14, 1 ).stats().count() ).isEqualTo( 0 ); // class luis shell (never loaded)
+		assertThat( CodeProfilerService.spanAt( staticKey, 29, 1 ).stats().count() ).isEqualTo( 1 ); // nested staticOnly shell RUNS (via staticOnly::s ref at load)
+		assertThat( CodeProfilerService.spanAt( staticKey, 33, 2 ).stats().count() ).isEqualTo( 0 ); // nested staticOnly y = 2 (no instance)
+		assertThat( CodeProfilerService.spanAt( staticKey, 54, 2 ).stats().count() ).isEqualTo( 0 ); // member sleep
+		assertThat( CodeProfilerService.spanAt( staticKey, 4, 35 ).stats().count() ).isEqualTo( 0 ); // threshold default RED
+		assertThat( CodeProfilerService.lineAt( staticKey, 8 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( staticKey, 8 ).count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.lineAt( staticKey, 12 ).covered() ).isFalse();
+		assertThat( CodeProfilerService.lineAt( staticKey, 54 ).covered() ).isFalse();
+
+		// ---- ProfilerGhost.bx : compiled but NEVER run -> ALL spans RED ----
+		String	ghostKey	= keyFor( "src/test/resources/profiler/ProfilerGhost.bx" );
+		var		ghostBlue	= CodeProfilerService.trackedBlueprints().get( ghostKey );
+		assertThat( ghostBlue.spans().stream().filter( Blueprint.SpanDef::executable ).count() ).isEqualTo( 56 );
+		for ( Blueprint.SpanDef def : ghostBlue.spans() ) {
+			if ( def.executable() ) {
+				assertThat( CodeProfilerService.spanAt( ghostKey, def.startLine(), def.startCol() ).stats().count() ).isEqualTo( 0 );
+			}
+		}
+		assertThat( CodeProfilerService.lineAt( ghostKey, 7 ).covered() ).isFalse();
+		assertThat( CodeProfilerService.lineAt( ghostKey, 8 ).covered() ).isFalse();
+		assertThat( CodeProfilerService.lineAt( ghostKey, 54 ).covered() ).isFalse();
+	}
+
+	@DisplayName( "It self-registers a blueprint from clinit and replaces stale span data" )
+	@Test
+	void testClinitBlueprintRegistration() {
+		// A class compiles its blueprint INTO <clinit> and self-registers on load.
+		// CodeProfilerService.registerBlueprintFromClinit is what <clinit> calls.
+		// It must be:
+		// 1) IDEMPOTENT per key (the id is the file path / source hash — a String)
+		// 2) REPLACE the stale blueprint when the key's lastModified is NEWER.
+		String	filePath	= "C:/opt/test/SomeComponent.cfc";
+
+		// First registration — two spans, lastModified 1000.
+		String	firstId		= CodeProfilerService.registerBlueprintFromClinit( filePath, 1000L, 5,
+		    new int[] {
+		        1, 0, 1, 10, 1,
+		        2, 0, 2, 8, 1
+		    } );
+		String	normPath	= java.nio.file.Paths.get( filePath ).toAbsolutePath().normalize().toString()
+		    .toLowerCase( java.util.Locale.ROOT );
+		assertThat( firstId ).isEqualTo( normPath );
+
+		// Idempotent: same key re-registered with the SAME lastModified -> SAME id.
+		String againId = CodeProfilerService.registerBlueprintFromClinit( filePath, 1000L, 5,
+		    new int[] {
+		        1, 0, 1, 10, 1,
+		        2, 0, 2, 8, 1
+		    } );
+		assertThat( againId ).isEqualTo( normPath );
+
+		// The blueprint is registered under the normalized absolute lowercase path.
+		var bp = CodeProfilerService.trackedBlueprints().get( normPath );
+		assertThat( bp ).isNotNull();
+		assertThat( bp.spans() ).hasSize( 2 );
+		assertThat( bp.lastModified() ).isEqualTo( 1000L );
+
+		// Newer lastModified (file changed + recompiled) -> SAME id, spans REPLACED.
+		String newerId = CodeProfilerService.registerBlueprintFromClinit( filePath, 2000L, 5,
+		    new int[] {
+		        1, 0, 1, 12, 1,
+		        2, 0, 2, 10, 1,
+		        3, 0, 3, 6, 1
+		    } );
+		assertThat( newerId ).isEqualTo( normPath );
+
+		var bp2 = CodeProfilerService.trackedBlueprints().get( normPath );
+		assertThat( bp2.lastModified() ).isEqualTo( 2000L );
+		assertThat( bp2.spans() ).hasSize( 3 ); // replaced, not appended
+
+		// The spans' counters are fresh (all zero) after replacement.
+		assertThat( CodeProfilerService.spanAt( normPath, 1, 0 ).stats().count() ).isEqualTo( 0 );
+		assertThat( CodeProfilerService.spanAt( normPath, 3, 0 ).stats().count() ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It embeds a blueprint self-registration call into the compiled class <clinit>" )
+	@Test
+	void testClinitEmbedsBlueprintRegistration() throws Exception {
+		// Compile an on-disk class with profiling so its <clinit> gets the
+		// registerBlueprintFromClinit self-registration bytecode.
+		runtime.getConfiguration().codeProfilerEnabled = true;
+
+		// Compile inline so we can grab the raw class bytes (not via resource lookup).
+		var	boxpiler	= ( ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler ) RunnableLoader.getInstance().getBoxpiler();
+		var	classPath	= java.nio.file.Paths.get( "src/test/resources/profiler/ProfilerComplex.bx" ).toAbsolutePath().normalize();
+		var	classInfo	= ortus.boxlang.compiler.ClassInfo.forClass(
+		    ResolvedFilePath.of( classPath ),
+		    ortus.boxlang.compiler.parser.Parser.detectFile( classPath.toFile(), true ),
+		    boxpiler );
+		boxpiler.getClassPool( classInfo.classPoolName() ).put( classInfo.fqn().toString(), classInfo );
+		java.util.List<byte[]>	compiled	= boxpiler.compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
+
+		// Find the main (non-$) class and confirm its <clinit> invokes
+		// CodeProfilerService.registerBlueprintFromClinit.
+		boolean					found		= false;
+		for ( byte[] bytes : compiled ) {
+			// Skip non-class entries (e.g. auxiliary resources) in the byte list.
+			if ( bytes.length < 4 || bytes[ 0 ] != ( byte ) 0xCA || bytes[ 1 ] != ( byte ) 0xFE || bytes[ 2 ] != ( byte ) 0xBA
+			    || bytes[ 3 ] != ( byte ) 0xBE ) {
+				continue;
+			}
+			org.objectweb.asm.tree.ClassNode classNode = new org.objectweb.asm.tree.ClassNode();
+			new org.objectweb.asm.ClassReader( bytes ).accept( classNode, 0 );
+			for ( var method : classNode.methods ) {
+				if ( !method.name.equals( "<clinit>" ) ) {
+					continue;
+				}
+				for ( var insn = method.instructions.getFirst(); insn != null; insn = insn.getNext() ) {
+					if ( insn instanceof org.objectweb.asm.tree.MethodInsnNode call
+					    && call.name.equals( "registerBlueprintFromClinit" ) ) {
+						found = true;
+						break;
+					}
+				}
+			}
+		}
+		assertThat( found ).isTrue();
+
+		// Ensure profiling is restored for subsequent tests.
+		runtime.getConfiguration().codeProfilerEnabled = false;
+	}
+
 	@DisplayName( "It profiles the named-argument param statement (script)" )
 	@Test
 	void testParamNamed() {
@@ -3159,5 +3508,17 @@ class CodeProfilerTest {
 		assertThat( CodeProfilerService.spanAt( key, 2, 10 ).stats().count() ).isEqualTo( 0 );   // default MISSED (foo exists)
 		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( key, 2 ).count() ).isEqualTo( 1 );
+	}
+
+	/**
+	 * Build the normalized lowercase absolute-path blueprint key for a test resource.
+	 *
+	 * @param relativePath the class file path relative to the repo root
+	 *
+	 * @return the file-path key used to register the on-disk blueprint
+	 */
+	private String keyFor( String relativePath ) {
+		Path absolute = Paths.get( relativePath ).toAbsolutePath().normalize();
+		return absolute.toString().toLowerCase( Locale.ROOT );
 	}
 }

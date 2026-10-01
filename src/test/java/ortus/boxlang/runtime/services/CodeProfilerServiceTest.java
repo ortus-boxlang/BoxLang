@@ -89,7 +89,7 @@ class CodeProfilerServiceTest {
 	@DisplayName( "It tracks plain spans, one per line" )
 	@Test
 	void testPlainStatements() {
-		int fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
+		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
 
 		CodeProfilerService.mark( fileId, 0 );
 		sleep( 20 );
@@ -129,7 +129,7 @@ class CodeProfilerServiceTest {
 	@DisplayName( "It marks only the executable spans that actually ran on one line" )
 	@Test
 	void testTernary() {
-		int fileId = CodeProfilerService.registerBlueprintForFile( FILE, TERNARY_BLUEPRINT );
+		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, TERNARY_BLUEPRINT );
 
 		// x = bar ? baz : bum; -> bar true, so baz runs, bum does NOT.
 		CodeProfilerService.mark( fileId, 0 ); // "x = "
@@ -191,7 +191,7 @@ class CodeProfilerServiceTest {
 	@DisplayName( "It separates definition-time from invocation-time spans on a function" )
 	@Test
 	void testFunctionDefinition() {
-		int fileId = CodeProfilerService.registerBlueprintForFile( FILE, FUNC_BLUEPRINT );
+		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, FUNC_BLUEPRINT );
 
 		// DEFINITION runs: registers the UDF + processes args. Arg defaults NOT evaluated.
 		CodeProfilerService.mark( fileId, 0 ); // function declaration/registration
@@ -252,7 +252,7 @@ class CodeProfilerServiceTest {
 		    ),
 		    Blueprint.Kind.SOURCE );
 
-		int			fileId			= CodeProfilerService.registerBlueprintForSource( sourceHash, sourceBlueprint );
+		String		fileId			= CodeProfilerService.registerBlueprintForSource( sourceHash, sourceBlueprint );
 
 		CodeProfilerService.mark( fileId, 0 );
 		CodeProfilerService.mark( fileId, 1 );
@@ -273,7 +273,7 @@ class CodeProfilerServiceTest {
 	@DisplayName( "It builds native per-line coverage data (FILE default)" )
 	@Test
 	void testBuildLineCoverage() {
-		int fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
+		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
 
 		CodeProfilerService.mark( fileId, 0 );
 		sleep( 5 );
@@ -304,7 +304,7 @@ class CodeProfilerServiceTest {
 	@DisplayName( "It builds native per-span coverage data" )
 	@Test
 	void testBuildSpanCoverage() {
-		int fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
+		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
 
 		CodeProfilerService.mark( fileId, 0 );
 		sleep( 5 );
@@ -330,7 +330,7 @@ class CodeProfilerServiceTest {
 	@DisplayName( "It writes a per-line coverage JSON report" )
 	@Test
 	void testWriteLineCoverageJSON() {
-		int fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
+		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
 
 		CodeProfilerService.mark( fileId, 0 );
 		sleep( 5 );
@@ -356,7 +356,7 @@ class CodeProfilerServiceTest {
 	@DisplayName( "It writes a per-span coverage JSON report" )
 	@Test
 	void testWriteSpanCoverageJSON() {
-		int fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
+		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
 
 		CodeProfilerService.mark( fileId, 0 );
 		sleep( 5 );
@@ -377,7 +377,7 @@ class CodeProfilerServiceTest {
 	@DisplayName( "It exports SonarQube generic coverage XML" )
 	@Test
 	void testSonarQubeXML() {
-		int fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
+		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
 
 		CodeProfilerService.mark( fileId, 0 );
 		sleep( 5 );
@@ -403,7 +403,7 @@ class CodeProfilerServiceTest {
 		        new Blueprint.SpanDef( 1, 0, 1, 4, true )
 		    ),
 		    Blueprint.Kind.SOURCE );
-		int			fileId			= CodeProfilerService.registerBlueprintForSource( sourceHash, sourceBlueprint );
+		String		fileId			= CodeProfilerService.registerBlueprintForSource( sourceHash, sourceBlueprint );
 		CodeProfilerService.mark( fileId, 0 );
 
 		// Default (FILE) excludes SOURCE

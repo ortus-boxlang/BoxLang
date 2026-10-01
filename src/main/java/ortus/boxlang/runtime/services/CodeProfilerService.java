@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -70,15 +69,12 @@ public class CodeProfilerService extends BaseService {
 	/**
 	 * Assigns compact file ids to blueprints.
 	 */
-	private final AtomicInteger								fileIdSeq	= new AtomicInteger( 0 );
+	// REMOVED: the file id is the blueprint KEY (path or source hash) — no integer
+	// sequence. (fileIdSeq removed)
 
 	/**
-	 * Registered blueprints by fileId (the id bytecode uses in mark()).
-	 */
-	private final ConcurrentHashMap<Integer, FileBlueprint>	byFileId	= new ConcurrentHashMap<>();
-
-	/**
-	 * Registered blueprints by NORMALIZED file path, for query-by-path.
+	 * Registered blueprints by NORMALIZED file path / source hash (the blueprint
+	 * KEY — the "id" bytecode embeds as a String static field).
 	 */
 	private final ConcurrentHashMap<String, FileBlueprint>	byPath		= new ConcurrentHashMap<>();
 
@@ -138,13 +134,16 @@ public class CodeProfilerService extends BaseService {
 	 * increment, no positions, no map lookup, no allocation. Returns immediately
 	 * when inactive.
 	 *
-	 * @param fileId the file id returned by {@link #registerBlueprintForFile} or
-	 *               {@link #registerBlueprintForSource} (0-based sequence)
+	 * @param id     the blueprint KEY — the normalized file path, or the source
+	 *               hash when there is no file. This is the SAME key that
+	 *               {@link #registerBlueprintForFile}/{@link #registerBlueprintForSource}
+	 *               stored the blueprint under, and is embedded as a String static
+	 *               field in the instrumented class.
 	 * @param spanId the id of the executable span within that file's blueprint
 	 *               (0-based; indexes the blueprint's executable span array)
 	 */
-	public static void mark( int fileId, int spanId ) {
-		mark( fileId, new int[] { spanId } );
+	public static void mark( String id, int spanId ) {
+		mark( id, new int[] { spanId } );
 	}
 
 	/**
@@ -154,14 +153,14 @@ public class CodeProfilerService extends BaseService {
 	 * and increment all its spans' counts together, with the LAST span owning the
 	 * next interval (so a following mark charges the tail to the shell's end).
 	 * <p>
-	 * This is several {@code mark( fileId, spanId )} calls collapsed into one
+	 * This is several {@code mark( id, spanId )} calls collapsed into one
 	 * bytecode invocation — same semantics, one call instead of N.
 	 *
-	 * @param fileId  the file id
+	 * @param id      the blueprint KEY (normalized file path or source hash)
 	 * @param spanIds the ids of all spans covered by this atomic unit, in source
 	 *                order; the last becomes the current span for the next interval
 	 */
-	public static void mark( int fileId, int... spanIds ) {
+	public static void mark( String id, int... spanIds ) {
 		CodeProfilerService service = instance;
 		if ( service == null || !service.active || spanIds.length == 0 ) {
 			return;
@@ -184,8 +183,9 @@ public class CodeProfilerService extends BaseService {
 
 		service.lastNano.set( now );
 
-		// The current (last) span now owns the next interval.
-		FileBlueprint fb = service.byFileId.get( fileId );
+		// The current (last) span now owns the next interval. The blueprint is
+		// located by its KEY (id) — the path or source hash.
+		FileBlueprint fb = service.byPath.get( id );
 		if ( fb == null ) {
 			return;
 		}
@@ -207,9 +207,10 @@ public class CodeProfilerService extends BaseService {
 	 * since its mark to it) WITHOUT opening a new interval or incrementing any count.
 	 * Emitted at the end of a body so the last span's self-time is not lost.
 	 *
-	 * @param fileId the file id whose current span interval to close
+	 * @param id the blueprint KEY (normalized file path or source hash) whose
+	 *           current span interval to close
 	 */
-	public static void markEnd( int fileId ) {
+	public static void markEnd( String id ) {
 		CodeProfilerService service = instance;
 		if ( service == null || !service.active ) {
 			return;
@@ -220,7 +221,7 @@ public class CodeProfilerService extends BaseService {
 		if ( prevNano != null && prevNano > 0 && now >= prevNano ) {
 			FileBlueprint	prevFile	= service.lastFile.get();
 			Integer			prevSpan	= service.lastSpanId.get();
-			if ( prevFile != null && prevSpan != null && prevFile == service.byFileId.get( fileId ) ) {
+			if ( prevFile != null && prevSpan != null && prevFile == service.byPath.get( id ) ) {
 				SpanStats prev = prevFile.spanStats( prevSpan );
 				if ( prev != null ) {
 					prev.addNanos( now - prevNano );
@@ -275,7 +276,6 @@ public class CodeProfilerService extends BaseService {
 	 */
 	public static void reset() {
 		if ( instance != null ) {
-			instance.byFileId.clear();
 			instance.byPath.clear();
 			instance.lastNano.remove();
 			instance.lastFile.remove();
@@ -290,9 +290,10 @@ public class CodeProfilerService extends BaseService {
 	 * @param filePath  the source file path (normalized internally)
 	 * @param blueprint the file's blueprint
 	 *
-	 * @return the compact fileId bytecode uses in {@link #mark}; -1 if no instance
+	 * @return the blueprint KEY (the normalized file path) — the id bytecode embeds
+	 *         as a String static field and passes to {@link #mark}; empty if no instance
 	 */
-	public static int registerBlueprintForFile( String filePath, Blueprint blueprint ) {
+	public static String registerBlueprintForFile( String filePath, Blueprint blueprint ) {
 		return registerBlueprint( normalize( filePath ), blueprint, Blueprint.Kind.FILE );
 	}
 
@@ -304,26 +305,149 @@ public class CodeProfilerService extends BaseService {
 	 * @param sourceHash the hash of the adhoc source
 	 * @param blueprint  the source's blueprint
 	 *
-	 * @return the compact fileId bytecode uses in {@link #mark}; -1 if no instance
+	 * @return the blueprint KEY (the source hash) — the id bytecode embeds as a
+	 *         String static field and passes to {@link #mark}; empty if no instance
 	 */
-	public static int registerBlueprintForSource( String sourceHash, Blueprint blueprint ) {
+	public static String registerBlueprintForSource( String sourceHash, Blueprint blueprint ) {
 		return registerBlueprint( sourceHash, blueprint, Blueprint.Kind.SOURCE );
+	}
+
+	/**
+	 * Register a blueprint that was serialized INTO the class's {@code <clinit>}
+	 * bytecode, so a class loaded from disk (not recompiled in this session) can
+	 * self-register its blueprint on first load. Idempotent per file path: the
+	 * existing registration is reused if already present; a NEWER blueprint (file's
+	 * lastModified is greater) replaces the stale one.
+	 * <p>
+	 * The {@code id} IS the blueprint key (file path, or the source hash for adhoc
+	 * source) — the SAME String baked into the class's {@code mark} static field,
+	 * so marks always resolve to the FileBlueprint registered here.
+	 *
+	 * @param id           the blueprint KEY (file path, or source hash for adhoc)
+	 * @param lastModified the source file's last-modified time (0 for adhoc source)
+	 * @param totalLines   the source's total line count
+	 * @param spanData     flat int[] describing every span: groups of 5 ints
+	 *                     (startLine, startCol, endLine, endCol, executableFlag)
+	 *
+	 * @return the id to use for {@link #mark}; empty if no instance
+	 */
+	public static String registerBlueprintFromClinit( String id, long lastModified, int totalLines, int[] spanData ) {
+		return registerBlueprintFromClinitInternal( id, lastModified, totalLines, spanData );
+	}
+
+	/**
+	 * Register a blueprint that was serialized INTO the class's {@code <clinit>}
+	 * as a packed, chunked String (see the {@code int[]} sibling overload for the
+	 * semantics). The boxpiler emits the span data as {@code LDC} string constants
+	 * rather than inline array-build bytecode so that even very large blueprints
+	 * keep the clinit well under the JVM's 64KB per-method limit (inline
+	 * {@code int[]} construction with thousands of {@code DUP/LDC/IASTORE} can
+	 * overflow a single {@code _clinit_part} and splitter frames can't subdivide
+	 * an array whose reference never leaves the stack).
+	 * <p>
+	 * The string is a single space-separated run of the flat ints (groups of 5:
+	 * startLine, startCol, endLine, endCol, executableFlag), broken into multiple
+	 * chunks so each chunk is a single {@code LDC} well under the JVM's 65535-byte
+	 * {@code CONSTANT_Utf8} limit even for very large files.
+	 *
+	 * @param id             the blueprint KEY (file path, or source hash for adhoc)
+	 * @param lastModified   the source file's last-modified time (0 for adhoc source)
+	 * @param totalLines     the source's total line count
+	 * @param spanDataChunks packed span data as space-separated ints, in order
+	 *
+	 * @return the id to use for {@link #mark}; empty if no instance
+	 */
+	public static String registerBlueprintFromClinit( String id, long lastModified, int totalLines, String... spanDataChunks ) {
+		if ( instance == null ) {
+			return "";
+		}
+		int[] spanData = parseSpanDataChunks( spanDataChunks );
+		return registerBlueprintFromClinitInternal( id, lastModified, totalLines, spanData );
+	}
+
+	/**
+	 * Parse the packed, space-separated span-int chunks (emitted by the boxpiler
+	 * as {@code LDC} string constants) back into the flat {@code int[]}.
+	 *
+	 * @param spanDataChunks the chunked, space-separated ints
+	 *
+	 * @return the concatenated flat int array
+	 */
+	private static int[] parseSpanDataChunks( String... spanDataChunks ) {
+		if ( spanDataChunks == null || spanDataChunks.length == 0 ) {
+			return new int[ 0 ];
+		}
+		// Single pass split is more memory-friendly than concatenating then re-splitting.
+		java.util.List<Integer> ints = new java.util.ArrayList<>();
+		for ( String chunk : spanDataChunks ) {
+			if ( chunk == null || chunk.isEmpty() ) {
+				continue;
+			}
+			for ( String part : chunk.trim().split( "\\s+" ) ) {
+				ints.add( Integer.parseInt( part ) );
+			}
+		}
+		int[] result = new int[ ints.size() ];
+		for ( int i = 0; i < result.length; i++ ) {
+			result[ i ] = ints.get( i );
+		}
+		return result;
+	}
+
+	private static String registerBlueprintFromClinitInternal( String id, long lastModified, int totalLines, int[] spanData ) {
+		CodeProfilerService service = instance;
+		if ( service == null ) {
+			return "";
+		}
+		List<Blueprint.SpanDef> spanDefs = new java.util.ArrayList<>();
+		for ( int i = 0; i + 4 < spanData.length; i += 5 ) {
+			spanDefs.add( new Blueprint.SpanDef(
+			    spanData[ i ], spanData[ i + 1 ], spanData[ i + 2 ], spanData[ i + 3 ],
+			    spanData[ i + 4 ] == 1 ) );
+		}
+		String			key			= normalize( id );
+		Blueprint		blueprint	= new Blueprint( totalLines, spanDefs, Blueprint.Kind.FILE, lastModified );
+
+		FileBlueprint	existing	= service.byPath.get( key );
+		if ( existing != null ) {
+			// A newer blueprint replaces the stale one under the SAME key.
+			if ( blueprint.lastModified() > existing.blueprint().lastModified() ) {
+				service.byPath.put( key, new FileBlueprint( key, blueprint ) );
+			}
+			return existing.filePath;
+		}
+		service.byPath.put( key, new FileBlueprint( key, blueprint ) );
+		return key;
 	}
 
 	/**
 	 * Core registration: build the FileBlueprint (keyed by the given opaque key
 	 * string, which is already canonical) and pre-allocate per-span counters.
+	 * <p>
+	 * IMPORTANT: registration is IDEMPOTENT per key. A span is identified by its
+	 * (blueprint key, span number) — the key is the ONLY identity of a blueprint.
+	 * If a blueprint is already registered for this key, it is reused as-is. If
+	 * the incoming blueprint is NEWER (its {@code lastModified} is greater — the
+	 * source file changed and was recompiled), the stale span map no longer
+	 * corresponds, so it is REPLACED (fresh zeroed counters).
+	 *
+	 * @return the blueprint KEY (the id bytecode uses in {@link #mark}).
 	 */
-	private static int registerBlueprint( String key, Blueprint blueprint, Blueprint.Kind kind ) {
+	private static String registerBlueprint( String key, Blueprint blueprint, Blueprint.Kind kind ) {
 		CodeProfilerService service = instance;
 		if ( service == null ) {
-			return -1;
+			return "";
 		}
-		FileBlueprint	fb		= new FileBlueprint( key, blueprint );
-		int				fileId	= service.fileIdSeq.getAndIncrement();
-		service.byFileId.put( fileId, fb );
-		service.byPath.put( key, fb );
-		return fileId;
+		FileBlueprint existing = service.byPath.get( key );
+		if ( existing != null ) {
+			// A newer blueprint (source file changed) replaces the stale one.
+			if ( blueprint.lastModified() > existing.blueprint().lastModified() ) {
+				service.byPath.put( key, new FileBlueprint( key, blueprint ) );
+			}
+			return existing.filePath;
+		}
+		service.byPath.put( key, new FileBlueprint( key, blueprint ) );
+		return key;
 	}
 
 	/**

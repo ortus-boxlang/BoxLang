@@ -160,6 +160,8 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ClassVariablesScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.Blueprint;
+import ortus.boxlang.runtime.services.CodeProfilerService;
 import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DefaultExpression;
@@ -492,6 +494,13 @@ public class AsmTranspiler extends Transpiler {
 		    Type.getDescriptor( ( Key[].class ) ),
 		    null,
 		    null ).visitEnd();
+		if ( hasProfilerId() ) {
+			classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			    Transpiler.PROFILER_ID_FIELD,
+			    Type.getDescriptor( String.class ),
+			    null,
+			    null ).visitEnd();
+		}
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "imports",
@@ -545,8 +554,8 @@ public class AsmTranspiler extends Transpiler {
 			    nodes.addAll( body );
 			    // Close the probe-charging interval after the last statement so the
 			    // final span's self-time is charged, not lost.
-			    if ( isProfilingEnabled() && getFileId() >= 0 ) {
-				    nodes.addAll( AsmHelper.invokeStaticMarkEnd( getFileId() ) );
+			    if ( hasProfilerId() ) {
+				    nodes.addAll( emitMarkEnd() );
 			    }
 			    return nodes;
 		    }
@@ -593,6 +602,16 @@ public class AsmTranspiler extends Transpiler {
 			    type.getInternalName(),
 			    "sourceType",
 			    Type.getDescriptor( BoxSourceType.class ) );
+
+			// Store the profiler blueprint KEY (id) and self-register this script's
+			// blueprint on load, so a script/template loaded from disk after a
+			// restart still has its span map. Idempotent per key.
+			if ( hasProfilerId() ) {
+				List<AbstractInsnNode> regNodes = emitBlueprintRegistrationScript( type.getInternalName() );
+				for ( AbstractInsnNode n : regNodes ) {
+					n.accept( methodVisitor );
+				}
+			}
 
 			methodVisitor.visitLdcInsn( getKeys().size() );
 			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
@@ -661,17 +680,41 @@ public class AsmTranspiler extends Transpiler {
 	}
 
 	/**
-	 * Recursively scan a list of statements for {@link BoxLocalClass} declarations, compiling each
-	 * one into an auxiliary JVM class and registering it in the local class registry.
-	 * <p>
-	 * This also descends into {@link BoxTemplateIsland}, {@link BoxScriptIsland}, and {@link BoxComponent} nodes
-	 * so that local classes defined inside {@code <bx:script>} islands in templates are handled correctly.
+	 * Emit the static-init nodes that store this script/template's profiler blueprint
+	 * KEY (id) into the {@code codeProfilerId} static field and self-register the
+	 * blueprint via {@link CodeProfilerService#registerBlueprintFromClinit}. Mirrors
+	 * what the class transformer emits for BoxClass, so scripts/templates loaded
+	 * from disk after a restart still have their span map registered.
 	 *
-	 * @param statements           the statement list to scan
-	 * @param outerClassname       simple JVM class name of the enclosing script/template class
-	 * @param outerPackage         dot-separated package name of the enclosing class
-	 * @param outerPackageInternal slash-separated package path of the enclosing class
+	 * @param internalClassName the JVM internal name of this compiled unit
+	 *
+	 * @return the instructions (PUTSTATIC codeProfilerId + registerBlueprintFromClinit call)
 	 */
+	private List<AbstractInsnNode> emitBlueprintRegistrationScript( String internalClassName ) {
+		List<AbstractInsnNode> nodes = new java.util.ArrayList<>();
+		if ( !hasProfilerId() ) {
+			return nodes;
+		}
+		List<Blueprint.SpanDef> spanDefs = getSpanDefs();
+		if ( spanDefs == null || spanDefs.isEmpty() ) {
+			return nodes;
+		}
+
+		String id = getFileId();
+		// Store the id into the static field.
+		nodes.add( new LdcInsnNode( id ) );
+		nodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, internalClassName, PROFILER_ID_FIELD, Type.getDescriptor( String.class ) ) );
+
+		// Serialize spans as packed, chunked String constants (constant-pool data —
+		// tiny method footprint) so even huge blueprints never overflow the JVM's
+		// per-method 64KB limit. The old inline int[] array-build kept the array
+		// reference on the stack the whole block, so the clinit splitter could
+		// never subdivide it, causing MethodTooLargeException on big files.
+		nodes.addAll( AsmHelper.emitBlueprintRegistrationNodes(
+		    id, getLastModified(), getTotalLines(), spanDefs ) );
+		return nodes;
+	}
+
 	/**
 	 * Recursively scan a list of statements for {@link BoxLocalClass} declarations, compiling each
 	 * one into an auxiliary JVM class and registering it in the local class registry.
@@ -798,8 +841,8 @@ public class AsmTranspiler extends Transpiler {
 				    ? getProperty( "outerClassInternal" )
 				    : outerPackageInternal + "/" + outerClassname;
 				Set<String>	fieldsToRedirect	= child.getLocalClasses().isEmpty()
-				    ? Set.of( "imports", "path", "sourceType" )
-				    : Set.of( "path", "sourceType" );
+				    ? Set.of( "imports", "path", "sourceType", Transpiler.PROFILER_ID_FIELD )
+				    : Set.of( "path", "sourceType", Transpiler.PROFILER_ID_FIELD );
 				redirectOuterClassFields( localClassNode, syntheticInternal, fieldRedirectTarget, fieldsToRedirect );
 
 				setAuxiliary( syntheticDotFQN, localClassNode );
@@ -924,21 +967,20 @@ public class AsmTranspiler extends Transpiler {
 					    | ( node.getPosition().getStart().getColumn() & 0xFFFFFFFFL );
 					int		spanId	= getSpanId( packed );
 					if ( spanId >= 0 ) {
-						int		fileId	= getFileId();
 						// If this span heads an atomic shell group (a declaration
 						// shell split at lazy defaults), batch the ENTIRE group into
 						// one varargs mark call — the whole shell runs atomically, so
 						// one probe-charging interval and one count increment for all
 						// its fragments. The lazy-default spans are NOT in the group
 						// (they run later at call time).
-						int[]	group	= takeSpanGroup( spanId );
+						int[] group = takeSpanGroup( spanId );
 						if ( group != null ) {
 							for ( int member : group ) {
 								claimSpanMark( member );
 							}
-							nodes.addAll( 0, AsmHelper.invokeStaticMarkVarargs( fileId, group ) );
+							nodes.addAll( 0, emitMarkVarargs( group ) );
 						} else if ( claimSpanMark( spanId ) ) {
-							nodes.addAll( 0, AsmHelper.invokeStaticMark( fileId, spanId ) );
+							nodes.addAll( 0, emitMark( spanId ) );
 						}
 					}
 				}

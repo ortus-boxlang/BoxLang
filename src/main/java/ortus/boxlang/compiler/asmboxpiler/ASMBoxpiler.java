@@ -311,10 +311,26 @@ public class ASMBoxpiler extends Boxpiler {
 			// count newlines in the adhoc source
 			totalLines = 1 + ( int ) classInfo.source().chars().filter( c -> c == '\n' ).count();
 		}
-		Blueprint	blueprint	= new Blueprint( totalLines, spanDefs, Blueprint.Kind.FILE );
+		// The source file's last-modified time, used to detect when a NEWER blueprint
+		// (recompiled file) should replace stale span data. 0 for adhoc source.
+		long lastModified = 0L;
+		if ( classInfo.resolvedFilePath() != null && classInfo.resolvedFilePath().absolutePath() != null ) {
+			try {
+				lastModified = java.nio.file.Files.getLastModifiedTime( classInfo.resolvedFilePath().absolutePath() ).toMillis();
+			} catch ( Exception e ) {
+				// ignore — lastModified stays 0
+			}
+		}
+		Blueprint blueprint = new Blueprint( totalLines, spanDefs, Blueprint.Kind.FILE, lastModified );
+
+		// Carry the span data + totalLines onto the transpiler so Pass B can embed
+		// them into the class's <clinit> for self-registration on load.
+		transpiler.setSpanDefs( spanDefs );
+		transpiler.setTotalLines( totalLines );
+		transpiler.setLastModified( lastModified );
 
 		// Resolve the file key: real path for files, source hash for adhoc source.
-		String		fileKey;
+		String fileKey;
 		if ( classInfo.resolvedFilePath() != null ) {
 			fileKey = classInfo.resolvedFilePath().absolutePath().toString();
 			transpiler.setFileId( CodeProfilerService.registerBlueprintForFile( fileKey, blueprint ) );

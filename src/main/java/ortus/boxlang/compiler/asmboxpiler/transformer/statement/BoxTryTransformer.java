@@ -231,7 +231,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 	 */
 	private void emitBraceGroupMark( List<AbstractInsnNode> nodes, Point keywordPos, boolean consume ) {
 		// No-op when profiling is disabled — never emit mark instructions otherwise.
-		if ( !transpiler.isProfilingEnabled() || transpiler.getFileId() < 0 ) {
+		if ( !transpiler.hasProfilerId() ) {
 			return;
 		}
 		if ( keywordPos == null ) {
@@ -249,7 +249,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 				}
 			}
 			if ( anyClaimed ) {
-				nodes.addAll( AsmHelper.invokeStaticMarkVarargs( transpiler.getFileId(), group ) );
+				nodes.addAll( transpiler.emitMarkVarargs( group ) );
 			}
 		}
 	}

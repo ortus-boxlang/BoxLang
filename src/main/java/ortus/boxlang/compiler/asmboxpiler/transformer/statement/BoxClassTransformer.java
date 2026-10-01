@@ -85,6 +85,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.services.Blueprint;
+import ortus.boxlang.runtime.services.CodeProfilerService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
@@ -554,6 +556,18 @@ public class BoxClassTransformer {
 		    null,
 		    0 ).visitEnd();
 
+		// The blueprint KEY (id) static field, added ONLY when profiling is enabled.
+		// Holds the file path (or source hash) that identifies this class's blueprint;
+		// the mark bytecode loads it as the first arg of each CodeProfilerService.mark
+		// call. Not present when profiling is off (no field bloat).
+		if ( transpiler.isProfilingEnabled() ) {
+			classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			    Transpiler.PROFILER_ID_FIELD,
+			    Type.getDescriptor( String.class ),
+			    null,
+			    null ).visitEnd();
+		}
+
 		// classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
 		// "compileTimeMethodNames",
 		// Type.getDescriptor( Set.class ),
@@ -945,8 +959,8 @@ public class BoxClassTransformer {
 
 			    // Close the probe-charging interval after the pseudo-constructor's
 			    // last statement so the final span's self-time is charged.
-			    if ( transpiler.isProfilingEnabled() && transpiler.getFileId() >= 0 ) {
-				    psuedoBody.addAll( AsmHelper.invokeStaticMarkEnd( transpiler.getFileId() ) );
+			    if ( transpiler.hasProfilerId() ) {
+				    psuedoBody.addAll( transpiler.emitMarkEnd() );
 			    }
 
 			    return psuedoBody;
@@ -1008,8 +1022,8 @@ public class BoxClassTransformer {
 
 			    // Close the probe-charging interval after the static initializer's
 			    // last statement so the final span's self-time is charged.
-			    if ( transpiler.isProfilingEnabled() && transpiler.getFileId() >= 0 ) {
-				    staticNodes.addAll( AsmHelper.invokeStaticMarkEnd( transpiler.getFileId() ) );
+			    if ( transpiler.hasProfilerId() ) {
+				    staticNodes.addAll( transpiler.emitMarkEnd() );
 			    }
 
 			    return staticNodes;
@@ -1025,10 +1039,31 @@ public class BoxClassTransformer {
 			String					outerClassInternal		= transpiler.getProperty( "outerClassInternal" );
 			boolean					isInnerClassDelegate	= outerClassInternal != null;
 
+			// Initialize the profiler blueprint KEY (id) static field FIRST — before
+			// any mark instruction (the shell mark below reads it), so marks never
+			// see a null id. INNER classes defer to the outer field (redirected later),
+			// so only the (non-inner) class emits it.
+			if ( !isInnerClassDelegate && transpiler.getFileId() != null ) {
+				clinitNodes.add( new LdcInsnNode( transpiler.getFileId() ) );
+				clinitNodes
+				    .add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), Transpiler.PROFILER_ID_FIELD, Type.getDescriptor( String.class ) ) );
+			}
+
 			// The CLASS SHELL + closing "}" are batch-marked when the class is
 			// LOADED (clinit). Pass A registered the shell group keyed by the first
 			// annotation (or the "class" keyword); emit it at clinit entry.
 			emitClassShellMark( transpiler, clinitNodes, boxClass );
+
+			// Self-register the blueprint on load so a class loaded from disk (not
+			// recompiled in this session — e.g. after a runtime restart) still has
+			// its span map available. This is IDEMPOTENT: if it was already
+			// registered at compile time, the same key is reused. INNER classes are
+			// delegates — they share the OUTER file's blueprint and their marks are
+			// redirected to the outer's codeProfilerId field, so only the outer
+			// emits the registration.
+			if ( !isInnerClassDelegate ) {
+				emitBlueprintRegistration( transpiler, clinitNodes, type, filePath );
+			}
 
 			if ( isInnerClassDelegate ) {
 				// Inner class: path, sourceType, imports fields are not declared on this class.
@@ -1376,7 +1411,7 @@ public class BoxClassTransformer {
 	 * @param boxClass    the class
 	 */
 	private static void emitClassShellMark( Transpiler transpiler, List<AbstractInsnNode> clinitNodes, BoxClass boxClass ) {
-		if ( !transpiler.isProfilingEnabled() || transpiler.getFileId() < 0 ) {
+		if ( !transpiler.hasProfilerId() ) {
 			return;
 		}
 		Point shellStart = null;
@@ -1413,11 +1448,58 @@ public class BoxClassTransformer {
 			for ( int member : group ) {
 				transpiler.claimSpanMark( member );
 			}
-			clinitNodes.addAll( AsmHelper.invokeStaticMarkVarargs( transpiler.getFileId(), group ) );
+			clinitNodes.addAll( transpiler.emitMarkVarargs( group ) );
 		}
 	}
 
 	/**
+	 * Emit {@code <clinit>} bytecode that self-registers this class's blueprint
+	 * with {@link CodeProfilerService} when the class is LOADED (clinit runs).
+	 * <p>
+	 * This makes a class loaded from disk (NOT recompiled in this session — e.g.
+	 * after a runtime restart where in-memory blueprints were cleared) still have
+	 * its span map available, so its embedded {@code mark(fileId, spanId)}
+	 * instructions continue to record coverage. Registration is idempotent: if
+	 * compile-time registration already happened, the same fileId is reused.
+	 * <p>
+	 * The blueprint is serialized as a flat {@code int[]} (5 ints per span:
+	 * startLine, startCol, endLine, endCol, executableFlag). The emitted call is
+	 * {@code CodeProfilerService.registerBlueprintFromClinit(filePath, fileId,
+	 * lastModified, totalLines, spanData)}. No-op when profiling is disabled or
+	 * there are no spans.
+	 *
+	 * @param transpiler  the active transpiler (span data + fileId live here)
+	 * @param clinitNodes the clinit instruction list to append to
+	 */
+	private static void emitBlueprintRegistration( Transpiler transpiler, List<AbstractInsnNode> clinitNodes, Type type, String filePath ) {
+		if ( !transpiler.isProfilingEnabled() || transpiler.getFileId() == null ) {
+			return;
+		}
+		List<Blueprint.SpanDef> spanDefs = transpiler.getSpanDefs();
+		if ( spanDefs == null || spanDefs.isEmpty() ) {
+			return;
+		}
+
+		// (The codeProfilerId static field was initialized at clinit start — BEFORE
+		// any mark — so marks never read a null id.)
+
+		// Serialize spans as packed, chunked String constants (constant-pool data —
+		// tiny method footprint) so even huge blueprints never overflow the JVM's
+		// per-method 64KB limit. The old inline int[] array-build kept the array
+		// reference on the stack the whole block, so the clinit splitter could
+		// never subdivide it, causing MethodTooLargeException on big files.
+		String id = transpiler.getFileId();
+		clinitNodes.addAll( AsmHelper.emitBlueprintRegistrationNodes(
+		    id, transpiler.getLastModified(), transpiler.getTotalLines(), spanDefs ) );
+	}
+
+	/**
+	 * Emit the {@code mark(fileId, ...staticBraces)} for a class's {@code static {
+	 * ... }} initializer braces at static-init entry. Pass A registered the static
+	 * brace group keyed by the {@code static} keyword. No-op when profiling is
+	 * disabled.
+	 * 
+	 * /**
 	 * Emit the {@code mark(fileId, ...staticBraces)} for a class's {@code static {
 	 * ... }} initializer braces at static-init entry. Pass A registered the static
 	 * brace group keyed by the {@code static} keyword. No-op when profiling is
@@ -1427,7 +1509,7 @@ public class BoxClassTransformer {
 	 * @param boxClass    the class
 	 */
 	private static void emitStaticInitMark( Transpiler transpiler, List<AbstractInsnNode> staticNodes, BoxClass boxClass ) {
-		if ( !transpiler.isProfilingEnabled() || transpiler.getFileId() < 0 ) {
+		if ( !transpiler.hasProfilerId() ) {
 			return;
 		}
 		for ( var stmt : boxClass.getBody() ) {
@@ -1450,7 +1532,7 @@ public class BoxClassTransformer {
 					for ( int member : group ) {
 						transpiler.claimSpanMark( member );
 					}
-					staticNodes.addAll( AsmHelper.invokeStaticMarkVarargs( transpiler.getFileId(), group ) );
+					staticNodes.addAll( transpiler.emitMarkVarargs( group ) );
 				}
 			}
 		}

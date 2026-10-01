@@ -199,7 +199,7 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 	 */
 	private void emitElseIfTagMark( List<AbstractInsnNode> nodes, BoxIfElse ifElse ) {
 		// No-op when profiling is disabled — never emit mark instructions otherwise.
-		if ( !transpiler.isProfilingEnabled() || transpiler.getFileId() < 0 ) {
+		if ( !transpiler.hasProfilerId() ) {
 			return;
 		}
 		if ( ifElse.getStart() == null ) {
@@ -213,12 +213,12 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		long	packed	= ( ( long ) ifElse.getStart().getLine() << 32 ) | ( ifElse.getStart().getColumn() & 0xFFFFFFFFL );
 		int		spanId	= transpiler.getSpanId( packed );
 		if ( spanId >= 0 && transpiler.claimSpanMark( spanId ) ) {
-			nodes.addAll( AsmHelper.invokeStaticMark( transpiler.getFileId(), spanId ) );
+			nodes.addAll( transpiler.emitMark( spanId ) );
 		}
 	}
 
 	/**
-	 * Emit a {@code mark(fileId, elseSpanId)} for the {@code else} keyword when the
+	 * Emit a {@code mark(id, elseSpanId)} for the {@code else} keyword when the
 	 * else branch runs. Pass A registered the keyword as its own span; this fires
 	 * only at the else branch entry — never when the if branch is taken. No-op when
 	 * profiling is disabled (no mark bytecode may be injected).
@@ -228,7 +228,7 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 	 */
 	private void emitElseKeywordMark( List<AbstractInsnNode> nodes, BoxIfElse ifElse ) {
 		// No-op when profiling is disabled — never emit mark instructions otherwise.
-		if ( !transpiler.isProfilingEnabled() || transpiler.getFileId() < 0 ) {
+		if ( !transpiler.hasProfilerId() ) {
 			return;
 		}
 		Point kw = findElseKeyword( ifElse );
@@ -248,7 +248,7 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		}
 		int spanId = transpiler.getSpanId( packed );
 		if ( spanId >= 0 && transpiler.claimSpanMark( spanId ) ) {
-			nodes.addAll( AsmHelper.invokeStaticMark( transpiler.getFileId(), spanId ) );
+			nodes.addAll( transpiler.emitMark( spanId ) );
 		}
 	}
 

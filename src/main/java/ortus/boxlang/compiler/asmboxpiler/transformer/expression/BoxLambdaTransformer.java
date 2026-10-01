@@ -94,8 +94,8 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 			    // Close the probe-charging interval after the lambda body's last
 			    // statement so the final body span's self-time is charged (mirrors
 			    // the script-body and UDF-body markEnd).
-			    if ( transpiler.isProfilingEnabled() && transpiler.getFileId() >= 0 ) {
-				    bodyNodes.addAll( AsmHelper.invokeStaticMarkEnd( transpiler.getFileId() ) );
+			    if ( transpiler.hasProfilerId() ) {
+				    bodyNodes.addAll( transpiler.emitMarkEnd() );
 			    }
 
 			    return bodyNodes;

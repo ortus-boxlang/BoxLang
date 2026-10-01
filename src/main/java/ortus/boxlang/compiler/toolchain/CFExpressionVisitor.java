@@ -784,7 +784,7 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		// el2 alone would report its start AFTER the opening `#`, losing the
 		// delimiters from the AST (and thus from any span/coverage over them).
 		BoxExpression inner = ctx.el2().accept( this );
-		return new BoxStringInterpolation( List.of( inner ), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+		return new BoxStringInterpolation( new ArrayList<>( List.of( inner ) ), tools.getPosition( ctx ), tools.getSourceText( ctx ) );
 	}
 
 	@Override

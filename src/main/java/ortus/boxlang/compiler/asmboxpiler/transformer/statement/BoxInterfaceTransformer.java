@@ -260,6 +260,18 @@ public class BoxInterfaceTransformer {
 		    null,
 		    null ).visitEnd();
 
+		// The blueprint KEY (id) static field, added ONLY when profiling is enabled.
+		// Holds the file path (or source hash) that identifies this interface's
+		// blueprint; the mark bytecode loads it as the first arg of each
+		// CodeProfilerService.mark call. Not present when profiling is off.
+		if ( transpiler.isProfilingEnabled() ) {
+			classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			    Transpiler.PROFILER_ID_FIELD,
+			    Type.getDescriptor( String.class ),
+			    null,
+			    null ).visitEnd();
+		}
+
 		// Add udfs, lambdas, closures static fields for the new function compilation pattern
 		AsmHelper.addNullStaticField( classNode, "udfs", Type.getType( Map.class ), false );
 		AsmHelper.addNullStaticField( classNode, "lambdas", Type.getType( List.class ), false );
@@ -408,6 +420,28 @@ public class BoxInterfaceTransformer {
 		);
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
+			// Initialize the profiler blueprint KEY (id) static field FIRST — before
+			// any mark instruction runs — so marks never read a null id. Then
+			// self-register the blueprint on load so an interface loaded from disk
+			// (not recompiled in this session) still has its span map available.
+			// Idempotent per key; only when profiling is enabled.
+			if ( transpiler.getFileId() != null ) {
+				methodVisitor.visitLdcInsn( transpiler.getFileId() );
+				methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+				    type.getInternalName(),
+				    Transpiler.PROFILER_ID_FIELD,
+				    Type.getDescriptor( String.class ) );
+
+				List<ortus.boxlang.runtime.services.Blueprint.SpanDef> interfaceSpanDefs = transpiler.getSpanDefs();
+				if ( interfaceSpanDefs != null && !interfaceSpanDefs.isEmpty() ) {
+					List<AbstractInsnNode> regNodes = AsmHelper.emitBlueprintRegistrationNodes(
+					    transpiler.getFileId(), transpiler.getLastModified(), transpiler.getTotalLines(), interfaceSpanDefs );
+					for ( AbstractInsnNode n : regNodes ) {
+						n.accept( methodVisitor );
+					}
+				}
+			}
+
 			AsmHelper.resolvedFilePath( methodVisitor, mappingName, mappingPath, relativePath, filePath );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),

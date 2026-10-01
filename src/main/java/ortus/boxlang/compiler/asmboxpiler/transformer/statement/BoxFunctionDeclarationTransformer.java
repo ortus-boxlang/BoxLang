@@ -145,8 +145,8 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    // Close the probe-charging interval after the UDF body's last
 			    // statement so the final body span's self-time is charged (mirrors
 			    // the script-body markEnd in the AsmTranspiler).
-			    if ( transpiler.isProfilingEnabled() && transpiler.getFileId() >= 0 ) {
-				    bodyNodes.addAll( AsmHelper.invokeStaticMarkEnd( transpiler.getFileId() ) );
+			    if ( transpiler.hasProfilerId() ) {
+				    bodyNodes.addAll( transpiler.emitMarkEnd() );
 			    }
 
 			    return bodyNodes;
@@ -353,7 +353,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 	 */
 	private void emitBodyBraceMark( List<AbstractInsnNode> bodyNodes, BoxFunctionDeclaration function ) {
 		// No-op when profiling is disabled — never emit mark instructions otherwise.
-		if ( !transpiler.isProfilingEnabled() || transpiler.getFileId() < 0 ) {
+		if ( !transpiler.hasProfilerId() ) {
 			return;
 		}
 		if ( function.getBody() == null || function.getBody().isEmpty() ) {
@@ -370,7 +370,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			for ( int member : group ) {
 				transpiler.claimSpanMark( member );
 			}
-			bodyNodes.addAll( AsmHelper.invokeStaticMarkVarargs( transpiler.getFileId(), group ) );
+			bodyNodes.addAll( transpiler.emitMarkVarargs( group ) );
 		}
 	}
 

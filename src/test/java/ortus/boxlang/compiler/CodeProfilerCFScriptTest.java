@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.services.Blueprint;
 import ortus.boxlang.runtime.services.CodeProfilerService;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * Tests for the ASM boxpiler's code-profiling instrumentation: run a block with
@@ -86,6 +87,18 @@ class CodeProfilerCFScriptTest {
 	 */
 	private void executeCFScript( String source ) {
 		this.runtime.executeSource( source, new ScriptingRequestBoxContext( this.runtime.getRuntimeContext() ), BoxSourceType.CFSCRIPT );
+	}
+
+	/**
+	 * Build the normalized lowercase absolute-path blueprint key for a test resource.
+	 *
+	 * @param relativePath the class file path relative to the repo root
+	 *
+	 * @return the file-path key used to register the on-disk blueprint
+	 */
+	private String keyFor( String relativePath ) {
+		Path absolute = Paths.get( relativePath ).toAbsolutePath().normalize();
+		return absolute.toString().toLowerCase( Locale.ROOT );
 	}
 
 	@DisplayName( "It registers a blueprint and profiles the expression statement (cfscript)" )
@@ -2533,6 +2546,83 @@ class CodeProfilerCFScriptTest {
 		assertThat( CodeProfilerService.spanAt( fileKey, 20, 2 ).stats().totalNanos() ).isAtMost( 400L * 1_000_000L );
 		assertThat( CodeProfilerService.lineAt( fileKey, 20 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( fileKey, 20 ).count() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It registers the full span model for the CFSCRIPT disk class files" )
+	@Test
+	void testDiskClassSpanDefs() {
+		// One shared context so the SAME instance/variables scope persists.
+		IBoxContext context = new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+
+		// Instantiate ProfilerComplexCF; reference ProfilerStaticOnlyCF statically
+		// (load + static init, NO instance); compile GhostCF without running it.
+		runtime.executeSource( "pc = new src.test.resources.profiler.ProfilerComplexCF();", context, BoxSourceType.CFSCRIPT );
+		runtime.executeSource( "ps = src.test.resources.profiler.ProfilerStaticOnlyCF::staticInitRan;", context, BoxSourceType.CFSCRIPT );
+		Path ghostPath = Paths.get( "src/test/resources/profiler/ProfilerGhostCF.cfc" ).toAbsolutePath().normalize();
+		RunnableLoader.getInstance().getBoxpiler().compileClass( ResolvedFilePath.of( ghostPath ) );
+
+		// ---- ProfilerComplexCF.cfc : full span model (20 exec spans) ----
+		String	complexKey	= keyFor( "src/test/resources/profiler/ProfilerComplexCF.cfc" );
+		var		complexBlue	= CodeProfilerService.trackedBlueprints().get( complexKey );
+		assertThat( complexBlue.spans().stream().filter( Blueprint.SpanDef::executable ).count() ).isEqualTo( 20 );
+		assertThat( complexBlue.spans().get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 50, true ) );  // "component accessors=true extends=\"ProfilerSuper\" {"
+		assertThat( complexBlue.spans().get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 23, 0, 23, 1, true ) ); // final "}"
+		assertThat( complexBlue.spans().get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 8, 1, 8, 9, true ) );   // "static {"
+		assertThat( complexBlue.spans().get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 9, 2, 9, 18, true ) );  // "complexSeed = 42"
+		assertThat( complexBlue.spans().get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 10, 2, 10, 22, true ) );// "staticInitRan = true"
+		assertThat( complexBlue.spans().get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 11, 1, 11, 2, true ) ); // static "}"
+		assertThat( complexBlue.spans().get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 13, 1, 13, 17, true ) );// "instanceInit = 0"
+		assertThat( complexBlue.spans().get( 7 ) ).isEqualTo( new Blueprint.SpanDef( 15, 1, 15, 24, true ) );// "function doubleIt( n ) "
+		assertThat( complexBlue.spans().get( 8 ) ).isEqualTo( new Blueprint.SpanDef( 16, 2, 16, 14, true ) );// "return n * 2"
+		assertThat( complexBlue.spans().get( 9 ) ).isEqualTo( new Blueprint.SpanDef( 15, 24, 15, 25, true ) );// doubleIt brace
+		assertThat( complexBlue.spans().get( 10 ) ).isEqualTo( new Blueprint.SpanDef( 17, 1, 17, 2, true ) );// doubleIt "}"
+		assertThat( complexBlue.spans().get( 11 ) ).isEqualTo( new Blueprint.SpanDef( 19, 1, 19, 22, true ) );// "function member( x ) "
+		assertThat( complexBlue.spans().get( 12 ) ).isEqualTo( new Blueprint.SpanDef( 20, 2, 20, 14, true ) );// "sleep( 100 )"
+		assertThat( complexBlue.spans().get( 13 ) ).isEqualTo( new Blueprint.SpanDef( 21, 2, 21, 14, true ) );// "return x * 3"
+		assertThat( complexBlue.spans().get( 14 ) ).isEqualTo( new Blueprint.SpanDef( 19, 22, 19, 23, true ) );// member brace
+		assertThat( complexBlue.spans().get( 15 ) ).isEqualTo( new Blueprint.SpanDef( 22, 1, 22, 2, true ) );// member "}"
+		assertThat( complexBlue.spans().get( 16 ) ).isEqualTo( new Blueprint.SpanDef( 4, 1, 4, 35, true ) );  // threshold property head
+		assertThat( complexBlue.spans().get( 17 ) ).isEqualTo( new Blueprint.SpanDef( 4, 35, 4, 46, true ) );// complexSeed (SKIPPED)
+		assertThat( complexBlue.spans().get( 18 ) ).isEqualTo( new Blueprint.SpanDef( 6, 1, 6, 31, true ) ); // other property head
+		assertThat( complexBlue.spans().get( 19 ) ).isEqualTo( new Blueprint.SpanDef( 6, 31, 6, 42, true ) );// complexSeed (USED)
+
+		assertThat( CodeProfilerService.spanAt( complexKey, 9, 2 ).stats().count() ).isEqualTo( 1 );   // static complexSeed
+		assertThat( CodeProfilerService.spanAt( complexKey, 13, 1 ).stats().count() ).isEqualTo( 1 );  // instanceInit
+		assertThat( CodeProfilerService.spanAt( complexKey, 4, 35 ).stats().count() ).isEqualTo( 0 );  // threshold default SKIPPED
+		assertThat( CodeProfilerService.spanAt( complexKey, 6, 31 ).stats().count() ).isEqualTo( 1 );  // other default USED
+		assertThat( CodeProfilerService.spanAt( complexKey, 20, 2 ).stats().count() ).isEqualTo( 0 );  // sleep NOT yet run
+		assertThat( CodeProfilerService.lineAt( complexKey, 9 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( complexKey, 9 ).count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.lineAt( complexKey, 20 ).covered() ).isFalse(); // member body line missed
+		assertThat( CodeProfilerService.lineAt( complexKey, 4 ).covered() ).isTrue();   // property head RUNS
+
+		// ---- ProfilerStaticOnlyCF.cfc : static ran, instance + members RED ----
+		String	staticKey	= keyFor( "src/test/resources/profiler/ProfilerStaticOnlyCF.cfc" );
+		var		staticBlue	= CodeProfilerService.trackedBlueprints().get( staticKey );
+		assertThat( staticBlue.spans().stream().filter( Blueprint.SpanDef::executable ).count() ).isEqualTo( 18 );
+		assertThat( CodeProfilerService.spanAt( staticKey, 7, 2 ).stats().count() ).isEqualTo( 1 );  // complexSeed
+		assertThat( CodeProfilerService.spanAt( staticKey, 8, 2 ).stats().count() ).isEqualTo( 1 );  // staticInitRan
+		assertThat( CodeProfilerService.spanAt( staticKey, 11, 1 ).stats().count() ).isEqualTo( 0 ); // instanceInit (no instance)
+		assertThat( CodeProfilerService.spanAt( staticKey, 13, 1 ).stats().count() ).isEqualTo( 0 ); // doubleIt shell (no instance)
+		assertThat( CodeProfilerService.spanAt( staticKey, 18, 2 ).stats().count() ).isEqualTo( 0 ); // member sleep
+		assertThat( CodeProfilerService.spanAt( staticKey, 4, 35 ).stats().count() ).isEqualTo( 0 ); // threshold default RED
+		assertThat( CodeProfilerService.lineAt( staticKey, 8 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( staticKey, 8 ).count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.lineAt( staticKey, 11 ).covered() ).isFalse();
+		assertThat( CodeProfilerService.lineAt( staticKey, 18 ).covered() ).isFalse();
+
+		// ---- ProfilerGhostCF.cfc : compiled but NEVER run -> ALL spans RED ----
+		String	ghostKey	= keyFor( "src/test/resources/profiler/ProfilerGhostCF.cfc" );
+		var		ghostBlue	= CodeProfilerService.trackedBlueprints().get( ghostKey );
+		assertThat( ghostBlue.spans().stream().filter( Blueprint.SpanDef::executable ).count() ).isEqualTo( 18 );
+		for ( Blueprint.SpanDef def : ghostBlue.spans() ) {
+			if ( def.executable() ) {
+				assertThat( CodeProfilerService.spanAt( ghostKey, def.startLine(), def.startCol() ).stats().count() ).isEqualTo( 0 );
+			}
+		}
+		assertThat( CodeProfilerService.lineAt( ghostKey, 7 ).covered() ).isFalse();
+		assertThat( CodeProfilerService.lineAt( ghostKey, 8 ).covered() ).isFalse();
+		assertThat( CodeProfilerService.lineAt( ghostKey, 18 ).covered() ).isFalse();
 	}
 
 	@DisplayName( "It profiles the named-argument param statement (cfscript)" )

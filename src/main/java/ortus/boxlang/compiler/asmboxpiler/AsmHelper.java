@@ -95,22 +95,23 @@ public class AsmHelper {
 
 	/**
 	 * Emit the bytecode for a code-coverage mark call:
-	 * {@code CodeProfilerService.mark( fileId, spanId )}.
+	 * {@code CodeProfilerService.mark( id, spanId )}.
 	 *
-	 * @param fileId the profiler fileId for this compilation's blueprint
+	 * @param id     the blueprint KEY (path string or source hash) — a String static
+	 *               field on the class
 	 * @param spanId the span id within that blueprint
 	 *
-	 * @return the instructions: LDC fileId, LDC spanId, INVOKESTATIC mark(II)V
+	 * @return the instructions: GETSTATIC id, LDC spanId, INVOKESTATIC mark(Ljava/lang/String;I)V
 	 */
-	public static List<AbstractInsnNode> invokeStaticMark( int fileId, int spanId ) {
+	public static List<AbstractInsnNode> invokeStaticMark( String internalClassName, String idField, int spanId ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
-		nodes.add( new LdcInsnNode( fileId ) );
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, idField, Type.getDescriptor( String.class ) ) );
 		nodes.add( new LdcInsnNode( spanId ) );
 		nodes.add( new MethodInsnNode(
 		    Opcodes.INVOKESTATIC,
 		    Type.getInternalName( CodeProfilerService.class ),
 		    "mark",
-		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.INT_TYPE, Type.INT_TYPE ),
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ), Type.INT_TYPE ),
 		    false
 		) );
 		return nodes;
@@ -118,20 +119,20 @@ public class AsmHelper {
 
 	/**
 	 * Emit the bytecode for closing the probe-charging interval at the end of a body:
-	 * {@code CodeProfilerService.markEnd( fileId )}.
+	 * {@code CodeProfilerService.markEnd( id )}.
 	 *
-	 * @param fileId the profiler fileId for this compilation's blueprint
+	 * @param id the blueprint KEY (path string or source hash) — a String static field
 	 *
-	 * @return the instructions: LDC fileId, INVOKESTATIC markEnd(I)V
+	 * @return the instructions: GETSTATIC id, INVOKESTATIC markEnd(Ljava/lang/String;)V
 	 */
-	public static List<AbstractInsnNode> invokeStaticMarkEnd( int fileId ) {
+	public static List<AbstractInsnNode> invokeStaticMarkEnd( String internalClassName, String idField ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
-		nodes.add( new LdcInsnNode( fileId ) );
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, idField, Type.getDescriptor( String.class ) ) );
 		nodes.add( new MethodInsnNode(
 		    Opcodes.INVOKESTATIC,
 		    Type.getInternalName( CodeProfilerService.class ),
 		    "markEnd",
-		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.INT_TYPE ),
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ) ),
 		    false
 		) );
 		return nodes;
@@ -139,21 +140,21 @@ public class AsmHelper {
 
 	/**
 	 * Emit the bytecode for a single code-coverage varargs mark call:
-	 * {@code CodeProfilerService.mark( fileId, int... spanIds )}. This collapses
+	 * {@code CodeProfilerService.mark( id, int... spanIds )}. This collapses
 	 * SEVERAL atomic shell spans (fragments of one declaration split at lazy
-	 * defaults) into a single {@code mark(I[I)V} invocation — the whole shell runs
-	 * or does not run together, so it opens exactly ONE probe-charging interval and
-	 * increments all its spans' counts together.
+	 * defaults) into a single {@code mark(Ljava/lang/String;[I)V} invocation — the
+	 * whole shell runs or does not run together, so it opens exactly ONE
+	 * probe-charging interval and increments all its spans' counts together.
 	 *
-	 * @param fileId  the profiler fileId for this compilation's blueprint
+	 * @param id      the blueprint KEY (path string or source hash) — a String static field
 	 * @param spanIds the shell spans to batch, in source order; the last owns the
 	 *                next interval
 	 *
-	 * @return the instructions: LDC fileId, int[] spanIds, INVOKESTATIC mark(I[I)V
+	 * @return the instructions: GETSTATIC id, int[] spanIds, INVOKESTATIC mark(Ljava/lang/String;[I)V
 	 */
-	public static List<AbstractInsnNode> invokeStaticMarkVarargs( int fileId, int[] spanIds ) {
+	public static List<AbstractInsnNode> invokeStaticMarkVarargs( String internalClassName, String idField, int[] spanIds ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
-		nodes.add( new LdcInsnNode( fileId ) );
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, idField, Type.getDescriptor( String.class ) ) );
 		nodes.add( new LdcInsnNode( spanIds.length ) );
 		nodes.add( new IntInsnNode( Opcodes.NEWARRAY, Opcodes.T_INT ) );
 		for ( int i = 0; i < spanIds.length; i++ ) {
@@ -166,9 +167,87 @@ public class AsmHelper {
 		    Opcodes.INVOKESTATIC,
 		    Type.getInternalName( CodeProfilerService.class ),
 		    "mark",
-		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.INT_TYPE, Type.getType( int[].class ) ),
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ), Type.getType( int[].class ) ),
 		    false
 		) );
+		return nodes;
+	}
+
+	/**
+	 * Emit the bytecode that self-registers a blueprint from a class's
+	 * {@code <clinit>}: {@code CodeProfilerService.registerBlueprintFromClinit(
+	 * id, lastModified, totalLines, String... spanDataChunks )}.
+	 * <p>
+	 * The span data is serialized as a series of PACKED, space-separated String
+	 * constants (each chunk a single {@code LDC}, data living in the constant pool
+	 * rather than the method body). This keeps the clinit tiny even for very large
+	 * blueprints — unlike the old inline {@code int[]} array-build (thousands of
+	 * {@code DUP/LDC/IASTORE}), which could overflow the JVM's per-method 64KB
+	 * limit in a single {@code _clinit_part} because the array-reference stays on
+	 * the stack the whole block, so {@link #completeWithSplitting}'s splitter can
+	 * never find a stack-depth-0 safe point inside it.
+	 *
+	 * @param id           the blueprint KEY (path string or source hash)
+	 * @param lastModified the source file's last-modified time
+	 * @param totalLines   the source's total line count
+	 * @param spanDefs     the spans to serialize (5 ints each: line/col/line/col/flag)
+	 *
+	 * @return the instructions for the registration call
+	 */
+	public static List<AbstractInsnNode> emitBlueprintRegistrationNodes( String id, long lastModified, int totalLines,
+	    List<ortus.boxlang.runtime.services.Blueprint.SpanDef> spanDefs ) {
+		List<AbstractInsnNode>	nodes	= new ArrayList<>();
+
+		// Build the mode-based descriptor: int[].
+		// Pack the spans into a space-separated string, chunked so each LDC stays
+		// well under the JVM's 65535-byte CONSTANT_Utf8 limit.
+		StringBuilder			sb		= new StringBuilder();
+		List<String>			chunks	= new ArrayList<>();
+		int						count	= 0;
+		for ( ortus.boxlang.runtime.services.Blueprint.SpanDef s : spanDefs ) {
+			if ( sb.length() > 0 ) {
+				sb.append( ' ' );
+			}
+			sb.append( s.startLine() ).append( ' ' ).append( s.startCol() )
+			    .append( ' ' ).append( s.endLine() ).append( ' ' ).append( s.endCol() )
+			    .append( s.executable() ? " 1" : " 0" );
+			if ( ++count % 1000 == 0 ) {
+				chunks.add( sb.toString() );
+				sb.setLength( 0 );
+			}
+		}
+		if ( sb.length() > 0 ) {
+			chunks.add( sb.toString() );
+		}
+		if ( chunks.isEmpty() ) {
+			chunks.add( "" );
+		}
+
+		nodes.add( new LdcInsnNode( id ) );
+		nodes.add( new LdcInsnNode( lastModified ) );
+		nodes.add( new LdcInsnNode( totalLines ) );
+		// Build String[] chunks: ANEWARRAY, DUP index LDC AASTORE per chunk.
+		nodes.add( new LdcInsnNode( chunks.size() ) );
+		nodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, Type.getInternalName( String.class ) ) );
+		for ( int i = 0; i < chunks.size(); i++ ) {
+			nodes.add( new InsnNode( Opcodes.DUP ) );
+			nodes.add( new LdcInsnNode( i ) );
+			nodes.add( new LdcInsnNode( chunks.get( i ) ) );
+			nodes.add( new InsnNode( Opcodes.AASTORE ) );
+		}
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( CodeProfilerService.class ),
+		    "registerBlueprintFromClinit",
+		    Type.getMethodDescriptor(
+		        Type.getType( String.class ),                       // return: id
+		        Type.getType( String.class ),                       // arg1: id
+		        Type.LONG_TYPE,                                     // arg2: lastModified
+		        Type.INT_TYPE,                                      // arg3: totalLines
+		        Type.getType( String[].class ) ),                   // arg4: spanDataChunks
+		    false
+		) );
+		nodes.add( new InsnNode( Opcodes.POP ) ); // discard the returned id
 		return nodes;
 	}
 
