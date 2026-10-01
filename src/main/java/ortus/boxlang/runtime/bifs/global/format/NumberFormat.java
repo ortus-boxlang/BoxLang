@@ -202,17 +202,13 @@ public class NumberFormat extends BIF {
 
 				// Preserve the whitespace the mask reserves: pad the result to the mask's digit width
 				// and honor the requested justification ( L = left, C = center, R / default = right ).
-				// The negative sign is placed at the very start, before any padding.
-				String	result		= formatter.format( value );
-				boolean	negative	= result.startsWith( "-" );
-				if ( negative ) {
-					result = result.substring( 1 );
-				}
-				int padding = computeMaskWidth( originalMask ) - countDigitChars( result );
+				// The negative sign stays attached to the number, with the padding placed in front of it.
+				String	result	= formatter.format( value );
+				int		padding	= computeMaskWidth( originalMask ) - countDigitChars( result );
 				if ( padding > 0 ) {
 					result = applyJustification( result, padding, justification );
 				}
-				return negative ? "-" + result : result;
+				return result;
 			}
 		}
 
