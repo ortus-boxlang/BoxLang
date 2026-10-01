@@ -1,4 +1,4 @@
-<cfcomponent extends="ProfilerSuper">
+<cfcomponent extends="ProfilerSuper" implements="ProfilerInterfaceTag">
 
 	<cfproperty name="threshold" default="#throw("boom")#">
 	<cfproperty name="other" default="#( 40 + 2 )#">
@@ -20,6 +20,10 @@
 		<cfargument name="x">
 		<cfset sleep( 100 )>
 		<cfreturn x * 3>
+	</cffunction>
+
+	<cffunction name="abstractOnly" returntype="string">
+		<cfreturn "abstract implemented">
 	</cffunction>
 
 </cfcomponent>

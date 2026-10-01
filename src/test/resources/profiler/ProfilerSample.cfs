@@ -180,6 +180,14 @@ diskVal = diskInstTag.member( 5 );
 result = src.test.resources.profiler.ProfilerStaticOnlyTag::staticMethod();
 foo = src.test.resources.profiler.ProfilerStaticOnlyTag::myStaticVar;
 
+// --- INTERFACE interactions ---
+// Statically reference the CFC interface (loads it, runs NO bodies) and run
+// the inherited DEFAULT method on the implementing class instance (GREEN).
+cfIfaceInited = src.test.resources.profiler.ProfilerInterfaceCF::display;
+cfImplGreeted = diskInst.greet();
+// Same for the TAG interface (via its implementing class's default method).
+tagImplGreeted = diskInstTag.greet();
+
 ```
 foo 
 <cfoutput>

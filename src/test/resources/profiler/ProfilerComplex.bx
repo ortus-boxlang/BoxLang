@@ -1,4 +1,4 @@
-class extends=ProfilerSuper {
+class extends=ProfilerSuper implements="src.test.resources.profiler.ProfilerInterface" {
 
 	// SKIPPED: super already set `threshold` into the variables scope.
 	property name="threshold" default=complexSeed;
@@ -55,5 +55,10 @@ class extends=ProfilerSuper {
 	function member( x ) {
 		sleep( 100 );
 		return x * 3;
+	}
+
+	// Implement the interface's abstract method so ProfilerComplex can instantiate.
+	function abstractOnly() {
+		return "abstract implemented";
 	}
 }

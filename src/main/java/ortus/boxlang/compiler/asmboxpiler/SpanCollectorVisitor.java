@@ -23,6 +23,7 @@ import java.util.Stack;
 
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
@@ -47,6 +48,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
+import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
@@ -62,6 +64,7 @@ import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.services.Blueprint;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * FIRST PASS (Pass A) span-discovery visitor.
@@ -2514,6 +2517,18 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			}
 		} else if ( node.getBody() != null && !node.getBody().isEmpty() ) {
 			closeRunningSpan( node.getBody().get( 0 ).getStart() );
+		} else if ( node.getBody() == null && !isTagContext( node ) ) {
+			// ABSTRACT method (no body, SCRIPT syntax — e.g. `function name();` in
+			// an interface, with NO braces): the DECLARATION TEXT is static
+			// metadata — it runs at class/interface load (the runtime registers the
+			// method signature). Register the whole declaration as ONE span so it
+			// can be batch-marked GREEN when the class/interface loads (grouped
+			// with the shell by the caller). A tag abstract (<cffunction />) is
+			// handled by its open/close tags; an empty-body concrete function
+			// (`function foo() {}`) has braces and takes the openBrace path above.
+			if ( node.getEnd() != null && node.getStart() != null ) {
+				closeRunningSpan( new Point( node.getEnd().getLine(), node.getEnd().getColumn() ) );
+			}
 		}
 		postCollectAndRegisterShell();
 		// Capture the shell HEAD id NOW (before body statements may collect nested
@@ -2542,7 +2557,15 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			Point afterBody = node.getBody() != null && !node.getBody().isEmpty() && node.getBody().get( node.getBody().size() - 1 ).getEnd() != null
 			    ? node.getBody().get( node.getBody().size() - 1 ).getEnd()
 			    : node.getEnd();
-			registerTagClose( node, afterBody, "function", shellHead );
+			if ( node.getBody() == null || node.getBody().isEmpty() ) {
+				// Abstract/empty TAG function (<cffunction ...></cffunction>): no
+				// body, so node.getEnd() is AT (or past) the close tag — scanning
+				// FORWARD from it can't find the close. Scan BACKWARD from the end
+				// to register the close tag and group it with the declaration shell.
+				registerTagCloseBackward( node, node.getEnd(), "function", shellHead );
+			} else {
+				registerTagClose( node, afterBody, "function", shellHead );
+			}
 		}
 
 		// Reset so the enclosing statement close doesn't mint a phantom span over
@@ -2735,12 +2758,34 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			}
 		}
 
+		// Abstract method shells become static metadata of the class, like property
+		// declarations — collect them to merge with the class shell (marked GREEN at
+		// load). Also captures the tag </cffunction> close for abstract tag methods.
+		List<Integer> abstractShells = new ArrayList<>();
 		for ( BoxStatement stmt : node.getBody() ) {
 			if ( stmt instanceof BoxFunctionDeclaration func ) {
 				// Member/static function: use the FULL function logic (shell + body
 				// braces + invocation-time body) so members behave like UDFs.
+				boolean isAbstract = func.getBody() == null;
 				this.runningStart = func.getStart();
 				visit( func );
+				if ( isAbstract ) {
+					// Abstract fn: no body, so it emits no invoker mark. Consume its
+					// shell group (incl. tag close) and merge it with the shell group.
+					int head = shellHeadId();
+					if ( head >= 0 ) {
+						int[] group = transpiler.takeSpanGroup( head );
+						if ( group != null ) {
+							for ( int g : group ) {
+								if ( !abstractShells.contains( g ) ) {
+									abstractShells.add( g );
+								}
+							}
+						} else if ( !abstractShells.contains( head ) ) {
+							abstractShells.add( head );
+						}
+					}
+				}
 			} else if ( stmt instanceof BoxStaticInitializer init ) {
 				// Static initializer: the "static {" header + closing "}" are a
 				// group, batch-marked at static load (Pass B emits at static init).
@@ -2813,9 +2858,192 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			}
 			transpiler.registerSpanGroup( group.stream().mapToInt( Integer::intValue ).toArray() );
 		}
+		// Merge abstract-method shells into the class SHELL group so their
+		// declarations (static metadata) are marked GREEN when the class loads.
+		if ( shellId >= 0 && !abstractShells.isEmpty() ) {
+			List<Integer>	group		= new ArrayList<>();
+			int[]			existing	= transpiler.peekSpanGroup( shellId );
+			if ( existing != null ) {
+				for ( int e : existing ) {
+					if ( !group.contains( e ) ) {
+						group.add( e );
+					}
+				}
+			} else {
+				group.add( shellId );
+			}
+			for ( int s : abstractShells ) {
+				if ( !group.contains( s ) ) {
+					group.add( s );
+				}
+			}
+			transpiler.registerSpanGroup( group.stream().mapToInt( Integer::intValue ).toArray() );
+		}
 
 		// Reset so the enclosing statement close doesn't mint a phantom span over
 		// the trailing ";" / newline after the class.
+		this.runningStart = null;
+		this.currentSourceType.pop();
+	}
+
+	/**
+	 * Visit an interface declaration. Interfaces hold executable spans in their
+	 * SHELL (the {@code interface ... { } header, marked once at interface load),
+	 * their STATIC INITIALIZER (header + closing brace, batch-marked at static
+	 * load), and their STATIC functions and DEFAULT methods (shell + body, marked
+	 * at declaration and again when invoked). Abstract members have no body and
+	 * hence no spans. Mirrors {@link #visit(BoxClass)} but without properties
+	 * (interfaces declare none).
+	 *
+	 * @param node the interface node
+	 */
+	public void visit( BoxInterface node ) {
+		// Push the interface's real source type (script vs CFSCRIPT vs CFTEMPLATE)
+		// so its body constructs register the right span flavor.
+		BoxSourceType interfaceType = node.getBoxSourceType();
+		this.currentSourceType.push( interfaceType != null ? interfaceType : this.currentSourceType.peek() );
+
+		// The INTERFACE SHELL (pre-annotations + "interface" keyword +
+		// post-annotations + opening "{") runs ONCE at interface load (clinit), as
+		// does the closing "}". Register them as ONE group so they batch-mark when
+		// the interface is loaded. The shell starts at the first pre-annotation
+		// (or the "interface" keyword if there are none).
+		Point shellStart = node.getStart();
+		if ( node.getAnnotations() != null && !node.getAnnotations().isEmpty() ) {
+			Point	annStart		= node.getAnnotations().get( 0 ).getPosition() == null
+			    ? null
+			    : node.getAnnotations().get( 0 ).getPosition().getStart();
+			Point	interfaceStart	= node.getStart();
+			if ( annStart != null && interfaceStart != null ) {
+				shellStart = ( annStart.getLine() < interfaceStart.getLine()
+				    || ( annStart.getLine() == interfaceStart.getLine()
+				        && annStart.getColumn() < interfaceStart.getColumn() ) )
+				            ? annStart
+				            : interfaceStart;
+			} else if ( annStart != null ) {
+				shellStart = annStart;
+			}
+		}
+
+		// Tag-based interfaces (<cfinterface>) use an open tag as their shell;
+		// script interfaces use the "@interface ... {" header.
+		int shellId = -1;
+		if ( isTemplate() ) {
+			Point tagEnd = findTagCloseAfter( node, node.getStart() );
+			if ( tagEnd != null && shellStart != null ) {
+				this.runningStart	= shellStart;
+				shellId				= closeRunningSpan( new Point( tagEnd.getLine(), tagEnd.getColumn() + 1 ) );
+			}
+			if ( shellId >= 0 ) {
+				Point closeOpen = findTagCloseOpen( node,
+				    node.getBody() == null || node.getBody().isEmpty() ? node.getEnd() : node.getBody().get( node.getBody().size() - 1 ).getEnd(),
+				    "interface" );
+				if ( closeOpen != null ) {
+					Point closeEnd = findTagCloseAfter( node, closeOpen );
+					if ( closeEnd != null ) {
+						int closeId = addSpan( closeOpen, new Point( closeEnd.getLine(), closeEnd.getColumn() + 1 ) );
+						if ( closeId >= 0 ) {
+							transpiler.registerSpanGroup( new int[] { shellId, closeId } );
+						}
+					}
+				}
+			}
+		} else {
+			// Script interface: header text through the opening "{", grouped with "}".
+			Point openBrace = findOpenBraceAfter( node, shellStart );
+			if ( openBrace != null && shellStart != null ) {
+				this.runningStart	= shellStart;
+				shellId				= closeRunningSpan( new Point( openBrace.getLine(), openBrace.getColumn() + 1 ) );
+			}
+			Point closeBrace = node.getEnd() == null ? null : new Point( node.getEnd().getLine(), node.getEnd().getColumn() - 1 );
+			if ( shellId >= 0 ) {
+				registerBraceGroup( shellId, closeBrace );
+			}
+		}
+
+		// Body: static functions, default methods, and static initializers carry
+		// runnable spans. Abstract member declarations have no body — their SHELLS
+		// (and tag close, if any) become static metadata of the interface, so they
+		// are grouped with the interface shell and marked GREEN at load, exactly
+		// like a property declaration.
+		List<Integer> abstractShells = new ArrayList<>();
+		for ( BoxStatement stmt : node.getBody() ) {
+			if ( stmt instanceof BoxFunctionDeclaration func ) {
+				boolean isAbstract = func.getBody() == null;
+				// Static function or DEFAULT method: use the full function logic
+				// (shell + body braces + invocation-time body).
+				this.runningStart = func.getStart();
+				visit( func );
+				if ( isAbstract ) {
+					// Abstract fn: no body, so it emits no invoker mark. Consume its
+					// shell group and merge it with the interface shell group so
+					// the declaration is marked GREEN when the interface loads.
+					int head = shellHeadId();
+					if ( head >= 0 ) {
+						int[] group = transpiler.takeSpanGroup( head );
+						if ( group != null ) {
+							for ( int g : group ) {
+								if ( !abstractShells.contains( g ) ) {
+									abstractShells.add( g );
+								}
+							}
+						} else if ( !abstractShells.contains( head ) ) {
+							abstractShells.add( head );
+						}
+					}
+				}
+			} else if ( stmt instanceof BoxStaticInitializer init ) {
+				// Static initializer: "static {" header + closing "}" group,
+				// batch-marked at static load. Header span includes the "{".
+				Point	initOpen	= findOpenBraceBefore( node, init.getBody().isEmpty() ? init.getEnd() : init.getBody().get( 0 ).getStart() );
+				Point	initClose	= init.getEnd() == null ? null : new Point( init.getEnd().getLine(), init.getEnd().getColumn() - 1 );
+				int		initHeader	= -1;
+				this.runningStart = init.getStart();
+				if ( initOpen != null ) {
+					initHeader = closeRunningSpan( new Point( initOpen.getLine(), initOpen.getColumn() + 1 ) );
+				}
+				for ( BoxStatement s : init.getBody() ) {
+					this.runningStart = s.getStart();
+					s.accept( this );
+					closeRunningSpan( s.getEnd() );
+				}
+				if ( initHeader >= 0 && initClose != null ) {
+					registerBraceGroup( initHeader, initClose );
+				}
+				this.runningStart = null;
+			} else if ( stmt instanceof BoxImport ) {
+				// imports carry no executable span — skip.
+			} else {
+				throw new BoxRuntimeException(
+				    "Unsupported interface body statement for span collection: " + stmt.getClass().getSimpleName() );
+			}
+		}
+
+		// Merge any abstract-method shells into the interface SHELL group so they
+		// are batch-marked GREEN when the interface loads (their declarations are
+		// static metadata, like property declarations).
+		if ( shellId >= 0 && !abstractShells.isEmpty() ) {
+			List<Integer>	group		= new ArrayList<>();
+			int[]			existing	= transpiler.peekSpanGroup( shellId );
+			if ( existing != null ) {
+				for ( int e : existing ) {
+					if ( !group.contains( e ) ) {
+						group.add( e );
+					}
+				}
+			} else {
+				group.add( shellId );
+			}
+			for ( int s : abstractShells ) {
+				if ( !group.contains( s ) ) {
+					group.add( s );
+				}
+			}
+			transpiler.registerSpanGroup( group.stream().mapToInt( Integer::intValue ).toArray() );
+		}
+
+		// Reset so the enclosing statement close doesn't mint a phantom span over
+		// the trailing ";" / newline after the interface.
 		this.runningStart = null;
 		this.currentSourceType.pop();
 	}

@@ -36,12 +36,15 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
+import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
+import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.InterfaceBoxContext;
@@ -390,6 +393,12 @@ public class BoxInterfaceTransformer {
 		    () -> {
 			    List<AbstractInsnNode> staticNodes = new ArrayList<AbstractInsnNode>();
 
+			    // The static { ... } braces are batch-marked when the static
+			    // initializer RUNS (interface load). Pass A registered the static
+			    // brace group keyed by the "static" keyword; emit it at static-init
+			    // entry, mirroring the class transformer.
+			    emitInterfaceStaticInitMark( transpiler, staticNodes, boxInterface );
+
 			    boxInterface.getDescendantsOfType( BoxFunctionDeclaration.class, ( expr ) -> {
 				    BoxFunctionDeclaration func = ( BoxFunctionDeclaration ) expr;
 
@@ -415,6 +424,12 @@ public class BoxInterfaceTransformer {
 			        .collect( Collectors.toList() )
 			    );
 
+			    // Close the probe-charging interval after the static initializer's
+			    // last statement so the final span's self-time is charged.
+			    if ( transpiler.hasProfilerId() ) {
+				    staticNodes.addAll( transpiler.emitMarkEnd() );
+			    }
+
 			    return staticNodes;
 		    }
 		);
@@ -439,6 +454,16 @@ public class BoxInterfaceTransformer {
 					for ( AbstractInsnNode n : regNodes ) {
 						n.accept( methodVisitor );
 					}
+				}
+			}
+
+			// Emit the interface SHELL + closing "}" batch mark AFTER the id field is
+			// initialized (the mark reads the id via GETSTATIC codeProfilerId). The
+			// shell runs ONCE when the interface is loaded.
+			if ( transpiler.hasProfilerId() ) {
+				List<AbstractInsnNode> shellNodes = emitInterfaceShellMark( transpiler, boxInterface );
+				for ( AbstractInsnNode n : shellNodes ) {
+					n.accept( methodVisitor );
 				}
 			}
 
@@ -587,5 +612,79 @@ public class BoxInterfaceTransformer {
 		} );
 
 		return classNode;
+	}
+
+	/**
+	 * Emit the interface SHELL + closing "}" batch mark. The interface header
+	 * (annotations + "interface" keyword + post-annotations + opening "{") and the
+	 * closing "}" run ONCE at interface load (clinit), so they are emitted here as
+	 * a single varargs mark. No-op when profiling is off or the shell span isn't in
+	 * the blueprint.
+	 *
+	 * @param transpiler   the active transpiler (span registry + fileId)
+	 * @param boxInterface the interface AST
+	 *
+	 * @return the instructions (or an empty list)
+	 */
+	private static List<AbstractInsnNode> emitInterfaceShellMark( Transpiler transpiler, BoxInterface boxInterface ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		if ( !transpiler.hasProfilerId() ) {
+			return nodes;
+		}
+		Point shellStart = boxInterface.getStart();
+		if ( shellStart == null ) {
+			return nodes;
+		}
+		long	packed	= ( ( long ) shellStart.getLine() << 32 ) | ( shellStart.getColumn() & 0xFFFFFFFFL );
+		int		spanId	= transpiler.getSpanId( packed );
+		int[]	group	= spanId < 0 ? null : transpiler.takeSpanGroup( spanId );
+		if ( group != null ) {
+			for ( int member : group ) {
+				transpiler.claimSpanMark( member );
+			}
+			nodes.addAll( transpiler.emitMarkVarargs( group ) );
+		}
+		return nodes;
+	}
+
+	/**
+	 * Emit the interface's static-initializer brace group mark. A static block's
+	 * {@code static { }} header (including the opening brace) and closing "}" are
+	 * REGISTERED as one group in Pass A keyed by the {@code static} keyword; this
+	 * batch-marks them when the static initializer RUNS (at interface load).
+	 * Handles static blocks written directly in the interface body or inside a
+	 * {@code <cfscript>} island (tag-based interfaces).
+	 *
+	 * @param transpiler   the active transpiler
+	 * @param staticNodes  the static initializer instruction list to append to
+	 * @param boxInterface the interface AST
+	 */
+	private static void emitInterfaceStaticInitMark( Transpiler transpiler, List<AbstractInsnNode> staticNodes, BoxInterface boxInterface ) {
+		if ( !transpiler.hasProfilerId() ) {
+			return;
+		}
+		for ( var stmt : boxInterface.getBody() ) {
+			List<BoxStatement> candidates = stmt instanceof BoxScriptIsland island
+			    ? island.getStatements()
+			    : List.of( stmt );
+			for ( BoxStatement candidate : candidates ) {
+				if ( ! ( candidate instanceof BoxStaticInitializer init ) ) {
+					continue;
+				}
+				Point kw = init.getStart();
+				if ( kw == null ) {
+					continue;
+				}
+				long	packed	= ( ( long ) kw.getLine() << 32 ) | ( kw.getColumn() & 0xFFFFFFFFL );
+				int		spanId	= transpiler.getSpanId( packed );
+				int[]	group	= spanId < 0 ? null : transpiler.takeSpanGroup( spanId );
+				if ( group != null ) {
+					for ( int member : group ) {
+						transpiler.claimSpanMark( member );
+					}
+					staticNodes.addAll( transpiler.emitMarkVarargs( group ) );
+				}
+			}
+		}
 	}
 }

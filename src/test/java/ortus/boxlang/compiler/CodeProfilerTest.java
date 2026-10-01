@@ -21,7 +21,9 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -3198,12 +3200,12 @@ class CodeProfilerTest {
 		assertThat( CodeProfilerService.spanAt( superKey, 3, 1 ).stats().count() ).isEqualTo( 1 );       // ran for the single Complex instance
 		assertThat( CodeProfilerService.lineAt( superKey, 3 ).covered() ).isTrue();
 
-		// ---- ProfilerComplex.bx : full span model (58 exec spans) ----
+		// ---- ProfilerComplex.bx : full span model (62 exec spans) ----
 		String	complexKey	= keyFor( "src/test/resources/profiler/ProfilerComplex.bx" );
 		var		complexBlue	= CodeProfilerService.trackedBlueprints().get( complexKey );
-		assertThat( complexBlue.spans().stream().filter( Blueprint.SpanDef::executable ).count() ).isEqualTo( 58 );
-		assertThat( complexBlue.spans().get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 29, true ) );  // "class extends=ProfilerSuper {"
-		assertThat( complexBlue.spans().get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 59, 0, 59, 1, true ) ); // final "}"
+		assertThat( complexBlue.spans().stream().filter( Blueprint.SpanDef::executable ).count() ).isEqualTo( 62 );
+		assertThat( complexBlue.spans().get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 88, true ) ); // "class extends=ProfilerSuper implements=... {"
+		assertThat( complexBlue.spans().get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 64, 0, 64, 1, true ) ); // final "}"
 		assertThat( complexBlue.spans().get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 8, 1, 8, 9, true ) );   // "static {"
 		assertThat( complexBlue.spans().get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 9, 2, 9, 18, true ) );  // "complexSeed = 42"
 		assertThat( complexBlue.spans().get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 10, 2, 10, 22, true ) );// "staticInitRan = true"
@@ -3256,10 +3258,15 @@ class CodeProfilerTest {
 		assertThat( complexBlue.spans().get( 51 ) ).isEqualTo( new Blueprint.SpanDef( 57, 2, 57, 14, true ) );// "return x * 3"
 		assertThat( complexBlue.spans().get( 52 ) ).isEqualTo( new Blueprint.SpanDef( 55, 22, 55, 23, true ) );// member brace
 		assertThat( complexBlue.spans().get( 53 ) ).isEqualTo( new Blueprint.SpanDef( 58, 1, 58, 2, true ) ); // member "}"
-		assertThat( complexBlue.spans().get( 54 ) ).isEqualTo( new Blueprint.SpanDef( 4, 1, 4, 35, true ) );  // threshold property head
-		assertThat( complexBlue.spans().get( 55 ) ).isEqualTo( new Blueprint.SpanDef( 4, 35, 4, 46, true ) );// complexSeed (SKIPPED)
-		assertThat( complexBlue.spans().get( 56 ) ).isEqualTo( new Blueprint.SpanDef( 6, 1, 6, 31, true ) ); // other property head
-		assertThat( complexBlue.spans().get( 57 ) ).isEqualTo( new Blueprint.SpanDef( 6, 31, 6, 42, true ) );// complexSeed (USED)
+		// abstractOnly() — the interface abstract method impl
+		assertThat( complexBlue.spans().get( 54 ) ).isEqualTo( new Blueprint.SpanDef( 61, 1, 61, 25, true ) );// "function abstractOnly() "
+		assertThat( complexBlue.spans().get( 55 ) ).isEqualTo( new Blueprint.SpanDef( 62, 2, 62, 31, true ) );// "return "abstract implemented""
+		assertThat( complexBlue.spans().get( 56 ) ).isEqualTo( new Blueprint.SpanDef( 61, 25, 61, 26, true ) );// brace
+		assertThat( complexBlue.spans().get( 57 ) ).isEqualTo( new Blueprint.SpanDef( 63, 1, 63, 2, true ) ); // abstractOnly "}"
+		assertThat( complexBlue.spans().get( 58 ) ).isEqualTo( new Blueprint.SpanDef( 4, 1, 4, 35, true ) );  // threshold property head
+		assertThat( complexBlue.spans().get( 59 ) ).isEqualTo( new Blueprint.SpanDef( 4, 35, 4, 46, true ) );// complexSeed (SKIPPED)
+		assertThat( complexBlue.spans().get( 60 ) ).isEqualTo( new Blueprint.SpanDef( 6, 1, 6, 31, true ) ); // other property head
+		assertThat( complexBlue.spans().get( 61 ) ).isEqualTo( new Blueprint.SpanDef( 6, 31, 6, 42, true ) );// complexSeed (USED)
 
 		// Complex coverage: static + pseudo-ctor ran; members only on call; the
 		// skipped threshold default is count 0 while the applied other is count 1.
@@ -3309,6 +3316,158 @@ class CodeProfilerTest {
 		assertThat( CodeProfilerService.lineAt( ghostKey, 7 ).covered() ).isFalse();
 		assertThat( CodeProfilerService.lineAt( ghostKey, 8 ).covered() ).isFalse();
 		assertThat( CodeProfilerService.lineAt( ghostKey, 54 ).covered() ).isFalse();
+	}
+
+	@DisplayName( "It instruments and profiles a BoxLang interface's static block, static functions, and default methods" )
+	@Test
+	void testInterfaceSpanCoverage() {
+		// Interfaces hold executable spans in their STATIC block, STATIC functions,
+		// and DEFAULT methods (abstract members have no body). The interface
+		// transformer must declare the codeProfilerId field, self-register the
+		// blueprint, and emit mark probes that run when the interface is loaded,
+		// its static functions are invoked, and an implementing class runs a
+		// default method.
+		IBoxContext context = new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+
+		// Reference the interface statically (loads it, running its static block).
+		runtime.executeSource( "src.test.resources.profiler.ProfilerInterface::initializedAt;", context );
+
+		String	key	= keyFor( "src/test/resources/profiler/ProfilerInterface.bx" );
+		var		bp	= CodeProfilerService.trackedBlueprints().get( key );
+		assertThat( bp ).isNotNull();
+
+		// ---- SPAN DEFINITIONS (exact span model for the interface file) ----
+		// Layout (the fixture has a static block, static functions, a CALLED
+		// default method, an UNUSED default method, and an abstract method with
+		// NO body — abstract members produce NO spans):
+		// 1 interface displayName="ProfilerInterface" { (SHELL)
+		// 3 static {
+		// 4 static.initializedAt = createDateTime( 2020, 1, 1 );
+		// 5 static.counter = 0;
+		// 6 }
+		// 8 static function bump() { 9 static.counter++; 10 return static.counter; 11 }
+		// 13 static function display() { 14 var x = 1 + 2; 15 return displayName; 16 }
+		// 20 default function greet() { 21 var msg...; 22 return msg; 23 }
+		// 26 default function greetUnused(){27 var unusedPrefix; 28 return ...; 29 } (never called)
+		// 32 function abstractOnly(); <- abstract, NO spans
+		// 34 }
+		List<Blueprint.SpanDef> exec = bp.spans().stream().filter( Blueprint.SpanDef::executable ).collect( Collectors.toList() );
+		assertThat( exec ).containsExactly(
+		    // interface shell (line 1) + closing "}" (line 34) — grouped, marked at load
+		    new Blueprint.SpanDef( 1, 0, 1, 43, true ),   // interface displayName="ProfilerInterface" {
+		    new Blueprint.SpanDef( 34, 0, 34, 1, true ),  // closing }
+		    // static function bump()
+		    new Blueprint.SpanDef( 8, 1, 8, 24, true ),   // static function bump() {
+		    new Blueprint.SpanDef( 9, 2, 9, 18, true ),   // static.counter++;
+		    new Blueprint.SpanDef( 10, 2, 10, 23, true ), // return static.counter;
+		    new Blueprint.SpanDef( 8, 24, 8, 25, true ),  // bump opening brace
+		    new Blueprint.SpanDef( 11, 1, 11, 2, true ),  // bump closing }
+		    // static function display()
+		    new Blueprint.SpanDef( 13, 1, 13, 27, true ), // static function display() {
+		    new Blueprint.SpanDef( 14, 2, 14, 15, true ), // var x = 1 + 2;
+		    new Blueprint.SpanDef( 15, 2, 15, 20, true ), // return displayName;
+		    new Blueprint.SpanDef( 13, 27, 13, 28, true ),// display opening brace
+		    new Blueprint.SpanDef( 16, 1, 16, 2, true ),  // display closing }
+		    // default method greet() — CALLED via implementing class
+		    new Blueprint.SpanDef( 20, 1, 20, 26, true ), // default function greet() {
+		    new Blueprint.SpanDef( 21, 2, 21, 34, true ), // var msg = "hello from interface";
+		    new Blueprint.SpanDef( 22, 2, 22, 12, true ), // return msg;
+		    new Blueprint.SpanDef( 20, 26, 20, 27, true ),// greet opening brace
+		    new Blueprint.SpanDef( 23, 1, 23, 2, true ),  // greet closing }
+		    // default method greetUnused() — NEVER called, body stays RED
+		    new Blueprint.SpanDef( 26, 1, 26, 32, true ), // default function greetUnused() {
+		    new Blueprint.SpanDef( 27, 2, 27, 29, true ), // var unusedPrefix = "unused";
+		    new Blueprint.SpanDef( 28, 2, 28, 27, true ), // return unusedPrefix & "!";
+		    new Blueprint.SpanDef( 26, 32, 26, 33, true ),// greetUnused opening brace
+		    new Blueprint.SpanDef( 29, 1, 29, 2, true ),  // greetUnused closing }
+		    // abstract method abstractOnly() — declaration is static metadata, marked GREEN at load
+		    new Blueprint.SpanDef( 32, 1, 32, 24, true ), // function abstractOnly();
+		    // static init block (header + closing brace grouped, marked at load)
+		    new Blueprint.SpanDef( 3, 1, 3, 9, true ),    // static {
+		    new Blueprint.SpanDef( 4, 2, 4, 53, true ),   // static.initializedAt = ...
+		    new Blueprint.SpanDef( 5, 2, 5, 20, true ),   // static.counter = 0;
+		    new Blueprint.SpanDef( 6, 1, 6, 2, true )     // static block closing }
+		);
+
+		// ---- COVERAGE after a static reference ----
+		// The interface SHELL (line 1) ran at load; static block RAN on load.
+		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();  // interface shell
+		assertThat( CodeProfilerService.lineAt( key, 3 ).covered() ).isTrue();  // static { header
+		assertThat( CodeProfilerService.lineAt( key, 4 ).covered() ).isTrue();  // static block body
+		assertThat( CodeProfilerService.lineAt( key, 5 ).covered() ).isTrue();  // static block body
+		// Function DECLARATION shells ran at load, but bodies did NOT.
+		assertThat( CodeProfilerService.lineAt( key, 9 ).covered() ).isFalse();  // bump body
+		assertThat( CodeProfilerService.lineAt( key, 14 ).covered() ).isFalse(); // display body
+		assertThat( CodeProfilerService.lineAt( key, 21 ).covered() ).isFalse(); // greet body
+		assertThat( CodeProfilerService.lineAt( key, 27 ).covered() ).isFalse(); // greetUnused body (never called)
+		assertThat( CodeProfilerService.lineAt( key, 28 ).covered() ).isFalse(); // greetUnused return (never called)
+		// The ABSTRACT method has no BODY — but its DECLARATION (`function
+		// abstractOnly();`) is static metadata of the interface, so it is marked
+		// GREEN when the interface loads, exactly like a property declaration.
+		var abstractDecl = CodeProfilerService.lineAt( key, 32 );
+		assertThat( abstractDecl ).isNotNull();
+		assertThat( abstractDecl.covered() ).isTrue();
+		assertThat( abstractDecl.count() ).isEqualTo( 1 );
+
+		// ---- Invoke the static function twice ----
+		runtime.executeSource( "src.test.resources.profiler.ProfilerInterface::bump();", context );
+		runtime.executeSource( "src.test.resources.profiler.ProfilerInterface::bump();", context );
+		assertThat( CodeProfilerService.lineAt( key, 9 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 9 ).count() ).isEqualTo( 2 );
+		assertThat( CodeProfilerService.lineAt( key, 10 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 10 ).count() ).isEqualTo( 2 );
+
+		// ---- Run a DEFAULT method on an implementing class instance ----
+		// ProfilerComplex implements the interface, so running its inherited
+		// greet() default method executes the INTERFACE's default-method body.
+		runtime.executeSource( "new src.test.resources.profiler.ProfilerComplex().greet();", context );
+		// The default method body span (in the INTERFACE's blueprint) now runs.
+		assertThat( CodeProfilerService.lineAt( key, 21 ).covered() ).isTrue(); // greet body msg line
+		assertThat( CodeProfilerService.lineAt( key, 21 ).count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.lineAt( key, 22 ).covered() ).isTrue(); // return msg
+		assertThat( CodeProfilerService.lineAt( key, 22 ).count() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It embeds a clinit self-registration call into a compiled interface <clinit>" )
+	@Test
+	void testInterfaceEmbedsBlueprintRegistration() throws Exception {
+		runtime.getConfiguration().codeProfilerEnabled = true;
+
+		var	boxpiler	= ( ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler ) RunnableLoader.getInstance().getBoxpiler();
+		var	classPath	= java.nio.file.Paths.get( "src/test/resources/profiler/ProfilerInterface.bx" ).toAbsolutePath().normalize();
+		var	classInfo	= ortus.boxlang.compiler.ClassInfo.forClass(
+		    ResolvedFilePath.of( classPath ),
+		    ortus.boxlang.compiler.parser.Parser.detectFile( classPath.toFile(), true ),
+		    boxpiler );
+		boxpiler.getClassPool( classInfo.classPoolName() ).put( classInfo.fqn().toString(), classInfo );
+		java.util.List<byte[]>	compiled	= boxpiler.compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
+
+		// The interface class <clinit> must declare/init codeProfilerId and invoke
+		// registerBlueprintFromClinit (proving self-registration bytecode is present).
+		boolean					found		= false;
+		for ( byte[] bytes : compiled ) {
+			if ( bytes.length < 4 || bytes[ 0 ] != ( byte ) 0xCA || bytes[ 1 ] != ( byte ) 0xFE
+			    || bytes[ 2 ] != ( byte ) 0xBA || bytes[ 3 ] != ( byte ) 0xBE ) {
+				continue;
+			}
+			org.objectweb.asm.tree.ClassNode classNode = new org.objectweb.asm.tree.ClassNode();
+			new org.objectweb.asm.ClassReader( bytes ).accept( classNode, 0 );
+			for ( var method : classNode.methods ) {
+				if ( !method.name.equals( "<clinit>" ) ) {
+					continue;
+				}
+				for ( var insn = method.instructions.getFirst(); insn != null; insn = insn.getNext() ) {
+					if ( insn instanceof org.objectweb.asm.tree.MethodInsnNode call
+					    && call.name.equals( "registerBlueprintFromClinit" ) ) {
+						found = true;
+						break;
+					}
+				}
+			}
+		}
+		assertThat( found ).isTrue();
+
+		runtime.getConfiguration().codeProfilerEnabled = false;
 	}
 
 	@DisplayName( "It self-registers a blueprint from clinit and replaces stale span data" )

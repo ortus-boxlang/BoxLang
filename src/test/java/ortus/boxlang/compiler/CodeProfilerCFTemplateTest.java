@@ -1086,12 +1086,12 @@ class CodeProfilerCFTemplateTest {
 		Path ghostPath = Paths.get( "src/test/resources/profiler/ProfilerGhostTag.cfc" ).toAbsolutePath().normalize();
 		RunnableLoader.getInstance().getBoxpiler().compileClass( ResolvedFilePath.of( ghostPath ) );
 
-		// ---- ProfilerComplexTag.cfc : full span model (23 exec spans) ----
+		// ---- ProfilerComplexTag.cfc : full span model (26 exec spans) ----
 		String	complexKey	= keyFor( "src/test/resources/profiler/ProfilerComplexTag.cfc" );
 		var		complexBlue	= CodeProfilerService.trackedBlueprints().get( complexKey );
-		assertThat( complexBlue.spans().stream().filter( Blueprint.SpanDef::executable ).count() ).isEqualTo( 23 );
-		assertThat( complexBlue.spans().get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 37, true ) );  // "<cfcomponent extends=\"ProfilerSuper\">"
-		assertThat( complexBlue.spans().get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 25, 0, 25, 14, true ) );// "</cfcomponent>"
+		assertThat( complexBlue.spans().stream().filter( Blueprint.SpanDef::executable ).count() ).isEqualTo( 26 );
+		assertThat( complexBlue.spans().get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 71, true ) );  // "<cfcomponent extends=\"ProfilerSuper\" implements=...>"
+		assertThat( complexBlue.spans().get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 29, 0, 29, 14, true ) );// "</cfcomponent>"
 		assertThat( complexBlue.spans().get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 6, 1, 6, 11, true ) );  // "<cfscript>"
 		assertThat( complexBlue.spans().get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 7, 8, 7, 16, true ) );  // "static {"
 		assertThat( complexBlue.spans().get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 8, 12, 8, 39, true ) ); // "myStaticVar = \"initialized\""
@@ -1107,12 +1107,16 @@ class CodeProfilerCFTemplateTest {
 		assertThat( complexBlue.spans().get( 14 ) ).isEqualTo( new Blueprint.SpanDef( 21, 2, 21, 22, true ) );// "<cfset sleep( 100 )>"
 		assertThat( complexBlue.spans().get( 15 ) ).isEqualTo( new Blueprint.SpanDef( 22, 2, 22, 18, true ) );// "<cfreturn x * 3>"
 		assertThat( complexBlue.spans().get( 16 ) ).isEqualTo( new Blueprint.SpanDef( 23, 1, 23, 14, true ) );// "</cffunction>"
-		assertThat( complexBlue.spans().get( 17 ) ).isEqualTo( new Blueprint.SpanDef( 3, 1, 3, 38, true ) );  // threshold property head
-		assertThat( complexBlue.spans().get( 18 ) ).isEqualTo( new Blueprint.SpanDef( 3, 38, 3, 55, true ) );// '"#throw("boom")#"' (SKIPPED)
-		assertThat( complexBlue.spans().get( 19 ) ).isEqualTo( new Blueprint.SpanDef( 3, 55, 3, 56, true ) );// threshold ">"
-		assertThat( complexBlue.spans().get( 20 ) ).isEqualTo( new Blueprint.SpanDef( 4, 1, 4, 34, true ) );  // other property head
-		assertThat( complexBlue.spans().get( 21 ) ).isEqualTo( new Blueprint.SpanDef( 4, 34, 4, 48, true ) );// '"#( 40 + 2 )#"' (USED)
-		assertThat( complexBlue.spans().get( 22 ) ).isEqualTo( new Blueprint.SpanDef( 4, 48, 4, 49, true ) );// other ">"
+		// abstractOnly() — the interface abstract method impl
+		assertThat( complexBlue.spans().get( 17 ) ).isEqualTo( new Blueprint.SpanDef( 25, 1, 25, 53, true ) );// "<cffunction name=\"abstractOnly\" ...>"
+		assertThat( complexBlue.spans().get( 18 ) ).isEqualTo( new Blueprint.SpanDef( 26, 2, 26, 35, true ) );// "<cfreturn \"abstract implemented\">"
+		assertThat( complexBlue.spans().get( 19 ) ).isEqualTo( new Blueprint.SpanDef( 27, 1, 27, 14, true ) );// "</cffunction>"
+		assertThat( complexBlue.spans().get( 20 ) ).isEqualTo( new Blueprint.SpanDef( 3, 1, 3, 38, true ) );  // threshold property head
+		assertThat( complexBlue.spans().get( 21 ) ).isEqualTo( new Blueprint.SpanDef( 3, 38, 3, 55, true ) );// '"#throw("boom")#"' (SKIPPED)
+		assertThat( complexBlue.spans().get( 22 ) ).isEqualTo( new Blueprint.SpanDef( 3, 55, 3, 56, true ) );// threshold ">"
+		assertThat( complexBlue.spans().get( 23 ) ).isEqualTo( new Blueprint.SpanDef( 4, 1, 4, 34, true ) );  // other property head
+		assertThat( complexBlue.spans().get( 24 ) ).isEqualTo( new Blueprint.SpanDef( 4, 34, 4, 48, true ) );// '"#( 40 + 2 )#"' (USED)
+		assertThat( complexBlue.spans().get( 25 ) ).isEqualTo( new Blueprint.SpanDef( 4, 48, 4, 49, true ) );// other ">"
 
 		assertThat( CodeProfilerService.spanAt( complexKey, 8, 12 ).stats().count() ).isEqualTo( 1 );  // static myStaticVar
 		assertThat( CodeProfilerService.spanAt( complexKey, 12, 1 ).stats().count() ).isEqualTo( 1 );  // instanceInit

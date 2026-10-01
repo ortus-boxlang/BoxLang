@@ -1,4 +1,4 @@
-component accessors=true extends="ProfilerSuper" {
+component accessors=true extends="ProfilerSuper" implements="ProfilerInterfaceCF" {
 
 	// SKIPPED: super already set `threshold` into the variables scope.
 	property name="threshold" default=complexSeed;
@@ -19,5 +19,10 @@ component accessors=true extends="ProfilerSuper" {
 	function member( x ) {
 		sleep( 100 );
 		return x * 3;
+	}
+
+	// Implement the interface's abstract method so the CFC can instantiate.
+	function abstractOnly() {
+		return "abstract implemented";
 	}
 }

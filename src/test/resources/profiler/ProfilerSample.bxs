@@ -262,6 +262,16 @@ diskVal = diskInst.member( 5 );
 // created — its COMPLEX property default is NEVER evaluated (NOT used → RED).
 diskStatic = src.test.resources.profiler.ProfilerStaticOnly::staticInitRan;
 
+// --- INTERFACE interactions (ProfilerInterface.bx on disk) ---
+// Statically referencing the interface runs its STATIC INIT BLOCK (lines →
+// GREEN) but NOT any function body.
+ifaceInited = src.test.resources.profiler.ProfilerInterface::initializedAt;
+// Invoke a STATIC function on the interface: its body runs (GREEN).
+ifaceBumped = src.test.resources.profiler.ProfilerInterface::bump();
+// ProfilerComplex implements the interface — running its inherited DEFAULT
+// method executes the default method body (declared in the INTERFACE).
+implGreeted = diskInst.greet();
+
 ```
 foo 
 <bx:output>
