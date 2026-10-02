@@ -38,7 +38,8 @@ public class IsXML extends BIF {
 	}
 
 	/**
-	 * Determines whether a string is well-formed XML text.
+	 * Determines whether a string is well-formed XML text. Note, this will return true if the XML contiains things like
+	 * XEE (XML External Entity) or doctype definitions, which are prohibited by your XML Settings.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

@@ -59,7 +59,7 @@ public class XMLConfig implements IConfigSegment {
 	 * requirements — skipping external DTD loading when it is inaccessible.
 	 * Defaults to {@code false}.
 	 */
-	public boolean	lenientProcessing			= false;
+	public boolean	lenientProcessing			= true;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -110,39 +110,79 @@ public class XMLConfig implements IConfigSegment {
 	/**
 	 * Utility method to read a boolean property with backward-compat fallback.
 	 * Checks the canonical key first, then falls back to the legacy key.
+	 * The default is a boxed {@link Boolean} so callers may pass {@code null}
+	 * to detect absence: a {@code null} return means neither key was present.
 	 *
 	 * @param config       The config struct
 	 * @param primaryKey   The canonical key to check first
 	 * @param legacyKey    The legacy key to check as fallback
 	 * @param defaultValue The default value if neither key is present
 	 *
-	 * @return The resolved boolean value
+	 * @return The resolved boolean value, or {@code defaultValue} if neither key is present
 	 */
-	private static boolean processBooleanCompat( IStruct config, Key primaryKey, Key legacyKey, boolean defaultValue ) {
+	private static Boolean processBooleanCompat( IStruct config, Key primaryKey, Key legacyKey, Boolean defaultValue ) {
 		// Check canonical key first
 		if ( config.containsKey( primaryKey ) ) {
-			return PropertyHelper.processBoolean( config, primaryKey, defaultValue );
+			return PropertyHelper.processBoolean( config, primaryKey, defaultValue != null && defaultValue );
 		}
 		// Fall back to legacy key
 		if ( config.containsKey( legacyKey ) ) {
-			return PropertyHelper.processBoolean( config, legacyKey, defaultValue );
+			return PropertyHelper.processBoolean( config, legacyKey, defaultValue != null && defaultValue );
 		}
 		return defaultValue;
 	}
 
 	/**
-	 * Normalize a raw settings struct by running it through an XMLConfig
-	 * and returning the canonicalized result. This is for use when Application.bx
-	 * settings may contain legacy key names.
+	 * Normalize a raw settings struct to only canonical key names, WITHOUT
+	 * applying any defaults. Missing keys are omitted from the result, so an
+	 * empty struct in yields an empty struct out.
 	 *
 	 * @param raw The raw settings struct (may contain legacy keys)
 	 *
-	 * @return A new struct with only canonical key names
+	 * @return A new struct with only canonical key names, no defaults
+	 */
+	public static IStruct normalizeNoDefaults( IStruct raw ) {
+		IStruct canonical = Struct.ofNonConcurrent();
+		normalizeKey( raw, canonical, Key.secureProcessing, Key.secure );
+		normalizeKey( raw, canonical, Key.disallowDoctypeDeclaration, Key.disallowDoctypeDecl );
+		normalizeKey( raw, canonical, Key.allowExternalEntities, Key.externalGeneralEntities );
+		normalizeKey( raw, canonical, Key.lenientProcessing, Key.lenient );
+		return canonical;
+	}
+
+	/**
+	 * Normalize a raw settings struct by running it through an XMLConfig
+	 * and returning the canonicalized result, with defaults applied for any
+	 * missing keys. This is for use when Application.bx settings may contain
+	 * legacy key names.
+	 *
+	 * @param raw The raw settings struct (may contain legacy keys)
+	 *
+	 * @return A new struct with only canonical key names, defaults applied
 	 */
 	public static IStruct normalize( IStruct raw ) {
 		XMLConfig config = new XMLConfig();
 		config.process( raw );
 		return config.asStruct();
+	}
+
+	/**
+	 * Normalize a single key: resolve it via
+	 * {@link #processBooleanCompat(IStruct, Key, Key, Boolean)} with a
+	 * {@code null} default and store the result under the canonical key.
+	 * A {@code null} return means neither key was present, so nothing is
+	 * emitted — that's what keeps empty in, empty out.
+	 *
+	 * @param raw          The raw settings struct
+	 * @param target       The struct receiving canonicalized keys
+	 * @param canonicalKey The canonical key to write to
+	 * @param legacyKey    The legacy key to look for as a fallback
+	 */
+	private static void normalizeKey( IStruct raw, IStruct target, Key canonicalKey, Key legacyKey ) {
+		Boolean value = processBooleanCompat( raw, canonicalKey, legacyKey, null );
+		if ( value != null ) {
+			target.put( canonicalKey, value );
+		}
 	}
 
 }

@@ -26,6 +26,12 @@ import org.junit.jupiter.api.Test;
 public class ClassFormattingTest extends PrettyPrintTest {
 
 	@Test
+	@DisplayName( "Body spacing adds blank lines before the first class member" )
+	public void testBodySpacing() throws IOException {
+		printTestWithConfigFile( "class", "body_spacing_1" );
+	}
+
+	@Test
 	@DisplayName( "Member spacing 1 (default) - one blank line between members" )
 	public void testMemberSpacing1() throws IOException {
 		printTestWithConfigFile( "class", "member_spacing_1" );

@@ -1604,6 +1604,12 @@ public final class Config {
 		if ( config.containsKey( "break_length" ) && config.get( "break_length" ) instanceof Number breakLength ) {
 			this.chain.setBreakLength( breakLength.intValue() );
 		}
+		if ( config.containsKey( "keep_receiver_count" ) && config.get( "keep_receiver_count" ) instanceof Number keepReceiverCount ) {
+			this.chain.setKeepReceiverCount( keepReceiverCount.intValue() );
+		}
+		if ( config.containsKey( "length_strategy" ) && config.get( "length_strategy" ) instanceof String lengthStrategy ) {
+			this.chain.setLengthStrategy( lengthStrategy );
+		}
 	}
 
 	/**
@@ -1668,6 +1674,9 @@ public final class Config {
 		}
 		if ( config.containsKey( "member_spacing" ) && config.get( "member_spacing" ) instanceof Number memberSpacing ) {
 			this.classConfig.setMemberSpacing( memberSpacing.intValue() );
+		}
+		if ( config.containsKey( "body_spacing" ) && config.get( "body_spacing" ) instanceof Number bodySpacing ) {
+			this.classConfig.setBodySpacing( bodySpacing.intValue() );
 		}
 		if ( config.containsKey( "property_order" ) && config.get( "property_order" ) instanceof String propertyOrder ) {
 			this.classConfig.setPropertyOrder( propertyOrder );

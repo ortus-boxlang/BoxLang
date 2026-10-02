@@ -54,7 +54,8 @@ public class XMLTransform extends BIF {
 		this.declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.XML ),
 		    new Argument( true, "String", Key.XSL ),
-		    new Argument( false, "Struct", Key.parameters, Struct.EMPTY )
+		    new Argument( false, "Struct", Key.parameters, Struct.EMPTY ),
+		    new Argument( false, "struct", Key.XMLSettings ),
 		};
 	}
 
@@ -77,8 +78,7 @@ public class XMLTransform extends BIF {
 		if ( xmlAny instanceof XML xmlCast ) {
 			xml = xmlCast;
 		} else {
-			IStruct xmlSettings = context.getConfig().getAsStruct( Key.applicationSettings ).getAsStruct( Key.XMLSettings );
-			xml = new XML( StringCaster.cast( xmlAny ), false, xmlSettings );
+			xml = new XML( StringCaster.cast( xmlAny ), false, arguments.getAsStruct( Key.XMLSettings ), null, context );
 		}
 		String xsl = arguments.getAsString( Key.XSL );
 		// Is not XML. Must be file or URL

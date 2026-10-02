@@ -117,6 +117,14 @@ public class BoxRunnerParseTest {
 		assertThat( options.showVersion() ).isTrue();
 	}
 
+	@DisplayName( "It sets showVersion for the -v short form" )
+	@Test
+	void testVersionShortFlag() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "-v" } );
+
+		assertThat( options.showVersion() ).isTrue();
+	}
+
 	@DisplayName( "It sets the code for --bx-code" )
 	@Test
 	void testCodeFlag() {
@@ -215,13 +223,118 @@ public class BoxRunnerParseTest {
 		assertThat( options.showHelp() ).isTrue();
 	}
 
-	@DisplayName( "Help wins over version when both are present" )
+	@DisplayName( "Neither help nor version fire when both are present together (not the sole argument)" )
 	@Test
-	void testHelpWinsOverVersion() {
+	void testHelpAndVersionTogetherAreNotGlobal() {
 		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--help", "--version" } );
 
-		assertThat( options.showHelp() ).isTrue();
+		assertThat( options.showHelp() ).isFalse();
 		assertThat( options.showVersion() ).isFalse();
+		assertThat( options.cliArgs() ).containsExactly( "--help", "--version" ).inOrder();
+	}
+
+	@DisplayName( "--help does not trigger global help when other args are present" )
+	@Test
+	void testHelpNotGlobalWithOtherArgs() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--help", "extra" } );
+
+		assertThat( options.showHelp() ).isFalse();
+		assertThat( options.cliArgs() ).containsExactly( "--help", "extra" ).inOrder();
+	}
+
+	@DisplayName( "-h does not trigger global help when other args are present" )
+	@Test
+	void testHelpShortFlagNotGlobalWithOtherArgs() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "-h", "extra" } );
+
+		assertThat( options.showHelp() ).isFalse();
+		assertThat( options.cliArgs() ).containsExactly( "-h", "extra" ).inOrder();
+	}
+
+	@DisplayName( "-v does not trigger global version when other args are present" )
+	@Test
+	void testVersionShortFlagNotGlobalWithOtherArgs() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "-v", "extra" } );
+
+		assertThat( options.showVersion() ).isFalse();
+		assertThat( options.cliArgs() ).containsExactly( "-v", "extra" ).inOrder();
+	}
+
+	@DisplayName( "--help still shows global help when combined only with a startup flag like --bx-debug" )
+	@Test
+	void testHelpStillGlobalWithStartupFlag() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-debug", "--help" } );
+
+		assertThat( options.showHelp() ).isTrue();
+		assertThat( options.isDebugMode() ).isTrue();
+		assertThat( options.targetModule() ).isNull();
+	}
+
+	@DisplayName( "--version still shows global version when combined only with a startup flag like --bx-home=" )
+	@Test
+	void testVersionStillGlobalWithStartupFlag() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-home=/x", "--version" } );
+
+		assertThat( options.showVersion() ).isTrue();
+		assertThat( options.runtimeHome() ).isEqualTo( "/x" );
+		assertThat( options.targetModule() ).isNull();
+	}
+
+	@DisplayName( "-h still shows global help when combined only with a space-separated startup flag" )
+	@Test
+	void testHelpShortFlagStillGlobalWithStartupFlag() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-config", "/path/config.json", "-h" } );
+
+		assertThat( options.showHelp() ).isTrue();
+		assertThat( options.configFile() ).isEqualTo( "/path/config.json" );
+		assertThat( options.targetModule() ).isNull();
+	}
+
+	@DisplayName( "--help still shows global help when combined only with --bx-printAST" )
+	@Test
+	void testHelpStillGlobalWithPrintASTFlag() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-printAST", "--help" } );
+
+		assertThat( options.showHelp() ).isTrue();
+		assertThat( options.printAST() ).isTrue();
+		assertThat( options.targetModule() ).isNull();
+	}
+
+	@DisplayName( "--version still shows global version when combined only with --bx-transpile" )
+	@Test
+	void testVersionStillGlobalWithTranspileFlag() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-transpile", "--version" } );
+
+		assertThat( options.showVersion() ).isTrue();
+		assertThat( options.transpile() ).isTrue();
+		assertThat( options.targetModule() ).isNull();
+	}
+
+	@DisplayName( "-h still shows global help when combined with multiple recognized flags" )
+	@Test
+	void testHelpStillGlobalWithMultipleFlags() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-debug", "--bx-printAST", "--bx-transpile", "-h" } );
+
+		assertThat( options.showHelp() ).isTrue();
+		assertThat( options.isDebugMode() ).isTrue();
+		assertThat( options.printAST() ).isTrue();
+		assertThat( options.transpile() ).isTrue();
+		assertThat( options.targetModule() ).isNull();
+	}
+
+	@DisplayName( "A bare module name receives a trailing -h instead of it triggering global help" )
+	@Test
+	void testBareModuleReceivesHelpFlag() {
+		CLIOptions parsed = BoxRunner.parseCommandLineOptions( new String[] { "bxSites", "-h" } );
+
+		assertThat( parsed.showHelp() ).isFalse();
+		assertThat( parsed.cliArgs() ).containsExactly( "bxSites", "-h" ).inOrder();
+
+		CLIOptions options = BoxRunner.resolveExecutionTarget( parsed, name -> name.equals( "bxSites" ) );
+
+		assertThat( options.targetModule() ).isEqualTo( "bxSites" );
+		assertThat( options.showHelp() ).isFalse();
+		assertThat( options.cliArgs() ).containsExactly( "-h" ).inOrder();
 	}
 
 	@DisplayName( "It throws when --bx-code is missing its value" )
@@ -348,6 +461,67 @@ public class BoxRunnerParseTest {
 		assertThat( options.printAST() ).isTrue();
 		assertThat( options.transpile() ).isTrue();
 		assertThat( options.cliArgs() ).containsExactly( "file.bx", "arg1" ).inOrder();
+	}
+
+	// ---------------------------------------------------------------------------
+	// parseEnvironmentVariables - cwd .boxlang.json discovery
+	// ---------------------------------------------------------------------------
+
+	@DisplayName( "It auto-detects a .boxlang.json in the current working directory when no config file was supplied" )
+	@Test
+	void testCwdConfigConventionDetected( @TempDir Path tempDir ) throws IOException {
+		Path cwdConfig = tempDir.resolve( ".boxlang.json" );
+		Files.writeString( cwdConfig, "{}" );
+
+		String originalUserDir = System.getProperty( "user.dir" );
+		try {
+			System.setProperty( "user.dir", tempDir.toString() );
+
+			CLIOptions options = BoxRunner.parseEnvironmentVariables(
+			    BoxRunner.parseCommandLineOptions( new String[] { "module:cli" } )
+			);
+
+			assertThat( options.configFile() ).isEqualTo( cwdConfig.toAbsolutePath().toString() );
+		} finally {
+			System.setProperty( "user.dir", originalUserDir );
+		}
+	}
+
+	@DisplayName( "It does not auto-detect a cwd .boxlang.json when none exists" )
+	@Test
+	void testCwdConfigConventionAbsent( @TempDir Path tempDir ) {
+		String originalUserDir = System.getProperty( "user.dir" );
+		try {
+			System.setProperty( "user.dir", tempDir.toString() );
+
+			CLIOptions options = BoxRunner.parseEnvironmentVariables(
+			    BoxRunner.parseCommandLineOptions( new String[] { "module:cli" } )
+			);
+
+			assertThat( options.configFile() ).isNull();
+		} finally {
+			System.setProperty( "user.dir", originalUserDir );
+		}
+	}
+
+	@DisplayName( "An explicit --bx-config wins over a cwd .boxlang.json convention file" )
+	@Test
+	void testCwdConfigConventionYieldsToExplicitFlag( @TempDir Path tempDir ) throws IOException {
+		Path cwdConfig = tempDir.resolve( ".boxlang.json" );
+		Files.writeString( cwdConfig, "{}" );
+
+		String originalUserDir = System.getProperty( "user.dir" );
+		try {
+			System.setProperty( "user.dir", tempDir.toString() );
+
+			CLIOptions options = BoxRunner.parseEnvironmentVariables(
+			    BoxRunner.parseCommandLineOptions( new String[] { "--bx-config", "/explicit/config.json", "module:cli" } )
+			);
+
+			assertThat( options.configFile() ).isEqualTo( "/explicit/config.json" );
+		} finally {
+			System.setProperty( "user.dir", originalUserDir );
+		}
 	}
 
 	// ---------------------------------------------------------------------------

@@ -74,6 +74,12 @@ public class BaseScheduler implements IScheduler {
 	protected ZoneId							timezone	= ZoneId.systemDefault();
 
 	/**
+	 * The name of the cache to use for server fixation/clustering locks for the tasks this scheduler
+	 * creates. Defaults to the runtime's {@code scheduler.cacheName} config setting.
+	 */
+	protected String							cacheName;
+
+	/**
 	 * The async service we are bound to
 	 */
 	protected AsyncService						asyncService;
@@ -160,6 +166,7 @@ public class BaseScheduler implements IScheduler {
 		this.asyncService	= BoxRuntime.getInstance().getAsyncService();
 		this.logger			= BoxRuntime.getInstance().getLoggingService().SCHEDULER_LOGGER;
 		this.context		= context;
+		this.cacheName		= BoxRuntime.getInstance().getConfiguration().scheduler.cacheName;
 
 		// Log it
 		this.logger.info( "Created scheduler [{}] with a [{}] timezone", name, timezone.getId() );
@@ -252,7 +259,9 @@ public class BaseScheduler implements IScheduler {
 		        // Register ourselves in the task
 		        .setScheduler( this )
 		        // Set default timezone into the task
-		        .setTimezone( this.getTimezone() );
+		        .setTimezone( this.getTimezone() )
+		        // Set the cache to use for server fixation locking into the task
+		        .setCacheName( this.getCacheName() );
 
 		// Register the task by name
 		this.tasks.put( name, new TaskRecord( name, group, oTask ) );
@@ -718,6 +727,27 @@ public class BaseScheduler implements IScheduler {
 	 */
 	public BaseScheduler setDefaultTimezone() {
 		this.timezone = ZoneId.systemDefault();
+		return this;
+	}
+
+	/**
+	 * Get the name of the cache used for server fixation/clustering locks
+	 *
+	 * @return the cacheName
+	 */
+	public String getCacheName() {
+		return this.cacheName;
+	}
+
+	/**
+	 * Set the name of the cache used for server fixation/clustering locks
+	 *
+	 * @param cacheName the cache name to set
+	 *
+	 * @return the scheduler object
+	 */
+	public BaseScheduler setCacheName( String cacheName ) {
+		this.cacheName = cacheName;
 		return this;
 	}
 

@@ -25,7 +25,6 @@ import java.util.function.Supplier;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.decision.IsJSON;
 import ortus.boxlang.runtime.config.Configuration;
-import ortus.boxlang.runtime.config.segments.XMLConfig;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
@@ -287,10 +286,6 @@ public abstract class BaseApplicationListener {
 	 */
 	public void updateSettings( IStruct settings ) {
 		ConfigSecretUtil.decryptValues( settings );
-		// Normalize XML settings using the config segment for backward compatibility
-		if ( settings.containsKey( Key.XMLSettings ) ) {
-			settings.put( Key.XMLSettings, XMLConfig.normalize( settings.getAsStruct( Key.XMLSettings ) ) );
-		}
 		this.settings.addAll( settings );
 		// If the settings have changed, see if the app and session contexts need updated or initialized as well
 		defineApplication();
@@ -462,8 +457,17 @@ public abstract class BaseApplicationListener {
 		// Update session management if enabled
 		else {
 			if ( sessionManagementEnabled ) {
-				// Ensure we have the right session (app name could have changed)
-				existingSessionContext.updateSession( this.application.getOrCreateSession( this.context.getSessionID(), this.context ) );
+				// Ensure we have the right session (app name could have changed, or the session ended). Keep the live one
+				// otherwise: a distributed sessions cache hands back the last persisted copy, dropping this request's
+				// writes and re-firing onSessionStart
+				Session	currentSession	= existingSessionContext.getSession();
+				Key		sessionID		= this.context.getSessionID();
+				if ( !currentSession.getApplicationName().equals( this.application.getName() )
+				    || !currentSession.getID().equals( sessionID )
+				    || currentSession.isShutdown()
+				    || currentSession.isExpired() ) {
+					existingSessionContext.updateSession( this.application.getOrCreateSession( sessionID, this.context ) );
+				}
 				// Only starts the first time
 				existingSessionContext.getSession().start( this.context );
 			} else {

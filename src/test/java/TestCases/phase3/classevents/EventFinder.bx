@@ -1,0 +1,7 @@
+class {
+
+	function callMissing() {
+		return findByAge( 5 );
+	}
+
+}

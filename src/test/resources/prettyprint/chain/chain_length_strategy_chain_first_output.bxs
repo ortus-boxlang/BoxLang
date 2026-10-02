@@ -1,0 +1,8 @@
+result = volunteerQuery( arguments.organizationId )
+	.whereIn( "organization_profiles.person_id", personIds )
+	.get()
+	.map(
+		( volunteer ) => {
+			return volunteer.id;
+		}
+	);

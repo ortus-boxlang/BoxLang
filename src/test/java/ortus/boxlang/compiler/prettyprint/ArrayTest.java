@@ -19,7 +19,7 @@ package ortus.boxlang.compiler.prettyprint;
 
 import java.io.IOException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ArrayTest extends PrettyPrintTest {
 
@@ -36,5 +36,10 @@ public class ArrayTest extends PrettyPrintTest {
 	@Test
 	public void testArrayMultiline() throws IOException {
 		printTestWithConfigFile( "array", "multiline_element_count" );
+	}
+
+	@Test
+	public void testArrayPaddingAppliesToBothSides() throws IOException {
+		printTestWithConfigFile( "array", "padding_true" );
 	}
 }

@@ -84,6 +84,40 @@ public class SetBIFsTest {
 		assertThat( ( ( BoxSet ) variables.get( result ) ).size() ).isEqualTo( 3 );
 	}
 
+	@DisplayName( "Array.toSet() defaults to LINKED and preserves insertion order" )
+	@Test
+	public void testArrayToSetLinkedOrder() {
+		instance.executeSource(
+		    """
+		    result = [ "a", "b", "c" ].toSet();
+		    """,
+		    context );
+		BoxSet		s	= ( BoxSet ) variables.get( result );
+		Object[]	arr	= s.toArray();
+		assertThat( s.getType() ).isEqualTo( BoxSet.Type.LINKED );
+		assertThat( arr.length ).isEqualTo( 3 );
+		assertThat( arr[ 0 ] ).isEqualTo( "a" );
+		assertThat( arr[ 1 ] ).isEqualTo( "b" );
+		assertThat( arr[ 2 ] ).isEqualTo( "c" );
+	}
+
+	@DisplayName( "Array.toSet(\"sorted\") builds a SORTED set in natural order" )
+	@Test
+	public void testArrayToSetSorted() {
+		instance.executeSource(
+		    """
+		    result = [ "c", "b", "a" ].toSet( "sorted" );
+		    """,
+		    context );
+		BoxSet		s	= ( BoxSet ) variables.get( result );
+		Object[]	arr	= s.toArray();
+		assertThat( s.getType() ).isEqualTo( BoxSet.Type.SORTED );
+		assertThat( arr.length ).isEqualTo( 3 );
+		assertThat( arr[ 0 ] ).isEqualTo( "a" );
+		assertThat( arr[ 1 ] ).isEqualTo( "b" );
+		assertThat( arr[ 2 ] ).isEqualTo( "c" );
+	}
+
 	@DisplayName( "[1,2,3] castAs Set requires a Set source (member .toSet() converts arrays)" )
 	@Test
 	public void testCastAsSet() {

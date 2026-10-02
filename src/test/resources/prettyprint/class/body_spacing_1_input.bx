@@ -1,0 +1,5 @@
+class {
+property name="first";
+property name="second";
+function init(){return this;}
+}

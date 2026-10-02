@@ -884,7 +884,10 @@ public class AsmTranspiler extends Transpiler {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnValueContext ) {
-		Transformer transformer = registry.get( node.getClass() );
+		// All param syntax uses the dedicated transformer before generic component generation.
+		Transformer transformer = registry.get( node instanceof BoxComponent component && component.getName().equalsIgnoreCase( "param" )
+		    ? BoxParam.class
+		    : node.getClass() );
 		if ( transformer != null ) {
 			try {
 				List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>( transformer.transform( node, context, returnValueContext ) );

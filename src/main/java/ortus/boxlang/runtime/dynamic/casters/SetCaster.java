@@ -55,16 +55,36 @@ public class SetCaster implements IBoxCaster {
 
 	/**
 	 * Strict attempt: succeeds only when {@code object} is already a {@link BoxSet} or {@link java.util.Set}.
+	 *
+	 * @param object The value to cast
+	 * @param type   The type of set, or {@code null} to auto-detect from the existing set
+	 */
+	public static CastAttempt<BoxSet> attempt( Object object, BoxSet.Type type ) {
+		return CastAttempt.ofNullable( cast( object, false, type ) );
+	}
+
+	/**
+	 * Strict attempt: succeeds only when {@code object} is already a {@link BoxSet} or {@link java.util.Set}.
 	 */
 	public static CastAttempt<BoxSet> attempt( Object object ) {
-		return CastAttempt.ofNullable( cast( object, false ) );
+		return attempt( object, null );
+	}
+
+	/**
+	 * Strict cast — throws if {@code object} is not already a Set.
+	 *
+	 * @param object The value to cast
+	 * @param type   The type of set, or {@code null} to auto-detect from the existing set
+	 */
+	public static BoxSet cast( Object object, BoxSet.Type type ) {
+		return cast( object, true, type );
 	}
 
 	/**
 	 * Strict cast — throws if {@code object} is not already a Set.
 	 */
 	public static BoxSet cast( Object object ) {
-		return cast( object, true );
+		return cast( object, ( BoxSet.Type ) null );
 	}
 
 	/**
@@ -73,8 +93,19 @@ public class SetCaster implements IBoxCaster {
 	 * @param object The value to cast
 	 * @param fail   True to throw on failure, false to return null
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static BoxSet cast( Object object, Boolean fail ) {
+		return cast( object, fail, null );
+	}
+
+	/**
+	 * Strict cast.
+	 *
+	 * @param object The value to cast
+	 * @param fail   True to throw on failure, false to return null
+	 * @param type   The type of set, or {@code null} to auto-detect from the existing set
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static BoxSet cast( Object object, Boolean fail, BoxSet.Type type ) {
 		if ( object == null ) {
 			if ( fail ) {
 				throw new BoxCastException( "Can't cast null to a Set." );
@@ -89,6 +120,9 @@ public class SetCaster implements IBoxCaster {
 		if ( object instanceof Set<?> existing ) {
 			// Wrap (no copy) so that mutations on the BoxSet propagate to the original
 			// Java Set — same contract as Array wrapping an ArrayList.
+			if ( type != null ) {
+				return BoxSet.fromCollection( type, ( Set<Object> ) existing );
+			}
 			return BoxSet.wrapJavaSet( ( Set<Object> ) existing );
 		}
 
@@ -101,16 +135,37 @@ public class SetCaster implements IBoxCaster {
 	/**
 	 * Loose attempt: also accepts arrays, lists, ranges, query columns, XML — anything
 	 * containing elements that can be deduplicated into a new {@link BoxSet}.
+	 *
+	 * @param object The value to cast
+	 * @param type   The type of set, or {@code null} to default to {@link BoxSet.Type#LINKED}
+	 */
+	public static CastAttempt<BoxSet> attemptLoose( Object object, BoxSet.Type type ) {
+		return CastAttempt.ofNullable( castLoose( object, false, type ) );
+	}
+
+	/**
+	 * Loose attempt: also accepts arrays, lists, ranges, query columns, XML — anything
+	 * containing elements that can be deduplicated into a new {@link BoxSet}.
 	 */
 	public static CastAttempt<BoxSet> attemptLoose( Object object ) {
-		return CastAttempt.ofNullable( castLoose( object, false ) );
+		return attemptLoose( object, null );
+	}
+
+	/**
+	 * Loose cast — throws on failure.
+	 *
+	 * @param object The value to cast
+	 * @param type   The type of set, or {@code null} to default to {@link BoxSet.Type#LINKED}
+	 */
+	public static BoxSet castLoose( Object object, BoxSet.Type type ) {
+		return castLoose( object, true, type );
 	}
 
 	/**
 	 * Loose cast — throws on failure.
 	 */
 	public static BoxSet castLoose( Object object ) {
-		return castLoose( object, true );
+		return castLoose( object, ( BoxSet.Type ) null );
 	}
 
 	/**
@@ -119,10 +174,21 @@ public class SetCaster implements IBoxCaster {
 	 * @param object The value to cast
 	 * @param fail   True to throw on failure, false to return null
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static BoxSet castLoose( Object object, Boolean fail ) {
+		return castLoose( object, fail, null );
+	}
+
+	/**
+	 * Loose cast.
+	 *
+	 * @param object The value to cast
+	 * @param fail   True to throw on failure, false to return null
+	 * @param type   The type of set
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static BoxSet castLoose( Object object, Boolean fail, BoxSet.Type type ) {
 		// Try the strict path first — preserves existing Set identity.
-		BoxSet strict = cast( object, false );
+		BoxSet strict = cast( object, false, type );
 		if ( strict != null ) {
 			return strict;
 		}
@@ -134,17 +200,22 @@ public class SetCaster implements IBoxCaster {
 		}
 		object = DynamicObject.unWrap( object );
 
+		// All paths below are for inherently-ordered data structures, so we'll default type to LINKED if not specified.
+		if ( type == null ) {
+			type = BoxSet.Type.LINKED;
+		}
+
 		// Native Java arrays
 		if ( object.getClass().isArray() ) {
 			if ( object instanceof Object[] array ) {
-				BoxSet s = new BoxSet();
+				BoxSet s = new BoxSet( type );
 				for ( Object e : array ) {
 					s.add( e );
 				}
 				return s;
 			}
 			int		length	= java.lang.reflect.Array.getLength( object );
-			BoxSet	s		= new BoxSet();
+			BoxSet	s		= new BoxSet( type );
 			for ( int i = 0; i < length; i++ ) {
 				s.add( java.lang.reflect.Array.get( object, i ) );
 			}
@@ -153,25 +224,25 @@ public class SetCaster implements IBoxCaster {
 
 		switch ( object ) {
 			case Array arr -> {
-				return BoxSet.fromCollection( arr );
+				return BoxSet.fromCollection( type, arr );
 			}
 			case Collection<?> coll -> {
-				return BoxSet.fromCollection( ( Collection<Object> ) coll );
+				return BoxSet.fromCollection( type, ( Collection<Object> ) coll );
 			}
 			case String str -> {
 				// Comma-delimited list — matches CF's list semantics. Use ToSet (member of
 				// STRING_STRICT) or setNew(values="x|y", delimiter="|") for a custom delimiter.
-				return BoxSet.fromCollection( ListUtil.asList( str, "," ) );
+				return BoxSet.fromCollection( type, ListUtil.asList( str, "," ) );
 			}
 			case QueryColumn col -> {
-				return BoxSet.fromCollection( col.getColumnDataAsArray() );
+				return BoxSet.fromCollection( type, col.getColumnDataAsArray() );
 			}
 			case XML xml -> {
-				return BoxSet.fromCollection( xml.getSiblingsOfSameName() );
+				return BoxSet.fromCollection( type, xml.getSiblingsOfSameName() );
 			}
 			case Range<?> range -> {
 				if ( range.isIterable() && range.isBounded() ) {
-					return BoxSet.fromCollection( range.toArray() );
+					return BoxSet.fromCollection( type, range.toArray() );
 				}
 				if ( fail ) {
 					throw new BoxCastException( String.format( "Can't cast Range [%s] to a Set.", range.asString() ) );

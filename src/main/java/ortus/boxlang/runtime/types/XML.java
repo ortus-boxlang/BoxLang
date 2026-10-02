@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.net.URL;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -71,7 +71,6 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
@@ -82,6 +81,7 @@ import ortus.boxlang.runtime.types.listeners.XMLChildrenListener;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.util.DuplicationUtil;
 
 /**
  * This type represents an XML Object in BoxLang
@@ -134,9 +134,37 @@ public class XML implements Serializable, IStruct {
 
 	/**
 	 * Create a new XML Document from the given string
+	 * 
+	 * @Deprecated Use {@link #XML(String, boolean, Object, IBoxContext)} instead.
 	 */
 	public XML( String xmlData ) {
-		this( xmlData, false, getDefaultXMLSettings() );
+		this(
+		    xmlData,
+		    false,
+		    null,
+		    null,
+		    RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() )
+		);
+	}
+
+	/**
+	 * Create a new XML Document from the given string with options for case sensitivity and validation
+	 * 
+	 * @Deprecated Use {@link #XML(String, boolean, IStruct, String, IBoxContext)} instead.
+	 * 
+	 * @param xmlData       The XML string to parse
+	 * @param caseSensitive Whether the XML parsing should be case-sensitive
+	 * @param validator     An optional struct of XML security settings to override the defaults, or a string path/URL to an XSD schema
+	 */
+	@Deprecated
+	public XML( String xmlData, boolean caseSensitive, Object validator ) {
+		this(
+		    xmlData,
+		    caseSensitive,
+		    validator instanceof IStruct ? ( IStruct ) validator : null,
+		    validator instanceof String ? ( String ) validator : null,
+		    RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() )
+		);
 	}
 
 	/**
@@ -145,11 +173,12 @@ public class XML implements Serializable, IStruct {
 	 * @param xmlData       The XML string to parse
 	 * @param caseSensitive Whether the XML parsing should be case-sensitive
 	 * @param validator     An optional struct of XML security settings to override the defaults, or a string path/URL to an XSD schema
+	 * @param context       The box context in which this XML document is being created
 	 */
-	public XML( String xmlData, boolean caseSensitive, Object validator ) {
+	public XML( String xmlData, boolean caseSensitive, IStruct XMLSettings, String validator, IBoxContext context ) {
 
 		this.type = caseSensitive ? TYPES.CASE_SENSITIVE : TYPES.DEFAULT;
-		DocumentBuilder	builder		= newDocumentBuilder( validator );
+		DocumentBuilder	builder		= newDocumentBuilder( XMLSettings, validator, context );
 		InputSource		inputSource	= new InputSource( new StringReader( xmlData ) );
 		try {
 			node = builder.parse( inputSource );
@@ -178,60 +207,58 @@ public class XML implements Serializable, IStruct {
 	/**
 	 * Creates a new document builder for either parsing or document creation
 	 */
-	private static DocumentBuilder newDocumentBuilder( Object validator ) {
+	private static DocumentBuilder newDocumentBuilder( IStruct XMLSettings, String validator, IBoxContext context ) {
 		DocumentBuilderFactory	factory	= DocumentBuilderFactory.newNSInstance();
 
-		final IStruct			xmlSettings;
+		final IStruct			finalSettings;
 
-		if ( validator instanceof IStruct structValidator ) {
-			IStruct	merged		= StructCaster.cast( structValidator );
+		if ( XMLSettings != null ) {
 			// Normalize first to map any legacy keys to canonical keys
-			IStruct	normalized	= XMLConfig.normalize( merged );
+			IStruct	normalized	= XMLConfig.normalizeNoDefaults( XMLSettings );
 			// Then fill in defaults for any canonical keys not already set
-			IStruct	defaults	= getDefaultXMLSettings();
-			defaults.keySet().forEach( key -> {
-				normalized.putIfAbsent( key, defaults.get( key ) );
+			IStruct	defaults	= ( IStruct ) DuplicationUtil.duplicate( getXMLSettings( context ), true, context );
+			normalized.keySet().forEach( key -> {
+				defaults.put( key, normalized.get( key ) );
 			} );
-			xmlSettings = normalized;
+			finalSettings = defaults;
 		} else {
-			xmlSettings = getDefaultXMLSettings();
+			finalSettings = getXMLSettings( context );
 		}
-
-		if ( validator instanceof String validatorString && !validatorString.trim().isEmpty() ) {
-			String validatorLower = validatorString.toLowerCase();
+		if ( validator != null && !validator.trim().isEmpty() ) {
+			String validatorLower = validator.toLowerCase();
 
 			try {
 				SchemaFactory	schemaFactory	= SchemaFactory.newInstance( XMLConstants.W3C_XML_SCHEMA_NS_URI );
 				Schema			schema;
 				if ( validatorLower.startsWith( "http" ) ) {
-					schema = schemaFactory.newSchema( new URL( validatorString ) );
+					schema = schemaFactory.newSchema( URI.create( validator ).toURL() );
 				} else {
-					schema = schemaFactory.newSchema( new File( validatorString ) );
+					schema = schemaFactory.newSchema( new File( validator ) );
 				}
 				factory.setSchema( schema );
 			} catch ( Exception e ) {
-				throw new BoxRuntimeException( "Error loading XML validator: " + validatorString, e );
+				throw new BoxRuntimeException( "Error loading XML validator: " + validator, e );
 			}
 		}
 
 		DocumentBuilder builder;
 		try {
 			// Security settings are always enforced regardless of leniency
-			if ( xmlSettings.containsKey( Key.secureProcessing ) ) {
-				factory.setFeature( XMLConstants.FEATURE_SECURE_PROCESSING, xmlSettings.getAsBoolean( Key.secureProcessing ) );
+			if ( finalSettings.containsKey( Key.secureProcessing ) ) {
+				factory.setFeature( XMLConstants.FEATURE_SECURE_PROCESSING, finalSettings.getAsBoolean( Key.secureProcessing ) );
 			}
-			if ( xmlSettings.containsKey( Key.disallowDoctypeDeclaration ) ) {
+			if ( finalSettings.containsKey( Key.disallowDoctypeDeclaration ) ) {
 				factory.setFeature( "http://apache.org/xml/features/disallow-doctype-decl",
-				    xmlSettings.getAsBoolean( Key.disallowDoctypeDeclaration ) );
+				    finalSettings.getAsBoolean( Key.disallowDoctypeDeclaration ) );
 			}
-			if ( xmlSettings.containsKey( Key.allowExternalEntities ) ) {
+			if ( finalSettings.containsKey( Key.allowExternalEntities ) ) {
 				factory.setFeature( "http://xml.org/sax/features/external-general-entities",
-				    xmlSettings.getAsBoolean( Key.allowExternalEntities ) );
+				    finalSettings.getAsBoolean( Key.allowExternalEntities ) );
 			}
 
 			// Determine lenient mode from the struct
-			boolean isLenient = xmlSettings.containsKey( Key.lenientProcessing )
-			    && xmlSettings.getAsBoolean( Key.lenientProcessing );
+			boolean isLenient = finalSettings.containsKey( Key.lenientProcessing )
+			    && finalSettings.getAsBoolean( Key.lenientProcessing );
 
 			// When lenient is true, relax validation and well-formed XML requirements
 			factory.setFeature( "http://xml.org/sax/features/validation", !isLenient );
@@ -248,18 +275,12 @@ public class XML implements Serializable, IStruct {
 	}
 
 	/**
-	 * Get the default XML settings from the XMLConfig segment.
-	 * This is the canonical source of XML parsing defaults for the runtime.
+	 * Get the XML settings for the current context.
 	 *
-	 * @return A struct with the default XML security and validation settings
+	 * @return A struct with the XML security and validation settings
 	 */
-	private static IStruct getDefaultXMLSettings() {
-		IBoxContext context = RequestBoxContext.getCurrent();
-		if ( context != null ) {
-			return context.getConfig().getAsStruct( Key.applicationSettings ).getAsStruct( Key.XMLSettings );
-		} else {
-			return BoxRuntime.getInstance().getConfiguration().xml.asStruct();
-		}
+	private static IStruct getXMLSettings( IBoxContext context ) {
+		return context.getConfig().getAsStruct( Key.XML );
 	}
 
 	/**
@@ -559,7 +580,7 @@ public class XML implements Serializable, IStruct {
 
 		// If we were initialized with an empty XML object and an attempt is made to access a property, then we need to create the document now.
 		if ( node == null ) {
-			node = newDocumentBuilder( getDefaultXMLSettings() ).newDocument();
+			node = newDocumentBuilder( null, null, context ).newDocument();
 			if ( name.equals( Key.XMLRoot ) ) {
 				return this;
 			} else if ( name.equals( Key.XMLAttributes ) ) {

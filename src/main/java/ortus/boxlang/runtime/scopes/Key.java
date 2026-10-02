@@ -1051,6 +1051,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		XMLChildren							= Key.of( "XMLChildren" );
 	public static final Key		XMLComment							= Key.of( "XMLComment" );
 	public static final Key		XMLDocType							= Key.of( "XMLDocType" );
+	public static final Key		XMLFeatures							= Key.of( "XMLFeatures" );
 	public static final Key		XMLName								= Key.of( "XMLName" );
 	public static final Key		XMLNode								= Key.of( "XMLNode" );
 	public static final Key		XMLNodes							= Key.of( "XMLNodes" );
@@ -1150,6 +1151,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		minimumIdle							= Key.of( "minimumIdle" );
 	public static final Key		poolName							= Key.of( "poolName" );
 	public static final Key		initializationFailTimeout			= Key.of( "initializationFailTimeout" );
+	public static final Key		registerMbeans						= Key.of( "registerMbeans" );
 
 	// Transaction events
 	public static final Key		onTransactionBegin					= Key.of( "onTransactionBegin" );

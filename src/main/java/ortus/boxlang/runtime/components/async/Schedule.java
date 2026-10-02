@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.components.async;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -432,7 +433,10 @@ public class Schedule extends Component {
 			Object schedulerObj = svc.getScheduler( schedulerKey );
 			if ( schedulerObj instanceof BaseScheduler ) {
 				BaseScheduler scheduler = ( BaseScheduler ) schedulerObj;
-				for ( TaskRecord record : scheduler.getTasks().values() ) {
+				// Iterate over a snapshot copy so tasks registered concurrently don't
+				// cause a ConcurrentModificationException. The list may omit a task that
+				// was added while we were building it, which is acceptable for a listing.
+				for ( TaskRecord record : new ArrayList<>( scheduler.getTasks().values() ) ) {
 					// Filter by group if specified
 					if ( group != null && !group.isBlank() && !group.equals( record.group ) ) {
 						continue;
@@ -472,7 +476,9 @@ public class Schedule extends Component {
 
 		BaseScheduler scheduler = ( BaseScheduler ) schedulerObj;
 
-		for ( TaskRecord record : scheduler.getTasks().values() ) {
+		// Iterate over a snapshot copy so tasks registered concurrently don't
+		// cause a ConcurrentModificationException.
+		for ( TaskRecord record : new ArrayList<>( scheduler.getTasks().values() ) ) {
 			if ( shouldIncludeTask( record, group ) ) {
 				record.task.disable();
 				record.disabled = true;
@@ -502,7 +508,9 @@ public class Schedule extends Component {
 
 		BaseScheduler scheduler = ( BaseScheduler ) schedulerObj;
 
-		for ( TaskRecord record : scheduler.getTasks().values() ) {
+		// Iterate over a snapshot copy so tasks registered concurrently don't
+		// cause a ConcurrentModificationException.
+		for ( TaskRecord record : new ArrayList<>( scheduler.getTasks().values() ) ) {
 			if ( shouldIncludeTask( record, group ) ) {
 				record.task.enable();
 				record.disabled		= false;
@@ -546,17 +554,19 @@ public class Schedule extends Component {
 		SchedulerService	svc				= ortus.boxlang.runtime.BoxRuntime.getInstance().getSchedulerService();
 		Key					schedulerKey	= Key.of( name );
 
-		if ( svc.hasScheduler( schedulerKey ) ) {
-			Object existing = svc.getScheduler( schedulerKey );
-			if ( existing instanceof BaseScheduler ) {
-				return ( BaseScheduler ) existing;
+		synchronized ( svc ) {
+			if ( svc.hasScheduler( schedulerKey ) ) {
+				Object existing = svc.getScheduler( schedulerKey );
+				if ( existing instanceof BaseScheduler ) {
+					return ( BaseScheduler ) existing;
+				}
 			}
-		}
 
-		// Register only — do NOT start. Startup happens after tasks are added (see _invoke post-switch).
-		BaseScheduler scheduler = new BaseScheduler( name, context );
-		svc.registerScheduler( scheduler, false );
-		return scheduler;
+			// Register only — do NOT start. Startup happens after tasks are added (see _invoke post-switch).
+			BaseScheduler scheduler = new BaseScheduler( name, context );
+			svc.registerScheduler( scheduler, false );
+			return scheduler;
+		}
 	}
 
 	/**

@@ -49,7 +49,7 @@ public class ArgumentsPrinter {
 				} else {
 					String nameSource = arg.getName().getSourceText();
 					if ( nameSource != null ) {
-						length += nameSource.length();
+						length += calculateSingleLineSourceLength( nameSource );
 					}
 				}
 				length += separator.length();
@@ -58,7 +58,7 @@ public class ArgumentsPrinter {
 			// Argument value
 			String valueSource = arg.getValue().getSourceText();
 			if ( valueSource != null ) {
-				length += valueSource.length();
+				length += calculateSingleLineSourceLength( valueSource );
 			}
 
 			if ( i < arguments.size() - 1 ) {
@@ -69,7 +69,28 @@ public class ArgumentsPrinter {
 		return length;
 	}
 
+	/**
+	 * Determine whether an argument list would become multiline solely because of
+	 * the configured length threshold.
+	 */
+	boolean wouldBreakByLength( List<BoxArgument> arguments ) {
+		return !visitor.config.getCFFormatCompatibility()
+		    && calculateArgumentListLength( arguments ) >= visitor.config.getArguments().getMultilineLength();
+	}
+
+	/**
+	 * Normalize source whitespace before measuring it so multiline decisions do not
+	 * depend on how the input was previously formatted.
+	 */
+	private int calculateSingleLineSourceLength( String source ) {
+		return source.replaceAll( "\\s+", " " ).trim().length();
+	}
+
 	public void print( BoxNode parentNode, List<BoxArgument> arguments ) {
+		print( parentNode, arguments, false );
+	}
+
+	public void print( BoxNode parentNode, List<BoxArgument> arguments, boolean suppressMultilineByLength ) {
 		var		currentDoc			= visitor.getCurrentDoc();
 		var		argumentsDoc		= visitor.pushDoc( DocType.GROUP );
 
@@ -83,7 +104,7 @@ public class ArgumentsPrinter {
 			multilineByLength	= false;
 		} else {
 			multilineByCount	= size > ( visitor.config.getArguments().getMultilineCount() - 1 );
-			multilineByLength	= calculateArgumentListLength( arguments ) >= visitor.config.getArguments().getMultilineLength();
+			multilineByLength	= !suppressMultilineByLength && wouldBreakByLength( arguments );
 		}
 		var	multiline				= multilineByCount || multilineByLength;
 
@@ -111,7 +132,7 @@ public class ArgumentsPrinter {
 			if ( multiline ) {
 				contentsDoc.append( Line.LINE );
 			} else if ( padding ) {
-				contentsDoc.append( " " );
+				contentsDoc.append( Line.LINE );
 			} else {
 				contentsDoc.append( Line.SOFT );
 			}
@@ -163,7 +184,7 @@ public class ArgumentsPrinter {
 			if ( multiline ) {
 				argumentsDoc.append( Line.LINE );
 			} else if ( padding ) {
-				argumentsDoc.append( " " );
+				argumentsDoc.append( Line.LINE );
 			} else {
 				argumentsDoc.append( Line.SOFT );
 			}

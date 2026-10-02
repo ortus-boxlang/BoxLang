@@ -22,6 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -115,6 +121,36 @@ public class ScheduleTest {
 		assertThat( svc.hasScheduler( SCHEDULER_KEY ) ).isTrue();
 		BaseScheduler scheduler = ( BaseScheduler ) svc.getScheduler( SCHEDULER_KEY );
 		assertThat( scheduler.hasTask( "myTask" ) ).isTrue();
+	}
+
+	/**
+	 * Verifies that concurrent schedule requests share one default scheduler instead of racing during registration.
+	 */
+	@DisplayName( "concurrent schedule requests create the default scheduler once" )
+	@Test
+	public void testConcurrentDefaultSchedulerCreation() throws Exception {
+		int					callerCount	= 8;
+		CountDownLatch		startGate	= new CountDownLatch( 1 );
+		ExecutorService		executor	= Executors.newFixedThreadPool( callerCount );
+		Set<BaseScheduler>	schedulers	= ConcurrentHashMap.newKeySet();
+		try {
+			Future<?>[] callers = new Future<?>[ callerCount ];
+			for ( int index = 0; index < callerCount; index++ ) {
+				callers[ index ] = executor.submit( () -> {
+					startGate.await();
+					schedulers.add( Schedule.getOrCreateScheduler( context, Schedule.DEFAULT_SCHEDULER_NAME ) );
+					return null;
+				} );
+			}
+			startGate.countDown();
+			for ( Future<?> caller : callers ) {
+				caller.get();
+			}
+		} finally {
+			executor.shutdownNow();
+		}
+
+		assertThat( schedulers ).hasSize( 1 );
 	}
 
 	@DisplayName( "It can create a task with a cron expression" )

@@ -1,0 +1,8 @@
+class extends="EventParent" {
+
+	function init() {
+		super.init();
+		return this;
+	}
+
+}

@@ -1,0 +1,5 @@
+result = encodeForHTMLAttribute( absoluteUrl( production.logoUrl,
+	platformHome ) );
+
+return rollupData.keyArray().map( ( id ) => rollupData[ id ] ).sort( ( a, b ) => compareNoCase( a.label,
+	b.label ) );

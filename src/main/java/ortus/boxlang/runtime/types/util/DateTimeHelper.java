@@ -421,6 +421,49 @@ public class DateTimeHelper {
 	}
 
 	/**
+	 * This utility method gives us the next occurrence of a specific day of the month, clamping
+	 * to the last day of the month when the requested day doesn't exist in it (Ex: the 31st in a
+	 * 30-day month).
+	 *
+	 * @param day      The day of the month to target: 1-31
+	 * @param time     The specific time using 24 hour format => HH:mm, defaults to midnight
+	 * @param addMonth Boolean to specify adding a month to today's date
+	 * @param now      The date to use as the starting point, defaults to now()
+	 *
+	 * @return The next occurrence of the day of the month, clamped to the month's last day if needed
+	 */
+	public static LocalDateTime getNextDayOfMonthOccurrence( int day, String time, Boolean addMonth, LocalDateTime now ) {
+		// Adding a month?
+		if ( addMonth ) {
+			now = now.plusMonths( 1 );
+		}
+		// Clamp the requested day to the last day of the target month
+		int clampedDay = Math.min( day, daysInMonth( now ) );
+		return now
+		    .withDayOfMonth( clampedDay )
+		    // Specific Time
+		    .withHour( Integer.parseInt( time.split( ":" )[ 0 ] ) )
+		    .withMinute( Integer.parseInt( time.split( ":" )[ 1 ] ) )
+		    .withSecond( 0 );
+	}
+
+	/**
+	 * This utility method gives us the next occurrence of a specific day of the month, clamping
+	 * to the last day of the month when the requested day doesn't exist in it (Ex: the 31st in a
+	 * 30-day month).
+	 *
+	 * @param day      The day of the month to target: 1-31
+	 * @param time     The specific time using 24 hour format => HH:mm, defaults to midnight
+	 * @param addMonth Boolean to specify adding a month to today's date
+	 * @param timezone The timezone to use
+	 *
+	 * @return The next occurrence of the day of the month, clamped to the month's last day if needed
+	 */
+	public static LocalDateTime getNextDayOfMonthOccurrence( int day, String time, Boolean addMonth, ZoneId timezone ) {
+		return getNextDayOfMonthOccurrence( day, time, addMonth, DateTimeHelper.now( timezone ) );
+	}
+
+	/**
 	 * Validates an incoming string to adhere to HH: mm while allowing a user to simply enter an hour value
 	 *
 	 * @param time The time to validate

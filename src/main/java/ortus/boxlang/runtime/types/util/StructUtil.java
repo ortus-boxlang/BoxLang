@@ -842,8 +842,18 @@ public class StructUtil {
 			}
 
 			// If the value is a struct, recursively search it
-			if ( value instanceof IStruct ) {
-				findKeyRecursive( rootStruct, ( IStruct ) value, searchKey, fullPath, results );
+			if ( value instanceof IStruct nestedStruct ) {
+				findKeyRecursive( rootStruct, nestedStruct, searchKey, fullPath, results );
+			} else if ( value instanceof List<?> list ) {
+				// Structs nested inside an array are part of the same object graph, so descend into them too.
+				// Paths carry a 1-based array index, matching findValue().
+				int index = 1;
+				for ( Object item : list ) {
+					if ( item instanceof Map ) {
+						findKeyRecursive( rootStruct, StructCaster.cast( item ), searchKey, fullPath + "[" + index + "]", results );
+					}
+					index++;
+				}
 			}
 		}
 	}

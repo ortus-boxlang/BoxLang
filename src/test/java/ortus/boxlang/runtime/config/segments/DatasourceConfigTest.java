@@ -50,6 +50,41 @@ class DatasourceConfigTest {
 		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:postgresql://localhost:5432/foo" );
 	}
 
+	@DisplayName( "It applies the registerMbeans default to the HikariConfig instead of forwarding it as a raw JDBC property" )
+	@Test
+	void testItAppliesRegisterMbeansToHikariConfig() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "connectionString", "jdbc:derby:memory:Foo;create=true"
+		) );
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+
+		assertThat( hikariConfig.isRegisterMbeans() ).isTrue();
+		assertThat( hikariConfig.getDataSourceProperties().containsKey( "registerMbeans" ) ).isFalse();
+	}
+
+	@DisplayName( "It does not forward reserved connection properties as raw JDBC dataSourceProperties" )
+	@Test
+	void testReservedPropertiesAreNotForwardedAsDataSourceProperties() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "connectionString", "jdbc:derby:memory:Foo;create=true",
+		    "connectionLimit", -1,
+		    "someVendorFlag", true,
+		    "someVendorTimeout", 42
+		) );
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+
+		// Every value handed to the JDBC driver as a raw dataSourceProperty must be a String:
+		// Hikari 7.x no longer stringifies dataSourceProperties for us, so a stray non-String
+		// value ( e.g. a Boolean or Integer default that was never wired to a HikariConfig
+		// setter ) will NPE inside stricter JDBC drivers like Derby.
+		hikariConfig.getDataSourceProperties().forEach( ( key, value ) -> assertThat( value ).isInstanceOf( String.class ) );
+		assertThat( hikariConfig.getDataSourceProperties().get( "someVendorFlag" ) ).isEqualTo( "true" );
+		assertThat( hikariConfig.getDataSourceProperties().get( "someVendorTimeout" ) ).isEqualTo( "42" );
+		assertThat( hikariConfig.getDataSourceProperties().containsKey( "custom" ) ).isFalse();
+		assertThat( hikariConfig.getDataSourceProperties().containsKey( "connectionLimit" ) ).isFalse();
+		assertThat( hikariConfig.getMaximumPoolSize() ).isEqualTo( Integer.MAX_VALUE );
+	}
+
 	@DisplayName( "It supports plaintext datasource passwords" )
 	@Test
 	void testPlaintextDatasourcePassword() {
@@ -76,7 +111,11 @@ class DatasourceConfigTest {
 		    "custom", Struct.of( "useSSL", false )
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://127.0.0.1:3306/foo?useSSL=false" );
+
+		// The bx-mysql driver appends its own default properties, so assert on the prefix and
+		// the presence of the explicitly-provided custom property rather than the full URL.
+		assertThat( hikariConfig.getJdbcUrl() ).startsWith( "jdbc:mysql://127.0.0.1:3306/foo?" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "useSSL=false" );
 	}
 
 	@DisplayName( "It can load a config with placeholders on a url key" )
@@ -91,7 +130,11 @@ class DatasourceConfigTest {
 		    "custom", Struct.of( "useSSL", false )
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?useSSL=false" );
+
+		// The bx-mysql driver appends its own default properties, so assert on the prefix and
+		// the presence of the explicitly-provided custom property rather than the full URL.
+		assertThat( hikariConfig.getJdbcUrl() ).startsWith( "jdbc:mysql://localhost:3306/foo?" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "useSSL=false" );
 	}
 
 	@DisplayName( "It can load a config with placeholders on a dsn key" )
@@ -105,7 +148,11 @@ class DatasourceConfigTest {
 		    "custom", Struct.of( "useSSL", false )
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?useSSL=false" );
+
+		// The bx-mysql driver appends its own default properties, so assert on the prefix and
+		// the presence of the explicitly-provided custom property rather than the full URL.
+		assertThat( hikariConfig.getJdbcUrl() ).startsWith( "jdbc:mysql://localhost:3306/foo?" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "useSSL=false" );
 	}
 
 	@DisplayName( "It can load a config with nonstandard placeholders on a dsn key" )
@@ -120,7 +167,12 @@ class DatasourceConfigTest {
 		    "custom", Struct.of( "useSSL", false )
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?totalRandomValue=12345&useSSL=false" );
+
+		// The bx-mysql driver appends its own default properties, so assert on the prefix and
+		// the presence of the resolved placeholders and custom property rather than the full URL.
+		assertThat( hikariConfig.getJdbcUrl() ).startsWith( "jdbc:mysql://localhost:3306/foo?" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "totalRandomValue=12345" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "useSSL=false" );
 	}
 
 	@DisplayName( "It performs case-insensitive placeholder replacements" )
@@ -135,7 +187,12 @@ class DatasourceConfigTest {
 		    "custom", Struct.of( "useSSL", false )
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?totalRandomValue=12345&useSSL=false" );
+
+		// The bx-mysql driver appends its own default properties, so assert on the prefix and
+		// the presence of the resolved placeholders and custom property rather than the full URL.
+		assertThat( hikariConfig.getJdbcUrl() ).startsWith( "jdbc:mysql://localhost:3306/foo?" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "totalRandomValue=12345" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "useSSL=false" );
 	}
 
 	@DisplayName( "It can replace the same placeholder more than once" )
@@ -148,7 +205,12 @@ class DatasourceConfigTest {
 		    "database", "foo"
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?someThing=localhost&andAnotherThing=3306" );
+
+		// The bx-mysql driver appends its own default properties, so assert on the prefix and
+		// the presence of the resolved placeholders rather than the full URL.
+		assertThat( hikariConfig.getJdbcUrl() ).startsWith( "jdbc:mysql://localhost:3306/foo?" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "someThing=localhost" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "andAnotherThing=3306" );
 	}
 
 	@DisplayName( "It can load config" )

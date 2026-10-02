@@ -134,7 +134,7 @@ public class ClassPrinter {
 		visitor.helperPrinter.printKeyValueAnnotations( postAnnotations, false, false, false );
 		currentDoc.append( " {" );
 
-		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
+		pushClassBody( !classNode.getProperties().isEmpty() || !classNode.getBody().isEmpty() );
 		printProperties( classNode.getProperties() );
 		List<BoxStatement> sortedBody = sortClassBody( classNode.getBody(), methodOrder, methodGrouping );
 		if ( !classNode.getProperties().isEmpty() && sortedBody.isEmpty() ) {
@@ -181,7 +181,7 @@ public class ClassPrinter {
 		visitor.helperPrinter.printKeyValueAnnotations( postAnnotations, false, false, false );
 		currentDoc.append( " {" );
 
-		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
+		pushClassBody( !localClass.getProperties().isEmpty() || !localClass.getBody().isEmpty() );
 		printProperties( localClass.getProperties() );
 		List<BoxStatement> sortedBody = sortClassBody( localClass.getBody(), methodOrder, methodGrouping );
 		if ( !localClass.getProperties().isEmpty() && sortedBody.isEmpty() ) {
@@ -218,7 +218,7 @@ public class ClassPrinter {
 		visitor.helperPrinter.printKeyValueAnnotations( interfaceNode.getPostAnnotations(), true, false, false );
 		currentDoc.append( "{" );
 
-		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
+		pushClassBody( !interfaceNode.getBody().isEmpty() );
 		visitor.helperPrinter.printStatements( sortClassBody( interfaceNode.getBody(), methodOrder, methodGrouping ) );
 		visitor.printInsideComments( interfaceNode, false );
 
@@ -249,7 +249,7 @@ public class ClassPrinter {
 		visitor.helperPrinter.printKeyValueAnnotations( classNode.getAnnotations(), true, visitor.config.getCFFormatCompatibility(), false );
 		currentDoc.append( "{" );
 
-		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
+		pushClassBody( !classNode.getProperties().isEmpty() || !classNode.getBody().isEmpty() );
 		printProperties( classNode.getProperties() );
 		List<BoxStatement> sortedBody = sortClassBody( classNode.getBody(), methodOrder, methodGrouping );
 		if ( visitor.config.getCFFormatCompatibility() && !classNode.getProperties().isEmpty() ) {
@@ -288,7 +288,7 @@ public class ClassPrinter {
 		visitor.helperPrinter.printKeyValueAnnotations( interfaceNode.getAllAnnotations(), true, false, false );
 		currentDoc.append( "{" );
 
-		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
+		pushClassBody( !interfaceNode.getBody().isEmpty() );
 		visitor.helperPrinter.printStatements( sortClassBody( interfaceNode.getBody(), methodOrder, methodGrouping ) );
 		visitor.printInsideComments( interfaceNode, false );
 
@@ -501,6 +501,21 @@ public class ClassPrinter {
 			}
 		}
 		// Note: member_spacing between properties and methods is handled by printStatements
+	}
+
+	/**
+	 * Starts an indented script class body and applies configured blank lines before
+	 * its first member without adding extra space to an empty body.
+	 *
+	 * @param hasMembers whether the class or interface body contains members
+	 */
+	private void pushClassBody( boolean hasMembers ) {
+		var bodyDoc = visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
+		if ( hasMembers ) {
+			for ( int i = 0; i < visitor.config.getClassConfig().getBodySpacing(); i++ ) {
+				bodyDoc.append( Line.HARD );
+			}
+		}
 	}
 
 	/**
