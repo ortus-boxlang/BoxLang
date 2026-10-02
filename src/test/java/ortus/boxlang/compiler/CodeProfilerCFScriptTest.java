@@ -739,15 +739,22 @@ class CodeProfilerCFScriptTest {
 		// System.out.println( "=== testForIn dump" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// Pass A: arr=[...], the for-in header, the body x = item, and the loop
-		// braces { and } are each their own span.
+		// Pass A: arr=[ 10, 20, 30 ] splits per element (like struct values):
+		// "arr = [ " | "10" | ", " | "20" | ", " | "30" | " ]" (7 spans), then the
+		// for-in header, the body x = item, and the loop braces { and }.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 5 );
-		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 20, true ) );  // "arr = [ 10, 20, 30 ]"
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 19, true ) );  // "for( item in arr ) "
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 8, true ) );   // "x = item"
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 2, 19, 2, 20, true ) ); // "{" open brace
-		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 1, true ) );   // "}" close brace
+		assertThat( spanDefs ).hasSize( 11 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 8, true ) );   // "arr = [ "
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 8, 1, 10, true ) );  // "10"
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 1, 10, 1, 12, true ) ); // ", "
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 1, 12, 1, 14, true ) ); // "20"
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 1, 14, 1, 16, true ) ); // ", "
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 1, 16, 1, 18, true ) ); // "30"
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 1, 18, 1, 20, true ) ); // " ]"
+		assertThat( spanDefs.get( 7 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 19, true ) );  // "for( item in arr ) "
+		assertThat( spanDefs.get( 8 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 8, true ) );   // "x = item"
+		assertThat( spanDefs.get( 9 ) ).isEqualTo( new Blueprint.SpanDef( 2, 19, 2, 20, true ) ); // "{" open brace
+		assertThat( spanDefs.get( 10 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 1, true ) ); // "}" close brace
 
 		// Pass B: header ran once; body ran 3 times (10, 20, 30).
 		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );   // arr = [...]
@@ -1863,12 +1870,15 @@ class CodeProfilerCFScriptTest {
 		// System.out.println( "=== testFunctionEmptyDeclaration dump" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// An empty function declaration body has no executable spans — the shell has
-		// no statements and the body is empty, so there is nothing to profile. As a
-		// result, no line coverage is recorded for line 1.
+		// An empty function body behaves like ANY other function: the declaration
+		// SHELL (including the braces' open group) marks GREEN at definition. The
+		// shell spans "function foo() ", the "{" and "}" are the body-brace group.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).isEmpty();
-		assertThat( CodeProfilerService.fileLines( key ) ).isEmpty();
+		assertThat( spanDefs ).hasSize( 3 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 15, true ) );  // "function foo() "
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 15, 1, 16, true ) ); // "{" body open
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 1, 16, 1, 17, true ) ); // "}"
+		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();   // the declaration ran (GREEN)
 	}
 
 	@DisplayName( "It splits a function declaration shell from its body span" )

@@ -277,4 +277,111 @@ foo
 <bx:output>
     #now()#
 </bx:output>
-```
+```// ==========================================================================
+// BUG REPRODUCTIONS (rendered to HTML by ScratchSpanHTMLTest for eyeballing)
+// ==========================================================================
+
+// --- BUG 1: script `lock {}` — the closing brace was previously RED (uncovered)
+// even though the body ran.
+totalSpecs = 0;
+lock name="tb-results-1" type="exclusive" timeout="10" {
+    totalSpecs += 1;
+}
+
+// --- BUG 2 (FAITHFUL): struct literal with a comment before EVERY entry,
+// inside a `lock {}` body — exactly TestResult.cfc startBundleStats(). Every
+// comment line was being marked executable (and the last one RED). This must
+// reproduce so we can fix the comment-in-struct-literal span.
+bundleStats = [];
+lock name="tb-results-1" type="exclusive" timeout="10" {
+    st = {
+        // bundle id
+        "id"              : hash( getTickCount() + randRange( 1, 10000000 ) ),
+        // The bundle display name
+        "name"            : "bundle",
+        // Path of the bundle
+        "path"            : "/some/path",
+        // Total Suites in Bundle
+        "totalSuites"     : 0,
+        // Total specs found to test
+        "totalSpecs"      : 0,
+        // Total passed specs
+        "totalPass"       : 0,
+        // Total failed specs
+        "totalFail"       : 0,
+        // Total error in specs
+        "totalError"      : 0,
+        // Total skipped specs/suites
+        "totalSkipped"    : 0,
+        // Durations
+        "startTime"       : getTickCount(),
+        "endTime"         : 0,
+        "totalDuration"   : 0,
+        // Suite stats holder
+        "suiteStats"      : [],
+        // Debug output buffer
+        "debugBuffer"     : [],
+        // Global Exception
+        "globalException" : ""
+    };
+    arrayAppend( bundleStats, st );
+}
+
+// --- BUG 3: ternary in a parenthesized expression spanning lines — the closing
+// `)` line was RED.
+lockNeedsLock = (
+    server.keyExists( "boxlang" ) ? "boxlang" : "cfml"
+);
+
+// --- BUG 4: array-of-struct literal — the closing `}` of the struct AND the
+// closing `]` of the array were RED.
+reverseTree = [
+    {
+        name   : "foo",
+        skip   : false
+    }
+];
+
+// --- BUG 5: function call with trailing args on their own lines — the trailing
+// `}, suite=, data=, );` lines were RED.
+function generateAroundEach( suite, spec ){
+    return arguments;
+}
+function nextSpec(){
+    return { name: "x", order: 0, skip: false, data: "d", labels: [] };
+}
+nextSpecInfo = nextSpec();
+nextClosure = { body: generateAroundEach, data: nextSpecInfo.data, suite: "s" };
+thread = { closures: [ generateAroundEach ], suite: "suite" };
+closureIndex = 1;
+generatedSpec = generateAroundEach(
+    spec = {
+        name : nextSpecInfo.name,
+        body : generateAroundEach(
+            thread.closures,
+            thread.suite,
+            thread.closures[ 1 ],
+            closureIndex
+        ),
+        data   : nextSpecInfo.data,
+        labels : nextSpecInfo.labels,
+        order  : nextSpecInfo.order,
+        skip   : nextSpecInfo.skip
+    },
+    suite = thread.suite,
+    data  = nextClosure.data
+);
+
+// --- BUG 6: empty-bodied member functions (TestCase.cfc setup/teardown/etc.) —
+// the empty method bodies were never spanned even when invoked.
+class SpecFns {
+    function setup() {}
+    function teardown() {}
+    function afterTests() {}
+    function beforeTests() {}
+}
+specFnsInst = new SpecFns();
+specFnsInst.setup();
+specFnsInst.teardown();
+specFnsInst.afterTests();
+specFnsInst.beforeTests();

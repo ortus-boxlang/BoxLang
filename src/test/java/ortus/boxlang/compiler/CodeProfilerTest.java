@@ -18,6 +18,7 @@
 package ortus.boxlang.compiler;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -752,18 +753,25 @@ class CodeProfilerTest {
 		// System.out.println( "=== testForIn dump" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// Pass A: arr=[...], the for-in header, the body x = item, and the loop
-		// braces { and } are each their own span.
+		// Pass A: arr=[ 10, 20, 30 ] splits per element (like struct values):
+		// "arr = [ " | "10" | ", " | "20" | ", " | "30" | " ]" (7 spans), then the
+		// for-in header, the body x = item, and the loop braces { and }.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 5 );
-		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 20, true ) );  // "arr = [ 10, 20, 30 ]"
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 19, true ) );  // "for( item in arr ) "
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 8, true ) );   // "x = item"
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 2, 19, 2, 20, true ) ); // "{" open brace
-		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 1, true ) );   // "}" close brace
+		assertThat( spanDefs ).hasSize( 11 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 8, true ) );   // "arr = [ "
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 8, 1, 10, true ) );  // "10"
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 1, 10, 1, 12, true ) ); // ", "
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 1, 12, 1, 14, true ) ); // "20"
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 1, 14, 1, 16, true ) ); // ", "
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 1, 16, 1, 18, true ) ); // "30"
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 1, 18, 1, 20, true ) ); // " ]"
+		assertThat( spanDefs.get( 7 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 19, true ) );  // "for( item in arr ) "
+		assertThat( spanDefs.get( 8 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 8, true ) );   // "x = item"
+		assertThat( spanDefs.get( 9 ) ).isEqualTo( new Blueprint.SpanDef( 2, 19, 2, 20, true ) ); // "{" open brace
+		assertThat( spanDefs.get( 10 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 1, true ) );  // "}" close brace
 
 		// Pass B: header ran once; body ran 3 times (10, 20, 30).
-		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );   // arr = [...]
+		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );   // arr = [ (
 		assertThat( CodeProfilerService.spanAt( key, 2, 1 ).stats().count() ).isEqualTo( 1 );   // for-in header
 		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 3 );   // x = item ran 3x
 		assertThat( CodeProfilerService.spanAt( key, 2, 19 ).stats().count() ).isEqualTo( 3 );  // { ran 3x
@@ -2001,12 +2009,16 @@ class CodeProfilerTest {
 		// System.out.println( "=== testFunctionEmptyDeclaration dump" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// An empty function declaration body has no executable spans — the shell has
-		// no statements and the body is empty, so there is nothing to profile. As a
-		// result, no line coverage is recorded for line 1.
+		// An empty function body must behave like ANY other function: the
+		// declaration SHELL (including the braces' open group) marks GREEN at
+		// definition. The shell spans a "function foo() ", the "{" and the "}" are
+		// the body-brace group. The whole line is covered at declaration.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).isEmpty();
-		assertThat( CodeProfilerService.fileLines( key ) ).isEmpty();
+		assertThat( spanDefs ).hasSize( 3 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 15, true ) );  // "function foo() "
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 15, 1, 16, true ) ); // "{" body open
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 1, 16, 1, 17, true ) ); // "}"
+		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();   // the declaration ran (GREEN)
 	}
 
 	@DisplayName( "It splits a function declaration shell from its body span" )
@@ -3719,5 +3731,195 @@ class CodeProfilerTest {
 	private String keyFor( String relativePath ) {
 		Path absolute = Paths.get( relativePath ).toAbsolutePath().normalize();
 		return absolute.toString().toLowerCase( Locale.ROOT );
+	}
+
+	@DisplayName( "It groups a script lock component's closing brace with its header" )
+	@Test
+	void testScriptComponentBlockBraces() {
+		String source = """
+		                totalSpecs = 0;
+		                lock name="tb-results-1" type="exclusive" timeout="10" {
+		                totalSpecs += 1;
+		                }
+		                """;
+		runtime.executeSource( source );
+
+		String	key			= IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// Pass A: totalSpecs = 0 is one span; the lock header is one span (through
+		// the "{"), the body statement is one span, and the closing "}" is grouped
+		// with the header so it is covered when the body runs.
+		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
+		assertThat( spanDefs ).hasSize( 4 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 14, true ) );  // "totalSpecs = 0"
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 3, 0, true ) );   // lock header through "{"
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 15, true ) );  // "totalSpecs += 1"
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 1, true ) );   // "}"
+
+		// Pass B: everything ran, and the closing brace is covered (count 1) — no
+		// phantom RED span over the closing "}".
+		assertThat( CodeProfilerService.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 1 );   // lock header
+		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 1 );   // body
+		assertThat( CodeProfilerService.spanAt( key, 4, 0 ).stats().count() ).isEqualTo( 1 );   // closing "}" GREEN
+
+		// Line-based: lines 1-4 all covered.
+		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 3 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 4 ).covered() ).isTrue();
+	}
+
+	@DisplayName( "It gives each struct-literal key and value its own tight span, with no comments in any span" )
+	@Test
+	void testStructLiteralKeysAndValuesAreTightSpans() {
+		// The BUG 2 struct literal in ProfilerSample.bxs (the faithful TestResult.cfc
+		// repro) has a comment before EVERY entry. Each KEY and each VALUE must be its
+		// OWN span covering EXACTLY that expression — no wider — so a comment line is
+		// NEVER part of any span, and the `:` / `,` separators are not spans either.
+		String relativePath = "src/test/resources/profiler/ProfilerSample.bxs";
+		runtime.executeTemplate( relativePath );
+		String	key	= keyFor( relativePath );
+		String	src	= readSampleSource();
+
+		// Find every executable span that falls within the struct literal region
+		// (lines 299-325). Each must be EXACTLY a key or EXACTLY a value — never
+		// spanning a comment line, never the `: ` between key and value, never a `,`.
+		// We assert on the exact defs for a representative slice and structurally
+		// verify the invariant for the whole region.
+		for ( CodeProfilerService.Span s : CodeProfilerService.fileSpans( key ) ) {
+			if ( s.startLine() < 299 || s.endLine() > 325 ) {
+				continue;
+			}
+			// A span in the struct region must NOT extend across a comment-only line.
+			for ( int commentLine : new int[] { 300, 302, 304, 306, 308, 310, 312, 314, 316, 320, 322, 324 } ) {
+				assertWithMessage( "span " + s + " crosses comment line " + commentLine )
+				    .that( s.startLine() <= commentLine && commentLine <= s.endLine() )
+				    .isFalse();
+			}
+			// The span text must be exactly an expression — never the `: ` gap or `,`.
+			String text = CodeProfilerService.spanSourceText( key, src, s );
+			assertWithMessage( "span " + s + " is not a tight key/value expression" )
+			    .that( text )
+			    .doesNotContain( ":" );
+			assertWithMessage( "span " + s + " has a leading pad" )
+			    .that( text.startsWith( " " ) )
+			    .isFalse();
+		}
+
+		// Every comment line in the struct region must have NO executable span
+		// (so lineAt is null and fileLines lacks the key).
+		for ( int commentLine : new int[] { 298, 300, 302, 304, 306, 308, 310, 312, 314, 316, 320, 322, 324 } ) {
+			assertThat( CodeProfilerService.lineAt( key, commentLine ) ).isNull();
+			assertThat( CodeProfilerService.fileLines( key ) ).doesNotContainKey( commentLine );
+		}
+		// Every key/value line in the struct region is covered (they all ran).
+		for ( int valueLine : new int[] { 299, 301, 303, 305, 307, 309, 311, 313, 315, 317, 318, 319, 321, 323, 325 } ) {
+			assertThat( CodeProfilerService.lineAt( key, valueLine ).covered() ).isTrue();
+		}
+	}
+
+	/**
+	 * Read the sample file source (used for spanSourceText in the struct test).
+	 *
+	 * @return the ProfilerSample.bxs source text
+	 */
+	private String readSampleSource() {
+		try {
+			return java.nio.file.Files.readString( Paths.get( "src/test/resources/profiler/ProfilerSample.bxs" ) );
+		} catch ( java.io.IOException e ) {
+			throw new RuntimeException( e );
+		}
+	}
+
+	@DisplayName( "It covers a ternary parenthesized expression's closing-paren line" )
+	@Test
+	void testTernaryParenthesizedExpressionClosingParen() {
+		String source = """
+		                a = (
+		                server.keyExists( "boxlang" ) ? "bx" : "cf"
+		                );
+		                """;
+		runtime.executeSource( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// The closing ")" on line 3 must be covered (GREEN), not a phantom RED span.
+		assertThat( CodeProfilerService.lineAt( key, 3 ).covered() ).isTrue();
+	}
+
+	@DisplayName( "It covers an array-of-struct literal's closing } and ]" )
+	@Test
+	void testArrayOfStructLiteralClosing() {
+		String source = """
+		                reverseTree = [
+		                {
+		                name   : "foo",
+		                skip   : false
+		                }
+		                ];
+		                """;
+		runtime.executeSource( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// The struct closing "}" (line 5) and the array closing "]" (line 6) must
+		// be covered (GREEN), not phantom RED spans.
+		assertThat( CodeProfilerService.lineAt( key, 5 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 6 ).covered() ).isTrue();
+	}
+
+	@DisplayName( "It covers a function call's trailing closing-paren line" )
+	@Test
+	void testFunctionCallTrailingClosingParenLine() {
+		String source = """
+		                function append2( a, b ) {
+		                return a & b;
+		                }
+		                append2(
+		                "a",
+		                "b"
+		                );
+		                """;
+		runtime.executeSource( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// The closing ")" on line 6 must be covered (GREEN), not a phantom RED span.
+		assertThat( CodeProfilerService.lineAt( key, 6 ).covered() ).isTrue();
+	}
+
+	@DisplayName( "It spans empty member function bodies when invoked" )
+	@Test
+	void testEmptyMemberFunctionBodies() {
+		String source = """
+		                class Spec {
+		                function setup() {}
+		                function teardown() {}
+		                function afterTests() {}
+		                function beforeTests() {}
+		                }
+		                s = new Spec();
+		                s.setup();
+		                s.teardown();
+		                s.afterTests();
+		                s.beforeTests();
+		                """;
+		runtime.executeSource( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// Every empty method body — even though it has NO statements — gets its
+		// braces registered as executable spans, and they are COVERED once the
+		// method is invoked. This is the TestCase.cfc setup/teardown case: the
+		// methods were instantiated and run, but their empty bodies were never
+		// spanned.
+		for ( int methodLine : new int[] { 2, 3, 4, 5 } ) {
+			// The empty body's braces are on the same line; the matching `}` line is
+			// the following line-dependent span. Since they're all on one line, the
+			// line itself must be covered once invoked.
+			assertThat( CodeProfilerService.lineAt( key, methodLine ).covered() ).isTrue();
+		}
+		assertThat( CodeProfilerService.lineAt( key, 8 ).covered() ).isTrue();   // s.setup() call
+		assertThat( CodeProfilerService.lineAt( key, 11 ).covered() ).isTrue();  // s.beforeTests() call
 	}
 }

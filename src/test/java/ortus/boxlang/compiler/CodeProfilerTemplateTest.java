@@ -629,16 +629,25 @@ class CodeProfilerTemplateTest {
 
 		String	key			= IBoxpiler.MD5( BoxSourceType.BOXTEMPLATE.toString() + source );
 
-		// Pass A: arr=[...], the <bx:loop> header, the body y = x, and the
-		// </bx:loop> close tag, plus the \r newline buffer spans.
+		// Pass A: the array splits per element (like struct values) inside the
+		// <bx:set>: "<bx:set arr = [ " | 10 | ", " | 20 | ", " | 30 | " ]" | ">"
+		// (8 spans on line 1), then the <bx:loop> header + \r, the body y = x + \r,
+		// and the </bx:loop> close tag.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 6 );
-		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 29, true ) ); // <bx:set arr = [ 10, 20, 30 ]>
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 32, true ) ); // <bx:loop array="#arr#" item="x">
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 32, 2, 33, true ) ); // \r
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 14, true ) ); // <bx:set y = x>
-		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 14, 3, 15, true ) ); // \r
-		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 10, true ) );  // </bx:loop>
+		assertThat( spanDefs ).hasSize( 13 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 16, true ) ); // "<bx:set arr = [ "
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 16, 1, 18, true ) ); // "10"
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 1, 18, 1, 20, true ) ); // ", "
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 1, 20, 1, 22, true ) ); // "20"
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 1, 22, 1, 24, true ) ); // ", "
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 1, 24, 1, 26, true ) ); // "30"
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 1, 26, 1, 28, true ) ); // " ]"
+		assertThat( spanDefs.get( 7 ) ).isEqualTo( new Blueprint.SpanDef( 1, 28, 1, 29, true ) ); // ">"
+		assertThat( spanDefs.get( 8 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 32, true ) ); // <bx:loop array="#arr#" item="x">
+		assertThat( spanDefs.get( 9 ) ).isEqualTo( new Blueprint.SpanDef( 2, 32, 2, 33, true ) ); // \r
+		assertThat( spanDefs.get( 10 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 14, true ) ); // <bx:set y = x>
+		assertThat( spanDefs.get( 11 ) ).isEqualTo( new Blueprint.SpanDef( 3, 14, 3, 15, true ) ); // \r
+		assertThat( spanDefs.get( 12 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 10, true ) ); // </bx:loop>
 
 		// Pass B: header ran once (arr set); body y = x ran 3 times (10, 20, 30).
 		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );  // arr = [...]

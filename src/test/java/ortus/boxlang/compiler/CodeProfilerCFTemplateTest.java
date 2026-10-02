@@ -687,16 +687,25 @@ class CodeProfilerCFTemplateTest {
 		// System.out.println( "=== dump ForIn" );
 		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
 
-		// Pass A: arr=[...], the <cfloop> header, the body y = x, and the
-		// </cfloop> close tag, plus the \r newline buffer spans.
+		// Pass A: the array splits per element (like struct values) inside the
+		// <cfset>: "<cfset arr = [ " | 10 | ", " | 20 | ", " | 30 | " ]" | ">"
+		// (8 spans on line 1), then the <cfloop> header + \r, the body y = x + \r,
+		// and the </cfloop> close tag.
 		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
-		assertThat( spanDefs ).hasSize( 6 );
-		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 28, true ) ); // <cfset arr = [ 10, 20, 30 ]>
-		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 31, true ) ); // <cfloop array="#arr#" item="x">
-		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 2, 31, 2, 32, true ) ); // \r
-		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 13, true ) ); // <cfset y = x>
-		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 3, 13, 3, 14, true ) ); // \r
-		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 9, true ) );  // </cfloop>
+		assertThat( spanDefs ).hasSize( 13 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 15, true ) ); // "<cfset arr = [ "
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 15, 1, 17, true ) ); // "10"
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 1, 17, 1, 19, true ) ); // ", "
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 1, 19, 1, 21, true ) ); // "20"
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 1, 21, 1, 23, true ) ); // ", "
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 1, 23, 1, 25, true ) ); // "30"
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 1, 25, 1, 27, true ) ); // " ]"
+		assertThat( spanDefs.get( 7 ) ).isEqualTo( new Blueprint.SpanDef( 1, 27, 1, 28, true ) ); // ">"
+		assertThat( spanDefs.get( 8 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 31, true ) ); // <cfloop array="#arr#" item="x">
+		assertThat( spanDefs.get( 9 ) ).isEqualTo( new Blueprint.SpanDef( 2, 31, 2, 32, true ) ); // \r
+		assertThat( spanDefs.get( 10 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 13, true ) ); // <cfset y = x>
+		assertThat( spanDefs.get( 11 ) ).isEqualTo( new Blueprint.SpanDef( 3, 13, 3, 14, true ) ); // \r
+		assertThat( spanDefs.get( 12 ) ).isEqualTo( new Blueprint.SpanDef( 4, 0, 4, 9, true ) ); // </cfloop>
 
 		// Pass B: header ran once (arr set); body y = x ran 3 times (10, 20, 30).
 		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );  // arr = [...]

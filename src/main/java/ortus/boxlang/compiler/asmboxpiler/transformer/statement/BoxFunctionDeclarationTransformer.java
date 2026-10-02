@@ -356,10 +356,14 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		if ( !transpiler.hasProfilerId() ) {
 			return;
 		}
-		if ( function.getBody() == null || function.getBody().isEmpty() ) {
-			return;
-		}
-		Point openBrace = findOpenBrace( function, function.getBody().get( 0 ).getStart() );
+		// The opening "{" is anchored after the FIRST body statement when there is
+		// one; for an EMPTY body (`function foo() {}`) there is no statement, so
+		// anchor from the function's own end. Either way, the body braces must be
+		// marked when the function is INVOKED — empty or not, if the function runs
+		// the braces run, so they must be covered (GREEN), never left missed.
+		Point openBrace = function.getBody() != null && !function.getBody().isEmpty()
+		    ? findOpenBrace( function, function.getBody().get( 0 ).getStart() )
+		    : findOpenBraceBeforeEnd( function );
 		if ( openBrace == null ) {
 			return;
 		}
@@ -372,6 +376,50 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			}
 			bodyNodes.addAll( transpiler.emitMarkVarargs( group ) );
 		}
+	}
+
+	/**
+	 * Locate the opening {@code {} of an EMPTY-BODY function ({@code function
+	 * foo(){} }), whose node end points at/past the CLOSING {@code }}. Scans
+	 * backward past the single closing {@code }} to the matching {@code {
+	 * (mirroring the Pass-A helper of the same purpose in SpanCollectorVisitor).
+	 *
+	 * @param function the empty-body function
+	 *
+	 * @return the opening brace point, or null
+	 */
+	private Point findOpenBraceBeforeEnd( BoxFunctionDeclaration function ) {
+		Point before = function.getEnd();
+		if ( before == null || function.getPosition() == null || function.getPosition().getSource() == null ) {
+			return null;
+		}
+		String	source	= function.getPosition().getSource().getCode();
+		int		offset	= offsetOf( source, before );
+		if ( offset < 0 ) {
+			return null;
+		}
+		boolean seenClose = false;
+		for ( int i = offset - 1; i >= 0; i-- ) {
+			char c = source.charAt( i );
+			if ( c == '}' ) {
+				seenClose = true;
+				continue;
+			}
+			if ( seenClose ) {
+				if ( c == '{' ) {
+					return pointAt( source, i );
+				}
+				if ( c == ';' ) {
+					return null;
+				}
+				if ( !Character.isWhitespace( c ) ) {
+					return null;
+				}
+			} else if ( c == '{' || c == ';' ) {
+				return null;
+			}
+		}
+		return null;
 	}
 
 	/**

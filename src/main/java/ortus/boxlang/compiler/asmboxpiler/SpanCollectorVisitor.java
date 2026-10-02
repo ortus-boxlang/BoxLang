@@ -29,13 +29,19 @@ import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.Point;
+import ortus.boxlang.compiler.ast.expression.BoxArgument;
+import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
+import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
@@ -540,8 +546,41 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			}
 		}
 
-		// Default: let the generic child walker handle it (each body statement opens
-		// its own span; the component tag itself threads the running span).
+		// Default: a SCRIPT component body ({@code lock name="..." { ... }},
+		// {@code savecontent { ... }}, {@code transaction { ... }}, etc.) is a plain
+		// list of body statements that each open their own span. The header (the
+		// {@code lock name="..." {} line) is the running span opened by the enclosing
+		// statement walk; we close it at the first body statement and group it with
+		// the closing {@code }} so both braces stay GREEN together (exactly like a
+		// {@link BoxStatementBlock}). Resetting {@code runningStart} prevents the
+		// enclosing statement's {@code closeRunningSpan} from minting a phantom
+		// RED span over the {@code }\n} gap after the last body statement.
+		if ( isTagContext( node ) ) {
+			// TAG-based component with a body that reached here — thread the running
+			// span generically (each body statement opens its own span).
+			visitChildren( node );
+			return;
+		}
+		if ( node.getBody() != null && !node.getBody().isEmpty() ) {
+			int headerId = closeRunningSpan( node.getBody().get( 0 ).getStart() );
+			for ( BoxStatement stmt : node.getBody() ) {
+				if ( stmt instanceof BoxBufferOutput bufOut
+				    && bufOut.getExpression() instanceof BoxStringLiteral lit
+				    && lit.getValue().isBlank() ) {
+					continue;
+				}
+				this.runningStart = stmt.getStart();
+				stmt.accept( this );
+				closeRunningSpan( bufferOutputEnd( stmt ) );
+			}
+			Point closeBrace = node.getEnd() == null ? null : new Point( node.getEnd().getLine(), node.getEnd().getColumn() - 1 );
+			registerBraceGroup( headerId, closeBrace );
+			this.runningStart = null;
+			return;
+		}
+
+		// No body (or non-statement children): let the generic child walker handle
+		// it — each child statement opens its own span threaded off the running one.
 		visitChildren( node );
 	}
 
@@ -768,6 +807,37 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				}
 			}
 			this.runningStart = null;
+		} else {
+			// SCRIPT mode: when a MULTI-LINE parenthesized ternary ends with its
+			// closing `)` on a LATER line than the false branch (e.g. `a = (\n
+			// ... ? "x" : "y"\n );`), the false-branch span would extend through that
+			// trailing `\n)` and inherit its RED (untaken) status — marking the closing
+			// `)` line uncovered even though the paren always executes when the ternary
+			// completes. The closing `)` must be split out of the false branch and
+			// grouped with the ALWAYS-RUN condition/head so it stays GREEN regardless
+			// of which branch ran.
+			//
+			// Only a `)` on a DISTINCT LATER line qualifies. A single-line ternary
+			// (`x = a ? b : c;`) has no trailing `)` beyond its false branch, and a
+			// nested ternary (`( a ? b : c ) ? 1 : 2`) has its `)` followed by an
+			// operator on the SAME line — neither must split, so their threading is
+			// untouched (preserving the existing span model).
+			Point	falseEnd	= leftmostEnd( whenFalse );
+			Point	parenClose	= findParenAfter( node, node.getEnd() );
+			if ( parenClose != null && parenClose.getLine() > falseEnd.getLine() ) {
+				// Close the false branch at its OWN end so the tail span is purely
+				// `[falseEnd, parenEnd]` and does NOT swallow the false branch (which
+				// would wrongly count the untaken branch when the tail's mark fires).
+				closeRunningSpan( falseEnd );
+				Point tailEnd = new Point( parenClose.getLine(), parenClose.getColumn() + 1 );
+				// Register the pure closing-paren tail grouped with the always-run head
+				// so it is GREEN when the ternary completes, but NEVER counts the branch.
+				this.runningStart = falseEnd;
+				int tailId = closeRunningSpan( tailEnd );
+				if ( tailId >= 0 && headId >= 0 && tailId != headId ) {
+					transpiler.registerSpanGroup( new int[] { headId, tailId } );
+				}
+			}
 		}
 	}
 
@@ -784,49 +854,149 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 */
 	@Override
 	public void visit( BoxStructLiteral node ) {
+		// A struct literal's keys and values are ordinary EXPRESSIONS. Each key and
+		// each value must be its OWN span covering EXACTLY that expression — nothing
+		// wider. The `:` between key and value, the `,` between entries, and any
+		// comment/blank lines before entries are NOT expressions and must NOT be part
+		// of any span. So we register each key span and each value span directly
+		// (keyStart->keyEnd, valueStart->valueEnd) and do NOT thread a running span
+		// across entries (which would create wide gap/separator spans that swallow
+		// comments). Pass B marks each key/value when its node is transformed.
+		//
+		// Close the outer statement's head (`x = {`) right AFTER the opening brace so
+		// it stays its own span (`x = {`) and is never extended across a following
+		// comment into the first key. The head still exists, so lineAt(statement
+		// start) is covered.
+		if ( node.getStart() != null && this.runningStart != null ) {
+			Point open = node.getStart();
+			closeRunningSpan( new Point( open.getLine(), open.getColumn() + 1 ) );
+		}
+		// After the head close, clear the running span so the enclosing statement's
+		// own close cannot mint a phantom span across the whole struct.
+		this.runningStart = null;
 		List<BoxExpression>	values		= node.getValues();
 		int					lastValueId	= -1;
 		for ( int i = 0; i < values.size(); i += 2 ) {
-			// Visit the key (fused into whatever span is running).
-			values.get( i ).accept( this );
+			BoxExpression	key		= values.get( i );
+			// Register the key's tight span, then visit it.
+			int				keyId	= addSpan( leftmostStart( key ), leftmostEnd( key ) );
+			key.accept( this );
 			if ( i + 1 >= values.size() ) {
 				break;
 			}
 			BoxExpression	value	= values.get( i + 1 );
-			// Break the value out of the running head at its start.
-			int				sepId	= closeRunningSpan( leftmostStart( value ) );
-			// Visit the value — its internal ternary/throw logic further subdivides
-			// it, and Pass B marks the span starting at its start.
+			// Register the value's tight span, then visit it (Pass B marks it).
+			int				valueId	= addSpan( leftmostStart( value ), leftmostEnd( value ) );
 			value.accept( this );
-			// Close the value's span at its end so the NEXT separator starts fresh.
-			closeRunningSpan( leftmostEnd( value ) );
-			// Remember the value span that Pass B resolves at the value's start (for
-			// the LAST value this is what the closing-delimiter tail gets grouped
-			// with).
+			// Group the KEY's span with the VALUE's span: an identifier/scope key is
+			// compiled to a bare LdcInsnNode in BoxStructLiteralTransformer.transformKey,
+			// which BYPASSES the Pass B mark hook — so its span would never be marked
+			// (RED). The VALUE always goes through transform() and IS marked; grouping
+			// the key with the value makes the value's mark cover the key too. String
+			// keys go through transform() themselves, so they need no group.
+			if ( keyId >= 0 && valueId >= 0 && keyId != valueId ) {
+				transpiler.registerSpanGroup( new int[] { valueId, keyId } );
+			}
+			// Remember the value span (for the closing-delimiter tail grouping).
 			Point	valueStart	= leftmostStart( value );
 			long	packed		= ( ( long ) valueStart.getLine() << 32 ) | ( valueStart.getColumn() & 0xFFFFFFFFL );
 			lastValueId = transpiler.getSpanId( packed );
-			// Group the separator + value so the value's mark covers both. The
-			// separator ALWAYS runs when the value runs. Key the group by the VALUE
-			// span (the one Pass B looks up at the value node's start) — resolved
-			// AFTER the value's own visit, because a value with internal subdivides
-			// (ternary/elvis) creates its value-span during that visit, not before.
-			// The FIRST value's separator IS the statement head — it is already
-			// marked by the assignment statement's own transform — so grouping it
-			// would double-count.
+		}
+		// The struct's CLOSING `}` (and any `)` of an enclosing call that trails
+		// after the last value) runs whenever the struct runs, but no node starts
+		// there — so it would be an unmarked span and stay RED. Group it with the
+		// LAST VALUE's span so the last value's mark covers it.
+		if ( lastValueId >= 0 && node.getEnd() != null ) {
+			Point	tailEnd		= node.getEnd();
+			Point	callClose	= findParenAfter( node, tailEnd );
+			if ( callClose != null ) {
+				tailEnd = new Point( callClose.getLine(), callClose.getColumn() + 1 );
+			}
+			// Only close the tail FROM the last value's end (never across a preceding
+			// comment), so the closing delimiters are covered without dragging comments
+			// into a span.
+			int tailId = addSpan( leftmostEnd( values.get( values.size() - 1 ) ), tailEnd );
+			if ( tailId >= 0 && tailId != lastValueId ) {
+				// MERGE with any EXISTING group keyed by the last value (e.g. the
+				// last value's key group) instead of overwriting — a plain
+				// registerSpanGroup would drop the last key from the group, leaving
+				// it RED.
+				List<Integer>	group		= new ArrayList<>();
+				int[]			existing	= transpiler.peekSpanGroup( lastValueId );
+				if ( existing != null ) {
+					for ( int e : existing ) {
+						if ( !group.contains( e ) ) {
+							group.add( e );
+						}
+					}
+				} else {
+					group.add( lastValueId );
+				}
+				if ( !group.contains( tailId ) ) {
+					group.add( tailId );
+				}
+				transpiler.registerSpanGroup( group.stream().mapToInt( Integer::intValue ).toArray() );
+			}
+		}
+		this.runningStart = null;
+	}
+
+	/**
+	 * An array literal's elements are each worth an executable span (Pass B emits
+	 * a mark at each element's start). The elements themselves may split further
+	 * (ternary/elvis inside an element), exactly like struct values. After the
+	 * last element, the CLOSING {@code ]} (and any {@code )} of an enclosing call
+	 * that trails after it) runs whenever the array runs, but no node starts there
+	 * — so, as with a struct, we close the running span at the {@code ]} and group
+	 * that tail with the LAST element's span so the last element's mark covers it.
+	 * <p>
+	 * This mirrors {@link #visit(BoxStructLiteral)} exactly: visit each element,
+	 * thread the running span, remember the last element's span id, then group the
+	 * closing tail with it. Arrays are otherwise NOT handled anywhere in this
+	 * visitor — they previously fell through to {@link #visitChildren}, which left
+	 * the closing {@code ]} as an ungrouped (RED) tail.
+	 *
+	 * @param node the array literal
+	 */
+	@Override
+	public void visit( BoxArrayLiteral node ) {
+		List<BoxExpression>	values		= node.getValues();
+		int					lastValueId	= -1;
+		for ( int i = 0; i < values.size(); i++ ) {
+			BoxExpression	value		= values.get( i );
+			// Break the element out of the running head at its start — UNCONDITIONALLY,
+			// mirroring visit(BoxStructLiteral) which breaks at every value whether or
+			// not it can throw. This guarantees each element has a registered span start
+			// so the closing-delimiter tail can be grouped with the LAST element's span
+			// (see below). Guard against the first element sharing the statement head
+			// (sepId resolves to the head id) so we don't double-count.
+			Point			elemStart	= leftmostStart( value );
+			int				sepId		= closeRunningSpan( elemStart );
+			// Visit the element — its internal ternary/throw logic further subdivides
+			// it, and Pass B marks the span starting at its start.
+			value.accept( this );
+			// Close the element's span at its rightmost end so the next separator
+			// starts fresh.
+			closeRunningSpan( leftmostEnd( value ) );
+			// Remember the element span that Pass B resolves at the element's start
+			// (for the LAST element this is what the closing-delimiter tail gets
+			// grouped with).
+			Point valueStart = leftmostStart( value );
+			if ( valueStart != null ) {
+				long packed = ( ( long ) valueStart.getLine() << 32 ) | ( valueStart.getColumn() & 0xFFFFFFFFL );
+				lastValueId = transpiler.getSpanId( packed );
+			}
+			// Group the separator (`,` between elements) with the element that follows
+			// it, exactly as structs group `, key: ` separators with the value — this
+			// keeps the separators GREEN when the element runs. Skip i==0 where the
+			// separator IS the statement head (already marked by the assignment).
 			if ( i > 0 && sepId >= 0 && lastValueId >= 0 && lastValueId != sepId ) {
 				transpiler.registerSpanGroup( new int[] { lastValueId, sepId } );
 			}
 		}
-		// The struct's CLOSING `}` (and any `)` of an enclosing call that trails
-		// after the last value) runs whenever the struct runs, but no node starts
-		// there — so it would be registered as an unmarked span and stay RED. Close
-		// the running span at the struct's `}`, then scan forward for the enclosing
-		// call's `)` and close there too. Group that tail with the LAST value's
-		// span, so the last value's mark covers it. IMPORTANT: merge with any
-		// EXISTING group keyed by the last value (the separator group registered
-		// above) instead of overwriting — a plain registerSpanGroup would replace
-		// the separator group, leaving the `,\n key: ` separator RED.
+		// Group the CLOSING `]` (and any trailing `)` of an enclosing call) with the
+		// last element's span, so the last element's mark covers the tail — the same
+		// mechanism `visit(BoxStructLiteral)` uses for its closing `}` / `)`.
 		if ( lastValueId >= 0 && node.getEnd() != null ) {
 			Point	tailEnd		= node.getEnd();
 			Point	callClose	= findParenAfter( node, tailEnd );
@@ -845,6 +1015,157 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 					}
 				} else {
 					group.add( lastValueId );
+				}
+				if ( !group.contains( tailId ) ) {
+					group.add( tailId );
+				}
+				transpiler.registerSpanGroup( group.stream().mapToInt( Integer::intValue ).toArray() );
+			}
+		}
+	}
+
+	/**
+	 * A function invocation's callee and ALL arguments execute whenever the call
+	 * runs (there is no short-circuit across args). Each argument value is threaded
+	 * through its own visit (so a struct/array/ternary argument still subdivides
+	 * into its own spans), and — critically — the trailing region after the LAST
+	 * argument up to the closing {@code )} (e.g. {@code spec = {...},\nsuite =
+	 * ...\ndata = ...\n);} on their own lines) runs unconditionally with the call.
+	 * That trailing tail is pure text with no node starting there, so, as with a
+	 * struct's closing {@code }}/)`, it must be grouped with the invocation's head
+	 * span (the callee start — always marked) so it stays GREEN.
+	 *
+	 * @param node the function invocation
+	 */
+	@Override
+	public void visit( BoxExpressionInvocation node ) {
+		visitInvocation( node, node.getExpr(), node.getArguments() );
+	}
+
+	@Override
+	public void visit( BoxFunctionInvocation node ) {
+		visitInvocation( node, null, node.getArguments() );
+	}
+
+	@Override
+	public void visit( BoxMethodInvocation node ) {
+		// The object+name form: thread the running span through the object and the
+		// name (the "callee" is the whole dotted path), then the arguments.
+		visitInvocation( node, null, node.getArguments() );
+		if ( node.getObj() != null ) {
+			node.getObj().accept( this );
+		}
+		if ( node.getName() != null ) {
+			node.getName().accept( this );
+		}
+	}
+
+	@Override
+	public void visit( BoxStaticMethodInvocation node ) {
+		visitInvocation( node, node.getObj(), node.getArguments() );
+		if ( node.getName() != null ) {
+			node.getName().accept( this );
+		}
+	}
+
+	/**
+	 * A function invocation's callee and ALL arguments execute whenever the call
+	 * runs (there is no short-circuit across args). Each argument value is threaded
+	 * through its own visit (so a struct/array/ternary argument still subdivides
+	 * into its own spans), and — critically — a MULTI-LINE invocation whose CLOSING
+	 * {@code )} sits on a LATER line than the last argument (e.g. {@code fn(
+	 * spec = {...},\nsuite = ...,\ndata = ...\n);} on their own lines) leaves that
+	 * trailing {@code \n);} region as pure text with no node starting there — it
+	 * runs unconditionally with the call, so it must be grouped with the
+	 * invocation's head span (the callee start — always marked) so it stays GREEN.
+	 * Single-line invocations need no tail (the {@code )} is covered by the
+	 * enclosing statement's span), preserving existing span models.
+	 *
+	 * @param node      the invocation (for its source bounds)
+	 * @param callee    the expression to thread first (may be null for a bare-name
+	 *                  function call whose name is not an expression)
+	 * @param arguments the invocation's arguments
+	 */
+	private void visitInvocation( BoxExpression node, BoxExpression callee, List<BoxArgument> arguments ) {
+		// The callee always runs; thread the running span through it.
+		if ( callee != null ) {
+			callee.accept( this );
+		}
+		// MULTI-LINE invocations (args on later lines, closing `)` on its own line)
+		// need per-argument spans AND a grouped closing tail so every line is
+		// covered — e.g. `fn( spec = {...},\nsuite = ...,\ndata = ...\n);`. For a
+		// SINGLE-LINE call the enclosing statement's span already covers everything
+		// and adding per-arg spans would change the existing span model — so the
+		// single-line path just threads the args through untouched.
+		boolean multiLine = node.getStart() != null && node.getEnd() != null
+		    && node.getEnd().getLine() > node.getStart().getLine();
+		if ( !multiLine ) {
+			for ( BoxArgument arg : arguments ) {
+				if ( arg.getName() != null ) {
+					arg.getName().accept( this );
+				}
+				if ( arg.getValue() != null ) {
+					arg.getValue().accept( this );
+				}
+			}
+			return;
+		}
+
+		// Multi-line: break each argument's VALUE out of the running head so it (and
+		// the `,\n` separator before it) gets a REAL span — without this, a named
+		// arg like `suite = thread.suite` on its own line threads the running span
+		// and gets swallowed into the trailing tail with no span of its own (RED).
+		Point	lastArgEnd	= null;
+		int[]	lastValueId	= { -1 };
+		for ( int i = 0; i < arguments.size(); i++ ) {
+			BoxArgument		arg		= arguments.get( i );
+			BoxExpression	value	= arg.getValue();
+			if ( arg.getName() != null ) {
+				arg.getName().accept( this );
+			}
+			if ( value != null ) {
+				Point	valueStart	= leftmostStart( value );
+				int		sepId		= closeRunningSpan( valueStart );
+				value.accept( this );
+				Point valueEnd = leftmostEnd( value );
+				closeRunningSpan( valueEnd );
+				if ( valueStart != null ) {
+					long packed = ( ( long ) valueStart.getLine() << 32 ) | ( valueStart.getColumn() & 0xFFFFFFFFL );
+					lastValueId[ 0 ] = transpiler.getSpanId( packed );
+				}
+				// Group the separator (`,` before this arg) with this arg's value so
+				// it stays GREEN when the value runs — mirroring struct/array
+				// separators. Skip i==0 where the separator IS the call head.
+				if ( i > 0 && sepId >= 0 && lastValueId[ 0 ] >= 0 && lastValueId[ 0 ] != sepId ) {
+					transpiler.registerSpanGroup( new int[] { lastValueId[ 0 ], sepId } );
+				}
+				if ( valueEnd != null && ( lastArgEnd == null
+				    || valueEnd.getLine() > lastArgEnd.getLine()
+				    || ( valueEnd.getLine() == lastArgEnd.getLine() && valueEnd.getColumn() > lastArgEnd.getColumn() ) ) ) {
+					lastArgEnd = valueEnd;
+				}
+			}
+		}
+		// The CLOSING `)` on a LATER line than the last argument is pure text with
+		// no node starting there — it runs whenever the LAST ARGUMENT runs (the `)`
+		// always follows the final arg), so it must be grouped with the LAST
+		// ARGUMENT's span — exactly how a struct's closing `}` is grouped with its
+		// last value — to stay GREEN.
+		if ( lastArgEnd != null && lastValueId[ 0 ] >= 0 && node.getEnd() != null
+		    && node.getEnd().getLine() > lastArgEnd.getLine() ) {
+			Point	tailEnd	= leftmostEnd( node );
+			int		tailId	= closeRunningSpan( tailEnd );
+			if ( tailId >= 0 && tailId != lastValueId[ 0 ] ) {
+				List<Integer>	group		= new ArrayList<>();
+				int[]			existing	= transpiler.peekSpanGroup( lastValueId[ 0 ] );
+				if ( existing != null ) {
+					for ( int e : existing ) {
+						if ( !group.contains( e ) ) {
+							group.add( e );
+						}
+					}
+				} else {
+					group.add( lastValueId[ 0 ] );
 				}
 				if ( !group.contains( tailId ) ) {
 					group.add( tailId );
@@ -2239,6 +2560,64 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	}
 
 	/**
+	 * Find the opening {@code {} of an EMPTY-BODY construct ({@code function
+	 * foo(){} }) whose node end points at/past the CLOSING {@code }}. Scanning
+	 * backward with {@link #findOpenBraceBefore} fails there because it aborts at
+	 * the first {@code }} — there is no body statement to anchor from. Instead,
+	 * scan backward past the single closing {@code }} to the matching {@code {.
+	 * 
+	<p>
+	 * Handles the canonical empty body {@code {} }; multi-line empty bodies with
+	 * interior whitespace are matched too. If the source doesn't show a closing
+	 * brace immediately (tag context / abstract), returns null.
+	 *
+	 * @param node the empty-body function
+	 *
+	 * @return the opening brace point, or null
+	 */
+	private Point findEmptyBodyOpenBrace( BoxNode node ) {
+		Point before = node.getEnd();
+		if ( before == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+			return null;
+		}
+		String	source	= node.getPosition().getSource().getCode();
+		int		offset	= offsetOf( source, before );
+		if ( offset < 0 ) {
+			return null;
+		}
+		// Skip the closing "}" (and any trailing whitespace) to reach the "{", but
+		// only if the node's tail really looks like an empty body: scan back over
+		// the closing "}" then immediately to the opening "{".
+		boolean seenClose = false;
+		for ( int i = offset - 1; i >= 0; i-- ) {
+			char c = source.charAt( i );
+			if ( c == '}' ) {
+				seenClose = true;
+				continue;
+			}
+			if ( seenClose ) {
+				if ( c == '{' ) {
+					return pointAt( source, i );
+				}
+				if ( c == ';' ) {
+					// Passed a statement boundary without finding "{ }" — not an
+					// empty body (e.g. an abstract `function foo();`).
+					return null;
+				}
+				// Between "}" and "{": only whitespace/annotations allowed in an
+				// empty body; anything else means it wasn't an empty body.
+				if ( !Character.isWhitespace( c ) ) {
+					return null;
+				}
+			} else if ( c == '{' || c == ';' ) {
+				// No closing "}" seen before a "{" or ";" — not an empty `{}` body.
+				return null;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Find the opening {@code {} that occurs AFTER the given point in the source —
 	 * scanning forward for the first {@code {} character. Used to locate a body's
 	 * opening brace (e.g. a class's {@code {} after its header keyword). Unlike
@@ -2518,9 +2897,15 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// LAST ARGUMENT — NOT at the first body statement. Closing at the body
 		// start would swallow the whitespace between the arguments and the body
 		// into the shell span, falsely claiming the body's line as run.
+		// A function's body braces are a GROUP, batch-marked when the body
+		// EXECUTES (invocation). For a NON-EMPTY body the opening "{" is found by
+		// scanning back from the FIRST BODY STATEMENT (which lives after the "{").
+		// For an EMPTY body (`function foo() {}`) there is no body statement to
+		// anchor from, so node.getEnd() points at/past the closing "}" — scanning
+		// back from it fails on the "}". Find the "{...}" pair directly instead.
 		Point openBrace = node.getBody() != null && !node.getBody().isEmpty()
 		    ? findOpenBraceBefore( node, node.getBody().get( 0 ).getStart() )
-		    : ( node.getBody() != null ? findOpenBraceBefore( node, node.getEnd() ) : null );
+		    : ( node.getBody() != null ? findEmptyBodyOpenBrace( node ) : null );
 		if ( openBrace != null ) {
 			closeRunningSpan( openBrace );
 		} else if ( isTagContext( node ) ) {
@@ -3283,11 +3668,28 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * Register an executable span (keyed by its start position) and add its
 	 * {@link Blueprint.SpanDef}. If either point is null (manual, unsourced node),
 	 * no span is emitted.
+	 * <p>
+	 * A span may NEVER cross a comment-only or blank line — comments are not
+	 * executable and must never be part of a span. If {@code [start, end]} crosses
+	 * such a line, the span is SPLIT into comment-free pieces, each registered as
+	 * its own span and batched into ONE group keyed by the first piece, so the
+	 * single mark Pass B resolves at {@code start} covers every piece.
 	 *
 	 * @param start the span's start point (may be null)
 	 * @param end   the span's end point (may be null)
 	 *
-	 * @return the registered span id, or -1 if no span was registered
+	 * @return the registered span id (the id of the FIRST piece, i.e. the group
+	 *         head that Pass B resolves), or -1 if no span was registered
+	 */
+	/**
+	 * Register an executable span (keyed by its start position) and add its
+	 * {@link Blueprint.SpanDef}. If either point is null (manual, unsourced node),
+	 * no span is emitted.
+	 *
+	 * @param start the span's start point (may be null)
+	 * @param end   the span's end point (may be null)
+	 *
+	 * @return the registered span id, or -1 no span was registered
 	 */
 	private int addSpan( Point start, Point end ) {
 		if ( start == null || end == null ) {
