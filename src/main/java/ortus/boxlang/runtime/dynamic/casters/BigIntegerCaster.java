@@ -20,8 +20,6 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import org.apache.commons.lang3.math.NumberUtils;
-
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
@@ -124,7 +122,7 @@ public class BigIntegerCaster implements IBoxCaster {
 	 * @return Optional - parsed BigInteger if all string characters are digits, with an optional sign
 	 */
 	private static BigInteger parseBigInteger( String value ) {
-		if ( NumberUtils.isCreatable( value ) ) {
+		if ( CasterNumberUtil.isCreatableIgnoringLeadingZeros( value ) ) {
 			try {
 				return new BigInteger( value );
 			} catch ( Exception e ) {
