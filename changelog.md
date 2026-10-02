@@ -11,25 +11,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.17.6] - 2026-09-25
 
+- <https://boxlang.ortusbooks.com/readme/release-history/1.17.0#patch-releases>
+
 ## [1.17.5] - 2026-09-14
+
+- <https://boxlang.ortusbooks.com/readme/release-history/1.17.0#patch-releases>
 
 ## [1.17.4] - 2026-09-11
 
+- <https://boxlang.ortusbooks.com/readme/release-history/1.17.0#patch-releases>
+
 ## [1.17.3] - 2026-09-05
+
+- <https://boxlang.ortusbooks.com/readme/release-history/1.17.0#patch-releases>
 
 ## [1.17.2] - 2026-09-04
 
+- <https://boxlang.ortusbooks.com/readme/release-history/1.17.0#patch-releases>
+
 ## [1.17.1] - 2026-09-01
+
+- <https://boxlang.ortusbooks.com/readme/release-history/1.17.0#patch-releases>
 
 ## [1.17.0] - 2026-08-28
 
+- <https://boxlang.ortusbooks.com/readme/release-history/1.17.0>
+
 ## [1.16.0] - 2026-07-30
+
+- <https://boxlang.ortusbooks.com/readme/release-history/1.16.0>
 
 ## [1.15.0] - 2026-07-08
 
+- <https://boxlang.ortusbooks.com/readme/release-history/1.15.0>
+
 ## [1.14.0] - 2026-06-03
 
+- <https://boxlang.ortusbooks.com/readme/release-history/1.14.0>
+
 ## [1.13.0] - 2026-05-01
+
+- <https://boxlang.ortusbooks.com/readme/release-history/1.13.0>
 
 ## [1.12.0] - 2026-04-08
 
