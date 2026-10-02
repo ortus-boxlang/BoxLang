@@ -918,8 +918,6 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 							else {
 								return ExceptionUtil.throwableToStruct( e );
 							}
-						} finally {
-							RequestBoxContext.unregisterDependentThread( context );
 						}
 					} ),
 						// Bound the executor to the CompletableFuture
