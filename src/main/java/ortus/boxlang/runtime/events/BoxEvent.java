@@ -104,6 +104,7 @@ public enum BoxEvent {
 	ON_QUERY_BUILD( "onQueryBuild" ),
 	PRE_QUERY_EXECUTE( "preQueryExecute" ),
 	POST_QUERY_EXECUTE( "postQueryExecute" ),
+	ON_QUERY_EXECUTE_ERROR( "onQueryExecuteError" ),
 	QUERY_ADD_ROW( "queryAddRow" ),
 
 	/**

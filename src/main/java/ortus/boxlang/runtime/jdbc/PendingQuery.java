@@ -707,6 +707,28 @@ public class PendingQuery {
 	 *         well as a link to this PendingQuery instance.
 	 */
 	private ExecutedQuery executeStatement( BoxConnection connection, IBoxContext context ) {
+		long started = System.nanoTime();
+		try {
+			return executeStatementInternal( connection, context );
+		} catch ( RuntimeException failure ) {
+			try {
+				this.interceptorService.announce(
+				    BoxEvent.ON_QUERY_EXECUTE_ERROR,
+				    () -> Struct.ofNonConcurrent(
+				        Key.pendingQuery, this,
+				        Key.context, context,
+				        Key.exception, failure,
+				        Key.executionTime, ( System.nanoTime() - started ) / 1_000_000.0
+				    )
+				);
+			} catch ( RuntimeException observerFailure ) {
+				// An observer must not replace or hide the original database failure.
+			}
+			throw failure;
+		}
+	}
+
+	private ExecutedQuery executeStatementInternal( BoxConnection connection, IBoxContext context ) {
 		try {
 			// Determine if we can return generated keys
 			int GENERATED_KEYS_SETTING = Statement.RETURN_GENERATED_KEYS;
@@ -749,6 +771,8 @@ public class PendingQuery {
 				    BoxEvent.PRE_QUERY_EXECUTE,
 				    () -> Struct.ofNonConcurrent(
 				        Key.sql, finalSQLStatement,
+				        Key.dbtype, this.queryOptions.dbtype,
+				        Key.cached, false,
 				        Key.bindings, getParameterValues(),
 				        Key.pendingQuery, this,
 				        Key.context, context
@@ -805,10 +829,12 @@ public class PendingQuery {
 	 * cacheKey, cacheProvider, etc.
 	 */
 	private ExecutedQuery respondWithCachedQuery( ExecutedQuery cachedQuery ) {
+		this.interceptorService.announce( BoxEvent.PRE_QUERY_EXECUTE, () -> Struct.ofNonConcurrent( Key.sql, this.sql, Key.dbtype, this.queryOptions.dbtype,
+		    Key.cached, true, Key.pendingQuery, this, Key.context, this.context ) );
 
 		logger.debug( "Query is present, returning cached result: {}", this.cacheKey );
 
-		IStruct	cacheMeta	= Struct.ofNonConcurrent(
+		IStruct			cacheMeta		= Struct.ofNonConcurrent(
 		    Key.cached, true,
 		    Key.cacheKey, this.cacheKey,
 		    Key.cacheProvider, this.cacheProvider.getName().toString(),
@@ -817,13 +843,16 @@ public class PendingQuery {
 		);
 
 		// We set the metadata on the results to indicate this was a cached query
-		Query	results		= cachedQuery
+		Query			results			= cachedQuery
 		    .getResults()
 		    .duplicate( context )
 		    .setMetadata( cacheMeta );
 
 		// Return a new ExecutedQuery instance with the cached results and generated key
-		return new ExecutedQuery( results, cachedQuery.getGeneratedKey() );
+		ExecutedQuery	executedQuery	= new ExecutedQuery( results, cachedQuery.getGeneratedKey() );
+		this.interceptorService.announce( BoxEvent.POST_QUERY_EXECUTE, () -> Struct.ofNonConcurrent( Key.sql, this.sql, Key.executionTime, 0, Key.result,
+		    cacheMeta, Key.pendingQuery, this, Key.executedQuery, executedQuery, Key.context, this.context ) );
+		return executedQuery;
 	}
 
 	/**
