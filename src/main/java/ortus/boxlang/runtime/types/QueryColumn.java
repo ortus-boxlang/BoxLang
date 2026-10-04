@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
+import ortus.boxlang.runtime.jdbc.drivers.GenericJDBCDriver;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -515,7 +516,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 		// Check if the key is numeric
 		int				index		= getIntFromKey( name, true );
 		QueryColumnType	columnType	= getType();
-		value = QueryColumnType.toSQLType( columnType, value, context, null );
+		value = GenericJDBCDriver.transformValueStatic( columnType.sqlType, QueryColumnType.toSQLType( columnType, value, context, null ), null );
 		// If assign a query column with a number like qry.col[1]='new value', then we ALWAYS get the value from that row
 		if ( index > 0 ) {
 			setCell( index - 1, value );

@@ -47,6 +47,7 @@ import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.jdbc.BoxStatement;
+import ortus.boxlang.runtime.jdbc.drivers.GenericJDBCDriver;
 import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -276,13 +277,17 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			int[] columnMap = columnMapList.stream().mapToInt( i -> i ).toArray();
 			// Update, may be smaller now if there were duplicate column names
 			columnCount = columnMap.length;
-			int rowCount = 0;
+			QueryColumn[]	queryColumns	= query.getColumns().values().toArray( QueryColumn[]::new );
+			int				rowCount		= 0;
 			while ( resultSet.next() && ( maxRows == -1 || rowCount < maxRows ) ) {
 				rowCount++;
 				Object[] row = new Object[ columnCount ];
 				for ( int i = 0; i < columnCount; i++ ) {
 					// Get the data in the JDBC column based on our column map and use the corresponding SQL type
-					row[ i ] = driver.transformValue( columnSQLTypes[ i ], resultSet.getObject( columnMap[ i ] ), statement );
+					// columnSQLTypes is indexed by JDBC column position (0-based), so we use columnMap[i] - 1
+					// to look up the type for the correct JDBC column, even when duplicate column labels
+					// caused columnMap to be smaller than the original column count.
+					row[ i ] = driver.transformValue( columnSQLTypes[ columnMap[ i ] - 1 ], resultSet.getObject( columnMap[ i ] ), statement );
 				}
 				query.addRow( row );
 			}
@@ -1015,7 +1020,20 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			if ( queryNullToEmpty && !QueryColumnType.isStringType( column.getType() ) && value instanceof String castValue && castValue.isEmpty() ) {
 				value = null;
 			}
-			rowData[ i ] = context != null ? QueryColumnType.toSQLType( column.getType(), value, context, null ) : value;
+			rowData[ i ] = context != null
+			    // This method will change things like Clob or Blob which we "hide" from the user to a String, byte[], etc, etc
+			    ? GenericJDBCDriver.transformValueStatic(
+			        column.getType().sqlType,
+			        // This method casts incoming values to the appropriate SQL type, but will leave things like Clob or Blob instances
+			        QueryColumnType.toSQLType(
+			            column.getType(),
+			            value,
+			            context,
+			            null
+			        ),
+			        null
+			    )
+			    : value;
 			i++;
 		}
 		// We're ignoring extra keys in the struct that aren't query columns.
@@ -1043,7 +1061,18 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			Object[]		castRow		= new Object[ columns.size() ];
 			QueryColumn[]	colArray	= columns.values().toArray( new QueryColumn[ 0 ] );
 			for ( int i = 0; i < castRow.length; i++ ) {
-				castRow[ i ] = QueryColumnType.toSQLType( colArray[ i ].getType(), row[ i ], context, null );
+				var sqlColType = colArray[ i ].getType();
+				// This method will change things like Clob or Blob which we "hide" from the user to a String, byte[], etc, etc
+				castRow[ i ] = GenericJDBCDriver.transformValueStatic(
+				    sqlColType.sqlType,
+				    // This method casts incoming values to the appropriate SQL type, but will leave things like Clob or Blob instances
+				    QueryColumnType.toSQLType(
+				        sqlColType,
+				        row[ i ],
+				        context,
+				        null
+				    ),
+				    null );
 			}
 			return addRow( castRow );
 		}
@@ -1508,7 +1537,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		if ( Query.queryNullToEmpty && !QueryColumnType.isStringType( columnType ) && value instanceof String castValue && castValue.isEmpty() ) {
 			value = null;
 		}
-		value = QueryColumnType.toSQLType( columnType, value, context, null );
+		value = GenericJDBCDriver.transformValueStatic( columnType.sqlType, QueryColumnType.toSQLType( columnType, value, context, null ), null );
 		column.setCell( getRowFromContext( context ), value );
 		return value;
 	}

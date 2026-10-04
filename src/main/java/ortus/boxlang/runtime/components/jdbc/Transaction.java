@@ -75,6 +75,9 @@ public class Transaction extends Component {
 	/**
 	 * Demarcate or manage a JDBC transaction.
 	 *
+	 * A start and end tag (with body content) is only intended for use with action="begin" (the default). For all other actions (commit, rollback, etc) there should not be a closing tag.
+	 * If one is present, the action is executed first then the body is processed. The action is silently ignored if there is no active transaction.
+	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
@@ -89,7 +92,8 @@ public class Transaction extends Component {
 	 * @attribute.datasource The name of the datasource to use for the transaction. If not provided, the first query execution inside the transaction will set the datasource.
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		boolean				isTransactionBeginning		= attributes.getAsString( Key.action ).equalsIgnoreCase( "begin" ) || body != null;
+		String				actionString				= attributes.getAsString( Key.action ).toLowerCase();
+		boolean				isTransactionBeginning		= actionString.equals( "begin" );
 		IJDBCCapableContext	jdbcContext					= context.getParentOfType( IJDBCCapableContext.class );
 		ConnectionManager	connectionManager			= jdbcContext.getConnectionManager();
 		Boolean				enableNestedTransactions	= BoxRuntime.getInstance().getConfiguration().enableNestedTransactions;
@@ -130,37 +134,6 @@ public class Transaction extends Component {
 				// isolation level is only set on the initial transaction start.
 				transaction.setIsolationLevel( getIsolationLevel( attributes.getAsString( Key.isolation ) ) );
 			}
-		} else {
-			transaction = connectionManager.getTransactionOrThrow();
-		}
-
-		if ( body == null ) {
-			switch ( attributes.getAsString( Key.action ).toLowerCase() ) {
-				case "begin" :
-					transaction.begin();
-					break;
-				case "end" :
-					// notify the connection manager that we're no longer in a transaction. This calls transaction.end() internally.
-					connectionManager.endTransaction();
-					break;
-				case "commit" :
-					transaction.commit();
-					break;
-				case "rollback" :
-					String savepoint = attributes.getAsString( Key.savepoint );
-					if ( savepoint == null ) {
-						transaction.rollback();
-					} else {
-						transaction.rollback( Key.of( savepoint ) );
-					}
-					break;
-				case "setsavepoint" :
-					transaction.setSavepoint( Key.of( attributes.getAsString( Key.savepoint ) ) );
-					break;
-				default :
-					throw new BoxRuntimeException( "Unknown action: " + attributes.getAsString( Key.action ) );
-			}
-		} else {
 			transaction.begin();
 			try {
 				bodyResult = processBody( context, body );
@@ -179,8 +152,46 @@ public class Transaction extends Component {
 			// Don't return until AFTER cleaning up the transaction. This resolves an issue in some CF engines where
 			// the transaction is not properly closed if a return statement is encountered.
 			return bodyResult == null ? DEFAULT_RETURN : bodyResult;
+		} else {
+			// Non-begin actions (commit, rollback, setsavepoint) — CF engines silently
+			// ignore these if there's no active transaction
+			transaction = connectionManager.getTransaction();
+			if ( transaction == null ) {
+				return DEFAULT_RETURN;
+			}
+
+			// Perform the action first, then process the body
+			switch ( actionString ) {
+				case "commit" :
+					transaction.commit();
+					break;
+				case "rollback" :
+					String savepoint = attributes.getAsString( Key.savepoint );
+					if ( savepoint == null ) {
+						transaction.rollback();
+					} else {
+						transaction.rollback( Key.of( savepoint ) );
+					}
+					break;
+				case "setsavepoint" :
+					transaction.setSavepoint( Key.of( attributes.getAsString( Key.savepoint ) ) );
+					break;
+				default :
+					throw new BoxRuntimeException( "Unknown action: " + attributes.getAsString( Key.action ) );
+			}
+
+			try {
+				bodyResult = processBody( context, body );
+			} catch ( AbortException e ) {
+				// Ignore aborts
+				throw e;
+			} catch ( Throwable e ) {
+				logger.error( "Encountered exception in transaction body after performing action", e );
+				ExceptionUtil.throwException( e );
+			}
+
+			return bodyResult == null ? DEFAULT_RETURN : bodyResult;
 		}
-		return DEFAULT_RETURN;
 	}
 
 	private int getIsolationLevel( String isolationLevel ) {

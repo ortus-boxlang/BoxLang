@@ -10,6 +10,9 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
+# Binary test fixture with deliberate 0xFF byte - DO NOT convert
+src/test/resources/loop-badchars.bin binary
+
 # Custom for Visual Studio
 *.cs     diff=csharp
 *.sln    merge=union

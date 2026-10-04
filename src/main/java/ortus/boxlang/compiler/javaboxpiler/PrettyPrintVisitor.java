@@ -17,9 +17,10 @@
  */
 package ortus.boxlang.compiler.javaboxpiler;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import com.github.javaparser.ast.ArrayCreationLevel;
 import com.github.javaparser.ast.CompilationUnit;
@@ -43,8 +44,8 @@ import com.github.javaparser.ast.body.ReceiverParameter;
 import com.github.javaparser.ast.body.RecordDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.comments.BlockComment;
-import com.github.javaparser.ast.comments.JavadocComment;
 import com.github.javaparser.ast.comments.LineComment;
+import com.github.javaparser.ast.comments.TraditionalJavadocComment;
 import com.github.javaparser.ast.expr.ArrayAccessExpr;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.ArrayInitializerExpr;
@@ -130,12 +131,12 @@ import com.github.javaparser.printer.configuration.PrinterConfiguration;
 
 public class PrettyPrintVisitor extends DefaultPrettyPrinterVisitor {
 
-	private List<Object[]>			lineNumbers	= new ArrayList<>();
+	private List<Object[]>	lineNumbers	= new ArrayList<>();
 
 	/**
 	 * Track the class we are inside of
 	 */
-	protected ArrayDeque<String>	insideClass	= new ArrayDeque<>();
+	protected Deque<String>	insideClass	= new ConcurrentLinkedDeque<>();
 
 	public PrettyPrintVisitor() {
 		super( new DefaultPrinterConfiguration() );
@@ -207,7 +208,7 @@ public class PrettyPrintVisitor extends DefaultPrettyPrinterVisitor {
 	}
 
 	@Override
-	public void visit( final JavadocComment n, final Void arg ) {
+	public void visit( final TraditionalJavadocComment n, final Void arg ) {
 		processNode( () -> super.visit( n, arg ), n );
 	}
 

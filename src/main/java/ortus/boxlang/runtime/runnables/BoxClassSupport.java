@@ -109,7 +109,8 @@ public class BoxClassSupport {
 	public static void pseudoConstructor( IClassRunnable thisClass, IBoxContext context ) {
 		context.pushTemplate( thisClass );
 		try {
-			// TODO: pre/post interceptor announcements here
+			// Instance creation is announced by DynamicInteropService.bootstrapBLClass() via
+			// BoxEvent.AFTER_BOX_CLASS_CREATION and BoxEvent.AFTER_BOX_CLASS_INIT
 			thisClass._pseudoConstructor( context );
 		} finally {
 			context.popTemplate();
@@ -335,15 +336,25 @@ public class BoxClassSupport {
 		thisClass.getVariablesScope().addAll( _super.getVariablesScope().getWrapped() );
 		thisClass.getThisScope().addAll( _super.getThisScope().getWrapped() );
 
-		// merge properties that don't already exist
-		for ( var entry : _super.getProperties().entrySet() ) {
-			if ( !thisClass.getProperties().containsKey( entry.getKey() ) ) {
-				thisClass.getProperties().put( entry.getKey(), entry.getValue() );
+		// Properties are static to the class so this merge only needs to happen once.
+		// Use double-checked locking on the Class object (since all fields involved are static)
+		// to ensure thread safety on first instantiation.
+		if ( !thisClass.getPropertiesMerged() ) {
+			synchronized ( thisClass.getClass() ) {
+				if ( !thisClass.getPropertiesMerged() ) {
+					// merge properties that don't already exist
+					for ( var entry : _super.getProperties().entrySet() ) {
+						if ( !thisClass.getProperties().containsKey( entry.getKey() ) ) {
+							thisClass.getProperties().put( entry.getKey(), entry.getValue() );
+						}
+					}
+					// merge getterLookup and setterLookup
+					thisClass.getGetterLookup().putAll( _super.getGetterLookup() );
+					thisClass.getSetterLookup().putAll( _super.getSetterLookup() );
+					thisClass.setPropertiesMerged( true );
+				}
 			}
 		}
-		// merge getterLookup and setterLookup
-		thisClass.getGetterLookup().putAll( _super.getGetterLookup() );
-		thisClass.getSetterLookup().putAll( _super.getSetterLookup() );
 
 		// DO NOT merge annotations. They stay separate between parent/child classes and must be merged at runtime, if desired.
 		// https://ortussolutions.atlassian.net/browse/BL-677

@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.util;
 
 import java.lang.ref.SoftReference;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -445,7 +446,7 @@ public final class LocalizationUtil {
 		NUMBER_FORMAT_PATTERNS.put( Key.of( "+" ), "+0;-0" );
 		NUMBER_FORMAT_PATTERNS.put( Key.of( "-" ), " 0;-0" );
 		NUMBER_FORMAT_PATTERNS.put( Key.dollarFormat, "$#,##0.00;($#,##0.00)" );
-		NUMBER_FORMAT_PATTERNS.put( DEFAULT_NUMBER_FORMAT_KEY, "#,##0.#" );
+		NUMBER_FORMAT_PATTERNS.put( DEFAULT_NUMBER_FORMAT_KEY, "#,##0" );
 	}
 
 	public static final String					CURRENCY_TYPE_LOCAL				= "local";
@@ -795,6 +796,7 @@ public final class LocalizationUtil {
 	public static DecimalFormat localizedDecimalFormatter( Locale locale ) {
 		DecimalFormat formatter = ( DecimalFormat ) DecimalFormat.getNumberInstance( locale );
 		formatter.setDecimalFormatSymbols( localizedDecimalSymbols( locale ) );
+		formatter.setRoundingMode( RoundingMode.HALF_UP );
 		return formatter;
 	}
 
@@ -810,7 +812,9 @@ public final class LocalizationUtil {
 		if ( NUMBER_FORMAT_PATTERNS.containsKey( formatKey ) ) {
 			format = NUMBER_FORMAT_PATTERNS.get( formatKey );
 		}
-		return new DecimalFormat( format, localizedDecimalSymbols( locale ) );
+		DecimalFormat formatter = new DecimalFormat( format, localizedDecimalSymbols( locale ) );
+		formatter.setRoundingMode( RoundingMode.HALF_UP );
+		return formatter;
 	}
 
 	/**

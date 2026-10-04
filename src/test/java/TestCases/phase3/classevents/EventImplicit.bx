@@ -1,0 +1,6 @@
+class accessors="true" {
+
+	property name="name";
+	property name="age";
+
+}

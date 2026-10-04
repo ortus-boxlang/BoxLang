@@ -75,6 +75,7 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
+import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
@@ -339,7 +340,8 @@ public class DynamicInteropService {
 			IClassRunnable boxClass;
 			try {
 				boxClass = ( IClassRunnable ) getNoArgConstructorHandle( targetClass ).invoke();
-				return bootstrapBLClass( context, boxClass, BLArgs, null, noInit, isSuper );
+				// Super classes bootstrapped in an extends chain do not announce creation events
+				return bootstrapBLClass( context, boxClass, BLArgs, null, noInit, isSuper, !isSuper );
 			} catch ( RuntimeException e ) {
 				throw e;
 			} catch ( Throwable e ) {
@@ -436,7 +438,7 @@ public class DynamicInteropService {
 			IClassRunnable boxClass;
 			try {
 				boxClass = ( IClassRunnable ) getNoArgConstructorHandle( targetClass ).invoke();
-				return bootstrapBLClass( context, boxClass, null, args, false, true );
+				return bootstrapBLClass( context, boxClass, null, args, false, true, true );
 			} catch ( RuntimeException e ) {
 				throw e;
 			} catch ( Throwable e ) {
@@ -3111,18 +3113,22 @@ public class DynamicInteropService {
 	 * @param positionalArgs The positional arguments to pass to the constructor
 	 * @param namedArgs      The named arguments to pass to the constructor
 	 * @param noInit         Whether to skip the initialization of the class or not
+	 * @param isSuper        Whether this class is being bootstrapped as a super class
+	 * @param announce       Whether to announce the class creation events. Only the outermost class being created announces, never its super classes.
 	 *
 	 * @return The instance of the class
 	 */
 	@SuppressWarnings( "unchecked" )
 	private static <T> T bootstrapBLClass( IBoxContext context, IClassRunnable boxClass, Object[] positionalArgs, Map<Key, Object> namedArgs, boolean noInit,
-	    boolean isSuper ) {
+	    boolean isSuper, boolean announce ) {
 		// This class context is really only used while boostrapping the pseudoConstructor. It will NOT be used as a parent
 		// context once the boxClass is initialized. Methods called on this boxClass will have access to the variables/this scope via their
 		// FunctionBoxContext, but their parent context will be whatever context they are called from.
 		IBoxContext classContext = new ClassBoxContext( context, boxClass );
 		// Bootstrap the pseudoConstructor
 		classContext.pushTemplate( boxClass );
+		// What the construction returns: the instance, or whatever a non-null init() returned
+		Object returnValue = boxClass;
 
 		try {
 			if ( boxClass.getBoxSuperClassName() != null ) {
@@ -3186,6 +3192,11 @@ public class DynamicInteropService {
 				}
 			}
 
+			// The instance is fully defined and validated, but init() has not been called yet
+			if ( announce ) {
+				announceBoxClassCreation( context, boxClass, noInit );
+			}
+
 			if ( !noInit ) {
 
 				// Call constructor
@@ -3202,7 +3213,7 @@ public class DynamicInteropService {
 					// return anything other than "this".
 					if ( result != null ) {
 						// This cast will fail if the init returns something like a string
-						return ( T ) result;
+						returnValue = result;
 					}
 				} else {
 					// implicit constructor
@@ -3250,8 +3261,61 @@ public class DynamicInteropService {
 			classContext.popTemplate();
 		}
 
+		// The instance is fully initialized (init() or the implicit constructor ran)
+		if ( announce && !noInit ) {
+			announceBoxClassInit( context, boxClass, returnValue );
+		}
+
 		// We have a fully initialized class, so we can return it
-		return ( T ) boxClass;
+		return ( T ) returnValue;
+	}
+
+	/**
+	 * Announce the {@link BoxEvent#AFTER_BOX_CLASS_CREATION} event.
+	 * This is a hot path, so the event data is only built if there are listeners.
+	 *
+	 * @param context  The context the class is being created in
+	 * @param boxClass The class instance
+	 * @param noInit   Whether init() will be skipped for this instance
+	 */
+	private static void announceBoxClassCreation( IBoxContext context, IClassRunnable boxClass, boolean noInit ) {
+		InterceptorService interceptorService = BoxRuntime.getInstance().getInterceptorService();
+		if ( interceptorService.hasState( BoxEvent.AFTER_BOX_CLASS_CREATION ) ) {
+			interceptorService.announce(
+			    BoxEvent.AFTER_BOX_CLASS_CREATION.key(),
+			    Struct.ofNonConcurrent(
+			        Key.instance, boxClass,
+			        Key.className, boxClass.bxGetName().getName(),
+			        Key.noInit, noInit,
+			        Key.context, context
+			    ),
+			    context
+			);
+		}
+	}
+
+	/**
+	 * Announce the {@link BoxEvent#AFTER_BOX_CLASS_INIT} event.
+	 * This is a hot path, so the event data is only built if there are listeners.
+	 *
+	 * @param context  The context the class is being created in
+	 * @param boxClass The class instance
+	 * @param result   What the construction returns: the instance, or whatever a non-null init() returned
+	 */
+	private static void announceBoxClassInit( IBoxContext context, IClassRunnable boxClass, Object result ) {
+		InterceptorService interceptorService = BoxRuntime.getInstance().getInterceptorService();
+		if ( interceptorService.hasState( BoxEvent.AFTER_BOX_CLASS_INIT ) ) {
+			interceptorService.announce(
+			    BoxEvent.AFTER_BOX_CLASS_INIT.key(),
+			    Struct.ofNonConcurrent(
+			        Key.instance, boxClass,
+			        Key.result, result,
+			        Key.className, boxClass.bxGetName().getName(),
+			        Key.context, context
+			    ),
+			    context
+			);
+		}
 	}
 
 	/**

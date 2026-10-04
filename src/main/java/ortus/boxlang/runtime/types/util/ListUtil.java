@@ -643,7 +643,8 @@ public class ListUtil {
 		    parallel,
 		    maxThreads,
 		    ordered,
-		    false // Default to not using virtual threads
+		    false, // Default to not using virtual threads
+		    null
 		);
 	}
 
@@ -658,7 +659,12 @@ public class ListUtil {
 	 * @param ordered         Boolean as to whether to maintain order in parallel
 	 *                        execution
 	 * @param virtual         Whether to use virtual threads for parallel execution
+	 *
+	 * @deprecated Since 1.18.0 Use
+	 *             {@link #each(Array, Function, IBoxContext, Boolean, Integer, Boolean, boolean, Object)}
+	 *             instead.
 	 */
+	@Deprecated
 	public static void each(
 	    Array array,
 	    Function callback,
@@ -667,6 +673,46 @@ public class ListUtil {
 	    Integer maxThreads,
 	    Boolean ordered,
 	    boolean virtual ) {
+		each(
+		    array,
+		    callback,
+		    callbackContext,
+		    parallel,
+		    maxThreads,
+		    ordered,
+		    virtual,
+		    null
+		);
+	}
+
+	/**
+	 * Method to invoke a function for every iteration of the array
+	 *
+	 * @param array           The array object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * @param ordered         Boolean as to whether to maintain order in parallel
+	 *                        execution
+	 * @param virtual         Whether to use virtual threads for parallel execution
+	 * @param original        The original array or string list object passed to the method
+	 */
+	public static void each(
+	    Array array,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    Boolean ordered,
+	    boolean virtual,
+	    Object original ) {
+
+		if ( original == null ) {
+			original = array;
+		}
+
+		final Object finalOriginal = original;
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
@@ -684,7 +730,7 @@ public class ListUtil {
 		} else {
 			consumer = idx -> ThreadBoxContext.runInContext( callbackContext, parallel,
 			    ctx -> ctx.invokeFunction( callback,
-			        new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
+			        new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, finalOriginal } ) );
 		}
 
 		// Create a stream of what we want, usage is determined internally by the

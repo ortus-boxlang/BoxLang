@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.components.jdbc;
 
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -165,7 +167,7 @@ public class StoredProc extends Component {
 			}
 
 			// capture out and inout parameters
-			putOutVariablesInContext( context, procedure, params, paramOffset, driver );
+			putOutVariablesInContext( context, procedure, params, paramOffset, driver, debug, procedureName );
 
 			// Create result struct. Is there anything else to put in here? Update count? Generated key?
 			ExpressionInterpreter.setVariable(
@@ -266,6 +268,12 @@ public class StoredProc extends Component {
 			int				sqlType		= queryType.sqlType;
 			Object			value		= attr.get( Key.value );
 			if ( varType.contains( "in" ) ) {
+				boolean isNull = BooleanCaster.cast( attr.getOrDefault( Key.nulls, false ) );
+				if ( isNull ) {
+					value = null;
+				} else {
+					value = QueryColumnType.toSQLType( queryType, value, context, procedure.getConnection() );
+				}
 				if ( debug ) {
 					String paramName = attr.getAsString( Key.DBVarName );
 					if ( paramName != null ) {
@@ -273,17 +281,18 @@ public class StoredProc extends Component {
 					} else {
 						paramName = "";
 					}
-					QueryColumnType typeInfo = QueryColumnType.fromSQLType( sqlType );
+					QueryColumnType	typeInfo	= QueryColumnType.fromSQLType( sqlType );
+					String			debugValue	= value == null ? null : value.toString();
+					if ( debugValue != null && debugValue.length() > 100 ) {
+						debugValue = debugValue.substring( 0, 100 ) + "...";
+					}
 					System.out.println(
 					    "Procedure [" + procedureName + "] Setting IN param " + paramName +
 					        "in position " + ( i + 1 + paramOffset ) +
-					        " (type: " + typeInfo + ")"
+					        " (type: " + typeInfo + ")" +
+					        " (null: " + isNull + ")" +
+					        " (value: " + debugValue + ")"
 					);
-				}
-				if ( BooleanCaster.cast( attr.getOrDefault( Key.nulls, false ) ) ) {
-					value = null;
-				} else {
-					value = QueryColumnType.toSQLType( queryType, value, context, procedure.getConnection() );
 				}
 				procedure.setObject( i + 1 + paramOffset, value, sqlType );
 			}
@@ -296,7 +305,7 @@ public class StoredProc extends Component {
 						paramName = "";
 					}
 					QueryColumnType typeInfo = QueryColumnType.fromSQLType( sqlType );
-					System.out.println( "Procedure [" + procedureName + "] Setting OUT param " + paramName + "in position "
+					System.out.println( "Procedure [" + procedureName + "] Registering OUT param " + paramName + "in position "
 					    + ( i + 1 + paramOffset ) + " (type: " + typeInfo + ")" );
 				}
 				procedure.registerOutParameter( i + 1 + paramOffset, sqlType );
@@ -396,7 +405,8 @@ public class StoredProc extends Component {
 	 * @param params      The stored procedure parameters.
 	 * @param paramOffset Offset for parameter positions (1 if return code is present, 0 otherwise)
 	 */
-	private void putOutVariablesInContext( IBoxContext context, BoxCallableStatement procedure, Array params, int paramOffset, IJDBCDriver driver )
+	private void putOutVariablesInContext( IBoxContext context, BoxCallableStatement procedure, Array params, int paramOffset, IJDBCDriver driver,
+	    boolean debug, String procedureName )
 	    throws SQLException {
 		for ( int i = 0; i < params.size(); i++ ) {
 			IStruct attr = ( IStruct ) params.get( i );
@@ -404,26 +414,73 @@ public class StoredProc extends Component {
 			    && attr.getAsString( Key.type ).toLowerCase().contains( "out" )
 			    && attr.containsKey( Key.variable )
 			    && attr.getAsString( Key.variable ) != null && !attr.getAsString( Key.variable ).isEmpty() ) {
-
+				String			variableName	= attr.getAsString( Key.variable );
 				// Get the out sql type, default to OBJECT if not specified
-				QueryColumnType	BLType	= QueryColumnType.fromString( ( String ) attr.getOrDefault( Key.sqltype, "OBJECT" ) );
-
+				QueryColumnType	BLType			= QueryColumnType.fromString( ( String ) attr.getOrDefault( Key.sqltype, "OBJECT" ) );
+				Object			rawValue		= procedure.getObject( i + 1 + paramOffset );
+				String			debugValue		= "";
+				if ( debug ) {
+					// I don't want to call toString() on these objects
+					if ( rawValue instanceof ResultSet ) {
+						debugValue = "<<JDBC ResultSet>>";
+					} else if ( rawValue instanceof Clob ) {
+						debugValue = "<<JDBC CLOB>>";
+					} else if ( rawValue instanceof Blob ) {
+						debugValue = "<<JDBC BLOB>>";
+					} else {
+						debugValue = rawValue == null ? null : rawValue.toString();
+						if ( debugValue != null && debugValue.length() > 100 ) {
+							debugValue = debugValue.substring( 0, 100 ) + "...";
+						}
+					}
+				}
 				// Get the value from the procedure, transform it if needed
-				Object			value	= driver.transformValue(
+				Object	value				= driver.transformValue(
 				    BLType.sqlType,
-				    procedure.getObject( i + 1 + paramOffset ),
+				    rawValue,
 				    procedure
 				);
 				// Oracle uses refcursor type out params for proc results. In that case, null needs to stay undefined
+				boolean	skipNullRefcursor	= false;
 				if ( value == null && BLType == QueryColumnType.REFCURSOR ) {
-					continue;
+					// Don't continue just yet so our debug can still run below
+					skipNullRefcursor = true;
 				}
 				if ( value == null && Compare.nullEqualsEmptyString ) {
 					value = "";
 				}
 
+				if ( debug ) {
+					String paramName = attr.getAsString( Key.DBVarName );
+					if ( paramName != null ) {
+						paramName = "[" + paramName + "] ";
+					} else {
+						paramName = "";
+					}
+
+					if ( skipNullRefcursor ) {
+						System.out.println(
+						    "Procedure [" + procedureName + "] Skipping NULL refcursor OUT param " + paramName +
+						        "in position " + ( i + 1 + paramOffset ) +
+						        " (type: " + BLType + ")" +
+						        " (variable: " + variableName + ")"
+						);
+					} else {
+						System.out.println(
+						    "Procedure [" + procedureName + "] Getting OUT param " + paramName +
+						        "in position " + ( i + 1 + paramOffset ) +
+						        " (type: " + BLType + ")" +
+						        " (value: " + debugValue + ")" +
+						        " (variable: " + variableName + ")"
+						);
+					}
+				}
+
+				if ( skipNullRefcursor ) {
+					continue;
+				}
 				// Set the variable in the context
-				ExpressionInterpreter.setVariable( context, attr.getAsString( Key.variable ), value );
+				ExpressionInterpreter.setVariable( context, variableName, value );
 			}
 		}
 	}

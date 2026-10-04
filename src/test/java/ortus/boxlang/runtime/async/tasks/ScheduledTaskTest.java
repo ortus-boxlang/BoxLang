@@ -382,6 +382,28 @@ class ScheduledTaskTest {
 			assertThat( task.isConstrained() ).isFalse();
 		}
 
+		@DisplayName( "clamps a day of the month constraint that doesn't exist in the running month to the last day" )
+		@Test
+		void testDayOfTheMonthConstraintClampsToLastDayOfShortMonth() {
+			// April only has 30 days, so a constraint of the 31st must clamp to the 30th
+			task.setDayOfTheMonth( 31 );
+
+			LocalDateTime midMonth = LocalDateTime.of( 2026, 4, 15, 10, 0 );
+			Mockito.when( task.getNow() ).thenReturn( midMonth );
+			assertThat( task.isConstrained() ).isTrue();
+
+			LocalDateTime lastDay = LocalDateTime.of( 2026, 4, 30, 10, 0 );
+			Mockito.when( task.getNow() ).thenReturn( lastDay );
+			assertThat( task.isConstrained() ).isFalse();
+
+			// Every other day of the month must still be constrained, not just skipped entirely
+			for ( int day = 1; day < 30; day++ ) {
+				LocalDateTime otherDay = LocalDateTime.of( 2026, 4, day, 10, 0 );
+				Mockito.when( task.getNow() ).thenReturn( otherDay );
+				assertThat( task.isConstrained() ).isTrue();
+			}
+		}
+
 		@DisplayName( "can have a last business day of the month constraint" )
 		@Test
 		@Disabled( "This fails every time CI runs on the last actual day of the actual month." )
@@ -489,6 +511,88 @@ class ScheduledTaskTest {
 			var mockNow = task.getNow().plusDays( -1 );
 			task.endOn( mockNow.format( DateTimeHelper.ISO_DATE_ONLY ) );
 			assertThat( task.isConstrained() ).isTrue();
+		}
+	}
+
+	@Nested
+	class ServerFixation {
+
+		@DisplayName( "onOneServer() enables the server fixation flag" )
+		@Test
+		void testOnOneServerEnablesTheFlag() {
+			assertThat( task.getServerFixation() ).isFalse();
+			task.onOneServer();
+			assertThat( task.getServerFixation() ).isTrue();
+		}
+
+		@DisplayName( "only one server wins the distributed lock when two servers race for the same task" )
+		@Test
+		void testOnlyOneServerCanRunTheTask() {
+			String			taskName	= "server-fixation-" + java.util.UUID.randomUUID();
+
+			ScheduledTask	serverA		= new ScheduledTask( taskName );
+			ScheduledTask	serverB		= new ScheduledTask( taskName );
+
+			// Simulate two different physical/virtual servers sharing the same "default" cache
+			serverA.getStats().put( "inetHost", "server-a-host" );
+			serverA.getStats().put( "localIp", "10.0.0.1" );
+			serverB.getStats().put( "inetHost", "server-b-host" );
+			serverB.getStats().put( "localIp", "10.0.0.2" );
+
+			boolean	aCanRun	= serverA.canRunOnThisServer();
+			boolean	bCanRun	= serverB.canRunOnThisServer();
+
+			// Exactly one of the two servers must win the lock
+			assertThat( aCanRun ).isNotEqualTo( bCanRun );
+
+			// The winner must keep winning on subsequent polls (lock refresh), the loser must keep losing
+			assertThat( serverA.canRunOnThisServer() ).isEqualTo( aCanRun );
+			assertThat( serverB.canRunOnThisServer() ).isEqualTo( bCanRun );
+		}
+
+		@DisplayName( "calculateLockTimeout() for a day-of-the-month task spans close to a real month, not a poll interval" )
+		@Test
+		void testCalculateLockTimeoutForDayOfTheMonthTask() throws InvalidAttributeValueException {
+			task.everyMonthOn( 28, "09:00" );
+
+			// Pretend "now" is early in the month so the real next occurrence is ~weeks away,
+			// while the internal poll period (period/timeUnit) is only ~1 day
+			LocalDateTime mockNow = LocalDateTime.of( 2026, 3, 1, 10, 0 );
+			Mockito.when( task.getNow() ).thenReturn( mockNow );
+
+			long timeoutMinutes = task.calculateLockTimeout();
+
+			// The real gap (Mar 1 10:00 -> Mar 28 09:00) is ~27 days, nowhere close to the
+			// ~1 day poll interval the regression class of bug would have produced
+			assertThat( timeoutMinutes ).isGreaterThan( TimeUnit.DAYS.toMinutes( 20 ) );
+			assertThat( timeoutMinutes ).isLessThan( TimeUnit.DAYS.toMinutes( 32 ) );
+		}
+
+		@DisplayName( "calculateLockTimeout() for a last-business-day task spans close to a real month, not a poll interval" )
+		@Test
+		void testCalculateLockTimeoutForLastBusinessDayTask() throws InvalidAttributeValueException {
+			task.onLastBusinessDayOfTheMonth( "09:00" );
+
+			LocalDateTime mockNow = LocalDateTime.of( 2026, 3, 1, 10, 0 );
+			Mockito.when( task.getNow() ).thenReturn( mockNow );
+
+			long timeoutMinutes = task.calculateLockTimeout();
+
+			assertThat( timeoutMinutes ).isGreaterThan( TimeUnit.DAYS.toMinutes( 20 ) );
+			assertThat( timeoutMinutes ).isLessThan( TimeUnit.DAYS.toMinutes( 32 ) );
+		}
+
+		@DisplayName( "calculateLockTimeout() falls back to the period/timeUnit converted to minutes for non date-based tasks" )
+		@Test
+		void testCalculateLockTimeoutForNonDateBasedTask() {
+			task.every( 30, TimeUnit.MINUTES );
+			assertThat( task.calculateLockTimeout() ).isEqualTo( 30L );
+		}
+
+		@DisplayName( "calculateLockTimeout() falls back to the default timeout when nothing else can be determined" )
+		@Test
+		void testCalculateLockTimeoutDefaultsWhenUndetermined() {
+			assertThat( task.calculateLockTimeout() ).isEqualTo( 60L );
 		}
 	}
 

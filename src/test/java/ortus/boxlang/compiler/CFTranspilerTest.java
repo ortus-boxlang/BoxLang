@@ -658,6 +658,53 @@ public class CFTranspilerTest {
 		assertThat( variables.get( result ) ).isEqualTo( "readwritesdfsdf" );
 	}
 
+	@DisplayName( "It preserves an explicit exclusive lock type" )
+	@Test
+	public void testLockTypeExclusiveIsPreserved() {
+		ParsingResult parsed = instance.parse( """
+		                                       lock name="a" type="exclusive" timeout=1 {}
+		                                       lock name="b" type="EXCLUSIVE" timeout=1 {}
+		                                       lock name="c" type="write" timeout=1 {}
+		                                       lock name="d" type="readonly" timeout=1 {}
+		                                       lock name="e" type="bogus" timeout=1 {}
+		                                       """, BoxSourceType.CFSCRIPT );
+		assertThat( parsed.isCorrect() ).isTrue();
+		String transpiled = parsed.getRoot().toString();
+		assertThat( transpiled ).doesNotContain( "\"write\"" );
+		assertThat( transpiled ).doesNotContain( "\"bogus\"" );
+		// a, b and c are exclusive; d and e are readonly
+		assertThat( transpiled.split( "exclusive", -1 ).length - 1 ).isEqualTo( 3 );
+		assertThat( transpiled.split( "readonly", -1 ).length - 1 ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "An exclusive lock in CF source actually serializes access" )
+	@Test
+	public void testExclusiveLockFromCFSourceIsMutuallyExclusive() {
+		instance.executeSource(
+		    """
+		    shared = { inside: 0, maxInside: 0 };
+		    futures = [];
+		    for( i = 1; i <= 64; i++ ) {
+		    	futures.append( runAsync( function() {
+		    		lock name="probe" type="exclusive" timeout="60" {
+		    			shared.inside++;
+		    			if ( shared.inside > shared.maxInside ) {
+		    				shared.maxInside = shared.inside;
+		    			}
+		    			sleep( 5 );
+		    			shared.inside--;
+		    		}
+		    	} ) );
+		    }
+		    for( f in futures ) {
+		    	f.get();
+		    }
+		    result = shared.maxInside;
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
 	@DisplayName( "It formats numbers with a string pattern" )
 	@Test
 	public void testNumberFormatSecondArgAsString() {

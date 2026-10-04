@@ -992,6 +992,20 @@ public class DateTime implements IType, IReferenceable, IRangeable<DateTime>, Se
 	}
 
 	/**
+	 * Replaces the wrapped ZonedDateTime object with a new value, mutating this instance in place.
+	 * This is used by temporal BIFs that produce an adjusted (immutable) ZonedDateTime and need to
+	 * write it back into the receiver.
+	 *
+	 * @param dateTime The new ZonedDateTime to wrap
+	 *
+	 * @return This DateTime instance
+	 */
+	public DateTime setWrapped( ZonedDateTime dateTime ) {
+		this.wrapped = dateTime;
+		return this;
+	}
+
+	/**
 	 * Fixes the timezone on this object for output operations
 	 * This means that any formatting or output operations will use the timezone of this object
 	 */
