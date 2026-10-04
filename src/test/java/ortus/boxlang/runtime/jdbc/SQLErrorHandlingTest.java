@@ -20,6 +20,10 @@ package ortus.boxlang.runtime.jdbc;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -119,6 +123,10 @@ public class SQLErrorHandlingTest {
 
 	@Test
 	public void testQueryErrorEventPreservesFailureAndCorrelation() {
+		ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
+		logAppender.setContext( instance.getLoggingService().getLoggerContext() );
+		logAppender.start();
+		instance.getLoggingService().DATASOURCE_LOGGER.addAppender( logAppender );
 		AtomicReference<IStruct>	observed	= new AtomicReference<>();
 		AtomicInteger				count		= new AtomicInteger();
 		IInterceptorLambda			listener	= data -> {
@@ -135,8 +143,16 @@ public class SQLErrorHandlingTest {
 			assertThat( observed.get().get( Key.context ) ).isSameInstanceAs( context );
 			assertThat( observed.get().get( Key.pendingQuery ) ).isInstanceOf( PendingQuery.class );
 			assertThat( ( ( Number ) observed.get().get( Key.executionTime ) ).doubleValue() ).isAtLeast( 0.0 );
+			ILoggingEvent diagnostic = logAppender.list.stream()
+			    .filter( event -> event.getFormattedMessage().equals( "Failed to announce onQueryExecuteError" ) )
+			    .findFirst().orElseThrow();
+			assertThat( diagnostic.getLevel() ).isEqualTo( Level.ERROR );
+			assertThat( diagnostic.getThrowableProxy().getClassName() ).isEqualTo( IllegalStateException.class.getName() );
+			assertThat( diagnostic.getThrowableProxy().getMessage() ).isEqualTo( "observer failed" );
 		} finally {
 			instance.getInterceptorService().unregister( listener );
+			instance.getLoggingService().DATASOURCE_LOGGER.detachAppender( logAppender );
+			logAppender.stop();
 		}
 	}
 

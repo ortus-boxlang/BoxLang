@@ -722,9 +722,11 @@ public class PendingQuery {
 				    )
 				);
 			} catch ( RuntimeException observerFailure ) {
-				// An observer must not replace or hide the original database failure.
+				logger.error( "Failed to announce onQueryExecuteError", observerFailure );
+			} finally {
+				// Observer and logging failures must not replace the original database failure.
+				throw failure;
 			}
-			throw failure;
 		}
 	}
 
