@@ -139,7 +139,9 @@ public class Transaction extends Component {
 				bodyResult = processBody( context, body );
 				transaction.commit();
 			} catch ( AbortException e ) {
-				// Ignore aborts
+				// The transaction never reached its end, so its writes must not be committed.
+				logger.debug( "Encountered abort while processing transaction; rolling back" );
+				transaction.rollback();
 				throw e;
 			} catch ( Throwable e ) {
 				logger.error( "Encountered database exception while processing transaction; rolling back", e );
