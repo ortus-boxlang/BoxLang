@@ -518,8 +518,8 @@ public interface IBoxpiler {
 	void clearPagePool();
 
 	/**
-	 * Wipe all compiled class files from the class generation directory on disk.
-	 * Any cached bytecode is removed so the next compile happens fresh.
+	 * Wipes all compiled class files from the class generation directory.
+	 * Any cached bytecode on disk is removed so the next compile happens fresh.
 	 */
 	void clearClassFiles();
 
