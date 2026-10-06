@@ -176,7 +176,7 @@ public class AsmHelper {
 	/**
 	 * Emit the bytecode that self-registers a blueprint from a class's
 	 * {@code <clinit>}: {@code CodeProfilerService.registerBlueprintFromClinit(
-	 * id, lastModified, totalLines, String... spanDataChunks )}.
+	 * id, lastModified, String... spanDataChunks )}.
 	 * <p>
 	 * The span data is serialized as a series of PACKED, space-separated String
 	 * constants (each chunk a single {@code LDC}, data living in the constant pool
@@ -189,12 +189,11 @@ public class AsmHelper {
 	 *
 	 * @param id           the blueprint KEY (path string or source hash)
 	 * @param lastModified the source file's last-modified time
-	 * @param totalLines   the source's total line count
 	 * @param spanDefs     the spans to serialize (5 ints each: line/col/line/col/flag)
 	 *
 	 * @return the instructions for the registration call
 	 */
-	public static List<AbstractInsnNode> emitBlueprintRegistrationNodes( String id, long lastModified, int totalLines,
+	public static List<AbstractInsnNode> emitBlueprintRegistrationNodes( String id, long lastModified,
 	    List<ortus.boxlang.runtime.services.Blueprint.SpanDef> spanDefs ) {
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 
@@ -225,7 +224,6 @@ public class AsmHelper {
 
 		nodes.add( new LdcInsnNode( id ) );
 		nodes.add( new LdcInsnNode( lastModified ) );
-		nodes.add( new LdcInsnNode( totalLines ) );
 		// Build String[] chunks: ANEWARRAY, DUP index LDC AASTORE per chunk.
 		nodes.add( new LdcInsnNode( chunks.size() ) );
 		nodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, Type.getInternalName( String.class ) ) );
@@ -243,8 +241,7 @@ public class AsmHelper {
 		        Type.getType( String.class ),                       // return: id
 		        Type.getType( String.class ),                       // arg1: id
 		        Type.LONG_TYPE,                                     // arg2: lastModified
-		        Type.INT_TYPE,                                      // arg3: totalLines
-		        Type.getType( String[].class ) ),                   // arg4: spanDataChunks
+		        Type.getType( String[].class ) ),                   // arg3: spanDataChunks
 		    false
 		) );
 		nodes.add( new InsnNode( Opcodes.POP ) ); // discard the returned id

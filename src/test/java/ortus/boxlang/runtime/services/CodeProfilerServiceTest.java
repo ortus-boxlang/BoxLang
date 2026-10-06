@@ -61,7 +61,7 @@ class CodeProfilerServiceTest {
 	// \tx = 1; (tab is leading whitespace, span starts at col 1)
 	// \ty = 2;
 	// \tz = x + y;
-	private static final Blueprint	PLAIN_BLUEPRINT		= new Blueprint( 3,
+	private static final Blueprint	PLAIN_BLUEPRINT		= new Blueprint(
 	    List.of(
 	        new Blueprint.SpanDef( 1, 1, 1, 8, true ),   // span 0: "x = 1 "
 	        new Blueprint.SpanDef( 2, 1, 2, 8, true ),   // span 1: "y = 2 "
@@ -71,7 +71,7 @@ class CodeProfilerServiceTest {
 	// \tx = bar ? baz : bum;
 	// tab(col0) non-exec gap; "x = " exec; " ? " gap; "bar" exec; " : " gap; "baz" exec;
 	// " " gap; "bum" exec. The trailing "; " is whitespace/gap, NOT its own span.
-	private static final Blueprint	TERNARY_BLUEPRINT	= new Blueprint( 1,
+	private static final Blueprint	TERNARY_BLUEPRINT	= new Blueprint(
 	    List.of(
 	        new Blueprint.SpanDef( 1, 0, 1, 0, false ),   // tab (non-exec gap)
 	        new Blueprint.SpanDef( 1, 1, 1, 4, true ),    // span 0: "x = "
@@ -175,7 +175,7 @@ class CodeProfilerServiceTest {
 	// literal default -> no bytecode, NOT_EXECUTABLE), and "return 42" (body, invocation-only).
 	// Invocation-time-only executable spans (MISSED during definition until the arg is
 	// omitted / the body is called): "=somevar.foobar" default expr (span 3), "return 42" (span 4).
-	private static final Blueprint FUNC_BLUEPRINT = new Blueprint( 3,
+	private static final Blueprint FUNC_BLUEPRINT = new Blueprint(
 	    List.of(
 	        new Blueprint.SpanDef( 1, 1, 1, 33, true ),  // span 0: "public static string function myFunc"
 	        new Blueprint.SpanDef( 1, 35, 1, 54, true ), // span 1: "required string arg"
@@ -244,7 +244,7 @@ class CodeProfilerServiceTest {
 		// boxpiler computes and passes the same hash.
 		String		sourceHash		= Integer.toString( source.hashCode() );
 
-		Blueprint	sourceBlueprint	= new Blueprint( 1,
+		Blueprint	sourceBlueprint	= new Blueprint(
 		    List.of(
 		        new Blueprint.SpanDef( 1, 0, 1, 4, true ),   // span 0: "x = "
 		        new Blueprint.SpanDef( 1, 5, 1, 9, true ),   // span 1: "foo()"
@@ -398,7 +398,7 @@ class CodeProfilerServiceTest {
 	@Test
 	void testKindFilter() {
 		String		sourceHash		= Integer.toString( "json-filter".hashCode() );
-		Blueprint	sourceBlueprint	= new Blueprint( 1,
+		Blueprint	sourceBlueprint	= new Blueprint(
 		    List.of(
 		        new Blueprint.SpanDef( 1, 0, 1, 4, true )
 		    ),

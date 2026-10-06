@@ -33,7 +33,6 @@ import java.util.List;
  * registered blueprint self-describing.
  */
 public record Blueprint(
-    int totalLines,
     List<SpanDef> spans,
     Kind kind,
     long lastModified ) {
@@ -57,22 +56,20 @@ public record Blueprint(
 	 * Convenience constructor defaulting the kind to {@link Kind#FILE} and the
 	 * last-modified time to 0 (unknown — used by adhoc source and older callers).
 	 *
-	 * @param totalLines total source line count
-	 * @param spans      every span of the source
+	 * @param spans every span of the source
 	 */
-	public Blueprint( int totalLines, List<SpanDef> spans ) {
-		this( totalLines, spans, Kind.FILE, 0L );
+	public Blueprint( List<SpanDef> spans ) {
+		this( spans, Kind.FILE, 0L );
 	}
 
 	/**
 	 * Convenience constructor defaulting only the last-modified time to 0.
 	 *
-	 * @param totalLines total source line count
-	 * @param spans      every span of the source
-	 * @param kind       whether the key is a file path or a source hash
+	 * @param spans every span of the source
+	 * @param kind  whether the key is a file path or a source hash
 	 */
-	public Blueprint( int totalLines, List<SpanDef> spans, Kind kind ) {
-		this( totalLines, spans, kind, 0L );
+	public Blueprint( List<SpanDef> spans, Kind kind ) {
+		this( spans, kind, 0L );
 	}
 
 	/**

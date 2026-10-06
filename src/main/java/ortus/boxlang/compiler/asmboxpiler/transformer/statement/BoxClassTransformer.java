@@ -1465,7 +1465,7 @@ public class BoxClassTransformer {
 	 * The blueprint is serialized as a flat {@code int[]} (5 ints per span:
 	 * startLine, startCol, endLine, endCol, executableFlag). The emitted call is
 	 * {@code CodeProfilerService.registerBlueprintFromClinit(filePath, fileId,
-	 * lastModified, totalLines, spanData)}. No-op when profiling is disabled or
+	 * lastModified, spanData)}. No-op when profiling is disabled or
 	 * there are no spans.
 	 *
 	 * @param transpiler  the active transpiler (span data + fileId live here)
@@ -1490,7 +1490,7 @@ public class BoxClassTransformer {
 		// never subdivide it, causing MethodTooLargeException on big files.
 		String id = transpiler.getFileId();
 		clinitNodes.addAll( AsmHelper.emitBlueprintRegistrationNodes(
-		    id, transpiler.getLastModified(), transpiler.getTotalLines(), spanDefs ) );
+		    id, transpiler.getLastModified(), spanDefs ) );
 	}
 
 	/**

@@ -3533,7 +3533,7 @@ class CodeProfilerTest {
 		String	filePath	= "C:/opt/test/SomeComponent.cfc";
 
 		// First registration — two spans, lastModified 1000.
-		String	firstId		= CodeProfilerService.registerBlueprintFromClinit( filePath, 1000L, 5,
+		String	firstId		= CodeProfilerService.registerBlueprintFromClinit( filePath, 1000L,
 		    new int[] {
 		        1, 0, 1, 10, 1,
 		        2, 0, 2, 8, 1
@@ -3543,7 +3543,7 @@ class CodeProfilerTest {
 		assertThat( firstId ).isEqualTo( normPath );
 
 		// Idempotent: same key re-registered with the SAME lastModified -> SAME id.
-		String againId = CodeProfilerService.registerBlueprintFromClinit( filePath, 1000L, 5,
+		String againId = CodeProfilerService.registerBlueprintFromClinit( filePath, 1000L,
 		    new int[] {
 		        1, 0, 1, 10, 1,
 		        2, 0, 2, 8, 1
@@ -3557,7 +3557,7 @@ class CodeProfilerTest {
 		assertThat( bp.lastModified() ).isEqualTo( 1000L );
 
 		// Newer lastModified (file changed + recompiled) -> SAME id, spans REPLACED.
-		String newerId = CodeProfilerService.registerBlueprintFromClinit( filePath, 2000L, 5,
+		String newerId = CodeProfilerService.registerBlueprintFromClinit( filePath, 2000L,
 		    new int[] {
 		        1, 0, 1, 12, 1,
 		        2, 0, 2, 10, 1,

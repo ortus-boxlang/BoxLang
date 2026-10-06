@@ -270,30 +270,6 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	/**
-	 * The total source line count for this compilation (from the Blueprint),
-	 * used when embedding the blueprint into {@code <clinit>}.
-	 */
-	private int totalLines = 1;
-
-	/**
-	 * Store the total source line count for embedding into {@code <clinit>}.
-	 *
-	 * @param totalLines the source line count
-	 */
-	public void setTotalLines( int totalLines ) {
-		this.totalLines = totalLines;
-	}
-
-	/**
-	 * The total source line count to embed with the blueprint.
-	 *
-	 * @return the source line count
-	 */
-	public int getTotalLines() {
-		return this.totalLines;
-	}
-
-	/**
 	 * The source file's last-modified time for this compilation, used to detect a
 	 * newer blueprint (recompiled file) and replace stale span data on load.
 	 */

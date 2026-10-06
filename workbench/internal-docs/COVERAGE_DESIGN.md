@@ -44,15 +44,12 @@ The `Blueprint` carries a `kind` (`FILE | SOURCE`) so generic reporting over all
 
 `Blueprint` does **not** store the source text — the runtime never re-reads source for coverage (the reporter reads the file/hash itself), so storing it would be wasted memory. The `dumpSpans`/`spanSourceText` helpers slice the source from disk/passed text only when a tool asks.
 
-`Blueprint` is **total for the file**:
-- `totalLines` — the file's full line count (incl. trailing blank/comment lines)
-- the ordered enumeration of EXECUTABLE spans: `{ startLine, startCol, endLine, endCol, executable=true }` — span ids are the array positions (source order)
-- a per-line index of which executable spans touch each line (for `lineAt`)
+`Blueprint` is **total for the file** — the ordered enumeration of EXECUTABLE spans: `{ startLine, startCol, endLine, endCol, executable=true }`, where span ids are the array positions (source order), plus a per-line index of which executable spans touch each line (for `lineAt`).
 
 Only **executable** spans are listed, and each gets an `id` (its index). Non-executable regions are simply absent.
 
 ### 5a. Blueprint survival across disk loads (`registerBlueprintFromClinit`)
-A class compiled in a PRIOR session (loaded from the on-disk class store, not recompiled) never calls `registerBlueprintForFile`. To recover its spans, the boxpiler serializes the blueprint INTO the class's `<clinit>` bytecode: a packed space-separated run of flat ints (groups of 5: startLine, startCol, endLine, endCol, executableFlag), chunked into multiple `LDC` string constants so each stays well under the JVM's 65535-byte `CONSTANT_Utf8` limit even for very large files. On first load, `registerBlueprintFromClinit(id, lastModified, totalLines, String... chunks)` (or its `int[]` overload) reconstructs the blueprint. It is **idempotent per file key**: an existing registration is reused; a NEWER blueprint (the file's `lastModified` is greater — it was recompiled) replaces the stale one so stale span maps don't corrupt fresh runs.
+A class compiled in a PRIOR session (loaded from the on-disk class store, not recompiled) never calls `registerBlueprintForFile`. To recover its spans, the boxpiler serializes the blueprint INTO the class's `<clinit>` bytecode: a packed space-separated run of flat ints (groups of 5: startLine, startCol, endLine, endCol, executableFlag), chunked into multiple `LDC` string constants so each stays well under the JVM's 65535-byte `CONSTANT_Utf8` limit even for very large files. On first load, `registerBlueprintFromClinit(id, lastModified, String... chunks)` (or its `int[]` overload) reconstructs the blueprint. It is **idempotent per file key**: an existing registration is reused; a NEWER blueprint (the file's `lastModified` is greater — it was recompiled) replaces the stale one so stale span maps don't corrupt fresh runs.
 
 ### 5. The runtime is KEY + SPAN-ID based (mark becomes trivial)
 The blueprint registry is keyed by a **String key** (the normalized absolute file path for `FILE` blueprints, or the adhoc source hash for `SOURCE` blueprints). Bytecode passes only that key plus its **span id**, never the positions:

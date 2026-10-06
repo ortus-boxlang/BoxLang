@@ -301,19 +301,11 @@ public class ASMBoxpiler extends Boxpiler {
 		// discover every executable span and register it with the transpiler.
 		SpanCollectorVisitor collector = new SpanCollectorVisitor( transpiler );
 		node.accept( collector );
-		List<Blueprint.SpanDef>	spanDefs	= collector.spanDefs();
+		List<Blueprint.SpanDef>	spanDefs		= collector.spanDefs();
 
-		// Build + register a full-file blueprint (executable spans; totalLines for extent).
-		int						totalLines	= 1;
-		if ( classInfo.resolvedFilePath() != null ) {
-			totalLines = 1;
-		} else if ( classInfo.source() != null ) {
-			// count newlines in the adhoc source
-			totalLines = 1 + ( int ) classInfo.source().chars().filter( c -> c == '\n' ).count();
-		}
 		// The source file's last-modified time, used to detect when a NEWER blueprint
 		// (recompiled file) should replace stale span data. 0 for adhoc source.
-		long lastModified = 0L;
+		long					lastModified	= 0L;
 		if ( classInfo.resolvedFilePath() != null && classInfo.resolvedFilePath().absolutePath() != null ) {
 			try {
 				lastModified = java.nio.file.Files.getLastModifiedTime( classInfo.resolvedFilePath().absolutePath() ).toMillis();
@@ -321,12 +313,11 @@ public class ASMBoxpiler extends Boxpiler {
 				// ignore — lastModified stays 0
 			}
 		}
-		Blueprint blueprint = new Blueprint( totalLines, spanDefs, Blueprint.Kind.FILE, lastModified );
+		Blueprint blueprint = new Blueprint( spanDefs, Blueprint.Kind.FILE, lastModified );
 
-		// Carry the span data + totalLines onto the transpiler so Pass B can embed
+		// Carry the span data + lastModified onto the transpiler so Pass B can embed
 		// them into the class's <clinit> for self-registration on load.
 		transpiler.setSpanDefs( spanDefs );
-		transpiler.setTotalLines( totalLines );
 		transpiler.setLastModified( lastModified );
 
 		// Resolve the file key: real path for files, source hash for adhoc source.
@@ -338,7 +329,7 @@ public class ASMBoxpiler extends Boxpiler {
 			// Adhoc source: key the blueprint by the same MD5 the boxpiler derives the
 			// FQN from (IBoxpiler.MD5( sourceType + source )), so runtime lookups align.
 			fileKey = IBoxpiler.MD5( classInfo.sourceType().toString() + classInfo.source() );
-			Blueprint sourceBp = new Blueprint( totalLines, spanDefs, Blueprint.Kind.SOURCE );
+			Blueprint sourceBp = new Blueprint( spanDefs, Blueprint.Kind.SOURCE );
 			transpiler.setFileId( CodeProfilerService.registerBlueprintForSource( fileKey, sourceBp ) );
 		}
 	}

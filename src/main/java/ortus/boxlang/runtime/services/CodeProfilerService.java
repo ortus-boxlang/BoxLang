@@ -325,14 +325,13 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @param id           the blueprint KEY (file path, or source hash for adhoc)
 	 * @param lastModified the source file's last-modified time (0 for adhoc source)
-	 * @param totalLines   the source's total line count
 	 * @param spanData     flat int[] describing every span: groups of 5 ints
 	 *                     (startLine, startCol, endLine, endCol, executableFlag)
 	 *
 	 * @return the id to use for {@link #mark}; empty if no instance
 	 */
-	public static String registerBlueprintFromClinit( String id, long lastModified, int totalLines, int[] spanData ) {
-		return registerBlueprintFromClinitInternal( id, lastModified, totalLines, spanData );
+	public static String registerBlueprintFromClinit( String id, long lastModified, int[] spanData ) {
+		return registerBlueprintFromClinitInternal( id, lastModified, spanData );
 	}
 
 	/**
@@ -352,17 +351,16 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @param id             the blueprint KEY (file path, or source hash for adhoc)
 	 * @param lastModified   the source file's last-modified time (0 for adhoc source)
-	 * @param totalLines     the source's total line count
 	 * @param spanDataChunks packed span data as space-separated ints, in order
 	 *
 	 * @return the id to use for {@link #mark}; empty if no instance
 	 */
-	public static String registerBlueprintFromClinit( String id, long lastModified, int totalLines, String... spanDataChunks ) {
+	public static String registerBlueprintFromClinit( String id, long lastModified, String... spanDataChunks ) {
 		if ( instance == null ) {
 			return "";
 		}
 		int[] spanData = parseSpanDataChunks( spanDataChunks );
-		return registerBlueprintFromClinitInternal( id, lastModified, totalLines, spanData );
+		return registerBlueprintFromClinitInternal( id, lastModified, spanData );
 	}
 
 	/**
@@ -394,7 +392,7 @@ public class CodeProfilerService extends BaseService {
 		return result;
 	}
 
-	private static String registerBlueprintFromClinitInternal( String id, long lastModified, int totalLines, int[] spanData ) {
+	private static String registerBlueprintFromClinitInternal( String id, long lastModified, int[] spanData ) {
 		CodeProfilerService service = instance;
 		if ( service == null ) {
 			return "";
@@ -406,7 +404,7 @@ public class CodeProfilerService extends BaseService {
 			    spanData[ i + 4 ] == 1 ) );
 		}
 		String			key			= normalize( id );
-		Blueprint		blueprint	= new Blueprint( totalLines, spanDefs, Blueprint.Kind.FILE, lastModified );
+		Blueprint		blueprint	= new Blueprint( spanDefs, Blueprint.Kind.FILE, lastModified );
 
 		FileBlueprint	existing	= service.byPath.get( key );
 		if ( existing != null ) {
