@@ -168,6 +168,7 @@ The existing `AsmTranspiler.transform(BoxNode, ...)` is the central emission hoo
 - Parens never create their own span — the inner expression's start is the boundary.
 - `spanAt(line, col)` only treats a span as a boundary-start if the span's START LINE is the queried line — a multi-line span (e.g. a function shell passing through a body line) doesn't claim columns on lines it merely crosses.
 - UDF declaration shells count 1 at declaration; non-literal arg defaults count 1 only when the arg is omitted at call time; body spans count per-invocation.
+- An explicit `return` closes the probe interval: `BoxReturnTransformer` emits `markEnd` immediately before the `ARETURN` (after loading the return value). Without it, `ARETURN` bypasses the invoker's fall-through `markEnd`, leaving the interval open so the CALLER's next mark charges misattributed time to the callee's return span. The fall-through and return-path `markEnd` are mutually exclusive (a return never reaches fall-through), so the interval is never double-closed.
 
 ---
 

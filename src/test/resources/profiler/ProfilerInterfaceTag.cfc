@@ -1,10 +1,10 @@
 <cfinterface displayname="ProfilerInterfaceTag">
 
-	<cffunction name="bump" returntype="numeric" static="true">
+	<cffunction name="bump" returntype="numeric">
 		<cfreturn 1>
 	</cffunction>
 
-	<cffunction name="display" returntype="string" static="true">
+	<cffunction name="display" returntype="string">
 		<cfset var x = 1 + 2>
 		<cfreturn displayname>
 	</cffunction>

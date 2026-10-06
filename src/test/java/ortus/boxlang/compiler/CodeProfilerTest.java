@@ -2684,7 +2684,77 @@ class CodeProfilerTest {
 		assertThat( CodeProfilerService.lineAt( key, 5 ).count() ).isEqualTo( 1 );
 	}
 
-	@DisplayName( "It registers a local class blueprint and runs static code at class load" )
+	@DisplayName( "It emits a markEnd before the ARETURN of a returning closure/lambda/UDF invoker" )
+	@Test
+	void testReturnPathClosesProbeInterval() throws Exception {
+		// A callee that RETURNS (not fall-through) must close its probe-charging
+		// interval. The invoker methods append a fall-through markEnd, but an
+		// explicit `return` compiles to ARETURN that bypasses it; BoxReturnTransformer
+		// must emit markEnd immediately before that ARETURN, or the open interval
+		// leaks into the caller's next mark (inflating the callee's return span
+		// timing and misattributing the caller's).
+		runtime.getConfiguration().codeProfilerEnabled = true;
+
+		var	boxpiler	= ( ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler ) RunnableLoader.getInstance().getBoxpiler();
+		var	classPath	= java.nio.file.Paths.get( "src/test/resources/profiler/ProfilerFunctionReturn.bxs" ).toAbsolutePath().normalize();
+		var	classInfo	= ortus.boxlang.compiler.ClassInfo.forClass(
+		    ResolvedFilePath.of( classPath ),
+		    ortus.boxlang.compiler.parser.Parser.detectFile( classPath.toFile(), true ),
+		    boxpiler );
+		boxpiler.getClassPool( classInfo.classPoolName() ).put( classInfo.fqn().toString(), classInfo );
+		java.util.List<byte[]>	compiled	= boxpiler.compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
+
+		// Every ARETURN in every method (giving us the UDF/closure/lambda invoker
+		// bodies that can `return`) must be immediately preceded by a
+		// CodeProfilerService.markEnd call.
+		int						returnCount	= 0;
+		int						guarded		= 0;
+		for ( byte[] bytes : compiled ) {
+			if ( bytes.length < 4 || bytes[ 0 ] != ( byte ) 0xCA || bytes[ 1 ] != ( byte ) 0xFE || bytes[ 2 ] != ( byte ) 0xBA
+			    || bytes[ 3 ] != ( byte ) 0xBE ) {
+				continue;
+			}
+			org.objectweb.asm.tree.ClassNode classNode = new org.objectweb.asm.tree.ClassNode();
+			new org.objectweb.asm.ClassReader( bytes ).accept( classNode, 0 );
+			for ( var method : classNode.methods ) {
+				// Only the UDF/closure/lambda INVOKER methods can execute a `return`
+				// statement. Other methods (infrastructure accessors, getters) return
+				// internal objects and do not open a probe interval.
+				if ( !method.name.startsWith( "invokeFunction_" )
+				    && !method.name.startsWith( "invokeClosure_" )
+				    && !method.name.startsWith( "invokeLambda_" ) ) {
+					continue;
+				}
+				for ( var insn = method.instructions.getFirst(); insn != null; insn = insn.getNext() ) {
+					if ( insn.getOpcode() != org.objectweb.asm.Opcodes.ARETURN ) {
+						continue;
+					}
+					returnCount++;
+					// Skip label/line/frame noise to find the meaningful predecessor.
+					var prev = insn.getPrevious();
+					while ( prev instanceof org.objectweb.asm.tree.LabelNode
+					    || prev instanceof org.objectweb.asm.tree.LineNumberNode
+					    || prev instanceof org.objectweb.asm.tree.FrameNode ) {
+						prev = prev.getPrevious();
+					}
+					if ( prev instanceof org.objectweb.asm.tree.MethodInsnNode call
+					    && call.owner.equals( org.objectweb.asm.Type.getInternalName( CodeProfilerService.class ) )
+					    && call.name.equals( "markEnd" ) ) {
+						guarded++;
+					}
+				}
+			}
+		}
+
+		// We must have actually found return opcodes (otherwise the test silently
+		// passes), and EVERY one must be markEnd-guarded.
+		assertThat( returnCount ).isGreaterThan( 0 );
+		assertThat( guarded ).isEqualTo( returnCount );
+
+		// Ensure profiling is restored for subsequent tests.
+		runtime.getConfiguration().codeProfilerEnabled = false;
+	}
+
 	@Test
 	void testLocalClassStaticRunsOnLoad() {
 		String source = """

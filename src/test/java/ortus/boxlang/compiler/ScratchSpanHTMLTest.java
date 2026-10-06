@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -38,6 +39,7 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
  * standalone {@link SpanHTMLRenderer} to write an annotated HTML view for
  * eyeballing span definitions. NOT KEPT AROUND.
  */
+@Disabled( "just for testing" )
 class ScratchSpanHTMLTest {
 
 	private BoxRuntime	runtime;

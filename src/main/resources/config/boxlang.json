@@ -52,8 +52,8 @@
 	// Set to false when the filesystem is read-only, or when JARs never change and locking is
 	// not a concern. When disabled, JARs are loaded directly from their original paths, no temp
 	// copies are made, no cleaner is registered, and no startup temp cleanup runs.
-	// Enable compile-time code instrumentation (span/blueprint emission) in the ASM boxpiler.
 	"jarTempFileCaching": true,
+	// Enable compile-time code instrumentation (span/blueprint emission) in the ASM boxpiler.
 	// When true, the boxpiler detects executable spans, builds a blueprint, and emits
 	// calls so the runtime can record per-span
 	// execution counts + time. When false, no instrumentation is emitted.

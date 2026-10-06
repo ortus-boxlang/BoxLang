@@ -53,6 +53,13 @@ public class BoxReturnTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 
 		if ( !transpiler.canReturn() ) {
+			// Script-level return (no enclosing function/closure/lambda invoker).
+			// The script body appends a fall-through markEnd, but this ARETURN
+			// bypasses it — close the probe interval here so the current span's
+			// self-time is charged and no interval leaks into the caller.
+			if ( transpiler.hasProfilerId() ) {
+				nodes.addAll( transpiler.emitMarkEnd() );
+			}
 			nodes.add( new InsnNode( Opcodes.RETURN ) );
 			if ( returnContext.nullable ) {
 				nodes.add( new InsnNode( Opcodes.ARETURN ) );
@@ -107,6 +114,15 @@ public class BoxReturnTransformer extends AbstractTransformer {
 
 		// load our original value to return
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, varStore.index() ) );
+
+		// Close the probe-charging interval immediately before the ARETURN so the
+		// current span's self-time is charged. A function/closure/lambda/UDF body
+		// appends a fall-through markEnd, but this ARETURN bypasses it; without a
+		// close here, the open interval would be charged to the CALLER's next mark,
+		// inflating this return span's time and misattributing caller time.
+		if ( transpiler.hasProfilerId() ) {
+			nodes.addAll( transpiler.emitMarkEnd() );
+		}
 		nodes.add( new InsnNode( Opcodes.ARETURN ) );
 
 		return AsmHelper.addLineNumberLabels( nodes, node );
