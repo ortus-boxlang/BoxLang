@@ -92,6 +92,34 @@ public class BoxTemplateTest {
 	}
 
 	@Test
+	public void testCustomTagWithNameAttribute() {
+		instance.getConfiguration().customComponentsDirectory.add( "src/test/java/TestCases/components" );
+		instance.executeSource(
+		    """
+		    <bx:savecontent variable="result">
+		          <bx:_greet name="Brad" foo="bar">
+		       </bx:savecontent>
+		       """, context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "Hello, Brad!" );
+
+		instance.executeSource(
+		    """
+		    <bx:savecontent variable="result">
+		          <bx:_greet name="Brad" foo="bar" attributeCollection="#{}#">
+		       </bx:savecontent>
+		       """, context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "Hello, Brad!" );
+
+		instance.executeSource(
+		    """
+		    <bx:savecontent variable="result">
+		          <bx:_greet name="Brad" foo="bar" attributeCollection="#{ name : "Luis" }#">
+		       </bx:savecontent>
+		       """, context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "Hello, Luis!" );
+	}
+
+	@Test
 	public void testIfStatementElse() {
 		instance.executeSource(
 		    """
