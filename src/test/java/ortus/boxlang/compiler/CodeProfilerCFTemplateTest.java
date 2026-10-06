@@ -671,6 +671,30 @@ class CodeProfilerCFTemplateTest {
 		assertThat( CodeProfilerService.lineAt( key, 9 ).count() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It marks the open/close tags of an empty finally (tag)" )
+	@Test
+	void testEmptyFinallyTag() {
+		String source = """
+		                <cftry>
+		                <cfset a = 1>
+		                <cffinally>
+		                </cffinally>
+		                </cftry>
+		                """;
+		runtime.executeSource( source, new ScriptingRequestBoxContext( runtime.getRuntimeContext() ), BoxSourceType.CFTEMPLATE );
+
+		String key = IBoxpiler.MD5( BoxSourceType.CFTEMPLATE.toString() + source );
+
+		// The empty <cffinally> still runs — both its open and close tags must be
+		// covered (regression: previously the whole empty-finally block was absent,
+		// leaving line 3/4 uncovered).
+		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 1 );   // <cffinally>
+		assertThat( CodeProfilerService.spanAt( key, 4, 0 ).stats().count() ).isEqualTo( 1 );   // </cffinally>
+		assertThat( CodeProfilerService.lineAt( key, 3 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 4 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isTrue();                  // a = 1
+	}
+
 	@DisplayName( "It splits a for-in loop into collection and body spans (tag)" )
 	@Test
 	void testForIn() {

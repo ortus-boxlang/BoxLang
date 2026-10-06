@@ -696,6 +696,67 @@ class CodeProfilerTest {
 		assertThat( CodeProfilerService.lineAt( key, 8 ).count() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It marks the braces of an empty finally block when it runs" )
+	@Test
+	void testEmptyFinallyBracesCovered() {
+		String source = """
+		                try {
+		                a = 1;
+		                } catch( any e ) {
+		                c = 3;
+		                } finally {
+		                }
+		                done = 2;
+		                """;
+		runtime.executeSource( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// DEBUG: print every span's actual source chars to confirm coordinates/counts.
+		// System.out.println( "=== testEmptyFinallyBracesCovered dump" );
+		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
+
+		// The empty finally `} finally {` + `}` still EXECUTES, so both brace spans
+		// must exist and be covered (regression: previously the whole empty-finally
+		// block was silently dropped — neither the header nor the closing brace was
+		// registered, leaving line 5/6 uncovered).
+		assertThat( CodeProfilerService.spanAt( key, 5, 2 ).stats().count() ).isEqualTo( 1 );   // finally {
+		assertThat( CodeProfilerService.spanAt( key, 6, 0 ).stats().count() ).isEqualTo( 1 );   // }
+		assertThat( CodeProfilerService.lineAt( key, 5 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 6 ).covered() ).isTrue();
+
+		// The try body ran; the catch did not.
+		assertThat( CodeProfilerService.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 1 );   // a = 1
+		assertThat( CodeProfilerService.spanAt( key, 4, 0 ).stats().count() ).isEqualTo( 0 );   // c = 3 (catch missed)
+		assertThat( CodeProfilerService.spanAt( key, 7, 0 ).stats().count() ).isEqualTo( 1 );   // done = 2
+	}
+
+	@DisplayName( "It marks the braces of an empty finally on the exception-handler path" )
+	@Test
+	void testEmptyFinallyBracesCoveredOnThrow() {
+		String source = """
+		                try {
+		                throw( "boom" );
+		                } finally {
+		                }
+		                done = 2;
+		                """;
+		try {
+			runtime.executeSource( source );
+		} catch ( RuntimeException e ) {
+			// expected — the throw propagates after the empty finally runs
+		}
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// The finally runs via the EXCEPTION-HANDLER bytecode copy when the try
+		// throws; its braces must still be marked (count > 0).
+		assertThat( CodeProfilerService.spanAt( key, 3, 2 ).stats().count() ).isEqualTo( 1 );   // finally {
+		assertThat( CodeProfilerService.lineAt( key, 3 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.lineAt( key, 4 ).covered() ).isTrue();
+		// done = 2 never ran (the throw propagated).
+		assertThat( CodeProfilerService.spanAt( key, 5, 0 ).stats().count() ).isEqualTo( 0 );
+	}
+
 	@DisplayName( "It profiles an assert statement and its message" )
 	@Test
 	void testAssert() {

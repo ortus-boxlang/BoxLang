@@ -1049,21 +1049,25 @@ public class BoxClassTransformer {
 				    .add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), Transpiler.PROFILER_ID_FIELD, Type.getDescriptor( String.class ) ) );
 			}
 
-			// The CLASS SHELL + closing "}" are batch-marked when the class is
-			// LOADED (clinit). Pass A registered the shell group keyed by the first
-			// annotation (or the "class" keyword); emit it at clinit entry.
-			emitClassShellMark( transpiler, clinitNodes, boxClass );
-
-			// Self-register the blueprint on load so a class loaded from disk (not
-			// recompiled in this session — e.g. after a runtime restart) still has
-			// its span map available. This is IDEMPOTENT: if it was already
-			// registered at compile time, the same key is reused. INNER classes are
-			// delegates — they share the OUTER file's blueprint and their marks are
-			// redirected to the outer's codeProfilerId field, so only the outer
-			// emits the registration.
+			// Self-register the blueprint on load FIRST — BEFORE any mark runs — so
+			// a class loaded from disk (not recompiled in this session — e.g. after
+			// a runtime restart) still has its span map available by the time the
+			// shell mark below executes. Without this ordering, the mark would look
+			// up a missing blueprint in the fresh runtime and the class shell would
+			// be permanently reported as missed. This is IDEMPOTENT: if it was
+			// already registered at compile time, the same key is reused. INNER
+			// classes are delegates — they share the OUTER file's blueprint and
+			// their marks are redirected to the outer's codeProfilerId field, so
+			// only the outer emits the registration.
 			if ( !isInnerClassDelegate ) {
 				emitBlueprintRegistration( transpiler, clinitNodes, type, filePath );
 			}
+
+			// The CLASS SHELL + closing "}" are batch-marked when the class is
+			// LOADED (clinit). Pass A registered the shell group keyed by the first
+			// annotation (or the "class" keyword); emit it at clinit entry, AFTER
+			// the blueprint registration above so the mark resolves the blueprint.
+			emitClassShellMark( transpiler, clinitNodes, boxClass );
 
 			if ( isInnerClassDelegate ) {
 				// Inner class: path, sourceType, imports fields are not declared on this class.

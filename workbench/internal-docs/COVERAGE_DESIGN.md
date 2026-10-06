@@ -51,6 +51,8 @@ Only **executable** spans are listed, and each gets an `id` (its index). Non-exe
 ### 5a. Blueprint survival across disk loads (`registerBlueprintFromClinit`)
 A class compiled in a PRIOR session (loaded from the on-disk class store, not recompiled) never calls `registerBlueprintForFile`. To recover its spans, the boxpiler serializes the blueprint INTO the class's `<clinit>` bytecode: a packed space-separated run of flat ints (groups of 5: startLine, startCol, endLine, endCol, executableFlag), chunked into multiple `LDC` string constants so each stays well under the JVM's 65535-byte `CONSTANT_Utf8` limit even for very large files. On first load, `registerBlueprintFromClinit(id, lastModified, String... chunks)` (or its `int[]` overload) reconstructs the blueprint. It is **idempotent per file key**: an existing registration is reused; a NEWER blueprint (the file's `lastModified` is greater — it was recompiled) replaces the stale one so stale span maps don't corrupt fresh runs.
 
+**Ordering invariant in `<clinit>`:** initialize the `codeProfilerId` static field, THEN call `registerBlueprintFromClinit`, and only THEN emit the first `mark` (the class/interface SHELL mark). On a cached class loaded into a fresh runtime the service has NO blueprint until the clinit self-registration runs, so a mark before registration would look up a missing blueprint and permanently report that span as missed. The class transformer (`BoxClassTransformer`) and interface transformer (`BoxInterfaceTransformer`) both follow this order; keep it if adding a new self-registering unit.
+
 ### 5. The runtime is KEY + SPAN-ID based (mark becomes trivial)
 The blueprint registry is keyed by a **String key** (the normalized absolute file path for `FILE` blueprints, or the adhoc source hash for `SOURCE` blueprints). Bytecode passes only that key plus its **span id**, never the positions:
 ```java
@@ -161,6 +163,7 @@ The existing `AsmTranspiler.transform(BoxNode, ...)` is the central emission hoo
 - Nested loops multiply: inner body of a 3× outer × 2× inner loop reports count=6.
 - Zero-iteration loops (false condition / empty collection) report count=0 on the body span.
 - A throwing `finally` body reports count=1 thanks to the snapshot/restore mark fix (see Pass B).
+- An EMPTY `finally {}` still executes (its braces run), so its header + closing brace are executable spans and marked like a non-empty finally — both on the normal and the exception-handler path. (Regression: the empty-finally block used to be silently dropped, leaving its braces absent.)
 - Passing asserts count 1; a failing assert's span counts 0 (the throw preempts its mark).
 - Comparisons (`==`, `<`, etc.) split into left/right spans just like binary ops.
 - Short-circuit `&&`/`||`/Elvis `?:` leave the untaken right operand MISSED (count 0); when the right runs (e.g. elvis with a null left), it counts 1.

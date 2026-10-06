@@ -1799,13 +1799,18 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			this.runningStart = null;
 		}
 
-		// FINALLY: its braces are a group, marked when the finally runs.
-		if ( !node.getFinallyBody().isEmpty() ) {
+		// FINALLY: its braces are a group, marked when the finally runs. This holds
+		// for an EMPTY finally too — `finally {}` still executes its (empty) body
+		// and closing brace, so both must be executable spans, not silently dropped.
+		{
 			Point	finallyClose	= node.getEnd() == null ? null : new Point( node.getEnd().getLine(), node.getEnd().getColumn() - 1 );
 			// The finally header starts at the "finally" keyword (found by scanning
-			// back from the first finally body statement past the preceding "}").
+			// back from the first finally body statement past the preceding "}"; for
+			// an empty finally, scan back from the closing brace instead).
 			Point	firstFinally	= firstPositionedStart( node.getFinallyBody() );
-			Point	finallyKw		= firstFinally == null ? null : findKeywordBraceStart( node, firstFinally, "finally" );
+			Point	finallyKw		= firstFinally == null
+			    ? ( finallyClose == null ? null : findKeywordBefore( node, finallyClose, "finally" ) )
+			    : findKeywordBraceStart( node, firstFinally, "finally" );
 			this.runningStart = finallyKw != null ? finallyKw : ( firstFinally != null ? firstFinally : node.getStart() );
 			int finallyHeader = closeRunningSpan( firstFinally != null ? firstFinally : finallyClose );
 			for ( BoxStatement stmt : node.getFinallyBody() ) {
@@ -1951,8 +1956,9 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		}
 
 		// FINALLY: BOTH the <bx:finally> open and </bx:finally> close tags are
-		// registered and grouped — marked when the finally runs.
-		if ( !node.getFinallyBody().isEmpty() ) {
+		// registered and grouped — marked when the finally runs. Holds for an EMPTY
+		// finally too (the open/close tags still execute).
+		{
 			int finallyHeader = -1;
 			this.runningStart = findFinallyOpenTag( node );
 			if ( !node.getFinallyBody().isEmpty() ) {
@@ -1964,7 +1970,9 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				closeRunningSpan( stmt.getEnd() );
 			}
 			this.runningStart = null;
-			Point finallyEnd = node.getFinallyBody().get( node.getFinallyBody().size() - 1 ).getEnd();
+			Point finallyEnd = node.getFinallyBody().isEmpty()
+			    ? node.getEnd()
+			    : node.getFinallyBody().get( node.getFinallyBody().size() - 1 ).getEnd();
 			registerTagClose( node, finallyEnd, "finally", finallyHeader );
 		}
 	}

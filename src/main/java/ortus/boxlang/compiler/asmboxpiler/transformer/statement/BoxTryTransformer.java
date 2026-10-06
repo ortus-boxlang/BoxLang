@@ -264,12 +264,16 @@ public class BoxTryTransformer extends AbstractTransformer {
 	 * @return the finally keyword point, or null
 	 */
 	private Point finallyKeyword( BoxTry boxTry ) {
-		if ( boxTry.getFinallyBody().isEmpty() || boxTry.getPosition() == null || boxTry.getPosition().getSource() == null ) {
+		if ( boxTry.getPosition() == null || boxTry.getPosition().getSource() == null ) {
 			return null;
 		}
-		Point	first	= boxTry.getFinallyBody().get( 0 ).getStart();
-		String	source	= boxTry.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, first );
+		// For a NON-empty finally, scan back from the first body statement. For an
+		// EMPTY finally (`finally {}`) there is no body statement — fall back to
+		// scanning back from the construct's end (the closing brace) so the finally
+		// braces are still located and marked.
+		Point	scanFrom	= boxTry.getFinallyBody().isEmpty() ? boxTry.getEnd() : boxTry.getFinallyBody().get( 0 ).getStart();
+		String	source		= boxTry.getPosition().getSource().getCode();
+		int		offset		= scanFrom == null ? -1 : offsetOf( source, scanFrom );
 		// Tag-based finally (<bx:finally> / <cffinally>): the open tag is a "<",
 		// and Pass A keyed its span group at that "<". Return the "<" position.
 		for ( int i = offset - 1; i >= 0; i-- ) {
