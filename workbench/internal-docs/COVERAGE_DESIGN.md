@@ -1,18 +1,18 @@
 # BoxLang Code Coverage / Perf-Emission Design
 
-Status: **IMPLEMENTED.** Core span collection (Pass A), mark emission (Pass B), the `CodeProfilerService` runtime, and the branching-span handling are all in place and covered by tests. Remaining work is consumer tooling (TestBox integration, SonarQube export, LSP display) in modules.
+Status: **IMPLEMENTED.** Core span collection (Pass A), mark emission (Pass B), the `CodeProfilerService` runtime, the branching-span handling, tight per-expression spans (including struct-literal per-key/per-value spans and span-group atomic units), and the off-disk-load blueprint path (`registerBlueprintFromClinit`) are all in place and covered by tests. Core captures and serves the data; the JSON / SonarQube export helpers are provided by core for any consumer. Reporters / editors (LSP display, etc.) are orthogonal projects that consume the §2 API.
 
 ## The Feature
 Instrument BoxLang bytecode (ASM boxpiler): at compile time, bake a per-file **blueprint** of every executable **span** into the generated class; at load, register it with the runtime; bytecode calls `mark(spanId)` so the runtime records per-span execution count + time. Data can drive:
-- code coverage reporting (TestBox first integration; model parity with FusionReactor `cflpi`)
+- code coverage reporting (consumed by external test runners; model parity with FusionReactor `cflpi`)
 - perf monitoring (accumulated execution time per span = hot-code finding)
 
 Service: `ortus.boxlang.runtime.services.CodeProfilerService` — an `IService` (extends `BaseService`), registered on `BoxRuntime` like the other services, exposed via `runtime.getCodeProfilerService()`. It exposes a static `mark(...)` that delegates to the singleton instance (so instrumented bytecode has a stable static call target). Flag: `Configuration.codeProfilerEnabled` (default false; zero instrumentation when off). ASM only for now — not concerned about Java boxpiler.
 
 ## Key Decisions/Takeaways
 
-### 1. Core instrumentation, tools in modules
-This is ALL CORE. The instrumentation, the `CodeProfilerService` service, and the data it produces live in core. The TOOLS that consume the data (reporters, LSP display, TestBox integration, SonarQube export) live in MODULES. The service/bytecode contract does NOT need to relocate/decouple for a module later — the module boundary is already at the consumer. Bytecode emits a STATIC call to `CodeProfilerService.mark(...)` — stable target.
+### 1. Core instrumentation, tooling outside core
+This is ALL CORE. The instrumentation, the `CodeProfilerService` service, and the data it produces live in core. The TOOLS that consume the data (reporters, LSP display, coverage generators, SonarQube export) live OUTSIDE core — as external projects or modules that read the §2 API. The service/bytecode contract does NOT need to relocate/decouple for a consumer later — the boundary is already at the consumer. Bytecode emits a STATIC call to `CodeProfilerService.mark(...)` — stable target. JSON / SonarQube export helpers are bundled in core for convenience.
 
 ### 2. Don't reinvent FR buggy-line workarounds
 FR needed a lot of "bugginess overrides" (line 1 comments, closing braces, "no data for file" hacks in `CoverageGenerator.cfc`). We own the compiler, so we should NOT need them. Executable-ness should come from OUR probes, NOT from the `LineNumberTable` — `AsmHelper.translatePosition()` emits LineNumberNodes at both start AND end of nodes, so the line table has phantom "closing brace" lines. Probes (not line table) = source of truth.
@@ -42,7 +42,7 @@ The service must know every EXECUTABLE span and its position — produced at COM
 
 The `Blueprint` carries a `kind` (`FILE | SOURCE`) so generic reporting over all registered blueprints can tell them apart. The boxpiler computes the source hash for adhoc code (same MD5 it uses for `ClassInfo.forScript`); the test reuses that same helper.
 
-`Blueprint` does **not** store the source text — the runtime never re-reads source for coverage (the reporter reads the file/hash itself), so storing it would be wasted memory.
+`Blueprint` does **not** store the source text — the runtime never re-reads source for coverage (the reporter reads the file/hash itself), so storing it would be wasted memory. The `dumpSpans`/`spanSourceText` helpers slice the source from disk/passed text only when a tool asks.
 
 `Blueprint` is **total for the file**:
 - `totalLines` — the file's full line count (incl. trailing blank/comment lines)
@@ -51,15 +51,24 @@ The `Blueprint` carries a `kind` (`FILE | SOURCE`) so generic reporting over all
 
 Only **executable** spans are listed, and each gets an `id` (its index). Non-executable regions are simply absent.
 
-### 5. The runtime is SPAN-ID based (mark becomes trivial)
-Because every executable span is known in the blueprint, bytecode passes only its **span id**, not the positions:
+### 5a. Blueprint survival across disk loads (`registerBlueprintFromClinit`)
+A class compiled in a PRIOR session (loaded from the on-disk class store, not recompiled) never calls `registerBlueprintForFile`. To recover its spans, the boxpiler serializes the blueprint INTO the class's `<clinit>` bytecode: a packed space-separated run of flat ints (groups of 5: startLine, startCol, endLine, endCol, executableFlag), chunked into multiple `LDC` string constants so each stays well under the JVM's 65535-byte `CONSTANT_Utf8` limit even for very large files. On first load, `registerBlueprintFromClinit(id, lastModified, totalLines, String... chunks)` (or its `int[]` overload) reconstructs the blueprint. It is **idempotent per file key**: an existing registration is reused; a NEWER blueprint (the file's `lastModified` is greater — it was recompiled) replaces the stale one so stale span maps don't corrupt fresh runs.
+
+### 5. The runtime is KEY + SPAN-ID based (mark becomes trivial)
+The blueprint registry is keyed by a **String key** (the normalized absolute file path for `FILE` blueprints, or the adhoc source hash for `SOURCE` blueprints). Bytecode passes only that key plus its **span id**, never the positions:
 ```java
-// fileId from registration; spanId indexes the blueprint's executable spans; the
-// service pre-allocated a counter (count + totalNanos) for every executable span.
-public static void mark( int fileId, int spanId )
+// id from registration (returned String key); spanId indexes the blueprint's
+// executable spans; the service pre-allocated a counter (count + totalNanos) for
+// every executable span.
+public static void mark( String id, int spanId )
+// Atomic multi-span unit (function/closure/lambda declaration shell, struct literal
+// key+value pair, closing tail merged with the last value...): one probe interval,
+// all spans counted together, the LAST span owns the next interval.
+public static void mark( String id, int... spanIds )
 ```
-- Hot path: `counters[fileId][spanId].count.incrementAndGet()` — a direct array index. No positions, no `pack()`, no hash, no map lookup.
-- Timing: probe-charging keyed by span id; thread-local `lastSpanId`/`lastNano`.
+- Hot path: a direct `ConcurrentHashMap` keyed by `id` to the `FileBlueprint`, then an array index into its pre-allocated counter array. No positions, no `pack()`, no hash (beyond the map lookup).
+- The key is baked into each instrumented class as a **String static field**; it aligns exactly with the key `registerBlueprintForFile/ForSource` stored the blueprint under.
+- Timing: probe-charging keyed by span id; thread-local `lastSpanId`/`lastFile`/`lastNano`.
 - Correct by construction: `spanId` can never reference a non-executable span or a phantom; a bad id is caught by the id range.
 - Non-executable spans have no id → never marked.
 
@@ -72,8 +81,9 @@ A line's data is derived from the spans that touch it:
 The multi-span line (`foo = bar ? baz : bum`) resolves cleanly: count from the leading span; time/covered from all touching spans.
 
 ### 7. Timing (probe-charging) — no double-count
-Each `mark(spanId)` reads `System.nanoTime()`; the interval since the previous probe on that thread is charged to the span that was "current" (the one that opened the interval). Intervals are strictly disjoint → `sum over line = line total`, no double-count. Condition-eval time lands on the condition span.
-- Tail time: `markEnd(fileId)` is appended at script-body end so the last span's interval is charged (no synthetic entry/exit span needed at script level).
+Each `mark(id, spanId)` reads `System.nanoTime()`; the interval since the previous probe on that thread is charged to the span that was "current" (the one that opened the interval). Intervals are strictly disjoint → `sum over line = line total`, no double-count. Condition-eval time lands on the condition span.
+- Tail time: `markEnd(id)` is appended at each body end (script body, UDF invoker, closure/lambda invoker, class `staticInitializer`/`_pseudoConstructor`) so the last span's interval is charged (no synthetic entry/exit span needed).
+- `resetThreadClock()` clears the current thread's probe state (call after thread-pool reuse so stale deltas aren't charged).
 - Open: on THROW/short-circuit mid-line, the pending interval is charged to whatever span opened it (may never close). Lean: accept & document — throwing isn't hot, misattribution bounded.
 
 ### 8. Branches are just spans
@@ -81,7 +91,7 @@ No statementId/kind needed. An `if`'s condition, each `&&`/`||` operand, each te
 
 ### 9. Perf / data volume
 - DATA VOLUME: non-issue. Blueprint is a few bytes per span; runtime counters are a pre-allocated array (one `long` count + `long` nanos per executable span). No per-execution allocation.
-- RUNTIME: `mark(spanId)` is a single array-index increment — the fastest possible hot path, and constant regardless of line layout.
+- RUNTIME: `mark(id, spanId)` is a map lookup to the file + a single array-index increment — near the fastest possible hot path, and constant regardless of line layout.
 - Real lever remains: when capture is OFF, mark returns immediately (volatile read).
 
 ## Implementation approach — TWO PASSES (collect then emit)
@@ -91,7 +101,7 @@ The ASM boxpiler runs two passes over the AST. This separates *span discovery* (
 ### Pass A — collect spans → build the blueprint
 Walk the AST once and gather every EXECUTABLE region from node positions. Descend into closures, function bodies, ternary operands, `&&`/`||` operands — a statement is NOT assumed to be one span; a ternary/closure/`||` yields multiple spans. Span IDs are assigned in source (visit) order as the running-span walk emits them. Only EXECUTABLE spans are registered as `SpanDef`s; non-executable regions (whitespace, punctuation, braces, comments, trailing lines) are simply ABSENT — the runtime treats any point not inside an executable span as NOT_EXECUTABLE (`spanAt` returns null for it).
 
-The blueprint does NOT store source text. `mark(fileId, spanId)` is the only runtime call.
+The blueprint does NOT store source text. `mark(id, spanId)` is the only runtime call.
 
 ### Pass B — emit marks during transform
 The existing `AsmTranspiler.transform(BoxNode, ...)` is the central emission hook, but it does NOT compute spans — it LOOKS THEM UP:
@@ -146,7 +156,7 @@ The existing `AsmTranspiler.transform(BoxNode, ...)` is the central emission hoo
 - Throw / short-circuit mid-line: the pending nano interval is charged to whatever span opened it (may never close). Accepted & documented — throwing isn't hot, misattribution bounded.
 - ~~`mark(fileId, spanId)` trailing-time~~ **RESOLVED**: `markEnd(fileId)` appended at script-body end closes the final interval.
 - ~~Whether line-aggregate should live in the service~~ **RESOLVED**: service-computed (`lineAt`, `fileLines`).
-- Consumer tooling (TestBox coverage generator, SonarQube exporter, LSP per-expression display) lives in modules and is not yet written.
+- Consumer tooling (coverage generators, SonarQube exporter, LSP per-expression display) lives in external projects / modules; core just captures and serves the data.
 
 ## Implemented behavioral notes (from tests)
 - `spanAt(file, line, col)` at a shared boundary prefers the span that STARTS at that column (e.g. col 34 of `1 : 2` is the start of `2`, not the end of `1 : `). This disambiguation was added after the ternary-boundary test exposed it.
@@ -290,4 +300,4 @@ public static void reset();                        // clear all collected data
 6. **How `mark` binds to a file.** RESOLVED: `mark(fileId, spanId)` — the file is the compact id returned at registration (`registerBlueprintForFile`/`ForSource`).
 
 ## 4. Tool modules (per §1)
-The instrumentation + `CodeProfilerService` + produced data are ALL CORE. Consumer tools (TestBox coverage generator, SonarQube exporter, LSP per-expression display) are MODULES that read the §2 API. Core ships no tooling; it just captures and serves the data.
+The instrumentation + `CodeProfilerService` + produced data are ALL CORE. Consumer tools (coverage generators, SonarQube exporter, LSP per-expression display) are external projects / modules that read the §2 API. Core ships no tooling; it just captures and serves the data.
