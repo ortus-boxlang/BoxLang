@@ -111,7 +111,11 @@ class DatasourceConfigTest {
 		    "custom", Struct.of( "useSSL", false )
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://127.0.0.1:3306/foo?useSSL=false" );
+
+		// The bx-mysql driver appends its own default properties, so assert on the prefix and
+		// the presence of the explicitly-provided custom property rather than the full URL.
+		assertThat( hikariConfig.getJdbcUrl() ).startsWith( "jdbc:mysql://127.0.0.1:3306/foo?" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "useSSL=false" );
 	}
 
 	@DisplayName( "It can load a config with placeholders on a url key" )
@@ -126,7 +130,11 @@ class DatasourceConfigTest {
 		    "custom", Struct.of( "useSSL", false )
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?useSSL=false" );
+
+		// The bx-mysql driver appends its own default properties, so assert on the prefix and
+		// the presence of the explicitly-provided custom property rather than the full URL.
+		assertThat( hikariConfig.getJdbcUrl() ).startsWith( "jdbc:mysql://localhost:3306/foo?" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "useSSL=false" );
 	}
 
 	@DisplayName( "It can load a config with placeholders on a dsn key" )
@@ -140,7 +148,11 @@ class DatasourceConfigTest {
 		    "custom", Struct.of( "useSSL", false )
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?useSSL=false" );
+
+		// The bx-mysql driver appends its own default properties, so assert on the prefix and
+		// the presence of the explicitly-provided custom property rather than the full URL.
+		assertThat( hikariConfig.getJdbcUrl() ).startsWith( "jdbc:mysql://localhost:3306/foo?" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "useSSL=false" );
 	}
 
 	@DisplayName( "It can load a config with nonstandard placeholders on a dsn key" )
@@ -155,7 +167,12 @@ class DatasourceConfigTest {
 		    "custom", Struct.of( "useSSL", false )
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?totalRandomValue=12345&useSSL=false" );
+
+		// The bx-mysql driver appends its own default properties, so assert on the prefix and
+		// the presence of the resolved placeholders and custom property rather than the full URL.
+		assertThat( hikariConfig.getJdbcUrl() ).startsWith( "jdbc:mysql://localhost:3306/foo?" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "totalRandomValue=12345" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "useSSL=false" );
 	}
 
 	@DisplayName( "It performs case-insensitive placeholder replacements" )
@@ -170,7 +187,12 @@ class DatasourceConfigTest {
 		    "custom", Struct.of( "useSSL", false )
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?totalRandomValue=12345&useSSL=false" );
+
+		// The bx-mysql driver appends its own default properties, so assert on the prefix and
+		// the presence of the resolved placeholders and custom property rather than the full URL.
+		assertThat( hikariConfig.getJdbcUrl() ).startsWith( "jdbc:mysql://localhost:3306/foo?" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "totalRandomValue=12345" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "useSSL=false" );
 	}
 
 	@DisplayName( "It can replace the same placeholder more than once" )
@@ -183,7 +205,12 @@ class DatasourceConfigTest {
 		    "database", "foo"
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?someThing=localhost&andAnotherThing=3306" );
+
+		// The bx-mysql driver appends its own default properties, so assert on the prefix and
+		// the presence of the resolved placeholders rather than the full URL.
+		assertThat( hikariConfig.getJdbcUrl() ).startsWith( "jdbc:mysql://localhost:3306/foo?" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "someThing=localhost" );
+		assertThat( hikariConfig.getJdbcUrl() ).contains( "andAnotherThing=3306" );
 	}
 
 	@DisplayName( "It can load config" )

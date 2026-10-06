@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.cache.filters.WildcardFilter;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.jdbc.PendingQuery;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -38,13 +39,16 @@ public class SystemCacheClear extends BIF {
 	 */
 	private static final String[]	VALID_CACHES	= new String[] {
 	    "all",
+	    "applicationdescriptor",
 	    "cfc",
 	    "class",
+	    "classfiles",
 	    "component",
 	    "ct",
 	    "customtag",
 	    "function",
 	    "http",
+	    "methodhandle",
 	    "object",
 	    "page",
 	    "query",
@@ -67,18 +71,25 @@ public class SystemCacheClear extends BIF {
 	/**
 	 * Clears many of the caches in the runtime. By default with no arguments, it will clear all caches.
 	 *
-	 * The following caches can be cleared:
+	 * The <code>cacheName</code> argument accepts one of the following values:
 	 *
 	 * <ul>
 	 * <li><code>all</code> - Clear everything</li>
-	 * <li><code>page</code> - Clear the compiled class pools</li>
+	 * <li><code>applicationdescriptor</code> - Clear the application descriptor cache used for storing parsed application descriptors</li>
+	 * <li><code>cfc</code> - Alias for <code>class</code>; clear the class path resolvers (kept for backwards compatibility)</li>
 	 * <li><code>class</code> - Clear the class path resolvers</li>
-	 * <li><code>template</code> - Clear all the templates cached using the bx:cache component</li>
-	 * <li><code>query</code> - Clears the cache storing queries</li>
-	 * <li><code>object</code> - Clear the default cache region</li>
+	 * <li><code>classfiles</code> - Clear the cached class files on disk</li>
+	 * <li><code>component</code> - Alias for <code>class</code>; clear the class path resolvers</li>
+	 * <li><code>ct</code> - Accepted for backwards compatibility; no cache is currently cleared by this value</li>
+	 * <li><code>customtag</code> - Accepted for backwards compatibility; no cache is currently cleared by this value</li>
+	 * <li><code>function</code> - Accepted for backwards compatibility; no cache is currently cleared by this value</li>
 	 * <li><code>http</code> - Clear all cached HTTP clients</li>
 	 * <li><code>methodhandle</code> - Clear the method handle cache used for dynamic interop calls</li>
-	 * <li><code>applicationdescriptor</code> - Clear the application descriptor cache used for storing parsed application descriptors</li>
+	 * <li><code>object</code> - Clear the default cache region</li>
+	 * <li><code>page</code> - Clear the compiled class pools</li>
+	 * <li><code>query</code> - Clears the cache storing queries</li>
+	 * <li><code>tag</code> - Accepted for backwards compatibility; no cache is currently cleared by this value</li>
+	 * <li><code>template</code> - Clear all the templates cached using the bx:cache component</li>
 	 * </ul>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -124,6 +135,11 @@ public class SystemCacheClear extends BIF {
 		// Specific caches
 		if ( clearAll || cacheName.equals( "object" ) || cacheName.equals( "template" ) ) {
 			runtime.getCacheService().getDefaultCache().clearAll();
+		}
+
+		// Class files cache
+		if ( clearAll || cacheName.equals( "classfiles" ) ) {
+			RunnableLoader.getInstance().getBoxpiler().clearClassFiles();
 		}
 
 		return null;

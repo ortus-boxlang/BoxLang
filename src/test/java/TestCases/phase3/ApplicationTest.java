@@ -19,12 +19,17 @@ package TestCases.phase3;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,14 +40,20 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
+import ortus.boxlang.runtime.application.Session;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
 import ortus.boxlang.runtime.async.watchers.WatcherInstance;
+import ortus.boxlang.runtime.cache.ICacheEntry;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
+import ortus.boxlang.runtime.cache.store.ConcurrentStore;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.context.SessionBoxContext;
+import ortus.boxlang.runtime.events.IInterceptorLambda;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -51,7 +62,9 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.ConfigSecretUtil;
+import ortus.boxlang.runtime.util.conversion.RuntimeObjectInputStream;
 
 public class ApplicationTest {
 
@@ -506,6 +519,102 @@ public class ApplicationTest {
 		assertThat( variables.get( Key.of( "firstSessionID" ) ) ).isEqualTo( variables.get( Key.of( "secondSessionID" ) ) );
 	}
 
+	@DisplayName( "An application update keeps the request's session when the sessions cache serializes entries" )
+	@Test
+	public void testUpdateApplicationKeepsSessionWithSerializingCache() {
+		AtomicInteger		sessionStarts	= new AtomicInteger();
+		IInterceptorLambda	counter			= data -> {
+												sessionStarts.incrementAndGet();
+												return false;
+											};
+		DynamicObject		interceptor		= DynamicObject.of( counter );
+		instance.getInterceptorService().register( interceptor, Key.onSessionStart );
+		try {
+			// @formatter:off
+			instance.executeSource(
+			    """
+			        bx:application
+						name="testUpdateApplicationKeepsSessionWithSerializingCache"
+						sessionmanagement="true"
+						caches = {
+							serializingSessions = {
+								provider : "BoxCacheProvider",
+								properties : { objectStore : "TestCases.phase3.ApplicationTest$SerializingStore" }
+							}
+						}
+						sessionStorage="serializingSessions";
+
+					session.writtenBeforeUpdate = true;
+
+					bx:application
+						action   ="update"
+						mappings ={ "/UpdateApplicationKeepsSession" : "/src/test/resources/libs/" };
+
+					result = session.keyExists( "writtenBeforeUpdate" );
+				""", context );
+			// @formatter:on
+
+			assertThat( variables.getAsBoolean( result ) ).isTrue();
+			assertThat( sessionStarts.get() ).isEqualTo( 1 );
+		} finally {
+			instance.getInterceptorService().unregister( interceptor, Key.onSessionStart );
+		}
+	}
+
+	@DisplayName( "An application update replaces a session that has ended" )
+	@Test
+	public void testUpdateApplicationReplacesEndedSession() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        bx:application
+					name="testUpdateApplicationReplacesEndedSession"
+					sessionmanagement="true";
+			""", context );
+		// @formatter:on
+		Session ended = context.getParentOfType( SessionBoxContext.class ).getSession();
+		ended.shutdown( context.getRequestContext().getApplicationListener() );
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+				bx:application
+					action   ="update"
+					mappings ={ "/UpdateApplicationReplacesEndedSession" : "/src/test/resources/libs/" };
+
+				session.writtenAfterUpdate = true;
+			""", context );
+		// @formatter:on
+
+		Session current = context.getParentOfType( SessionBoxContext.class ).getSession();
+		assertThat( current ).isNotSameInstanceAs( ended );
+		assertThat( current.isShutdown() ).isFalse();
+		assertThat( current.getSessionScope().containsKey( Key.of( "writtenAfterUpdate" ) ) ).isTrue();
+	}
+
+	@DisplayName( "Switching the application name moves the request to that application's session" )
+	@Test
+	public void testSwitchingApplicationNameSwapsSession() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        bx:application
+					name="testSwitchingApplicationNameSwapsSessionA"
+					sessionmanagement="true";
+
+				session.fromFirstApp = true;
+
+				bx:application
+					name="testSwitchingApplicationNameSwapsSessionB"
+					sessionmanagement="true";
+
+				result = session.keyExists( "fromFirstApp" );
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.getAsBoolean( result ) ).isFalse();
+	}
+
 	@DisplayName( "Create this.caches for an application" )
 	@Test
 	public void testCreateCaches() {
@@ -754,6 +863,38 @@ public class ApplicationTest {
 		assertThat( variables.getAsStruct( result ).get( "name" ) ).isEqualTo( "myAppWithAltCache" );
 		assertThat( variables.getAsStruct( result ).get( "sessionmanagement" ).toString() ).isEqualTo( "true" );
 		assertThat( variables.getAsStruct( result ).get( "sessionStorage" ).toString() ).isEqualTo( "sessionCache" );
+	}
+
+	/**
+	 * A sessions cache store that keeps a serialized snapshot and hands back a fresh copy on every read, as Redis or
+	 * JDBC storage does, without using file names (session cache keys contain ':', which Windows rejects)
+	 */
+	public static class SerializingStore extends ConcurrentStore {
+
+		@Override
+		public void set( Key key, ICacheEntry entry ) {
+			super.set( key, copy( entry ) );
+		}
+
+		@Override
+		public ICacheEntry getQuiet( Key key ) {
+			ICacheEntry entry = super.getQuiet( key );
+			return entry == null ? null : copy( entry );
+		}
+
+		private static ICacheEntry copy( ICacheEntry entry ) {
+			try {
+				ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+				try ( ObjectOutputStream out = new ObjectOutputStream( bytes ) ) {
+					out.writeObject( entry );
+				}
+				try ( RuntimeObjectInputStream in = new RuntimeObjectInputStream( new ByteArrayInputStream( bytes.toByteArray() ) ) ) {
+					return ( ICacheEntry ) in.readObject();
+				}
+			} catch ( IOException | ClassNotFoundException e ) {
+				throw new BoxRuntimeException( "Could not copy the cache entry", e );
+			}
+		}
 	}
 
 }

@@ -19,8 +19,6 @@ package ortus.boxlang.runtime.dynamic.casters;
 
 import java.math.BigDecimal;
 
-import org.apache.commons.lang3.math.NumberUtils;
-
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
@@ -121,28 +119,7 @@ public class DoubleCaster implements IBoxCaster {
 			return null;
 		}
 		value = value.trim();
-		// Strip leading zeros so NumberUtils.isCreatable() doesn't treat them as octal
-		String	checkValue	= value;
-		int		start		= 0;
-		int		len			= checkValue.length();
-		// Skip past optional sign
-		if ( len > 0 && ( checkValue.charAt( 0 ) == '+' || checkValue.charAt( 0 ) == '-' ) ) {
-			start = 1;
-		}
-		// Find first non-zero digit after sign
-		while ( start < len - 1 && checkValue.charAt( start ) == '0' && checkValue.charAt( start + 1 ) != '.' ) {
-			start++;
-		}
-		if ( start > 0 ) {
-			// Preserve original sign if present
-			char first = value.charAt( 0 );
-			if ( first == '+' || first == '-' ) {
-				checkValue = first + checkValue.substring( start );
-			} else {
-				checkValue = checkValue.substring( start );
-			}
-		}
-		if ( NumberUtils.isCreatable( checkValue ) ) {
+		if ( CasterNumberUtil.isCreatableIgnoringLeadingZeros( value ) ) {
 			try {
 				return Double.parseDouble( value );
 			} catch ( Exception e ) {

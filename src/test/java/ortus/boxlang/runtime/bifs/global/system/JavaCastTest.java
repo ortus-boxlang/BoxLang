@@ -261,9 +261,24 @@ public class JavaCastTest {
 		instance.executeSource(
 		    """
 		    result = javaCast('bigdecimal', '3.14159265359');
+		    result2 = javaCast('bigdecimal', '099');
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( new java.math.BigDecimal( "3.14159265359", MathUtil.getMathContext() ) );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( new java.math.BigDecimal( "099", MathUtil.getMathContext() ) );
+	}
+
+	@DisplayName( "It casts to string to biginteger" )
+	@Test
+	public void testItCastsStringToBigInteger() {
+		instance.executeSource(
+		    """
+		    result = javaCast('biginteger', '42');
+		    result2 = javaCast('biginteger', '099');
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( new java.math.BigInteger( "42" ) );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( new java.math.BigInteger( "099" ) );
 	}
 
 	@DisplayName( "It can casts to a char" )

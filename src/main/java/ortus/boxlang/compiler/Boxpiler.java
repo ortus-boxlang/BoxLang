@@ -110,12 +110,24 @@ public abstract class Boxpiler implements IBoxpiler {
 		this.classGenerationDirectory.toFile().mkdirs();
 
 		// If we are in debug mode, let's clean out the class generation directory
-		if ( this.runtime.getConfiguration().clearClassFilesOnStartup && Files.exists( this.classGenerationDirectory ) ) {
+		if ( this.runtime.getConfiguration().clearClassFilesOnStartup ) {
+			clearClassFiles();
+		}
+	}
+
+	/**
+	 * Wipe all compiled class files from the class generation directory. Any cached
+	 * bytecode on disk is removed so the next compile happens fresh.
+	 */
+	public void clearClassFiles() {
+		if ( Files.exists( this.classGenerationDirectory ) ) {
 			try {
-				logger.debug( "Running with [clearClassFilesOnStartup], cleaning out class generation directory: " + classGenerationDirectory );
+				logger.debug( "Cleaning out class generation directory: " + classGenerationDirectory );
 				FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
 			} catch ( IOException e ) {
-				throw new BoxRuntimeException( "Error cleaning out class generation directory on first run", e );
+				// A file may be locked by another process (e.g. a class writer writing a
+				// .tmp) — best-effort clean; never fail compilation over it.
+				logger.warn( "Failed to clean class generation directory: " + e.getMessage() );
 			}
 		}
 	}

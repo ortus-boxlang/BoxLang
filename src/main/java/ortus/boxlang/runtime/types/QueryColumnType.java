@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.types;
 import java.sql.Types;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.BigIntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.BinaryCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -322,7 +323,7 @@ public enum QueryColumnType {
 				case QueryColumnType.INTEGER -> IntegerCaster.cast( true, value );
 				case QueryColumnType.BIGINT -> BigIntegerCaster.cast( value );
 				case QueryColumnType.DOUBLE -> DoubleCaster.cast( value );
-				case QueryColumnType.DECIMAL -> DoubleCaster.cast( value );
+				case QueryColumnType.DECIMAL -> BigDecimalCaster.cast( value );
 				case QueryColumnType.CHAR, VARCHAR -> StringCaster.cast( value );
 				case QueryColumnType.BINARY -> value; // @TODO: Will this work?
 				case QueryColumnType.BLOB -> {

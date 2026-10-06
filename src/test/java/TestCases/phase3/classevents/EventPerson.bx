@@ -1,0 +1,12 @@
+class accessors="true" {
+
+	property name="name";
+	property name="age";
+
+	function init( name = "", age = 0 ) {
+		variables.name = arguments.name;
+		variables.age  = arguments.age;
+		return this;
+	}
+
+}

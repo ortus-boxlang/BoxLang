@@ -1,0 +1,7 @@
+class {
+
+	function init() {
+		throw( message = "init failed" );
+	}
+
+}
