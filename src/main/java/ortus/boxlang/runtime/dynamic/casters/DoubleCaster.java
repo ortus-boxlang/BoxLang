@@ -91,10 +91,12 @@ public class DoubleCaster implements IBoxCaster {
 			}
 		}
 		// Try to parse the string as a double
-		String	stringValue	= StringCaster.cast( object, false );
-		Double	result		= parseDouble( stringValue );
-		if ( result != null ) {
-			return result;
+		String stringValue = StringCaster.cast( object, false );
+		if ( stringValue != null ) {
+			Double result = parseDouble( stringValue );
+			if ( result != null ) {
+				return result;
+			}
 		}
 
 		// Verify if we can throw an exception
@@ -115,9 +117,6 @@ public class DoubleCaster implements IBoxCaster {
 	 *         null, floats, alpha characters, etc.
 	 */
 	private static Double parseDouble( String value ) {
-		if ( value == null ) {
-			return null;
-		}
 		value = value.trim();
 		if ( CasterNumberUtil.isCreatableIgnoringLeadingZeros( value ) ) {
 			try {
