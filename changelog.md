@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- [BL-2707](https://ortussolutions.atlassian.net/browse/BL-2707) - `INSERT/UPDATE/DELETE ... RETURNING` returned an empty query on PostgreSQL because pgjdbc hands the RETURNING rows of a single statement back as generated keys; they are now exposed as the query result while `generatedKey`/`generatedKeys` keep working
+
 ## [1.18.0] - 2026-10-02
 
 - <https://boxlang.ortusbooks.com/readme/release-history/1.18.0>
