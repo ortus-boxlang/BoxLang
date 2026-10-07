@@ -189,10 +189,10 @@ public class CFTranspilerTemplateFunctionTest {
 		                                     	<cfsavecontent variable="out">
 		                                     		<cfoutput>#title#:</cfoutput>
 		                                     		<cfloop array="#items#" item="i">
-		                                     			<cfif i EQ 1>
-		                                     				<cfoutput>(#i#)</cfoutput>
-		                                     			<cfelse>
+		                                     			<cfif i GT 1>
 		                                     				<cfoutput>[#i#]</cfoutput>
+		                                     			<cfelse>
+		                                     				<cfoutput>(#i#)</cfoutput>
 		                                     			</cfif>
 		                                     			<cfset total += i>
 		                                     		</cfloop>
@@ -221,5 +221,44 @@ public class CFTranspilerTemplateFunctionTest {
 		                                <cfoutput>Hello #greet( "x" )#</cfoutput>
 		                                """ );
 		assertThat( execute( bxm ) ).isEqualTo( "Hello hi x" );
+	}
+
+	/**
+	 * Greater-than comparisons in a tag condition must not print a bare {@code >}, which would end the tag early.
+	 *
+	 * @throws IOException if the temp files cannot be written or read
+	 */
+	@DisplayName( "It keeps GT and GTE comparisons inside a tag condition" )
+	@Test
+	public void testGreaterThanInTagCondition() throws IOException {
+		Path bxm = transpile( "gt", """
+		                            <cfset i = 2>
+		                            <cfif i GT 1><cfoutput>gt</cfoutput><cfelse><cfoutput>not-gt</cfoutput></cfif>
+		                            <cfif i GTE 2><cfoutput>gte</cfoutput><cfelse><cfoutput>not-gte</cfoutput></cfif>
+		                            <cfif i GT 1 AND i LT 3><cfoutput>both</cfoutput><cfelse><cfoutput>not-both</cfoutput></cfif>
+		                            <cfif i GT 5><cfoutput>big</cfoutput><cfelseif i GTE 2><cfoutput>elseif-gte</cfoutput></cfif>
+		                            <cfset big = i GT 1>
+		                            <cfoutput>#big#</cfoutput>
+		                            """ );
+		assertThat( Files.readString( bxm ) ).doesNotContain( "<bx:if i >" );
+		assertThat( execute( bxm ) ).isEqualTo( "gt gte both elseif-gte true" );
+	}
+
+	/**
+	 * Greater-than comparisons inside a tag-form function body must survive and execute.
+	 *
+	 * @throws IOException if the temp files cannot be written or read
+	 */
+	@DisplayName( "It keeps GT inside a function body" )
+	@Test
+	public void testGreaterThanInFunction() throws IOException {
+		Path bxm = transpile( "gtfn", """
+		                              <cfoutput>#size( 5 )#|#size( 1 )#</cfoutput>
+		                              <cffunction name="size" output="false">
+		                              	<cfargument name="n">
+		                              	<cfif n GTE 3><cfreturn "big"><cfelse><cfreturn "small"></cfif>
+		                              </cffunction>
+		                              """ );
+		assertThat( execute( bxm ) ).isEqualTo( "big|small" );
 	}
 }
