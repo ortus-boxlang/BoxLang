@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.compiler.prettyprint;
 
+import java.util.Set;
+
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -25,7 +27,12 @@ import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 
 public class ComponentPrinter {
 
-	private Visitor visitor;
+	/**
+	 * Components BoxLang script accepts without the component prefix (grammar keywords).
+	 */
+	private static final Set<String>	BARE_SCRIPT_COMPONENTS	= Set.of( "include", "lock", "param", "thread", "transaction", "abort", "exit" );
+
+	private Visitor						visitor;
 
 	public ComponentPrinter( Visitor visitor ) {
 		this.visitor = visitor;
@@ -115,13 +122,15 @@ public class ComponentPrinter {
 	}
 
 	private void printScriptComponentName( BoxComponent node ) {
-		// Use the component prefix only when the original source used it.
+		// Use the component prefix when the original source used it, or when the component is not a bare keyword.
 		// "include" can appear both as a bare keyword (`include template="..."`) and as
 		// a prefixed component (`bx:include template="..."`), so we check the source
-		// text rather than always applying the visitor prefix.
+		// text for the bare keywords. CFML script has no prefix at all (`savecontent ...`),
+		// but BoxLang script requires it for everything that is not a keyword.
 		String	sourceText	= node.getSourceText();
 		boolean	hadPrefix	= sourceText != null && sourceText.toLowerCase().startsWith( visitor.componentPrefix.toLowerCase() );
-		if ( hadPrefix ) {
+		boolean	needsPrefix	= !BARE_SCRIPT_COMPONENTS.contains( node.getName().toLowerCase() );
+		if ( hadPrefix || needsPrefix ) {
 			visitor.print( visitor.componentPrefix );
 		}
 		visitor.print( node.getName() );
