@@ -131,8 +131,9 @@ public class CodeProfilerService extends BaseService {
 	 * span on this thread to the span that was current (probe-charging).
 	 * <p>
 	 * The ONLY method instrumented bytecode calls for a single span. Direct array
-	 * increment, no positions, no map lookup, no allocation. Returns immediately
-	 * when inactive.
+	 * increment, no positions, no map lookup, NO ALLOCATION (it does not build an
+	 * {@code int[]} to hand to the varargs form — the single-span logic is inline).
+	 * Returns immediately when inactive.
 	 *
 	 * @param id     the blueprint KEY — the normalized file path, or the source
 	 *               hash when there is no file. This is the SAME key that
@@ -143,26 +144,8 @@ public class CodeProfilerService extends BaseService {
 	 *               (0-based; indexes the blueprint's executable span array)
 	 */
 	public static void mark( String id, int spanId ) {
-		mark( id, new int[] { spanId } );
-	}
-
-	/**
-	 * Record that SEVERAL spans executed atomically — used for an all-or-nothing
-	 * unit (e.g. a function/closure/lambda declaration shell). The whole unit
-	 * either runs or does not, so it must open exactly ONE probe-charging interval
-	 * and increment all its spans' counts together, with the LAST span owning the
-	 * next interval (so a following mark charges the tail to the shell's end).
-	 * <p>
-	 * This is several {@code mark( id, spanId )} calls collapsed into one
-	 * bytecode invocation — same semantics, one call instead of N.
-	 *
-	 * @param id      the blueprint KEY (normalized file path or source hash)
-	 * @param spanIds the ids of all spans covered by this atomic unit, in source
-	 *                order; the last becomes the current span for the next interval
-	 */
-	public static void mark( String id, int... spanIds ) {
 		CodeProfilerService service = instance;
-		if ( service == null || !service.active || spanIds.length == 0 ) {
+		if ( service == null || !service.active ) {
 			return;
 		}
 
@@ -183,23 +166,43 @@ public class CodeProfilerService extends BaseService {
 
 		service.lastNano.set( now );
 
-		// The current (last) span now owns the next interval. The blueprint is
-		// located by its KEY (id) — the path or source hash.
+		// The CURRENT span owns the next interval. The blueprint is located by its
+		// KEY (id) — the path or source hash.
 		FileBlueprint fb = service.byPath.get( id );
 		if ( fb == null ) {
 			return;
 		}
 		service.lastFile.set( fb );
 
-		int	lastId	= spanIds[ spanIds.length - 1 ];
-		int	count	= spanIds.length;
-		for ( int i = 0; i < count; i++ ) {
-			SpanStats stats = fb.spanStats( spanIds[ i ] );
-			if ( stats != null ) {
-				stats.incrementCount();
-			}
+		SpanStats stats = fb.spanStats( spanId );
+		if ( stats != null ) {
+			stats.incrementCount();
 		}
-		service.lastSpanId.set( lastId );
+		service.lastSpanId.set( spanId );
+	}
+
+	/**
+	 * Record that SEVERAL spans executed atomically — used for an all-or-nothing
+	 * unit (e.g. a function/closure/lambda declaration shell). The whole unit
+	 * either runs or does not.
+	 * <p>
+	 * Implemented as a loop of individual {@link #mark(String, int)} calls — each
+	 * span is charged/incremented independently, and the LAST span ends up owning
+	 * the next probe-charging interval, so a following mark still charges the tail
+	 * to the shell's end.
+	 *
+	 * @param id      the blueprint KEY (normalized file path or source hash)
+	 * @param spanIds the ids of all spans covered by this atomic unit, in source
+	 *                order; the last becomes the current span for the next interval
+	 */
+	public static void mark( String id, int... spanIds ) {
+		CodeProfilerService service = instance;
+		if ( service == null || !service.active || spanIds.length == 0 ) {
+			return;
+		}
+		for ( int spanId : spanIds ) {
+			mark( id, spanId );
+		}
 	}
 
 	/**
@@ -325,13 +328,14 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @param id           the blueprint KEY (file path, or source hash for adhoc)
 	 * @param lastModified the source file's last-modified time (0 for adhoc source)
+	 * @param kind         the blueprint kind (FILE or SOURCE)
 	 * @param spanData     flat int[] describing every span: groups of 5 ints
 	 *                     (startLine, startCol, endLine, endCol, executableFlag)
 	 *
 	 * @return the id to use for {@link #mark}; empty if no instance
 	 */
-	public static String registerBlueprintFromClinit( String id, long lastModified, int[] spanData ) {
-		return registerBlueprintFromClinitInternal( id, lastModified, spanData );
+	public static String registerBlueprintFromClinit( String id, long lastModified, Blueprint.Kind kind, int[] spanData ) {
+		return registerBlueprintFromClinitInternal( id, lastModified, kind, spanData );
 	}
 
 	/**
@@ -351,16 +355,17 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @param id             the blueprint KEY (file path, or source hash for adhoc)
 	 * @param lastModified   the source file's last-modified time (0 for adhoc source)
+	 * @param kind           the blueprint kind (FILE or SOURCE)
 	 * @param spanDataChunks packed span data as space-separated ints, in order
 	 *
 	 * @return the id to use for {@link #mark}; empty if no instance
 	 */
-	public static String registerBlueprintFromClinit( String id, long lastModified, String... spanDataChunks ) {
+	public static String registerBlueprintFromClinit( String id, long lastModified, Blueprint.Kind kind, String... spanDataChunks ) {
 		if ( instance == null ) {
 			return "";
 		}
 		int[] spanData = parseSpanDataChunks( spanDataChunks );
-		return registerBlueprintFromClinitInternal( id, lastModified, spanData );
+		return registerBlueprintFromClinitInternal( id, lastModified, kind, spanData );
 	}
 
 	/**
@@ -392,7 +397,7 @@ public class CodeProfilerService extends BaseService {
 		return result;
 	}
 
-	private static String registerBlueprintFromClinitInternal( String id, long lastModified, int[] spanData ) {
+	private static String registerBlueprintFromClinitInternal( String id, long lastModified, Blueprint.Kind kind, int[] spanData ) {
 		CodeProfilerService service = instance;
 		if ( service == null ) {
 			return "";
@@ -403,8 +408,11 @@ public class CodeProfilerService extends BaseService {
 			    spanData[ i ], spanData[ i + 1 ], spanData[ i + 2 ], spanData[ i + 3 ],
 			    spanData[ i + 4 ] == 1 ) );
 		}
-		String			key			= normalize( id );
-		Blueprint		blueprint	= new Blueprint( spanDefs, Blueprint.Kind.FILE, lastModified );
+		// Only FILE ids are filesystem paths that get normalized. SOURCE ids are
+		// adhoc source hashes and must be keyed verbatim, or the self-registration
+		// would mint a bogus <cwd>/<hash> FILE entry while marks keep the original.
+		String			key			= kind == Blueprint.Kind.SOURCE ? id : normalize( id );
+		Blueprint		blueprint	= new Blueprint( spanDefs, kind, lastModified );
 
 		FileBlueprint	existing	= service.byPath.get( key );
 		if ( existing != null ) {

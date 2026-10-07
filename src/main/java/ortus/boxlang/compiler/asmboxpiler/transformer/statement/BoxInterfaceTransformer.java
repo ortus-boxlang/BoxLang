@@ -450,7 +450,7 @@ public class BoxInterfaceTransformer {
 				List<ortus.boxlang.runtime.services.Blueprint.SpanDef> interfaceSpanDefs = transpiler.getSpanDefs();
 				if ( interfaceSpanDefs != null && !interfaceSpanDefs.isEmpty() ) {
 					List<AbstractInsnNode> regNodes = AsmHelper.emitBlueprintRegistrationNodes(
-					    transpiler.getFileId(), transpiler.getLastModified(), interfaceSpanDefs );
+					    transpiler.getFileId(), transpiler.getLastModified(), transpiler.getBlueprintKind(), interfaceSpanDefs );
 					for ( AbstractInsnNode n : regNodes ) {
 						n.accept( methodVisitor );
 					}

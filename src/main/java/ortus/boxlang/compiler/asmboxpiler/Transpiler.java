@@ -294,6 +294,31 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	/**
+	 * The blueprint kind for this compilation (FILE path vs SOURCE hash). Carried
+	 * onto the class's {@code <clinit>} self-registration so a SOURCE blueprint
+	 * reloaded from disk is NOT re-registered as a bogus FILE path.
+	 */
+	private Blueprint.Kind blueprintKind = Blueprint.Kind.FILE;
+
+	/**
+	 * Store the blueprint kind for embedding into {@code <clinit>}.
+	 *
+	 * @param kind the blueprint kind (FILE or SOURCE)
+	 */
+	public void setBlueprintKind( Blueprint.Kind kind ) {
+		this.blueprintKind = kind != null ? kind : Blueprint.Kind.FILE;
+	}
+
+	/**
+	 * The blueprint kind to embed with the self-registration.
+	 *
+	 * @return the blueprint kind
+	 */
+	public Blueprint.Kind getBlueprintKind() {
+		return this.blueprintKind;
+	}
+
+	/**
 	 * Register a source span (by its packed start position) for this compilation.
 	 * Assigns the next sequential span id.
 	 *

@@ -27,6 +27,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -51,6 +52,8 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
  * CF-only differences: no {@code assert} statement, no inline classes
  * (CF uses {@code component}), no skinny-arrow lambdas ({@code ->}).
  */
+// Profiling instrumentation is ASM-boxpiler-specific; skip under the Java boxpiler.
+@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 class CodeProfilerCFScriptTest {
 
 	private BoxRuntime	runtime;

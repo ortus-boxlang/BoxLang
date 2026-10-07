@@ -1494,7 +1494,7 @@ public class BoxClassTransformer {
 		// never subdivide it, causing MethodTooLargeException on big files.
 		String id = transpiler.getFileId();
 		clinitNodes.addAll( AsmHelper.emitBlueprintRegistrationNodes(
-		    id, transpiler.getLastModified(), spanDefs ) );
+		    id, transpiler.getLastModified(), transpiler.getBlueprintKind(), spanDefs ) );
 	}
 
 	/**

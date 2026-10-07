@@ -66,6 +66,7 @@ import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.Blueprint;
 import ortus.boxlang.runtime.services.CodeProfilerService;
 import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Argument;
@@ -189,11 +190,13 @@ public class AsmHelper {
 	 *
 	 * @param id           the blueprint KEY (path string or source hash)
 	 * @param lastModified the source file's last-modified time
+	 * @param kind         the blueprint kind (FILE or SOURCE) — SOURCE ids are
+	 *                     hashes that must NOT be normalized as paths
 	 * @param spanDefs     the spans to serialize (5 ints each: line/col/line/col/flag)
 	 *
 	 * @return the instructions for the registration call
 	 */
-	public static List<AbstractInsnNode> emitBlueprintRegistrationNodes( String id, long lastModified,
+	public static List<AbstractInsnNode> emitBlueprintRegistrationNodes( String id, long lastModified, Blueprint.Kind kind,
 	    List<ortus.boxlang.runtime.services.Blueprint.SpanDef> spanDefs ) {
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 
@@ -224,6 +227,12 @@ public class AsmHelper {
 
 		nodes.add( new LdcInsnNode( id ) );
 		nodes.add( new LdcInsnNode( lastModified ) );
+		// The blueprint kind as a GETSTATIC enum constant (stable, typed — not a
+		// fragile ordinal or string).
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    Type.getInternalName( Blueprint.Kind.class ),
+		    kind.name(),
+		    Type.getDescriptor( Blueprint.Kind.class ) ) );
 		// Build String[] chunks: ANEWARRAY, DUP index LDC AASTORE per chunk.
 		nodes.add( new LdcInsnNode( chunks.size() ) );
 		nodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, Type.getInternalName( String.class ) ) );
@@ -241,7 +250,8 @@ public class AsmHelper {
 		        Type.getType( String.class ),                       // return: id
 		        Type.getType( String.class ),                       // arg1: id
 		        Type.LONG_TYPE,                                     // arg2: lastModified
-		        Type.getType( String[].class ) ),                   // arg3: spanDataChunks
+		        Type.getType( Blueprint.Kind.class ),               // arg3: kind
+		        Type.getType( String[].class ) ),                   // arg4: spanDataChunks
 		    false
 		) );
 		nodes.add( new InsnNode( Opcodes.POP ) ); // discard the returned id

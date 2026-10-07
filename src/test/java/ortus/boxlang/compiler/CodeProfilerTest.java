@@ -30,6 +30,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -49,6 +50,10 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
  * This differs from the service-only {@code CodeProfilerServiceTest}: here we go
  * source -> boxpiler spans -> mark emission -> recorded coverage through the runtime.
  */
+// These tests compile + inspect bytecode emitted by the ASM boxpiler (mark/
+// markEnd instructions, clinit self-registration). They only apply when the
+// ASM boxpiler is the active compiler.
+@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 class CodeProfilerTest {
 
 	private BoxRuntime	runtime;
@@ -3664,7 +3669,7 @@ class CodeProfilerTest {
 		String	filePath	= "C:/opt/test/SomeComponent.cfc";
 
 		// First registration — two spans, lastModified 1000.
-		String	firstId		= CodeProfilerService.registerBlueprintFromClinit( filePath, 1000L,
+		String	firstId		= CodeProfilerService.registerBlueprintFromClinit( filePath, 1000L, Blueprint.Kind.FILE,
 		    new int[] {
 		        1, 0, 1, 10, 1,
 		        2, 0, 2, 8, 1
@@ -3674,7 +3679,7 @@ class CodeProfilerTest {
 		assertThat( firstId ).isEqualTo( normPath );
 
 		// Idempotent: same key re-registered with the SAME lastModified -> SAME id.
-		String againId = CodeProfilerService.registerBlueprintFromClinit( filePath, 1000L,
+		String againId = CodeProfilerService.registerBlueprintFromClinit( filePath, 1000L, Blueprint.Kind.FILE,
 		    new int[] {
 		        1, 0, 1, 10, 1,
 		        2, 0, 2, 8, 1
@@ -3688,7 +3693,7 @@ class CodeProfilerTest {
 		assertThat( bp.lastModified() ).isEqualTo( 1000L );
 
 		// Newer lastModified (file changed + recompiled) -> SAME id, spans REPLACED.
-		String newerId = CodeProfilerService.registerBlueprintFromClinit( filePath, 2000L,
+		String newerId = CodeProfilerService.registerBlueprintFromClinit( filePath, 2000L, Blueprint.Kind.FILE,
 		    new int[] {
 		        1, 0, 1, 12, 1,
 		        2, 0, 2, 10, 1,
@@ -3703,6 +3708,31 @@ class CodeProfilerTest {
 		// The spans' counters are fresh (all zero) after replacement.
 		assertThat( CodeProfilerService.spanAt( normPath, 1, 0 ).stats().count() ).isEqualTo( 0 );
 		assertThat( CodeProfilerService.spanAt( normPath, 3, 0 ).stats().count() ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It preserves the SOURCE kind without path-normalizing the id on clinit self-registration" )
+	@Test
+	void testClinitSourceBlueprintKeepsHashKey() {
+		// A SOURCE self-registration (adhoc source) must key the blueprint by the
+		// source-hash VERBATIM and keep kind=SOURCE. Regression: the clinit path
+		// used to normalize every id as a filesystem path and force kind=FILE,
+		// minting a bogus <cwd>/<hash> FILE entry while marks hit the hash key.
+		String	sourceHash	= "0123456789abcdef0123456789abcdef";
+		String	firstId		= CodeProfilerService.registerBlueprintFromClinit( sourceHash, 0L, Blueprint.Kind.SOURCE,
+		    new int[] {
+		        1, 0, 1, 10, 1
+		    } );
+
+		// The id is returned UNCHANGED (a hash is not a path to normalize).
+		assertThat( firstId ).isEqualTo( sourceHash );
+
+		var bp = CodeProfilerService.trackedBlueprints().get( sourceHash );
+		assertThat( bp ).isNotNull();
+		assertThat( bp.kind() ).isEqualTo( Blueprint.Kind.SOURCE );
+		// No bogus FILE entry was minted under a normalized path of the hash.
+		assertThat( CodeProfilerService.trackedBlueprints().values().stream()
+		    .filter( b -> b.kind() == Blueprint.Kind.FILE )
+		    .noneMatch( b -> b.equals( bp ) ) ).isTrue();
 	}
 
 	@DisplayName( "It embeds a blueprint self-registration call into the compiled class <clinit>" )

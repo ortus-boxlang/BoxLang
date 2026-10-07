@@ -27,6 +27,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -45,6 +46,8 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
  * Everything else works the same; only the position-based span assertions
  * differ because the CF tag text moves the code relative to the Box tags.
  */
+// Profiling instrumentation is ASM-boxpiler-specific; skip under the Java boxpiler.
+@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 class CodeProfilerCFTemplateTest {
 
 	private BoxRuntime	runtime;

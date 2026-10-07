@@ -325,12 +325,14 @@ public class ASMBoxpiler extends Boxpiler {
 		if ( classInfo.resolvedFilePath() != null ) {
 			fileKey = classInfo.resolvedFilePath().absolutePath().toString();
 			transpiler.setFileId( CodeProfilerService.registerBlueprintForFile( fileKey, blueprint ) );
+			transpiler.setBlueprintKind( Blueprint.Kind.FILE );
 		} else if ( classInfo.source() != null ) {
 			// Adhoc source: key the blueprint by the same MD5 the boxpiler derives the
 			// FQN from (IBoxpiler.MD5( sourceType + source )), so runtime lookups align.
 			fileKey = IBoxpiler.MD5( classInfo.sourceType().toString() + classInfo.source() );
 			Blueprint sourceBp = new Blueprint( spanDefs, Blueprint.Kind.SOURCE );
 			transpiler.setFileId( CodeProfilerService.registerBlueprintForSource( fileKey, sourceBp ) );
+			transpiler.setBlueprintKind( Blueprint.Kind.SOURCE );
 		}
 	}
 

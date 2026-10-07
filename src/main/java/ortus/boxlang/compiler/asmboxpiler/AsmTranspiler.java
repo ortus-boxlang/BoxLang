@@ -711,7 +711,7 @@ public class AsmTranspiler extends Transpiler {
 		// reference on the stack the whole block, so the clinit splitter could
 		// never subdivide it, causing MethodTooLargeException on big files.
 		nodes.addAll( AsmHelper.emitBlueprintRegistrationNodes(
-		    id, getLastModified(), spanDefs ) );
+		    id, getLastModified(), getBlueprintKind(), spanDefs ) );
 		return nodes;
 	}
 
