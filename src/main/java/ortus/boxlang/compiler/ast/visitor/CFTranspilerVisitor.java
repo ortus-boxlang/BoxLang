@@ -1713,12 +1713,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 *      Key behaviors:
 	 *      - Only merges if mergeDocsIntoAnnotations configuration is enabled
 	 *      - Skips "hint" annotations (handled separately)
+	 *      - Skips "return" because it is a keyword the parser rejects as an annotation; it stays in the docblock
 	 *      - Avoids overriding existing formal annotations
 	 *      - Trims whitespace from string values and converts empty strings to null
 	 *
 	 *      Examples:
 	 *      - @param name "User name" becomes a formal annotation
-	 *      - @return "Generated user ID" becomes a return annotation
+	 *      - @return "Generated user ID" stays in the docblock only
 	 *      - @Deprecated "Use newMethod instead" becomes a deprecated annotation
 	 *
 	 * @param annotations   The existing formal annotations list to merge into
@@ -1731,8 +1732,10 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		Set<String> existingAnnotations = annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue ).map( k -> k.toLowerCase() )
 		    .collect( Collectors.toSet() );
 		for ( BoxDocumentationAnnotation doc : documentation ) {
-			// Don't override existing annotations, and don't copy hint
-			if ( !doc.getKey().getValue().equalsIgnoreCase( "hint" ) && !existingAnnotations.contains( doc.getKey().getValue().toLowerCase() ) ) {
+			// Don't override existing annotations, and don't copy hint or return (a keyword, so not a valid annotation name)
+			String docKey = doc.getKey().getValue();
+			if ( !docKey.equalsIgnoreCase( "hint" ) && !docKey.equalsIgnoreCase( "return" )
+			    && !existingAnnotations.contains( doc.getKey().getValue().toLowerCase() ) ) {
 				BoxExpression value = doc.getValue();
 				if ( value instanceof BoxStringLiteral bsl ) {
 					bsl.setValue( bsl.getValue().trim() );
