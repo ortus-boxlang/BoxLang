@@ -347,7 +347,7 @@ public class CFParser extends AbstractParser {
 		this.classOrInterface = classOrInterface;
 		CFLexerCustom	lexer	= new CFLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ),
 		    isScript ? CFLexerCustom.DEFAULT_SCRIPT_MODE : CFLexerCustom.DEFAULT_TEMPLATE_MODE, errorListener, this )
-		    .setClassIsExpected( classOrInterface );
+		        .setClassIsExpected( classOrInterface );
 		CFGrammar		parser	= new CFGrammar( new CommonTokenStream( lexer ) );
 
 		// DEBUG: Will print a trace of all parser rules visited:
@@ -1304,6 +1304,21 @@ public class CFParser extends AbstractParser {
 		}
 
 		body.addAll( toAst( file, node.body ) );
+
+		// An ABSTRACT function cannot have a body. Normalize an abstract tag
+		// function whose body is only whitespace/whitespace buffer output to a
+		// null body (matching how script abstract functions — `abstract function
+		// foo();` — are represented, so downstream `getBody() == null` abstract
+		// discovery works). If the body contains REAL statements, reject it.
+		if ( modifiers.contains( BoxMethodDeclarationModifier.ABSTRACT ) ) {
+			if ( allStatementsAreWhitespace( body ) ) {
+				body = null;
+			} else {
+				errorListener.semanticError(
+				    "Abstract function [" + name + "] cannot have a body. Remove the body or the abstract modifier.",
+				    getPosition( node ) );
+			}
+		}
 
 		return new BoxFunctionDeclaration( accessModifier, modifiers, name, returnType, args, annotations, documentation, body, getPosition( node ),
 		    getSourceText( node ) );
