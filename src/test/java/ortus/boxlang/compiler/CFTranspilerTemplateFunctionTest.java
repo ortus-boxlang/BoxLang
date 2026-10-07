@@ -261,4 +261,29 @@ public class CFTranspilerTemplateFunctionTest {
 		                              """ );
 		assertThat( execute( bxm ) ).isEqualTo( "big|small" );
 	}
+
+	/**
+	 * {@code DOES NOT CONTAIN} must transpile to a form the BoxLang parser accepts, in tags, in script and inside a function.
+	 *
+	 * @throws IOException if the temp files cannot be written or read
+	 */
+	@DisplayName( "It keeps DOES NOT CONTAIN in tags, script and function bodies" )
+	@Test
+	public void testDoesNotContain() throws IOException {
+		Path bxm = transpile( "dnc", """
+		                             <cfset s = "hello">
+		                             <cfif s DOES NOT CONTAIN "zz"><cfoutput>a-yes</cfoutput><cfelse><cfoutput>a-no</cfoutput></cfif>
+		                             <cfif s DOES NOT CONTAIN "ell"><cfoutput>b-yes</cfoutput><cfelse><cfoutput>b-no</cfoutput></cfif>
+		                             <cfset r = s DOES NOT CONTAIN "zz">
+		                             <cfoutput>#r#</cfoutput>
+		                             <cfscript>z = s DOES NOT CONTAIN "ell";</cfscript>
+		                             <cfoutput>#z# #check( "abc" )#</cfoutput>
+		                             <cffunction name="check" output="false">
+		                             	<cfargument name="v">
+		                             	<cfif v DOES NOT CONTAIN "z"><cfreturn "no-z"><cfelse><cfreturn "has-z"></cfif>
+		                             </cffunction>
+		                             """ );
+		assertThat( Files.readString( bxm ) ).doesNotContain( "not contains" );
+		assertThat( execute( bxm ) ).isEqualTo( "a-yes b-no true false no-z" );
+	}
 }
