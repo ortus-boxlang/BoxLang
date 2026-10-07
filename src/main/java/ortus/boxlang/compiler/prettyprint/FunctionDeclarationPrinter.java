@@ -100,6 +100,15 @@ public class FunctionDeclarationPrinter {
 
 	}
 
+	/**
+	 * Prints a function declaration in template syntax as {@code <bx:function>}, with one {@code <bx:argument>} per declared
+	 * argument followed by the body statements.
+	 * <p>
+	 * Tag-origin functions already carry every attribute as an annotation. For any other origin, {@code name}, {@code returnType}
+	 * and {@code access} are synthesized, but only when no annotation of that name exists, so attributes are never duplicated.
+	 *
+	 * @param node the function declaration to print
+	 */
 	public void printTemplateFunctionDeclaration( BoxFunctionDeclaration node ) {
 		var	currentDoc	= this.visitor.getCurrentDoc();
 		var	prefix		= this.visitor.componentPrefix;
@@ -136,6 +145,13 @@ public class FunctionDeclarationPrinter {
 		currentDoc.append( Line.HARD ).append( "</" + prefix + "function>" );
 	}
 
+	/**
+	 * Prints a single argument as a {@code <bx:argument>} tag. Uses the same rule as the function header: attributes already
+	 * present as annotations are printed as-is, and {@code name}, {@code type}, {@code required} and {@code default} are only
+	 * synthesized when absent. The implicit {@code Any} type is omitted.
+	 *
+	 * @param arg the argument declaration to print
+	 */
 	private void printTemplateArgument( BoxArgumentDeclaration arg ) {
 		// Same rule as the function header: tag-origin arguments already carry their attributes as annotations
 		var attrs = new ArrayList<BoxAnnotation>();
@@ -158,16 +174,40 @@ public class FunctionDeclarationPrinter {
 		currentDoc.append( this.visitor.config.getTemplate().getSelfClosing() ? " />" : ">" );
 	}
 
+	/**
+	 * Adds a string-valued attribute to the target list unless the existing annotations already contain one with the same key.
+	 *
+	 * @param target   the attribute list being built for printing
+	 * @param existing the annotations already present on the node
+	 * @param key      the attribute name, compared case-insensitively
+	 * @param value    the attribute value to synthesize
+	 */
 	private void addIfAbsent( List<BoxAnnotation> target, List<BoxAnnotation> existing, String key, String value ) {
 		if ( !hasAnnotation( existing, key ) ) {
 			target.add( new BoxAnnotation( new BoxFQN( key, null, null ), new BoxStringLiteral( value, null, null ), null, null ) );
 		}
 	}
 
+	/**
+	 * Checks whether an annotation with the given key exists, ignoring case.
+	 *
+	 * @param annotations the annotations to search
+	 * @param key         the annotation name to look for
+	 *
+	 * @return true if a matching annotation exists
+	 */
 	private boolean hasAnnotation( List<BoxAnnotation> annotations, String key ) {
 		return annotations.stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( key ) );
 	}
 
+	/**
+	 * Converts a return type node to its template attribute text: the fully qualified name for class types, otherwise the
+	 * lowercase built-in type name.
+	 *
+	 * @param type the return type node
+	 *
+	 * @return the text to use for the {@code returnType} attribute
+	 */
 	private String returnTypeText( BoxReturnType type ) {
 		return type.getType().equals( BoxType.Fqn ) ? type.getFqn() : type.getType().toString().toLowerCase();
 	}

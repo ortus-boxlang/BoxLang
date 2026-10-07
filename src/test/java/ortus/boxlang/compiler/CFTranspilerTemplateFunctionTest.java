@@ -44,6 +44,9 @@ public class CFTranspilerTemplateFunctionTest {
 	@TempDir
 	Path				tempDir;
 
+	/**
+	 * Starts the BoxLang runtime once for all tests in this class.
+	 */
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
@@ -76,6 +79,11 @@ public class CFTranspilerTemplateFunctionTest {
 		return buffer.toString().replaceAll( "\\s+", " " ).trim();
 	}
 
+	/**
+	 * A function defined before the output is kept and callable.
+	 *
+	 * @throws IOException if the temp files cannot be written or read
+	 */
 	@DisplayName( "It keeps a tag function defined before the output" )
 	@Test
 	public void testFunctionBeforeOutput() throws IOException {
@@ -93,6 +101,11 @@ public class CFTranspilerTemplateFunctionTest {
 		assertThat( execute( bxm ) ).isEqualTo( "Hello hi x" );
 	}
 
+	/**
+	 * A function defined after the output is kept and callable.
+	 *
+	 * @throws IOException if the temp files cannot be written or read
+	 */
 	@DisplayName( "It keeps a tag function defined after the output" )
 	@Test
 	public void testFunctionAfterOutput() throws IOException {
@@ -107,6 +120,11 @@ public class CFTranspilerTemplateFunctionTest {
 		assertThat( execute( bxm ) ).isEqualTo( "Hello hi x" );
 	}
 
+	/**
+	 * A function defined inside cfoutput is kept and callable.
+	 *
+	 * @throws IOException if the temp files cannot be written or read
+	 */
 	@DisplayName( "It keeps a tag function defined inside cfoutput" )
 	@Test
 	public void testFunctionInsideOutput() throws IOException {
@@ -123,6 +141,11 @@ public class CFTranspilerTemplateFunctionTest {
 		assertThat( execute( bxm ) ).isEqualTo( "Hello hi x" );
 	}
 
+	/**
+	 * Argument type, required, default and function attributes are kept exactly once and honored at runtime.
+	 *
+	 * @throws IOException if the temp files cannot be written or read
+	 */
 	@DisplayName( "It keeps argument type, required, default and function attributes" )
 	@Test
 	public void testArgumentsAndDefaults() throws IOException {
@@ -148,6 +171,11 @@ public class CFTranspilerTemplateFunctionTest {
 		assertThat( execute( bxm ) ).isEqualTo( "Hello Bob 2|Yo Ann 5" );
 	}
 
+	/**
+	 * A body with cfsavecontent, cfloop, cfif and cfset var is kept and executes correctly.
+	 *
+	 * @throws IOException if the temp files cannot be written or read
+	 */
 	@DisplayName( "It keeps a body with cfsavecontent, cfloop, cfif and cfset var" )
 	@Test
 	public void testComplexBody() throws IOException {
@@ -178,6 +206,11 @@ public class CFTranspilerTemplateFunctionTest {
 		assertThat( execute( bxm ) ).isEqualTo( "T: (1) [2] [3] total=6" );
 	}
 
+	/**
+	 * Regression control: a function inside cfscript still transpiles and runs.
+	 *
+	 * @throws IOException if the temp files cannot be written or read
+	 */
 	@DisplayName( "It still transpiles a function inside cfscript" )
 	@Test
 	public void testScriptFunctionStillWorks() throws IOException {
