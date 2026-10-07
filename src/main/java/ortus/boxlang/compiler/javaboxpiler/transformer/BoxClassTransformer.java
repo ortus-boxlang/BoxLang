@@ -987,14 +987,15 @@ public class BoxClassTransformer extends AbstractTransformer {
 			if ( defaultAnnotation != null && defaultAnnotation.getValue() != null ) {
 
 				// A property default written as a BARE IDENTIFIER
-				// (e.g. `property name="x" default=someVar;`) is a COMPLEX
-				// expression to be evaluated at runtime — even though the parser
-				// folds it into a BoxStringLiteral for CFML annotation semantics.
+				// A property default written as a BARE IDENTIFIER
+				// (e.g. `property name="x" default=someVar;`) is folded by the
+				// parser into a BoxStringLiteral (value="someVar") — the string
+				// IS the default value (CFML annotation semantics). It MUST still
+				// be deferred so the default is only evaluated when
+				// defaultProperties() actually applies it (a super class may have
+				// already preset the value → the default never runs).
 				// Detect it by sourceText: a quoted default ("foo" / 'foo') starts
-				// with a quote; a bare identifier does not. Bare identifiers MUST be
-				// deferred so the default is only evaluated when defaultProperties()
-				// actually applies it (a super class may have already preset the
-				// value → the default never runs).
+				// with a quote; a bare identifier does not.
 				BoxExpression	defValue		= defaultAnnotation.getValue();
 				String			srcText			= defValue.getSourceText();
 				boolean			bareIdentifier	= defValue instanceof BoxStringLiteral

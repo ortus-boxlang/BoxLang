@@ -28,6 +28,7 @@ import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.IntInsnNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
+import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.LineNumberNode;
@@ -1577,23 +1578,13 @@ public class AsmHelper {
 
 		return switch ( opcode ) {
 			// Push single value onto stack
-			case Opcodes.ACONST_NULL, Opcodes.ICONST_M1, Opcodes.ICONST_0, Opcodes.ICONST_1, Opcodes.ICONST_2, Opcodes.ICONST_3, Opcodes.ICONST_4,
-			    Opcodes.ICONST_5, Opcodes.LCONST_0, Opcodes.LCONST_1, Opcodes.FCONST_0, Opcodes.FCONST_1, Opcodes.FCONST_2, Opcodes.DCONST_0, Opcodes.DCONST_1,
-			    Opcodes.BIPUSH, Opcodes.SIPUSH, Opcodes.LDC, Opcodes.ILOAD, Opcodes.LLOAD, Opcodes.FLOAD, Opcodes.DLOAD, Opcodes.ALOAD, Opcodes.GETSTATIC,
-			    Opcodes.NEW -> 1;
+			case Opcodes.ACONST_NULL, Opcodes.ICONST_M1, Opcodes.ICONST_0, Opcodes.ICONST_1, Opcodes.ICONST_2, Opcodes.ICONST_3, Opcodes.ICONST_4, Opcodes.ICONST_5, Opcodes.LCONST_0, Opcodes.LCONST_1, Opcodes.FCONST_0, Opcodes.FCONST_1, Opcodes.FCONST_2, Opcodes.DCONST_0, Opcodes.DCONST_1, Opcodes.BIPUSH, Opcodes.SIPUSH, Opcodes.LDC, Opcodes.ILOAD, Opcodes.LLOAD, Opcodes.FLOAD, Opcodes.DLOAD, Opcodes.ALOAD, Opcodes.GETSTATIC, Opcodes.NEW -> 1;
 
 			// Pop single value from stack
-			case Opcodes.ISTORE, Opcodes.LSTORE, Opcodes.FSTORE, Opcodes.DSTORE, Opcodes.ASTORE, Opcodes.POP, Opcodes.IRETURN, Opcodes.LRETURN, Opcodes.FRETURN,
-			    Opcodes.DRETURN, Opcodes.ARETURN, Opcodes.ATHROW, Opcodes.MONITORENTER, Opcodes.MONITOREXIT, Opcodes.IFNULL, Opcodes.IFNONNULL, Opcodes.IFEQ,
-			    Opcodes.IFNE, Opcodes.IFLT, Opcodes.IFGE, Opcodes.IFGT, Opcodes.IFLE, Opcodes.TABLESWITCH, Opcodes.LOOKUPSWITCH -> -1;
+			case Opcodes.ISTORE, Opcodes.LSTORE, Opcodes.FSTORE, Opcodes.DSTORE, Opcodes.ASTORE, Opcodes.POP, Opcodes.IRETURN, Opcodes.LRETURN, Opcodes.FRETURN, Opcodes.DRETURN, Opcodes.ARETURN, Opcodes.ATHROW, Opcodes.MONITORENTER, Opcodes.MONITOREXIT, Opcodes.IFNULL, Opcodes.IFNONNULL, Opcodes.IFEQ, Opcodes.IFNE, Opcodes.IFLT, Opcodes.IFGE, Opcodes.IFGT, Opcodes.IFLE, Opcodes.TABLESWITCH, Opcodes.LOOKUPSWITCH -> -1;
 
 			// Pop 2 values from stack
-			case Opcodes.POP2, Opcodes.IF_ICMPEQ, Opcodes.IF_ICMPNE, Opcodes.IF_ICMPLT, Opcodes.IF_ICMPGE, Opcodes.IF_ICMPGT, Opcodes.IF_ICMPLE,
-			    Opcodes.IF_ACMPEQ, Opcodes.IF_ACMPNE, Opcodes.IADD, Opcodes.LADD, Opcodes.FADD, Opcodes.DADD, Opcodes.ISUB, Opcodes.LSUB, Opcodes.FSUB,
-			    Opcodes.DSUB, Opcodes.IMUL, Opcodes.LMUL, Opcodes.FMUL, Opcodes.DMUL, Opcodes.IDIV, Opcodes.LDIV, Opcodes.FDIV, Opcodes.DDIV, Opcodes.IREM,
-			    Opcodes.LREM, Opcodes.FREM, Opcodes.DREM, Opcodes.ISHL, Opcodes.LSHL, Opcodes.ISHR, Opcodes.LSHR, Opcodes.IUSHR, Opcodes.LUSHR, Opcodes.IAND,
-			    Opcodes.LAND, Opcodes.IOR, Opcodes.LOR, Opcodes.IXOR, Opcodes.LXOR, Opcodes.LCMP, Opcodes.FCMPL, Opcodes.FCMPG, Opcodes.DCMPL, Opcodes.DCMPG,
-			    Opcodes.PUTFIELD -> -2;
+			case Opcodes.POP2, Opcodes.IF_ICMPEQ, Opcodes.IF_ICMPNE, Opcodes.IF_ICMPLT, Opcodes.IF_ICMPGE, Opcodes.IF_ICMPGT, Opcodes.IF_ICMPLE, Opcodes.IF_ACMPEQ, Opcodes.IF_ACMPNE, Opcodes.IADD, Opcodes.LADD, Opcodes.FADD, Opcodes.DADD, Opcodes.ISUB, Opcodes.LSUB, Opcodes.FSUB, Opcodes.DSUB, Opcodes.IMUL, Opcodes.LMUL, Opcodes.FMUL, Opcodes.DMUL, Opcodes.IDIV, Opcodes.LDIV, Opcodes.FDIV, Opcodes.DDIV, Opcodes.IREM, Opcodes.LREM, Opcodes.FREM, Opcodes.DREM, Opcodes.ISHL, Opcodes.LSHL, Opcodes.ISHR, Opcodes.LSHR, Opcodes.IUSHR, Opcodes.LUSHR, Opcodes.IAND, Opcodes.LAND, Opcodes.IOR, Opcodes.LOR, Opcodes.IXOR, Opcodes.LXOR, Opcodes.LCMP, Opcodes.FCMPL, Opcodes.FCMPG, Opcodes.DCMPL, Opcodes.DCMPG, Opcodes.PUTFIELD -> -2;
 
 			// Pop 3 values from stack
 			case Opcodes.IASTORE, Opcodes.LASTORE, Opcodes.FASTORE, Opcodes.DASTORE, Opcodes.AASTORE, Opcodes.BASTORE, Opcodes.CASTORE, Opcodes.SASTORE -> -3;
@@ -1719,6 +1710,52 @@ public class AsmHelper {
 
 		nodes.addAll( transpiler.transform( lastStatement, context, finalReturnValueContext ) );
 
+		return nodes;
+	}
+
+	/**
+	 * Wrap a generated method body in a catch-all try whose handler closes the
+	 * probe-charging interval (markEnd) and RETHROWS the caught Throwable.
+	 * <p>
+	 * This runs ONLY when profiling is active. A <b>locally caught</b> exception
+	 * (the body's own try/catch machinery) is handled inside the body and never
+	 * reaches here — it stays in the same probe interval, exactly as it should.
+	 * An <b>uncaught</b> exception escaping the method closes the interval first
+	 * so the throwing span is charged its self-time up to the throw, and the
+	 * thread's next profiled probe (in the caller) does NOT absorb unwinding /
+	 * idle time.
+	 *
+	 * @param transpiler the active transpiler (span registry + profiling flag)
+	 * @param tracker    the method's context tracker (to register the try-catch)
+	 * @param body       the method body instructions to wrap
+	 *
+	 * @return the wrapped body, or the original body when profiling is off
+	 */
+	private static List<AbstractInsnNode> wrapBodyWithCatchAllMarkEnd( Transpiler transpiler, MethodContextTracker tracker,
+	    List<AbstractInsnNode> body ) {
+		if ( !transpiler.hasProfilerId() ) {
+			return body;
+		}
+		List<AbstractInsnNode>	nodes		= new ArrayList<>( body );
+		LabelNode				tryStart	= new LabelNode();
+		LabelNode				tryEnd		= new LabelNode();
+		LabelNode				handler		= new LabelNode();
+		LabelNode				end			= new LabelNode();
+
+		nodes.add( 0, tryStart );
+		// After the body completes NORMALLY jump past the handler (the handler
+		// must only run on the exceptional path — otherwise the fall-through
+		// flow hits ATHROW with a non-Throwable on the stack → VerifyError).
+		nodes.add( tryEnd );
+		nodes.add( new JumpInsnNode( Opcodes.GOTO, end ) );
+		nodes.add( handler );
+		// Close the probe interval, then rethrow the caught Throwable (still on
+		// the stack). markEnd charges the open interval to the throwing span.
+		nodes.addAll( transpiler.emitMarkEnd() );
+		nodes.add( new InsnNode( Opcodes.ATHROW ) );
+		nodes.add( end );
+
+		tracker.addTryCatchBlock( new TryCatchBlockNode( tryStart, tryEnd, handler, null ) );
 		return nodes;
 	}
 
@@ -1859,10 +1896,22 @@ public class AsmHelper {
 		tracker.setClassLocatorSlot( classLocatorStore.index() );
 		classLocatorStore.nodes().forEach( ( node ) -> node.accept( methodVisitor ) );
 
-		var				nodes		= supplier.get();
+		var nodes = supplier.get();
+
+		// When profiling is active, wrap the whole body in a catch-all try that
+		// CLOSES the probe-charging interval before an UNCAUGHT exception escapes
+		// this method, then rethrows. Without this, an exception bypasses both the
+		// return-path markEnd and the fall-through markEnd, leaving the thread's
+		// interval open so the NEXT profiled probe charges unwinding/caller/idle
+		// time to the throwing span. Locally-caught exceptions (the try/catch
+		// machinery) do NOT reach this handler — they are caught inside the body
+		// and stay in the same interval, exactly as they should.
+		if ( transpiler.hasProfilerId() ) {
+			nodes = wrapBodyWithCatchAllMarkEnd( transpiler, tracker, nodes );
+		}
 
 		// Collect all labels that are in the original node list
-		Set<LabelNode>	allLabels	= new HashSet<>();
+		Set<LabelNode> allLabels = new HashSet<>();
 		for ( AbstractInsnNode node : nodes ) {
 			if ( node instanceof LabelNode labelNode ) {
 				allLabels.add( labelNode );

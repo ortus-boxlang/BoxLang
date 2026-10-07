@@ -1112,28 +1112,17 @@ public class AsmTranspiler extends Transpiler {
 			if ( defaultAnnotation.getValue() != null ) {
 
 				// A property default written as a BARE IDENTIFIER
-				// (e.g. `property name="x" default=someVar;`) is a COMPLEX
-				// expression to be evaluated at runtime — even though the parser
-				// folds it into a BoxStringLiteral for CFML annotation semantics.
-				// Detect it by sourceText: a quoted default ("foo") keeps its
-				// quotes; a bare identifier does not. Bare identifiers MUST be
-				// deferred (defaultExpr_N) so the default is only evaluated when
+				// (e.g. `property name="x" default=someVar;`) is folded by the
+				// parser into a BoxStringLiteral (value="someVar") — the string
+				// IS the default value (CFML annotation semantics). It MUST still
+				// be deferred (defaultExpr_N) so the default is only evaluated when
 				// defaultProperties() actually applies it (a super class may have
 				// already preset the value → the default never runs → its span
-				// stays RED). Treating it as a literal would bake its mark at
-				// clinit (class load) and falsely count it as run.
+				// stays RED). Treating it as an inline literal would bake its mark
+				// at clinit (class load) and falsely count it as run.
+				// Detect a bare identifier by sourceText: a quoted default
+				// ("foo" / 'foo') starts with a quote; a bare identifier does not.
 				BoxExpression	defaultValue	= defaultAnnotation.getValue();
-				// A property default written as a BARE IDENTIFIER
-				// (e.g. `property name="x" default=someVar;`) is a COMPLEX
-				// expression to be evaluated at runtime — even though the parser
-				// folds it into a BoxStringLiteral for CFML annotation semantics.
-				// Detect it by sourceText: a quoted default ("foo" / 'foo') starts
-				// with a quote; a bare identifier does not. Bare identifiers MUST be
-				// deferred (defaultExpr_N) so the default is only evaluated when
-				// defaultProperties() actually applies it (a super class may have
-				// already preset the value → the default never runs → its span
-				// stays RED). Treating it as a literal would bake its mark at
-				// clinit (class load) and falsely count it as run.
 				String			srcText			= defaultValue.getSourceText();
 				boolean			bareIdentifier	= defaultValue instanceof BoxStringLiteral
 				    && srcText != null

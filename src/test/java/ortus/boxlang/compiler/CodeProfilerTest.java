@@ -1340,6 +1340,85 @@ class CodeProfilerTest {
 		assertThat( CodeProfilerService.lineAt( key, 7 ).count() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It wraps profiled method bodies in a catch-all that closes the probe interval on uncaught exceptions" )
+	@Test
+	void testExceptionEscapeClosesProbeInterval() throws Exception {
+		// Every profiled method boundary (script _invoke, UDF/closure/lambda
+		// invoker, pseudo-constructor, static initializer) must wrap its body in a
+		// catch-all handler that calls CodeProfilerService.markEnd then rethrows.
+		// Regression: an uncaught exception used to bypass the return-path and
+		// fall-through markEnd, leaving the thread's probe interval open and
+		// charging unwind/caller time to the throwing span on the next probe.
+		runtime.getConfiguration().codeProfilerEnabled = true;
+
+		var	boxpiler	= ( ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler ) RunnableLoader.getInstance().getBoxpiler();
+		var	source		= """
+		                  boom = () -> {
+		                  throw( "Oh no!" );
+		                  };
+		                  function bounce() {
+		                  boom();
+		                  }
+		                  bounce();
+		                  """;
+		var	classInfo	= ortus.boxlang.compiler.ClassInfo.forScript( source, BoxSourceType.BOXSCRIPT, boxpiler );
+		boxpiler.getClassPool( classInfo.classPoolName() ).put( classInfo.fqn().toString(), classInfo );
+		java.util.List<byte[]>	compiled		= boxpiler.compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
+
+		// Count methods that are profiled body boundaries and verify each has a
+		// catch-all handler (TryCatchBlockNode with null type) whose handler label
+		// leads to markEnd before an ATHROW.
+		int						profiledMethods	= 0;
+		int						guarded			= 0;
+		for ( byte[] bytes : compiled ) {
+			if ( bytes.length < 4 || bytes[ 0 ] != ( byte ) 0xCA || bytes[ 1 ] != ( byte ) 0xFE || bytes[ 2 ] != ( byte ) 0xBA
+			    || bytes[ 3 ] != ( byte ) 0xBE ) {
+				continue;
+			}
+			org.objectweb.asm.tree.ClassNode classNode = new org.objectweb.asm.tree.ClassNode();
+			new org.objectweb.asm.ClassReader( bytes ).accept( classNode, 0 );
+			for ( var method : classNode.methods ) {
+				boolean isBoundary = method.name.equals( "_invoke" )
+				    || method.name.startsWith( "invokeFunction_" )
+				    || method.name.startsWith( "invokeClosure_" )
+				    || method.name.startsWith( "invokeLambda_" );
+				if ( !isBoundary ) {
+					continue;
+				}
+				profiledMethods++;
+				if ( method.tryCatchBlocks.stream().anyMatch( tc -> tc.type == null && isMarkEndThenThrow( method, tc.handler ) ) ) {
+					guarded++;
+				}
+			}
+		}
+		assertThat( profiledMethods ).isGreaterThan( 0 );
+		assertThat( guarded ).isEqualTo( profiledMethods );
+
+		runtime.getConfiguration().codeProfilerEnabled = false;
+	}
+
+	private boolean isMarkEndThenThrow( org.objectweb.asm.tree.MethodNode method, org.objectweb.asm.tree.LabelNode handler ) {
+		// Walk forward from the handler label: markEnd(...) then ATHROW.
+		boolean	foundHandler	= false;
+		boolean	foundMarkEnd	= false;
+		for ( var insn = method.instructions.getFirst(); insn != null; insn = insn.getNext() ) {
+			if ( insn == handler ) {
+				foundHandler = true;
+			} else if ( !foundHandler ) {
+				continue;
+			}
+			if ( insn instanceof org.objectweb.asm.tree.MethodInsnNode call
+			    && call.owner.equals( org.objectweb.asm.Type.getInternalName( CodeProfilerService.class ) )
+			    && call.name.equals( "markEnd" ) ) {
+				foundMarkEnd = true;
+			}
+			if ( foundMarkEnd && insn.getOpcode() == org.objectweb.asm.Opcodes.ATHROW ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	@DisplayName( "It runs the switch default when no case matches" )
 	@Test
 	void testSwitchDefault() {
