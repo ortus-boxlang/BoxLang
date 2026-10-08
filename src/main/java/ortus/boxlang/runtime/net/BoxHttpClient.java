@@ -1230,6 +1230,19 @@ public class BoxHttpClient {
 		 * When set, this takes precedence over {@link #onChunk(Function)}, and the request
 		 * <code>timeout</code> acts as an idle timeout: the longest wait for the response headers or between
 		 * received bytes. A non 2xx status skips the callback and is reported through the error callback.
+		 * <p>
+		 * Example:
+		 *
+		 * <pre>
+		 * http( "https://example.com/audio.mp3" )
+		 *     .timeout( 30 )
+		 *     .onBinaryChunk( ( bytes, info ) => {
+		 *         output.write( bytes )
+		 *         // Stop after 1MB
+		 *         return info.totalBytes lt 1048576
+		 *     } )
+		 *     .send()
+		 * </pre>
 		 *
 		 * @param callback The binary chunk callback function
 		 *

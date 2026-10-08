@@ -39,4 +39,28 @@ writeDump( result );
 <bx:dump var="#result#">
 ```
 
+### Binary Streaming (New in 1.19.0)
+
+```java
+bx:http url="https://example.com/audio.mp3" method="GET" timeout=30 result="audio"
+	onBinaryChunk=function( bytes, info ) {
+		// bytes is a byte array exactly as read from the network
+		writeOutput( "chunk " & info.chunkNumber & ": " & arrayLen( bytes ) & " bytes<br>" );
+	} {}
+writeOutput( "Total: " & audio.totalBytes & " bytes in " & audio.chunkCount & " chunks" );
+
+```
+
+
+### Binary Streaming With Early Stop (New in 1.19.0)
+
+```java
+// Returning an explicit false stops the stream and closes the connection
+bx:http url="https://example.com/audio.mp3" method="GET" result="audio"
+	onBinaryChunk=function( bytes, info ) {
+		return info.totalBytes < 8192;
+	} {}
+writeOutput( audio.streamCompleted ); // false
+
+```
 

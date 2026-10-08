@@ -233,6 +233,32 @@ public class HTTP extends Component {
 	 * } {}
 	 * </pre>
 	 * <p>
+	 * <b>Binary Streaming (New in 1.19.0):</b> Use <code>onBinaryChunk</code> to receive the raw bytes of a streaming response,
+	 * such as audio, exactly as they are read from the network. The callback receives <code>(bytes, info)</code> and can return an
+	 * explicit <code>false</code> to stop and close the connection. When it is set, <code>timeout</code> is an idle timeout (longest wait
+	 * for the headers or between received bytes) and a non 2xx status is reported through <code>onError</code> as
+	 * a message such as <code>HTTP 401: {"error":"bad key"}</code> (the status and the response body) instead of invoking the callback.
+	 *
+	 * <pre>
+	 * bx:http url="https://api.example.com/v1/speech"
+	 *         method="POST"
+	 *         timeout=30
+	 *         result="speech"
+	 *         onBinaryChunk=function( bytes, info ) {
+	 *     // bytes is a byte array, info has chunkNumber, totalBytes, headers (first chunk only), result and httpClient
+	 *     socket.send( bytes );
+	 *     // Return false to stop streaming and close the connection
+	 *     return !socket.isClosed();
+	 * }
+	 *         onError=function( error, httpResult ) {
+	 *     println( "Stream failed: ##error.message" );
+	 * } {
+	 *     bx:httpparam type="header" name="Authorization" value="Bearer ##apiKey##";
+	 *     bx:httpparam type="body" value='{"text":"Hello from BoxLang"}';
+	 * }
+	 * println( "Received ##speech.totalBytes## bytes in ##speech.chunkCount## chunks" );
+	 * </pre>
+	 * <p>
 	 * <b>Proxy Configuration:</b>
 	 *
 	 * <pre>

@@ -79,6 +79,30 @@ public class HTTP extends BIF {
 	 * 	.invokeAndGet().
 	 * </pre>
 	 *
+	 * Streaming raw binary responses (New in 1.19.0):
+	 *
+	 * <pre>
+	 * // Receive the raw bytes of a streaming response, such as audio, as they arrive.
+	 * // timeout is an idle timeout while streaming: the longest wait for headers or between received bytes.
+	 * result = http( "https://api.example.com/v1/speech" )
+	 *     .post()
+	 *     .header( "Authorization", "Bearer ##apiKey##" )
+	 *     .jsonBody( '{"text":"Hello from BoxLang"}' )
+	 *     .timeout( 30 )
+	 *     .onBinaryChunk( ( bytes, info ) => {
+	 *         socket.send( bytes )
+	 *         // An explicit false stops streaming and closes the connection
+	 *         return !socket.isClosed()
+	 *     } )
+	 *     .onError( ( error, httpResult ) => {
+	 *         // A non 2xx status is reported as "HTTP 401: body", a stalled stream as a 408 timeout
+	 *         println( "Stream failed: ##error.message##" )
+	 *     } )
+	 *     .send()
+	 *
+	 * println( "Received ##result.totalBytes## bytes in ##result.chunkCount## chunks" )
+	 * </pre>
+	 *
 	 * @param context   The BoxLang execution context
 	 * @param arguments The arguments provided to the BIF
 	 *
