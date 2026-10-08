@@ -173,6 +173,35 @@ public class ThreadTest {
 		assertThat( result3.get( Key.of( "insideThread3" ) ) ).isEqualTo( "yep" );
 	}
 
+	@DisplayName( "Unscoped lookups inside a thread do not search the thread scope" )
+	@Test
+	public void testUnscopedLookupSkipsThreadScope() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    thread name="myThread" {
+		    	thread.foo = "bar";
+		    	variables.unscoped = foo ?: "not defined";
+		    	variables.viaThread = thread.foo;
+		    	variables.viaName = myThread.foo;
+		    	// an unscoped assignment must not land in the thread metadata
+		    	status = "mine";
+		    	variables.localStatus = local.status ?: "not defined";
+		    }
+		    threadJoin( "myThread" );
+		    result = myThread;
+		        """,
+		    context );
+		// @formatter:on
+
+		assertThat( variables.get( Key.of( "unscoped" ) ) ).isEqualTo( "not defined" );
+		assertThat( variables.get( Key.of( "viaThread" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "viaName" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "localStatus" ) ) ).isEqualTo( "mine" );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( result ).get( Key.status ) ).isEqualTo( "COMPLETED" );
+	}
+
 	@Test
 	public void testHasVirtualThreadScope() {
 		// @formatter:off
