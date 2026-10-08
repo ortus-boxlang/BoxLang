@@ -693,6 +693,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onApplicationEnd					= Key.of( "onApplicationEnd" );
 	public static final Key		onApplicationRestart				= Key.of( "onApplicationRestart" );
 	public static final Key		onApplicationStart					= Key.of( "onApplicationStart" );
+	public static final Key		onBinaryChunk						= Key.of( "onBinaryChunk" );
 	public static final Key		onChunk								= Key.of( "onChunk" );
 	public static final Key		onClassRequest						= Key.of( "onClassRequest" );
 	public static final Key		onComplete							= Key.of( "onComplete" );

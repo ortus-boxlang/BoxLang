@@ -53,7 +53,7 @@ public enum BoxBinaryOperator {
 			case CastAs :
 				return "castAs";
 			case NotContains :
-				return "not contains";
+				return "DOES NOT CONTAIN";
 			case Plus :
 				return "+";
 			case Minus :
