@@ -86,21 +86,48 @@ public class HTTP extends BIF {
 	 * // timeout is an idle timeout while streaming: the longest wait for headers or between received bytes.
 	 * result = http( "https://api.example.com/v1/speech" )
 	 *     .post()
-	 *     .header( "Authorization", "Bearer ##apiKey##" )
+	 *     .header( "Authorization", "Bearer #apiKey#" )
 	 *     .jsonBody( '{"text":"Hello from BoxLang"}' )
 	 *     .timeout( 30 )
 	 *     .onBinaryChunk( ( bytes, info ) => {
+	 *         // info has chunkNumber, totalBytes, result, httpClient and headers (first chunk only)
 	 *         socket.send( bytes )
 	 *         // An explicit false stops streaming and closes the connection
 	 *         return !socket.isClosed()
 	 *     } )
 	 *     .onError( ( error, httpResult ) => {
 	 *         // A non 2xx status is reported as "HTTP 401: body", a stalled stream as a 408 timeout
-	 *         println( "Stream failed: ##error.message##" )
+	 *         println( "Stream failed: #error.message#" )
 	 *     } )
 	 *     .send()
 	 *
-	 * println( "Received ##result.totalBytes## bytes in ##result.chunkCount## chunks" )
+	 * println( "Received #result.totalBytes# bytes in #result.chunkCount# chunks" )
+	 *
+	 * // Save a stream to a file without holding it in memory
+	 * out = createObject( "java", "java.io.FileOutputStream" ).init( "/downloads/audio.mp3" )
+	 * try {
+	 *     http( "https://example.com/audio.mp3" )
+	 *         .onBinaryChunk( ( bytes, info ) => out.write( bytes ) )
+	 *         .send()
+	 * } finally {
+	 *     out.close()
+	 * }
+	 *
+	 * // Stop a stream early. The status is unchanged and result.streamCompleted is false
+	 * result = http( "https://example.com/audio.mp3" )
+	 *     .onBinaryChunk( ( bytes, info ) => info.totalBytes lt 5000 )
+	 *     .send()
+	 *
+	 * // Stop a Server-Sent Events stream
+	 * http( "https://api.example.com/events" )
+	 *     .sse( true )
+	 *     .onChunk( ( event ) => {
+	 *         if ( event.data == "[DONE]" ) {
+	 *             return false
+	 *         }
+	 *         println( event.data )
+	 *     } )
+	 *     .send()
 	 * </pre>
 	 *
 	 * @param context   The BoxLang execution context
