@@ -43,6 +43,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
@@ -96,6 +100,18 @@ public class BoxHttpClient {
 	public static final int												DEFAULT_READ_TIMEOUT		= 15;
 	public static final int												DEFAULT_REQUEST_TIMEOUT		= 0;
 	public static final boolean											DEFAULT_THROW_ON_ERROR		= false;
+	/** Max bytes handed to an onBinaryChunk callback per read */
+	public static final int												BINARY_CHUNK_SIZE			= 8192;
+	/** How often the idle watchdog checks for stalled streams */
+	private static final long											IDLE_WATCHDOG_INTERVAL_MS	= 250;
+	/** Single daemon thread that closes stalled binary and SSE streams */
+	private static final ScheduledExecutorService						IDLE_WATCHDOG_SCHEDULER		= Executors
+	    .newSingleThreadScheduledExecutor( runnable -> {
+																										    Thread thread = new Thread( runnable,
+																										        "bx-http-idle-watchdog" );
+																										    thread.setDaemon( true );
+																										    return thread;
+																									    } );
 	private static final Set<String>									JAVA_RESTRICTED_HEADERS		= Set.of(
 	    "connection",
 	    "content-length",
@@ -554,6 +570,9 @@ public class BoxHttpClient {
 		// Callbacks
 		private ortus.boxlang.runtime.types.Function			onRequestStartCallback;
 		private ortus.boxlang.runtime.types.Function			onChunkCallback;
+		private ortus.boxlang.runtime.types.Function			onBinaryChunkCallback;
+		// Idle watchdog for binary and SSE streams, null when not streaming or no timeout is set
+		private IdleWatchdog									idleWatchdog;
 		private ortus.boxlang.runtime.types.Function			onErrorCallback;
 		private ortus.boxlang.runtime.types.Function			onCompleteCallback;
 
@@ -1200,6 +1219,28 @@ public class BoxHttpClient {
 		}
 
 		/**
+		 * Set the callback function for raw binary response streaming.
+		 * <p>
+		 * The callback receives each chunk of the response body as a byte array exactly as it was read from
+		 * the network (no text decoding and no line splitting), plus an info struct with
+		 * <code>chunkNumber</code>, <code>totalBytes</code>, <code>headers</code> (first chunk only),
+		 * <code>result</code> and <code>httpClient</code>. Returning an explicit boolean <code>false</code>
+		 * stops the stream and closes the connection immediately.
+		 * <p>
+		 * When set, this takes precedence over {@link #onChunk(Function)}, and the request
+		 * <code>timeout</code> acts as an idle timeout: the longest wait for the response headers or between
+		 * received bytes. A non 2xx status skips the callback and is reported through the error callback.
+		 *
+		 * @param callback The binary chunk callback function
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest onBinaryChunk( ortus.boxlang.runtime.types.Function callback ) {
+			this.onBinaryChunkCallback = callback;
+			return this;
+		}
+
+		/**
 		 * Set the callback function for error handling
 		 *
 		 * @param callback The error callback function
@@ -1820,7 +1861,7 @@ public class BoxHttpClient {
 				// Prepare the Http Reesults with the request info so we can start
 				this.httpResult.put( Key.requestID, this.requestID );
 				this.httpResult.put( Key.userAgent, this.userAgent );
-				this.httpResult.put( Key.stream, this.onChunkCallback != null ? true : false );
+				this.httpResult.put( Key.stream, this.onChunkCallback != null || this.onBinaryChunkCallback != null );
 				// Note, if sse was not set explicitly, this will be false
 				// Content type detection for SSE is done after receiving the response headers
 				this.httpResult.put( Key.sse, this.forceSSE );
@@ -1852,11 +1893,11 @@ public class BoxHttpClient {
 				 * ------------------------------------------------------------------------------
 				 * EXECUTE THE REQUEST
 				 * ------------------------------------------------------------------------------
-				 * - Streaming mode if onChunkCallback is provided
+				 * - Streaming mode if onChunkCallback or onBinaryChunkCallback is provided
 				 * - Buffered mode otherwise
 				 */
 
-				if ( this.onChunkCallback != null ) {
+				if ( this.onChunkCallback != null || this.onBinaryChunkCallback != null ) {
 					// Streaming mode: process response in chunks
 					invokeStreaming();
 				} else {
@@ -2485,12 +2526,18 @@ public class BoxHttpClient {
 				String	charset			= HttpResponseHelper.processContentType( this.httpResult, headers, contentType, this.charset );
 				String	contentEncoding	= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentEncoding );
 
-				// Determine if SSE mode (auto-detect or forced)
-				boolean	isSSE			= this.forceSSE || ( contentType != null && contentType.contains( "text/event-stream" ) );
+				// Binary mode wins over everything else. Otherwise determine if SSE mode (auto-detect or forced)
+				boolean	isBinary		= this.onBinaryChunkCallback != null;
+				boolean	isSSE			= !isBinary && ( this.forceSSE || ( contentType != null && contentType.contains( "text/event-stream" ) ) );
 
 				// Execution Markers
 				this.httpResult.put( Key.stream, true );
 				this.httpResult.put( Key.sse, isSSE );
+
+				// Binary and SSE streams get an idle watchdog: the timeout is the longest wait between received bytes
+				if ( ( isBinary || isSSE ) && this.timeout > 0 ) {
+					this.idleWatchdog = new IdleWatchdog( response.body(), this.timeout );
+				}
 
 				/**
 				 * ------------------------------------------------------------------------------
@@ -2510,13 +2557,22 @@ public class BoxHttpClient {
 				 * PROCESS STREAMING RESPONSE BY MODE
 				 * ------------------------------------------------------------------------------
 				 */
-				if ( isSSE ) {
+				int statusCode = response.statusCode();
+				if ( ( isBinary || isSSE ) && ( statusCode < 200 || statusCode > 299 ) ) {
+					// Never hand an error body to a binary or event callback
+					processStreamingHttpError( responseBody, charset, contentEncoding, statusCode );
+				} else if ( isBinary ) {
+					processBinaryStream( response, responseBody, headers, contentEncoding );
+				} else if ( isSSE ) {
 					processSSEStream( response, responseBody, headers, charset, contentEncoding );
 				} else {
 					processRegularStream( response, responseBody, headers, charset, contentEncoding );
 				}
 			} finally {
 				this.receivedBytes = responseBody.getCount();
+				if ( this.idleWatchdog != null ) {
+					this.idleWatchdog.close();
+				}
 			}
 		}
 
@@ -2547,11 +2603,14 @@ public class BoxHttpClient {
 			StringBuilder	accumulatedData	= new StringBuilder();
 			AtomicLong		eventCount		= new AtomicLong( 0 );
 			AtomicBoolean	streamingError	= new AtomicBoolean( false );
+			boolean			stopped			= false;
 
-			// Read SSE stream (always UTF-8 text, no decoding)
+			// Read SSE stream as text, honoring any Content-Encoding
 			// Try with Resources to ensure streams are closed properly
 			try (
-			    java.io.InputStreamReader reader = new java.io.InputStreamReader( responseBody,
+			    java.io.InputStream decodedInputStream = HttpResponseHelper.decodeInputStream( responseBody,
+			        contentEncoding );
+			    java.io.InputStreamReader reader = new java.io.InputStreamReader( decodedInputStream,
 			        Charset.forName( charset ) );
 			    java.io.BufferedReader bufferedReader = new java.io.BufferedReader( reader ) ) {
 
@@ -2591,7 +2650,7 @@ public class BoxHttpClient {
 								// sseEvent.id() != null ? sseEvent.id() : "none" );
 
 								// Invoke onChunk callback with SSE event
-								context.invokeFunction(
+								Object callbackResult = context.invokeFunction(
 								    onChunkCallback,
 								    new Object[] {
 								        sseEvent.toStruct(), // event struct
@@ -2600,6 +2659,12 @@ public class BoxHttpClient {
 								        BoxHttpClient.this, // httpClient
 								        response // rawResponse
 								    } );
+
+								// An explicit false stops the stream; closing the resources below cancels the connection
+								if ( isStopSignal( callbackResult ) ) {
+									stopped = true;
+									break;
+								}
 							}
 							// Handle SSE Retry Directive
 							else if ( parserResult instanceof SSERetryDirective retryDirective ) {
@@ -2628,12 +2693,24 @@ public class BoxHttpClient {
 						break;
 					}
 				}
+			} catch ( IOException e ) {
+				// The idle watchdog closes the stream to unblock the read, any other failure is not ours to handle
+				if ( this.idleWatchdog == null || !this.idleWatchdog.timedOut() ) {
+					throw e;
+				}
+			}
+
+			// A stalled stream is reported as a timeout and skips the completion events
+			if ( this.idleWatchdog != null && this.idleWatchdog.timedOut() ) {
+				reportIdleTimeout();
+				return;
 			}
 
 			// Finalize httpResult
 			String finalContent = accumulatedData.toString();
 			this.httpResult.put( Key.fileContent, finalContent );
 			this.httpResult.put( "streamContentTruncated", this.streamTruncated );
+			this.httpResult.put( "streamCompleted", !stopped );
 			this.httpResult.put( Key.errorDetail, "" );
 			this.httpResult.put( Key.executionTime, Duration.between( startTime.toInstant(), Instant.now() ).toMillis() );
 			this.httpResult.put( Key.totalEvents, eventCount.get() );
@@ -2806,6 +2883,210 @@ public class BoxHttpClient {
 		}
 
 		/**
+		 * Process a raw binary streaming response. Each read from the network is handed to the
+		 * onBinaryChunk callback as a byte array, with no text decoding or line splitting.
+		 * An explicit boolean false returned by the callback stops the stream and closes the connection.
+		 *
+		 * @param response        The HTTP response with InputStream body
+		 * @param responseBody    The protected response body stream
+		 * @param headers         The response headers struct, passed to the first chunk only
+		 * @param contentEncoding The content encoding (gzip, deflate, etc.)
+		 *
+		 * @throws IOException If an I/O error occurs
+		 */
+		private void processBinaryStream(
+		    HttpResponse<InputStream> response,
+		    CountingInputStream responseBody,
+		    IStruct headers,
+		    String contentEncoding ) throws IOException {
+
+			BoxLangLogger streamLogger = getLogger();
+			streamLogger.trace( "Starting binary stream processing. Content-Encoding: {}", contentEncoding );
+
+			byte[]	buffer			= new byte[ BINARY_CHUNK_SIZE ];
+			long	chunkCount		= 0;
+			long	totalBytes		= 0;
+			boolean	stopped			= false;
+			boolean	callbackFailed	= false;
+
+			try ( java.io.InputStream decodedInputStream = HttpResponseHelper.decodeInputStream( responseBody, contentEncoding ) ) {
+				int read;
+				// read() returns as soon as any bytes are available, which gives progressive delivery
+				while ( ( read = decodedInputStream.read( buffer ) ) != -1 ) {
+					if ( read == 0 ) {
+						continue;
+					}
+					chunkCount++;
+					totalBytes += read;
+
+					try {
+						IStruct info = Struct.ofNonConcurrent(
+						    Key.chunkNumber, chunkCount,
+						    Key.totalBytes, totalBytes,
+						    Key.result, this.httpResult,
+						    Key.httpClient, BoxHttpClient.this );
+						if ( chunkCount == 1 ) {
+							info.put( Key.headers, headers );
+						}
+
+						Object callbackResult = context.invokeFunction(
+						    this.onBinaryChunkCallback,
+						    new Object[] { java.util.Arrays.copyOf( buffer, read ), info } );
+
+						if ( isStopSignal( callbackResult ) ) {
+							stopped = true;
+							break;
+						}
+					} catch ( Exception e ) {
+						callbackFailed = true;
+						streamLogger.error( "Error in onBinaryChunk callback", e );
+
+						this.error				= true;
+						this.requestException	= e;
+						this.errorMessage		= e.getMessage();
+						this.httpResult.put( Key.errorDetail, "Streaming callback error: " + e.getMessage() );
+
+						if ( this.onErrorCallback != null ) {
+							try {
+								context.invokeFunction( this.onErrorCallback, new Object[] { e, this.httpResult } );
+							} catch ( Exception callbackError ) {
+								streamLogger.error( "Error in onError callback", callbackError );
+							}
+						}
+						break;
+					}
+				}
+			} catch ( IOException e ) {
+				// The idle watchdog closes the stream to unblock the read, any other failure is not ours to handle
+				if ( this.idleWatchdog == null || !this.idleWatchdog.timedOut() ) {
+					throw e;
+				}
+			}
+
+			// A stalled stream is reported as a timeout and skips the completion events
+			if ( this.idleWatchdog != null && this.idleWatchdog.timedOut() ) {
+				reportIdleTimeout();
+				return;
+			}
+
+			// Binary content is never accumulated, only counted
+			this.httpResult.put( Key.fileContent, "" );
+			this.httpResult.put( Key.chunkCount, chunkCount );
+			this.httpResult.put( Key.totalBytes, totalBytes );
+			this.httpResult.put( "streamCompleted", !stopped && !callbackFailed );
+			if ( !callbackFailed ) {
+				this.httpResult.put( Key.errorDetail, "" );
+			}
+			this.httpResult.put( Key.executionTime, Duration.between( startTime.toInstant(), Instant.now() ).toMillis() );
+
+			final long finalChunkCount = chunkCount;
+			interceptorService.announce(
+			    BoxEvent.ON_HTTP_RESPONSE,
+			    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
+			        Key.result, httpResult,
+			        Key.response, response,
+			        Key.httpClient, BoxHttpClient.this,
+			        Key.chunkCount, finalChunkCount ) );
+
+			if ( this.onCompleteCallback != null ) {
+				context.invokeFunction(
+				    this.onCompleteCallback,
+				    new Object[] {
+				        this.httpResult, // result
+				        response, // response
+				        BoxHttpClient.this, // httpClient
+				        chunkCount
+				    } );
+			}
+		}
+
+		/**
+		 * Handle a non 2xx response on a binary or SSE stream. The body is read (bounded by the stream content
+		 * limit and the idle watchdog) and reported as <code>HTTP &lt;status&gt;: &lt;body&gt;</code> through the
+		 * result struct and the onError callback. The chunk callbacks are never invoked.
+		 *
+		 * @param responseBody    The protected response body stream
+		 * @param charset         The charset used to decode the error body
+		 * @param contentEncoding The content encoding (gzip, deflate, etc.)
+		 * @param statusCode      The HTTP status code
+		 *
+		 * @throws IOException If an I/O error occurs
+		 */
+		private void processStreamingHttpError(
+		    CountingInputStream responseBody,
+		    String charset,
+		    String contentEncoding,
+		    int statusCode ) throws IOException {
+
+			String body = "";
+			try ( java.io.InputStream decodedInputStream = HttpResponseHelper.decodeInputStream( responseBody, contentEncoding ) ) {
+				body = new String( decodedInputStream.readNBytes( this.streamContentLimit ), Charset.forName( charset ) );
+			} catch ( IOException e ) {
+				if ( this.idleWatchdog == null || !this.idleWatchdog.timedOut() ) {
+					throw e;
+				}
+			}
+
+			if ( this.idleWatchdog != null && this.idleWatchdog.timedOut() ) {
+				reportIdleTimeout();
+				return;
+			}
+
+			String				message		= "HTTP " + statusCode + ": " + body;
+			BoxRuntimeException	exception	= new BoxRuntimeException( message );
+
+			this.error				= true;
+			this.requestException	= exception;
+			this.errorMessage		= message;
+			this.httpResult.put( Key.fileContent, body );
+			this.httpResult.put( Key.errorDetail, message );
+			this.httpResult.put( "streamCompleted", false );
+			this.httpResult.put( Key.executionTime, Duration.between( startTime.toInstant(), Instant.now() ).toMillis() );
+
+			if ( this.onErrorCallback != null ) {
+				context.invokeFunction( this.onErrorCallback, new Object[] { exception, this.httpResult } );
+			}
+		}
+
+		/**
+		 * Report a binary or SSE stream that stalled for longer than the idle timeout as a request timeout.
+		 */
+		private void reportIdleTimeout() {
+			BoxHttpClient.this.timeoutFailures.incrementAndGet();
+			String					detail		= "The stream was idle for more than " + this.timeout + " second(s) without receiving data";
+			HttpTimeoutException	exception	= new HttpTimeoutException( detail );
+
+			this.error				= true;
+			this.requestException	= exception;
+			this.errorMessage		= detail;
+			HttpResponseHelper.populateErrorResponse(
+			    this.httpResult,
+			    STATUS_REQUEST_TIMEOUT,
+			    "Request Timeout",
+			    "Request Timeout",
+			    detail,
+			    this.charset,
+			    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+			this.httpResult.put( "streamCompleted", false );
+
+			if ( this.onErrorCallback != null ) {
+				context.invokeFunction( this.onErrorCallback, new Object[] { exception, this.httpResult } );
+			}
+		}
+
+		/**
+		 * A streaming callback stops the stream only by returning an explicit boolean false.
+		 * Null and any other value mean keep streaming.
+		 *
+		 * @param callbackResult The value returned by the callback
+		 *
+		 * @return True if the stream should stop
+		 */
+		private boolean isStopSignal( Object callbackResult ) {
+			return Boolean.FALSE.equals( callbackResult );
+		}
+
+		/**
 		 * Append up to the configured limit and report whether content was truncated.
 		 */
 		private boolean appendTruncated( StringBuilder target, String content, int maxLength ) {
@@ -2837,6 +3118,7 @@ public class BoxHttpClient {
 				int value = super.read();
 				if ( value >= 0 ) {
 					this.count++;
+					touchWatchdog();
 				}
 				return value;
 			}
@@ -2846,8 +3128,19 @@ public class BoxHttpClient {
 				int bytesRead = super.read( buffer, offset, length );
 				if ( bytesRead > 0 ) {
 					this.count += bytesRead;
+					touchWatchdog();
 				}
 				return bytesRead;
+			}
+
+			/**
+			 * Any received byte resets the idle timeout
+			 */
+			private void touchWatchdog() {
+				IdleWatchdog watchdog = BoxHttpRequest.this.idleWatchdog;
+				if ( watchdog != null ) {
+					watchdog.touch();
+				}
 			}
 
 			private long getCount() {
@@ -2855,4 +3148,41 @@ public class BoxHttpClient {
 			}
 		}
 	} // End of BoxHttpRequest class
+
+	/**
+	 * Idle watchdog for streaming responses. If no bytes are received for the configured number of seconds,
+	 * the response stream is closed, which unblocks the pending read and releases the connection.
+	 */
+	private static final class IdleWatchdog implements AutoCloseable {
+
+		private final AtomicLong			lastActivity	= new AtomicLong( System.nanoTime() );
+		private final AtomicBoolean			timedOut		= new AtomicBoolean( false );
+		private final ScheduledFuture<?>	task;
+
+		private IdleWatchdog( InputStream stream, int timeoutSeconds ) {
+			long timeoutNanos = TimeUnit.SECONDS.toNanos( timeoutSeconds );
+			this.task = IDLE_WATCHDOG_SCHEDULER.scheduleAtFixedRate( () -> {
+				if ( System.nanoTime() - this.lastActivity.get() > timeoutNanos && this.timedOut.compareAndSet( false, true ) ) {
+					try {
+						stream.close();
+					} catch ( IOException ignored ) {
+						// Closing is best effort, the pending read fails either way
+					}
+				}
+			}, IDLE_WATCHDOG_INTERVAL_MS, IDLE_WATCHDOG_INTERVAL_MS, TimeUnit.MILLISECONDS );
+		}
+
+		private void touch() {
+			this.lastActivity.set( System.nanoTime() );
+		}
+
+		private boolean timedOut() {
+			return this.timedOut.get();
+		}
+
+		@Override
+		public void close() {
+			this.task.cancel( false );
+		}
+	}
 }

@@ -135,6 +135,7 @@ public class HTTP extends Component {
 		    new Attribute( Key.sse, "boolean", false ),
 		    new Attribute( Key.onRequestStart, "function" ),
 		    new Attribute( Key.onChunk, "function" ),
+		    new Attribute( Key.onBinaryChunk, "function" ),
 		    new Attribute( Key.onMessage, "function" ),
 		    new Attribute( Key.onError, "function" ),
 		    new Attribute( Key.onComplete, "function" ),
@@ -327,6 +328,10 @@ public class HTTP extends Component {
 	 *                           request, or performing pre-flight checks. Optional.
 	 *
 	 * @attribute.onChunk A callback function for streaming/chunked response processing. Receives a struct with: chunk (data), chunkNumber (1-based), totalReceived (bytes), headers (first chunk only), result (HTTPResult struct). Optional.
+	 * 
+	 * @attribute.onBinaryChunk A callback function for raw binary response streaming. Receives (bytes, info): bytes is the byte array read from the network (no text decoding, no line splitting) and info is a struct with chunkNumber (1-based),
+	 *                          totalBytes, headers (first chunk only), result and httpClient. Return an explicit false to stop and close the connection. When set, timeout is an idle timeout (longest wait for headers or between received bytes) and a non
+	 *                          2xx status is reported through onError instead of invoking the callback. Takes precedence over onChunk. Optional.
 	 *
 	 * @attribute.onError A callback function to handle errors during the HTTP request. Receives a struct with: error (exception), message (error message), result (HTTPResult struct with partial data). Called for both streaming and non-streaming
 	 *                    requests. Optional.
@@ -476,6 +481,7 @@ public class HTTP extends Component {
 		    // CallBacks
 		    .onRequestStart( attributes.getAsFunction( Key.onRequestStart ) )
 		    .onChunk( attributes.getAsFunction( Key.onChunk ) )
+		    .onBinaryChunk( attributes.getAsFunction( Key.onBinaryChunk ) )
 		    .onError( attributes.getAsFunction( Key.onError ) )
 		    .onComplete( attributes.getAsFunction( Key.onComplete ) )
 		    // SSE Mode
