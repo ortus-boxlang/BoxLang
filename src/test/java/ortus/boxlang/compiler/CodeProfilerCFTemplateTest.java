@@ -21,7 +21,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Locale;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -80,7 +79,7 @@ class CodeProfilerCFTemplateTest {
 	 */
 	private String keyFor( String relativePath ) {
 		Path absolute = Paths.get( relativePath ).toAbsolutePath().normalize();
-		return absolute.toString().toLowerCase( Locale.ROOT );
+		return absolute.toString();
 	}
 
 	@DisplayName( "It profiles the expression statement (tag)" )
@@ -1029,7 +1028,7 @@ class CodeProfilerCFTemplateTest {
 		// The blueprint is keyed by the NORMALIZED absolute file path (what
 		// registerBlueprintForFile stores), not a source hash.
 		Path	absolute	= Paths.get( relativePath ).toAbsolutePath().normalize();
-		String	fileKey		= absolute.toString().toLowerCase( Locale.ROOT );
+		String	fileKey		= absolute.toString();
 		assertThat( CodeProfilerService.trackedBlueprints() ).containsKey( fileKey );
 
 		var blueprint = CodeProfilerService.trackedBlueprints().get( fileKey );
@@ -1070,7 +1069,7 @@ class CodeProfilerCFTemplateTest {
 
 		// Same file-path keying: normalized absolute path.
 		Path	absolute	= Paths.get( relativePath ).toAbsolutePath().normalize();
-		String	fileKey		= absolute.toString().toLowerCase( Locale.ROOT );
+		String	fileKey		= absolute.toString();
 		assertThat( CodeProfilerService.trackedBlueprints() ).containsKey( fileKey );
 
 		var blueprint = CodeProfilerService.trackedBlueprints().get( fileKey );

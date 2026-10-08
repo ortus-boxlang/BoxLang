@@ -126,6 +126,59 @@ class CodeProfilerServiceTest {
 	// Ternary: not all spans on the line run
 	// -------------------------------------------------------------------------
 
+	@DisplayName( "It resolves a registered file regardless of the caller's path case or separators" )
+	@Test
+	void testLookupNormalizesCaseAndSeparators() throws Exception {
+		// A blueprint registered under one spelling must be resolvable under a
+		// DIFFERENT case + separator spelling — the normalizing lookup is automatic
+		// and built into the user-facing API, not the caller's job.
+		java.nio.file.Path	temp		= java.nio.file.Files.createTempFile( "CodeProfilerServiceTest", ".cfm" );
+		String				registered	= temp.toString();
+		// Register using the canonical (absoluted + normalized) path.
+		String				fileId		= CodeProfilerService.registerBlueprintForFile( registered, PLAIN_BLUEPRINT );
+		CodeProfilerService.mark( fileId, 0 );
+		sleep( 5 );
+		CodeProfilerService.mark( fileId, 1 );
+
+		// Query with the OPPOSITE separator + flipped case.
+		String query = registered.replace( java.io.File.separatorChar, java.io.File.separatorChar == '/' ? '\\' : '/' )
+		    .toUpperCase( java.util.Locale.ROOT );
+
+		// spanAt resolves via the automatic case-insensitive fallback.
+		assertThat( CodeProfilerService.spanAt( query, 1, 1 ).stats().count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.spanAt( query, 2, 1 ).stats().count() ).isEqualTo( 1 );
+		// The line aggregate resolves too.
+		assertThat( CodeProfilerService.lineAt( query, 1 ).covered() ).isTrue();
+		assertThat( CodeProfilerService.fileLines( query ).keySet() ).containsExactly( 1, 2, 3 );
+	}
+
+	@DisplayName( "It does not charge a disabled interval to a span across a disable/re-enable" )
+	@Test
+	void testDisableEnableDoesNotCorruptTiming() {
+		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
+
+		// Open an interval (span 0 marked), then DISABLE capture.
+		CodeProfilerService.mark( fileId, 0 );
+		CodeProfilerService.setActive( false );
+
+		// The trace is off for a while (simulated). Stale interval sits in the
+		// thread-local state from BEFORE the disable.
+		sleep( 700 );
+
+		// Re-enable and take a NEW probe. This must NOT charge the 700ms disabled
+		// gap to span 0 — the activation generation invalidates the stale clock.
+		CodeProfilerService.setActive( true );
+		CodeProfilerService.mark( fileId, 1 );
+
+		// span 0 (line 1) opened the interval BEFORE the disable. Its self-time must be
+		// the tiny pre-disable gap, NOT the 700ms disabled period.
+		assertThat( CodeProfilerService.spanAt( FILE, 1, 1 ).stats().count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.spanAt( FILE, 1, 1 ).stats().totalNanos() ).isLessThan( 100L * 1_000_000L );
+		// span 1 (line 2) fired right after re-enable; its own self-time is tiny too.
+		assertThat( CodeProfilerService.spanAt( FILE, 2, 1 ).stats().count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.spanAt( FILE, 2, 1 ).stats().totalNanos() ).isLessThan( 100L * 1_000_000L );
+	}
+
 	@DisplayName( "It marks only the executable spans that actually ran on one line" )
 	@Test
 	void testTernary() {
@@ -424,7 +477,7 @@ class CodeProfilerServiceTest {
 	// -------------------------------------------------------------------------
 
 	private static String normalizePath( String path ) {
-		return java.nio.file.Paths.get( path ).toAbsolutePath().normalize().toString().toLowerCase( java.util.Locale.ROOT );
+		return java.nio.file.Paths.get( path ).toAbsolutePath().normalize().toString();
 	}
 
 	private static void sleep( long ms ) {

@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterEach;
@@ -3347,7 +3346,7 @@ class CodeProfilerTest {
 		// The blueprint is keyed by the NORMALIZED absolute file path (what
 		// registerBlueprintForFile stores), not a source hash.
 		Path	absolute	= Paths.get( relativePath ).toAbsolutePath().normalize();
-		String	fileKey		= absolute.toString().toLowerCase( Locale.ROOT );
+		String	fileKey		= absolute.toString();
 
 		// DEBUG (reads file from disk, no source arg)
 		// System.out.println( "=== testDiskFile dump" );
@@ -3396,7 +3395,7 @@ class CodeProfilerTest {
 
 		// Same file-path keying: normalized absolute path.
 		Path	absolute	= Paths.get( relativePath ).toAbsolutePath().normalize();
-		String	fileKey		= absolute.toString().toLowerCase( Locale.ROOT );
+		String	fileKey		= absolute.toString();
 
 		// DEBUG (reads file from disk, no source arg)
 		// System.out.println( "=== testDiskClassFile dump" );
@@ -3753,8 +3752,7 @@ class CodeProfilerTest {
 		        1, 0, 1, 10, 1,
 		        2, 0, 2, 8, 1
 		    } );
-		String	normPath	= java.nio.file.Paths.get( filePath ).toAbsolutePath().normalize().toString()
-		    .toLowerCase( java.util.Locale.ROOT );
+		String	normPath	= java.nio.file.Paths.get( filePath ).toAbsolutePath().normalize().toString();
 		assertThat( firstId ).isEqualTo( normPath );
 
 		// Idempotent: same key re-registered with the SAME lastModified -> SAME id.
@@ -3970,7 +3968,7 @@ class CodeProfilerTest {
 	 */
 	private String keyFor( String relativePath ) {
 		Path absolute = Paths.get( relativePath ).toAbsolutePath().normalize();
-		return absolute.toString().toLowerCase( Locale.ROOT );
+		return absolute.toString();
 	}
 
 	@DisplayName( "It groups a script lock component's closing brace with its header" )

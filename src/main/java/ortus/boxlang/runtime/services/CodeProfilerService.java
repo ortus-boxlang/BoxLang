@@ -64,7 +64,7 @@ public class CodeProfilerService extends BaseService {
 	/**
 	 * Whether live capture is active. Off => {@link #mark} returns immediately.
 	 */
-	private volatile boolean								active		= false;
+	private volatile boolean								active					= false;
 
 	/**
 	 * Assigns compact file ids to blueprints.
@@ -76,22 +76,40 @@ public class CodeProfilerService extends BaseService {
 	 * Registered blueprints by NORMALIZED file path / source hash (the blueprint
 	 * KEY — the "id" bytecode embeds as a String static field).
 	 */
-	private final ConcurrentHashMap<String, FileBlueprint>	byPath		= new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, FileBlueprint>	byPath					= new ConcurrentHashMap<>();
 
 	/**
 	 * Thread-local timestamp of the last span fired on this thread (probe-charging).
 	 */
-	private final ThreadLocal<Long>							lastNano	= new ThreadLocal<>();
+	private final ThreadLocal<Long>							lastNano				= new ThreadLocal<>();
 
 	/**
 	 * Thread-local FileBlueprint that opened the current interval.
 	 */
-	private final ThreadLocal<FileBlueprint>				lastFile	= new ThreadLocal<>();
+	private final ThreadLocal<FileBlueprint>				lastFile				= new ThreadLocal<>();
 
 	/**
 	 * Thread-local span id that opened the current interval.
 	 */
-	private final ThreadLocal<Integer>						lastSpanId	= new ThreadLocal<>();
+	private final ThreadLocal<Integer>						lastSpanId				= new ThreadLocal<>();
+
+	/**
+	 * The capture ACTIVATION GENERATION. Bumped every time capture is re-enabled
+	 * ({@link #setActive(true)}). Each thread records the generation it last saw
+	 * when it opened its probe interval; on the next {@link #mark}, a mismatch means
+	 * the interval was opened in a PREVIOUS capture session (before a disable/
+	 * enable cycle), so the huge wall-clock gap (the disabled period) must NOT be
+	 * charged to the old span. Without this, re-enabling capture would corrupt
+	 * every worker thread's timing data for the whole time capture was off.
+	 */
+	private volatile long									activationGeneration	= 0L;
+
+	/**
+	 * Thread-local activation generation of the interval currently open on this
+	 * thread (0 = none/unknown). Compared against {@link #activationGeneration} in
+	 * {@link #mark}/{@link #markEnd} to detect stale cross-disable intervals.
+	 */
+	private final ThreadLocal<Long>							lastGeneration			= new ThreadLocal<>();
 
 	/**
 	 * Construct the CodeProfilerService. Called by {@link BoxRuntime} during startup.
@@ -149,11 +167,19 @@ public class CodeProfilerService extends BaseService {
 			return;
 		}
 
-		long	now			= System.nanoTime();
-		Long	prevNano	= service.lastNano.get();
+		long	now				= System.nanoTime();
+		long	curGeneration	= service.activationGeneration;
+		Long	prevNano		= service.lastNano.get();
+		Long	prevGeneration	= service.lastGeneration.get();
 
 		// Charge the interval since the previous timestamp to the span that opened it.
-		if ( prevNano != null && prevNano > 0 && now >= prevNano ) {
+		// SKIP the charge if the interval was opened in a PREVIOUS capture session
+		// (capture was disabled + re-enabled in between): the gap then spans the
+		// disabled period and would corrupt timing. This thread's stale clock is
+		// invalidated by the generation mismatch on EVERY thread — not just the one
+		// that called setActive.
+		if ( prevNano != null && prevNano > 0 && now >= prevNano
+		    && prevGeneration != null && prevGeneration == curGeneration ) {
 			FileBlueprint	prevFile	= service.lastFile.get();
 			Integer			prevSpan	= service.lastSpanId.get();
 			if ( prevFile != null && prevSpan != null ) {
@@ -165,6 +191,7 @@ public class CodeProfilerService extends BaseService {
 		}
 
 		service.lastNano.set( now );
+		service.lastGeneration.set( curGeneration );
 
 		// The CURRENT span owns the next interval. The blueprint is located by its
 		// KEY (id) — the path or source hash.
@@ -219,9 +246,14 @@ public class CodeProfilerService extends BaseService {
 			return;
 		}
 
-		long	now			= System.nanoTime();
-		Long	prevNano	= service.lastNano.get();
-		if ( prevNano != null && prevNano > 0 && now >= prevNano ) {
+		long	now				= System.nanoTime();
+		long	curGeneration	= service.activationGeneration;
+		Long	prevNano		= service.lastNano.get();
+		Long	prevGeneration	= service.lastGeneration.get();
+		// Same stale-interval guard as mark(): never charge a gap that spans a
+		// disable/re-enable cycle on this thread.
+		if ( prevNano != null && prevNano > 0 && now >= prevNano
+		    && prevGeneration != null && prevGeneration == curGeneration ) {
 			FileBlueprint	prevFile	= service.lastFile.get();
 			Integer			prevSpan	= service.lastSpanId.get();
 			if ( prevFile != null && prevSpan != null && prevFile == service.byPath.get( id ) ) {
@@ -236,6 +268,7 @@ public class CodeProfilerService extends BaseService {
 		service.lastNano.remove();
 		service.lastFile.remove();
 		service.lastSpanId.remove();
+		service.lastGeneration.remove();
 	}
 
 	/**
@@ -247,6 +280,7 @@ public class CodeProfilerService extends BaseService {
 			inst.lastNano.remove();
 			inst.lastFile.remove();
 			inst.lastSpanId.remove();
+			inst.lastGeneration.remove();
 		}
 	}
 
@@ -256,12 +290,21 @@ public class CodeProfilerService extends BaseService {
 
 	/**
 	 * Turn live capture on or off.
+	 * <p>
+	 * Re-ENABLING capture bumps the activation generation, which invalidates every
+	 * worker thread's stale probe clock (see {@link #activationGeneration}). Any
+	 * interval a thread had open BEFORE the disable can no longer charge its
+	 * (huge, disabled-period) gap to the old span.
 	 *
 	 * @param active whether to capture
 	 */
 	public static void setActive( boolean active ) {
 		if ( instance != null ) {
 			instance.active = active;
+			if ( active ) {
+				// Invalidate stale intervals opened in a previous capture session.
+				instance.activationGeneration++;
+			}
 		}
 	}
 
@@ -283,6 +326,10 @@ public class CodeProfilerService extends BaseService {
 			instance.lastNano.remove();
 			instance.lastFile.remove();
 			instance.lastSpanId.remove();
+			instance.lastGeneration.remove();
+			// Bump the generation so any OTHER thread's stale interval (opened before
+			// the reset) is invalidated and cannot charge across the reset boundary.
+			instance.activationGeneration++;
 		}
 	}
 
@@ -562,9 +609,12 @@ public class CodeProfilerService extends BaseService {
 		String resolvedSource = source;
 		if ( resolvedSource == null && fb.kind() == Blueprint.Kind.FILE ) {
 			try {
-				resolvedSource = java.nio.file.Files.readString( Paths.get( filePath ) );
+				// Read from the CANONICAL stored path, not the caller's spelling —
+				// a differently-cased query may match the blueprint but still not
+				// exist on disk verbatim.
+				resolvedSource = java.nio.file.Files.readString( Paths.get( fb.filePath ) );
 			} catch ( java.io.IOException e ) {
-				return "<cannot read " + filePath + ": " + e.getMessage() + ">";
+				return "<cannot read " + fb.filePath + ": " + e.getMessage() + ">";
 			}
 		}
 		StringBuilder	sb		= new StringBuilder();
@@ -859,8 +909,10 @@ public class CodeProfilerService extends BaseService {
 	// -------------------------------------------------------------------------
 
 	private static String normalize( String filePath ) {
+		// Canonicalize the path so registration and lookup agree regardless of
+		// slashes, redundant segments, or relative/absolute forms.
 		Path path = Paths.get( filePath ).toAbsolutePath().normalize();
-		return path.toString().toLowerCase( Locale.ROOT );
+		return path.toString();
 	}
 
 	private static FileBlueprint fileBlueprint( String key ) {
@@ -871,6 +923,21 @@ public class CodeProfilerService extends BaseService {
 		if ( fb == null ) {
 			// Not an exact key match; maybe a real path needing normalization.
 			fb = instance.byPath.get( normalize( key ) );
+		}
+		if ( fb == null ) {
+			// Still not found — the caller may have passed a differently-cased
+			// spelling of a registered FILE path (e.g. C:\foo\bar.cfm vs
+			// c:/foo/BAR.cfm), and the separators may differ too (Windows \ vs /).
+			// Fall back to a case-insensitive, separator-insensitive match over
+			// registered FILE blueprints. COLD path — a linear scan, acceptable
+			// for lookups (not the mark hot path).
+			String lowerKey = key.toLowerCase( Locale.ROOT ).replace( '\\', '/' );
+			for ( var entry : instance.byPath.entrySet() ) {
+				if ( entry.getValue().kind() == Blueprint.Kind.FILE
+				    && entry.getValue().filePath.toLowerCase( Locale.ROOT ).replace( '\\', '/' ).equals( lowerKey ) ) {
+					return entry.getValue();
+				}
+			}
 		}
 		return fb;
 	}

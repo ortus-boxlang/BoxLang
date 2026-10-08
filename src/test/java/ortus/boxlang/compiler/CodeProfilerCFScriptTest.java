@@ -21,7 +21,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Locale;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,7 +100,7 @@ class CodeProfilerCFScriptTest {
 	 */
 	private String keyFor( String relativePath ) {
 		Path absolute = Paths.get( relativePath ).toAbsolutePath().normalize();
-		return absolute.toString().toLowerCase( Locale.ROOT );
+		return absolute.toString();
 	}
 
 	@DisplayName( "It registers a blueprint and profiles the expression statement (cfscript)" )
@@ -2464,7 +2463,7 @@ class CodeProfilerCFScriptTest {
 		// The blueprint is keyed by the NORMALIZED absolute file path (what
 		// registerBlueprintForFile stores), not a source hash.
 		Path	absolute	= Paths.get( relativePath ).toAbsolutePath().normalize();
-		String	fileKey		= absolute.toString().toLowerCase( Locale.ROOT );
+		String	fileKey		= absolute.toString();
 
 		// DEBUG (reads file from disk, no source arg)
 		// DEBUG (reads file from disk, no source arg)
@@ -2514,7 +2513,7 @@ class CodeProfilerCFScriptTest {
 
 		// Same file-path keying: normalized absolute path.
 		Path	absolute	= Paths.get( relativePath ).toAbsolutePath().normalize();
-		String	fileKey		= absolute.toString().toLowerCase( Locale.ROOT );
+		String	fileKey		= absolute.toString();
 
 		// DEBUG (reads file from disk, no source arg)
 		// System.out.println( "=== testDiskClassFile dump" );
