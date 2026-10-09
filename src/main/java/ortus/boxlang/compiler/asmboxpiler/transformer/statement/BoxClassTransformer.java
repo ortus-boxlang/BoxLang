@@ -55,6 +55,9 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
+import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
@@ -65,6 +68,7 @@ import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
+import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -81,6 +85,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.services.Blueprint;
+import ortus.boxlang.runtime.services.CodeProfilerService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
@@ -550,6 +556,18 @@ public class BoxClassTransformer {
 		    null,
 		    0 ).visitEnd();
 
+		// The blueprint KEY (id) static field, added ONLY when profiling is enabled.
+		// Holds the file path (or source hash) that identifies this class's blueprint;
+		// the mark bytecode loads it as the first arg of each CodeProfilerService.mark
+		// call. Not present when profiling is off (no field bloat).
+		if ( transpiler.isProfilingEnabled() ) {
+			classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			    Transpiler.PROFILER_ID_FIELD,
+			    Type.getDescriptor( String.class ),
+			    null,
+			    null ).visitEnd();
+		}
+
 		// classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
 		// "compileTimeMethodNames",
 		// Type.getDescriptor( Set.class ),
@@ -927,7 +945,23 @@ public class BoxClassTransformer {
 			        )
 			    );
 
+			    // Property-default spans are marked at the RIGHT moment by their own
+			    // compiled code — do NOT batch-mark them here:
+			    // - literal defaults are evaluated inline at CLINIT (Property
+			    // construction), so their mark is baked at class load;
+			    // - non-literal defaults compile to a lazy defaultExpr_N method
+			    // whose mark fires ONLY when getDefaultValue() runs — which
+			    // defaultProperties() skips when the variable already exists
+			    // (e.g. a super class preset it). Batch-marking them here would
+			    // falsely count SKIPPED defaults as run (GREEN).
+
 			    psuedoBody.addAll( body );
+
+			    // Close the probe-charging interval after the pseudo-constructor's
+			    // last statement so the final span's self-time is charged.
+			    if ( transpiler.hasProfilerId() ) {
+				    psuedoBody.addAll( transpiler.emitMarkEnd() );
+			    }
 
 			    return psuedoBody;
 		    }
@@ -956,6 +990,12 @@ public class BoxClassTransformer {
 		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, transpiler, false,
 		    () -> {
 			    List<AbstractInsnNode> staticNodes = new ArrayList<>();
+
+			    // The static { ... } braces are batch-marked when the static
+			    // initializer RUNS (class load). Pass A registered the static brace
+			    // group keyed by the "static" keyword; emit it at static-init entry.
+			    emitStaticInitMark( transpiler, staticNodes, boxClass );
+
 			    boxClass.getDescendantsOfType( BoxFunctionDeclaration.class, ( expr ) -> {
 				    BoxFunctionDeclaration func = ( BoxFunctionDeclaration ) expr;
 
@@ -980,6 +1020,12 @@ public class BoxClassTransformer {
 			        .flatMap( s -> s.stream() )
 			        .collect( Collectors.toList() ) );
 
+			    // Close the probe-charging interval after the static initializer's
+			    // last statement so the final span's self-time is charged.
+			    if ( transpiler.hasProfilerId() ) {
+				    staticNodes.addAll( transpiler.emitMarkEnd() );
+			    }
+
 			    return staticNodes;
 		    }
 		);
@@ -992,6 +1038,36 @@ public class BoxClassTransformer {
 			List<AbstractInsnNode>	clinitNodes				= new ArrayList<>();
 			String					outerClassInternal		= transpiler.getProperty( "outerClassInternal" );
 			boolean					isInnerClassDelegate	= outerClassInternal != null;
+
+			// Initialize the profiler blueprint KEY (id) static field FIRST — before
+			// any mark instruction (the shell mark below reads it), so marks never
+			// see a null id. INNER classes defer to the outer field (redirected later),
+			// so only the (non-inner) class emits it.
+			if ( !isInnerClassDelegate && transpiler.getFileId() != null ) {
+				clinitNodes.add( new LdcInsnNode( transpiler.getFileId() ) );
+				clinitNodes
+				    .add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), Transpiler.PROFILER_ID_FIELD, Type.getDescriptor( String.class ) ) );
+			}
+
+			// Self-register the blueprint on load FIRST — BEFORE any mark runs — so
+			// a class loaded from disk (not recompiled in this session — e.g. after
+			// a runtime restart) still has its span map available by the time the
+			// shell mark below executes. Without this ordering, the mark would look
+			// up a missing blueprint in the fresh runtime and the class shell would
+			// be permanently reported as missed. This is IDEMPOTENT: if it was
+			// already registered at compile time, the same key is reused. INNER
+			// classes are delegates — they share the OUTER file's blueprint and
+			// their marks are redirected to the outer's codeProfilerId field, so
+			// only the outer emits the registration.
+			if ( !isInnerClassDelegate ) {
+				emitBlueprintRegistration( transpiler, clinitNodes, type, filePath );
+			}
+
+			// The CLASS SHELL + closing "}" are batch-marked when the class is
+			// LOADED (clinit). Pass A registered the shell group keyed by the first
+			// annotation (or the "class" keyword); emit it at clinit entry, AFTER
+			// the blueprint registration above so the mark resolves the blueprint.
+			emitClassShellMark( transpiler, clinitNodes, boxClass );
 
 			if ( isInnerClassDelegate ) {
 				// Inner class: path, sourceType, imports fields are not declared on this class.
@@ -1326,6 +1402,144 @@ public class BoxClassTransformer {
 		} );
 
 		return classNode;
+	}
+
+	/**
+	 * Emit the {@code mark(fileId, ...classShell)} for the class shell (pre/post
+	 * annotations + "class" keyword + opening "{") and its closing "}" at class
+	 * LOAD time (clinit). Pass A registered the shell span group keyed by the
+	 * first annotation (or the "class" keyword). No-op when profiling is disabled.
+	 *
+	 * @param transpiler  the transpiler
+	 * @param clinitNodes the clinit instruction list to append to
+	 * @param boxClass    the class
+	 */
+	private static void emitClassShellMark( Transpiler transpiler, List<AbstractInsnNode> clinitNodes, BoxClass boxClass ) {
+		if ( !transpiler.hasProfilerId() ) {
+			return;
+		}
+		Point shellStart = null;
+		if ( boxClass.getAnnotations() != null && !boxClass.getAnnotations().isEmpty() ) {
+			// A CF component's annotations (component attributes) may have a null
+			// position — guard and fall back to the class start.
+			Point	annStart	= boxClass.getAnnotations().get( 0 ).getPosition() == null
+			    ? null
+			    : boxClass.getAnnotations().get( 0 ).getPosition().getStart();
+			// The shell must start at the EARLIEST source point: the class keyword
+			// (`boxClass.getStart()`) OR the first pre-annotation. A post-annotation
+			// like `extends=ProfilerSuper` starts AFTER the `class` keyword, so it
+			// must not shrink the shell away from the keyword.
+			Point	classStart	= boxClass.getStart();
+			if ( annStart != null && classStart != null ) {
+				shellStart = ( annStart.getLine() < classStart.getLine()
+				    || ( annStart.getLine() == classStart.getLine() && annStart.getColumn() < classStart.getColumn() ) )
+				        ? annStart
+				        : classStart;
+			} else if ( annStart != null ) {
+				shellStart = annStart;
+			}
+		}
+		if ( shellStart == null ) {
+			shellStart = boxClass.getStart();
+		}
+		if ( shellStart == null ) {
+			return;
+		}
+		long	packed	= ( ( long ) shellStart.getLine() << 32 ) | ( shellStart.getColumn() & 0xFFFFFFFFL );
+		int		spanId	= transpiler.getSpanId( packed );
+		int[]	group	= spanId < 0 ? null : transpiler.takeSpanGroup( spanId );
+		if ( group != null ) {
+			for ( int member : group ) {
+				transpiler.claimSpanMark( member );
+			}
+			clinitNodes.addAll( transpiler.emitMarkVarargs( group ) );
+		}
+	}
+
+	/**
+	 * Emit {@code <clinit>} bytecode that self-registers this class's blueprint
+	 * with {@link CodeProfilerService} when the class is LOADED (clinit runs).
+	 * <p>
+	 * This makes a class loaded from disk (NOT recompiled in this session — e.g.
+	 * after a runtime restart where in-memory blueprints were cleared) still have
+	 * its span map available, so its embedded {@code mark(fileId, spanId)}
+	 * instructions continue to record coverage. Registration is idempotent: if
+	 * compile-time registration already happened, the same fileId is reused.
+	 * <p>
+	 * The blueprint is serialized as a flat {@code int[]} (5 ints per span:
+	 * startLine, startCol, endLine, endCol, executableFlag). The emitted call is
+	 * {@code CodeProfilerService.registerBlueprintFromClinit(filePath, fileId,
+	 * lastModified, spanData)}. No-op when profiling is disabled or
+	 * there are no spans.
+	 *
+	 * @param transpiler  the active transpiler (span data + fileId live here)
+	 * @param clinitNodes the clinit instruction list to append to
+	 */
+	private static void emitBlueprintRegistration( Transpiler transpiler, List<AbstractInsnNode> clinitNodes, Type type, String filePath ) {
+		if ( !transpiler.isProfilingEnabled() || transpiler.getFileId() == null ) {
+			return;
+		}
+		List<Blueprint.SpanDef> spanDefs = transpiler.getSpanDefs();
+		if ( spanDefs == null || spanDefs.isEmpty() ) {
+			return;
+		}
+
+		// (The codeProfilerId static field was initialized at clinit start — BEFORE
+		// any mark — so marks never read a null id.)
+
+		// Serialize spans as packed, chunked String constants (constant-pool data —
+		// tiny method footprint) so even huge blueprints never overflow the JVM's
+		// per-method 64KB limit. The old inline int[] array-build kept the array
+		// reference on the stack the whole block, so the clinit splitter could
+		// never subdivide it, causing MethodTooLargeException on big files.
+		String id = transpiler.getFileId();
+		clinitNodes.addAll( AsmHelper.emitBlueprintRegistrationNodes(
+		    id, transpiler.getLastModified(), transpiler.getBlueprintKind(), spanDefs ) );
+	}
+
+	/**
+	 * Emit the {@code mark(fileId, ...staticBraces)} for a class's {@code static {
+	 * ... }} initializer braces at static-init entry. Pass A registered the static
+	 * brace group keyed by the {@code static} keyword. No-op when profiling is
+	 * disabled.
+	 * 
+	 * /**
+	 * Emit the {@code mark(fileId, ...staticBraces)} for a class's {@code static {
+	 * ... }} initializer braces at static-init entry. Pass A registered the static
+	 * brace group keyed by the {@code static} keyword. No-op when profiling is
+	 * disabled.
+	 *
+	 * @param staticNodes the staticInitializer instruction list to append to
+	 * @param boxClass    the class
+	 */
+	private static void emitStaticInitMark( Transpiler transpiler, List<AbstractInsnNode> staticNodes, BoxClass boxClass ) {
+		if ( !transpiler.hasProfilerId() ) {
+			return;
+		}
+		for ( var stmt : boxClass.getBody() ) {
+			// A static initializer may be a DIRECT class body statement, or it may
+			// be wrapped in a <cfscript> BoxScriptIsland (e.g. a CF tag component
+			// whose static block is written in a script island). Unwrap islands.
+			List<BoxStatement> candidates = stmt instanceof BoxScriptIsland island ? island.getStatements() : List.of( stmt );
+			for ( BoxStatement candidate : candidates ) {
+				if ( ! ( candidate instanceof BoxStaticInitializer init ) ) {
+					continue;
+				}
+				Point kw = init.getStart();
+				if ( kw == null ) {
+					continue;
+				}
+				long	packed	= ( ( long ) kw.getLine() << 32 ) | ( kw.getColumn() & 0xFFFFFFFFL );
+				int		spanId	= transpiler.getSpanId( packed );
+				int[]	group	= spanId < 0 ? null : transpiler.takeSpanGroup( spanId );
+				if ( group != null ) {
+					for ( int member : group ) {
+						transpiler.claimSpanMark( member );
+					}
+					staticNodes.addAll( transpiler.emitMarkVarargs( group ) );
+				}
+			}
+		}
 	}
 
 	private static void defineLookupPrivateMethod( Transpiler transpiler, ClassNode classNode, Type thisType ) {

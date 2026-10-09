@@ -26,7 +26,9 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.IntInsnNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
+import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.LineNumberNode;
@@ -65,6 +67,8 @@ import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.Blueprint;
+import ortus.boxlang.runtime.services.CodeProfilerService;
 import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DefaultExpression;
@@ -89,6 +93,170 @@ public class AsmHelper {
 		    List.of( start, new LineNumberNode( node.getPosition().getStart().getLine(), start ) ),
 		    List.of( end, new LineNumberNode( node.getPosition().getEnd().getLine(), end ) )
 		);
+	}
+
+	/**
+	 * Emit the bytecode for a code-coverage mark call:
+	 * {@code CodeProfilerService.mark( id, spanId )}.
+	 *
+	 * @param id     the blueprint KEY (path string or source hash) — a String static
+	 *               field on the class
+	 * @param spanId the span id within that blueprint
+	 *
+	 * @return the instructions: GETSTATIC id, LDC spanId, INVOKESTATIC mark(Ljava/lang/String;I)V
+	 */
+	public static List<AbstractInsnNode> invokeStaticMark( String internalClassName, String idField, int spanId ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, idField, Type.getDescriptor( String.class ) ) );
+		nodes.add( new LdcInsnNode( spanId ) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( CodeProfilerService.class ),
+		    "mark",
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ), Type.INT_TYPE ),
+		    false
+		) );
+		return nodes;
+	}
+
+	/**
+	 * Emit the bytecode for closing the probe-charging interval at the end of a body:
+	 * {@code CodeProfilerService.markEnd( id )}.
+	 *
+	 * @param id the blueprint KEY (path string or source hash) — a String static field
+	 *
+	 * @return the instructions: GETSTATIC id, INVOKESTATIC markEnd(Ljava/lang/String;)V
+	 */
+	public static List<AbstractInsnNode> invokeStaticMarkEnd( String internalClassName, String idField ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, idField, Type.getDescriptor( String.class ) ) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( CodeProfilerService.class ),
+		    "markEnd",
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ) ),
+		    false
+		) );
+		return nodes;
+	}
+
+	/**
+	 * Emit the bytecode for a single code-coverage varargs mark call:
+	 * {@code CodeProfilerService.mark( id, int... spanIds )}. This collapses
+	 * SEVERAL atomic shell spans (fragments of one declaration split at lazy
+	 * defaults) into a single {@code mark(Ljava/lang/String;[I)V} invocation — the
+	 * whole shell runs or does not run together, so it opens exactly ONE
+	 * probe-charging interval and increments all its spans' counts together.
+	 *
+	 * @param id      the blueprint KEY (path string or source hash) — a String static field
+	 * @param spanIds the shell spans to batch, in source order; the last owns the
+	 *                next interval
+	 *
+	 * @return the instructions: GETSTATIC id, int[] spanIds, INVOKESTATIC mark(Ljava/lang/String;[I)V
+	 */
+	public static List<AbstractInsnNode> invokeStaticMarkVarargs( String internalClassName, String idField, int[] spanIds ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, idField, Type.getDescriptor( String.class ) ) );
+		nodes.add( new LdcInsnNode( spanIds.length ) );
+		nodes.add( new IntInsnNode( Opcodes.NEWARRAY, Opcodes.T_INT ) );
+		for ( int i = 0; i < spanIds.length; i++ ) {
+			nodes.add( new InsnNode( Opcodes.DUP ) );
+			nodes.add( new LdcInsnNode( i ) );
+			nodes.add( new LdcInsnNode( spanIds[ i ] ) );
+			nodes.add( new InsnNode( Opcodes.IASTORE ) );
+		}
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( CodeProfilerService.class ),
+		    "mark",
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ), Type.getType( int[].class ) ),
+		    false
+		) );
+		return nodes;
+	}
+
+	/**
+	 * Emit the bytecode that self-registers a blueprint from a class's
+	 * {@code <clinit>}: {@code CodeProfilerService.registerBlueprintFromClinit(
+	 * id, lastModified, String... spanDataChunks )}.
+	 * <p>
+	 * The span data is serialized as a series of PACKED, space-separated String
+	 * constants (each chunk a single {@code LDC}, data living in the constant pool
+	 * rather than the method body). This keeps the clinit tiny even for very large
+	 * blueprints — unlike the old inline {@code int[]} array-build (thousands of
+	 * {@code DUP/LDC/IASTORE}), which could overflow the JVM's per-method 64KB
+	 * limit in a single {@code _clinit_part} because the array-reference stays on
+	 * the stack the whole block, so {@link #completeWithSplitting}'s splitter can
+	 * never find a stack-depth-0 safe point inside it.
+	 *
+	 * @param id           the blueprint KEY (path string or source hash)
+	 * @param lastModified the source file's last-modified time
+	 * @param kind         the blueprint kind (FILE or SOURCE) — SOURCE ids are
+	 *                     hashes that must NOT be normalized as paths
+	 * @param spanDefs     the spans to serialize (5 ints each: line/col/line/col/flag)
+	 *
+	 * @return the instructions for the registration call
+	 */
+	public static List<AbstractInsnNode> emitBlueprintRegistrationNodes( String id, long lastModified, Blueprint.Kind kind,
+	    List<ortus.boxlang.runtime.services.Blueprint.SpanDef> spanDefs ) {
+		List<AbstractInsnNode>	nodes	= new ArrayList<>();
+
+		// Build the mode-based descriptor: int[].
+		// Pack the spans into a space-separated string, chunked so each LDC stays
+		// well under the JVM's 65535-byte CONSTANT_Utf8 limit.
+		StringBuilder			sb		= new StringBuilder();
+		List<String>			chunks	= new ArrayList<>();
+		int						count	= 0;
+		for ( ortus.boxlang.runtime.services.Blueprint.SpanDef s : spanDefs ) {
+			if ( sb.length() > 0 ) {
+				sb.append( ' ' );
+			}
+			sb.append( s.startLine() ).append( ' ' ).append( s.startCol() )
+			    .append( ' ' ).append( s.endLine() ).append( ' ' ).append( s.endCol() )
+			    .append( s.executable() ? " 1" : " 0" );
+			if ( ++count % 1000 == 0 ) {
+				chunks.add( sb.toString() );
+				sb.setLength( 0 );
+			}
+		}
+		if ( sb.length() > 0 ) {
+			chunks.add( sb.toString() );
+		}
+		if ( chunks.isEmpty() ) {
+			chunks.add( "" );
+		}
+
+		nodes.add( new LdcInsnNode( id ) );
+		nodes.add( new LdcInsnNode( lastModified ) );
+		// The blueprint kind as a GETSTATIC enum constant (stable, typed — not a
+		// fragile ordinal or string).
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    Type.getInternalName( Blueprint.Kind.class ),
+		    kind.name(),
+		    Type.getDescriptor( Blueprint.Kind.class ) ) );
+		// Build String[] chunks: ANEWARRAY, DUP index LDC AASTORE per chunk.
+		nodes.add( new LdcInsnNode( chunks.size() ) );
+		nodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, Type.getInternalName( String.class ) ) );
+		for ( int i = 0; i < chunks.size(); i++ ) {
+			nodes.add( new InsnNode( Opcodes.DUP ) );
+			nodes.add( new LdcInsnNode( i ) );
+			nodes.add( new LdcInsnNode( chunks.get( i ) ) );
+			nodes.add( new InsnNode( Opcodes.AASTORE ) );
+		}
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( CodeProfilerService.class ),
+		    "registerBlueprintFromClinit",
+		    Type.getMethodDescriptor(
+		        Type.getType( String.class ),                       // return: id
+		        Type.getType( String.class ),                       // arg1: id
+		        Type.LONG_TYPE,                                     // arg2: lastModified
+		        Type.getType( Blueprint.Kind.class ),               // arg3: kind
+		        Type.getType( String[].class ) ),                   // arg4: spanDataChunks
+		    false
+		) );
+		nodes.add( new InsnNode( Opcodes.POP ) ); // discard the returned id
+		return nodes;
 	}
 
 	/**
@@ -1556,6 +1724,52 @@ public class AsmHelper {
 	}
 
 	/**
+	 * Wrap a generated method body in a catch-all try whose handler closes the
+	 * probe-charging interval (markEnd) and RETHROWS the caught Throwable.
+	 * <p>
+	 * This runs ONLY when profiling is active. A <b>locally caught</b> exception
+	 * (the body's own try/catch machinery) is handled inside the body and never
+	 * reaches here — it stays in the same probe interval, exactly as it should.
+	 * An <b>uncaught</b> exception escaping the method closes the interval first
+	 * so the throwing span is charged its self-time up to the throw, and the
+	 * thread's next profiled probe (in the caller) does NOT absorb unwinding /
+	 * idle time.
+	 *
+	 * @param transpiler the active transpiler (span registry + profiling flag)
+	 * @param tracker    the method's context tracker (to register the try-catch)
+	 * @param body       the method body instructions to wrap
+	 *
+	 * @return the wrapped body, or the original body when profiling is off
+	 */
+	private static List<AbstractInsnNode> wrapBodyWithCatchAllMarkEnd( Transpiler transpiler, MethodContextTracker tracker,
+	    List<AbstractInsnNode> body ) {
+		if ( !transpiler.hasProfilerId() ) {
+			return body;
+		}
+		List<AbstractInsnNode>	nodes		= new ArrayList<>( body );
+		LabelNode				tryStart	= new LabelNode();
+		LabelNode				tryEnd		= new LabelNode();
+		LabelNode				handler		= new LabelNode();
+		LabelNode				end			= new LabelNode();
+
+		nodes.add( 0, tryStart );
+		// After the body completes NORMALLY jump past the handler (the handler
+		// must only run on the exceptional path — otherwise the fall-through
+		// flow hits ATHROW with a non-Throwable on the stack → VerifyError).
+		nodes.add( tryEnd );
+		nodes.add( new JumpInsnNode( Opcodes.GOTO, end ) );
+		nodes.add( handler );
+		// Close the probe interval, then rethrow the caught Throwable (still on
+		// the stack). markEnd charges the open interval to the throwing span.
+		nodes.addAll( transpiler.emitMarkEnd() );
+		nodes.add( new InsnNode( Opcodes.ATHROW ) );
+		nodes.add( end );
+
+		tracker.addTryCatchBlock( new TryCatchBlockNode( tryStart, tryEnd, handler, null ) );
+		return nodes;
+	}
+
+	/**
 	 * Create a method with context and ClassLocator setup, applying method splitting if needed.
 	 * This overload automatically handles large methods by splitting them into sub-methods.
 	 *
@@ -1692,10 +1906,22 @@ public class AsmHelper {
 		tracker.setClassLocatorSlot( classLocatorStore.index() );
 		classLocatorStore.nodes().forEach( ( node ) -> node.accept( methodVisitor ) );
 
-		var				nodes		= supplier.get();
+		var nodes = supplier.get();
+
+		// When profiling is active, wrap the whole body in a catch-all try that
+		// CLOSES the probe-charging interval before an UNCAUGHT exception escapes
+		// this method, then rethrows. Without this, an exception bypasses both the
+		// return-path markEnd and the fall-through markEnd, leaving the thread's
+		// interval open so the NEXT profiled probe charges unwinding/caller/idle
+		// time to the throwing span. Locally-caught exceptions (the try/catch
+		// machinery) do NOT reach this handler — they are caught inside the body
+		// and stay in the same interval, exactly as they should.
+		if ( transpiler.hasProfilerId() ) {
+			nodes = wrapBodyWithCatchAllMarkEnd( transpiler, tracker, nodes );
+		}
 
 		// Collect all labels that are in the original node list
-		Set<LabelNode>	allLabels	= new HashSet<>();
+		Set<LabelNode> allLabels = new HashSet<>();
 		for ( AbstractInsnNode node : nodes ) {
 			if ( node instanceof LabelNode labelNode ) {
 				allLabels.add( labelNode );

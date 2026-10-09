@@ -1,0 +1,64 @@
+class extends=ProfilerSuper implements="src.test.resources.profiler.ProfilerInterface" {
+
+	// SKIPPED: super already set `threshold` into the variables scope.
+	property name="threshold" default=complexSeed;
+	// RUNS: no preset exists, so defaultProperties() applies this default.
+	property name="other" default=complexSeed;
+
+	static {
+		complexSeed = 42;
+		staticInitRan = true;
+		staticOnly::s
+	}
+
+	instanceInit = 0;
+
+	class luis {
+		static {
+			s = 1;
+			if( false ) {
+				println( "This should never run" )
+			}
+		}
+		y = 2;
+		function member() {
+			a = "b" ?: "c";
+			return 3;
+		}
+	}
+	inst = new luis();
+
+	class staticOnly {
+		static {
+			s = 1;
+		}
+		y = 2;
+		function member() {
+			return 3;
+		}
+	}
+
+	class ghost {
+		static {
+			s = 1;
+		}
+		y = 2;
+		function member() {
+			return 3;
+		}
+	}
+
+	function doubleIt( n ) {
+		return n * 2;
+	}
+
+	function member( x ) {
+		sleep( 100 );
+		return x * 3;
+	}
+
+	// Implement the interface's abstract method so ProfilerComplex can instantiate.
+	function abstractOnly() {
+		return "abstract implemented";
+	}
+}

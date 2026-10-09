@@ -18,14 +18,18 @@ import org.objectweb.asm.util.TraceClassVisitor;
 import ortus.boxlang.compiler.Boxpiler;
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.DiskClassUtil;
+import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.visitor.QueryEscapeSingleQuoteVisitor;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
+import ortus.boxlang.runtime.services.Blueprint;
+import ortus.boxlang.runtime.services.CodeProfilerService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -255,6 +259,12 @@ public class ASMBoxpiler extends Boxpiler {
 	}
 
 	private void doCompileClassInfo( Transpiler transpiler, ClassInfo classInfo, BoxNode node, BiConsumer<String, ClassNode> consumer ) {
+		// Pass A: if coverage is enabled, build the span registry + blueprint up-front
+		// (before transpiling), so Pass B can look up span ids during transform.
+		if ( runtime.getConfiguration().codeProfilerEnabled ) {
+			setupCoverage( transpiler, classInfo, node );
+		}
+
 		ClassNode classNode;
 		if ( node instanceof BoxScript boxScript ) {
 			classNode = transpiler.transpile( boxScript );
@@ -267,6 +277,63 @@ public class ASMBoxpiler extends Boxpiler {
 		}
 		transpiler.getAuxiliary().forEach( consumer );
 		consumer.accept( classInfo.fqn().toString(), classNode );
+	}
+
+	/**
+	 * Pass A of code-coverage instrumentation: walk the AST once, assign a span id
+	 * to every instrumentable statement's start position, and register a file
+	 * blueprint with the code profiler so the runtime has the executable-map ahead
+	 * of execution.
+	 * <p>
+	 * For this first vertical slice we only instrument {@link BoxExpressionStatement}
+	 * (a single expression statement like {@code 2 + 2}); each gets one executable span.
+	 *
+	 * @param transpiler the active transpiler (span registry + fileId live here)
+	 * @param classInfo  the compiled class info (source path)
+	 * @param node       the AST root
+	 */
+	private void setupCoverage( Transpiler transpiler, ClassInfo classInfo, BoxNode node ) {
+		if ( !transpiler.isProfilingEnabled() ) {
+			transpiler.setProfilingEnabled( true );
+		}
+
+		// First pass (Pass A): walk the AST once with the span-collector visitor to
+		// discover every executable span and register it with the transpiler.
+		SpanCollectorVisitor collector = new SpanCollectorVisitor( transpiler );
+		node.accept( collector );
+		List<Blueprint.SpanDef>	spanDefs		= collector.spanDefs();
+
+		// The source file's last-modified time, used to detect when a NEWER blueprint
+		// (recompiled file) should replace stale span data. 0 for adhoc source.
+		long					lastModified	= 0L;
+		if ( classInfo.resolvedFilePath() != null && classInfo.resolvedFilePath().absolutePath() != null ) {
+			try {
+				lastModified = java.nio.file.Files.getLastModifiedTime( classInfo.resolvedFilePath().absolutePath() ).toMillis();
+			} catch ( Exception e ) {
+				// ignore — lastModified stays 0
+			}
+		}
+		Blueprint blueprint = new Blueprint( spanDefs, Blueprint.Kind.FILE, lastModified );
+
+		// Carry the span data + lastModified onto the transpiler so Pass B can embed
+		// them into the class's <clinit> for self-registration on load.
+		transpiler.setSpanDefs( spanDefs );
+		transpiler.setLastModified( lastModified );
+
+		// Resolve the file key: real path for files, source hash for adhoc source.
+		String fileKey;
+		if ( classInfo.resolvedFilePath() != null ) {
+			fileKey = classInfo.resolvedFilePath().absolutePath().toString();
+			transpiler.setFileId( CodeProfilerService.registerBlueprintForFile( fileKey, blueprint ) );
+			transpiler.setBlueprintKind( Blueprint.Kind.FILE );
+		} else if ( classInfo.source() != null ) {
+			// Adhoc source: key the blueprint by the same MD5 the boxpiler derives the
+			// FQN from (IBoxpiler.MD5( sourceType + source )), so runtime lookups align.
+			fileKey = IBoxpiler.MD5( classInfo.sourceType().toString() + classInfo.source() );
+			Blueprint sourceBp = new Blueprint( spanDefs, Blueprint.Kind.SOURCE );
+			transpiler.setFileId( CodeProfilerService.registerBlueprintForSource( fileKey, sourceBp ) );
+			transpiler.setBlueprintKind( Blueprint.Kind.SOURCE );
+		}
 	}
 
 	private ParsingResult parseClassInfo( ClassInfo info ) {

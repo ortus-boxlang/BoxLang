@@ -1,0 +1,387 @@
+// --- Plain statements, one per line
+i = 0;
+j = 0;
+
+sleep( 2000 )
+
+// --- A loop that runs
+while( i < 3 ) {
+    i++;
+}
+
+// --- A function declared and invoked
+function doubleIt( n ) {
+    return n * 2;
+}
+doubled = doubleIt( 21 );
+
+// --- A function with annotations
+@foo
+@bar( baz )
+function doubleIt2( n ) brad="wood" luis="majano" {
+    return n * 2;
+}
+doubled = doubleIt2( 21 );
+
+// --- A function declared but NEVER invoked (body stays missed)
+function neverCalled() {
+    z = 1;
+}
+
+// --- A conditional branch — only one side runs
+if( doubled > 40 ) {
+    j = 1;
+} else {
+    j = 2;
+}
+
+if( true ) now(); else now();
+
+if( true ) { now(); } else { now(); }
+
+// --- more than one if-else in a row
+if( false ) {
+    now()
+} else if( 1 == 2 ) {
+    now()
+} else if( 4 > 3 ) {
+    now()
+} else {
+    now()
+}
+
+// --- more than one if-else in a row, take two
+if( false ) {
+    now()
+} else if( 1 == 2 ) {
+    now()
+} else if( 4 < 3 ) {
+    now()
+} else {
+    now()
+}
+
+// --- A ternary
+k = j == 1 ? "big" : "small";
+
+// --- A closure that IS invoked
+adder = ( x ) => x + 100;
+added = adder( doubled );
+
+// --- A closure declared but NEVER invoked (body stays missed)
+sleeper = ( x ) => {
+    x = x + 1;
+};
+neverRan = 1;
+// --- A lambda that IS invoked
+adder = ( x ) -> x + 100;
+added = adder( doubled );
+
+// --- A lambda declared but NEVER invoked (body stays missed)
+sleeper = ( x ) -> x = x + 1;
+neverRan = 1;
+
+// --- A simple switch — only the matching case runs
+x = 2;
+switch( x ) {
+    case 1: a = 10; break;
+    case now(): a = now(); break;
+    case 2: a = 20; break;
+    default: a = 30;
+}
+// --- A verbose switch — only the matching case runs
+x = 2;
+switch( x ) {
+    case 1: {
+        a = 10; 
+        break;
+    }
+    case now(): {
+        a = now();
+        break;
+    }
+    case 2: {
+        a = 20; 
+        break;
+    }
+    default: {
+        a = 30;
+    }
+}
+
+// --- A try/catch/finally — only try and finally run
+try {
+    b = 1;
+} catch( any e ) {
+    c = 2;
+} finally {
+    d = 3;
+}
+// --- A try/catch/finally — all three bodies run
+try {
+    1/0;
+    now()
+    1+1
+} catch( any e ) {
+    c = 2;
+} finally {
+    d = 3;
+}
+
+// --- A for-in loop
+arr = [ 10, 20, 30 ];
+for( item in arr ) {
+    x = item;
+}
+
+// --- A do-while loop
+i = 0;
+do {
+    i++;
+} while( i < 2 );
+
+// --- A C-style for loop
+j = 0;
+for( i = 0; i < 3; i++ ) {
+    j = j + i;
+}
+
+// --- Short-circuit: right side never runs
+a = false;
+b = 1;
+x = a && b;
+y = ( false || ( true || false ) ) || ( false && true )
+
+// --- Elvis: right side runs when left is null
+foo = null;
+bar = 2;
+x = foo ?: ( bar = 99 );
+
+// --- Elvis: right side doesn't run
+foo = "brad";
+bar = 2;
+x = foo ?: ( bar = 99 );
+
+// --- Array + struct literals
+arr2 = [ 10, 20, 30 ];
+st = { one: 1, two: 2 };
+
+// --- Array + struct literals multi-line
+arr2 = [
+    10,
+    20,
+    30
+];
+st = {
+    one: 1,
+    two: 2
+};
+
+@foo
+@bar( baz )
+class brad luis="majano" extends=ProfilerSuper {
+    property name="threshold" default=localSeed;
+    property name="other" default=localSeed;
+    static {
+        localSeed = 42;
+        s = 1;
+        if( false ) {
+            println( "This should never run" )
+        }
+    }
+    y = 2;
+    @output( false )
+    function member() {
+        a = "b" ?: "c";
+        return 3;
+    }
+}
+inst = new brad();
+v = inst.member();
+
+// --- A class: static runs at load, body at instantiation, member never called
+class luis {
+    static {
+        s = 1;
+        if( false ) {
+            println( "This should never run" )
+        }
+    }
+    y = 2;
+    function member() {
+        a = "b" ?: "c";
+        return 3;
+    }
+}
+inst = new luis();
+
+// --- A local class only referenced statically.  (static init runs, nothing else)
+class staticOnly {
+    static {
+        s = 1;
+    }
+    y = 2;
+    function member() {
+        return 3;
+    }
+}
+staticOnly::s
+
+// --- A local class never instantiated (body + member stay missed)
+class ghost {
+    static {
+        s = 1;
+    }
+    y = 2;
+    function member() {
+        return 3;
+    }
+}
+
+// --- param: default is set when the variable is missing ... (complex default,
+// compiled to a deferred closure — its span shows GREEN when run, RED when skipped)
+param name="paramMissing" default=( now() );
+// ... and is a no-op (default skipped — RED) when the variable already exists.
+paramMissing = 1;
+param name="paramMissing" default=( now() );
+
+// --- param with the shorthand syntax: name=default
+param paramShorthand=( now() );
+
+// --- param with a LITERAL default stays fused inline (always covered)
+param name="paramLiteral" default="bar";
+
+// --- DISK class interactions (ProfilerComplex.bx on disk)
+// INSTANTIATED class: static block + pseudo-constructor run; members only on
+// call. The `other` property default is APPLIED at instantiation (USED → GREEN);
+// the `threshold` default is SKIPPED (ProfilerSuper presets it → RED).
+diskInst = new src.test.resources.profiler.ProfilerComplex();
+diskVal = diskInst.member( 5 );
+
+// STATIC-ONLY class: class loads and its static init runs, but no instance is
+// created — its COMPLEX property default is NEVER evaluated (NOT used → RED).
+diskStatic = src.test.resources.profiler.ProfilerStaticOnly::staticInitRan;
+
+// --- INTERFACE interactions (ProfilerInterface.bx on disk) ---
+// Statically referencing the interface runs its STATIC INIT BLOCK (lines →
+// GREEN) but NOT any function body.
+ifaceInited = src.test.resources.profiler.ProfilerInterface::initializedAt;
+// Invoke a STATIC function on the interface: its body runs (GREEN).
+ifaceBumped = src.test.resources.profiler.ProfilerInterface::bump();
+// ProfilerComplex implements the interface — running its inherited DEFAULT
+// method executes the default method body (declared in the INTERFACE).
+implGreeted = diskInst.greet();
+
+```
+foo 
+<bx:output>
+    #now()#
+</bx:output>
+```// ==========================================================================
+// BUG REPRODUCTIONS (rendered to HTML by ScratchSpanHTMLTest for eyeballing)
+// ==========================================================================
+
+// --- BUG 1: script `lock {}` — the closing brace was previously RED (uncovered)
+// even though the body ran.
+totalSpecs = 0;
+lock name="tb-results-1" type="exclusive" timeout="10" {
+    totalSpecs += 1;
+}
+
+// --- BUG 2 (FAITHFUL): struct literal with a comment before EVERY entry,
+// inside a `lock {}` body — exactly TestResult.cfc startBundleStats(). Every
+// comment line was being marked executable (and the last one RED). This must
+// reproduce so we can fix the comment-in-struct-literal span.
+bundleStats = [];
+lock name="tb-results-1" type="exclusive" timeout="10" {
+    st = {
+        // bundle id
+        "id"              : hash( getTickCount() + randRange( 1, 10000000 ) ),
+        // The bundle display name
+        "name"            : "bundle",
+        // Path of the bundle
+        "path"            : "/some/path",
+        // Total Suites in Bundle
+        "totalSuites"     : 0,
+        // Total specs found to test
+        "totalSpecs"      : 0,
+        // Total passed specs
+        "totalPass"       : 0,
+        // Total failed specs
+        "totalFail"       : 0,
+        // Total error in specs
+        "totalError"      : 0,
+        // Total skipped specs/suites
+        "totalSkipped"    : 0,
+        // Durations
+        "startTime"       : getTickCount(),
+        "endTime"         : 0,
+        "totalDuration"   : 0,
+        // Suite stats holder
+        "suiteStats"      : [],
+        // Debug output buffer
+        "debugBuffer"     : [],
+        // Global Exception
+        "globalException" : ""
+    };
+    arrayAppend( bundleStats, st );
+}
+
+// --- BUG 3: ternary in a parenthesized expression spanning lines — the closing
+// `)` line was RED.
+lockNeedsLock = (
+    server.keyExists( "boxlang" ) ? "boxlang" : "cfml"
+);
+
+// --- BUG 4: array-of-struct literal — the closing `}` of the struct AND the
+// closing `]` of the array were RED.
+reverseTree = [
+    {
+        name   : "foo",
+        skip   : false
+    }
+];
+
+// --- BUG 5: function call with trailing args on their own lines — the trailing
+// `}, suite=, data=, );` lines were RED.
+function generateAroundEach( suite, spec ){
+    return arguments;
+}
+function nextSpec(){
+    return { name: "x", order: 0, skip: false, data: "d", labels: [] };
+}
+nextSpecInfo = nextSpec();
+nextClosure = { body: generateAroundEach, data: nextSpecInfo.data, suite: "s" };
+thread = { closures: [ generateAroundEach ], suite: "suite" };
+closureIndex = 1;
+generatedSpec = generateAroundEach(
+    spec = {
+        name : nextSpecInfo.name,
+        body : generateAroundEach(
+            thread.closures,
+            thread.suite,
+            thread.closures[ 1 ],
+            closureIndex
+        ),
+        data   : nextSpecInfo.data,
+        labels : nextSpecInfo.labels,
+        order  : nextSpecInfo.order,
+        skip   : nextSpecInfo.skip
+    },
+    suite = thread.suite,
+    data  = nextClosure.data
+);
+
+// --- BUG 6: empty-bodied member functions (TestCase.cfc setup/teardown/etc.) —
+// the empty method bodies were never spanned even when invoked.
+class SpecFns {
+    function setup() {}
+    function teardown() {}
+    function afterTests() {}
+    function beforeTests() {}
+}
+specFnsInst = new SpecFns();
+specFnsInst.setup();
+specFnsInst.teardown();
+specFnsInst.afterTests();
+specFnsInst.beforeTests();

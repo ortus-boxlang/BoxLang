@@ -160,6 +160,8 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ClassVariablesScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.Blueprint;
+import ortus.boxlang.runtime.services.CodeProfilerService;
 import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DefaultExpression;
@@ -492,6 +494,13 @@ public class AsmTranspiler extends Transpiler {
 		    Type.getDescriptor( ( Key[].class ) ),
 		    null,
 		    null ).visitEnd();
+		if ( hasProfilerId() ) {
+			classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			    Transpiler.PROFILER_ID_FIELD,
+			    Type.getDescriptor( String.class ),
+			    null,
+			    null ).visitEnd();
+		}
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "imports",
@@ -543,6 +552,11 @@ public class AsmTranspiler extends Transpiler {
 			        returnType == Type.VOID_TYPE ? ReturnValueContext.EMPTY : ReturnValueContext.VALUE_OR_NULL );
 			    nodes.addAll( getUDFRegistrations() );
 			    nodes.addAll( body );
+			    // Close the probe-charging interval after the last statement so the
+			    // final span's self-time is charged, not lost.
+			    if ( hasProfilerId() ) {
+				    nodes.addAll( emitMarkEnd() );
+			    }
 			    return nodes;
 		    }
 		);
@@ -588,6 +602,16 @@ public class AsmTranspiler extends Transpiler {
 			    type.getInternalName(),
 			    "sourceType",
 			    Type.getDescriptor( BoxSourceType.class ) );
+
+			// Store the profiler blueprint KEY (id) and self-register this script's
+			// blueprint on load, so a script/template loaded from disk after a
+			// restart still has its span map. Idempotent per key.
+			if ( hasProfilerId() ) {
+				List<AbstractInsnNode> regNodes = emitBlueprintRegistrationScript( type.getInternalName() );
+				for ( AbstractInsnNode n : regNodes ) {
+					n.accept( methodVisitor );
+				}
+			}
 
 			methodVisitor.visitLdcInsn( getKeys().size() );
 			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
@@ -656,17 +680,41 @@ public class AsmTranspiler extends Transpiler {
 	}
 
 	/**
-	 * Recursively scan a list of statements for {@link BoxLocalClass} declarations, compiling each
-	 * one into an auxiliary JVM class and registering it in the local class registry.
-	 * <p>
-	 * This also descends into {@link BoxTemplateIsland}, {@link BoxScriptIsland}, and {@link BoxComponent} nodes
-	 * so that local classes defined inside {@code <bx:script>} islands in templates are handled correctly.
+	 * Emit the static-init nodes that store this script/template's profiler blueprint
+	 * KEY (id) into the {@code codeProfilerId} static field and self-register the
+	 * blueprint via {@link CodeProfilerService#registerBlueprintFromClinit}. Mirrors
+	 * what the class transformer emits for BoxClass, so scripts/templates loaded
+	 * from disk after a restart still have their span map registered.
 	 *
-	 * @param statements           the statement list to scan
-	 * @param outerClassname       simple JVM class name of the enclosing script/template class
-	 * @param outerPackage         dot-separated package name of the enclosing class
-	 * @param outerPackageInternal slash-separated package path of the enclosing class
+	 * @param internalClassName the JVM internal name of this compiled unit
+	 *
+	 * @return the instructions (PUTSTATIC codeProfilerId + registerBlueprintFromClinit call)
 	 */
+	private List<AbstractInsnNode> emitBlueprintRegistrationScript( String internalClassName ) {
+		List<AbstractInsnNode> nodes = new java.util.ArrayList<>();
+		if ( !hasProfilerId() ) {
+			return nodes;
+		}
+		List<Blueprint.SpanDef> spanDefs = getSpanDefs();
+		if ( spanDefs == null || spanDefs.isEmpty() ) {
+			return nodes;
+		}
+
+		String id = getFileId();
+		// Store the id into the static field.
+		nodes.add( new LdcInsnNode( id ) );
+		nodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, internalClassName, PROFILER_ID_FIELD, Type.getDescriptor( String.class ) ) );
+
+		// Serialize spans as packed, chunked String constants (constant-pool data —
+		// tiny method footprint) so even huge blueprints never overflow the JVM's
+		// per-method 64KB limit. The old inline int[] array-build kept the array
+		// reference on the stack the whole block, so the clinit splitter could
+		// never subdivide it, causing MethodTooLargeException on big files.
+		nodes.addAll( AsmHelper.emitBlueprintRegistrationNodes(
+		    id, getLastModified(), getBlueprintKind(), spanDefs ) );
+		return nodes;
+	}
+
 	/**
 	 * Recursively scan a list of statements for {@link BoxLocalClass} declarations, compiling each
 	 * one into an auxiliary JVM class and registering it in the local class registry.
@@ -767,10 +815,19 @@ public class AsmTranspiler extends Transpiler {
 				}
 
 				// Compile with enclosing imports only - sibling visibility is handled by classRef imports
-				BoxClass	asBoxClass			= new BoxClass( enclosingImports, localClass.getBody(),
+				BoxClass asBoxClass = new BoxClass( enclosingImports, localClass.getBody(),
 				    localClass.getAnnotations(), localClass.getDocumentation(), localClass.getProperties(),
 				    localClass.getPosition(), localClass.getSourceText(),
 				    BoxSourceType.valueOf( getProperty( "sourceType" ).toUpperCase() ) );
+
+				// Pass A for the local class: when coverage is enabled, the child
+				// transpiler must emit marks against the OUTER source's fileId and
+				// span registry (the parent's Pass A already walked the whole tree,
+				// so the class's spans are in the outer blueprint). From the user's
+				// perspective the class lives inside the container script.
+				if ( isProfilingEnabled() ) {
+					child.adoptProfilingContext( this );
+				}
 
 				ClassNode	localClassNode		= BoxClassTransformer.transpile( child, asBoxClass );
 
@@ -784,8 +841,8 @@ public class AsmTranspiler extends Transpiler {
 				    ? getProperty( "outerClassInternal" )
 				    : outerPackageInternal + "/" + outerClassname;
 				Set<String>	fieldsToRedirect	= child.getLocalClasses().isEmpty()
-				    ? Set.of( "imports", "path", "sourceType" )
-				    : Set.of( "path", "sourceType" );
+				    ? Set.of( "imports", "path", "sourceType", Transpiler.PROFILER_ID_FIELD )
+				    : Set.of( "path", "sourceType", Transpiler.PROFILER_ID_FIELD );
 				redirectOuterClassFields( localClassNode, syntheticInternal, fieldRedirectTarget, fieldsToRedirect );
 
 				setAuxiliary( syntheticDotFQN, localClassNode );
@@ -896,6 +953,38 @@ public class AsmTranspiler extends Transpiler {
 					nodes = nodes.stream().filter( n -> ! ( n instanceof DividerNode ) ).collect( Collectors.toList() );
 				}
 
+				// PASS B (profiling): emit a mark for any node whose start position maps to a
+				// registered span (span registry built in Pass A). Generic — no per-construct
+				// knowledge here. When a ternary translator transforms each operand, the
+				// operand's node lands here and its branch mark is emitted, so only the
+				// operands that actually evaluated get profiled.
+				// NOTE: BoxStaticInitializer is EXCLUDED — its braces are batch-marked by
+				// the class transformer's staticInitializer method (emitStaticInitMark),
+				// NOT at the pseudo-constructor site where this node is otherwise
+				// transformed (which would wrongly tie the static braces to instantiation).
+				if ( isProfilingEnabled() && node.getPosition() != null && ! ( node instanceof BoxStaticInitializer ) ) {
+					long	packed	= ( ( long ) node.getPosition().getStart().getLine() << 32 )
+					    | ( node.getPosition().getStart().getColumn() & 0xFFFFFFFFL );
+					int		spanId	= getSpanId( packed );
+					if ( spanId >= 0 ) {
+						// If this span heads an atomic shell group (a declaration
+						// shell split at lazy defaults), batch the ENTIRE group into
+						// one varargs mark call — the whole shell runs atomically, so
+						// one probe-charging interval and one count increment for all
+						// its fragments. The lazy-default spans are NOT in the group
+						// (they run later at call time).
+						int[] group = takeSpanGroup( spanId );
+						if ( group != null ) {
+							for ( int member : group ) {
+								claimSpanMark( member );
+							}
+							nodes.addAll( 0, emitMarkVarargs( group ) );
+						} else if ( claimSpanMark( spanId ) ) {
+							nodes.addAll( 0, emitMark( spanId ) );
+						}
+					}
+				}
+
 				if ( returnValueContext == ReturnValueContext.EMPTY && nodes.size() > 0 ) {
 					nodes.add( 0, new DividerNode() );
 				}
@@ -990,21 +1079,21 @@ public class AsmTranspiler extends Transpiler {
 		List<List<AbstractInsnNode>>	getterLookup	= new ArrayList<>();
 		List<List<AbstractInsnNode>>	setterLookup	= new ArrayList<>();
 		properties.forEach( prop -> {
-			List<AbstractInsnNode>	documentationStruct	= transformDocumentation( prop.getDocumentation() );
+			List<AbstractInsnNode>	documentationStruct		= transformDocumentation( prop.getDocumentation() );
 			/*
 			 * normalize annotations to allow for
 			 * property String userName;
 			 */
-			List<BoxAnnotation>		finalAnnotations	= normlizePropertyAnnotations( prop );
+			List<BoxAnnotation>		finalAnnotations		= normlizePropertyAnnotations( prop );
 			// Start wiith all inline annotatinos
 
-			BoxAnnotation			nameAnnotation		= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "name" ) )
+			BoxAnnotation			nameAnnotation			= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "name" ) )
 			    .findFirst()
 			    .orElseThrow( () -> new ExpressionException( "Property [" + prop.getSourceText() + "] missing name annotation", prop ) );
-			BoxAnnotation			typeAnnotation		= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "type" ) )
+			BoxAnnotation			typeAnnotation			= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "type" ) )
 			    .findFirst()
 			    .orElseThrow( () -> new ExpressionException( "Property [" + prop.getSourceText() + "] missing type annotation", prop ) );
-			BoxAnnotation			defaultAnnotation	= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "default" ) )
+			BoxAnnotation			defaultAnnotation		= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "default" ) )
 			    .findFirst()
 			    .orElse( null );
 
@@ -1018,17 +1107,47 @@ public class AsmTranspiler extends Transpiler {
 			// }
 			// }
 
-			List<AbstractInsnNode>	annotationStruct	= transformAnnotations( finalAnnotations );
-			List<AbstractInsnNode>	init, initLambda;
-			if ( defaultAnnotation.getValue() != null ) {
+			BoxExpression			defaultValue			= defaultAnnotation.getValue();
 
-				if ( defaultAnnotation.getValue().isLiteral() ) {
-					init		= transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL );
+			// A property default written as a BARE IDENTIFIER
+			// (e.g. `property name="x" default=someVar;`) is folded by the
+			// parser into a BoxStringLiteral (value="someVar") — the string
+			// IS the default value (CFML annotation semantics). It MUST still
+			// be deferred (defaultExpr_N) so the default is only evaluated when
+			// defaultProperties() actually applies it (a super class may have
+			// already preset the value → the default never runs → its span
+			// stays RED). Treating it as an inline literal would bake its mark
+			// at clinit (class load) and falsely count it as run.
+			// Detect a bare identifier by sourceText: a quoted default
+			// ("foo" / 'foo') starts with a quote; a bare identifier does not.
+			boolean					bareIdentifier			= defaultValue instanceof BoxStringLiteral
+			    && defaultValue.getSourceText() != null
+			    && !defaultValue.getSourceText().isEmpty()
+			    && !defaultValue.getSourceText().startsWith( "\"" )
+			    && !defaultValue.getSourceText().startsWith( "'" );
+
+			// The default annotation's VALUE is kept in the metadata so
+			// annotations.default reports the real default (matching the Java
+			// boxpiler). For the DEFERRED bare-identifier default only, the value
+			// is cloned WITHOUT a source position: the profiler mark hook only
+			// fires for nodes carrying a position, so the metadata value is
+			// serialized without claiming the default's span mark at the clinit
+			// Property construction (which would falsely count a SKIPPED default
+			// as run — the real mark is emitted inside its defaultExpr_N).
+			List<BoxAnnotation>		annotationsForStruct	= bareIdentifier
+			    ? stripDefaultValuePositionFromAnnotations( finalAnnotations )
+			    : finalAnnotations;
+			List<AbstractInsnNode>	annotationStruct		= transformAnnotations( annotationsForStruct );
+
+			List<AbstractInsnNode>	init, initLambda;
+			if ( defaultValue != null ) {
+				if ( defaultValue.isLiteral() && !bareIdentifier ) {
+					init		= transform( defaultValue, TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL );
 					initLambda	= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 				} else {
 					init		= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 
-					initLambda	= AsmHelper.getDefaultExpression( this, defaultAnnotation.getValue() );
+					initLambda	= AsmHelper.getDefaultExpression( this, defaultValue );
 				}
 			} else {
 				init		= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
@@ -1151,6 +1270,38 @@ public class AsmTranspiler extends Transpiler {
 			    false ) );
 			return List.of( propertiesStruct, getterStruct, setterStruct );
 		}
+	}
+
+	/**
+	 * Return a copy of the property annotations with the {@code default}
+	 * annotation's VALUE cloned WITHOUT a source position (the value itself is
+	 * preserved). The deferred (bare-identifier) property default is evaluated
+	 * separately by the lazy {@code defaultExpr_N} method, so its span mark must
+	 * NOT be claimed when the annotation struct is transformed at the clinit
+	 * {@code Property} construction — that would falsely count a SKIPPED default
+	 * as run. The profiler mark hook only fires for nodes carrying a source
+	 * position, so a position-less clone keeps the metadata value
+	 * ({@code annotations.default} reports the real default, matching the Java
+	 * boxpiler) while skipping the spurious mark. The annotation KEY ("default")
+	 * is preserved too.
+	 *
+	 * @param annotations the normalized property annotations
+	 *
+	 * @return a new list with the default value cloned without a source position
+	 */
+	public static List<BoxAnnotation> stripDefaultValuePositionFromAnnotations( List<BoxAnnotation> annotations ) {
+		List<BoxAnnotation> stripped = new ArrayList<>( annotations.size() );
+		for ( BoxAnnotation annotation : annotations ) {
+			BoxExpression value = annotation.getValue();
+			if ( annotation.getKey().getValue().equalsIgnoreCase( "default" ) && value instanceof BoxStringLiteral literal ) {
+				// Keep the VALUE, drop the source position so the profiler mark hook skips it.
+				BoxStringLiteral positionless = new BoxStringLiteral( literal.getValue(), null, literal.getSourceText() );
+				stripped.add( new BoxAnnotation( annotation.getKey(), positionless, annotation.getPosition(), annotation.getSourceText() ) );
+			} else {
+				stripped.add( annotation );
+			}
+		}
+		return stripped;
 	}
 
 	public static List<BoxAnnotation> normlizePropertyAnnotations( BoxProperty prop ) {

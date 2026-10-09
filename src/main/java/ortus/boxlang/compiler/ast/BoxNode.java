@@ -79,6 +79,26 @@ public abstract class BoxNode implements BoxVisitable {
 	}
 
 	/**
+	 * The start {@link Point} of this node's position, or {@code null} if the node
+	 * has no source position (nodes built on-the-fly by a transpiling visitor).
+	 *
+	 * @return the start point, or null
+	 */
+	public Point getStart() {
+		return position == null ? null : position.getStart();
+	}
+
+	/**
+	 * The end {@link Point} of this node's position, or {@code null} if the node
+	 * has no source position (nodes built on-the-fly by a transpiling visitor).
+	 *
+	 * @return the end point, or null
+	 */
+	public Point getEnd() {
+		return position == null ? null : position.getEnd();
+	}
+
+	/**
 	 * Returns the source code that originated the Node
 	 *
 	 * @return the snipped of the source code

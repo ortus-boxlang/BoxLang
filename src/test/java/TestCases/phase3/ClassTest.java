@@ -729,6 +729,7 @@ public class ClassTest {
 
 		var prop1Annotations = prop1.getAsStruct( Key.of( "annotations" ) );
 		assertThat( prop1Annotations.size() ).isEqualTo( 5 );
+		assertThat( prop1Annotations.get( Key.of( "default" ) ) ).isEqualTo( "myDefaultValue" );
 
 		assertThat( prop1Annotations.containsKey( Key.of( "preAnno" ) ) ).isTrue();
 		assertThat( prop1Annotations.get( Key.of( "preAnno" ) ) ).isEqualTo( "" );
@@ -1348,6 +1349,24 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+	}
+
+	@Test
+	public void testStaticBlockInScriptIslandTagCFC() {
+		// A TAG-based CFC whose static block is written inside a <cfscript> island.
+		// The static block must run ONCE at CLASS LOAD — its static-scope values
+		// must be set before any instance is created, and instance code must see
+		// them — mirroring testStaticInstance but for tag-based CFC source.
+		instance.executeSource(
+		    """
+		             clazz = new src.test.java.TestCases.phase3.StaticInScriptIsland();
+		    result1 = clazz.getFoo();
+		    result2 = clazz.getScoped();
+		    result3 = clazz.getInstanceVar();
+		               """, context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "instance" );
 	}
 
 	@Test

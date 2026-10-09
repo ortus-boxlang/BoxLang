@@ -53,6 +53,11 @@
 	// not a concern. When disabled, JARs are loaded directly from their original paths, no temp
 	// copies are made, no cleaner is registered, and no startup temp cleanup runs.
 	"jarTempFileCaching": true,
+	// Enable compile-time code instrumentation (span/blueprint emission) in the ASM boxpiler.
+	// When true, the boxpiler detects executable spans, builds a blueprint, and emits
+	// calls so the runtime can record per-span
+	// execution counts + time. When false, no instrumentation is emitted.
+	"codeProfilerEnabled": false,
 	// This enforces argument type checking and return value type checking for UDFs, closures, and lambdas.
 	"enforceUDFTypeChecks": true,
 	// The default timezone for the runtime; defaults to the JVM timezone if empty
@@ -99,11 +104,17 @@
 		"${boxlang-home}/modules"
 	],
 	// A collection of BoxLang custom component directories, they must be absolute paths
-	"customComponentsDirectory": ["${boxlang-home}/global/components"],
+	"customComponentsDirectory": [
+		"${boxlang-home}/global/components"
+	],
 	// A collection of directories to lookup box classes in (.bx files), they must be absolute paths
-	"classPaths": ["${boxlang-home}/global/classes"],
+	"classPaths": [
+		"${boxlang-home}/global/classes"
+	],
 	// A collection of directories we will class load all Java *.jar files from
-	"javaLibraryPaths": ["${boxlang-home}/lib"],
+	"javaLibraryPaths": [
+		"${boxlang-home}/lib"
+	],
 	// Query Default Options
 	"queries": {
 		// The default timeout for queries in seconds. 0 means no timeout. This can be overridden per query.
@@ -333,7 +344,9 @@
 				"appender": "file",
 				"encoder": "text",
 				"additive": false,
-				"categories": ["com.zaxxer.hikari"]
+				"categories": [
+					"com.zaxxer.hikari"
+				]
 			}
 		}
 	},

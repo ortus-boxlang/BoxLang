@@ -777,7 +777,15 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 
 	@Override
 	public BoxExpression visitExprOutString( ExprOutStringContext ctx ) {
-		return ctx.el2().accept( this );
+		// `#el2#` OUTSIDE a string literal (e.g. a tag attribute value like
+		// `default=#now()#`, or template output `#x#`). The pounds are markers
+		// around the inner expression, NOT a string interpolation — so preserve the
+		// inner expression's AST node (e.g. `#result#` stays a BoxIdentifier and can
+		// still be an assignment LHS). Only widen the SOURCE TEXT to cover the full
+		// `#...#` so the source/span text is correct.
+		BoxExpression inner = ctx.el2().accept( this );
+		inner.setSourceText( tools.getSourceText( ctx ) );
+		return inner;
 	}
 
 	@Override

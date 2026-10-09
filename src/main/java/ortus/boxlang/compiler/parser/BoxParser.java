@@ -333,7 +333,7 @@ public class BoxParser extends AbstractParser {
 		this.classOrInterface = classOrInterface;
 		BoxLexerCustom	lexer	= new BoxLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ),
 		    isScript ? BoxLexerCustom.DEFAULT_SCRIPT_MODE : BoxLexerCustom.DEFAULT_TEMPLATE_MODE, errorListener, this )
-		    .setClassIsExpected( classOrInterface );
+		        .setClassIsExpected( classOrInterface );
 		BoxGrammar		parser	= new BoxGrammar( new CommonTokenStream( lexer ) );
 
 		// DEBUG: Will print a trace of all parser rules visited:
@@ -793,6 +793,12 @@ public class BoxParser extends AbstractParser {
 	}
 
 	private boolean allStatementsAreWhitespace( List<BoxStatement> bodyStatements ) {
+		// A NULL body means "no statements" — vacuously all-whitespace. This occurs
+		// when an explicit `abstract` function has already been normalized to a null
+		// body (e.g. an abstract tag function), so callers must not NPE.
+		if ( bodyStatements == null ) {
+			return true;
+		}
 		for ( BoxStatement statement : bodyStatements ) {
 			if ( statement instanceof BoxBufferOutput bffr ) {
 				if ( bffr.getExpression() instanceof BoxStringLiteral str && !str.getValue().isBlank() ) {
@@ -864,7 +870,13 @@ public class BoxParser extends AbstractParser {
 		if ( name.equalsIgnoreCase( "loop" ) ) {
 			for ( var attr : attributes ) {
 				if ( attr.getKey().getValue().equalsIgnoreCase( "condition" ) ) {
-					BoxExpression condition = attr.getValue();
+					BoxExpression	condition	= attr.getValue();
+					// The ORIGINAL attribute value (e.g. `"i < 3"`) carries the
+					// position covering the WHOLE quoted source. After re-parsing
+					// the inner expression, that quoted position is retained on the
+					// BoxReturn so the profiler's condition span covers the full
+					// attribute text (quotes included), not just the inner expr.
+					Position		valuePos	= condition.getPosition();
 					// parse as BX script expression and update value
 					// In reality, we could just re-parse the source text for all expression types, but there's really no need unless it was a string or interpolated string.
 					if ( condition instanceof BoxStringLiteral str ) {
@@ -876,7 +888,7 @@ public class BoxParser extends AbstractParser {
 					BoxExpression newCondition = new BoxClosure(
 					    List.of(),
 					    List.of(),
-					    new BoxReturn( condition, null, null ),
+					    new BoxReturn( condition, valuePos, condition.getSourceText() ),
 					    null,
 					    condition.getSourceText() );
 					attr.setValue( newCondition );
@@ -1079,6 +1091,43 @@ public class BoxParser extends AbstractParser {
 			}
 		}
 
+		// The `modifier` attribute carries the BoxLang method declaration
+		// modifiers (static / final / abstract / default) on a <bx:function>.
+		// It may be a single identifier or a comma-delimited list, mirroring how
+		// BoxVisitor resolves script modifiers onto the function's modifiers list.
+		String modifierText = getBoxExprAsString( findExprInAnnotations( annotations, "modifier", false, null, null, null ), "modifier", true );
+		if ( modifierText != null ) {
+			String[] parts = modifierText.split( "," );
+			for ( String part : parts ) {
+				switch ( part.trim().toUpperCase() ) {
+					case "STATIC" :
+						if ( !modifiers.contains( BoxMethodDeclarationModifier.STATIC ) ) {
+							modifiers.add( BoxMethodDeclarationModifier.STATIC );
+						}
+						break;
+					case "FINAL" :
+						if ( !modifiers.contains( BoxMethodDeclarationModifier.FINAL ) ) {
+							modifiers.add( BoxMethodDeclarationModifier.FINAL );
+						}
+						break;
+					case "ABSTRACT" :
+						if ( !modifiers.contains( BoxMethodDeclarationModifier.ABSTRACT ) ) {
+							modifiers.add( BoxMethodDeclarationModifier.ABSTRACT );
+						}
+						break;
+					case "DEFAULT" :
+						if ( !modifiers.contains( BoxMethodDeclarationModifier.DEFAULT ) ) {
+							modifiers.add( BoxMethodDeclarationModifier.DEFAULT );
+						}
+						break;
+					default :
+						// Unknown modifier tokens are ignored, matching the
+						// permissive attribute handling of tag functions.
+						break;
+				}
+			}
+		}
+
 		BoxExpression	returnTypeSearch	= findExprInAnnotations( annotations, "returnType", false, null, null, null );
 		String			returnTypeText		= getBoxExprAsString( returnTypeSearch, "returnType", true );
 		if ( returnTypeText != null ) {
@@ -1092,6 +1141,21 @@ public class BoxParser extends AbstractParser {
 		}
 
 		body.addAll( toAst( file, node.body ) );
+
+		// An ABSTRACT function cannot have a body. Normalize an abstract tag
+		// function whose body is only whitespace/whitespace buffer output to a
+		// null body (matching how script abstract functions — `abstract function
+		// foo();` — are represented, so downstream `getBody() == null` abstract
+		// discovery works). If the body contains REAL statements, reject it.
+		if ( modifiers.contains( BoxMethodDeclarationModifier.ABSTRACT ) ) {
+			if ( allStatementsAreWhitespace( body ) ) {
+				body = null;
+			} else {
+				errorListener.semanticError(
+				    "Abstract function [" + name + "] cannot have a body. Remove the body or the abstract modifier.",
+				    getPosition( node ) );
+			}
+		}
 
 		return new BoxFunctionDeclaration( accessModifier, modifiers, name, returnType, args, annotations, documentation, body, getPosition( node ),
 		    getSourceText( node ) );
@@ -1146,7 +1210,17 @@ public class BoxParser extends AbstractParser {
 		if ( node.stringLiteral() != null ) {
 			return expressionVisitor.visit( node.stringLiteral() );
 		} else if ( node.el2() != null ) {
-			return expressionVisitor.visit( node.el2() );
+			BoxExpression	inner	= expressionVisitor.visit( node.el2() );
+			// `ICHAR el2 ICHAR` — an interpolated attribute value like
+			// `default=#now()#`. The pounds are PART of the expression's source:
+			// wrap in a BoxStringInterpolation whose position covers the whole
+			// `#...#` so the delimiters are not lost from the AST (and thus from any
+			// span/coverage over them).
+			String			src		= getSourceText( node );
+			if ( src != null && src.startsWith( "#" ) && src.endsWith( "#" ) ) {
+				return new BoxStringInterpolation( new ArrayList<>( List.of( inner ) ), getPosition( node ), src );
+			}
+			return inner;
 		} else {
 			throw new BoxRuntimeException( "Unexpected attribute value type " + node.getText() );
 		}
@@ -1235,8 +1309,13 @@ public class BoxParser extends AbstractParser {
 				stopIndex	= node.elseThenBody.get( i ).template_statement( node.elseThenBody.get( i ).template_statement().size() - 1 ).getStop()
 				    .getStopIndex();
 			}
+			// The elseif tag's open "<" token. Index i+1 because COMPONENT_OPEN(0) is
+			// the <bx:if>/<cfif> opener; each elseif iteration consumes its own
+			// COMPONENT_OPEN. Using the real token instead of a hardcoded -3 offset
+			// keeps the position correct regardless of the prefix length ("bx:" vs "cf").
+			Token			elseifOpen		= node.COMPONENT_OPEN( i + 1 ).getSymbol();
 			Position		pos				= new Position(
-			    new Point( node.TEMPLATE_ELSEIF( i ).getSymbol().getLine(), node.TEMPLATE_ELSEIF( i ).getSymbol().getCharPositionInLine() - 3 ),
+			    new Point( elseifOpen.getLine(), elseifOpen.getCharPositionInLine() ),
 			    end, sourceToParse );
 			BoxExpression	thisCondition	= expressionVisitor.visit( node.elseIfCondition.get( i ) );
 			elseBodyStatements	= List.of(
@@ -1246,11 +1325,11 @@ public class BoxParser extends AbstractParser {
 			        new BoxStatementBlock( toAst( file, node.elseThenBody.get( i ) ), pos, getSourceText( node.elseThenBody.get( i ) ) ),
 			        elseBody,
 			        pos,
-			        getSourceText( node, node.TEMPLATE_ELSEIF().get( i ).getSymbol().getStartIndex() - 3, stopIndex )
+			        getSourceText( node, elseifOpen.getStartIndex(), stopIndex )
 			    )
 			);
 			elseBody			= new BoxStatementBlock( elseBodyStatements, pos,
-			    getSourceText( node, node.TEMPLATE_ELSEIF().get( i ).getSymbol().getStartIndex() - 3, stopIndex ) );
+			    getSourceText( node, elseifOpen.getStartIndex(), stopIndex ) );
 		}
 
 		BoxStatement thenBody = new BoxStatementBlock( thenBodyStatements, getPosition( node.thenBody ), getSourceText( node.thenBody ) );
