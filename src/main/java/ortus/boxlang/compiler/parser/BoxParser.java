@@ -333,7 +333,7 @@ public class BoxParser extends AbstractParser {
 		this.classOrInterface = classOrInterface;
 		BoxLexerCustom	lexer	= new BoxLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ),
 		    isScript ? BoxLexerCustom.DEFAULT_SCRIPT_MODE : BoxLexerCustom.DEFAULT_TEMPLATE_MODE, errorListener, this )
-		    .setClassIsExpected( classOrInterface );
+		        .setClassIsExpected( classOrInterface );
 		BoxGrammar		parser	= new BoxGrammar( new CommonTokenStream( lexer ) );
 
 		// DEBUG: Will print a trace of all parser rules visited:
@@ -793,6 +793,12 @@ public class BoxParser extends AbstractParser {
 	}
 
 	private boolean allStatementsAreWhitespace( List<BoxStatement> bodyStatements ) {
+		// A NULL body means "no statements" — vacuously all-whitespace. This occurs
+		// when an explicit `abstract` function has already been normalized to a null
+		// body (e.g. an abstract tag function), so callers must not NPE.
+		if ( bodyStatements == null ) {
+			return true;
+		}
 		for ( BoxStatement statement : bodyStatements ) {
 			if ( statement instanceof BoxBufferOutput bffr ) {
 				if ( bffr.getExpression() instanceof BoxStringLiteral str && !str.getValue().isBlank() ) {

@@ -347,7 +347,7 @@ public class CFParser extends AbstractParser {
 		this.classOrInterface = classOrInterface;
 		CFLexerCustom	lexer	= new CFLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ),
 		    isScript ? CFLexerCustom.DEFAULT_SCRIPT_MODE : CFLexerCustom.DEFAULT_TEMPLATE_MODE, errorListener, this )
-		    .setClassIsExpected( classOrInterface );
+		        .setClassIsExpected( classOrInterface );
 		CFGrammar		parser	= new CFGrammar( new CommonTokenStream( lexer ) );
 
 		// DEBUG: Will print a trace of all parser rules visited:
@@ -962,6 +962,13 @@ public class CFParser extends AbstractParser {
 	}
 
 	private boolean allStatementsAreWhitespace( List<BoxStatement> bodyStatements ) {
+		// A NULL body means "no statements" — vacuously all-whitespace. This occurs
+		// when an explicit `abstract` function has already been normalized to a null
+		// body (e.g. `<cfinterface><cffunction modifier="abstract">`), so the
+		// interface loop that re-checks emptiness must not NPE.
+		if ( bodyStatements == null ) {
+			return true;
+		}
 		for ( BoxStatement statement : bodyStatements ) {
 			if ( statement instanceof BoxBufferOutput bffr ) {
 				if ( bffr.getExpression() instanceof BoxStringLiteral str && !str.getValue().isBlank() ) {

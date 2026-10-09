@@ -17,17 +17,19 @@
  */
 package ortus.boxlang.compiler;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
+import ortus.boxlang.runtime.BoxRuntime;
 
 /**
  * A tag-based function marked `modifier="abstract"` must be represented in the
@@ -36,6 +38,11 @@ import ortus.boxlang.compiler.parser.ParsingResult;
  * are normalized to null; a body containing REAL statements is a semantic error.
  */
 public class TestAbstractTagFunction {
+
+	@BeforeAll
+	public static void setupRuntime() {
+		BoxRuntime.getInstance( true );
+	}
 
 	private BoxFunctionDeclaration firstFunction( ParsingResult result ) {
 		return result.getRoot().getDescendantsOfType( BoxFunctionDeclaration.class ).getFirst();
@@ -106,5 +113,22 @@ public class TestAbstractTagFunction {
 		assertTrue( !result.isCorrect() );
 		assertTrue( result.getIssues().stream()
 		    .anyMatch( issue -> issue.getMessage().contains( "Abstract function [abs] cannot have a body" ) ) );
+	}
+
+	@Test
+	public void testCFInterfaceAbstractFunction() throws IOException {
+		// A <cfinterface> containing an explicit `modifier="abstract"` function: the
+		// function is normalized to a null body, and the interface conversion must
+		// not NPE on that null (it iterates each function body to null out
+		// whitespace-only bodies). Regression: the interface path lacked a null guard.
+		String			code	= """
+		                          <cfinterface>
+		                          <cffunction name="abs" modifier="abstract">
+		                          </cffunction>
+		                          </cfinterface>
+		                          """;
+		ParsingResult	result	= new Parser().parse( code, BoxSourceType.CFTEMPLATE, true );
+		assertTrue( result.isCorrect() );
+		assertNull( firstFunction( result ).getBody() );
 	}
 }
