@@ -1339,6 +1339,49 @@ class CodeProfilerTest {
 		assertThat( CodeProfilerService.lineAt( key, 7 ).count() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It keeps a grouped construct inside a duplicated finally body covered on the catch path" )
+	@Test
+	void testFinallyBodyGroupedConstructOnCatchPath() {
+		// A GROUPED construct (here an `if` with braces → a header + closing-brace
+		// span GROUP) inside a finally body. The finally body is compiled into
+		// MULTIPLE bytecode copies (try-inline, catch-inline, exceptional handler)
+		// and only ONE runs at runtime — so the group must be re-emitted in EVERY
+		// copy. The snapshot/restore of emitted marks restores only the CLAIMED
+		// marks; unless it also restores the consumed span GROUP, the first copy
+		// consumes the group and later copies emit only the head span, leaving the
+		// rest (e.g. the closing brace) missed on the path that actually runs.
+		String source = """
+		                try {
+		                a = 1;
+		                throw( "boom" );
+		                } catch( any e ) {
+		                c = 3;
+		                } finally {
+		                d = 4;
+		                if( true ) {
+		                e = 5;
+		                }
+		                }
+		                """;
+		runtime.executeSource( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testFinallyBodyGroupedConstructOnCatchPath dump" );
+		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
+
+		// The throw is caught, so the finally runs via the CATCH's inlined copy (the
+		// try's inline copy is skipped). Its grouped `if` must be FULLY covered: the
+		// finally statement, the if body, the if header and the if's closing brace.
+		assertThat( CodeProfilerService.spanAt( key, 7, 0 ).stats().count() ).isEqualTo( 1 );   // d = 4 (finally body)
+		assertThat( CodeProfilerService.spanAt( key, 9, 0 ).stats().count() ).isEqualTo( 1 );   // e = 5 (if body)
+		assertThat( CodeProfilerService.spanAt( key, 10, 0 ).stats().count() ).isEqualTo( 1 );  // if closing "}" (group member)
+
+		// Line-based: the if's closing-brace line is covered.
+		assertThat( CodeProfilerService.lineAt( key, 10 ).covered() ).isTrue();
+	}
+
 	@DisplayName( "It wraps profiled method bodies in a catch-all that closes the probe interval on uncaught exceptions" )
 	@Test
 	void testExceptionEscapeClosesProbeInterval() throws Exception {
@@ -2471,6 +2514,57 @@ class CodeProfilerTest {
 		// missed body/brace spans — NOT covered.
 		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( key, 1 ).count() ).isEqualTo( 1 );
+		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isFalse();
+		assertThat( CodeProfilerService.lineAt( key, 3 ).covered() ).isFalse();
+	}
+
+	@DisplayName( "It keeps a nested lambda default out of the outer shell group" )
+	@Test
+	void testFunctionLambdaDefaultDoesNotCorruptOuterShell() {
+		String source = """
+		                function f( cb = () => 1 ) {
+		                x = cb();
+		                }
+		                """;
+		runtime.executeSource( source );
+
+		String	key			= IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testFunctionLambdaDefaultDoesNotCorruptOuterShell dump" );
+		// System.out.print( CodeProfilerService.dumpSpans( key, source ) );
+
+		// Pass A: the outer declaration shell splits around the lambda default
+		// "() => 1". The lambda's own shell ("() => ") breaks into its OWN isolated
+		// span, and its body fragment ("1") must NOT be swept into the OUTER shell
+		// group — the outer group is exactly [head, tail] so the declaration mark
+		// covers the whole declaration text, and nothing of the nested lambda is
+		// batched into it.
+		var		spanDefs	= CodeProfilerService.trackedBlueprints().get( key ).spans();
+		assertThat( spanDefs ).hasSize( 7 );
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 17, true ) );   // outer head "function f( cb = "
+		assertThat( spanDefs.get( 1 ) ).isEqualTo( new Blueprint.SpanDef( 1, 17, 1, 23, true ) );  // lambda shell "() => "
+		assertThat( spanDefs.get( 2 ) ).isEqualTo( new Blueprint.SpanDef( 1, 23, 1, 24, true ) );  // lambda body "1"
+		assertThat( spanDefs.get( 3 ) ).isEqualTo( new Blueprint.SpanDef( 1, 24, 1, 27, true ) );  // outer shell tail " ) "
+		assertThat( spanDefs.get( 4 ) ).isEqualTo( new Blueprint.SpanDef( 2, 0, 2, 8, true ) );    // outer body "x = cb()"
+		assertThat( spanDefs.get( 5 ) ).isEqualTo( new Blueprint.SpanDef( 1, 27, 1, 28, true ) );  // "{"
+		assertThat( spanDefs.get( 6 ) ).isEqualTo( new Blueprint.SpanDef( 3, 0, 3, 1, true ) );    // "}"
+
+		// Pass B: f() was NEVER called — ONLY the declaration shell (head + tail)
+		// ran. They were batched into ONE varargs mark at the declaration site.
+		assertThat( CodeProfilerService.spanAt( key, 1, 0 ).stats().count() ).isEqualTo( 1 );   // outer head ran at declaration
+		assertThat( CodeProfilerService.spanAt( key, 1, 24 ).stats().count() ).isEqualTo( 1 );  // outer tail ran at declaration
+		// The nested lambda was never created (defaultExpr never ran) — its shell
+		// and body both missed; the outer body + braces never ran either.
+		assertThat( CodeProfilerService.spanAt( key, 1, 17 ).stats().count() ).isEqualTo( 0 );
+		assertThat( CodeProfilerService.spanAt( key, 1, 23 ).stats().count() ).isEqualTo( 0 );
+		assertThat( CodeProfilerService.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 0 );
+		assertThat( CodeProfilerService.spanAt( key, 1, 27 ).stats().count() ).isEqualTo( 0 );
+		assertThat( CodeProfilerService.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 0 );
+
+		// Line-based: line 1 covered via the declaration shell; lines 2-3 only
+		// touched by missed spans — NOT covered.
+		assertThat( CodeProfilerService.lineAt( key, 1 ).covered() ).isTrue();
 		assertThat( CodeProfilerService.lineAt( key, 2 ).covered() ).isFalse();
 		assertThat( CodeProfilerService.lineAt( key, 3 ).covered() ).isFalse();
 	}

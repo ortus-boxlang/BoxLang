@@ -2859,7 +2859,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// parens around/after the isolated defaults) run atomically at declaration
 		// but have no AST node to carry a mark. They are grouped and registered so
 		// the transformer can emit ONE varargs mark(fileId, ...shell) for the shell.
-		preCollectShell( node );
+		preCollectShell( node.getArgs() );
 		if ( isTagContext( node ) ) {
 			// TAG functions (<cffunction>/<bx:function>): the shell is just the
 			// OPEN TAG, ending at its ">". Close it FIRST (before any arguments),
@@ -2984,16 +2984,14 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	}
 
 	/**
-	 * The registered span id of the function's shell HEAD (the first span of the
-	 * declaration shell group), used to group the tag close with the declaration.
+	 * The registered span id of the just-completed function declaration's shell
+	 * HEAD (its first span), used to group a tag close (or an abstract
+	 * declaration) with the declaration shell.
 	 *
-	 * @return the shell head span id, or -1 if none was captured
+	 * @return the shell head span id, or -1 if the completed shell had no spans
 	 */
 	private int shellHeadId() {
-		if ( !shellAccumulator.isEmpty() ) {
-			return shellAccumulator.get( 0 );
-		}
-		return -1;
+		return this.lastShellHead;
 	}
 
 	/**
@@ -3037,7 +3035,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// the arg is omitted at call time): break before it, thread it, close after
 		// it so it isn't fused with the surrounding shell text. The HEAD +
 		// INTERSTITIAL + TAIL shell fragments are batched into one varargs mark.
-		preCollectShell();
+		preCollectShell( args );
 		for ( BoxArgumentDeclaration arg : args ) {
 			BoxExpression defaultValue = arg.getValue();
 			if ( defaultValue != null && couldThrow( defaultValue ) ) {
@@ -3732,55 +3730,95 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	}
 
 	/** Currently-active consumers for capturing shell-group span ids (LIFO). */
-	private final List<SpanConsumer>	shellSpanConsumers		= new ArrayList<>();
-	private final List<Integer>			shellAccumulator		= new ArrayList<>();
-	private final java.util.Set<Long>	shellLazyDefaultStarts	= new java.util.HashSet<>();
+	private final List<SpanConsumer>	shellSpanConsumers	= new ArrayList<>();
+
+	/** Stack of active declaration-shell collection frames (one per nested shell). */
+	private final List<ShellFrame>		shellFrames			= new ArrayList<>();
+
+	/**
+	 * The span id of the head of the most recently COMPLETED shell frame, used to
+	 * group a tag close (or an abstract function declaration) with its
+	 * declaration shell.
+	 */
+	private int							lastShellHead		= -1;
+
+	/**
+	 * One active declaration-shell collection frame. Shell fragments (head,
+	 * interstitial, tail around literal args) accumulate in {@code accumulator};
+	 * spans that START inside a non-literal default's region (the default itself
+	 * and every span inside it, e.g. a nested lambda's shell and body) are
+	 * excluded — they run later at call time, not at declaration.
+	 * <p>
+	 * Nested shells (a closure/lambda used as a non-literal default) each push
+	 * their OWN frame, so the inner shell's collection never clears or mixes with
+	 * the outer shell's.
+	 */
+	private static final class ShellFrame {
+
+		final List<Integer>	accumulator	= new ArrayList<>();
+
+		// [startPacked, endPacked) regions of non-literal defaults.
+		final List<long[]>	excluded	= new ArrayList<>();
+	}
+
+	/**
+	 * Pack a source point into a single comparable long (line dominates column).
+	 *
+	 * @param p the point
+	 *
+	 * @return the packed point
+	 */
+	private static long pack( Point p ) {
+		return ( ( long ) p.getLine() << 32 ) | ( p.getColumn() & 0xFFFFFFFFL );
+	}
+
+	/**
+	 * Whether a span start falls inside any excluded non-literal-default region of
+	 * the frame.
+	 *
+	 * @param frame  the shell collection frame
+	 * @param packed the packed span start
+	 *
+	 * @return true if the span must stay out of the shell group
+	 */
+	private static boolean inExcludedRegion( ShellFrame frame, long packed ) {
+		for ( long[] region : frame.excluded ) {
+			if ( packed >= region[ 0 ] && packed < region[ 1 ] ) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * Begin collecting shell fragments for a declaration, so they can be batched
 	 * into one varargs mark at the declaration site. Shell fragments (head,
 	 * interstitial, tail around literal args) have no AST node of their own and run
 	 * atomically at declaration — unlike the lazy-default spans, which run at call
-	 * time and must stay separate.
+	 * time and must stay separate. Each active declaration pushes its own frame, so
+	 * a nested closure/lambda default (which starts its own shell collection) never
+	 * corrupts the enclosing shell's accumulator or exclusion regions.
+	 *
+	 * @param args the declaration's arguments (their non-literal defaults become
+	 *             excluded regions)
 	 */
-	private void preCollectShell() {
-		shellAccumulator.clear();
-		shellLazyDefaultStarts.clear();
-		shellSpanConsumers.add( ( spanId, start ) -> {
-			if ( start != null ) {
-				long packed = ( ( long ) start.getLine() << 32 ) | ( start.getColumn() & 0xFFFFFFFFL );
-				if ( !shellLazyDefaultStarts.contains( packed ) ) {
-					shellAccumulator.add( spanId );
-				}
-			}
-		} );
-	}
-
-	/**
-	 * Begin collecting shell fragments for a function declaration, recording the
-	 * lazy-default start positions so those spans are excluded from the shell
-	 * group (they run later at call time).
-	 */
-	private void preCollectShell( BoxFunctionDeclaration node ) {
-		// Fill the exclusion set FIRST, then arm the consumer (which clears the set
-		// must not run before the defaults are recorded).
-		for ( BoxArgumentDeclaration arg : node.getArgs() ) {
+	private void preCollectShell( List<BoxArgumentDeclaration> args ) {
+		ShellFrame frame = new ShellFrame();
+		for ( BoxArgumentDeclaration arg : args ) {
 			BoxExpression defaultValue = arg.getValue();
 			if ( defaultValue != null && couldThrow( defaultValue ) ) {
-				Point p = unwrapParens( defaultValue ).getStart();
-				if ( p != null ) {
-					shellLazyDefaultStarts.add( ( ( long ) p.getLine() << 32 ) | ( p.getColumn() & 0xFFFFFFFFL ) );
+				BoxExpression	inner	= unwrapParens( defaultValue );
+				Point			p		= inner.getStart();
+				Point			e		= inner.getEnd();
+				if ( p != null && e != null ) {
+					frame.excluded.add( new long[] { pack( p ), pack( e ) } );
 				}
 			}
 		}
-		// Now arm the consumer WITHOUT clearing the exclusion set we just built.
-		shellAccumulator.clear();
-		shellSpanConsumers.add( ( spanId, start ) -> {
-			if ( start != null ) {
-				long packed = ( ( long ) start.getLine() << 32 ) | ( start.getColumn() & 0xFFFFFFFFL );
-				if ( !shellLazyDefaultStarts.contains( packed ) ) {
-					shellAccumulator.add( spanId );
-				}
+		this.shellFrames.add( frame );
+		this.shellSpanConsumers.add( ( spanId, start ) -> {
+			if ( start != null && !inExcludedRegion( frame, pack( start ) ) ) {
+				frame.accumulator.add( spanId );
 			}
 		} );
 	}
@@ -3791,8 +3829,10 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 */
 	private void postCollectAndRegisterShell() {
 		shellSpanConsumers.remove( shellSpanConsumers.size() - 1 );
-		if ( !shellAccumulator.isEmpty() ) {
-			transpiler.registerSpanGroup( shellAccumulator.stream().mapToInt( Integer::intValue ).toArray() );
+		ShellFrame frame = shellFrames.remove( shellFrames.size() - 1 );
+		this.lastShellHead = frame.accumulator.isEmpty() ? -1 : frame.accumulator.get( 0 );
+		if ( !frame.accumulator.isEmpty() ) {
+			transpiler.registerSpanGroup( frame.accumulator.stream().mapToInt( Integer::intValue ).toArray() );
 		}
 	}
 

@@ -432,27 +432,49 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	/**
-	 * Snapshot the set of span marks claimed so far in this compilation. Used by
-	 * transformers that duplicate the same AST (e.g. a {@code finally} body, which
-	 * is compiled both inline and in the exception handler) so the duplicated copy
-	 * can reclaim the marks and emit them on its own execution path.
+	 * An immutable snapshot of the profiler mark-emission state, taken before
+	 * transforming a DUPLICATED AST body (e.g. a {@code finally} body compiled
+	 * into several bytecode copies). It captures BOTH the claimed-mark set AND the
+	 * span-GROUP map, because transforming one copy both CLAIMS marks
+	 * ({@link #claimSpanMark}) AND CONSUMES span groups ({@link #takeSpanGroup});
+	 * restoring only the marks leaves groups consumed, so later copies emit only
+	 * the group HEAD and leave the rest missed on the path that actually runs.
 	 *
-	 * @return a defensive copy of the claimed-mark ids
+	 * @param emittedMarks the claimed span-mark ids at snapshot time
+	 * @param spanGroups   the registered span groups (id → member ids) at snapshot time
 	 */
-	public Set<Integer> snapshotEmittedMarks() {
-		return new HashSet<>( this.emittedMarks );
+	public record SpanMarkSnapshot( Set<Integer> emittedMarks, Map<Integer, int[]> spanGroups ) {
 	}
 
 	/**
-	 * Restore the claimed-mark set to a prior snapshot, releasing any marks claimed
-	 * since. Call with the snapshot taken before transforming a duplicated AST body
-	 * so the duplicate copy's marks can be re-claimed and emitted.
+	 * Snapshot the profiler mark-emission state claimed so far in this compilation.
+	 * Used by transformers that duplicate the same AST (e.g. a {@code finally} body,
+	 * which is compiled both inline and in the exception handler) so the duplicated
+	 * copy can reclaim the marks AND re-consume the span groups, emitting the full
+	 * set on its own execution path.
 	 *
-	 * @param snapshot the set previously returned by {@link #snapshotEmittedMarks()}
+	 * @return a defensive snapshot of the claimed-mark ids and span groups
 	 */
-	public void restoreEmittedMarks( Set<Integer> snapshot ) {
+	public SpanMarkSnapshot snapshotEmittedMarks() {
+		return new SpanMarkSnapshot( new HashSet<>( this.emittedMarks ), new java.util.HashMap<>( this.spanGroups ) );
+	}
+
+	/**
+	 * Restore the profiler mark-emission state to a prior snapshot, releasing any
+	 * marks claimed AND any span groups consumed since. Call with the snapshot
+	 * taken before transforming a duplicated AST body so the duplicate copy's marks
+	 * and groups can be re-claimed/re-consumed and emitted.
+	 *
+	 * @param snapshot the snapshot previously returned by {@link #snapshotEmittedMarks()}
+	 */
+	public void restoreEmittedMarks( SpanMarkSnapshot snapshot ) {
 		this.emittedMarks.clear();
-		this.emittedMarks.addAll( snapshot );
+		this.emittedMarks.addAll( snapshot.emittedMarks() );
+		// Restore the group map IN PLACE (it may be SHARED with child transpilers
+		// via adoptProfilingContext — reassigning would detach them) so consumed
+		// groups become re-consumable by the duplicate copy.
+		this.spanGroups.clear();
+		this.spanGroups.putAll( snapshot.spanGroups() );
 	}
 
 	/**

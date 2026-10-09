@@ -729,6 +729,7 @@ public class ClassTest {
 
 		var prop1Annotations = prop1.getAsStruct( Key.of( "annotations" ) );
 		assertThat( prop1Annotations.size() ).isEqualTo( 5 );
+		assertThat( prop1Annotations.get( Key.of( "default" ) ) ).isEqualTo( "myDefaultValue" );
 
 		assertThat( prop1Annotations.containsKey( Key.of( "preAnno" ) ) ).isTrue();
 		assertThat( prop1Annotations.get( Key.of( "preAnno" ) ) ).isEqualTo( "" );
