@@ -109,37 +109,69 @@ public abstract class BIF {
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// We do this, since it's hot code
-		boolean	doEvents	= this.interceptorService.hasState( BoxEvent.ON_BIF_INVOCATION.key() ) ||
-		    this.interceptorService.hasState( BoxEvent.POST_BIF_INVOCATION.key() );
+		// We do this, since it's hot code. A state only exists once a listener registers, so with no
+		// listeners nothing is allocated and the clock is never read.
+		boolean	doPre		= this.interceptorService.hasState( BoxEvent.ON_BIF_INVOCATION );
+		boolean	doPost		= this.interceptorService.hasState( BoxEvent.POST_BIF_INVOCATION );
+		boolean	doException	= this.interceptorService.hasState( BoxEvent.ON_BIF_EXCEPTION );
 
-		IStruct	data		= null;
-		if ( doEvents ) {
-			data = Struct.ofNonConcurrent(
-			    Key.context, context,
-			    Key.arguments, arguments,
-			    Key.bif, this,
-			    Key._name, arguments.getAsKey( __functionName )
-			);
-			interceptorService.announce(
-			    BoxEvent.ON_BIF_INVOCATION,
-			    data
-			);
+		if ( !doPre && !doPost && !doException ) {
+			return _invoke( context, arguments );
 		}
 
-		// Invoke the BIF
-		Object result = _invoke( context, arguments );
+		return invokeWithEvents( context, arguments, doPre, doPost, doException );
+	}
 
-		if ( doEvents ) {
+	/**
+	 * Invoke the BIF announcing the pre, post and exception interception points.
+	 * Kept apart from {@link #invoke(IBoxContext, ArgumentsScope)} so the no-listener path stays tiny.
+	 *
+	 * <ul>
+	 * <li>{@code onBIFInvocation}: before the call. Data: context, arguments, bif, name</li>
+	 * <li>{@code postBIFInvocation}: after a successful call. Adds result (if any) and elapsedNanos. A listener can override result</li>
+	 * <li>{@code onBIFException}: when the BIF throws. Adds exception and elapsedNanos. The exception is rethrown unchanged</li>
+	 * </ul>
+	 *
+	 * @param context     The context in which the BIF is being invoked
+	 * @param arguments   The arguments to the BIF
+	 * @param doPre       Whether there are listeners for the pre point
+	 * @param doPost      Whether there are listeners for the post point
+	 * @param doException Whether there are listeners for the exception point
+	 *
+	 * @return The result of the invocation
+	 */
+	private Object invokeWithEvents( IBoxContext context, ArgumentsScope arguments, boolean doPre, boolean doPost, boolean doException ) {
+		IStruct data = Struct.ofNonConcurrent(
+		    Key.context, context,
+		    Key.arguments, arguments,
+		    Key.bif, this,
+		    Key._name, arguments.getAsKey( __functionName )
+		);
 
+		if ( doPre ) {
+			this.interceptorService.announce( BoxEvent.ON_BIF_INVOCATION, data );
+		}
+
+		long	start	= System.nanoTime();
+		Object	result;
+		try {
+			// Invoke the BIF
+			result = _invoke( context, arguments );
+		} catch ( Throwable e ) {
+			if ( doException ) {
+				data.put( Key.exception, e );
+				data.put( Key.elapsedNanos, System.nanoTime() - start );
+				this.interceptorService.announce( BoxEvent.ON_BIF_EXCEPTION, data );
+			}
+			throw e;
+		}
+
+		if ( doPost ) {
 			if ( result != null ) {
 				data.put( Key.result, result );
 			}
-
-			interceptorService.announce(
-			    BoxEvent.ON_BIF_INVOCATION,
-			    data
-			);
+			data.put( Key.elapsedNanos, System.nanoTime() - start );
+			this.interceptorService.announce( BoxEvent.POST_BIF_INVOCATION, data );
 
 			// If we have it, then override it
 			if ( data.containsKey( Key.result ) ) {
