@@ -1,0 +1,3 @@
+import java.lang.Math;
+try { a = 1; } catch ( any e ) { a = 2; }
+request.bl2745 = a;
