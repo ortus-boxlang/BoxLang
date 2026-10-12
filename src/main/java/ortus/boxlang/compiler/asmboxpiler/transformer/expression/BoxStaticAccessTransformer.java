@@ -56,63 +56,8 @@ public class BoxStaticAccessTransformer extends AbstractTransformer {
 		Boolean					safe			= objectAccess.isSafe() || context == TransformerContext.SAFE;
 
 		transpiler.getCurrentMethodContextTracker().ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
-
-		// does this go here or above?
-
-		// get the imports for the current class
-		transpiler.getCurrentMethodContextTracker().ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
-		// nodes.add( new VarInsnNode( Opcodes.ALOAD, 0 ) );
-		// push scope reference onto the stack
-		if ( objectAccess.getContext() instanceof BoxFQN fqn ) {
-			nodes.add( new LdcInsnNode( fqn.getValue() ) );
-		} else if ( objectAccess.getContext() instanceof BoxIdentifier id ) {
-			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
-				nodes.addAll( transpiler.transform( id, context, ReturnValueContext.VALUE ) );
-			} else {
-				nodes.add( new LdcInsnNode( id.getName() ) );
-			}
-		} else {
-			nodes.addAll( transpiler.transform( objectAccess.getContext(), context, ReturnValueContext.VALUE ) );
-			// throw new ExpressionException( "Unexpected base token in static access.", objectAccess.getContext() );
-		}
-		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, transpiler.getProperty( "classTypeInternal" ), "imports", Type.getDescriptor( List.class ) ) );
-
-		// invoke BoxClassSupport.ensureClass(${contextName},${scopeReference},imports),
-		nodes.add( new MethodInsnNode(
-		    Opcodes.INVOKESTATIC,
-		    Type.getInternalName( BoxClassSupport.class ),
-		    "ensureClass",
-		    Type.getMethodDescriptor( Type.getType( DynamicObject.class ),
-		        Type.getType( IBoxContext.class ),
-		        Type.getType( Object.class ),
-		        Type.getType( List.class )
-		    ),
-		    false )
-		);
-
-		// Node accessKey;
-		// objectAccess just uses the string directly, array access allows any expression
-		if ( objectAccess.getAccess() instanceof BoxIdentifier id ) {
-			nodes.addAll( transpiler.createKey( id.getName() ) );
-		} else if ( objectAccess.getAccess() instanceof BoxIntegerLiteral il ) {
-			nodes.addAll( transpiler.createKey( il ) );
-		} else {
-			throw new ExpressionException( "Unsupported access type: " + objectAccess.getAccess().getClass().getName(), objectAccess.getAccess() );
-		}
-
-		// Expression jContext;
-
-		// // "scope" here isn't a BoxLang proper scope, it's just whatever Java source represents the context of the access expression
-		// values.put( "scopeReference", jContext.toString() );
-
-		// String template = """
-		// Referencer.get(
-		// ${contextName},
-		// BoxClassSupport.ensureClass(${contextName},${scopeReference},imports),
-		// ${accessKey},
-		// ${safe}
-		// )
-		// """;
+		nodes.addAll( transformClassReference( objectAccess, context ) );
+		nodes.addAll( transformAccessKey( objectAccess ) );
 
 		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, Type.getInternalName( Boolean.class ), safe ? "TRUE" : "FALSE",
 		    Type.getDescriptor( Boolean.class ) ) );
@@ -135,6 +80,60 @@ public class BoxStaticAccessTransformer extends AbstractTransformer {
 		}
 
 		return AsmHelper.addLineNumberLabels( nodes, node );
+	}
+
+	/**
+	 * Generate the bytecode that pushes the class reference (a DynamicObject) on the left side of the <code>::</code> operator.
+	 * Used for reading static members and for assigning them (<code>Foo::bar = 1</code>).
+	 *
+	 * @param objectAccess The static access node
+	 * @param context      The transformer context
+	 *
+	 * @return The instructions that leave a DynamicObject on the stack
+	 */
+	public List<AbstractInsnNode> transformClassReference( BoxStaticAccess objectAccess, TransformerContext context ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		transpiler.getCurrentMethodContextTracker().ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
+		if ( objectAccess.getContext() instanceof BoxFQN fqn ) {
+			nodes.add( new LdcInsnNode( fqn.getValue() ) );
+		} else if ( objectAccess.getContext() instanceof BoxIdentifier id ) {
+			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
+				nodes.addAll( transpiler.transform( id, context, ReturnValueContext.VALUE ) );
+			} else {
+				nodes.add( new LdcInsnNode( id.getName() ) );
+			}
+		} else {
+			nodes.addAll( transpiler.transform( objectAccess.getContext(), context, ReturnValueContext.VALUE ) );
+		}
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, transpiler.getProperty( "classTypeInternal" ), "imports", Type.getDescriptor( List.class ) ) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( BoxClassSupport.class ),
+		    "ensureClass",
+		    Type.getMethodDescriptor( Type.getType( DynamicObject.class ),
+		        Type.getType( IBoxContext.class ),
+		        Type.getType( Object.class ),
+		        Type.getType( List.class )
+		    ),
+		    false )
+		);
+		return nodes;
+	}
+
+	/**
+	 * Generate the bytecode that pushes the Key on the right side of the <code>::</code> operator.
+	 *
+	 * @param objectAccess The static access node
+	 *
+	 * @return The instructions that leave a Key on the stack
+	 */
+	public List<AbstractInsnNode> transformAccessKey( BoxStaticAccess objectAccess ) {
+		if ( objectAccess.getAccess() instanceof BoxIdentifier id ) {
+			return transpiler.createKey( id.getName() );
+		} else if ( objectAccess.getAccess() instanceof BoxIntegerLiteral il ) {
+			return transpiler.createKey( il );
+		}
+		throw new ExpressionException( "Unsupported access type: " + objectAccess.getAccess().getClass().getName(), objectAccess.getAccess() );
 	}
 
 }
