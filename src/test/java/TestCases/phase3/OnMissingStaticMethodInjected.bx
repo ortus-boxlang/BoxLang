@@ -1,0 +1,7 @@
+class {
+
+	static function hello() {
+		return "hello";
+	}
+
+}

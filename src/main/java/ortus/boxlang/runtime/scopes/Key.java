@@ -704,6 +704,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onMessage							= Key.of( "onMessage" );
 	public static final Key		onMisfire							= Key.of( "onMisfire" );
 	public static final Key		onMissingMethod						= Key.of( "onMissingMethod" );
+	public static final Key		onMissingStaticMethod				= Key.of( "onMissingStaticMethod" );
 	public static final Key		onMissingTemplate					= Key.of( "onMissingTemplate" );
 	public static final Key		onParse								= Key.of( "onParse" );
 	public static final Key		onRequest							= Key.of( "onRequest" );
