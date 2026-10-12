@@ -9,15 +9,18 @@ import static ortus.boxlang.parser.antlr.BoxGrammar.CASE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.CASTAS;
 import static ortus.boxlang.parser.antlr.BoxGrammar.CATCH;
 import static ortus.boxlang.parser.antlr.BoxGrammar.CLASS;
+import static ortus.boxlang.parser.antlr.BoxGrammar.COMMA;
 import static ortus.boxlang.parser.antlr.BoxGrammar.CONTAIN;
 import static ortus.boxlang.parser.antlr.BoxGrammar.CONTAINS;
 import static ortus.boxlang.parser.antlr.BoxGrammar.CONTINUE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.DEFAULT;
 import static ortus.boxlang.parser.antlr.BoxGrammar.DO;
 import static ortus.boxlang.parser.antlr.BoxGrammar.DOES;
+import static ortus.boxlang.parser.antlr.BoxGrammar.ELLIPSIS;
 import static ortus.boxlang.parser.antlr.BoxGrammar.ELSE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.EQ;
 import static ortus.boxlang.parser.antlr.BoxGrammar.EQUAL;
+import static ortus.boxlang.parser.antlr.BoxGrammar.EQUALSIGN;
 import static ortus.boxlang.parser.antlr.BoxGrammar.EQV;
 import static ortus.boxlang.parser.antlr.BoxGrammar.FALSE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.FINAL;
@@ -56,10 +59,13 @@ import static ortus.boxlang.parser.antlr.BoxGrammar.PARAM;
 import static ortus.boxlang.parser.antlr.BoxGrammar.PRIVATE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.PROPERTY;
 import static ortus.boxlang.parser.antlr.BoxGrammar.PUBLIC;
+import static ortus.boxlang.parser.antlr.BoxGrammar.RBRACE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.RBRACKET;
 import static ortus.boxlang.parser.antlr.BoxGrammar.REMOTE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.REQUIRED;
 import static ortus.boxlang.parser.antlr.BoxGrammar.RETHROW;
 import static ortus.boxlang.parser.antlr.BoxGrammar.RETURN;
+import static ortus.boxlang.parser.antlr.BoxGrammar.RPAREN;
 import static ortus.boxlang.parser.antlr.BoxGrammar.STATIC;
 import static ortus.boxlang.parser.antlr.BoxGrammar.THAN;
 import static ortus.boxlang.parser.antlr.BoxGrammar.THROW;
@@ -74,6 +80,7 @@ import static ortus.boxlang.parser.antlr.BoxGrammar.XOR;
 import java.util.Set;
 
 import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
 
 public abstract class BoxParserControl extends Parser {
@@ -178,13 +185,63 @@ public abstract class BoxParserControl extends Parser {
 	 * @return true if this should be seen as a VAR expression and not an identifier
 	 */
 	protected boolean isAssignmentModifier( TokenStream input ) {
-		int thisType = input.LT( 1 ).getType();
-		// System.out.println( "thisType: " + thisType );
-		// System.out.println( "LT(2): " + input.LT( 2 ).getType() );
-		// System.out
-		// .println( "( thisType == VAR || thisType == FINAL || thisType == STATIC ): " + ( thisType == VAR || thisType == FINAL || thisType == STATIC ) );
-		return ( thisType == VAR || thisType == FINAL || thisType == STATIC )
-		    && ( identifiers.contains( input.LT( 2 ).getType() ) || input.LT( 2 ).getType() == LBRACE || input.LT( 2 ).getType() == LBRACKET );
+		int	thisType	= input.LT( 1 ).getType();
+		int	nextType	= input.LT( 2 ).getType();
+		if ( thisType != VAR && thisType != FINAL && thisType != STATIC ) {
+			return false;
+		}
+		// static[ expr ] is bracket access into the static scope unless the brackets hold a destructuring pattern
+		if ( thisType == STATIC && nextType == LBRACKET ) {
+			return isStaticArrayDestructuring( input );
+		}
+		return identifiers.contains( nextType ) || nextType == LBRACE || nextType == LBRACKET;
+	}
+
+	/**
+	 * Gate for treating the STATIC keyword as the static scope in {@code static[ expr ]} bracket access (BL-2750).
+	 *
+	 * @param input the token input stream
+	 *
+	 * @return true if STATIC is followed by brackets that are scope access rather than a destructuring declaration
+	 */
+	protected boolean isStaticScopeAccess( TokenStream input ) {
+		return input.LT( 1 ).getType() == STATIC && input.LT( 2 ).getType() == LBRACKET && !isStaticArrayDestructuring( input );
+	}
+
+	/**
+	 * Decides whether {@code static [ ... ]} starts a static array destructuring declaration or is bracket access
+	 * into the static scope, such as {@code static[ name ] = value}.
+	 *
+	 * It is a declaration only when the matching {@code ]} is followed by {@code =} and the brackets hold something
+	 * that cannot be a single key expression: a top-level comma, a rest binding ({@code ...}), a default value
+	 * ({@code =}), a nested pattern, or nothing at all. So {@code static [ a, b ] = data} and {@code static [ a, ] = data}
+	 * destructure, while {@code static[ name ] = value}, {@code static [ name ] = value} and {@code static[ k ] += 1}
+	 * assign into the static scope.
+	 *
+	 * @param input the token input stream, positioned on the STATIC token
+	 *
+	 * @return true if this is a static array destructuring declaration
+	 */
+	private boolean isStaticArrayDestructuring( TokenStream input ) {
+		int		firstType	= input.LT( 3 ).getType();
+		boolean	isPattern	= firstType == LBRACKET || firstType == RBRACKET || firstType == ELLIPSIS;
+		int		depth		= 0;
+		for ( int i = 2;; i++ ) {
+			int type = input.LT( i ).getType();
+			if ( type == Token.EOF ) {
+				return false;
+			}
+			if ( type == LBRACKET || type == LPAREN || type == LBRACE ) {
+				depth++;
+			} else if ( type == RBRACKET || type == RPAREN || type == RBRACE ) {
+				depth--;
+				if ( depth == 0 ) {
+					return isPattern && input.LT( i + 1 ).getType() == EQUALSIGN;
+				}
+			} else if ( depth == 1 && ( type == COMMA || type == ELLIPSIS || type == EQUALSIGN ) ) {
+				isPattern = true;
+			}
+		}
 	}
 
 	/**

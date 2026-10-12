@@ -1,0 +1,67 @@
+class {
+
+	static {
+		counter = 1
+	}
+
+	static function setDyn( name, value ) {
+		static[ name ] = value;
+		return static[ name ];
+	}
+
+	static function setDynSpaced( name, value ) {
+		static [ name ] = value;
+		return static [ name ];
+	}
+
+	static function setDynLiteral( value ) {
+		static[ "literalKey" ] = value;
+		return static.literalKey;
+	}
+
+	static function setDynNested( name, value ) {
+		var keys = [ name ];
+		static[ keys[ 1 ] ] = value;
+		return static[ keys[ 1 ] ];
+	}
+
+	static function increment( k ) {
+		static[ k ] += 1;
+		return static[ k ];
+	}
+
+	static function readDyn( name ) {
+		return static[ name ];
+	}
+
+	function setDynInstance( name, value ) {
+		static[ name ] = value;
+		return static[ name ];
+	}
+
+	static function destructurePair( data ) {
+		static [ first, second ] = data;
+		return [ static.first, static.second ];
+	}
+
+	static function destructureSingle( data ) {
+		static [ only, ] = data;
+		return static.only;
+	}
+
+	static function destructureRest( data ) {
+		static [ head, ...tail ] = data;
+		return [ static.head, static.tail ];
+	}
+
+	static function destructureDefault( data ) {
+		static [ withDefault = 99 ] = data;
+		return static.withDefault;
+	}
+
+	static function destructureNested( data ) {
+		static [ [ inner ] ] = data;
+		return static.inner;
+	}
+
+}
