@@ -37,6 +37,10 @@ public record Blueprint(
     Kind kind,
     long lastModified ) {
 
+	public Blueprint {
+		spans = List.copyOf( spans );
+	}
+
 	/**
 	 * What the registered key represents.
 	 */
