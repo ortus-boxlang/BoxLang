@@ -24,7 +24,7 @@ import java.util.List;
  * produced by the boxpiler (Pass A) and registered with {@link CodeProfilerService}.
  * <p>
  * Only executable spans are listed — the atomic units that can run and get a span
- * id. Non-executable regions (whitespace, punctuation, braces, comments, trailing
+ * id. Non-executable regions (whitespace, punctuation, comments, trailing
  * lines) are absent; the runtime treats any point not inside an executable span
  * as NOT_EXECUTABLE ({@code spanAt} returns null for it).
  * <p>

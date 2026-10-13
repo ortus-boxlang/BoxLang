@@ -796,6 +796,36 @@ class CodeProfilerTest {
 		assertThat( service.spanAt( key, 5, 0 ).stats().count() ).isEqualTo( 0 );
 	}
 
+	@DisplayName( "It marks the finally braces when the try body holds tag-like text inside a string" )
+	@Test
+	void testFinallyBracesCoveredWithTagLikeTextInTryBody() {
+		// Regression: finallyKeyword() pre-scans backward for the TAG form of the
+		// finally and aborts on ANY "<" that looks like a tag. Tag-like text inside a
+		// string literal in the try body (`"<foo>"`) is unrelated to template syntax,
+		// but the scan stopped there and never reached the script `finally` lookup,
+		// leaving the executed finally brace group reported as MISSED.
+		String source = """
+		                try {
+		                x = "<foo>";
+		                } finally {
+		                y = 1;
+		                }
+		                """;
+		runtime.executeSource( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// The try body statement ran.
+		assertThat( service.lineAt( key, 2 ).covered() ).isTrue();   // x = "<foo>"
+
+		// The finally ALWAYS runs: its header brace group, body and closing brace
+		// must all be GREEN.
+		assertThat( service.lineAt( key, 3 ).covered() ).isTrue();   // } finally {
+		assertThat( service.lineAt( key, 4 ).covered() ).isTrue();   // y = 1
+		assertThat( service.lineAt( key, 5 ).covered() ).isTrue();   // }
+		assertThat( service.lineAt( key, 4 ).count() ).isEqualTo( 1 );
+	}
+
 	@DisplayName( "It profiles an assert statement and its message" )
 	@Test
 	void testAssert() {

@@ -1123,28 +1123,49 @@ public class CodeProfilerService extends BaseService {
 			if ( lineSpans == null ) {
 				return null;
 			}
-			// A column that begins an inner span owns the point at that boundary
+			// A column that begins a span owns the point at that boundary
 			// (e.g. col 34 starts the "2" branch of "1 : 2" even though it is also
-			// the inclusive end of the "1 : " span). A span only "starts" the
-			// boundary if its START LINE is the queried line — a multi-line span
-			// (e.g. a function shell that ends on the body's line) must not claim
-			// a column on a line it merely passes through.
-			Span boundary = null;
+			// the inclusive end of the "1 : " span). A span only claims a boundary
+			// column if its START LINE is the queried line.
 			for ( Span s : lineSpans ) {
 				if ( s.startLine() == line && col == s.startCol() ) {
-					boundary = s;
-					break;
-				}
-			}
-			if ( boundary != null ) {
-				return boundary;
-			}
-			for ( Span s : lineSpans ) {
-				if ( col >= s.startCol() && col <= s.endCol() ) {
 					return s;
 				}
 			}
-			return null;
+			// Otherwise the point belongs to the INNERMOST span that contains it.
+			// A multi-line span's column bounds apply ONLY on its boundary lines:
+			// the start-column constrains the start line, the end-column constrains
+			// the end line, and every column on an intermediate line is inside the
+			// span. (Previously both bounds were applied on every line the span
+			// touched, so an intermediate line could never satisfy them and the span
+			// was wrongly reported NOT_EXECUTABLE.)
+			Span best = null;
+			for ( Span s : lineSpans ) {
+				if ( contains( s, line, col ) && ( best == null || startsAfter( s, best ) ) ) {
+					best = s;
+				}
+			}
+			return best;
+		}
+
+		/**
+		 * True when the point (line, col) lies inside the span. The start-column bound
+		 * applies only on the start line and the end-column bound only on the end line;
+		 * intermediate lines are contained at every column.
+		 */
+		private static boolean contains( Span s, int line, int col ) {
+			boolean	afterStart	= line > s.startLine() || ( line == s.startLine() && col >= s.startCol() );
+			boolean	beforeEnd	= line < s.endLine() || ( line == s.endLine() && col <= s.endCol() );
+			return afterStart && beforeEnd;
+		}
+
+		/**
+		 * True when span {@code a} starts strictly after span {@code b} in source order.
+		 * The later-starting span is the innermost (a nested body statement beats the
+		 * multi-line shell that encloses it).
+		 */
+		private static boolean startsAfter( Span a, Span b ) {
+			return a.startLine() > b.startLine() || ( a.startLine() == b.startLine() && a.startCol() > b.startCol() );
 		}
 
 		List<Span> spansOnLine( int line ) {

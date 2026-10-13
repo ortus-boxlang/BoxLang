@@ -42,6 +42,7 @@ import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.CatchBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
@@ -250,18 +251,25 @@ public class BoxTryTransformer extends AbstractTransformer {
 		int		offset		= scanFrom == null ? -1 : offsetOf( source, scanFrom );
 		// Tag-based finally (<bx:finally> / <cffinally>): the open tag is a "<",
 		// and Pass A keyed its span group at that "<". Return the "<" position.
-		for ( int i = offset - 1; i >= 0; i-- ) {
-			if ( source.charAt( i ) == '<' ) {
-				String rest = source.substring( i, Math.min( source.length(), i + 30 ) );
-				// Tag names are case-insensitive — match the finally tag ignoring case.
-				if ( rest.matches( "(?i)<(?:bx:|cf)?finally[\\s\\S]*" ) ) {
-					return pointAt( source, i );
-				}
-				// A different tag — the finally tag must be after it. A "<" that is
-				// NOT followed by a tag-name letter (e.g. the less-than operator in
-				// `i < 3`) is not a tag and must not stop the scan.
-				if ( rest.length() > 1 && Character.isLetter( rest.charAt( 1 ) ) ) {
-					return null;
+		// ONLY template source can carry a tag form. Script source has no tags, so an
+		// unrelated "<" in script (e.g. inside a string literal like "<foo>") must NOT
+		// abort this scan before the script keyword lookup below.
+		String	sourceType	= transpiler.getProperty( "sourceType" );
+		boolean	isTemplate	= BoxSourceType.BOXTEMPLATE.name().equalsIgnoreCase( sourceType ) || BoxSourceType.CFTEMPLATE.name().equalsIgnoreCase( sourceType );
+		if ( isTemplate ) {
+			for ( int i = offset - 1; i >= 0; i-- ) {
+				if ( source.charAt( i ) == '<' ) {
+					String rest = source.substring( i, Math.min( source.length(), i + 30 ) );
+					// Tag names are case-insensitive — match the finally tag ignoring case.
+					if ( rest.matches( "(?i)<(?:bx:|cf)?finally[\\s\\S]*" ) ) {
+						return pointAt( source, i );
+					}
+					// A different tag — the finally tag must be after it. A "<" that is
+					// NOT followed by a tag-name letter (e.g. the less-than operator in
+					// `i < 3`) is not a tag and must not stop the scan.
+					if ( rest.length() > 1 && Character.isLetter( rest.charAt( 1 ) ) ) {
+						return null;
+					}
 				}
 			}
 		}

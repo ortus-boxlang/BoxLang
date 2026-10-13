@@ -83,6 +83,16 @@ class CodeProfilerServiceTest {
 	        new Blueprint.SpanDef( 1, 18, 1, 21, true )   // span 3: "bum"
 	    ) );
 
+	// A MULTI-LINE executable span: it starts on line 1 at col 10, crosses line 2
+	// entirely, and ends on line 3 at col 5 (e.g. a function shell or a multi-line
+	// expression). Only the boundaries constrain the column: the start-column bound
+	// applies ON the start line, the end-column bound applies ON the end line, and
+	// every column on an intermediate line is inside the span.
+	private static final Blueprint	MULTILINE_BLUEPRINT	= new Blueprint(
+	    List.of(
+	        new Blueprint.SpanDef( 1, 10, 3, 5, true )   // span 0: multi-line shell
+	    ) );
+
 	// -------------------------------------------------------------------------
 	// Plain statements, one per line
 	// -------------------------------------------------------------------------
@@ -121,6 +131,35 @@ class CodeProfilerServiceTest {
 
 		// fileLines has all 3 lines
 		assertThat( service.fileLines( FILE ).keySet() ).containsExactly( 1, 2, 3 );
+	}
+
+	@DisplayName( "It resolves a multi-line span on its intermediate lines, not just its boundary lines" )
+	@Test
+	void testMultiLineSpanResolution() {
+		String fileId = service.registerBlueprintForFile( FILE, MULTILINE_BLUEPRINT );
+		CodeProfilerService.mark( fileId, 0 );
+
+		// Start line (1): the start-column bound applies (col 12 >= 10). The end
+		// bound does NOT apply here — it belongs to the end line only.
+		assertThat( service.spanAt( FILE, 1, 12 ) ).isNotNull();
+		assertThat( service.spanAt( FILE, 1, 12 ).id() ).isEqualTo( 0 );
+
+		// Intermediate line (2): EVERY column is inside the span.
+		assertThat( service.spanAt( FILE, 2, 0 ) ).isNotNull();
+		assertThat( service.spanAt( FILE, 2, 0 ).id() ).isEqualTo( 0 );
+		assertThat( service.spanAt( FILE, 2, 40 ) ).isNotNull();
+		assertThat( service.spanAt( FILE, 2, 40 ).id() ).isEqualTo( 0 );
+
+		// End line (3): the end-column bound applies (col 5 <= 5). The start bound
+		// does NOT apply here — it belongs to the start line only.
+		assertThat( service.spanAt( FILE, 3, 5 ) ).isNotNull();
+		assertThat( service.spanAt( FILE, 3, 5 ).id() ).isEqualTo( 0 );
+
+		// Past the end line's column bound (col 6 > 5) is NOT_EXECUTABLE.
+		assertThat( service.spanAt( FILE, 3, 6 ) ).isNull();
+
+		// The span ran, so a resolved point reports its count.
+		assertThat( service.spanAt( FILE, 2, 0 ).stats().count() ).isEqualTo( 1 );
 	}
 
 	// -------------------------------------------------------------------------
