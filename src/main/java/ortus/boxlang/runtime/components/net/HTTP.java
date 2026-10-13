@@ -135,6 +135,7 @@ public class HTTP extends Component {
 		    new Attribute( Key.sse, "boolean", false ),
 		    new Attribute( Key.onRequestStart, "function" ),
 		    new Attribute( Key.onChunk, "function" ),
+		    new Attribute( Key.onBinaryChunk, "function" ),
 		    new Attribute( Key.onMessage, "function" ),
 		    new Attribute( Key.onError, "function" ),
 		    new Attribute( Key.onComplete, "function" ),
@@ -229,6 +230,65 @@ public class HTTP extends Component {
 	 * bx:http url="https://api.example.com/stream" onChunk=function(chunk) {
 	 *     println( "Received chunk ##chunk.chunkNumber: ##chunk.totalReceived bytes" );
 	 *     println( chunk.chunk ); // The actual data
+	 * } {}
+	 * </pre>
+	 * <p>
+	 * <b>Binary Streaming (New in 1.19.0):</b> Use <code>onBinaryChunk</code> to receive the raw bytes of a streaming response,
+	 * such as audio, exactly as they are read from the network. There is no text decoding and no line splitting, so binary data arrives intact.
+	 * <ul>
+	 * <li>The callback receives <code>(bytes, info)</code>. <code>info</code> has <code>chunkNumber</code> (1-based), <code>totalBytes</code>
+	 * (so far), <code>result</code> and <code>httpClient</code>, plus <code>headers</code> on the first chunk only.</li>
+	 * <li>Return an explicit <code>false</code> to stop streaming and close the connection immediately. Any other return value keeps
+	 * streaming. Stopping is not an error: the status code is unchanged and <code>result.streamCompleted</code> is <code>false</code>.</li>
+	 * <li><code>timeout</code> becomes an idle timeout: the longest wait for the response headers or between received bytes. It does not limit
+	 * the total duration. A stalled stream is aborted and reported as a <code>408</code> through <code>onError</code>.</li>
+	 * <li>A non 2xx status never reaches the callback. It is reported through <code>onError</code> as a message such as
+	 * <code>HTTP 401: {"error":"bad key"}</code> (the status and the response body).</li>
+	 * <li>The body is not accumulated. The result has <code>chunkCount</code>, <code>totalBytes</code> and <code>streamCompleted</code>.</li>
+	 * <li>When both <code>onBinaryChunk</code> and <code>onChunk</code> are set, <code>onBinaryChunk</code> is used.</li>
+	 * </ul>
+	 *
+	 * <pre>
+	 * // Restream audio from a provider
+	 * bx:http url="https://api.example.com/v1/speech"
+	 *         method="POST"
+	 *         timeout=30
+	 *         result="speech"
+	 *         onBinaryChunk=function( bytes, info ) {
+	 *     if ( info.chunkNumber == 1 ) {
+	 *         println( "Content-Type: #info.headers[ "Content-Type" ]#" );
+	 *     }
+	 *     socket.send( bytes );
+	 *     // Return false to stop streaming and close the connection
+	 *     return !socket.isClosed();
+	 * }
+	 *         onError=function( error, httpResult ) {
+	 *     // "HTTP 401: {...}" for a bad status, or a 408 timeout when the stream stalls
+	 *     println( "Stream failed: #error.message#" );
+	 * } {
+	 *     bx:httpparam type="header" name="Authorization" value="Bearer #apiKey#";
+	 *     bx:httpparam type="body" value='{"text":"Hello from BoxLang"}';
+	 * }
+	 * println( "Received #speech.totalBytes# bytes in #speech.chunkCount# chunks" );
+	 *
+	 * // Save a stream to a file without holding it in memory
+	 * out = createObject( "java", "java.io.FileOutputStream" ).init( "/downloads/audio.mp3" );
+	 * try {
+	 *     bx:http url="https://example.com/audio.mp3" result="audio"
+	 *             onBinaryChunk=function( bytes, info ) {
+	 *         out.write( bytes );
+	 *     } {}
+	 * } finally {
+	 *     out.close();
+	 * }
+	 *
+	 * // Stop a Server-Sent Events stream with an explicit false
+	 * bx:http url="https://api.example.com/events" sse=true timeout=30 result="events"
+	 *         onChunk=function( event ) {
+	 *     if ( event.data == "[DONE]" ) {
+	 *         return false;
+	 *     }
+	 *     println( event.data );
 	 * } {}
 	 * </pre>
 	 * <p>
@@ -327,6 +387,10 @@ public class HTTP extends Component {
 	 *                           request, or performing pre-flight checks. Optional.
 	 *
 	 * @attribute.onChunk A callback function for streaming/chunked response processing. Receives a struct with: chunk (data), chunkNumber (1-based), totalReceived (bytes), headers (first chunk only), result (HTTPResult struct). Optional.
+	 * 
+	 * @attribute.onBinaryChunk A callback function for raw binary response streaming. Receives (bytes, info): bytes is the byte array read from the network (no text decoding, no line splitting) and info is a struct with chunkNumber (1-based),
+	 *                          totalBytes, headers (first chunk only), result and httpClient. Return an explicit false to stop and close the connection. When set, timeout is an idle timeout (longest wait for headers or between received bytes) and a non
+	 *                          2xx status is reported through onError instead of invoking the callback. Takes precedence over onChunk. Optional.
 	 *
 	 * @attribute.onError A callback function to handle errors during the HTTP request. Receives a struct with: error (exception), message (error message), result (HTTPResult struct with partial data). Called for both streaming and non-streaming
 	 *                    requests. Optional.
@@ -476,6 +540,7 @@ public class HTTP extends Component {
 		    // CallBacks
 		    .onRequestStart( attributes.getAsFunction( Key.onRequestStart ) )
 		    .onChunk( attributes.getAsFunction( Key.onChunk ) )
+		    .onBinaryChunk( attributes.getAsFunction( Key.onBinaryChunk ) )
 		    .onError( attributes.getAsFunction( Key.onError ) )
 		    .onComplete( attributes.getAsFunction( Key.onComplete ) )
 		    // SSE Mode

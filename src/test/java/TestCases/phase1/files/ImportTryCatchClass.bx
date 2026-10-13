@@ -1,0 +1,14 @@
+import java.lang.Math;
+
+class {
+
+	function run() {
+		try {
+			var result = Math::max( 1, 5 );
+		} catch ( any e ) {
+			result = -1;
+		}
+		return result;
+	}
+
+}

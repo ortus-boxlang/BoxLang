@@ -20,6 +20,10 @@ package ortus.boxlang.runtime.jdbc;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.sql.SQLException;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -110,5 +114,27 @@ public class SQLErrorHandlingTest {
 
 		// Verify it contains information about syntax error
 		assertThat( message.toLowerCase() ).containsMatch( "(syntax|invalid)" );
+	}
+
+	@Test
+	public void testSQLExceptionChainPreservesExistingCauseAndAddsSuppressedException() {
+		SQLException	existingCause	= new SQLException( "existing cause" );
+		SQLException	firstException	= new SQLException( "first exception" );
+		SQLException	secondException	= new SQLException( "second exception", "state", 2, existingCause );
+		SQLException	thirdException	= new SQLException( "third exception" );
+		firstException.setNextException( secondException );
+		secondException.setNextException( thirdException );
+
+		DatabaseException databaseException = new DatabaseException( firstException );
+
+		assertThat( databaseException.getCause() ).isSameInstanceAs( thirdException );
+		assertThat( thirdException.getCause() ).isSameInstanceAs( secondException );
+		assertThat( secondException.getCause() ).isSameInstanceAs( existingCause );
+		assertThat( secondException.getSuppressed() ).hasLength( 1 );
+		assertThat( secondException.getSuppressed()[ 0 ] ).isSameInstanceAs( firstException );
+
+		StringWriter stackTrace = new StringWriter();
+		databaseException.printStackTrace( new PrintWriter( stackTrace ) );
+		assertThat( stackTrace.toString() ).contains( "Suppressed:" );
 	}
 }

@@ -99,10 +99,12 @@ public class BigIntegerCaster implements IBoxCaster {
 		}
 
 		// Try to parse the string as a double
-		String		stringValue	= StringCaster.cast( object, false );
-		BigInteger	result		= parseBigInteger( stringValue );
-		if ( result != null ) {
-			return result;
+		String stringValue = StringCaster.cast( object, false );
+		if ( stringValue != null ) {
+			BigInteger result = parseBigInteger( stringValue );
+			if ( result != null ) {
+				return result;
+			}
 		}
 
 		// Verify if we can throw an exception
@@ -119,9 +121,11 @@ public class BigIntegerCaster implements IBoxCaster {
 	 *
 	 * @param value A probably-hopefully BigInteger string value, with an optional plus/minus sign.
 	 *
-	 * @return Optional - parsed BigInteger if all string characters are digits, with an optional sign
+	 * @return Optional - parsed BigInteger if all string characters are digits, with an optional sign. Empty optional for empty string, null,
+	 *         floats, alpha characters, etc.
 	 */
 	private static BigInteger parseBigInteger( String value ) {
+		value = value.trim();
 		if ( CasterNumberUtil.isCreatableIgnoringLeadingZeros( value ) ) {
 			try {
 				return new BigInteger( value );

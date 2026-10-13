@@ -341,6 +341,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		dumpLevel							= Key.of( "dumpLevel" );
 	public static final Key		dumpOutput							= Key.of( "dumpOutput" );
 	public static final Key		duration							= Key.of( "duration" );
+	public static final Key		elapsedNanos						= Key.of( "elapsedNanos" );
 	public static final Key		elapsedTime							= Key.of( "elapsedTime" );
 	public static final Key		elem								= Key.of( "elem" );
 	public static final Key		element								= Key.of( "element" );
@@ -693,6 +694,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onApplicationEnd					= Key.of( "onApplicationEnd" );
 	public static final Key		onApplicationRestart				= Key.of( "onApplicationRestart" );
 	public static final Key		onApplicationStart					= Key.of( "onApplicationStart" );
+	public static final Key		onBinaryChunk						= Key.of( "onBinaryChunk" );
 	public static final Key		onChunk								= Key.of( "onChunk" );
 	public static final Key		onClassRequest						= Key.of( "onClassRequest" );
 	public static final Key		onComplete							= Key.of( "onComplete" );
