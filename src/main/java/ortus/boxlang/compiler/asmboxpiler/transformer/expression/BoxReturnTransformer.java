@@ -100,14 +100,26 @@ public class BoxReturnTransformer extends AbstractTransformer {
 		var returnDepth = tracker.getReturnDepth();
 		tracker.incrementReturnDepth();
 
+		// The finally body is compiled into MULTIPLE bytecode copies (this return path,
+		// the try-inline copy, each catch-inline copy, the no-catch-matched copy and the
+		// exception-handler copy) and only ONE runs at runtime. Snapshot the profiler
+		// mark state so THIS copy's claims do NOT starve the copies transformed later —
+		// every copy must carry the finally marks (body AND braces) for whichever path
+		// actually executes.
+		var finallyMarksSnapshot = transpiler.snapshotEmittedMarks();
+
 		reversed.stream().skip( returnDepth ).forEach( finallyBody -> {
+			// The finally braces are batch-marked when the finally runs (this copy).
+			transpiler.emitBraceGroupMark( nodes, finallyBody.keywordPos(), false );
 			nodes.addAll( AsmHelper.transformBodyExpressions(
 			    transpiler,
-			    finallyBody,
+			    finallyBody.body(),
 			    context,
 			    returnContext
 			) );
 		} );
+
+		transpiler.restoreEmittedMarks( finallyMarksSnapshot );
 
 		tracker.decrementReturnDepth();
 		// finish iterating through return blocks

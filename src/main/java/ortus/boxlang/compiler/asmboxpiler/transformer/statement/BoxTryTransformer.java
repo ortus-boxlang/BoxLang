@@ -118,7 +118,14 @@ public class BoxTryTransformer extends AbstractTransformer {
 					nodes.add( new InsnNode( Opcodes.POP ) );
 				}
 			}
+			// Duplicated finally copy (#5, the "no catch matched" path). Snapshot the
+			// profiler mark state around it so this copy's claims do NOT starve the
+			// exception-handler copy (#6) emitted below — only ONE copy runs at runtime,
+			// so BOTH must carry the finally marks (body AND braces).
+			var unmatchedCatchSnapshot = transpiler.snapshotEmittedMarks();
+			transpiler.emitBraceGroupMark( nodes, finallyKeyword( boxTry ), false );
 			nodes.addAll( AsmHelper.transformBodyExpressions( transpiler, boxTry.getFinallyBody(), context, returnValueContext ) );
+			transpiler.restoreEmittedMarks( unmatchedCatchSnapshot );
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, eVar.index() ) );
 			nodes.add( new InsnNode( Opcodes.ATHROW ) );
 		}
@@ -133,10 +140,15 @@ public class BoxTryTransformer extends AbstractTransformer {
 		var errorVarStore = tracker.storeNewVariable( Opcodes.ASTORE );
 		nodes.addAll( errorVarStore.nodes() );
 
-		// The finally braces are batch-marked when the finally runs.
-		emitBraceGroupMark( nodes, finallyKeyword( boxTry ), false );
+		// Duplicated finally copy (#6, the exceptional-handler path). Snapshot the
+		// profiler mark state around it so its claims do not leak into any copy
+		// transformed later. The finally braces are batch-marked when the finally runs.
+		var handlerSnapshot = transpiler.snapshotEmittedMarks();
+		transpiler.emitBraceGroupMark( nodes, finallyKeyword( boxTry ), false );
 
 		nodes.addAll( AsmHelper.transformBodyExpressions( transpiler, boxTry.getFinallyBody(), context, returnValueContext ) );
+
+		transpiler.restoreEmittedMarks( handlerSnapshot );
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, errorVarStore.index() ) );
 
@@ -176,7 +188,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 			return nodes;
 		}
 
-		tracker.addFinallyBody( finallyBody );
+		tracker.addFinallyBody( finallyBody, finallyKeyword );
 		nodes.addAll( AsmHelper.transformBodyExpressions(
 		    transpiler,
 		    codeBody,
@@ -200,7 +212,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 		var finallyMarksSnapshot = transpiler.snapshotEmittedMarks();
 
 		// The finally braces are batch-marked when the finally runs (inline path).
-		emitBraceGroupMark( nodes, finallyKeyword, false );
+		transpiler.emitBraceGroupMark( nodes, finallyKeyword, false );
 
 		nodes.addAll( AsmHelper.transformBodyExpressions(
 		    transpiler,
@@ -214,44 +226,6 @@ public class BoxTryTransformer extends AbstractTransformer {
 		AsmHelper.addDebugLabel( nodes, "BoxTryBlock - END" );
 
 		return nodes;
-	}
-
-	/**
-	 * Emit a {@code mark(fileId, ...braceGroup)} for a try/catch/finally construct's
-	 * braces. Pass A registered the construct's header + closing brace as a span
-	 * GROUP keyed by the construct keyword position. The group is consumed for a
-	 * catch (each catch handler runs at most once); for a finally it is PEEKED
-	 * (non-consuming) because the finally body — and thus its brace mark — is
-	 * compiled into BOTH the inline and exception-handler bytecode copies, and only
-	 * one runs at runtime.
-	 *
-	 * @param nodes      the instruction list to append to
-	 * @param keywordPos the construct keyword start position (group key)
-	 * @param consume    whether to consume the group (catch) or peek (finally)
-	 */
-	private void emitBraceGroupMark( List<AbstractInsnNode> nodes, Point keywordPos, boolean consume ) {
-		// No-op when profiling is disabled — never emit mark instructions otherwise.
-		if ( !transpiler.hasProfilerId() ) {
-			return;
-		}
-		if ( keywordPos == null ) {
-			return;
-		}
-		long	packed	= ( ( long ) keywordPos.getLine() << 32 ) | ( keywordPos.getColumn() & 0xFFFFFFFFL );
-		int		spanId	= transpiler.getSpanId( packed );
-		int[]	group	= spanId < 0 ? null : ( consume ? transpiler.takeSpanGroup( spanId ) : transpiler.peekSpanGroup( spanId ) );
-		if ( group != null ) {
-			// Only emit if no member has been claimed yet (dedup across copies).
-			boolean anyClaimed = false;
-			for ( int member : group ) {
-				if ( transpiler.claimSpanMark( member ) ) {
-					anyClaimed = true;
-				}
-			}
-			if ( anyClaimed ) {
-				nodes.addAll( transpiler.emitMarkVarargs( group ) );
-			}
-		}
 	}
 
 	/**
@@ -357,7 +331,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 		nodes.add( startHandlerLabel );
 
 		// The catch braces are batch-marked only when this catch actually runs.
-		emitBraceGroupMark( nodes, boxCatch.getPosition().getStart(), true );
+		transpiler.emitBraceGroupMark( nodes, boxCatch.getPosition().getStart(), true );
 
 		nodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( CatchBoxContext.class ) ) );
 

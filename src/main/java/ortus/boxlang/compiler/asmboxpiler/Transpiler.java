@@ -29,6 +29,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
+import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
@@ -252,6 +253,52 @@ public abstract class Transpiler implements ITranspiler {
 			return List.of();
 		}
 		return AsmHelper.invokeStaticMarkVarargs( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, PROFILER_BLUEPRINT_FIELD, spanIds );
+	}
+
+	/**
+	 * Emit a {@code mark(fileId, ...braceGroup)} for a construct's braces. Pass A
+	 * registers a construct's header + closing brace as a span GROUP keyed by the
+	 * construct keyword position.
+	 * <p>
+	 * The {@code consume} flag matters when the SAME group is compiled into
+	 * multiple bytecode copies of which only one runs at runtime:
+	 * <ul>
+	 * <li>{@code catch} braces are CONSUMED ({@code true}) — each catch handler runs
+	 * at most once, so the group is removed on first emission.</li>
+	 * <li>{@code finally} braces are PEEKED ({@code false}) — the finally body (and
+	 * thus its brace mark) is compiled into EVERY duplicated copy (return path,
+	 * try-inline, each catch-inline, no-catch-matched and exception-handler), and
+	 * only one runs at runtime, so every copy must be able to re-emit the group.</li>
+	 * </ul>
+	 * Emits nothing when profiling is disabled or no group exists at the position.
+	 *
+	 * @param nodes      the instruction list to append to
+	 * @param keywordPos the construct keyword start position (group key)
+	 * @param consume    whether to consume the group (catch) or peek (finally)
+	 */
+	public void emitBraceGroupMark( List<AbstractInsnNode> nodes, Point keywordPos, boolean consume ) {
+		// No-op when profiling is disabled — never emit mark instructions otherwise.
+		if ( !hasProfilerId() ) {
+			return;
+		}
+		if ( keywordPos == null ) {
+			return;
+		}
+		long	packed	= ( ( long ) keywordPos.getLine() << 32 ) | ( keywordPos.getColumn() & 0xFFFFFFFFL );
+		int		spanId	= getSpanId( packed );
+		int[]	group	= spanId < 0 ? null : ( consume ? takeSpanGroup( spanId ) : peekSpanGroup( spanId ) );
+		if ( group != null ) {
+			// Only emit if no member has been claimed yet (dedup across copies).
+			boolean anyClaimed = false;
+			for ( int member : group ) {
+				if ( claimSpanMark( member ) ) {
+					anyClaimed = true;
+				}
+			}
+			if ( anyClaimed ) {
+				nodes.addAll( emitMarkVarargs( group ) );
+			}
+		}
 	}
 
 	/**

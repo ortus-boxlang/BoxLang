@@ -1417,6 +1417,140 @@ class CodeProfilerTest {
 		assertThat( service.lineAt( key, 10 ).covered() ).isTrue();
 	}
 
+	@DisplayName( "It keeps the finally body covered when the try body has a return on another path" )
+	@Test
+	void testFinallyBodyCoveredWhenTryReturnsOnNonReturnPath() {
+		// The try body contains a `return` on ONE path only. The boxpiler compiles the
+		// finally body into a bytecode copy for THAT return too, and that copy is what
+		// used to claim the finally statement's mark first — starving the fall-through
+		// copy (the one that actually runs when the return is NOT taken). Coverage must
+		// not depend on which duplicated copy happened to be transformed first.
+		String source = """
+		                function foo( flag ) {
+		                try {
+		                if( flag ) {
+		                return 1;
+		                }
+		                a = 2;
+		                } finally {
+		                d = 4;
+		                }
+		                return 0;
+		                }
+		                result = foo( false );
+		                """;
+		runtime.executeSource( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testFinallyBodyCoveredWhenTryReturnsOnNonReturnPath dump" );
+		// System.out.print( service.dumpSpans( key, source ) );
+
+		// foo( false ) takes the fall-through path: a=2 runs, then the finally d=4 runs.
+		assertThat( service.spanAt( key, 6, 0 ).stats().count() ).isEqualTo( 1 );   // a = 2
+		assertThat( service.spanAt( key, 8, 0 ).stats().count() ).isEqualTo( 1 );   // d = 4 (finally body)
+		assertThat( service.lineAt( key, 8 ).covered() ).isTrue();
+	}
+
+	@DisplayName( "It marks the finally braces when the finally runs via a return path" )
+	@Test
+	void testFinallyBracesCoveredOnReturnPath() {
+		// `return 5` inside the try jumps straight to the (inlined) finally body, so the
+		// finally header/brace marks emitted by the fall-through copy never execute. The
+		// return path's own copy must therefore carry the finally brace-group mark.
+		String source = """
+		                function bar() {
+		                try {
+		                return 5;
+		                } finally {
+		                d = 6;
+		                }
+		                }
+		                result = bar();
+		                """;
+		runtime.executeSource( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testFinallyBracesCoveredOnReturnPath dump" );
+		// System.out.print( service.dumpSpans( key, source ) );
+
+		// The finally ran (via the return path) — its body, header and closing brace must be GREEN.
+		assertThat( service.spanAt( key, 5, 0 ).stats().count() ).isEqualTo( 1 );   // d = 6 (finally body)
+		assertThat( service.spanAt( key, 4, 2 ).stats().count() ).isEqualTo( 1 );   // } finally { (group head)
+		assertThat( service.spanAt( key, 6, 0 ).stats().count() ).isEqualTo( 1 );   // } (group member)
+		assertThat( service.lineAt( key, 4 ).covered() ).isTrue();
+	}
+
+	@DisplayName( "It keeps the finally body covered when a catch body throws" )
+	@Test
+	void testFinallyBodyCoveredWhenCatchBodyThrows() {
+		// A throwing catch body runs the finally via the dedicated exception-handler
+		// copy. A DIFFERENT duplicated copy (the "no catch matched" copy) is emitted
+		// earlier and used to claim the finally statement's mark first, starving the
+		// exception-handler copy that actually runs.
+		String source = """
+		                try {
+		                throw( "boom" );
+		                } catch( any e ) {
+		                throw( "again" );
+		                } finally {
+		                d = 4;
+		                }
+		                """;
+		try {
+			runtime.executeSource( source );
+		} catch ( RuntimeException e ) {
+			// expected — the catch body rethrows after the finally runs
+		}
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testFinallyBodyCoveredWhenCatchBodyThrows dump" );
+		// System.out.print( service.dumpSpans( key, source ) );
+
+		// The finally body ran (after the throwing catch body) — must be GREEN.
+		assertThat( service.spanAt( key, 4, 0 ).stats().count() ).isEqualTo( 1 );   // throw "again"
+		assertThat( service.spanAt( key, 6, 0 ).stats().count() ).isEqualTo( 1 );   // d = 4 (finally body)
+		assertThat( service.lineAt( key, 6 ).covered() ).isTrue();
+	}
+
+	@DisplayName( "It marks the finally braces when the finally runs on the unmatched-catch path" )
+	@Test
+	void testFinallyBracesCoveredOnUnmatchedCatchPath() {
+		// An exception that matches NO catch clause runs the finally via the
+		// "no catch matched" copy, which must carry the finally brace-group mark.
+		String source = """
+		                try {
+		                throw( "boom" );
+		                } catch( java.io.IOException e ) {
+		                c = 3;
+		                } finally {
+		                d = 4;
+		                }
+		                """;
+		try {
+			runtime.executeSource( source );
+		} catch ( RuntimeException e ) {
+			// expected — no catch matched, so the exception propagates after finally runs
+		}
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// DEBUG
+		// System.out.println( "=== testFinallyBracesCoveredOnUnmatchedCatchPath dump" );
+		// System.out.print( service.dumpSpans( key, source ) );
+
+		// The finally ran (no catch matched) — body AND braces must be GREEN.
+		assertThat( service.spanAt( key, 6, 0 ).stats().count() ).isEqualTo( 1 );   // d = 4 (finally body)
+		assertThat( service.spanAt( key, 5, 2 ).stats().count() ).isEqualTo( 1 );   // } finally { (group head)
+		assertThat( service.spanAt( key, 7, 0 ).stats().count() ).isEqualTo( 1 );   // } (group member)
+		assertThat( service.lineAt( key, 7 ).covered() ).isTrue();
+	}
+
 	@DisplayName( "It wraps profiled method bodies in a catch-all that closes the probe interval on uncaught exceptions" )
 	@Test
 	void testExceptionEscapeClosesProbeInterval() throws Exception {
