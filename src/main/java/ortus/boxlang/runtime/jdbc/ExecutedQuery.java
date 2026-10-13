@@ -255,8 +255,21 @@ public final class ExecutedQuery implements Serializable {
 								if ( debug )
 									System.out.println( "retrieving generated keys" );
 								if ( keys != null ) {
-									generatedKey = processGeneratedKeys( keys, allGeneratedKeys, generatedKey,
-									    affectedCount, generatedKeyIsActuallyRowID );
+									if ( results == null && returningRowsHiddenInGeneratedKeys( pendingQuery, keys ) ) {
+										// The statement asked for rows itself ( RETURNING ... ), but the driver
+										// handed them back as the generated keys of a single statement instead of
+										// a result set ( pgjdbc does this whenever generated keys are requested ).
+										// Those rows are the query the user asked for; the generated key(s) are
+										// still taken from their first column.
+										results		= Query.fromResultSet( statement, keys );
+										recordCount	= results.size();
+										if ( debug )
+											System.out.println( "RETURNING rows taken from generated keys. recordCount: " + recordCount );
+										generatedKey = processGeneratedKeys( results, allGeneratedKeys, generatedKey, affectedCount );
+									} else {
+										generatedKey = processGeneratedKeys( keys, allGeneratedKeys, generatedKey,
+										    affectedCount, generatedKeyIsActuallyRowID );
+									}
 									try {
 										keys.close();
 									} catch ( SQLException | NullPointerException e ) {
@@ -405,6 +418,59 @@ public final class ExecutedQuery implements Serializable {
 		);
 
 		return executedQuery;
+	}
+
+	/**
+	 * Whether the generated keys of this statement are really the rows of its own
+	 * {@code RETURNING} clause. That is the case when the SQL carries a RETURNING clause and
+	 * the driver produced no result set for it - pgjdbc, for example, moves the RETURNING rows
+	 * of a single statement into {@link Statement#getGeneratedKeys()} whenever generated keys
+	 * were requested, so {@code INSERT ... RETURNING id, name} came back as an empty query.
+	 * A ROWID pseudo column ( Oracle ) is never treated as RETURNING rows.
+	 *
+	 * @param pendingQuery The pending query holding the SQL
+	 * @param keys         The generated keys result set, positioned before its first row
+	 *
+	 * @return true if the generated keys should be exposed as the query result
+	 *
+	 * @throws SQLException If the result set metadata cannot be read
+	 */
+	private static boolean returningRowsHiddenInGeneratedKeys( PendingQuery pendingQuery, ResultSet keys ) throws SQLException {
+		if ( !pendingQuery.hasReturningClause() ) {
+			return false;
+		}
+		ResultSetMetaData meta = keys.getMetaData();
+		return meta != null && meta.getColumnCount() > 0 && !meta.getColumnLabel( 1 ).equalsIgnoreCase( "ROWID" );
+	}
+
+	/**
+	 * Derives the generated keys from a query that was built from the RETURNING rows of the
+	 * statement: the first column of every row, capped at the affected row count exactly like
+	 * {@link #processGeneratedKeys(ResultSet, Array, Object, int, ObjectRef)} does.
+	 *
+	 * @param returningRows    The query built from the RETURNING rows
+	 * @param allGeneratedKeys An array to store all generated keys.
+	 * @param generatedKey     The generated key so far
+	 * @param affectedCount    The number of rows affected by the operation.
+	 *
+	 * @return The processed generated key.
+	 */
+	private static Object processGeneratedKeys( Query returningRows, Array allGeneratedKeys, Object generatedKey, int affectedCount ) {
+		Array theseKeys = new Array();
+		if ( !returningRows.getColumns().isEmpty() ) {
+			Key firstColumn = returningRows.getColumns().keySet().iterator().next();
+			for ( Object value : returningRows.getColumnData( firstColumn ) ) {
+				if ( affectedCount != -1 && theseKeys.size() >= affectedCount ) {
+					break;
+				}
+				theseKeys.add( value );
+			}
+		}
+		allGeneratedKeys.add( theseKeys );
+		if ( generatedKey == null && !theseKeys.isEmpty() ) {
+			generatedKey = theseKeys.get( 0 );
+		}
+		return generatedKey;
 	}
 
 	/**

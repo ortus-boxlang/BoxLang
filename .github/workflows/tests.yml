@@ -61,7 +61,7 @@ jobs:
 
       - name: Install JDBC modules
         if: ${{ matrix.os != 'windows-latest' }}
-        run: box install id=bx-mssql@be,bx-mysql,bx-oracle@be directory=${{ github.workspace }}/build/test-home/.boxlang/modules --verbose --nosave
+        run: box install id=bx-mssql@be,bx-mysql,bx-oracle@be,bx-postgresql@be directory=${{ github.workspace }}/build/test-home/.boxlang/modules --verbose --nosave
 
       - name: Setup MySQL Service
         if: ${{ matrix.os != 'windows-latest' }}
@@ -71,6 +71,15 @@ jobs:
           mysql version: '8.0'
           mysql database: "myDB"
           mysql root password: "123456Password"
+
+      - name: Setup PostgreSQL
+        if: ${{ matrix.os != 'windows-latest' }}
+        uses: harmon758/postgresql-action@v1
+        with:
+          postgresql version: '16'
+          postgresql db: 'myDB'
+          postgresql user: 'postgres'
+          postgresql password: '123456Password'
 
       - name: Setup MSSQL
         if: ${{ matrix.os != 'windows-latest' }}
