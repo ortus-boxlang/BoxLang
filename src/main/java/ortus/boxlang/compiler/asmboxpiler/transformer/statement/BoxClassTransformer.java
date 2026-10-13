@@ -1507,12 +1507,6 @@ public class BoxClassTransformer {
 	 * ... }} initializer braces at static-init entry. Pass A registered the static
 	 * brace group keyed by the {@code static} keyword. No-op when profiling is
 	 * disabled.
-	 * 
-	 * /**
-	 * Emit the {@code mark(fileId, ...staticBraces)} for a class's {@code static {
-	 * ... }} initializer braces at static-init entry. Pass A registered the static
-	 * brace group keyed by the {@code static} keyword. No-op when profiling is
-	 * disabled.
 	 *
 	 * @param staticNodes the staticInitializer instruction list to append to
 	 * @param boxClass    the class
