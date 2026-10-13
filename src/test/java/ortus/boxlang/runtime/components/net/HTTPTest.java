@@ -2299,4 +2299,30 @@ public class HTTPTest {
 		return new JcaX509CertificateConverter().setProvider( "BC" ).getCertificate( certBuilder.build( signer ) );
 	}
 
+	@Test
+	@DisplayName( "It can process an NTLM authentication request" )
+	public void testNtlm( WireMockRuntimeInfo wm ) {
+		// Type 1 request
+		stubFor( get( "/secure" )
+		    .withHeader( "Authorization", equalTo( "NTLM TYPE1FAKE" ) )
+		    .willReturn( aResponse().withStatus( 401 )
+		        .withHeader( "WWW-Authenticate", "NTLM CHALLENGE123" ) ) );
+		// Type 3 request with challenge response
+		stubFor( get( "/secure" )
+		    .withHeader( "Authorization", equalTo( "NTLM TYPE3FAKE-CHALLENGE123" ) )
+		    .willReturn( ok().withBody( "success" ) ) );
+
+		instance.executeSource(
+		    String.format( """
+		                   <cfhttp result="result" url="%s" authType="NTLM"
+		                   		username="user" password="pass" domain="DOMAIN"></cfhttp>
+		                   """, wm.getHttpBaseUrl() + "/secure" ),
+		    context, BoxSourceType.CFTEMPLATE );
+
+		// Verify the final response is successful and contains the expected body
+		IStruct r = variables.getAsStruct( result );
+		assertThat( r.getAsInteger( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( r.getAsString( Key.fileContent ) ).isEqualTo( "success" );
+	}
+
 }

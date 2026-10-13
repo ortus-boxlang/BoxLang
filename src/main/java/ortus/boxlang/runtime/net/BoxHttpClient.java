@@ -551,6 +551,10 @@ public class BoxHttpClient {
 		// just in case, but never used
 		private String											authType			= "BASIC";
 
+		// NTLM Authentication
+		private String											domain;
+		private String											workstation;
+
 		// Callbacks
 		private ortus.boxlang.runtime.types.Function			onRequestStartCallback;
 		private ortus.boxlang.runtime.types.Function			onChunkCallback;
@@ -1164,6 +1168,27 @@ public class BoxHttpClient {
 		}
 
 		/**
+		 * Configure NTLM Authentication
+		 * NTLM does not work over HTTP/2, so this forces HTTP/1.1.
+		 *
+		 * @param username    The username
+		 * @param password    The password
+		 * @param domain      The NTLM domain
+		 * @param workstation The NTLM workstation
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest withNTLMAuth( String username, String password, String domain, String workstation ) {
+			this.username		= username;
+			this.password		= password;
+			this.domain			= domain;
+			this.workstation	= workstation;
+			this.authType		= "NTLM";
+			this.httpVersion	= HTTP_1; // NTLM does not work over HTTP/2
+			return this;
+		}
+
+		/**
 		 * Set the authentication type
 		 *
 		 * @param authType The authentication type (BASIC, NTLM)
@@ -1640,7 +1665,7 @@ public class BoxHttpClient {
 			}
 
 			// Setup Basic Auth if provided
-			if ( this.username != null && this.password != null ) {
+			if ( this.username != null && this.password != null && !"NTLM".equalsIgnoreCase( this.authType ) ) {
 				setupBasicAuth( requestBuilder );
 			}
 
@@ -1750,7 +1775,7 @@ public class BoxHttpClient {
 		 *     .method( "POST" )
 		 *     .header( "Content-Type", "application/json" )
 		 *     .onComplete( result -> {
-		 * 	} )
+		 * 							} )
 		 *     .send();
 		 *
 		 * IStruct result = request.getHttpResult();
@@ -2244,10 +2269,43 @@ public class BoxHttpClient {
 			 * ------------------------------------------------------------------------------
 			 */
 
-			// Buffered mode: receive entire response then process
-			HttpResponse<byte[]> response = httpClient
-			    .sendAsync( this.targetHttpRequest, HttpResponse.BodyHandlers.ofByteArray() )
-			    .get();
+			HttpResponse<byte[]> response;
+
+			// Handle NTLM authentication if specified
+			if ( !"NTLM".equalsIgnoreCase( this.authType ) ) {
+				response = BoxHttpClient.this.httpClient.sendAsync( this.targetHttpRequest, HttpResponse.BodyHandlers.ofByteArray() ).get();
+			} else {
+				// Type 1 message
+				HttpRequest			type1			= HttpRequest.newBuilder( this.targetHttpRequest, ( name, value ) -> true )
+				    .method( this.method, HttpRequest.BodyPublishers.noBody() )
+				    .header( "Authorization", "NTLM " + NtlmHelper.createType1( this.domain, this.workstation ) )
+				    .build();
+				HttpResponse<Void>	type1Response	= httpClient
+				    .sendAsync( type1, HttpResponse.BodyHandlers.discarding() )
+				    .get();
+
+				// Extract the NTLM challenge from the response headers
+				String				challenge		= null;
+				for ( String header : type1Response.headers().allValues( "WWW-Authenticate" ) ) {
+					if ( header.startsWith( "NTLM " ) ) {
+						challenge = header.substring( 5 );
+						break;
+					}
+				}
+				if ( challenge == null ) {
+					throw new BoxRuntimeException( "NTLM login failed: No challenge received from server." );
+				}
+
+				// Type 3 message
+				String		type3			= NtlmHelper.createType3( this.username, this.password, this.domain, this.workstation, challenge );
+
+				HttpRequest	type3Request	= HttpRequest.newBuilder( this.targetHttpRequest, ( name, value ) -> true )
+				    .header( "Authorization", "NTLM " + type3 )
+				    .build();
+				response = httpClient
+				    .sendAsync( type3Request, HttpResponse.BodyHandlers.ofByteArray() )
+				    .get();
+			}
 
 			/**
 			 * ------------------------------------------------------------------------------

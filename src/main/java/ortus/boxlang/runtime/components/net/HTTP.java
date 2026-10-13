@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.HttpService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
@@ -128,6 +129,14 @@ public class HTTP extends Component {
 		    // Authentication
 		    new Attribute( Key.username, "string" ),
 		    new Attribute( Key.password, "string", Set.of( Validator.requires( Key.username ) ) ),
+
+		    // NTLM
+		    new Attribute( Key.authType, "string", AUTHMODE_BASIC,
+		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( AUTHMODE_BASIC, AUTHMODE_NTLM ) )
+		    ),
+		    new Attribute( Key.domain, "string" ),
+		    new Attribute( Key.workstation, "string" ),
+
 		    // Client certificates
 		    new Attribute( Key.clientCert, "string" ),
 		    new Attribute( Key.clientCertPassword, "string" ),
@@ -153,12 +162,6 @@ public class HTTP extends Component {
 		    new Attribute( Key.columns, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.firstRowAsHeaders, "boolean", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.textQualifier, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    // NTLM
-		    new Attribute( Key.authType, "string", AUTHMODE_BASIC,
-		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( AUTHMODE_BASIC, AUTHMODE_NTLM ) )
-		    ),
-		    new Attribute( Key.domain, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.workstation, "string", Set.of( Validator.NOT_IMPLEMENTED ) )
 		};
 	}
 
@@ -317,6 +320,10 @@ public class HTTP extends Component {
 	 *
 	 * @attribute.password The password for HTTP Basic or NTLM authentication. Optional.
 	 *
+	 * @attribute.domain The NTLM domain. Optional when using NTLM authentication.
+	 *
+	 * @attribute.workstation The NTLM workstation. Optional when using NTLM authentication.
+	 *
 	 * @attribute.authType The authentication type to use. One of "BASIC" or "NTLM". Default is "BASIC". Required when username/password provided.
 	 *
 	 * @attribute.clientCert The file path to the PKCS12 (.p12/.pfx) client certificate for SSL/TLS mutual authentication. Optional.
@@ -360,6 +367,13 @@ public class HTTP extends Component {
 		boolean			isBinaryRequested	= BINARY_REQUEST_VALUES
 		    .stream()
 		    .anyMatch( value -> value.equals( binaryOperator ) );
+
+		// Check if NTLM authentication is requested
+		boolean			isNtlm				= AUTHMODE_NTLM.equalsIgnoreCase( attributes.getAsString( Key.authType ) );
+
+		if ( isNtlm && ( attributes.get( Key.username ) == null || attributes.get( Key.password ) == null ) ) {
+			throw new BoxRuntimeException( "authType=\"NTLM\" requires both the username and password attributes" );
+		}
 
 		// onMessage is sugar for onChunk + sse=true
 		if ( attributes.containsKey( Key.onMessage ) && attributes.get( Key.onMessage ) != null ) {
@@ -456,12 +470,24 @@ public class HTTP extends Component {
 		    // Outputs if any
 		    .outputDirectory( outputDirectory )
 		    .outputFile( attributes.getAsString( Key.file ) )
-		    .when( attributes.get( Key.username ) != null && attributes.get( Key.password ) != null, ( request ) -> {
+		    // Basic Authentication
+		    .when( !isNtlm && attributes.get( Key.username ) != null && attributes.get( Key.password ) != null, ( request ) -> {
 			    request.withBasicAuth(
 			        attributes.getAsString( Key.username ),
 			        attributes.getAsString( Key.password )
 			    );
 		    } )
+
+		    // NTLM Authentication
+		    .when( isNtlm && attributes.get( Key.username ) != null && attributes.get( Key.password ) != null, ( request ) -> {
+			    request.withNTLMAuth(
+			        attributes.getAsString( Key.username ),
+			        attributes.getAsString( Key.password ),
+			        attributes.getAsString( Key.domain ),
+			        attributes.getAsString( Key.workstation )
+			    );
+		    } )
+
 		    // Encoded Client Certificate Header for Debugging
 		    .when( debug && encodedCertKey != null, ( request ) -> {
 			    request.header( "X-Client-Cert", encodedCertKey );
