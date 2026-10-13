@@ -127,7 +127,21 @@ public class DatabaseException extends BoxLangException {
 		}
 		if ( cause instanceof SQLException se ) {
 			while ( se.getNextException() != null ) {
-				se = ( SQLException ) se.getNextException().initCause( se );
+				SQLException next = se.getNextException();
+
+				try {
+					// This will work unless next already has a cause
+					next.initCause( se );
+				} catch ( IllegalStateException | IllegalArgumentException e ) {
+					try {
+						// If initCause fails, add the previous exception as a suppressed exception instead
+						next.addSuppressed( se );
+					} catch ( IllegalArgumentException ignored ) {
+						// Ignore self-suppression and preserve the existing exception.
+					}
+				}
+
+				se = next;
 			}
 			return se;
 		}

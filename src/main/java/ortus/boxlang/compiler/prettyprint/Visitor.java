@@ -39,6 +39,7 @@ import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
+import ortus.boxlang.compiler.ast.expression.BoxComparisonOperator;
 import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
@@ -633,10 +634,15 @@ public class Visitor extends VoidBoxVisitor {
 										case "preserve" -> node.isWasKeyword() ? node.getOperator().getKeyword() : node.getOperator().getSymbol();
 										default -> node.getOperator().getSymbol();
 									};
+		// In template mode a bare > or >= would end the surrounding tag early, e.g. <bx:if i > 1>, so always use the keyword form
+		if ( isTemplate()
+		    && ( node.getOperator() == BoxComparisonOperator.GreaterThan || node.getOperator() == BoxComparisonOperator.GreaterThanEquals ) ) {
+			operatorStr = node.getOperator().getKeyword();
+		}
 
 		// Always create a GROUP for each comparison operation
-		var		binaryDoc			= pushDoc( DocType.GROUP );
-		var		indentDoc			= pushDoc( DocType.INDENT );
+		var	binaryDoc	= pushDoc( DocType.GROUP );
+		var	indentDoc	= pushDoc( DocType.INDENT );
 
 		node.getLeft().accept( this );
 

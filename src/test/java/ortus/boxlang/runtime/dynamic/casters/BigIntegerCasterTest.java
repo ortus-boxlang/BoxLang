@@ -68,4 +68,21 @@ public class BigIntegerCasterTest {
 	void testItCanCastBoxedDouble() {
 		assertThat( BigIntegerCaster.cast( Double.valueOf( 1 ) ) ).isEqualTo( BigInteger.ONE );
 	}
+
+	@DisplayName( "It can cast strings with surrounding whitespace" )
+	@Test
+	void testItCanCastWhitespaceStrings() {
+		assertThat( BigIntegerCaster.cast( "  421  " ) ).isEqualTo( new BigInteger( "421" ) );
+		assertThat( BigIntegerCaster.cast( "	421	" ) ).isEqualTo( new BigInteger( "421" ) );
+		assertThat( BigIntegerCaster.cast( "  -42  " ) ).isEqualTo( new BigInteger( "-42" ) );
+		assertThat( BigIntegerCaster.cast( "  +42  " ) ).isEqualTo( new BigInteger( "42" ) );
+	}
+
+	@DisplayName( "It can cast strings with leading zeros and whitespace" )
+	@Test
+	void testItCanCastLeadingZeroWhitespaceStrings() {
+		assertThat( BigIntegerCaster.cast( "  0123  " ) ).isEqualTo( new BigInteger( "123" ) );
+		assertThat( BigIntegerCaster.cast( "  05887  " ) ).isEqualTo( new BigInteger( "5887" ) );
+		assertThat( BigIntegerCaster.cast( "  007  " ) ).isEqualTo( new BigInteger( "7" ) );
+	}
 }
