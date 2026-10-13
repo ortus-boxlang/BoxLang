@@ -1,0 +1,457 @@
+BL-2363 INVESTIGATION: CACHE COMPONENT FEATURES
+================================================
+
+Author: Kevin, CIS3590 Team 7
+Date:   Oct 12, 2026
+Repos:  ortus-boxlang/BoxLang (core) and ortus-boxlang/boxlang-web-support,
+        both on the development branch as of Oct 12, 2026.
+
+
+SUMMARY
+-------
+
+BL-2363 is not development-ready: its two central attributes, useQueryString
+and expireURL, depend on page-level caching that BoxLang does not have yet,
+and that work spans both the core BoxLang repo and boxlang-web-support. Per
+guidance from the BoxLang maintainers (Oct 2026), this document records
+Team 7's investigation instead of an implementation.
+
+Key findings:
+
+- The cache component (bx:cache / cfcache) in core only caches content
+  between the tags and objects (put/get). Full-page caching is an open TODO
+  in the code.
+- useQueryString and expireURL only make sense once cached content is tied
+  to a request URL. Core has no URL; the web runtime does, through the cgi
+  scope.
+- The web runtime's handler for clientcache/servercache listens on
+  onComponentInvocation, but core announces onCacheComponentAction. Core
+  never announces onComponentInvocation anywhere, so that handler appears
+  never to run (see section 3).
+- region and the legacy username/password/port/protocol attributes do not
+  depend on the web runtime and could be closed independently.
+
+A working prototype of all seven attributes in core exists on the team
+branch (section 9). It is a reference, not a proposed PR.
+
+
+1. WHAT BL-2363 ASKS FOR
+------------------------
+
+The ticket asks to implement seven cfcache attributes that the BoxLang cache
+component declares but never uses. Its description is only this snippet:
+
+    new Attribute( Key.expireURL, "string", Set.of( Validator.NOT_IMPLEMENTED ) ), // "wildcarded URL reference"
+    new Attribute( Key.password, "string", Set.of( Validator.NOT_IMPLEMENTED ) ), // "password"
+    new Attribute( Key.port, "integer", Set.of( Validator.NOT_IMPLEMENTED ) ), // "port number"
+    new Attribute( Key.protocol, "string", Set.of( Validator.NOT_IMPLEMENTED ) ), // "http://|https://"
+    new Attribute( Key.region, "string", Set.of( Validator.NOT_IMPLEMENTED ) ), // "region_name"
+    new Attribute( Key.useQueryString, "boolean", false, Set.of( Validator.NOT_IMPLEMENTED ) ), // "false|true"
+    new Attribute( Key.username, "string", Set.of( Validator.NOT_IMPLEMENTED ) ), // "username"
+
+The snippet is out of date. Commit "BL-2324 remove validation for now"
+(Apr 24, 2026) removed the NOT_IMPLEMENTED validators. Since then, these
+attributes are ACCEPTED AND SILENTLY IGNORED rather than rejected with an
+error. A CFML app migrated to BoxLang that relies on them runs without
+complaint but behaves differently.
+
+What each attribute means in Adobe ColdFusion (cfcache reference):
+
+  useQueryString      Include the query string in the page cache ID, so each
+                      query-string variation is cached separately. Default
+                      false. Added in ColdFusion 9; before that the query
+                      string was always part of the ID.
+  expireURL           With action="flush", flush only cached pages whose URL
+                      matches a wildcard pattern, e.g. **/view.cfm?id=**.
+                      Matching rules are not specified.
+  region              Name of the cache region to use. Added in ColdFusion 10.
+  username, password  Credentials for a page that needs web-server
+                      authentication, used by the server's internal request
+                      to the page.
+  port, protocol      Port and http:// / https:// used to build the cached
+                      page's URL; default to the current page's values.
+
+The ticket gives no written acceptance criteria.
+
+
+2. WHAT ALREADY EXISTS IN CORE
+------------------------------
+
+The component lives in
+src/main/java/ortus/boxlang/runtime/components/cache/Cache.java
+(428 lines on development, Oct 12, 2026). It handles object caching and
+caching of the content between its tags; it hands two web-only actions to
+interceptors.
+
+  Action                    What core does today
+  ------------------------  -------------------------------------------------
+  get                       Reads key from the chosen cache into the name
+                            variable. key required.
+  put                       Stores value (or the rendered body) under key.
+                            key required.
+  cache, optimal, content   All three behave the same: getOrSet on the
+                            rendered body. Only the content between the tags
+                            is cached, never the whole page.
+  flush                     Clears one key, or the whole cache when no key is
+                            given.
+  delete                    Clears one key. Present in the CacheAction enum,
+                            but "delete" is missing from the action validator,
+                            so action="delete" is likely rejected before it
+                            runs.
+  clientcache, servercache  Not handled in core. Core announces
+                            onCacheComponentAction and throws if no
+                            interceptor sets a result.
+
+Other working behavior:
+
+- Cache selection: cacheName picks a named cache via
+  context.getApplicationCache(); directory creates a file-backed cache
+  (FileSystemStore) on first use; otherwise the default cache.
+- Timeouts: timespan and idleTime are in days (or a Duration), converted to
+  seconds. If only idleTime is given, it is also used as timespan.
+- Generated keys: when no key (or alias id) is passed, the key is
+  BL_TEMPLATE_ + hash40() of the attributes struct and the ComponentBody.
+  Nothing about the request URL is in the key.
+- Other attributes in use: useCache=false bypasses the cache;
+  stripWhitespace trims string results; throwOnError switches between
+  get/getQuiet and clear/clearQuiet.
+- Tests: src/test/java/ortus/boxlang/runtime/components/cache/CacheTest.java
+  covers cfcache/bx:cache in script and template syntax, object and content
+  caching, named caches, directory caches and flush. It has no test for any
+  BL-2363 attribute or for delete.
+
+
+3. WHAT IS MISSING
+------------------
+
+The biggest gap is page caching itself; the BL-2363 attributes sit on top
+of it.
+
+- Full-page server caching
+    Where: Cache.java, case CACHE/OPTIMAL/CONTENT
+    Marked "// TODO: Need to figure out how to handle the full page
+    caching". A body-less <cfcache> at the top of a page does not cache the
+    page.
+- clientcache / servercache in the web runtime
+    Where: boxlang-web-support interceptors/WebRequest.java
+    Handler appears never to run (below).
+- useQueryString, expireURL
+    Where: Cache.java constructor
+    Declared under "// TODO: These are specfic to web connectivity...",
+    never read.
+- region
+    Where: Cache.java. Declared, never read.
+- username, password, port, protocol
+    Where: Cache.java. Declared, never read. Javadoc already calls protocol
+    and port "Legacy CFML attribute. Not implemented".
+- dependsOn (not in BL-2363)
+    Where: Cache.java. Declared with "// TODO: Circle back and immplement
+    find nearby checks for these variables - then make them part of the key".
+- action="delete"
+    Where: Cache.java. Enum value and case exist; "delete" missing from the
+    validator list.
+
+Smaller issues noticed: Key.metadata is declared twice in the attribute list,
+and the put failure path logs "An error occurred while attempting to flush
+the cache".
+
+The client/server cache handler appears never to fire
+.....................................................
+
+Core announces one event; the web runtime listens on a different one:
+
+- Core, Cache.java line 262:
+  interceptorService.announce( BoxEvent.ON_CACHE_COMPONENT_ACTION, interceptorArgs )
+  i.e. the event "onCacheComponentAction".
+- Web runtime, WebRequest.java: the cache logic is in a method annotated
+  @InterceptionPoint named onComponentInvocation.
+- InterceptorPool.register() subscribes each @InterceptionPoint method to the
+  event with the same name as the method.
+- BoxEvent.ON_COMPONENT_INVOCATION ("onComponentInvocation") is defined, but
+  a search of all 1,606 Java files in core src/main/java found no place that
+  announces it.
+
+So in a web request, action="clientcache" or "servercache" most likely throws
+"is not valid in the current runtime" instead of setting a Cache-Control
+header. By contrast, the file component's handler is named
+onFileComponentAction, which matches BoxEvent.ON_FILECOMPONENT_ACTION. We
+traced this by reading code and did not run it; boxlang-web-support has no
+test covering these two actions. This likely explains part of the
+maintainers' note that client- and server-side caching is not implemented
+yet.
+
+
+4. HOW useQueryString SHOULD WORK AND WHAT IT DEPENDS ON
+--------------------------------------------------------
+
+useQueryString changes how a page cache ID is built, so it cannot work until
+cached content is identified by the page it came from.
+
+Expected behavior, from the ACF reference:
+
+- useQueryString="false" (default): view.cfm?id=1 and view.cfm?id=2 share one
+  cached copy.
+- useQueryString="true": the query string becomes part of the cache ID, so
+  each variation gets its own copy.
+- Before ColdFusion 9 the query string was always part of the ID;
+  ColdFusion 9 added useQueryString with a default of false, which changed
+  that (Ben Forta, 2011). BoxLang should follow the modern behavior.
+- When true, dependsOn also considers URL parameters. dependsOn is itself
+  unimplemented.
+
+What it depends on:
+
+1. A cache ID tied to the page. Today's generated key (BL_TEMPLATE_ + hash
+   of attributes and body) has no page or URL in it. Some notion of "which
+   page" must be added first.
+2. The request URL. Only available in a web request, from the web runtime
+   (section 5). Outside a web request there is no URL, so behavior there
+   needs a decision.
+3. Page caching, for the full ACF meaning. In ACF, useQueryString mostly
+   matters for whole-page caching, which BoxLang lacks. Whether it should
+   also apply to content caching between tags is unconfirmed.
+4. expireURL depends on the same thing. Flushing by URL pattern only works if
+   each cache entry records its URL, in its key or its metadata. The two
+   attributes should be designed together.
+
+
+5. WHERE THE PAGE URL COMES FROM, AND HOW THE REPOS CONNECT
+-----------------------------------------------------------
+
+Core has no page URL of its own; in a web request, boxlang-web-support
+exposes it through the cgi scope, which core code can read but not depend on.
+
+  BoxLang core (no request URL)          boxlang-web-support (has the URL)
+  +-------------------------------+      +-----------------------------------+
+  | Cache component (Cache.java)  |      | WebRequestBoxContext              |
+  | builds keys, picks a cache,   |      | one per HTTP request; owns the    |
+  | runs actions                  |      | exchange; registers url, form,    |
+  +-------------------------------+      | cgi and cookie scopes             |
+      |     ^     |                      +-----------------------------------+
+      |     |     |                                       |
+      |     |     |                      +-----------------------------------+
+      |     +-----|---- read via --------| CGIScope                          |
+      |           |     getScope("cgi")  | script_name, query_string,        |
+      v           |                      | request_url                       |
+  +---------------+---------------+      +-----------------------------------+
+  | Cache providers and filters   |
+  | ICacheProvider, WildcardFilter|      +-----------------------------------+
+  +-------------------------------+      | WebRequest interceptor            |
+                  |                      | listens on onComponentInvocation; |
+                  +-- announces ----X--> | sets Cache-Control for            |
+                      onCacheComponent   | clientcache / servercache         |
+                      Action             +-----------------------------------+
+
+  X = names differ: core announces onCacheComponentAction, but the handler
+      listens on onComponentInvocation, which core never announces, so
+      client/server caching never reaches it.
+
+How the repos connect. boxlang-web-support compiles against the core jar
+(its build.gradle uses ../boxlang/build/libs/boxlang-<version>.jar when
+present). It imports core classes such as Cache and Cache.CacheAction
+directly. Core never imports web-support. The two talk at runtime in two
+ways:
+
+- Interceptor events: core announces an event (onCacheComponentAction,
+  onFileComponentAction) with a data struct; web-support's WebRequest
+  interceptor handles it and writes a result back.
+- Contexts and scopes: each web request runs in a WebRequestBoxContext,
+  created in WebRequestExecutor. It owns the HTTP exchange (IBoxHTTPExchange)
+  and registers the url, form, cgi and cookie scopes. Core code can ask any
+  context for a scope by name, context.getScope( Key.of( "cgi" ) ); outside a
+  web request this throws ScopeNotFoundException. A component can also test
+  context.getParentOfType( WebRequestBoxContext.class ), which is what
+  WebRequest.java does, but that needs a web-support class.
+
+Where the URL pieces come from (boxlang-web-support .../scopes/CGIScope.java,
+each computed lazily from the exchange):
+
+  CGI key            Source in the exchange     Example
+  -----------------  -------------------------  ---------------------------
+  cgi.script_name    getRequestURI()            /products/view.cfm
+  cgi.query_string   getRequestQueryString()    id=1
+  cgi.path_info      getRequestPathInfo()       extra path after the script
+  cgi.request_url    getRequestURL()            the full URL
+
+There is no pageURL field or helper in either repo. In ACF terms, the "page
+URL" is the script path plus, when useQueryString is true, the query string;
+in BoxLang that means cgi.script_name and cgi.query_string. When none of
+these exist, there is no page to cache by URL.
+
+
+6. LIKELY SPLIT BETWEEN CORE AND WEB-SUPPORT
+--------------------------------------------
+
+Core should own the cache logic and key format; web-support should own
+anything that needs the HTTP request or response. This matches how
+clientcache/servercache and file uploads are already split.
+
+- region as alias for cacheName
+    Core. Cache selection only; no web dependency.
+- username, password, port, protocol as accepted-but-ignored
+    Core. BoxLang does not cache pages by making an HTTP request to itself,
+    so there is nothing to connect to.
+- Page cache key format (where the URL goes in the key or metadata)
+    Core. Shared by useQueryString and expireURL; the cache providers live
+    in core.
+- expireURL flush by pattern
+    Core. Only matches stored keys; needs no request.
+- Supplying the current page URL and query string
+    Web-support, or core reading the cgi scope. The open design choice
+    (section 8).
+- Full-page caching (cache and replay a whole response, stop the page early)
+    Both. Core decides hit or miss; web-support owns the response buffer and
+    headers.
+- clientcache / servercache headers
+    Web-support. Already there; the event name needs fixing in one of the
+    two repos.
+- Web-request tests for useQueryString and full-page caching
+    Web-support. Core tests run in ScriptingRequestBoxContext, which has no
+    cgi scope. Web-support has MockHTTPExchange and BaseWebTest.
+
+
+7. EXISTING CODE THAT CAN BE REUSED
+-----------------------------------
+
+- WildcardFilter
+    core runtime/cache/filters/WildcardFilter.java
+    For expireURL. Turns * and ? into a regex, case-insensitive by default,
+    full-key match. ** collapses to *, so ACF-style **/view.cfm?id=**
+    patterns work.
+- ICacheProvider.clearAll( ICacheKeyFilter )
+    core runtime/cache/providers/ICacheProvider.java
+    Clearing every key that matches a filter. RegexFilter is in the same
+    package.
+- CACHE_PREFIX (BL_TEMPLATE_)
+    Cache.java
+    Marks generated page/content keys, so a flush can target only those and
+    never user keys.
+- Alias pattern (id -> key, idleTime -> timespan)
+    Cache.java _invoke()
+    The model for region -> cacheName.
+- "Accepted for compatibility" pattern
+    File.java ("// ACF compatibility attribute"), Dump.java
+    The model for username/password/port/protocol: declare with a comment,
+    no logic.
+- ON_CACHE_COMPONENT_ACTION + WebRequest interceptor
+    core Cache.java; web-support interceptors/WebRequest.java
+    Hand-off pattern for anything that needs the request.
+- CGIScope
+    web-support scopes/CGIScope.java
+    Source of script_name, query_string, request_url.
+- MockHTTPExchange, BaseWebTest
+    web-support src/test/java/.../web/util/
+    Web-request tests in web-support.
+
+
+8. OPEN QUESTIONS FOR THE MAINTAINERS
+-------------------------------------
+
+1.  Full-page caching first? Should BL-2363 wait for full-page server
+    caching, or should useQueryString/expireURL also apply to content cached
+    between tags?
+2.  How core gets the URL. Read the cgi scope from core when present, or add
+    an event (or extend onCacheComponentAction) so web-support supplies the
+    path?
+3.  Event name mismatch. Is WebRequest.onComponentInvocation meant to receive
+    onCacheComponentAction? If so, which side should change: rename the
+    web-support method, or have core announce onComponentInvocation?
+4.  Client-side caching requirements. What should clientcache, and the
+    client half of cache/optimal, do beyond setting Cache-Control? The
+    maintainers flagged this as unresolved.
+5.  Where the URL is stored. In the key (BL_TEMPLATE_<path>|<hash>) or in
+    entry metadata? Keys are simpler to filter; metadata keeps keys
+    unchanged but needs a metadata filter.
+6.  Key stability. Generated keys hash the ComponentBody object. Is that hash
+    stable across requests and recompiles, or can identical content get
+    different keys?
+7.  Behavior outside a web request. Ignore useQueryString and expireURL
+    silently, log, or throw?
+8.  Upgrade impact. Adding the path to generated keys means entries cached
+    before an upgrade are missed once. Acceptable?
+9.  Legacy attributes. Is "accept and ignore" correct for username,
+    password, port, protocol, or should they log or warn?
+10. region precedence. If both cacheName and region are passed, should
+    cacheName win, or should it be an error?
+11. Small fixes outside the ticket. Should "delete" be added to the action
+    validator, and the duplicate metadata attribute removed, as separate
+    tickets?
+
+
+9. RECOMMENDATION AND POSSIBLE APPROACH
+---------------------------------------
+
+Split BL-2363: close the parts with no web dependency now, and fold
+useQueryString and expireURL into the page-caching work.
+
+1. Small core ticket (ready now): region as an alias for cacheName, and
+   username/password/port/protocol declared as accepted-but-ignored CFML
+   compatibility attributes, with docs and tests. Optionally add "delete" to
+   the action validator.
+2. Fix the event wiring: make clientcache/servercache reach WebRequest
+   (rename the handler to onCacheComponentAction, or announce
+   onComponentInvocation from core), and add web-support tests using
+   MockHTTPExchange.
+3. Design page caching: decide how a cached page is identified, where its URL
+   is stored, and how a full response is captured and replayed. This is the
+   dependency the maintainers identified.
+4. Then useQueryString and expireURL: core builds page keys as
+   BL_TEMPLATE_<path>[?query]|<hash> (or stores the path in metadata), and
+   flush with expireURL calls
+   clearAll( new WildcardFilter( "BL_TEMPLATE_" + expireURL + "*" ) ).
+   Web-support supplies the path, via the cgi scope or an event.
+5. Test across both repos: web-support's build already picks up a locally
+   built core jar, so both changes can be tested together before either PR.
+
+Prototype on the team branch
+............................
+
+Before the maintainers' guidance arrived, Team 7 implemented all seven
+attributes in core as a proof of concept:
+https://github.com/LivinKevin/BoxLang/tree/BL-2363-add-missing-cache-component-features
+
+It will not be submitted as a PR, but shows one concrete version of steps 1
+and 4:
+
+- region alias and the legacy attributes, matching the patterns in
+  section 7.
+- A getRequestPath( context, includeQueryString ) helper that reads
+  cgi.script_name and cgi.query_string, returning null when there is no cgi
+  scope.
+- Generated keys of the form BL_TEMPLATE_<path>|<hash>; unchanged outside a
+  web request.
+- expireURL flush with WildcardFilter.
+- Five new CacheTest tests. useQueryString is only tested outside a web
+  request, which is exactly the gap described in sections 6 and 8.
+
+The cache tests passed on the team's last local run. Parts of it, especially
+step 1, could be reused if the maintainers want that smaller ticket.
+
+
+APPENDIX: FILES AND SOURCES
+---------------------------
+
+Files:
+
+  Cache component         BoxLang/src/main/java/ortus/boxlang/runtime/components/cache/Cache.java
+  Cache component tests   BoxLang/src/test/java/ortus/boxlang/runtime/components/cache/CacheTest.java
+  Event names             BoxLang/src/main/java/ortus/boxlang/runtime/events/BoxEvent.java
+  Interceptor registration BoxLang/src/main/java/ortus/boxlang/runtime/events/InterceptorPool.java
+  Key filters             BoxLang/src/main/java/ortus/boxlang/runtime/cache/filters/
+  Cache provider API      BoxLang/src/main/java/ortus/boxlang/runtime/cache/providers/ICacheProvider.java
+  Web interceptor         boxlang-web-support/src/main/java/ortus/boxlang/web/interceptors/WebRequest.java
+  Web request context     boxlang-web-support/src/main/java/ortus/boxlang/web/context/WebRequestBoxContext.java
+  CGI scope               boxlang-web-support/src/main/java/ortus/boxlang/web/scopes/CGIScope.java
+  Web test helpers        boxlang-web-support/src/test/java/ortus/boxlang/web/util/
+
+Sources:
+
+- BL-2363 on Jira: https://ortussolutions.atlassian.net/browse/BL-2363
+- ortus-boxlang/BoxLang: https://github.com/ortus-boxlang/BoxLang
+- ortus-boxlang/boxlang-web-support: https://github.com/ortus-boxlang/boxlang-web-support
+- Adobe ColdFusion cfcache reference:
+  https://guides.adobe.com/coldfusion/en/docs/cfml-reference/__references__/cfcache.html
+- Ben Forta, "ColdFusion 9 and cfcache backwards compatibility":
+  https://old.forta.com/2011/01/10/coldfusion-9-and-cfcache-backwards-compatibility/
+- Team 7 prototype branch:
+  https://github.com/LivinKevin/BoxLang/tree/BL-2363-add-missing-cache-component-features
