@@ -141,7 +141,6 @@ import ortus.boxlang.parser.antlr.BoxGrammar.ExprPrefixContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprRangeContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprRelationalContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprStatInvocableContext;
-import ortus.boxlang.parser.antlr.BoxGrammar.ExprStaticScopeContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprTernaryContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprUnaryContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprVarDeclContext;
@@ -1278,21 +1277,6 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	 *
 	 * @return Either a BoxIdentifier or BoxScope AST node
 	 */
-	/**
-	 * The STATIC keyword used as the static scope, as in {@code static[ name ] = value} (BL-2750).
-	 *
-	 * @param ctx parse context
-	 *
-	 * @return the static scope reference, built the same way as a plain {@code static} identifier
-	 */
-	@Override
-	public BoxExpression visitExprStaticScope( ExprStaticScopeContext ctx ) {
-		if ( tools.isScope( ctx.getText() ) ) {
-			return new BoxScope( ctx.getText(), tools.getPosition( ctx ), ctx.getText() );
-		}
-		return new BoxIdentifier( ctx.getText(), tools.getPosition( ctx ), ctx.getText() );
-	}
-
 	@Override
 	public BoxExpression visitExprIdentifier( ExprIdentifierContext ctx ) {
 		if ( tools.isScope( ctx.getText() ) ) {

@@ -721,7 +721,6 @@ el2
     | <assoc = right> el2 QM expression COLON expression               # exprTernary    // foo ? bar : baz
     | atoms                                                            # exprAtoms      // foo, 42, true, false, null, [1,2,3], {foo:bar}
     | { isAssignmentModifier(_input) }? assignmentModifier+ expression # exprVarDecl    // var foo = bar or final foo = bar
-    | { isStaticScopeAccess(_input) }? STATIC                          # exprStaticScope // static[ name ] = value (BL-2750)
     | identifier                                                       # exprIdentifier // foo
     ;
 

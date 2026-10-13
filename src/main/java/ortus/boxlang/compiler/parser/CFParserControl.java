@@ -17,7 +17,6 @@ import static ortus.boxlang.parser.antlr.CFGrammar.DEFAULT;
 import static ortus.boxlang.parser.antlr.CFGrammar.DO;
 import static ortus.boxlang.parser.antlr.CFGrammar.DOES;
 import static ortus.boxlang.parser.antlr.CFGrammar.DOT;
-import static ortus.boxlang.parser.antlr.CFGrammar.ELLIPSIS;
 import static ortus.boxlang.parser.antlr.CFGrammar.ELSE;
 import static ortus.boxlang.parser.antlr.CFGrammar.ELSEIF;
 import static ortus.boxlang.parser.antlr.CFGrammar.EQ;
@@ -85,7 +84,6 @@ import static ortus.boxlang.runtime.BoxRuntime.getInstance;
 import java.util.Set;
 
 import org.antlr.v4.runtime.Parser;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
 
 import ortus.boxlang.runtime.services.ComponentService;
@@ -194,63 +192,9 @@ public abstract class CFParserControl extends Parser {
 	 * @return true if this should be seen as a VAR expression and not an identifier
 	 */
 	protected boolean isAssignmentModifier( TokenStream input ) {
-		int	thisType	= input.LT( 1 ).getType();
-		int	nextType	= input.LT( 2 ).getType();
-		if ( thisType != VAR && thisType != FINAL && thisType != STATIC ) {
-			return false;
-		}
-		// static[ expr ] is bracket access into the static scope unless the brackets hold a destructuring pattern
-		if ( thisType == STATIC && nextType == LBRACKET ) {
-			return isStaticArrayDestructuring( input );
-		}
-		return identifiers.contains( nextType ) || nextType == LBRACE || nextType == LBRACKET;
-	}
-
-	/**
-	 * Gate for treating the STATIC keyword as the static scope in {@code static[ expr ]} bracket access (BL-2750).
-	 *
-	 * @param input the token input stream
-	 *
-	 * @return true if STATIC is followed by brackets that are scope access rather than a destructuring declaration
-	 */
-	protected boolean isStaticScopeAccess( TokenStream input ) {
-		return input.LT( 1 ).getType() == STATIC && input.LT( 2 ).getType() == LBRACKET && !isStaticArrayDestructuring( input );
-	}
-
-	/**
-	 * Decides whether {@code static [ ... ]} starts a static array destructuring declaration or is bracket access
-	 * into the static scope, such as {@code static[ name ] = value}.
-	 *
-	 * It is a declaration only when the matching {@code ]} is followed by {@code =} and the brackets hold something
-	 * that cannot be a single key expression: a top-level comma, a rest binding ({@code ...}), a default value
-	 * ({@code =}), a nested pattern, or nothing at all. So {@code static [ a, b ] = data} and {@code static [ a, ] = data}
-	 * destructure, while {@code static[ name ] = value}, {@code static [ name ] = value} and {@code static[ k ] += 1}
-	 * assign into the static scope.
-	 *
-	 * @param input the token input stream, positioned on the STATIC token
-	 *
-	 * @return true if this is a static array destructuring declaration
-	 */
-	private boolean isStaticArrayDestructuring( TokenStream input ) {
-		int		firstType	= input.LT( 3 ).getType();
-		boolean	isPattern	= firstType == LBRACKET || firstType == RBRACKET || firstType == ELLIPSIS;
-		int		depth		= 0;
-		for ( int i = 2;; i++ ) {
-			int type = input.LT( i ).getType();
-			if ( type == Token.EOF ) {
-				return false;
-			}
-			if ( type == LBRACKET || type == LPAREN || type == LBRACE ) {
-				depth++;
-			} else if ( type == RBRACKET || type == RPAREN || type == RBRACE ) {
-				depth--;
-				if ( depth == 0 ) {
-					return isPattern && input.LT( i + 1 ).getType() == EQUALSIGN;
-				}
-			} else if ( depth == 1 && ( type == COMMA || type == ELLIPSIS || type == EQUALSIGN ) ) {
-				isPattern = true;
-			}
-		}
+		int thisType = input.LT( 1 ).getType();
+		return ( thisType == VAR || thisType == FINAL || thisType == STATIC )
+		    && ( identifiers.contains( input.LT( 2 ).getType() ) || input.LT( 2 ).getType() == LBRACE || input.LT( 2 ).getType() == LBRACKET );
 	}
 
 	/**

@@ -205,7 +205,10 @@ public class ArrayDestructuringASTTest {
 			    "static[ \"lit\" ] = value;",
 			    "static[ keys[ 1 ] ] = value;",
 			    "static[ fn( a, b ) ] = value;",
-			    "static[ a.b ] = value;"
+			    "static[ a.b ] = value;",
+			    "static[ \"a,b\" ] = value;",
+			    "static[ \"x#a[ 1 ]#\" ] = value;",
+			    "static[ a == b ] = value;"
 			} ) {
 				BoxAssignment assignment = parseAssignmentStatement( source, sourceType );
 				assertTrue( assignment.getModifiers().isEmpty(), sourceType + " " + source );

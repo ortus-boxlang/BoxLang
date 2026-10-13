@@ -680,7 +680,6 @@ el2
     | literals                                                         # exprLiterals     // "bar", [1,2,3], {foo:bar}
     | arrayLiteral                                                     # exprArrayLiteral // [1,2,3]
     | { isAssignmentModifier(_input) }? assignmentModifier+ expression # exprVarDecl      // var foo = bar or final foo = bar
-    | { isStaticScopeAccess(_input) }? STATIC                          # exprStaticScope // static[ name ] = value (BL-2750)
     | identifier                                                       # exprIdentifier   // foo
     ;
 
