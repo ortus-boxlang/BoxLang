@@ -57,10 +57,10 @@ public final class LineCoverageHTMLRenderer {
 	 *
 	 * @return the full HTML document string
 	 */
-	public static String renderHTML( String fileKey, String title ) {
+	public static String renderHTML( CodeProfilerService service, String fileKey, String title ) {
 		String											source		= readSource( fileKey );
 		// line -> LineCoverage (only lines with executable spans present).
-		Map<Integer, CodeProfilerService.LineCoverage>	lines		= CodeProfilerService.fileLines( fileKey );
+		Map<Integer, CodeProfilerService.LineCoverage>	lines		= service.fileLines( fileKey );
 		String[]										srcLines	= splitLines( source );
 
 		StringBuilder									html		= new StringBuilder();
@@ -107,8 +107,8 @@ public final class LineCoverageHTMLRenderer {
 	 *
 	 * @return the output path written
 	 */
-	public static Path renderToFile( String fileKey, String outputPath, String title ) {
-		String	html	= renderHTML( fileKey, title );
+	public static Path renderToFile( CodeProfilerService service, String fileKey, String outputPath, String title ) {
+		String	html	= renderHTML( service, fileKey, title );
 		Path	out		= Paths.get( outputPath ).toAbsolutePath().normalize();
 		try {
 			Files.createDirectories( out.getParent() );

@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.Blueprint;
+import ortus.boxlang.runtime.services.CodeProfilerService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -189,7 +190,17 @@ public abstract class Transpiler implements ITranspiler {
 	 * (id). Added to every instrumented class so the {@code mark} bytecode can
 	 * load the id WITHOUT a per-file LDC — the field is the single, canonical store.
 	 */
-	public static final String PROFILER_ID_FIELD = "codeProfilerId";
+	public static final String	PROFILER_ID_FIELD			= "codeProfilerId";
+
+	/**
+	 * The name of the static field holding this class's {@link Blueprint}. Added to
+	 * every instrumented class (set at {@code <clinit>} from the blueprint the
+	 * registration call returns). Each {@code mark}/{@code markEnd} passes this
+	 * reference so a blueprint cleared by {@link CodeProfilerService#reset()} is
+	 * RE-REGISTERED on demand by the class's own marks — the class does not need to
+	 * re-run {@code <clinit>}.
+	 */
+	public static final String	PROFILER_BLUEPRINT_FIELD	= "codeProfilerBlueprint";
 
 	/**
 	 * Whether this compilation currently has a registered blueprint key (profiling on).
@@ -212,7 +223,7 @@ public abstract class Transpiler implements ITranspiler {
 		if ( !hasProfilerId() ) {
 			return List.of();
 		}
-		return AsmHelper.invokeStaticMark( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, spanId );
+		return AsmHelper.invokeStaticMark( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, PROFILER_BLUEPRINT_FIELD, spanId );
 	}
 
 	/**
@@ -225,7 +236,7 @@ public abstract class Transpiler implements ITranspiler {
 		if ( !hasProfilerId() ) {
 			return List.of();
 		}
-		return AsmHelper.invokeStaticMarkEnd( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD );
+		return AsmHelper.invokeStaticMarkEnd( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, PROFILER_BLUEPRINT_FIELD );
 	}
 
 	/**
@@ -240,7 +251,7 @@ public abstract class Transpiler implements ITranspiler {
 		if ( !hasProfilerId() ) {
 			return List.of();
 		}
-		return AsmHelper.invokeStaticMarkVarargs( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, spanIds );
+		return AsmHelper.invokeStaticMarkVarargs( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, PROFILER_BLUEPRINT_FIELD, spanIds );
 	}
 
 	/**

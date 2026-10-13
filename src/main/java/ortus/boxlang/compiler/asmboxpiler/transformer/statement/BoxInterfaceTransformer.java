@@ -52,6 +52,7 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
+import ortus.boxlang.runtime.services.Blueprint;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
@@ -273,6 +274,11 @@ public class BoxInterfaceTransformer {
 			    Type.getDescriptor( String.class ),
 			    null,
 			    null ).visitEnd();
+			classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			    Transpiler.PROFILER_BLUEPRINT_FIELD,
+			    Type.getDescriptor( Blueprint.class ),
+			    null,
+			    null ).visitEnd();
 		}
 
 		// Add udfs, lambdas, closures static fields for the new function compilation pattern
@@ -450,7 +456,8 @@ public class BoxInterfaceTransformer {
 				List<ortus.boxlang.runtime.services.Blueprint.SpanDef> interfaceSpanDefs = transpiler.getSpanDefs();
 				if ( interfaceSpanDefs != null && !interfaceSpanDefs.isEmpty() ) {
 					List<AbstractInsnNode> regNodes = AsmHelper.emitBlueprintRegistrationNodes(
-					    transpiler.getFileId(), transpiler.getLastModified(), transpiler.getBlueprintKind(), interfaceSpanDefs );
+					    transpiler.getFileId(), transpiler.getLastModified(), transpiler.getBlueprintKind(), interfaceSpanDefs,
+					    type.getInternalName(), Transpiler.PROFILER_BLUEPRINT_FIELD );
 					for ( AbstractInsnNode n : regNodes ) {
 						n.accept( methodVisitor );
 					}

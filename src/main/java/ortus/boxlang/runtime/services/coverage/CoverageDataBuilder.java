@@ -91,10 +91,10 @@ public final class CoverageDataBuilder {
 	 *
 	 * @return a {@link Struct} keyed by blueprint key, ordered by registration
 	 */
-	public static Struct buildLineCoverage( Blueprint.Kind... kinds ) {
+	public static Struct buildLineCoverage( CodeProfilerService service, Blueprint.Kind... kinds ) {
 		Set<Blueprint.Kind>	allowed	= resolveKinds( kinds );
 		Struct				root	= new Struct( IStruct.TYPES.LINKED );
-		for ( Map.Entry<String, Blueprint> entry : CodeProfilerService.trackedBlueprints().entrySet() ) {
+		for ( Map.Entry<String, Blueprint> entry : service.trackedBlueprints().entrySet() ) {
 			Blueprint bp = entry.getValue();
 			if ( !allowed.contains( bp.kind() ) ) {
 				continue;
@@ -103,7 +103,7 @@ public final class CoverageDataBuilder {
 			fileObj.put( "filePath", entry.getKey() );
 			fileObj.put( "kind", bp.kind().name() );
 
-			Map<Integer, CodeProfilerService.LineCoverage>	lines		= CodeProfilerService.fileLines( entry.getKey() );
+			Map<Integer, CodeProfilerService.LineCoverage>	lines		= service.fileLines( entry.getKey() );
 			Struct											lineObj		= new Struct( IStruct.TYPES.LINKED );
 			long											execLines	= 0, coveredLines = 0;
 			// Sort for stable, readable output.
@@ -149,10 +149,10 @@ public final class CoverageDataBuilder {
 	 *
 	 * @return a {@link Struct} keyed by blueprint key, ordered by registration
 	 */
-	public static Struct buildSpanCoverage( Blueprint.Kind... kinds ) {
+	public static Struct buildSpanCoverage( CodeProfilerService service, Blueprint.Kind... kinds ) {
 		Set<Blueprint.Kind>	allowed	= resolveKinds( kinds );
 		Struct				root	= new Struct( IStruct.TYPES.LINKED );
-		for ( Map.Entry<String, Blueprint> entry : CodeProfilerService.trackedBlueprints().entrySet() ) {
+		for ( Map.Entry<String, Blueprint> entry : service.trackedBlueprints().entrySet() ) {
 			Blueprint bp = entry.getValue();
 			if ( !allowed.contains( bp.kind() ) ) {
 				continue;
@@ -161,7 +161,7 @@ public final class CoverageDataBuilder {
 			fileObj.put( "filePath", entry.getKey() );
 			fileObj.put( "kind", bp.kind().name() );
 			Array spanArr = new Array();
-			for ( CodeProfilerService.Span s : CodeProfilerService.fileSpans( entry.getKey() ) ) {
+			for ( CodeProfilerService.Span s : service.fileSpans( entry.getKey() ) ) {
 				Struct sv = new Struct( IStruct.TYPES.LINKED );
 				sv.put( "id", s.id() );
 				sv.put( "startLine", s.startLine() );

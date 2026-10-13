@@ -41,25 +41,27 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 // @Disabled( "just for testing" )
 class ScratchSpanHTMLTest {
 
-	private BoxRuntime	runtime;
-	private boolean		prevProfiler;
+	private BoxRuntime			runtime;
+	private CodeProfilerService	service;
+	private boolean				prevProfiler;
 
 	@BeforeEach
 	void setup() {
 		this.runtime										= BoxRuntime.getInstance();
+		this.service										= this.runtime.getCodeProfilerService();
 		this.prevProfiler									= this.runtime.getConfiguration().codeProfilerEnabled;
 		this.runtime.getConfiguration().codeProfilerEnabled	= true;
 		RunnableLoader.getInstance().getBoxpiler().clearPagePool();
 		RunnableLoader.getInstance().getBoxpiler().clearClassFiles();
-		CodeProfilerService.setActive( true );
-		CodeProfilerService.reset();
+		service.setActive( true );
+		service.reset();
 	}
 
 	@AfterEach
 	void teardown() {
 		this.runtime.getConfiguration().codeProfilerEnabled = this.prevProfiler;
-		CodeProfilerService.setActive( false );
-		CodeProfilerService.reset();
+		service.setActive( false );
+		service.reset();
 	}
 
 	@Test
@@ -90,7 +92,7 @@ class ScratchSpanHTMLTest {
 		// the samples plus any disk class they referenced (ProfilerComplex*,
 		// ProfilerStaticOnly*, ProfilerSuper, ProfilerGhost*). Skip anything the
 		// test harness loaded outside that dir (e.g. an Application.bx).
-		for ( String fileKey : CodeProfilerService.trackedBlueprints().keySet() ) {
+		for ( String fileKey : service.trackedBlueprints().keySet() ) {
 			if ( fileKey.contains( "resources\\profiler" ) || fileKey.contains( "resources/profiler" ) ) {
 				renderTracked( fileKey, outDir );
 			}
@@ -134,9 +136,9 @@ class ScratchSpanHTMLTest {
 		if ( slash >= 0 ) {
 			fileName = fileKey.substring( slash + 1 );
 		}
-		Path spanOut = SpanHTMLRenderer.renderToFile( fileKey, outDir + "/" + fileName + ".html", fileName );
+		Path spanOut = SpanHTMLRenderer.renderToFile( this.service, fileKey, outDir + "/" + fileName + ".html", fileName );
 		System.out.println( "WROTE: " + spanOut );
-		Path lineOut = LineCoverageHTMLRenderer.renderToFile( fileKey, outDir + "/" + fileName + "-line.html", fileName );
+		Path lineOut = LineCoverageHTMLRenderer.renderToFile( this.service, fileKey, outDir + "/" + fileName + "-line.html", fileName );
 		System.out.println( "WROTE: " + lineOut );
 
 		String source = null;
@@ -145,11 +147,11 @@ class ScratchSpanHTMLTest {
 		} catch ( java.io.IOException e ) {
 			// ignore
 		}
-		System.out.println( "SPANS(" + fileName + "): " + CodeProfilerService.fileSpans( fileKey ).size() );
-		for ( CodeProfilerService.Span s : CodeProfilerService.fileSpans( fileKey ) ) {
+		System.out.println( "SPANS(" + fileName + "): " + service.fileSpans( fileKey ).size() );
+		for ( CodeProfilerService.Span s : service.fileSpans( fileKey ) ) {
 			System.out.println(
 			    "  id=" + s.id() + " (" + s.startLine() + "," + s.startCol() + ")-(" + s.endLine() + "," + s.endCol() + ") count=" + s.stats().count()
-			        + " [" + CodeProfilerService.spanSourceText( fileKey, source, s ).replace( "\n", "\\n" ) + "]" );
+			        + " [" + service.spanSourceText( fileKey, source, s ).replace( "\n", "\\n" ) + "]" );
 		}
 	}
 }

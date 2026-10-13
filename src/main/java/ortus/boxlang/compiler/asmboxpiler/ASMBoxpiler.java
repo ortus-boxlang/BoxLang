@@ -29,7 +29,6 @@ import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
 import ortus.boxlang.runtime.services.Blueprint;
-import ortus.boxlang.runtime.services.CodeProfilerService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -324,14 +323,14 @@ public class ASMBoxpiler extends Boxpiler {
 		String fileKey;
 		if ( classInfo.resolvedFilePath() != null ) {
 			fileKey = classInfo.resolvedFilePath().absolutePath().toString();
-			transpiler.setFileId( CodeProfilerService.registerBlueprintForFile( fileKey, blueprint ) );
+			transpiler.setFileId( runtime.getCodeProfilerService().registerBlueprintForFile( fileKey, blueprint ) );
 			transpiler.setBlueprintKind( Blueprint.Kind.FILE );
 		} else if ( classInfo.source() != null ) {
 			// Adhoc source: key the blueprint by the same MD5 the boxpiler derives the
 			// FQN from (IBoxpiler.MD5( sourceType + source )), so runtime lookups align.
 			fileKey = IBoxpiler.MD5( classInfo.sourceType().toString() + classInfo.source() );
 			Blueprint sourceBp = new Blueprint( spanDefs, Blueprint.Kind.SOURCE );
-			transpiler.setFileId( CodeProfilerService.registerBlueprintForSource( fileKey, sourceBp ) );
+			transpiler.setFileId( runtime.getCodeProfilerService().registerBlueprintForSource( fileKey, sourceBp ) );
 			transpiler.setBlueprintKind( Blueprint.Kind.SOURCE );
 		}
 	}

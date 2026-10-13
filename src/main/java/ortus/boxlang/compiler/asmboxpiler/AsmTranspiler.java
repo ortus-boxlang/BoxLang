@@ -500,6 +500,11 @@ public class AsmTranspiler extends Transpiler {
 			    Type.getDescriptor( String.class ),
 			    null,
 			    null ).visitEnd();
+			classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			    Transpiler.PROFILER_BLUEPRINT_FIELD,
+			    Type.getDescriptor( Blueprint.class ),
+			    null,
+			    null ).visitEnd();
 		}
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
@@ -711,7 +716,7 @@ public class AsmTranspiler extends Transpiler {
 		// reference on the stack the whole block, so the clinit splitter could
 		// never subdivide it, causing MethodTooLargeException on big files.
 		nodes.addAll( AsmHelper.emitBlueprintRegistrationNodes(
-		    id, getLastModified(), getBlueprintKind(), spanDefs ) );
+		    id, getLastModified(), getBlueprintKind(), spanDefs, internalClassName, PROFILER_BLUEPRINT_FIELD ) );
 		return nodes;
 	}
 
@@ -841,8 +846,8 @@ public class AsmTranspiler extends Transpiler {
 				    ? getProperty( "outerClassInternal" )
 				    : outerPackageInternal + "/" + outerClassname;
 				Set<String>	fieldsToRedirect	= child.getLocalClasses().isEmpty()
-				    ? Set.of( "imports", "path", "sourceType", Transpiler.PROFILER_ID_FIELD )
-				    : Set.of( "path", "sourceType", Transpiler.PROFILER_ID_FIELD );
+				    ? Set.of( "imports", "path", "sourceType", Transpiler.PROFILER_ID_FIELD, Transpiler.PROFILER_BLUEPRINT_FIELD )
+				    : Set.of( "path", "sourceType", Transpiler.PROFILER_ID_FIELD, Transpiler.PROFILER_BLUEPRINT_FIELD );
 				redirectOuterClassFields( localClassNode, syntheticInternal, fieldRedirectTarget, fieldsToRedirect );
 
 				setAuxiliary( syntheticDotFQN, localClassNode );

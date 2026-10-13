@@ -43,19 +43,20 @@ class CodeProfilerServiceTest {
 	private static final String	FILE	= "src/test/resources/code-profiler/sample.bx";
 
 	private BoxRuntime			runtime;
+	private CodeProfilerService	service;
 
 	@BeforeEach
 	void setup() {
-		this.runtime = BoxRuntime.getInstance();
-		this.runtime.getCodeProfilerService();
-		CodeProfilerService.setActive( true );
-		CodeProfilerService.reset();
+		this.runtime	= BoxRuntime.getInstance();
+		this.service	= this.runtime.getCodeProfilerService();
+		service.setActive( true );
+		service.reset();
 	}
 
 	@AfterEach
 	void teardown() {
-		CodeProfilerService.setActive( false );
-		CodeProfilerService.reset();
+		service.setActive( false );
+		service.reset();
 	}
 
 	// \tx = 1; (tab is leading whitespace, span starts at col 1)
@@ -89,7 +90,7 @@ class CodeProfilerServiceTest {
 	@DisplayName( "It tracks plain spans, one per line" )
 	@Test
 	void testPlainStatements() {
-		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
+		String fileId = service.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
 
 		CodeProfilerService.mark( fileId, 0 );
 		sleep( 20 );
@@ -100,26 +101,26 @@ class CodeProfilerServiceTest {
 
 		// Each line is covered with one span -> count == 1
 		for ( int line = 1; line <= 3; line++ ) {
-			CodeProfilerService.LineCoverage lc = CodeProfilerService.lineAt( FILE, line );
+			CodeProfilerService.LineCoverage lc = service.lineAt( FILE, line );
 			assertThat( lc ).isNotNull();
 			assertThat( lc.covered() ).isTrue();
 			assertThat( lc.count() ).isEqualTo( 1 );
 		}
 
 		// spanAt resolves a point to the executable span
-		CodeProfilerService.Span span2 = CodeProfilerService.spanAt( FILE, 2, 1 );
+		CodeProfilerService.Span span2 = service.spanAt( FILE, 2, 1 );
 		assertThat( span2 ).isNotNull();
 		assertThat( span2.id() ).isEqualTo( 1 );
 		assertThat( span2.stats().count() ).isEqualTo( 1 );
 		assertThat( span2.stats().totalNanos() ).isGreaterThan( 0L );
 
 		// Longer sleep on span 0 -> more time than span 2
-		CodeProfilerService.Span	s0	= CodeProfilerService.spanAt( FILE, 1, 1 );
-		CodeProfilerService.Span	s2	= CodeProfilerService.spanAt( FILE, 3, 1 );
+		CodeProfilerService.Span	s0	= service.spanAt( FILE, 1, 1 );
+		CodeProfilerService.Span	s2	= service.spanAt( FILE, 3, 1 );
 		assertThat( s0.stats().totalNanos() ).isGreaterThan( s2.stats().totalNanos() );
 
 		// fileLines has all 3 lines
-		assertThat( CodeProfilerService.fileLines( FILE ).keySet() ).containsExactly( 1, 2, 3 );
+		assertThat( service.fileLines( FILE ).keySet() ).containsExactly( 1, 2, 3 );
 	}
 
 	// -------------------------------------------------------------------------
@@ -135,7 +136,7 @@ class CodeProfilerServiceTest {
 		java.nio.file.Path	temp		= java.nio.file.Files.createTempFile( "CodeProfilerServiceTest", ".cfm" );
 		String				registered	= temp.toString();
 		// Register using the canonical (absoluted + normalized) path.
-		String				fileId		= CodeProfilerService.registerBlueprintForFile( registered, PLAIN_BLUEPRINT );
+		String				fileId		= service.registerBlueprintForFile( registered, PLAIN_BLUEPRINT );
 		CodeProfilerService.mark( fileId, 0 );
 		sleep( 5 );
 		CodeProfilerService.mark( fileId, 1 );
@@ -145,21 +146,21 @@ class CodeProfilerServiceTest {
 		    .toUpperCase( java.util.Locale.ROOT );
 
 		// spanAt resolves via the automatic case-insensitive fallback.
-		assertThat( CodeProfilerService.spanAt( query, 1, 1 ).stats().count() ).isEqualTo( 1 );
-		assertThat( CodeProfilerService.spanAt( query, 2, 1 ).stats().count() ).isEqualTo( 1 );
+		assertThat( service.spanAt( query, 1, 1 ).stats().count() ).isEqualTo( 1 );
+		assertThat( service.spanAt( query, 2, 1 ).stats().count() ).isEqualTo( 1 );
 		// The line aggregate resolves too.
-		assertThat( CodeProfilerService.lineAt( query, 1 ).covered() ).isTrue();
-		assertThat( CodeProfilerService.fileLines( query ).keySet() ).containsExactly( 1, 2, 3 );
+		assertThat( service.lineAt( query, 1 ).covered() ).isTrue();
+		assertThat( service.fileLines( query ).keySet() ).containsExactly( 1, 2, 3 );
 	}
 
 	@DisplayName( "It does not charge a disabled interval to a span across a disable/re-enable" )
 	@Test
 	void testDisableEnableDoesNotCorruptTiming() {
-		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
+		String fileId = service.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
 
 		// Open an interval (span 0 marked), then DISABLE capture.
 		CodeProfilerService.mark( fileId, 0 );
-		CodeProfilerService.setActive( false );
+		service.setActive( false );
 
 		// The trace is off for a while (simulated). Stale interval sits in the
 		// thread-local state from BEFORE the disable.
@@ -167,22 +168,22 @@ class CodeProfilerServiceTest {
 
 		// Re-enable and take a NEW probe. This must NOT charge the 700ms disabled
 		// gap to span 0 — the activation generation invalidates the stale clock.
-		CodeProfilerService.setActive( true );
+		service.setActive( true );
 		CodeProfilerService.mark( fileId, 1 );
 
 		// span 0 (line 1) opened the interval BEFORE the disable. Its self-time must be
 		// the tiny pre-disable gap, NOT the 700ms disabled period.
-		assertThat( CodeProfilerService.spanAt( FILE, 1, 1 ).stats().count() ).isEqualTo( 1 );
-		assertThat( CodeProfilerService.spanAt( FILE, 1, 1 ).stats().totalNanos() ).isLessThan( 100L * 1_000_000L );
+		assertThat( service.spanAt( FILE, 1, 1 ).stats().count() ).isEqualTo( 1 );
+		assertThat( service.spanAt( FILE, 1, 1 ).stats().totalNanos() ).isLessThan( 100L * 1_000_000L );
 		// span 1 (line 2) fired right after re-enable; its own self-time is tiny too.
-		assertThat( CodeProfilerService.spanAt( FILE, 2, 1 ).stats().count() ).isEqualTo( 1 );
-		assertThat( CodeProfilerService.spanAt( FILE, 2, 1 ).stats().totalNanos() ).isLessThan( 100L * 1_000_000L );
+		assertThat( service.spanAt( FILE, 2, 1 ).stats().count() ).isEqualTo( 1 );
+		assertThat( service.spanAt( FILE, 2, 1 ).stats().totalNanos() ).isLessThan( 100L * 1_000_000L );
 	}
 
 	@DisplayName( "It marks only the executable spans that actually ran on one line" )
 	@Test
 	void testTernary() {
-		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, TERNARY_BLUEPRINT );
+		String fileId = service.registerBlueprintForFile( FILE, TERNARY_BLUEPRINT );
 
 		// x = bar ? baz : bum; -> bar true, so baz runs, bum does NOT.
 		CodeProfilerService.mark( fileId, 0 ); // "x = "
@@ -191,22 +192,22 @@ class CodeProfilerServiceTest {
 		// "bum" (span 3) never marked
 
 		// Covered spans
-		assertThat( CodeProfilerService.spanAt( FILE, 1, 0 ) ).isNull();              // tab NOT_EXECUTABLE
-		assertThat( CodeProfilerService.spanAt( FILE, 1, 1 ).stats().count() ).isEqualTo( 1 );  // x =
-		assertThat( CodeProfilerService.spanAt( FILE, 1, 5 ) ).isNull();                          // "?" NOT_EXECUTABLE
-		assertThat( CodeProfilerService.spanAt( FILE, 1, 7 ).stats().count() ).isEqualTo( 1 );  // bar
-		assertThat( CodeProfilerService.spanAt( FILE, 1, 13 ).stats().count() ).isEqualTo( 1 ); // baz
+		assertThat( service.spanAt( FILE, 1, 0 ) ).isNull();              // tab NOT_EXECUTABLE
+		assertThat( service.spanAt( FILE, 1, 1 ).stats().count() ).isEqualTo( 1 );  // x =
+		assertThat( service.spanAt( FILE, 1, 5 ) ).isNull();                          // "?" NOT_EXECUTABLE
+		assertThat( service.spanAt( FILE, 1, 7 ).stats().count() ).isEqualTo( 1 );  // bar
+		assertThat( service.spanAt( FILE, 1, 13 ).stats().count() ).isEqualTo( 1 ); // baz
 
 		// "bum" (span 3) is MISSED: executable span registered but count == 0
-		CodeProfilerService.Span bum = CodeProfilerService.spanAt( FILE, 1, 18 );
+		CodeProfilerService.Span bum = service.spanAt( FILE, 1, 18 );
 		assertThat( bum ).isNotNull();
 		assertThat( bum.stats().count() ).isEqualTo( 0 );
 
 		// trailing ";" is whitespace/gap -> non-executable
-		assertThat( CodeProfilerService.spanAt( FILE, 1, 22 ) ).isNull();
+		assertThat( service.spanAt( FILE, 1, 22 ) ).isNull();
 
 		// Line is covered (x=, bar, baz all ran); count = first/outermost span "x = "
-		CodeProfilerService.LineCoverage line = CodeProfilerService.lineAt( FILE, 1 );
+		CodeProfilerService.LineCoverage line = service.lineAt( FILE, 1 );
 		assertThat( line ).isNotNull();
 		assertThat( line.covered() ).isTrue();
 		assertThat( line.count() ).isEqualTo( 1 );
@@ -244,7 +245,7 @@ class CodeProfilerServiceTest {
 	@DisplayName( "It separates definition-time from invocation-time spans on a function" )
 	@Test
 	void testFunctionDefinition() {
-		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, FUNC_BLUEPRINT );
+		String fileId = service.registerBlueprintForFile( FILE, FUNC_BLUEPRINT );
 
 		// DEFINITION runs: registers the UDF + processes args. Arg defaults NOT evaluated.
 		CodeProfilerService.mark( fileId, 0 ); // function declaration/registration
@@ -253,33 +254,33 @@ class CodeProfilerServiceTest {
 		// "somevar.foobar" (span 3) and "return 42" (span 4) are NOT marked at definition.
 
 		// Definition-time spans are covered
-		assertThat( CodeProfilerService.spanAt( FILE, 1, 1 ).stats().count() ).isEqualTo( 1 );  // myFunc decl
-		assertThat( CodeProfilerService.spanAt( FILE, 1, 35 ).stats().count() ).isEqualTo( 1 ); // required string arg
-		assertThat( CodeProfilerService.spanAt( FILE, 1, 76 ).stats().count() ).isEqualTo( 1 ); // arg2
+		assertThat( service.spanAt( FILE, 1, 1 ).stats().count() ).isEqualTo( 1 );  // myFunc decl
+		assertThat( service.spanAt( FILE, 1, 35 ).stats().count() ).isEqualTo( 1 ); // required string arg
+		assertThat( service.spanAt( FILE, 1, 76 ).stats().count() ).isEqualTo( 1 ); // arg2
 
 		// Stored literal default is NOT_EXECUTABLE
-		assertThat( CodeProfilerService.spanAt( FILE, 1, 58 ) ).isNull();
+		assertThat( service.spanAt( FILE, 1, 58 ) ).isNull();
 
 		// Invocation-only spans are MISSED (registered executable, count == 0)
-		CodeProfilerService.Span defaultExpr = CodeProfilerService.spanAt( FILE, 1, 82 );
+		CodeProfilerService.Span defaultExpr = service.spanAt( FILE, 1, 82 );
 		assertThat( defaultExpr ).isNotNull();
 		assertThat( defaultExpr.stats().count() ).isEqualTo( 0 );
-		CodeProfilerService.Span body = CodeProfilerService.spanAt( FILE, 2, 5 );
+		CodeProfilerService.Span body = service.spanAt( FILE, 2, 5 );
 		assertThat( body ).isNotNull();
 		assertThat( body.stats().count() ).isEqualTo( 0 );
 
 		// Closing brace is NOT_EXECUTABLE
-		assertThat( CodeProfilerService.spanAt( FILE, 3, 1 ) ).isNull();
+		assertThat( service.spanAt( FILE, 3, 1 ) ).isNull();
 
 		// NOW an invocation omits arg2 -> its default evaluates, and the body runs.
 		CodeProfilerService.mark( fileId, 3 ); // somevar.foobar default evaluates
 		CodeProfilerService.mark( fileId, 4 ); // return 42 body
 
-		assertThat( CodeProfilerService.spanAt( FILE, 1, 82 ).stats().count() ).isEqualTo( 1 ); // default now ran
-		assertThat( CodeProfilerService.spanAt( FILE, 2, 5 ).stats().count() ).isEqualTo( 1 );  // body now ran
+		assertThat( service.spanAt( FILE, 1, 82 ).stats().count() ).isEqualTo( 1 ); // default now ran
+		assertThat( service.spanAt( FILE, 2, 5 ).stats().count() ).isEqualTo( 1 );  // body now ran
 
 		// Line 1 is covered; count = first/outermost span "public static string function myFunc"
-		CodeProfilerService.LineCoverage line1 = CodeProfilerService.lineAt( FILE, 1 );
+		CodeProfilerService.LineCoverage line1 = service.lineAt( FILE, 1 );
 		assertThat( line1 ).isNotNull();
 		assertThat( line1.covered() ).isTrue();
 		assertThat( line1.count() ).isEqualTo( 1 );
@@ -305,18 +306,64 @@ class CodeProfilerServiceTest {
 		    ),
 		    Blueprint.Kind.SOURCE );
 
-		String		fileId			= CodeProfilerService.registerBlueprintForSource( sourceHash, sourceBlueprint );
+		String		fileId			= service.registerBlueprintForSource( sourceHash, sourceBlueprint );
 
 		CodeProfilerService.mark( fileId, 0 );
 		CodeProfilerService.mark( fileId, 1 );
 
 		// Query by the hash key
-		assertThat( CodeProfilerService.spanAt( sourceHash, 1, 0 ).stats().count() ).isEqualTo( 1 );
-		assertThat( CodeProfilerService.spanAt( sourceHash, 1, 10 ).stats().count() ).isEqualTo( 0 );
+		assertThat( service.spanAt( sourceHash, 1, 0 ).stats().count() ).isEqualTo( 1 );
+		assertThat( service.spanAt( sourceHash, 1, 10 ).stats().count() ).isEqualTo( 0 );
 
 		// trackedBlueprints includes the adhoc entry and it is self-describing as SOURCE
-		assertThat( CodeProfilerService.trackedBlueprints() ).containsKey( sourceHash );
-		assertThat( CodeProfilerService.trackedBlueprints().get( sourceHash ).kind() ).isEqualTo( Blueprint.Kind.SOURCE );
+		assertThat( service.trackedBlueprints() ).containsKey( sourceHash );
+		assertThat( service.trackedBlueprints().get( sourceHash ).kind() ).isEqualTo( Blueprint.Kind.SOURCE );
+	}
+
+	@DisplayName( "It re-registers a cleared blueprint from the mark's blueprint reference after reset()" )
+	@Test
+	void testMarkReRegistersClearedBlueprint() {
+		// Regression for the Copilot report on reset(): reset() clears blueprints,
+		// but already-loaded instrumented classes only self-register from <clinit>,
+		// which cannot run again — so a second capture session dropped their marks.
+		// The fix: each mark passes the class's own Blueprint reference, and the
+		// service RE-REGISTERS it when the id is not currently known. This test
+		// simulates that: register, reset (clears), then mark WITH the reference.
+		Blueprint	blueprint	= new Blueprint(
+		    List.of(
+		        new Blueprint.SpanDef( 1, 1, 1, 8, true ),
+		        new Blueprint.SpanDef( 2, 1, 2, 8, true )
+		    ),
+		    Blueprint.Kind.FILE );
+		String		fileId		= service.registerBlueprintForFile( FILE, blueprint );
+
+		// Simulate the blueprint being cleared between capture sessions.
+		service.reset();
+		assertThat( service.trackedBlueprints() ).doesNotContainKey( fileId );
+
+		// A mark that carries the class's blueprint reference re-registers it.
+		CodeProfilerService.mark( fileId, 0, blueprint );
+
+		assertThat( service.trackedBlueprints() ).containsKey( fileId );
+		assertThat( service.spanAt( FILE, 1, 1 ).stats().count() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It drops a mark after reset() when NO blueprint reference is supplied" )
+	@Test
+	void testMarkWithoutBlueprintReferenceIsDroppedAfterReset() {
+		// The legacy mark(id, spanId) (no reference) cannot rebuild a cleared
+		// blueprint — a plain mark is dropped (the pre-fix behavior). This pins the
+		// contract: rebuilding requires the reference-carrying overloads.
+		Blueprint	blueprint	= new Blueprint(
+		    List.of( new Blueprint.SpanDef( 1, 1, 1, 8, true ) ),
+		    Blueprint.Kind.FILE );
+		String		fileId		= service.registerBlueprintForFile( FILE, blueprint );
+
+		service.reset();
+		// No reference -> cannot re-register -> dropped.
+		CodeProfilerService.mark( fileId, 0 );
+		assertThat( service.trackedBlueprints() ).doesNotContainKey( fileId );
+		assertThat( service.spanAt( FILE, 1, 1 ) ).isNull();
 	}
 
 	// -------------------------------------------------------------------------
@@ -326,14 +373,14 @@ class CodeProfilerServiceTest {
 	@DisplayName( "It builds native per-line coverage data (FILE default)" )
 	@Test
 	void testBuildLineCoverage() {
-		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
+		String fileId = service.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
 
 		CodeProfilerService.mark( fileId, 0 );
 		sleep( 5 );
 		CodeProfilerService.mark( fileId, 1 );
 		// span 2 (line 3) never marked -> missed
 
-		IStruct	data	= CodeProfilerService.buildLineCoverage();
+		IStruct	data	= service.buildLineCoverage();
 
 		// FILE is included by default; key is the normalized file path
 		String	key		= normalizePath( FILE );
@@ -357,14 +404,14 @@ class CodeProfilerServiceTest {
 	@DisplayName( "It builds native per-span coverage data" )
 	@Test
 	void testBuildSpanCoverage() {
-		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
+		String fileId = service.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
 
 		CodeProfilerService.mark( fileId, 0 );
 		sleep( 5 );
 		CodeProfilerService.mark( fileId, 1 );
 		// span 2 missed
 
-		IStruct	data		= CodeProfilerService.buildSpanCoverage();
+		IStruct	data		= service.buildSpanCoverage();
 		String	key			= normalizePath( FILE );
 		IStruct	fileData	= ( IStruct ) data.get( key );
 		assertThat( fileData.get( "filePath" ).toString() ).isEqualTo( key );
@@ -383,14 +430,14 @@ class CodeProfilerServiceTest {
 	@DisplayName( "It writes a per-line coverage JSON report" )
 	@Test
 	void testWriteLineCoverageJSON() {
-		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
+		String fileId = service.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
 
 		CodeProfilerService.mark( fileId, 0 );
 		sleep( 5 );
 		CodeProfilerService.mark( fileId, 1 );
 		// span 2 (line 3) never marked -> missed
 
-		String json = CodeProfilerService.buildLineCoverageJSON();
+		String json = service.buildLineCoverageJSON();
 		assertThat( json ).contains( "\"filePath\"" );
 		assertThat( json ).contains( "\"kind\"" );
 		assertThat( json ).contains( "\"numExecutableLines\"" );
@@ -409,13 +456,13 @@ class CodeProfilerServiceTest {
 	@DisplayName( "It writes a per-span coverage JSON report" )
 	@Test
 	void testWriteSpanCoverageJSON() {
-		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
+		String fileId = service.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
 
 		CodeProfilerService.mark( fileId, 0 );
 		sleep( 5 );
 		// span 1 missed
 
-		String json = CodeProfilerService.buildSpanCoverageJSON();
+		String json = service.buildSpanCoverageJSON();
 		assertThat( json ).contains( "\"spans\"" );
 		assertThat( json ).contains( "\"id\" : 0" );
 		assertThat( json ).contains( "\"startLine\"" );
@@ -430,14 +477,14 @@ class CodeProfilerServiceTest {
 	@DisplayName( "It exports SonarQube generic coverage XML" )
 	@Test
 	void testSonarQubeXML() {
-		String fileId = CodeProfilerService.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
+		String fileId = service.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
 
 		CodeProfilerService.mark( fileId, 0 );
 		sleep( 5 );
 		CodeProfilerService.mark( fileId, 1 );
 		// span 2 (line 3) never marked -> missed
 
-		String xml = CodeProfilerService.buildSonarQubeXML();
+		String xml = service.buildSonarQubeXML();
 		assertThat( xml ).contains( "<coverage version=\"1\">" );
 		assertThat( xml ).contains( "<file path=\"" );
 		assertThat( xml ).contains( "lineToCover" );
@@ -456,19 +503,19 @@ class CodeProfilerServiceTest {
 		        new Blueprint.SpanDef( 1, 0, 1, 4, true )
 		    ),
 		    Blueprint.Kind.SOURCE );
-		String		fileId			= CodeProfilerService.registerBlueprintForSource( sourceHash, sourceBlueprint );
+		String		fileId			= service.registerBlueprintForSource( sourceHash, sourceBlueprint );
 		CodeProfilerService.mark( fileId, 0 );
 
 		// Default (FILE) excludes SOURCE
-		IStruct defaultData = CodeProfilerService.buildLineCoverage();
+		IStruct defaultData = service.buildLineCoverage();
 		assertThat( defaultData.containsKey( sourceHash ) ).isFalse();
 
 		// Explicit SOURCE includes it
-		IStruct sourceData = CodeProfilerService.buildLineCoverage( Blueprint.Kind.SOURCE );
+		IStruct sourceData = service.buildLineCoverage( Blueprint.Kind.SOURCE );
 		assertThat( sourceData.containsKey( sourceHash ) ).isTrue();
 
 		// Both
-		IStruct both = CodeProfilerService.buildLineCoverage( Blueprint.Kind.FILE, Blueprint.Kind.SOURCE );
+		IStruct both = service.buildLineCoverage( Blueprint.Kind.FILE, Blueprint.Kind.SOURCE );
 		assertThat( both.containsKey( sourceHash ) ).isTrue();
 	}
 

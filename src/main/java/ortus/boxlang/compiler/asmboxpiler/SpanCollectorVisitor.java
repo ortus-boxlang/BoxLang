@@ -1999,7 +1999,8 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		for ( int i = offset - 1; i >= 0; i-- ) {
 			if ( source.charAt( i ) == '<' ) {
 				String rest = source.substring( i, Math.min( source.length(), i + 30 ) );
-				if ( rest.matches( "<(?:bx:|cf)?finally[\\s\\S]*" ) ) {
+				// Tag names are case-insensitive — match ignoring case.
+				if ( rest.matches( "(?i)<(?:bx:|cf)?finally[\\s\\S]*" ) ) {
 					return pointAt( source, i );
 				}
 				// Previous tag — the finally tag must be after it.
@@ -2037,7 +2038,8 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				return null;
 			}
 			String rest = source.substring( off, Math.min( source.length(), off + 30 ) );
-			return rest.matches( "<(?:bx:|cf)?catch[\\s\\S]*" ) ? s : null;
+			// Tag names are case-insensitive — match ignoring case.
+			return rest.matches( "(?i)<(?:bx:|cf)?catch[\\s\\S]*" ) ? s : null;
 		}
 		String	source	= node.getPosition().getSource().getCode();
 		Point	first	= catchNode.getCatchBody().isEmpty() || catchNode.getCatchBody().get( 0 ).getStart() == null
@@ -2053,7 +2055,8 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		for ( int i = offset - 1; i >= 0; i-- ) {
 			if ( source.charAt( i ) == '<' ) {
 				String rest = source.substring( i, Math.min( source.length(), i + 30 ) );
-				if ( rest.matches( "<(?:bx:|cf)?catch[\\s\\S]*" ) ) {
+				// Tag names are case-insensitive — match ignoring case.
+				if ( rest.matches( "(?i)<(?:bx:|cf)?catch[\\s\\S]*" ) ) {
 					return pointAt( source, i );
 				}
 				// A closing tag (</...>) between the end and the open tag is skipped
@@ -2092,7 +2095,8 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		String	close1	= "</bx:" + tagName;
 		String	close2	= "</cf" + tagName;
 		for ( int i = offset - 1; i >= 0; i-- ) {
-			if ( source.startsWith( close1, i ) || source.startsWith( close2, i ) ) {
+			// Tag names are case-insensitive — compare ignoring case.
+			if ( source.regionMatches( true, i, close1, 0, close1.length() ) || source.regionMatches( true, i, close2, 0, close2.length() ) ) {
 				return pointAt( source, i );
 			}
 		}
@@ -2203,7 +2207,8 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		String	close2	= "</cf" + ( tagName.equalsIgnoreCase( "defaultcase" ) ? "defaultcase" : tagName );
 		int		maxLen	= Math.min( close1.length(), close2.length() );
 		for ( int i = offset; i <= source.length() - maxLen; i++ ) {
-			if ( source.startsWith( close1, i ) || source.startsWith( close2, i ) ) {
+			// Tag names are case-insensitive — compare ignoring case.
+			if ( source.regionMatches( true, i, close1, 0, close1.length() ) || source.regionMatches( true, i, close2, 0, close2.length() ) ) {
 				return pointAt( source, i );
 			}
 		}
@@ -2481,7 +2486,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				// Match a plain else tag (<bx:else>/<cfelse>) OR an elseif tag
 				// (<bx:elseif>/<cfelseif>). The elseif tag is also captured here
 				// (via the previous branch's else path); addSpan dedups by start.
-				if ( rest.matches( "<(?:bx:|cf)?else[a-zA-Z]*[\\s\\S]*" ) ) {
+				if ( rest.matches( "(?i)<(?:bx:|cf)?else[a-z]*[\\s\\S]*" ) ) {
 					// Resolve this tag's close.
 					int j = i + 1;
 					while ( j < source.length() && source.charAt( j ) != '>' ) {
@@ -2495,7 +2500,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				// The immediate previous tag boundary — keep scanning past it for
 				// older tags is pointless (best is already the nearest), so if this
 				// was a non-else tag we can stop: the branch tag must be AFTER it.
-				if ( !rest.matches( "<(?:bx:|cf)?else[a-zA-Z]*[\\s\\S]*" ) && best == null ) {
+				if ( !rest.matches( "(?i)<(?:bx:|cf)?else[a-z]*[\\s\\S]*" ) && best == null ) {
 					return null;
 				}
 			}

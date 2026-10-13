@@ -55,10 +55,6 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 		AsmHelper.addDebugLabel( nodes, "BoxIf" );
-		// An ELSEIF tag (<bx:elseif ...> / <cfelseif ...>) is evaluated when the
-		// chain reaches it — mark its tag span at that point (the tag opens at the
-		// node start, matching Pass A registration).
-		emitElseIfTagMark( nodes, ifElse );
 		nodes.addAll( transpiler.transform( ifElse.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 		if ( !ifElse.getCondition().returnsBoolean() ) {
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
@@ -187,37 +183,6 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 	}
 
 	/**
-	 * Emit a {@code mark(fileId, spanId)} for an ELSEIF tag when its condition is
-	 * evaluated. Pass A registered the full {@code <bx:elseif ...>} tag as a span
-	 * starting at its {@code <} (the parser fixes tag positions). Only when the
-	 * chain reaches this elseif does the tag "run". No-op when profiling is
-	 * disabled.
-	 *
-	 * @param nodes  the instruction list to append to
-	 * @param ifElse the if statement (an elseif if its source starts with the
-	 *               else-if tag prefix)
-	 */
-	private void emitElseIfTagMark( List<AbstractInsnNode> nodes, BoxIfElse ifElse ) {
-		// No-op when profiling is disabled — never emit mark instructions otherwise.
-		if ( !transpiler.hasProfilerId() ) {
-			return;
-		}
-		if ( ifElse.getStart() == null ) {
-			return;
-		}
-		String src = ifElse.getSourceText() == null ? null : ifElse.getSourceText().trim();
-		if ( src == null || ! ( src.startsWith( "bx:elseif" ) || src.startsWith( "cfelseif" ) || src.startsWith( "elseif" ) ) ) {
-			return;
-		}
-		// The tag's "<" IS the node start.
-		long	packed	= ( ( long ) ifElse.getStart().getLine() << 32 ) | ( ifElse.getStart().getColumn() & 0xFFFFFFFFL );
-		int		spanId	= transpiler.getSpanId( packed );
-		if ( spanId >= 0 && transpiler.claimSpanMark( spanId ) ) {
-			nodes.addAll( transpiler.emitMark( spanId ) );
-		}
-	}
-
-	/**
 	 * Emit a {@code mark(id, elseSpanId)} for the {@code else} keyword when the
 	 * else branch runs. Pass A registered the keyword as its own span; this fires
 	 * only at the else branch entry — never when the if branch is taken. No-op when
@@ -281,7 +246,8 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 			return null;
 		}
 		String tag = source.substring( i, Math.min( source.length(), i + 20 ) );
-		if ( !tag.matches( "<(?:bx:|cf)?else(?!if)[\\s\\S]*" ) ) {
+		// Tag names are case-insensitive — match the else tag ignoring case.
+		if ( !tag.matches( "(?i)<(?:bx:|cf)?else(?!if)[\\s\\S]*" ) ) {
 			return null;
 		}
 		return pointAt( source, i );

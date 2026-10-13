@@ -105,15 +105,17 @@ public class AsmHelper {
 	 *
 	 * @return the instructions: GETSTATIC id, LDC spanId, INVOKESTATIC mark(Ljava/lang/String;I)V
 	 */
-	public static List<AbstractInsnNode> invokeStaticMark( String internalClassName, String idField, int spanId ) {
+	public static List<AbstractInsnNode> invokeStaticMark( String internalClassName, String idField, String blueprintField, int spanId ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, idField, Type.getDescriptor( String.class ) ) );
 		nodes.add( new LdcInsnNode( spanId ) );
+		// Pass the class's own blueprint so a cleared registration is re-registered.
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, blueprintField, Type.getDescriptor( Blueprint.class ) ) );
 		nodes.add( new MethodInsnNode(
 		    Opcodes.INVOKESTATIC,
 		    Type.getInternalName( CodeProfilerService.class ),
 		    "mark",
-		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ), Type.INT_TYPE ),
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ), Type.INT_TYPE, Type.getType( Blueprint.class ) ),
 		    false
 		) );
 		return nodes;
@@ -121,20 +123,24 @@ public class AsmHelper {
 
 	/**
 	 * Emit the bytecode for closing the probe-charging interval at the end of a body:
-	 * {@code CodeProfilerService.markEnd( id )}.
+	 * {@code CodeProfilerService.markEnd( id, blueprint )}. The blueprint reference is
+	 * passed so a cleared registration is re-registered on demand.
 	 *
-	 * @param id the blueprint KEY (path string or source hash) — a String static field
+	 * @param internalClassName the class holding the id + blueprint static fields
+	 * @param idField           the blueprint KEY static field name
+	 * @param blueprintField    the {@link Blueprint} static field name
 	 *
-	 * @return the instructions: GETSTATIC id, INVOKESTATIC markEnd(Ljava/lang/String;)V
+	 * @return the instructions
 	 */
-	public static List<AbstractInsnNode> invokeStaticMarkEnd( String internalClassName, String idField ) {
+	public static List<AbstractInsnNode> invokeStaticMarkEnd( String internalClassName, String idField, String blueprintField ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, idField, Type.getDescriptor( String.class ) ) );
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, blueprintField, Type.getDescriptor( Blueprint.class ) ) );
 		nodes.add( new MethodInsnNode(
 		    Opcodes.INVOKESTATIC,
 		    Type.getInternalName( CodeProfilerService.class ),
 		    "markEnd",
-		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ) ),
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ), Type.getType( Blueprint.class ) ),
 		    false
 		) );
 		return nodes;
@@ -142,20 +148,23 @@ public class AsmHelper {
 
 	/**
 	 * Emit the bytecode for a single code-coverage varargs mark call:
-	 * {@code CodeProfilerService.mark( id, int... spanIds )}. This collapses
+	 * {@code CodeProfilerService.mark( blueprint, id, int... spanIds )}. This collapses
 	 * SEVERAL atomic shell spans (fragments of one declaration split at lazy
-	 * defaults) into a single {@code mark(Ljava/lang/String;[I)V} invocation — the
+	 * defaults) into a single {@code mark(Blueprint,String,[I)V} invocation — the
 	 * whole shell runs or does not run together, so it opens exactly ONE
-	 * probe-charging interval and increments all its spans' counts together.
+	 * probe-charging interval and increments all its spans' counts together. The
+	 * blueprint reference is passed so a cleared registration is re-registered.
 	 *
-	 * @param id      the blueprint KEY (path string or source hash) — a String static field
-	 * @param spanIds the shell spans to batch, in source order; the last owns the
-	 *                next interval
+	 * @param internalClassName the class holding the id + blueprint static fields
+	 * @param idField           the blueprint KEY static field name
+	 * @param blueprintField    the {@link Blueprint} static field name
+	 * @param spanIds           the shell spans to batch, in source order
 	 *
-	 * @return the instructions: GETSTATIC id, int[] spanIds, INVOKESTATIC mark(Ljava/lang/String;[I)V
+	 * @return the instructions
 	 */
-	public static List<AbstractInsnNode> invokeStaticMarkVarargs( String internalClassName, String idField, int[] spanIds ) {
+	public static List<AbstractInsnNode> invokeStaticMarkVarargs( String internalClassName, String idField, String blueprintField, int[] spanIds ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, blueprintField, Type.getDescriptor( Blueprint.class ) ) );
 		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, idField, Type.getDescriptor( String.class ) ) );
 		nodes.add( new LdcInsnNode( spanIds.length ) );
 		nodes.add( new IntInsnNode( Opcodes.NEWARRAY, Opcodes.T_INT ) );
@@ -169,7 +178,7 @@ public class AsmHelper {
 		    Opcodes.INVOKESTATIC,
 		    Type.getInternalName( CodeProfilerService.class ),
 		    "mark",
-		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ), Type.getType( int[].class ) ),
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( Blueprint.class ), Type.getType( String.class ), Type.getType( int[].class ) ),
 		    false
 		) );
 		return nodes;
@@ -189,16 +198,18 @@ public class AsmHelper {
 	 * the stack the whole block, so {@link #completeWithSplitting}'s splitter can
 	 * never find a stack-depth-0 safe point inside it.
 	 *
-	 * @param id           the blueprint KEY (path string or source hash)
-	 * @param lastModified the source file's last-modified time
-	 * @param kind         the blueprint kind (FILE or SOURCE) — SOURCE ids are
-	 *                     hashes that must NOT be normalized as paths
-	 * @param spanDefs     the spans to serialize (5 ints each: line/col/line/col/flag)
+	 * @param id                the blueprint KEY (path string or source hash)
+	 * @param lastModified      the source file's last-modified time
+	 * @param kind              the blueprint kind (FILE or SOURCE) — SOURCE ids are
+	 *                          hashes that must NOT be normalized as paths
+	 * @param spanDefs          the spans to serialize (5 ints each: line/col/line/col/flag)
+	 * @param internalClassName the class whose static {@link Blueprint} field to set
+	 * @param blueprintField    the name of that static field
 	 *
 	 * @return the instructions for the registration call
 	 */
 	public static List<AbstractInsnNode> emitBlueprintRegistrationNodes( String id, long lastModified, Blueprint.Kind kind,
-	    List<ortus.boxlang.runtime.services.Blueprint.SpanDef> spanDefs ) {
+	    List<ortus.boxlang.runtime.services.Blueprint.SpanDef> spanDefs, String internalClassName, String blueprintField ) {
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 
 		// Build the mode-based descriptor: int[].
@@ -248,14 +259,16 @@ public class AsmHelper {
 		    Type.getInternalName( CodeProfilerService.class ),
 		    "registerBlueprintFromClinit",
 		    Type.getMethodDescriptor(
-		        Type.getType( String.class ),                       // return: id
+		        Type.getType( Blueprint.class ),                    // return: the blueprint (stored in the static field)
 		        Type.getType( String.class ),                       // arg1: id
 		        Type.LONG_TYPE,                                     // arg2: lastModified
 		        Type.getType( Blueprint.Kind.class ),               // arg3: kind
 		        Type.getType( String[].class ) ),                   // arg4: spanDataChunks
 		    false
 		) );
-		nodes.add( new InsnNode( Opcodes.POP ) ); // discard the returned id
+		// Store the returned blueprint in the class's static field so every mark can
+		// pass it — enabling re-registration after CodeProfilerService.reset().
+		nodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, internalClassName, blueprintField, Type.getDescriptor( Blueprint.class ) ) );
 		return nodes;
 	}
 

@@ -162,6 +162,24 @@ public class CodeProfilerService extends BaseService {
 	 *               (0-based; indexes the blueprint's executable span array)
 	 */
 	public static void mark( String id, int spanId ) {
+		mark( id, spanId, null );
+	}
+
+	/**
+	 * Record that one span executed, charging elapsed time since the previous
+	 * span on this thread to the span that was current (probe-charging).
+	 * <p>
+	 * As {@link #mark(String, int)} but also receives the class's own
+	 * {@link Blueprint}. If the blueprint is not currently registered for
+	 * {@code id} — e.g. it was cleared by {@link #reset()} — it is RE-REGISTERED
+	 * from this reference, so an already-loaded instrumented class (whose
+	 * {@code <clinit>} cannot run again) keeps recording marks across a reset.
+	 *
+	 * @param id        the blueprint KEY (normalized file path or source hash)
+	 * @param spanId    the id of the executable span within that blueprint
+	 * @param blueprint the class's blueprint, or null when not supplied
+	 */
+	public static void mark( String id, int spanId, Blueprint blueprint ) {
 		CodeProfilerService service = instance;
 		if ( service == null || !service.active ) {
 			return;
@@ -193,9 +211,10 @@ public class CodeProfilerService extends BaseService {
 		service.lastNano.set( now );
 		service.lastGeneration.set( curGeneration );
 
-		// The CURRENT span owns the next interval. The blueprint is located by its
-		// KEY (id) — the path or source hash.
-		FileBlueprint fb = service.byPath.get( id );
+		// The CURRENT span owns the next interval. Locate the blueprint by its KEY;
+		// if it is gone (cleared by reset()), re-register it from the passed
+		// reference so marks from an already-loaded class are never dropped.
+		FileBlueprint fb = service.fileBlueprintOrRegister( id, blueprint );
 		if ( fb == null ) {
 			return;
 		}
@@ -223,12 +242,24 @@ public class CodeProfilerService extends BaseService {
 	 *                order; the last becomes the current span for the next interval
 	 */
 	public static void mark( String id, int... spanIds ) {
+		mark( null, id, spanIds );
+	}
+
+	/**
+	 * As {@link #mark(String, int...)} but also receives the class's own
+	 * {@link Blueprint} so a cleared registration is RE-REGISTERED on demand.
+	 *
+	 * @param blueprint the class's blueprint, or null when not supplied
+	 * @param id        the blueprint KEY (normalized file path or source hash)
+	 * @param spanIds   the atomic unit's span ids, in source order
+	 */
+	public static void mark( Blueprint blueprint, String id, int... spanIds ) {
 		CodeProfilerService service = instance;
 		if ( service == null || !service.active || spanIds.length == 0 ) {
 			return;
 		}
 		for ( int spanId : spanIds ) {
-			mark( id, spanId );
+			mark( id, spanId, blueprint );
 		}
 	}
 
@@ -241,6 +272,18 @@ public class CodeProfilerService extends BaseService {
 	 *           current span interval to close
 	 */
 	public static void markEnd( String id ) {
+		markEnd( id, null );
+	}
+
+	/**
+	 * As {@link #markEnd(String)} but also receives the class's own
+	 * {@link Blueprint} so a cleared registration is RE-REGISTERED on demand (see
+	 * {@link #mark(String, int, Blueprint)}).
+	 *
+	 * @param id        the blueprint KEY (normalized file path or source hash)
+	 * @param blueprint the class's blueprint, or null when not supplied
+	 */
+	public static void markEnd( String id, Blueprint blueprint ) {
 		CodeProfilerService service = instance;
 		if ( service == null || !service.active ) {
 			return;
@@ -256,7 +299,7 @@ public class CodeProfilerService extends BaseService {
 		    && prevGeneration != null && prevGeneration == curGeneration ) {
 			FileBlueprint	prevFile	= service.lastFile.get();
 			Integer			prevSpan	= service.lastSpanId.get();
-			if ( prevFile != null && prevSpan != null && prevFile == service.byPath.get( id ) ) {
+			if ( prevFile != null && prevSpan != null && prevFile == service.fileBlueprintOrRegister( id, blueprint ) ) {
 				SpanStats prev = prevFile.spanStats( prevSpan );
 				if ( prev != null ) {
 					prev.addNanos( now - prevNano );
@@ -274,7 +317,7 @@ public class CodeProfilerService extends BaseService {
 	/**
 	 * Reset the probe-charging clock for the current thread.
 	 */
-	public static void resetThreadClock() {
+	public void resetThreadClock() {
 		CodeProfilerService inst = instance;
 		if ( inst != null ) {
 			inst.lastNano.remove();
@@ -298,7 +341,7 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @param active whether to capture
 	 */
-	public static void setActive( boolean active ) {
+	public void setActive( boolean active ) {
 		if ( instance != null ) {
 			instance.active = active;
 			if ( active ) {
@@ -313,14 +356,23 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @return {@code true} if capturing
 	 */
-	public static boolean isActive() {
+	public boolean isActive() {
 		return instance != null && instance.active;
 	}
 
 	/**
-	 * Clear all collected data and registered blueprints.
+	 * Clear all collected data AND registered blueprints, starting a fresh capture
+	 * session.
+	 * <p>
+	 * Clearing blueprints is SAFE: instrumented classes carry their own
+	 * {@link Blueprint} reference, so the next {@code mark} from an already-loaded
+	 * class (whose {@code <clinit>} cannot run again) RE-REGISTERS its blueprint on
+	 * demand (see {@link #mark(String, int, Blueprint)} / {@link #fileBlueprintOrRegister}).
+	 * Compilation-time registration is unaffected, so blueprints for files that
+	 * were compiled but never EXECUTED remain queryable (e.g. by test harnesses)
+	 * until this is called.
 	 */
-	public static void reset() {
+	public void reset() {
 		if ( instance != null ) {
 			instance.byPath.clear();
 			instance.lastNano.remove();
@@ -343,7 +395,7 @@ public class CodeProfilerService extends BaseService {
 	 * @return the blueprint KEY (the normalized file path) — the id bytecode embeds
 	 *         as a String static field and passes to {@link #mark}; empty if no instance
 	 */
-	public static String registerBlueprintForFile( String filePath, Blueprint blueprint ) {
+	public String registerBlueprintForFile( String filePath, Blueprint blueprint ) {
 		return registerBlueprint( normalize( filePath ), blueprint, Blueprint.Kind.FILE );
 	}
 
@@ -358,7 +410,7 @@ public class CodeProfilerService extends BaseService {
 	 * @return the blueprint KEY (the source hash) — the id bytecode embeds as a
 	 *         String static field and passes to {@link #mark}; empty if no instance
 	 */
-	public static String registerBlueprintForSource( String sourceHash, Blueprint blueprint ) {
+	public String registerBlueprintForSource( String sourceHash, Blueprint blueprint ) {
 		return registerBlueprint( sourceHash, blueprint, Blueprint.Kind.SOURCE );
 	}
 
@@ -379,9 +431,12 @@ public class CodeProfilerService extends BaseService {
 	 * @param spanData     flat int[] describing every span: groups of 5 ints
 	 *                     (startLine, startCol, endLine, endCol, executableFlag)
 	 *
-	 * @return the id to use for {@link #mark}; empty if no instance
+	 * @return a blueprint whose {@code spans()} are ALL spans of the file (in source
+	 *         order, covering executable AND non-executable) — stored in the class's
+	 *         static blueprint field so its marks can re-register it after a reset;
+	 *         or null if no instance
 	 */
-	public static String registerBlueprintFromClinit( String id, long lastModified, Blueprint.Kind kind, int[] spanData ) {
+	public static Blueprint registerBlueprintFromClinit( String id, long lastModified, Blueprint.Kind kind, int[] spanData ) {
 		return registerBlueprintFromClinitInternal( id, lastModified, kind, spanData );
 	}
 
@@ -405,11 +460,12 @@ public class CodeProfilerService extends BaseService {
 	 * @param kind           the blueprint kind (FILE or SOURCE)
 	 * @param spanDataChunks packed span data as space-separated ints, in order
 	 *
-	 * @return the id to use for {@link #mark}; empty if no instance
+	 * @return a blueprint whose {@code spans()} are ALL spans of the file (see the
+	 *         {@code int[]} overload); or null if no instance
 	 */
-	public static String registerBlueprintFromClinit( String id, long lastModified, Blueprint.Kind kind, String... spanDataChunks ) {
+	public static Blueprint registerBlueprintFromClinit( String id, long lastModified, Blueprint.Kind kind, String... spanDataChunks ) {
 		if ( instance == null ) {
-			return "";
+			return null;
 		}
 		int[] spanData = parseSpanDataChunks( spanDataChunks );
 		return registerBlueprintFromClinitInternal( id, lastModified, kind, spanData );
@@ -444,10 +500,10 @@ public class CodeProfilerService extends BaseService {
 		return result;
 	}
 
-	private static String registerBlueprintFromClinitInternal( String id, long lastModified, Blueprint.Kind kind, int[] spanData ) {
+	private static Blueprint registerBlueprintFromClinitInternal( String id, long lastModified, Blueprint.Kind kind, int[] spanData ) {
 		CodeProfilerService service = instance;
 		if ( service == null ) {
-			return "";
+			return null;
 		}
 		List<Blueprint.SpanDef> spanDefs = new java.util.ArrayList<>();
 		for ( int i = 0; i + 4 < spanData.length; i += 5 ) {
@@ -467,10 +523,12 @@ public class CodeProfilerService extends BaseService {
 			if ( blueprint.lastModified() > existing.blueprint().lastModified() ) {
 				service.byPath.put( key, new FileBlueprint( key, blueprint ) );
 			}
-			return existing.filePath;
+			// Return the passed blueprint so the class's static field references the
+			// SAME object each mark passes back for re-registration.
+			return blueprint;
 		}
 		service.byPath.put( key, new FileBlueprint( key, blueprint ) );
-		return key;
+		return blueprint;
 	}
 
 	/**
@@ -509,7 +567,7 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @return map of registered key -> blueprint
 	 */
-	public static Map<String, Blueprint> trackedBlueprints() {
+	public Map<String, Blueprint> trackedBlueprints() {
 		Map<String, Blueprint> result = new ConcurrentHashMap<>();
 		if ( instance != null ) {
 			instance.byPath.forEach( ( key, fb ) -> result.put( key, fb.blueprint() ) );
@@ -532,7 +590,7 @@ public class CodeProfilerService extends BaseService {
 	 * @return the executable {@link Span} containing the point, or null if the point
 	 *         falls in a gap/non-executable region or the file isn't registered
 	 */
-	public static Span spanAt( String filePath, int line, int col ) {
+	public Span spanAt( String filePath, int line, int col ) {
 		FileBlueprint fb = fileBlueprint( filePath );
 		return fb == null ? null : fb.spanAt( line, col );
 	}
@@ -546,7 +604,7 @@ public class CodeProfilerService extends BaseService {
 	 * @return the {@link Span} with that id, or null if the id is out of range or
 	 *         the file isn't registered
 	 */
-	public static Span span( String filePath, int spanId ) {
+	public Span span( String filePath, int spanId ) {
 		FileBlueprint fb = fileBlueprint( filePath );
 		return fb == null ? null : fb.span( spanId );
 	}
@@ -560,7 +618,7 @@ public class CodeProfilerService extends BaseService {
 	 * @return the executable spans on that line, in source order; empty list if none
 	 *         or the file isn't registered
 	 */
-	public static List<Span> spansOnLine( String filePath, int line ) {
+	public List<Span> spansOnLine( String filePath, int line ) {
 		FileBlueprint fb = fileBlueprint( filePath );
 		return fb == null ? List.of() : fb.spansOnLine( line );
 	}
@@ -572,7 +630,7 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @return the file's executable spans; empty list if not registered
 	 */
-	public static List<Span> fileSpans( String filePath ) {
+	public List<Span> fileSpans( String filePath ) {
 		FileBlueprint fb = fileBlueprint( filePath );
 		return fb == null ? List.of() : fb.fileSpans();
 	}
@@ -585,7 +643,7 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @return a multi-line string, one {@code spanN (line,col)-(line,col) count=.. [chars] } per span
 	 */
-	public static String dumpSpans( String filePath ) {
+	public String dumpSpans( String filePath ) {
 		return dumpSpans( filePath, null );
 	}
 
@@ -601,7 +659,7 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @return a multi-line string, one {@code spanN (line,col)-(line,col) count=.. [chars] } per span
 	 */
-	public static String dumpSpans( String filePath, String source ) {
+	public String dumpSpans( String filePath, String source ) {
 		FileBlueprint fb = fileBlueprint( filePath );
 		if ( fb == null ) {
 			return "<no blueprint for " + filePath + ">";
@@ -649,7 +707,7 @@ public class CodeProfilerService extends BaseService {
 	 * @return the characters the span covers, {@code <no source>} if the source is
 	 *         absent, or {@code null} if the span is null
 	 */
-	public static String spanSourceText( String filePath, String source, Span span ) {
+	public String spanSourceText( String filePath, String source, Span span ) {
 		if ( span == null ) {
 			return null;
 		}
@@ -713,7 +771,7 @@ public class CodeProfilerService extends BaseService {
 	 * @return per-line aggregate, or null if no executable span touches the line
 	 *         or the file isn't registered
 	 */
-	public static LineCoverage lineAt( String filePath, int line ) {
+	public LineCoverage lineAt( String filePath, int line ) {
 		FileBlueprint fb = fileBlueprint( filePath );
 		if ( fb == null ) {
 			return null;
@@ -736,7 +794,7 @@ public class CodeProfilerService extends BaseService {
 	 * @return map of 1-based line number to its {@link LineCoverage}; empty map if
 	 *         the file isn't registered
 	 */
-	public static Map<Integer, LineCoverage> fileLines( String filePath ) {
+	public Map<Integer, LineCoverage> fileLines( String filePath ) {
 		FileBlueprint fb = fileBlueprint( filePath );
 		if ( fb == null ) {
 			return Map.of();
@@ -783,8 +841,8 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @return a {@link Struct} keyed by blueprint key
 	 */
-	public static IStruct buildLineCoverage( Blueprint.Kind... kinds ) {
-		return CoverageDataBuilder.buildLineCoverage( kinds );
+	public IStruct buildLineCoverage( Blueprint.Kind... kinds ) {
+		return CoverageDataBuilder.buildLineCoverage( this, kinds );
 	}
 
 	/**
@@ -796,8 +854,8 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @return a {@link Struct} keyed by blueprint key
 	 */
-	public static IStruct buildSpanCoverage( Blueprint.Kind... kinds ) {
-		return CoverageDataBuilder.buildSpanCoverage( kinds );
+	public IStruct buildSpanCoverage( Blueprint.Kind... kinds ) {
+		return CoverageDataBuilder.buildSpanCoverage( this, kinds );
 	}
 
 	/**
@@ -808,7 +866,7 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @return the JSON string
 	 */
-	public static String buildLineCoverageJSON( Blueprint.Kind... kinds ) {
+	public String buildLineCoverageJSON( Blueprint.Kind... kinds ) {
 		return CoverageJSONExporter.toJSON( buildLineCoverage( kinds ) );
 	}
 
@@ -820,7 +878,7 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @return the JSON string
 	 */
-	public static String buildSpanCoverageJSON( Blueprint.Kind... kinds ) {
+	public String buildSpanCoverageJSON( Blueprint.Kind... kinds ) {
 		return CoverageJSONExporter.toJSON( buildSpanCoverage( kinds ) );
 	}
 
@@ -835,7 +893,7 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @return the JSON string written (also available for embedding)
 	 */
-	public static String writeLineCoverageJSON( String path, boolean pretty, Blueprint.Kind... kinds ) {
+	public String writeLineCoverageJSON( String path, boolean pretty, Blueprint.Kind... kinds ) {
 		return CoverageJSONExporter.write( path, buildLineCoverage( kinds ), pretty );
 	}
 
@@ -848,7 +906,7 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @return the JSON string written
 	 */
-	public static String writeLineCoverageJSON( String path, Blueprint.Kind... kinds ) {
+	public String writeLineCoverageJSON( String path, Blueprint.Kind... kinds ) {
 		return writeLineCoverageJSON( path, true, kinds );
 	}
 
@@ -862,7 +920,7 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @return the JSON string written
 	 */
-	public static String writeSpanCoverageJSON( String path, boolean pretty, Blueprint.Kind... kinds ) {
+	public String writeSpanCoverageJSON( String path, boolean pretty, Blueprint.Kind... kinds ) {
 		return CoverageJSONExporter.write( path, buildSpanCoverage( kinds ), pretty );
 	}
 
@@ -875,7 +933,7 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @return the JSON string written
 	 */
-	public static String writeSpanCoverageJSON( String path, Blueprint.Kind... kinds ) {
+	public String writeSpanCoverageJSON( String path, Blueprint.Kind... kinds ) {
 		return writeSpanCoverageJSON( path, true, kinds );
 	}
 
@@ -888,7 +946,7 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @return the XML string written
 	 */
-	public static String writeSonarQubeXML( String path, Blueprint.Kind... kinds ) {
+	public String writeSonarQubeXML( String path, Blueprint.Kind... kinds ) {
 		return CoverageSonarQubeExporter.write( buildLineCoverage( kinds ), path );
 	}
 
@@ -900,7 +958,7 @@ public class CodeProfilerService extends BaseService {
 	 *
 	 * @return the XML string
 	 */
-	public static String buildSonarQubeXML( Blueprint.Kind... kinds ) {
+	public String buildSonarQubeXML( Blueprint.Kind... kinds ) {
 		return CoverageSonarQubeExporter.generateXML( buildLineCoverage( kinds ) );
 	}
 
@@ -940,6 +998,33 @@ public class CodeProfilerService extends BaseService {
 			}
 		}
 		return fb;
+	}
+
+	/**
+	 * Locate the live {@link FileBlueprint} for {@code id}; if it is NOT currently
+	 * registered and a {@code blueprint} reference is supplied, RE-REGISTER it from
+	 * that reference. This is how a cleared blueprint (see {@link #reset()}) is
+	 * rebuilt on demand by the marks of an already-loaded instrumented class whose
+	 * {@code <clinit>} cannot run again.
+	 *
+	 * @param id        the blueprint KEY (normalized file path or source hash)
+	 * @param blueprint the class's blueprint, or null when not supplied
+	 *
+	 * @return the live blueprint, or null if not found and none supplied
+	 */
+	private FileBlueprint fileBlueprintOrRegister( String id, Blueprint blueprint ) {
+		FileBlueprint fb = fileBlueprint( id );
+		if ( fb != null ) {
+			return fb;
+		}
+		if ( blueprint == null ) {
+			return null;
+		}
+		// Re-register from the passed reference so subsequent marks (and this one)
+		// resolve. registerBlueprint is idempotent and keyed by id; FILE keys are
+		// normalized internally, SOURCE keys are used verbatim.
+		registerBlueprint( blueprint.kind() == Blueprint.Kind.SOURCE ? id : normalize( id ), blueprint, blueprint.kind() );
+		return fileBlueprint( id );
 	}
 
 	/**

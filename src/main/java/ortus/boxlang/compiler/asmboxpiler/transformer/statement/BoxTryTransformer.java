@@ -279,7 +279,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 		for ( int i = offset - 1; i >= 0; i-- ) {
 			if ( source.charAt( i ) == '<' ) {
 				String rest = source.substring( i, Math.min( source.length(), i + 30 ) );
-				if ( rest.matches( "<(?:bx:|cf)?finally[\\s\\S]*" ) ) {
+				// Tag names are case-insensitive — match the finally tag ignoring case.
+				if ( rest.matches( "(?i)<(?:bx:|cf)?finally[\\s\\S]*" ) ) {
 					return pointAt( source, i );
 				}
 				// A different tag — the finally tag must be after it. A "<" that is

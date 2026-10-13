@@ -566,6 +566,11 @@ public class BoxClassTransformer {
 			    Type.getDescriptor( String.class ),
 			    null,
 			    null ).visitEnd();
+			classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			    Transpiler.PROFILER_BLUEPRINT_FIELD,
+			    Type.getDescriptor( Blueprint.class ),
+			    null,
+			    null ).visitEnd();
 		}
 
 		// classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
@@ -1494,7 +1499,7 @@ public class BoxClassTransformer {
 		// never subdivide it, causing MethodTooLargeException on big files.
 		String id = transpiler.getFileId();
 		clinitNodes.addAll( AsmHelper.emitBlueprintRegistrationNodes(
-		    id, transpiler.getLastModified(), transpiler.getBlueprintKind(), spanDefs ) );
+		    id, transpiler.getLastModified(), transpiler.getBlueprintKind(), spanDefs, type.getInternalName(), Transpiler.PROFILER_BLUEPRINT_FIELD ) );
 	}
 
 	/**

@@ -61,8 +61,8 @@ public final class SpanHTMLRenderer {
 	 *
 	 * @return the full HTML document string
 	 */
-	public static String renderHTML( String fileKey ) {
-		return renderHTML( fileKey, null );
+	public static String renderHTML( CodeProfilerService service, String fileKey ) {
+		return renderHTML( service, fileKey, null );
 	}
 
 	/**
@@ -74,8 +74,8 @@ public final class SpanHTMLRenderer {
 	 *
 	 * @return the full HTML document string
 	 */
-	public static String renderHTML( String fileKey, String title ) {
-		List<CodeProfilerService.Span>	allSpans	= CodeProfilerService.fileSpans( fileKey );
+	public static String renderHTML( CodeProfilerService service, String fileKey, String title ) {
+		List<CodeProfilerService.Span>	allSpans	= service.fileSpans( fileKey );
 		String							source		= readSource( fileKey );
 
 		// [startChar, endChar, span]
@@ -313,21 +313,22 @@ public final class SpanHTMLRenderer {
 	 *
 	 * @return the output path written
 	 */
-	public static Path renderToFile( String fileKey, String outputPath ) {
-		return renderToFile( fileKey, outputPath, null );
+	public static Path renderToFile( CodeProfilerService service, String fileKey, String outputPath ) {
+		return renderToFile( service, fileKey, outputPath, null );
 	}
 
 	/**
 	 * Render a tracked source file and write the HTML to {@code outputPath}.
 	 *
+	 * @param service    the profiler service to read spans from
 	 * @param fileKey    the normalized blueprint key
 	 * @param outputPath the output HTML file path
 	 * @param title      an optional HTML title
 	 *
 	 * @return the output path written
 	 */
-	public static Path renderToFile( String fileKey, String outputPath, String title ) {
-		String	html	= renderHTML( fileKey, title );
+	public static Path renderToFile( CodeProfilerService service, String fileKey, String outputPath, String title ) {
+		String	html	= renderHTML( service, fileKey, title );
 		Path	out		= Paths.get( outputPath ).toAbsolutePath().normalize();
 		try {
 			Files.createDirectories( out.getParent() );
