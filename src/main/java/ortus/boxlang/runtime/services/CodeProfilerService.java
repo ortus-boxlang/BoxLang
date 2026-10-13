@@ -549,16 +549,13 @@ public class CodeProfilerService extends BaseService {
 		if ( service == null ) {
 			return "";
 		}
-		FileBlueprint existing = service.byPath.get( key );
-		if ( existing != null ) {
-			// A newer blueprint (source file changed) replaces the stale one.
-			if ( blueprint.lastModified() > existing.blueprint().lastModified() ) {
-				service.byPath.put( key, new FileBlueprint( key, blueprint ) );
+		FileBlueprint registered = service.byPath.compute( key, ( k, existing ) -> {
+			if ( existing == null || blueprint.lastModified() > existing.blueprint().lastModified() ) {
+				return new FileBlueprint( k, blueprint );
 			}
-			return existing.filePath;
-		}
-		service.byPath.put( key, new FileBlueprint( key, blueprint ) );
-		return key;
+			return existing;
+		} );
+		return registered.filePath;
 	}
 
 	/**
