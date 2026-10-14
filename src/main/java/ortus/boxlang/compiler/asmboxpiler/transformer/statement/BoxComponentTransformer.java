@@ -138,12 +138,23 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		nodes.addAll( generateBodyNodes( boxComponent.getBody() ) );
 		transpiler.decrementComponentCounter();
 
+		// INCLUSIVE timing: bracket the component/tag invocation so the tag's span
+		// records how long the whole tag (its internal work + body) was on the stack.
+		// markEnter/markExit are void and leave the operand stack untouched, so they
+		// sit safely between the argument setup and the invokeComponent call.
+		int callSpan = transpiler.spanIdOf( boxComponent );
+		nodes.addAll( transpiler.emitMarkEnter( callSpan ) );
+
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 		    Type.getInternalName( IBoxContext.class ),
 		    "invokeComponent",
 		    Type.getMethodDescriptor( Type.getType( Component.BodyResult.class ), Type.getType( Key.class ), Type.getType( IStruct.class ),
 		        Type.getType( Component.ComponentBody.class ) ),
 		    true ) );
+
+		if ( callSpan >= 0 ) {
+			nodes.addAll( transpiler.emitMarkExit() );
+		}
 
 		if ( transpiler.isInsideComponent() ) {
 			LabelNode ifLabel = new LabelNode();

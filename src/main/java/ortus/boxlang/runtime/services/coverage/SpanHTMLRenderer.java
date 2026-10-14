@@ -93,8 +93,9 @@ public final class SpanHTMLRenderer {
 		// shows the line's coverage count, not a summed total across all its spans),
 		// and the total time summed across touching spans. Iterate the SORTED spans
 		// so "first" = earliest/outermost in source.
-		Map<Integer, long[]>	lineMetrics	= new LinkedHashMap<>(); // line -> [covered01, count, 0]
-		Map<Integer, Long>		lineNanos	= new LinkedHashMap<>();
+		Map<Integer, long[]>	lineMetrics		= new LinkedHashMap<>(); // line -> [covered01, count, 0]
+		Map<Integer, Long>		lineNanos		= new LinkedHashMap<>();
+		Map<Integer, Long>		lineInclusive	= new LinkedHashMap<>();
 		for ( Object[] sp : spans ) {
 			CodeProfilerService.Span s = ( CodeProfilerService.Span ) sp[ 2 ];
 			for ( int ln = s.startLine(); ln <= s.endLine(); ln++ ) {
@@ -106,6 +107,10 @@ public final class SpanHTMLRenderer {
 				}
 				long nanos = lineNanos.getOrDefault( ln, 0L ) + s.stats().totalNanos();
 				lineNanos.put( ln, nanos );
+				// Inclusive call time (0 for lines with no calls).
+				if ( s.stats().inclusiveNanos() > 0 ) {
+					lineInclusive.put( ln, lineInclusive.getOrDefault( ln, 0L ) + s.stats().inclusiveNanos() );
+				}
 			}
 		}
 
@@ -130,7 +135,7 @@ public final class SpanHTMLRenderer {
 			int							cov		= span.stats().count() > 0 ? 1 : 0;
 			for ( int ln = span.startLine(); ln <= span.endLine(); ln++ ) {
 				lineSpans.computeIfAbsent( ln, k -> new ArrayList<>() )
-				    .add( new Object[] { start, end, cov, span.stats().count(), span.stats().totalNanos() } );
+				    .add( new Object[] { start, end, cov, span.stats().count(), span.stats().totalNanos(), span.stats().inclusiveNanos() } );
 			}
 		}
 		lineSpans.values().forEach( l -> l.sort( Comparator.comparingInt( a -> ( int ) a[ 0 ] ) ) );
@@ -161,8 +166,9 @@ public final class SpanHTMLRenderer {
 			long[]	lm		= lineMetrics.get( lineNum );
 			long	nanos	= lineNanos.getOrDefault( lineNum, 0L );
 			if ( lm != null ) {
+				long incl = lineInclusive.getOrDefault( lineNum, 0L );
 				tooltip = " title=\"" + ( lm[ 0 ] == 1 ? "covered" : "missed" ) + ", count=" + lm[ 1 ] + ", time="
-				    + formatDuration( nanos ) + "\"";
+				    + formatDuration( nanos ) + ( incl > 0 ? ", incl=" + formatDuration( incl ) : "" ) + "\"";
 			}
 			int		lineEnd		= srcLines[ i ].length();
 			// Colour per character index: 1 = covered, 0 = missed. Untracked
@@ -234,10 +240,12 @@ public final class SpanHTMLRenderer {
 				String	extra	= real ? "" : " pad";
 				String	tt		= "";
 				if ( real && charOwner[ cursor ] >= 0 ) {
-					Object[]	spg	= ls.get( charOwner[ cursor ] );
-					long		cnt	= ( long ) spg[ 3 ];
-					long		ns	= ( long ) spg[ 4 ];
-					tt = " title=\"count=" + cnt + ", time=" + formatDuration( ns ) + "\"";
+					Object[]	spg		= ls.get( charOwner[ cursor ] );
+					long		cnt		= ( long ) spg[ 3 ];
+					long		ns		= ( long ) spg[ 4 ];
+					long		incl	= spg.length > 5 ? ( long ) spg[ 5 ] : 0L;
+					tt = " title=\"count=" + cnt + ", time=" + formatDuration( ns )
+					    + ( incl > 0 ? ", incl=" + formatDuration( incl ) : "" ) + "\"";
 				}
 				sb.append( "<span class=\"" ).append( cls ).append( extra ).append( "\"" ).append( tt ).append( ">" )
 				    .append( escape( srcLines[ i ].substring( cursor, runEnd ) ) ).append( "</span>" );

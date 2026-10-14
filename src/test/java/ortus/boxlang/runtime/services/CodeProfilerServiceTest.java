@@ -466,6 +466,31 @@ class CodeProfilerServiceTest {
 		assertThat( ( ( IStruct ) spans.get( 2 ) ).get( "count" ) ).isEqualTo( 0L );
 	}
 
+	@DisplayName( "It exports inclusive call time in the line and span coverage data" )
+	@Test
+	void testInclusiveNanosInCoverageData() {
+		String fileId = service.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
+
+		// Simulate a call-site bracket on span 0 (line 1): the span runs, a call is
+		// entered, ~20ms elapses, and the call exits -> inclusive time ~20ms.
+		CodeProfilerService.mark( fileId, 0, PLAIN_BLUEPRINT );
+		CodeProfilerService.markEnter( fileId, 0, PLAIN_BLUEPRINT );
+		sleep( 20 );
+		CodeProfilerService.markExit( fileId, PLAIN_BLUEPRINT );
+
+		// Per-line export: line 1 carries inclusiveNanos alongside totalNanos.
+		IStruct	lineData	= ( IStruct ) service.buildLineCoverage().get( normalizePath( FILE ) );
+		IStruct	lines		= ( IStruct ) lineData.get( "lines" );
+		IStruct	line1		= ( IStruct ) lines.get( Key.of( 1 ) );
+		assertThat( ( ( Number ) line1.get( "inclusiveNanos" ) ).longValue() ).isAtLeast( 15L * 1_000_000L );
+
+		// Per-span export: the call-site span carries inclusiveNanos.
+		IStruct	spanData	= ( IStruct ) service.buildSpanCoverage().get( normalizePath( FILE ) );
+		Array	spans		= ( Array ) spanData.get( "spans" );
+		IStruct	first		= ( IStruct ) spans.get( 0 );
+		assertThat( ( ( Number ) first.get( "inclusiveNanos" ) ).longValue() ).isAtLeast( 15L * 1_000_000L );
+	}
+
 	@DisplayName( "It writes a per-line coverage JSON report" )
 	@Test
 	void testWriteLineCoverageJSON() {

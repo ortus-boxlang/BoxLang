@@ -110,26 +110,54 @@ public abstract class Transpiler implements ITranspiler {
 	private boolean											profilingEnabled		= false;
 
 	/**
+	 * Whether INCLUSIVE call-site timing (the additive {@code markEnter}/{@code markExit}
+	 * brackets around BoxLang invocations) is emitted. Purely additive to the base
+	 * span marks; toggling it lets benchmarks compare the base instrumentation against
+	 * the inclusive-timing instrumentation. Static so a harness can flip it before a
+	 * fresh compile. Only meaningful when {@link #profilingEnabled} is true.
+	 */
+	private static volatile boolean							inclusiveTimingEnabled	= true;
+
+	/**
+	 * Enable/disable emission of the inclusive call-timing brackets. Static: set
+	 * before compiling so a benchmark can A/B the base vs inclusive instrumentation.
+	 *
+	 * @param enabled whether to emit the inclusive call-site brackets
+	 */
+	public static void setInclusiveTimingEnabled( boolean enabled ) {
+		inclusiveTimingEnabled = enabled;
+	}
+
+	/**
+	 * Whether inclusive call-timing brackets are currently enabled for compilation.
+	 *
+	 * @return true when inclusive call timing is emitted
+	 */
+	public static boolean isInclusiveTimingEnabled() {
+		return inclusiveTimingEnabled;
+	}
+
+	/**
 	 * The code profiler blueprint KEY for this compilation — the normalized file
 	 * path (or source hash for adhoc source). This String IS the blueprint's id;
 	 * it is stored as a static field on the instrumented class and passed as the
 	 * first arg of every {@code mark(id, spanId)} instruction.
 	 */
-	private String											fileId					= null;
+	private String				fileId			= null;
 
 	/**
 	 * Source-position -> span id map, built during Pass A (span detection).
 	 * Keyed by packed start position (line/col). Pass B looks up a node's span id
 	 * from its start position to emit the matching mark.
 	 */
-	private Map<Long, Integer>								spanIds					= new HashMap<>();
+	private Map<Long, Integer>	spanIds			= new HashMap<>();
 
 	/**
 	 * Span ids already given a {@code mark} instruction in this compilation. Several
 	 * AST nodes can share a span's start position (e.g. a statement and the call
 	 * inside it), so we emit at most one mark per span to keep counts exact.
 	 */
-	private Set<Integer>									emittedMarks			= new HashSet<>();
+	private Set<Integer>		emittedMarks	= new HashSet<>();
 
 	/**
 	 * Set a property
@@ -238,6 +266,67 @@ public abstract class Transpiler implements ITranspiler {
 			return List.of();
 		}
 		return AsmHelper.invokeStaticMarkEnd( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, PROFILER_BLUEPRINT_FIELD );
+	}
+
+	/**
+	 * Emit a call-site bracket OPEN for INCLUSIVE timing:
+	 * {@code CodeProfilerService.markEnter(id, spanId, blueprint)}. Emitted just
+	 * before a BoxLang invocation so the call's whole elapsed time (including the
+	 * called subtree) is charged to the call-site span's {@code inclusiveNanos}.
+	 *
+	 * @param spanId the call-site span id within this blueprint
+	 *
+	 * @return the instructions, or an empty list when profiling is off
+	 */
+	public List<AbstractInsnNode> emitMarkEnter( int spanId ) {
+		if ( !hasProfilerId() || spanId < 0 || !inclusiveTimingEnabled ) {
+			return List.of();
+		}
+		return AsmHelper.invokeStaticMarkEnter( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, PROFILER_BLUEPRINT_FIELD, spanId );
+	}
+
+	/**
+	 * Resolve the span id whose start position matches the given node's start, or -1
+	 * when profiling is off, the node has no position, or no span starts there. Used
+	 * to bracket BoxLang invocations for inclusive timing.
+	 *
+	 * @param node the node whose start position identifies the span
+	 *
+	 * @return the span id, or -1
+	 */
+	public int spanIdOf( BoxNode node ) {
+		if ( !hasProfilerId() || node == null || node.getPosition() == null || node.getPosition().getStart() == null ) {
+			return -1;
+		}
+		Point	p		= node.getPosition().getStart();
+		long	packed	= ( ( long ) p.getLine() << 32 ) | ( p.getColumn() & 0xFFFFFFFFL );
+		return getSpanId( packed );
+	}
+
+	/**
+	 * Emit a call-site bracket CLOSE for inclusive timing:
+	 * {@code CodeProfilerService.markExit(id, blueprint)}.
+	 *
+	 * @return the instructions, or an empty list when profiling is off
+	 */
+	public List<AbstractInsnNode> emitMarkExit() {
+		if ( !hasProfilerId() ) {
+			return List.of();
+		}
+		return AsmHelper.invokeStaticMarkExit( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, PROFILER_BLUEPRINT_FIELD );
+	}
+
+	/**
+	 * Emit {@code CodeProfilerService.markDepth()} — the current call-bracket depth,
+	 * captured at a method's entry for its catch-all unwinder.
+	 *
+	 * @return the instructions, or an empty list when profiling is off
+	 */
+	public List<AbstractInsnNode> emitMarkDepth() {
+		if ( !hasProfilerId() ) {
+			return List.of();
+		}
+		return AsmHelper.invokeStaticMarkDepth();
 	}
 
 	/**

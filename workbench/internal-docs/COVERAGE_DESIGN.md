@@ -87,6 +87,31 @@ Each `mark(id, spanId)` reads `System.nanoTime()`; the interval since the previo
 - `resetThreadClock()` clears the current thread's probe state (call after thread-pool reuse so stale deltas aren't charged).
 - Open: on THROW/short-circuit mid-line, the pending interval is charged to whatever span opened it (may never close). Lean: accept & document — throwing isn't hot, misattribution bounded.
 
+### 7a. INCLUSIVE call timing (additive, opt-in) — "how long was this line on the stack"
+Self time (above) is disjoint and excludes called-subtree time. For perf usefulness we ALSO record
+per-call INCLUSIVE time: a `sleeper()` call line reports the whole time the call was on the stack.
+- **Emission:** each BoxLang invocation (function + method + static-method) is bracketed with
+  `markEnter(id, spanId, blueprint)` before the call and `markExit(id, blueprint)` after. Argument
+  evaluation happens inside the bracket, so `foo( bar() )` reports args + call (~150ms), and a
+  BIF/plain-Java call already reports its wall time for free (its Java work runs inside the span window
+  and nothing else claims it). Container-only, so loop/if headers stay non-inclusive of their body.
+- **Runtime:** `markEnter` pushes `{callSiteSpan, startNano, FileBlueprint}` on a per-thread stack
+  (`CallStack`, primitive arrays); `markExit` pops and adds the elapsed time to that span's
+  `SpanStats.inclusiveNanos`. The brackets are PURELY ADDITIVE — they never touch the flat
+  probe-charging owner, so self-time accounting is byte-for-byte unchanged.
+- **Abnormal exits:** every profiled body already has a catch-all (`wrapBodyWithCatchAllMarkEnd`). It
+  now captures `markDepth()` at entry (before `tryStart`) into a local and, in the handler, calls
+  `markUnwindTo(depth)` before `markEnd`/rethrow — so a call whose callee threw THROUGH this method
+  still gets its inclusive time charged. This covers throw AND `AbortException` (bare `Throwable`).
+  Normal fall-through and `return` close brackets via their existing `markEnd` sites (brackets are
+  exited naturally as control returns through the call site).
+- **Metrics:** `SpanStats` now carries `totalNanos` (self) and `inclusiveNanos` (call). `LineCoverage`
+  carries both; totals stay on SELF so the file's sum remains real elapsed time (inclusive would
+  double-count nested call time).
+- **Cost (measured):** ~30 ns per call (~+2.9% on a 50-call loop, ~0.1% call-heavy, 0% call-free).
+  See `PROFILER_OVERHEAD.md`.
+- **Toggle:** `Transpiler.setInclusiveTimingEnabled(boolean)` (static) gates emission for A/B benchmarking.
+
 ### 8. Branches are just spans
 No statementId/kind needed. An `if`'s condition, each `&&`/`||` operand, each ternary operand, each branch body is its own executable span with its own counter. Short-circuiting means only evaluated sub-spans get marked → `foo || bar` where `foo` is true leaves `bar` MISSED. "Which branch ran" = "which branch's span has count > 0".
 

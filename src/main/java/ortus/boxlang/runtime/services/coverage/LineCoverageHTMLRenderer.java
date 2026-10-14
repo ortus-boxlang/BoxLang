@@ -87,7 +87,8 @@ public final class LineCoverageHTMLRenderer {
 			if ( lc != null ) {
 				rowCls	= ( rowCls.isEmpty() ? "" : rowCls + " " ) + ( lc.covered() ? "cov" : "miss" );
 				state	= " title=\"" + ( lc.covered() ? "covered" : "missed" ) + ", count=" + lc.count() + ", time="
-				    + SpanHTMLRenderer.formatDuration( lc.totalNanos() ) + "\"";
+				    + SpanHTMLRenderer.formatDuration( lc.totalNanos() )
+				    + ( lc.inclusiveNanos() > 0 ? ", incl=" + SpanHTMLRenderer.formatDuration( lc.inclusiveNanos() ) : "" ) + "\"";
 			}
 			html.append( "<tr class=\"" ).append( rowCls ).append( "\">" )
 			    .append( "<td class=\"ln\">" ).append( lineNum ).append( "</td>" )

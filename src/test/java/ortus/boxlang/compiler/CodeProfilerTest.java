@@ -2674,6 +2674,135 @@ class CodeProfilerTest {
 		assertThat( service.lineAt( key, 5 ).count() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It records INCLUSIVE call time on the UDF call-site span (how long the call was on the stack)" )
+	@Test
+	void testInclusiveCallTiming() {
+		String source = """
+		                function sleeper() {
+		                sleep( 1000 );
+		                }
+		                sleeper();
+		                """;
+		runtime.executeSource( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// The body statement's SELF time is ~1000ms (unchanged by this feature).
+		assertThat( service.spanAt( key, 2, 0 ).stats().totalNanos() ).isAtLeast( 1000L * 1_000_000L );
+
+		// The CALL SITE`span (line 4) now carries the FULL call duration as INCLUSIVE
+		// time — the time the sleeper() call was on the stack (~1000ms + overhead).
+		long inclusive = service.spanAt( key, 4, 0 ).stats().inclusiveNanos();
+		assertThat( inclusive ).isAtLeast( 1000L * 1_000_000L );
+		assertThat( inclusive ).isAtMost( 1500L * 1_000_000L );
+
+		// Self time of the call site stays small (the body owns the self time), so the
+		// two metrics are distinct and both available.
+		assertThat( service.spanAt( key, 4, 0 ).stats().totalNanos() ).isAtMost( 100L * 1_000_000L );
+
+		// The line aggregate exposes inclusive as well.
+		assertThat( service.lineAt( key, 4 ).inclusiveNanos() ).isAtLeast( 1000L * 1_000_000L );
+	}
+
+	@DisplayName( "It attributes inclusive time for a call whose argument is itself a call" )
+	@Test
+	void testInclusiveNestedCalls() {
+		// foo( bar() ): the argument is evaluated before foo is invoked, so the
+		// call-site span's INCLUSIVE time is the WHOLE expression — bar's ~100ms +
+		// foo's own ~50ms = ~150ms. (Arguments are not separate spans in the current
+		// model; the whole `foo( bar() )` is one call-site span.)
+		String source = """
+		                function bar() {
+		                sleep( 100 );
+		                return 1;
+		                }
+		                function foo( x ) {
+		                sleep( 50 );
+		                return x;
+		                }
+		                foo( bar() );
+		                """;
+		runtime.executeSource( source );
+
+		String	key			= IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// foo( bar() ) call-site span (line 9, col 0) inclusive ~150ms.
+		long	inclusive	= service.spanAt( key, 9, 0 ).stats().inclusiveNanos();
+		assertThat( inclusive ).isAtLeast( 150L * 1_000_000L );
+		assertThat( inclusive ).isAtMost( 450L * 1_000_000L );
+
+		// The line aggregate exposes it too.
+		assertThat( service.lineAt( key, 9 ).inclusiveNanos() ).isAtLeast( 150L * 1_000_000L );
+	}
+
+	@DisplayName( "It closes a call bracket when the callee throws (inclusive time still recorded)" )
+	@Test
+	void testInclusiveCallTimingOnThrow() {
+		// The callee sleeps then throws. The exception escapes BOTH the callee and
+		// the caller's catch-all (the caller has no try), so each frame unwinds back
+		// to its entry depth. The call-site span's inclusive time must still be
+		// recorded (the unwind charges the abandoned bracket).
+		String source = """
+		                function boomer() {
+		                sleep( 200 );
+		                throw( "boom" );
+		                }
+		                boomer();
+		                """;
+		try {
+			runtime.executeSource( source );
+		} catch ( RuntimeException e ) {
+			// expected — the throw propagates out of the script
+		}
+
+		String	key			= IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// The call-site span (line 5) inclusive time is ~200ms+ even though the call
+		// never returned normally.
+		long	inclusive	= service.spanAt( key, 5, 0 ).stats().inclusiveNanos();
+		assertThat( inclusive ).isAtLeast( 200L * 1_000_000L );
+		assertThat( inclusive ).isAtMost( 600L * 1_000_000L );
+	}
+
+	@DisplayName( "It records inclusive time for a BIF call (sleep)" )
+	@Test
+	void testInclusiveBifCallTiming() {
+		// A BIF call goes through the same bracket. `sleep( 300 )` blocks for 300ms
+		// with no BoxLang frame in between, so the call-site span's inclusive time is
+		// ~300ms — the whole time that line was on the stack.
+		String source = """
+		                sleep( 300 );
+		                """;
+		runtime.executeSource( source );
+
+		String	key			= IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		long	inclusive	= service.spanAt( key, 1, 0 ).stats().inclusiveNanos();
+		assertThat( inclusive ).isAtLeast( 300L * 1_000_000L );
+		assertThat( inclusive ).isAtMost( 700L * 1_000_000L );
+	}
+
+	@DisplayName( "It includes a BIF callback's time in the BIF call's inclusive time" )
+	@Test
+	void testInclusiveBifCallbackTiming() {
+		// arrayMap invokes the closure synchronously, INSIDE the arrayMap call. The
+		// arrayMap call-site bracket is open across the whole call, so its inclusive
+		// time includes the callback's sleep even though the closure is invoked by the
+		// BIF (no BoxLang call site for the invocation itself).
+		String source = """
+		                arr = [ 1 ];
+		                arrayMap( arr, ( x ) => { sleep( 200 ); return x; } );
+		                """;
+		runtime.executeSource( source );
+
+		String	key			= IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// arrayMap call site (line 2) inclusive time includes the callback's 200ms.
+		long	inclusive	= service.spanAt( key, 2, 0 ).stats().inclusiveNanos();
+		assertThat( inclusive ).isAtLeast( 200L * 1_000_000L );
+		assertThat( inclusive ).isAtMost( 600L * 1_000_000L );
+	}
+
 	@DisplayName( "It splits a non-literal default into its own span" )
 	@Test
 	void testFunctionDynamicDefaultSplitsShell() {

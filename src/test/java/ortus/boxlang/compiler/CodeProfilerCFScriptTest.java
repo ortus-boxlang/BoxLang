@@ -133,6 +133,27 @@ class CodeProfilerCFScriptTest {
 		assertThat( service.lineAt( key, 1 ).count() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It records inclusive call time for a UDF (cfscript)" )
+	@Test
+	void testInclusiveCallTiming() {
+		// Parity with the BOXSCRIPT inclusive test: a cfs UDF's call-site span
+		// reports the whole time the call was on the stack.
+		String source = """
+		                function sleeper() {
+		                    sleep( 400 );
+		                }
+		                sleeper();
+		                """;
+		executeCFScript( source );
+
+		String	key			= IBoxpiler.MD5( BoxSourceType.CFSCRIPT.toString() + source );
+
+		// The call-site span (line 4) inclusive time is ~400ms+.
+		long	inclusive	= service.spanAt( key, 4, 0 ).stats().inclusiveNanos();
+		assertThat( inclusive ).isAtLeast( 400L * 1_000_000L );
+		assertThat( inclusive ).isAtMost( 900L * 1_000_000L );
+	}
+
 	@DisplayName( "It profiles plain statements, one per line" )
 	@Test
 	void testPlainStatements() {

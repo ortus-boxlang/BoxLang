@@ -182,6 +182,28 @@ class CodeProfilerTemplateTest {
 		}
 	}
 
+	@DisplayName( "It records inclusive time for a tag that runs a body (loop)" )
+	@Test
+	void testTagInclusiveTiming() {
+		// A tag invokes its body synchronously, so the tag's span should report the
+		// whole time the tag was on the stack — including the body's work. A
+		// <bx:loop> that sleeps 100ms per iteration (3 iterations) => ~300ms.
+		String source = """
+		                <bx:loop from="1" to="3" index="i">
+		                <bx:set dummy = sleep( 100 )>
+		                </bx:loop>
+		                """;
+		runtime.executeSource( source, context, BoxSourceType.BOXTEMPLATE );
+
+		String	key			= IBoxpiler.MD5( BoxSourceType.BOXTEMPLATE.toString() + source );
+
+		// The <bx:loop> tag header span (line 1, col 1). Its inclusive time must be
+		// at least the 3 x 100ms the body slept.
+		long	inclusive	= service.spanAt( key, 1, 1 ).stats().inclusiveNanos();
+		assertThat( inclusive ).isAtLeast( 300L * 1_000_000L );
+		assertThat( inclusive ).isAtMost( 900L * 1_000_000L );
+	}
+
 	@DisplayName( "It tracks rendered text and interpolation but skips blank buffer output (tag)" )
 	@Test
 	void testBufferOutputTextAndInterpolation() {

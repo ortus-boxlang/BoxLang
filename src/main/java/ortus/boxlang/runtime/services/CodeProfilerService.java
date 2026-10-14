@@ -112,6 +112,40 @@ public class CodeProfilerService extends BaseService {
 	private final ThreadLocal<Long>							lastGeneration			= new ThreadLocal<>();
 
 	/**
+	 * Per-thread stack of open call-site brackets, for INCLUSIVE call timing
+	 * ("how long was this line on the stack"). A call site emits {@code markEnter}
+	 * before the invocation and {@code markExit} after it; the publishable product
+	 * charges the elapsed wall time to the call-site span's {@code inclusiveNanos}
+	 * (which, unlike self time, includes everything the call itself ran). The stack
+	 * makes nested calls in one expression (e.g. {@code foo( bar() )}) attribute to
+	 * the correct call site.
+	 */
+	private final ThreadLocal<CallStack>					callStack				= ThreadLocal.withInitial( CallStack::new );
+
+	/**
+	 * Mutable per-thread call-bracket stack. Uses primitive arrays grown on demand
+	 * (no per-call allocation). Each frame holds the call-site span, its start time,
+	 * and the call-site blueprint, so {@link #markExit} can accumulate inclusive time
+	 * onto the right span. The brackets are PURELY ADDITIVE — they never touch the
+	 * flat probe-charging owner, so self-time accounting is byte-for-byte unchanged.
+	 */
+	private static final class CallStack {
+
+		long[]		nums	= new long[ 32 ];	// interleaved [callSpanId, startNano] per frame
+		Object[]	files	= new Object[ 16 ];	// call-site FileBlueprint
+		int			depth	= 0;
+
+		void ensureCapacity( int d ) {
+			if ( 2 * d + 1 >= nums.length ) {
+				nums = java.util.Arrays.copyOf( nums, nums.length * 2 );
+			}
+			if ( d >= files.length ) {
+				files = java.util.Arrays.copyOf( files, files.length * 2 );
+			}
+		}
+	}
+
+	/**
 	 * Construct the CodeProfilerService. Called by {@link BoxRuntime} during startup.
 	 *
 	 * @param runtime the BoxRuntime singleton
@@ -315,6 +349,117 @@ public class CodeProfilerService extends BaseService {
 	}
 
 	/**
+	 * Open a call-site bracket for INCLUSIVE timing: remember the call-site span and
+	 * the start time so the matching {@link #markExit} can charge the whole elapsed
+	 * wall time of the invocation to that span. Emitted just before a BoxLang
+	 * invocation (UDF/closure/lambda); the argument expressions were already
+	 * evaluated, so the bracket measures the CALL itself (args + body), which is
+	 * exactly "how long this call was on the stack".
+	 * <p>
+	 * PURELY ADDITIVE: the bracket does NOT touch the flat probe-charging owner, so
+	 * existing self-time accounting is unchanged. The per-thread stack makes nested
+	 * calls in one expression (e.g. {@code foo( bar() )}) attribute correctly.
+	 *
+	 * @param id        the blueprint KEY (normalized file path or source hash)
+	 * @param spanId    the call-site span id within that blueprint
+	 * @param blueprint the class's blueprint, or null when not supplied
+	 */
+	public static void markEnter( String id, int spanId, Blueprint blueprint ) {
+		CodeProfilerService service = instance;
+		if ( service == null || !service.active ) {
+			return;
+		}
+		FileBlueprint fb = service.fileBlueprintOrRegister( id, blueprint );
+		if ( fb == null ) {
+			return;
+		}
+		CallStack cs = service.callStack.get();
+		cs.ensureCapacity( cs.depth );
+		cs.files[ cs.depth ]		= fb;
+		cs.nums[ 2 * cs.depth ]		= spanId;
+		cs.nums[ 2 * cs.depth + 1 ]	= System.nanoTime();
+		cs.depth++;
+	}
+
+	/**
+	 * Close the innermost call-site bracket opened by {@link #markEnter}: charge the
+	 * elapsed wall time to the call-site span's {@code inclusiveNanos} (which includes
+	 * the called subtree, unlike self time). Safe to call with no open bracket
+	 * (returns immediately); repeated calls unwind one frame each, so a deep exception
+	 * unwind can close several brackets.
+	 *
+	 * @param id        the blueprint KEY (normalized file path or source hash)
+	 * @param blueprint the class's blueprint, or null when not supplied
+	 */
+	public static void markExit( String id, Blueprint blueprint ) {
+		CodeProfilerService service = instance;
+		if ( service == null || !service.active ) {
+			return;
+		}
+		CallStack cs = service.callStack.get();
+		if ( cs.depth == 0 ) {
+			return;
+		}
+		int				top			= cs.depth - 1;
+		FileBlueprint	fb			= ( FileBlueprint ) cs.files[ top ];
+		int				callSpanId	= ( int ) cs.nums[ 2 * top ];
+		long			startNano	= cs.nums[ 2 * top + 1 ];
+
+		SpanStats		callStats	= fb == null ? null : fb.spanStats( callSpanId );
+		if ( callStats != null ) {
+			callStats.addInclusiveNanos( System.nanoTime() - startNano );
+		}
+
+		cs.files[ top ] = null;
+		cs.depth--;
+	}
+
+	/**
+	 * The current call-bracket depth on this thread. Emitted at a method's entry and
+	 * saved to a local so the method's catch-all handler can unwind back to it if an
+	 * exception escapes (see {@link #markUnwindTo}).
+	 *
+	 * @return the current call-stack depth (0 when no bracket is open)
+	 */
+	public static int markDepth() {
+		CodeProfilerService service = instance;
+		if ( service == null || !service.active ) {
+			return 0;
+		}
+		return service.callStack.get().depth;
+	}
+
+	/**
+	 * Unwind the call-bracket stack back to {@code depth}, charging the elapsed time
+	 * of every abandoned bracket to its call-site span's inclusive time. Emitted in a
+	 * method's catch-all handler just before rethrowing, so an exception (or abort)
+	 * escaping the method closes the brackets its body opened. Without this, a
+	 * thrown-through call would leave its bracket open until the next push.
+	 *
+	 * @param depth the depth to unwind to (captured via {@link #markDepth} at entry)
+	 */
+	public static void markUnwindTo( int depth ) {
+		CodeProfilerService service = instance;
+		if ( service == null || !service.active ) {
+			return;
+		}
+		CallStack	cs	= service.callStack.get();
+		long		end	= System.nanoTime();
+		while ( cs.depth > depth ) {
+			int				top			= cs.depth - 1;
+			FileBlueprint	fb			= ( FileBlueprint ) cs.files[ top ];
+			int				callSpanId	= ( int ) cs.nums[ 2 * top ];
+			long			startNano	= cs.nums[ 2 * top + 1 ];
+			SpanStats		callStats	= fb == null ? null : fb.spanStats( callSpanId );
+			if ( callStats != null ) {
+				callStats.addInclusiveNanos( Math.max( 0L, end - startNano ) );
+			}
+			cs.files[ top ] = null;
+			cs.depth--;
+		}
+	}
+
+	/**
 	 * Reset the probe-charging clock for the current thread.
 	 */
 	public void resetThreadClock() {
@@ -324,6 +469,7 @@ public class CodeProfilerService extends BaseService {
 			inst.lastFile.remove();
 			inst.lastSpanId.remove();
 			inst.lastGeneration.remove();
+			inst.callStack.get().depth = 0;
 		}
 	}
 
@@ -379,6 +525,7 @@ public class CodeProfilerService extends BaseService {
 			instance.lastFile.remove();
 			instance.lastSpanId.remove();
 			instance.lastGeneration.remove();
+			instance.callStack.get().depth = 0;
 			// Bump the generation so any OTHER thread's stale interval (opened before
 			// the reset) is invalidated and cannot charge across the reset boundary.
 			instance.activationGeneration++;
@@ -780,7 +927,11 @@ public class CodeProfilerService extends BaseService {
 		boolean	covered		= spans.stream().anyMatch( s -> s.stats().count() > 0 );
 		long	lineCount	= spans.get( 0 ).stats().count(); // first/outermost span
 		long	nanos		= spans.stream().mapToLong( s -> s.stats().totalNanos() ).sum();
-		return new LineCoverage( line, covered, nanos, lineCount );
+		// INCLUSIVE time for the line: sum over spans of inclusiveNanos (call-site
+		// brackets). Non-call spans contribute 0, so this is the total time spent in
+		// calls made ON this line (including what those calls ran).
+		long	inclusive	= spans.stream().mapToLong( s -> s.stats().inclusiveNanos() ).sum();
+		return new LineCoverage( line, covered, nanos, inclusive, lineCount );
 	}
 
 	/**
@@ -1041,8 +1192,9 @@ public class CodeProfilerService extends BaseService {
 	 */
 	public static final class SpanStats {
 
-		private final AtomicLong	count		= new AtomicLong();
-		private final AtomicLong	totalNanos	= new AtomicLong();
+		private final AtomicLong	count			= new AtomicLong();
+		private final AtomicLong	totalNanos		= new AtomicLong();
+		private final AtomicLong	inclusiveNanos	= new AtomicLong();
 
 		public long count() {
 			return count.get();
@@ -1050,6 +1202,19 @@ public class CodeProfilerService extends BaseService {
 
 		public long totalNanos() {
 			return totalNanos.get();
+		}
+
+		/**
+		 * INCLUSIVE wall time charged to this span by call-site brackets: the elapsed
+		 * time of every invocation whose call site is this span, INCLUDING the work the
+		 * called code ran. Only populated for call-site spans (see {@link #markEnter}/
+		 * {@link #markExit}); self time ({@link #totalNanos()}) excludes called-subtree
+		 * time, but this field includes it.
+		 *
+		 * @return accumulated inclusive nanoseconds
+		 */
+		public long inclusiveNanos() {
+			return inclusiveNanos.get();
 		}
 
 		void incrementCount() {
@@ -1060,19 +1225,32 @@ public class CodeProfilerService extends BaseService {
 			totalNanos.addAndGet( delta );
 		}
 
+		void addInclusiveNanos( long delta ) {
+			inclusiveNanos.addAndGet( delta );
+		}
+
 		@Override
 		public String toString() {
-			return "count=" + count.get() + ", nanos=" + totalNanos.get();
+			return "count=" + count.get() + ", nanos=" + totalNanos.get() + ", inclusive=" + inclusiveNanos.get();
 		}
 	}
 
 	/**
 	 * Immutable per-line aggregate.
+	 *
+	 * @param line           the 1-based line number
+	 * @param covered        true when any executable span touching the line ran
+	 * @param totalNanos     SELF time: sum of {@code totalNanos} over all spans on the line
+	 * @param inclusiveNanos INCLUSIVE call time: sum of {@code inclusiveNanos} over all spans
+	 *                       on the line (time spent in calls made on this line, including
+	 *                       what those calls ran). 0 for lines with no calls.
+	 * @param count          execution count of the first/outermost span on the line
 	 */
 	public record LineCoverage(
 	    int line,
 	    boolean covered,
 	    long totalNanos,
+	    long inclusiveNanos,
 	    long count ) {
 	}
 

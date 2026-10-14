@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.services.CodeProfilerService;
 import ortus.boxlang.runtime.services.coverage.LineCoverageHTMLRenderer;
 import ortus.boxlang.runtime.services.coverage.SpanHTMLRenderer;
+import ortus.boxlang.runtime.services.coverage.SpanHeatmapHTMLRenderer;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -80,6 +81,11 @@ class ScratchSpanHTMLTest {
 		runSample( "src/test/resources/profiler/ProfilerSample.cfs" );
 		runSample( "src/test/resources/profiler/ProfilerSample.bxm" );
 		runSample( "src/test/resources/profiler/ProfilerSample.cfm" );
+
+		// The HEAT MAP showcase — purpose-built to exercise the heat-map scenarios
+		// (one-shot slow, many-cheap, both, per-run, floor, missed, deep chain).
+		// Running it emits its blueprints so the -heat-* views render alongside.
+		runSample( "src/test/resources/profiler/HeatmapShowcase.bxs" );
 
 		// The GHOST disk classes are NEVER referenced by the samples (that is the
 		// whole point — their blueprints must show ALL RED). They only need to be
@@ -140,6 +146,15 @@ class ScratchSpanHTMLTest {
 		System.out.println( "WROTE: " + spanOut );
 		Path lineOut = LineCoverageHTMLRenderer.renderToFile( this.service, fileKey, outDir + "/" + fileName + "-line.html", fileName );
 		System.out.println( "WROTE: " + lineOut );
+
+		// SPAN-ONLY heat maps: hottest by total time, per-run cost, and count.
+		Path	heatTotal	= SpanHeatmapHTMLRenderer.renderToFile( this.service, fileKey, outDir + "/" + fileName + "-heat-total.html", fileName,
+		    SpanHeatmapHTMLRenderer.Metric.TIME_TOTAL, 0L );
+		Path	heatPerRun	= SpanHeatmapHTMLRenderer.renderToFile( this.service, fileKey, outDir + "/" + fileName + "-heat-perrun.html", fileName,
+		    SpanHeatmapHTMLRenderer.Metric.TIME_PER_RUN, 0L );
+		Path	heatCount	= SpanHeatmapHTMLRenderer.renderToFile( this.service, fileKey, outDir + "/" + fileName + "-heat-count.html", fileName,
+		    SpanHeatmapHTMLRenderer.Metric.COUNT, 0L );
+		System.out.println( "WROTE: " + heatTotal + ", " + heatPerRun + ", " + heatCount );
 
 		String source = null;
 		try {

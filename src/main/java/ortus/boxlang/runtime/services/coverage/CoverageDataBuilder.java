@@ -115,6 +115,7 @@ public final class CoverageDataBuilder {
 				lv.put( "covered", lc.covered() );
 				lv.put( "count", lc.count() );
 				lv.put( "totalNanos", lc.totalNanos() );
+				lv.put( "inclusiveNanos", lc.inclusiveNanos() );
 				lineObj.put( Key.of( line ), lv );
 				execLines++;
 				if ( lc.covered() ) {
@@ -170,6 +171,7 @@ public final class CoverageDataBuilder {
 				sv.put( "endCol", s.endCol() );
 				sv.put( "count", s.stats().count() );
 				sv.put( "totalNanos", s.stats().totalNanos() );
+				sv.put( "inclusiveNanos", s.stats().inclusiveNanos() );
 				spanArr.append( sv );
 			}
 			fileObj.put( "spans", spanArr );

@@ -36,6 +36,7 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.objectweb.asm.tree.TypeInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.BoxByteCodeVersion;
 import ortus.boxlang.compiler.IBoxpiler;
@@ -141,6 +142,95 @@ public class AsmHelper {
 		    Type.getInternalName( CodeProfilerService.class ),
 		    "markEnd",
 		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ), Type.getType( Blueprint.class ) ),
+		    false
+		) );
+		return nodes;
+	}
+
+	/**
+	 * Emit the bytecode for opening a call-site bracket:
+	 * {@code CodeProfilerService.markEnter( id, spanId, blueprint )}. Purely additive
+	 * inclusive timing — see {@link CodeProfilerService#markEnter}.
+	 *
+	 * @param internalClassName the class holding the id + blueprint static fields
+	 * @param idField           the blueprint KEY static field name
+	 * @param blueprintField    the {@link Blueprint} static field name
+	 * @param spanId            the call-site span id within that blueprint
+	 *
+	 * @return the instructions
+	 */
+	public static List<AbstractInsnNode> invokeStaticMarkEnter( String internalClassName, String idField, String blueprintField, int spanId ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, idField, Type.getDescriptor( String.class ) ) );
+		nodes.add( new LdcInsnNode( spanId ) );
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, blueprintField, Type.getDescriptor( Blueprint.class ) ) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( CodeProfilerService.class ),
+		    "markEnter",
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ), Type.INT_TYPE, Type.getType( Blueprint.class ) ),
+		    false
+		) );
+		return nodes;
+	}
+
+	/**
+	 * Emit the bytecode for closing a call-site bracket:
+	 * {@code CodeProfilerService.markExit( id, blueprint )}. Purely additive
+	 * inclusive timing — see {@link CodeProfilerService#markExit}.
+	 *
+	 * @param internalClassName the class holding the id + blueprint static fields
+	 * @param idField           the blueprint KEY static field name
+	 * @param blueprintField    the {@link Blueprint} static field name
+	 *
+	 * @return the instructions
+	 */
+	public static List<AbstractInsnNode> invokeStaticMarkExit( String internalClassName, String idField, String blueprintField ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, idField, Type.getDescriptor( String.class ) ) );
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, blueprintField, Type.getDescriptor( Blueprint.class ) ) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( CodeProfilerService.class ),
+		    "markExit",
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ), Type.getType( Blueprint.class ) ),
+		    false
+		) );
+		return nodes;
+	}
+
+	/**
+	 * Emit {@code CodeProfilerService.markDepth()} — the current call-bracket depth.
+	 *
+	 * @return the instructions
+	 */
+	public static List<AbstractInsnNode> invokeStaticMarkDepth() {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( CodeProfilerService.class ),
+		    "markDepth",
+		    Type.getMethodDescriptor( Type.INT_TYPE ),
+		    false
+		) );
+		return nodes;
+	}
+
+	/**
+	 * Emit {@code CodeProfilerService.markUnwindTo( depth )} — expects the target
+	 * depth already on the operand stack — closes all call brackets opened since the
+	 * captured depth (used by a method's catch-all handler to close brackets when an
+	 * exception escapes).
+	 *
+	 * @return the instructions
+	 */
+	public static List<AbstractInsnNode> invokeStaticMarkUnwindTo() {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( CodeProfilerService.class ),
+		    "markUnwindTo",
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.INT_TYPE ),
 		    false
 		) );
 		return nodes;
@@ -1765,13 +1855,33 @@ public class AsmHelper {
 		LabelNode				handler		= new LabelNode();
 		LabelNode				end			= new LabelNode();
 
-		nodes.add( 0, tryStart );
+		// Capture the call-bracket depth on entry so the handler can UNWIND any
+		// bracket the body opened (a call whose callee threw through this method).
+		// Only needed when inclusive call timing is active. The capture MUST sit
+		// BEFORE tryStart so the local is initialized on every path that reaches the
+		// handler (otherwise the verifier sees an uninitialized local -> VerifyError).
+		boolean					inclusive	= transpiler.isInclusiveTimingEnabled();
+		VarStore				depthVar	= inclusive ? tracker.storeNewVariable( Opcodes.ISTORE ) : null;
+		List<AbstractInsnNode>	prefix		= new ArrayList<>();
+		if ( inclusive ) {
+			prefix.addAll( transpiler.emitMarkDepth() );
+			prefix.addAll( depthVar.nodes() );
+		}
+		prefix.add( tryStart );
+		nodes.addAll( 0, prefix );
 		// After the body completes NORMALLY jump past the handler (the handler
 		// must only run on the exceptional path — otherwise the fall-through
 		// flow hits ATHROW with a non-Throwable on the stack → VerifyError).
 		nodes.add( tryEnd );
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, end ) );
 		nodes.add( handler );
+		// Unwind any call brackets the body opened (a call whose callee threw through
+		// this method) back to the entry depth, so inclusive time is still charged to
+		// the abandoned call-site spans. Runs before markEnd/rethrow.
+		if ( inclusive ) {
+			nodes.add( new VarInsnNode( Opcodes.ILOAD, depthVar.index() ) );
+			nodes.addAll( invokeStaticMarkUnwindTo() );
+		}
 		// Close the probe interval, then rethrow the caught Throwable (still on
 		// the stack). markEnd charges the open interval to the throwing span.
 		nodes.addAll( transpiler.emitMarkEnd() );

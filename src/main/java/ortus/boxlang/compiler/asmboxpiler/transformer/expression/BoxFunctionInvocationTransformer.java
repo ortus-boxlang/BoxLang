@@ -45,9 +45,20 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 
+		// INCLUSIVE timing: bracket the invocation so the call-site span records how
+		// long the call was on the stack (argument evaluation happens inside the call
+		// helper below, so this measures args + the call — per the agreed design).
+		// Additive only: it does NOT disturb the flat self-time probe chain.
+		int callSpan = transpiler.spanIdOf( function );
+		nodes.addAll( transpiler.emitMarkEnter( callSpan ) );
+
 		TransformerContext argContext = safe ? TransformerContext.SAFE : context;
 		nodes.addAll( AsmHelper.callinvokeFunction( transpiler, Type.getType( Key.class ), function.getArguments(), transpiler.createKey( function.getName() ),
 		    argContext, safe, function.isNamedArgs(), function.hasSpread() ) );
+
+		if ( callSpan >= 0 ) {
+			nodes.addAll( transpiler.emitMarkExit() );
+		}
 
 		if ( returnContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );
