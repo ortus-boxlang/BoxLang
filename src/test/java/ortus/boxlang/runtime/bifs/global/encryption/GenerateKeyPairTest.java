@@ -33,7 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -101,12 +101,19 @@ public class GenerateKeyPairTest {
 
 	@DisplayName( "Each supported algorithm generates a parseable pair" )
 	@ParameterizedTest
-	@CsvSource( delimiter = '|', value = {
-	    "'Ed25519'|Ed25519", "'Ed448'|Ed448", "'X25519'|X25519", "'X448'|X448", "'RSA'|RSA", "'EC'|EC",
-	    "algorithm='RSA', keySize=3072|RSA", "algorithm='EC', curve='secp384r1'|EC"
-	} )
-	public void testEachAlgorithm( String args, String algorithm ) throws Exception {
-		IStruct kp = generate( args );
+	@ValueSource( strings = { "Ed25519", "Ed448", "X25519", "X448", "RSA", "EC" } )
+	public void testEachAlgorithm( String algorithm ) throws Exception {
+		assertParseable( generate( "algorithm=\"" + algorithm + "\"" ), algorithm );
+	}
+
+	@DisplayName( "RSA keySize and EC curve options work" )
+	@Test
+	public void testOptions() throws Exception {
+		assertParseable( generate( "algorithm=\"RSA\", keySize=3072" ), "RSA" );
+		assertParseable( generate( "algorithm=\"EC\", curve=\"secp384r1\"" ), "EC" );
+	}
+
+	private void assertParseable( IStruct kp, String algorithm ) throws Exception {
 		assertThat( kp.getAsString( Key.algorithm ) ).isEqualTo( algorithm );
 		KeyFactory factory = KeyFactory.getInstance( algorithm );
 		assertThat( factory.generatePrivate( new PKCS8EncodedKeySpec( Base64.getDecoder().decode( kp.getAsString( Key.privateKey ) ) ) ) ).isNotNull();
