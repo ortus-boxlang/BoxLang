@@ -25,7 +25,8 @@ public enum BoxSourceType {
 	CFSCRIPT,
 	CFTEMPLATE,
 	BOXSCRIPT,
-	BOXTEMPLATE;
+	BOXTEMPLATE,
+	GROOVYSCRIPT;
 
 	/**
 	 * Check if this source type is a CF type (CFSCRIPT or CFTEMPLATE)
@@ -43,5 +44,14 @@ public enum BoxSourceType {
 	 */
 	public boolean isBoxType() {
 		return this == BOXSCRIPT || this == BOXTEMPLATE;
+	}
+
+	/**
+	 * Check if this source type is a Groovy type (GROOVYSCRIPT)
+	 *
+	 * @return true if this is a Groovy type
+	 */
+	public boolean isGroovyType() {
+		return this == GROOVYSCRIPT;
 	}
 }
