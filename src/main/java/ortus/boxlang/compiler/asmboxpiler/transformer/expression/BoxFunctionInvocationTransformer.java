@@ -48,9 +48,12 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		// INCLUSIVE timing: bracket the invocation so the call-site span records how
 		// long the call was on the stack (argument evaluation happens inside the call
 		// helper below, so this measures args + the call — per the agreed design).
-		// Additive only: it does NOT disturb the flat self-time probe chain.
-		int callSpan = transpiler.spanIdOf( function );
-		nodes.addAll( transpiler.emitMarkEnter( callSpan ) );
+		// Additive only: it does NOT disturb the flat self-time probe chain. The call's
+		// atomic SHELL members (head `callee(` + tail `)`) are charged the same time so
+		// the `)` reports the SAME on-stack time as the head.
+		int		callSpan	= transpiler.callSpanIdOf( function );
+		int[]	shell		= callSpan >= 0 ? transpiler.peekCallShell( callSpan ) : null;
+		nodes.addAll( transpiler.emitMarkEnter( callSpan, shell ) );
 
 		TransformerContext argContext = safe ? TransformerContext.SAFE : context;
 		nodes.addAll( AsmHelper.callinvokeFunction( transpiler, Type.getType( Key.class ), function.getArguments(), transpiler.createKey( function.getName() ),

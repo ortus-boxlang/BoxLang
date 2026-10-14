@@ -62,11 +62,12 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		// own start position may not coincide with a span boundary (e.g. when the node
 		// start is the method name rather than the receiver) — fall back to the
 		// receiver's start, which is the statement/expression boundary.
-		int callSpan = transpiler.spanIdOf( invocation );
+		int callSpan = transpiler.callSpanIdOf( invocation );
 		if ( callSpan < 0 && invocation.getObj() != null ) {
-			callSpan = transpiler.spanIdOf( invocation.getObj() );
+			callSpan = transpiler.callSpanIdOf( invocation.getObj() );
 		}
-		nodes.addAll( transpiler.emitMarkEnter( callSpan ) );
+		int[] shell = callSpan >= 0 ? transpiler.peekCallShell( callSpan ) : null;
+		nodes.addAll( transpiler.emitMarkEnter( callSpan, shell ) );
 
 		nodes.addAll( AsmHelper.callReferencerGetAndInvoke( transpiler, invocation.getArguments(), name, context, safe,
 		    invocation.isNamedArgs(), invocation.hasSpread() ) );

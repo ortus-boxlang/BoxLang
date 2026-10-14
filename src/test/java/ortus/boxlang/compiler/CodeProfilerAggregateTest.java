@@ -338,7 +338,7 @@ class CodeProfilerAggregateTest {
 	// 7. Many sibling calls on one line: count + inclusive sum
 	// -------------------------------------------------------------------------
 
-	@DisplayName( "It sums inclusive time across several calls on one line" )
+	@DisplayName( "It counts the calls on a single line" )
 	@Test
 	void testManySiblingCallsOneLine() {
 		String source = """
@@ -350,15 +350,49 @@ class CodeProfilerAggregateTest {
 		runtime.executeSource( source );
 		String key = keyFor( source );
 
-		// Four calls on line 4; the callee body ran 4x. The line's inclusive time is
-		// the SUM (~40ms), and its count comes from the outermost span.
+		// Four calls on line 4; the callee body ran 4x.
 		assertLineCount( key, 2, 4 );
-		assertThat( service.lineAt( key, 4 ).nanos() ).isAtLeast( 40L * 1_000_000L );
-		assertThat( service.lineAt( key, 4 ).nanos() ).isAtMost( 400L * 1_000_000L );
+		// The statement line ran once (count = first/outermost span on the line).
+		assertLineCount( key, 4, 1 );
+
+		// ALL FOUR calls must be bracketed for inclusive timing — including the FIRST
+		// one, which sits inside the leading span `a = tick() + ` (starting at `a`, not
+		// at the call). Before the containing-span fallback only 3 of the 4 calls were
+		// bracketed, so the line reported ~3 sleeps. Require ~4 sleeps: a 3-call line
+		// (~30ms) must fail.
+		long lineNanos = service.lineAt( key, 4 ).nanos();
+		assertThat( lineNanos ).isAtLeast( 35L * 1_000_000L );
+		assertThat( lineNanos ).isAtMost( 80L * 1_000_000L );
 	}
 
 	// -------------------------------------------------------------------------
-	// 8. Abort/throw through a deep chain keeps inclusive timing on every frame
+	// 8. Same-line nested call args must NOT double count the line's time
+	// -------------------------------------------------------------------------
+
+	@DisplayName( "It does not double count same-line nested call arguments" )
+	@Test
+	void testSameLineNestedArgsNotDoubleCounted() {
+		// getData1()=100ms, getData2()=200ms, processData body=100ms. The argument calls
+		// run INSIDE processData's bracket, on the SAME line, so the line's on-stack time
+		// must be processData's inclusive (~400ms) — NOT the sum of the args PLUS the
+		// call (~700ms). The arg spans' time is already inside the call's inclusive.
+		String source = """
+		                getData1 = ()->sleep(100);
+		                getData2 = ()->sleep(200);
+		                processData = (a, b)->sleep(100)
+		                processData( getData1(), getData2() );
+		                """;
+		runtime.executeSource( source );
+		String	key			= keyFor( source );
+
+		long	lineNanos	= service.lineAt( key, 4 ).nanos();
+		// ~400ms (the whole call), definitely not ~700ms (double-counted).
+		assertThat( lineNanos ).isAtLeast( 400L * 1_000_000L );
+		assertThat( lineNanos ).isAtMost( 600L * 1_000_000L );
+	}
+
+	// -------------------------------------------------------------------------
+	// 9. Abort/throw through a deep chain keeps inclusive timing on every frame
 	// -------------------------------------------------------------------------
 
 	@DisplayName( "It records inclusive time on each frame when a deep chain throws" )
@@ -397,5 +431,48 @@ class CodeProfilerAggregateTest {
 		// Monotonic across the unwound chain.
 		assertInclusiveAtLeast( key, 11, 9 );
 		assertInclusiveAtLeast( key, 9, 6 );
+	}
+
+	// -------------------------------------------------------------------------
+	// 10. The call SHELL: `)` carries the SAME inclusive time as the head `callee(`
+	// -------------------------------------------------------------------------
+
+	@DisplayName( "It gives the closing ) the SAME on-stack time as the call head" )
+	@Test
+	void testCallCloseParenSharesHeadInclusiveTime() {
+		// The shell around the args — `processData(` and `)` — is ONE atomic unit: it
+		// runs exactly when the call runs. So the `)` span must report the SAME
+		// on-stack (inclusive) time as the head `processData(` span — NOT a separate,
+		// near-zero probe time. Between the head and the `)` the body sleeps ~100ms.
+		String source = """
+		                getData1 = ()->sleep(100);
+		                getData2 = ()->sleep(200);
+		                processData = (a, b)->sleep(100)
+		                processData( getData1(), getData2() );
+		                """;
+		runtime.executeSource( source );
+		String						key		= keyFor( source );
+
+		// Find the head (`processData(`) and tail (`)`) spans ON LINE 4.
+		CodeProfilerService.Span	head	= null;
+		CodeProfilerService.Span	tail	= null;
+		for ( CodeProfilerService.Span s : service.fileSpans( key ) ) {
+			if ( s.startLine() != 4 ) {
+				continue;
+			}
+			String text = service.spanSourceText( key, source, s );
+			if ( "processData(".equals( text ) ) {
+				head = s;
+			} else if ( ")".equals( text ) ) {
+				tail = s;
+			}
+		}
+		assertThat( head ).isNotNull();
+		assertThat( tail ).isNotNull();
+
+		// The shell's inclusive time: the head is on the stack the whole call (~400ms).
+		assertThat( head.stats().onStackNanos() ).isAtLeast( 400L * 1_000_000L );
+		// THE INVARIANT: the `)` shares that time EXACTLY (same atomic shell).
+		assertThat( tail.stats().onStackNanos() ).isEqualTo( head.stats().onStackNanos() );
 	}
 }

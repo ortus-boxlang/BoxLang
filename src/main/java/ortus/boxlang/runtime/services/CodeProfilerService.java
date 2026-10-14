@@ -133,6 +133,7 @@ public class CodeProfilerService extends BaseService {
 
 		long[]		nums	= new long[ 32 ];	// interleaved [callSpanId, startNano] per frame
 		Object[]	files	= new Object[ 16 ];	// call-site FileBlueprint
+		int[][]		shells	= new int[ 16 ][];	// call-site SHELL members to charge on exit (see #markEnter)
 		int			depth	= 0;
 
 		void ensureCapacity( int d ) {
@@ -141,6 +142,9 @@ public class CodeProfilerService extends BaseService {
 			}
 			if ( d >= files.length ) {
 				files = java.util.Arrays.copyOf( files, files.length * 2 );
+			}
+			if ( d >= shells.length ) {
+				shells = java.util.Arrays.copyOf( shells, shells.length * 2 );
 			}
 		}
 	}
@@ -365,6 +369,24 @@ public class CodeProfilerService extends BaseService {
 	 * @param blueprint the class's blueprint, or null when not supplied
 	 */
 	public static void markEnter( String id, int spanId, Blueprint blueprint ) {
+		markEnter( id, spanId, blueprint, null );
+	}
+
+	/**
+	 * Open a call-site bracket for INCLUSIVE timing TOGETHER WITH the call's atomic
+	 * SHELL members — the fragments that always run when the call runs (the head
+	 * {@code callee(} and the closing {@code )}). The shell is atomic: every member
+	 * is on the stack for the WHOLE call, so on {@link #markExit} each shell member
+	 * shares the call-site span's inclusive time rather than keeping its own tiny
+	 * probe time. This is what makes the {@code )} span report the same on-stack time
+	 * as the head.
+	 *
+	 * @param id         the blueprint KEY (normalized file path or source hash)
+	 * @param spanId     the call-site span id within that blueprint
+	 * @param blueprint  the class's blueprint, or null when not supplied
+	 * @param shellSpans the call's atomic shell span ids (may be null/empty), or null
+	 */
+	public static void markEnter( String id, int spanId, Blueprint blueprint, int[] shellSpans ) {
 		CodeProfilerService service = instance;
 		if ( service == null || !service.active ) {
 			return;
@@ -376,6 +398,7 @@ public class CodeProfilerService extends BaseService {
 		CallStack cs = service.callStack.get();
 		cs.ensureCapacity( cs.depth );
 		cs.files[ cs.depth ]		= fb;
+		cs.shells[ cs.depth ]		= shellSpans;
 		cs.nums[ 2 * cs.depth ]		= spanId;
 		cs.nums[ 2 * cs.depth + 1 ]	= System.nanoTime();
 		cs.depth++;
@@ -404,14 +427,87 @@ public class CodeProfilerService extends BaseService {
 		FileBlueprint	fb			= ( FileBlueprint ) cs.files[ top ];
 		int				callSpanId	= ( int ) cs.nums[ 2 * top ];
 		long			startNano	= cs.nums[ 2 * top + 1 ];
+		int[]			shellSpans	= cs.shells[ top ];
 
+		long			elapsed		= System.nanoTime() - startNano;
+		// Charge the call-site span AND every atomic shell member (the `callee(` head
+		// and the `)` tail) the SAME inclusive time: the shell is on the stack for the
+		// whole call, so the `)` reports the same on-stack time as the head.
 		SpanStats		callStats	= fb == null ? null : fb.spanStats( callSpanId );
 		if ( callStats != null ) {
-			callStats.addInclusiveNanos( System.nanoTime() - startNano );
+			callStats.addInclusiveNanos( elapsed );
 		}
+		chargeShell( fb, shellSpans, callSpanId, elapsed );
 
-		cs.files[ top ] = null;
+		// LINE DOUBLE-COUNT GUARD: if this call bracket ran inside ANOTHER call
+		// bracket on the same line (e.g. the argument call in
+		// `processData( getData1() )`), its time is already inside the enclosing
+		// bracket's inclusive time — record it so LINE aggregation subtracts it.
+		markSameLineNested( cs, top, elapsed );
+
+		cs.files[ top ]		= null;
+		cs.shells[ top ]	= null;
 		cs.depth--;
+	}
+
+	/**
+	 * Charge the atomic SHELL members of a call (the head {@code callee(} and the
+	 * closing {@code )}) the same inclusive time as the call-site span — the shell is
+	 * on the stack for the whole call, so all its fragments report identical on-stack
+	 * time.
+	 * <p>
+	 * Each non-call-site member also records the SAME amount as line-nested, because
+	 * it is a duplicate of the call-site span's time on the line: LINE aggregation
+	 * then sums the shell exactly once (via the head/call-site span) instead of
+	 * counting the head and the {@code )} separately. Span-level reports still show
+	 * the member's full on-stack time.
+	 *
+	 * @param fb         the call-site blueprint
+	 * @param shellSpans the shell span ids (may be null/empty)
+	 * @param callSpanId the call-site span id (skipped — it owns the line)
+	 * @param elapsed    the inclusive nanoseconds to charge
+	 */
+	private static void chargeShell( FileBlueprint fb, int[] shellSpans, int callSpanId, long elapsed ) {
+		if ( fb == null || shellSpans == null || shellSpans.length == 0 || elapsed <= 0 ) {
+			return;
+		}
+		for ( int member : shellSpans ) {
+			if ( member == callSpanId ) {
+				continue;
+			}
+			SpanStats memberStats = fb.spanStats( member );
+			if ( memberStats != null ) {
+				memberStats.addInclusiveNanos( elapsed );
+				memberStats.addNestedNanos( elapsed );
+			}
+		}
+	}
+
+	/**
+	 * Record on the frame at {@code top} the elapsed time that was same-line-nested
+	 * inside the enclosing frame (immediately below it on the stack) when both call
+	 * spans sit on the SAME source line.
+	 *
+	 * @param cs      the thread's call stack
+	 * @param top     the index of the frame being closed
+	 * @param elapsed the bracket's elapsed nanoseconds
+	 */
+	private static void markSameLineNested( CallStack cs, int top, long elapsed ) {
+		if ( top <= 0 ) {
+			return;
+		}
+		FileBlueprint	childFb		= ( FileBlueprint ) cs.files[ top ];
+		int				childSpan	= ( int ) cs.nums[ 2 * top ];
+		FileBlueprint	parentFb	= ( FileBlueprint ) cs.files[ top - 1 ];
+		int				parentSpan	= ( int ) cs.nums[ 2 * ( top - 1 ) ];
+		if ( childFb == null || parentFb == null ) {
+			return;
+		}
+		Span	child	= childFb.span( childSpan );
+		Span	parent	= parentFb.span( parentSpan );
+		if ( child != null && parent != null && child.startLine() == parent.startLine() ) {
+			child.stats().addNestedNanos( elapsed );
+		}
 	}
 
 	/**
@@ -450,11 +546,18 @@ public class CodeProfilerService extends BaseService {
 			FileBlueprint	fb			= ( FileBlueprint ) cs.files[ top ];
 			int				callSpanId	= ( int ) cs.nums[ 2 * top ];
 			long			startNano	= cs.nums[ 2 * top + 1 ];
+			int[]			shellSpans	= cs.shells[ top ];
+			long			elapsed		= Math.max( 0L, end - startNano );
+			// Charge the call-site span AND its atomic shell members (head `callee(` /
+			// tail `)`) the same inclusive time on the exception path too.
 			SpanStats		callStats	= fb == null ? null : fb.spanStats( callSpanId );
 			if ( callStats != null ) {
-				callStats.addInclusiveNanos( Math.max( 0L, end - startNano ) );
+				callStats.addInclusiveNanos( elapsed );
 			}
-			cs.files[ top ] = null;
+			chargeShell( fb, shellSpans, callSpanId, elapsed );
+			markSameLineNested( cs, top, elapsed );
+			cs.files[ top ]		= null;
+			cs.shells[ top ]	= null;
 			cs.depth--;
 		}
 	}
@@ -928,8 +1031,12 @@ public class CodeProfilerService extends BaseService {
 		boolean	covered		= spans.stream().anyMatch( s -> s.stats().count() > 0 );
 		long	lineCount	= spans.get( 0 ).stats().count(); // first/outermost span
 		// The single line time: SUM of the spans' ON-THE-STACK time (inclusive for
-		// call spans, self for leaf spans). This is the only time number surfaced.
-		long	nanos		= spans.stream().mapToLong( s -> s.stats().onStackNanos() ).sum();
+		// call spans, self for leaf spans), EXCLUDING spans whose bracket ran nested
+		// inside another call bracket on the same line — their time is already inside
+		// the enclosing span's inclusive time, so counting them would double it.
+		long	nanos		= spans.stream()
+		    .mapToLong( s -> Math.max( 0L, s.stats().onStackNanos() - s.stats().lineNestedNanos() ) )
+		    .sum();
 		return new LineCoverage( line, covered, nanos, lineCount );
 	}
 
@@ -1195,6 +1302,13 @@ public class CodeProfilerService extends BaseService {
 		private final AtomicLong	totalNanos		= new AtomicLong();
 		private final AtomicLong	inclusiveNanos	= new AtomicLong();
 
+		/**
+		 * Inclusive time of this span's invocations that ran NESTED inside another call
+		 * bracket on the SAME line (see {@link #lineNestedNanos()}). Subtracted from the
+		 * span's time during LINE aggregation so the same wall time is not counted twice.
+		 */
+		private final AtomicLong	nestedNanos		= new AtomicLong();
+
 		public long count() {
 			return count.get();
 		}
@@ -1230,6 +1344,23 @@ public class CodeProfilerService extends BaseService {
 		 */
 		public long onStackNanos() {
 			return Math.max( totalNanos.get(), inclusiveNanos.get() );
+		}
+
+		/**
+		 * The part of this span's inclusive time that was spent NESTED inside another
+		 * call bracket on the SAME source line (e.g. the argument call in
+		 * {@code processData( getData1() )}). That time is already counted inside the
+		 * enclosing span's inclusive time, so LINE aggregation subtracts it from this
+		 * span's contribution to avoid double-counting the same wall time.
+		 *
+		 * @return the same-line-nested nanoseconds
+		 */
+		public long lineNestedNanos() {
+			return nestedNanos.get();
+		}
+
+		void addNestedNanos( long delta ) {
+			nestedNanos.addAndGet( delta );
 		}
 
 		void incrementCount() {

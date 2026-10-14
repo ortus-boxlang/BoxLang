@@ -142,7 +142,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		// records how long the whole tag (its internal work + body) was on the stack.
 		// markEnter/markExit are void and leave the operand stack untouched, so they
 		// sit safely between the argument setup and the invokeComponent call.
-		int callSpan = transpiler.spanIdOf( boxComponent );
+		int callSpan = transpiler.callSpanIdOf( boxComponent );
 		nodes.addAll( transpiler.emitMarkEnter( callSpan ) );
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,

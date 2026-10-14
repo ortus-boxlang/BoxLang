@@ -111,3 +111,16 @@ for( i in 1..5000 ) {
     // This line will count for 5 seconds, but runs 5,000 times, so the per-run time is still tiny.
     sleep( 1 );
 }
+
+getData1 = ()->sleep(100);
+getData2 = ()->sleep(200);
+getData3 = ()->sleep(300);
+processData = (data1, data2, data3)->sleep(100)
+
+processData( getData1(), getData2(), getData3() );
+
+processData(
+    getData1(),
+    getData2(),
+    getData3()
+);

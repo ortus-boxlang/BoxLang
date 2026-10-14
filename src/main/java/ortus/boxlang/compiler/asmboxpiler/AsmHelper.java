@@ -164,11 +164,58 @@ public class AsmHelper {
 		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, idField, Type.getDescriptor( String.class ) ) );
 		nodes.add( new LdcInsnNode( spanId ) );
 		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, blueprintField, Type.getDescriptor( Blueprint.class ) ) );
+		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		nodes.add( new MethodInsnNode(
 		    Opcodes.INVOKESTATIC,
 		    Type.getInternalName( CodeProfilerService.class ),
 		    "markEnter",
-		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ), Type.INT_TYPE, Type.getType( Blueprint.class ) ),
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ), Type.INT_TYPE, Type.getType( Blueprint.class ),
+		        Type.getType( int[].class ) ),
+		    false
+		) );
+		return nodes;
+	}
+
+	/**
+	 * Emit the bytecode for opening a call-site bracket WITH its atomic shell members:
+	 * {@code CodeProfilerService.markEnter( id, spanId, blueprint, shellSpans )}. The
+	 * shell members (the {@code callee(} head and the {@code )} tail) each receive the
+	 * call-site span's inclusive time on exit, so the {@code )} reports the SAME
+	 * on-stack time as the head. Purely additive inclusive timing — see
+	 * {@link CodeProfilerService#markEnter(String, int, Blueprint, int[])}.
+	 *
+	 * @param internalClassName the class holding the id + blueprint static fields
+	 * @param idField           the blueprint KEY static field name
+	 * @param blueprintField    the {@link Blueprint} static field name
+	 * @param spanId            the call-site span id within that blueprint
+	 * @param shellSpans        the call's atomic shell span ids (may be null/empty)
+	 *
+	 * @return the instructions
+	 */
+	public static List<AbstractInsnNode> invokeStaticMarkEnter( String internalClassName, String idField, String blueprintField, int spanId,
+	    int[] shellSpans ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, idField, Type.getDescriptor( String.class ) ) );
+		nodes.add( new LdcInsnNode( spanId ) );
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, internalClassName, blueprintField, Type.getDescriptor( Blueprint.class ) ) );
+		if ( shellSpans == null || shellSpans.length == 0 ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		} else {
+			nodes.add( new LdcInsnNode( shellSpans.length ) );
+			nodes.add( new IntInsnNode( Opcodes.NEWARRAY, Opcodes.T_INT ) );
+			for ( int i = 0; i < shellSpans.length; i++ ) {
+				nodes.add( new InsnNode( Opcodes.DUP ) );
+				nodes.add( new LdcInsnNode( i ) );
+				nodes.add( new LdcInsnNode( shellSpans[ i ] ) );
+				nodes.add( new InsnNode( Opcodes.IASTORE ) );
+			}
+		}
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( CodeProfilerService.class ),
+		    "markEnter",
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ), Type.INT_TYPE, Type.getType( Blueprint.class ),
+		        Type.getType( int[].class ) ),
 		    false
 		) );
 		return nodes;

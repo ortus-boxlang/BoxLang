@@ -38,6 +38,7 @@ import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
@@ -46,6 +47,7 @@ import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
+import ortus.boxlang.compiler.ast.expression.IBoxSimpleLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
@@ -1091,32 +1093,19 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		if ( callee != null ) {
 			callee.accept( this );
 		}
-		// MULTI-LINE invocations (args on later lines, closing `)` on its own line)
-		// need per-argument spans AND a grouped closing tail so every line is
-		// covered — e.g. `fn( spec = {...},\nsuite = ...,\ndata = ...\n);`. For a
-		// SINGLE-LINE call the enclosing statement's span already covers everything
-		// and adding per-arg spans would change the existing span model — so the
-		// single-line path just threads the args through untouched.
-		boolean multiLine = node.getStart() != null && node.getEnd() != null
-		    && node.getEnd().getLine() > node.getStart().getLine();
-		if ( !multiLine ) {
-			for ( BoxArgument arg : arguments ) {
-				if ( arg.getName() != null ) {
-					arg.getName().accept( this );
-				}
-				if ( arg.getValue() != null ) {
-					arg.getValue().accept( this );
-				}
-			}
-			return;
-		}
+		String	source		= node.getPosition() != null && node.getPosition().getSource() != null
+		    ? node.getPosition().getSource().getCode()
+		    : null;
 
-		// Multi-line: break each argument's VALUE out of the running head so it (and
-		// the `,\n` separator before it) gets a REAL span — without this, a named
-		// arg like `suite = thread.suite` on its own line threads the running span
-		// and gets swallowed into the trailing tail with no span of its own (RED).
+		// Each argument's VALUE breaks out of the running head into its OWN span,
+		// ALWAYS — argument evaluation is separate from the call itself, and that has
+		// NOTHING to do with how the call is formatted. A single-line `foo( bar() )`
+		// and a multi-line `foo(\n bar()\n)` MUST produce the same spans (bar() gets
+		// its own span in both). Line breaks and whitespace never change the span
+		// model.
 		Point	lastArgEnd	= null;
 		int[]	lastValueId	= { -1 };
+		int		headId		= -1;
 		for ( int i = 0; i < arguments.size(); i++ ) {
 			BoxArgument		arg		= arguments.get( i );
 			BoxExpression	value	= arg.getValue();
@@ -1124,8 +1113,36 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				arg.getName().accept( this );
 			}
 			if ( value != null ) {
+				// A TRIVIAL argument (a simple literal like `100`, or a bare identifier)
+				// is NOT split into its own span — it threads through the running head,
+				// exactly like a literal inside any other expression. Splitting it would
+				// fragment `sleep( 100 )` into `sleep(` / `100` / `)` and misattribute
+				// timing. Only a NON-trivial argument (a call, operator chain, ternary,
+				// literal-collection, ...) breaks into its own span, because its
+				// evaluation is genuinely separate work from the call.
+				if ( value instanceof IBoxSimpleLiteral || value instanceof BoxIdentifier ) {
+					value.accept( this );
+					continue;
+				}
 				Point	valueStart	= leftmostStart( value );
-				int		sepId		= closeRunningSpan( valueStart );
+				// The FIRST split argument ends the call HEAD. Trim the whitespace
+				// between `(` and the arg so the head is exactly `callee(` — the
+				// whitespace stays an unspanned gap (it is not code that runs).
+				Point	headEnd		= valueStart;
+				boolean	closingHead	= headId < 0;
+				if ( source != null && valueStart != null ) {
+					headEnd = trimTrailingWhitespace( source, valueStart );
+				}
+				int sepId = closeRunningSpan( headEnd );
+				if ( closingHead ) {
+					headId = sepId;
+				}
+				// Skip the whitespace gap: EVERY split arg's own span starts at the arg
+				// itself, never at the trimmed head/separator end, so the arg never
+				// carries leading whitespace.
+				if ( valueStart != null ) {
+					this.runningStart = valueStart;
+				}
 				value.accept( this );
 				Point valueEnd = leftmostEnd( value );
 				closeRunningSpan( valueEnd );
@@ -1146,18 +1163,24 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				}
 			}
 		}
-		// The CLOSING `)` on a LATER line than the last argument is pure text with
-		// no node starting there — it runs whenever the LAST ARGUMENT runs (the `)`
-		// always follows the final arg), so it must be grouped with the LAST
-		// ARGUMENT's span — exactly how a struct's closing `}` is grouped with its
-		// last value — to stay GREEN.
-		if ( lastArgEnd != null && lastValueId[ 0 ] >= 0 && node.getEnd() != null
-		    && node.getEnd().getLine() > lastArgEnd.getLine() ) {
-			Point	tailEnd	= leftmostEnd( node );
-			int		tailId	= closeRunningSpan( tailEnd );
-			if ( tailId >= 0 && tailId != lastValueId[ 0 ] ) {
+		// The CLOSING `)` after the last argument is the call SHELL's tail — it runs
+		// whenever the call runs, on ONE line or MANY (line breaks never matter). It is
+		// marked ATOMICALLY with the call HEAD (`callee(`), because the callee-open-paren
+		// and the close-paren always run together as the fixed shell around the args.
+		// (The args themselves are the separate spans in between.) Only emitted when at
+		// least one argument was actually split — a call whose args are all trivial
+		// (e.g. `sleep( 100 )`) stays ONE span with no separate head/tail.
+		if ( lastArgEnd != null && headId >= 0 && node.getEnd() != null ) {
+			Point tailEnd = leftmostEnd( node );
+			// Trim the whitespace between the last arg and `)` so the tail is exactly
+			// `)` — the whitespace stays an unspanned gap.
+			if ( source != null && lastArgEnd != null ) {
+				this.runningStart = trimLeadingWhitespace( source, lastArgEnd );
+			}
+			int tailId = closeRunningSpan( tailEnd );
+			if ( tailId >= 0 && tailId != headId ) {
 				List<Integer>	group		= new ArrayList<>();
-				int[]			existing	= transpiler.peekSpanGroup( lastValueId[ 0 ] );
+				int[]			existing	= transpiler.peekSpanGroup( headId );
 				if ( existing != null ) {
 					for ( int e : existing ) {
 						if ( !group.contains( e ) ) {
@@ -1165,12 +1188,17 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 						}
 					}
 				} else {
-					group.add( lastValueId[ 0 ] );
+					group.add( headId );
 				}
 				if ( !group.contains( tailId ) ) {
 					group.add( tailId );
 				}
 				transpiler.registerSpanGroup( group.stream().mapToInt( Integer::intValue ).toArray() );
+				// The call's atomic SHELL (head `callee(` + tail `)`) — registered under
+				// the head so the call-site bracket can charge BOTH the same inclusive
+				// time (the shell is on the stack for the whole call). Keyed by the head
+				// span id, which IS the call-site span the bracket opens at.
+				transpiler.registerCallShell( headId, new int[] { headId, tailId } );
 			}
 		}
 	}
@@ -2691,6 +2719,44 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			}
 		}
 		return new Point( line, col );
+	}
+
+	/**
+	 * A copy of the point with any trailing whitespace before it removed, so a span
+	 * that ENDS at the point no longer absorbs the whitespace immediately preceding
+	 * it (e.g. the space before a call's first argument). The whitespace becomes an
+	 * unspanned gap.
+	 *
+	 * @param source the source text
+	 * @param p      the point whose preceding whitespace to trim
+	 *
+	 * @return the trimmed point
+	 */
+	private Point trimTrailingWhitespace( String source, Point p ) {
+		int off = offsetOf( source, p );
+		while ( off > 0 && Character.isWhitespace( source.charAt( off - 1 ) ) ) {
+			off--;
+		}
+		return pointAt( source, off );
+	}
+
+	/**
+	 * A copy of the point with any leading whitespace at it removed, so a span that
+	 * STARTS at the point does not absorb the whitespace immediately after it (e.g.
+	 * the space before a call's closing {@code )}). The whitespace becomes an
+	 * unspanned gap.
+	 *
+	 * @param source the source text
+	 * @param p      the point whose following whitespace to trim
+	 *
+	 * @return the trimmed point
+	 */
+	private Point trimLeadingWhitespace( String source, Point p ) {
+		int off = offsetOf( source, p );
+		while ( off < source.length() && Character.isWhitespace( source.charAt( off ) ) ) {
+			off++;
+		}
+		return pointAt( source, off );
 	}
 
 	/**

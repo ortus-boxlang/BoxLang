@@ -279,10 +279,29 @@ public abstract class Transpiler implements ITranspiler {
 	 * @return the instructions, or an empty list when profiling is off
 	 */
 	public List<AbstractInsnNode> emitMarkEnter( int spanId ) {
+		return emitMarkEnter( spanId, null );
+	}
+
+	/**
+	 * Emit a call-site bracket OPEN for INCLUSIVE timing WITH its atomic shell members
+	 * (the {@code callee(} head and the {@code )} tail): {@code markEnter(id, spanId,
+	 * blueprint, shellSpans)}. On exit each shell member is charged the call-site
+	 * span's inclusive time, so the {@code )} span reports the SAME on-stack time as
+	 * the head. Trailing/duplicate members are passed straight through; a group of
+	 * one (or none) is treated as no shell.
+	 *
+	 * @param spanId     the call-site span id within this blueprint
+	 * @param shellSpans the call's atomic shell span ids, or null
+	 *
+	 * @return the instructions, or an empty list when profiling is off
+	 */
+	public List<AbstractInsnNode> emitMarkEnter( int spanId, int[] shellSpans ) {
 		if ( !hasProfilerId() || spanId < 0 || !inclusiveTimingEnabled ) {
 			return List.of();
 		}
-		return AsmHelper.invokeStaticMarkEnter( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, PROFILER_BLUEPRINT_FIELD, spanId );
+		// Only a real SHELL (head + at least one more member) is worth batching.
+		int[] shell = shellSpans != null && shellSpans.length > 1 ? shellSpans : null;
+		return AsmHelper.invokeStaticMarkEnter( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, PROFILER_BLUEPRINT_FIELD, spanId, shell );
 	}
 
 	/**
@@ -301,6 +320,67 @@ public abstract class Transpiler implements ITranspiler {
 		Point	p		= node.getPosition().getStart();
 		long	packed	= ( ( long ) p.getLine() << 32 ) | ( p.getColumn() & 0xFFFFFFFFL );
 		return getSpanId( packed );
+	}
+
+	/**
+	 * Resolve the span id to bracket a CALL at the given node: the span STARTING at
+	 * the node when one exists, otherwise the INNERMOST span CONTAINING the node's
+	 * start. Invocations embedded in a larger expression — e.g. the FIRST call in
+	 * {@code a = tick() + tick() + tick() + tick()}, which sits inside the leading
+	 * span {@code a = tick() + } (starting at {@code a}, not at the call) — do not
+	 * start a span, so without this fallback they get NO inclusive bracket and the
+	 * line under-counts its calls. The enclosing span's bracket still measures just
+	 * the one call (markEnter is immediately before the invoke, markExit immediately
+	 * after), so charging it there is correct.
+	 *
+	 * @param node the node whose position identifies the call span
+	 *
+	 * @return the span id to bracket, or -1 when profiling is off / no span contains it
+	 */
+	public int callSpanIdOf( BoxNode node ) {
+		if ( !hasProfilerId() || node == null || node.getPosition() == null || node.getPosition().getStart() == null ) {
+			return -1;
+		}
+		int exact = spanIdOf( node );
+		if ( exact >= 0 ) {
+			return exact;
+		}
+		Point	p		= node.getPosition().getStart();
+		long	packed	= ( ( long ) p.getLine() << 32 ) | ( p.getColumn() & 0xFFFFFFFFL );
+		return getContainingSpanId( packed );
+	}
+
+	/**
+	 * The id of the INNERMOST registered executable span that CONTAINS the given
+	 * packed source position, or -1 when none does. "Innermost" = the containing span
+	 * with the latest start position (a nested body span beats the shell that holds
+	 * it). Used by {@link #callSpanIdOf} to bracket a call that does not itself start
+	 * a span.
+	 *
+	 * @param packedStart the packed (line, col) position to locate
+	 *
+	 * @return the containing span id, or -1
+	 */
+	public int getContainingSpanId( long packedStart ) {
+		int		line	= ( int ) ( packedStart >> 32 );
+		int		col		= ( int ) packedStart;
+		long	bestKey	= -1L;
+		for ( int i = 0; i < this.spanDefs.size(); i++ ) {
+			Blueprint.SpanDef s = this.spanDefs.get( i );
+			if ( !s.executable() ) {
+				continue;
+			}
+			boolean	afterStart	= line > s.startLine() || ( line == s.startLine() && col >= s.startCol() );
+			boolean	beforeEnd	= line < s.endLine() || ( line == s.endLine() && col <= s.endCol() );
+			if ( !afterStart || !beforeEnd ) {
+				continue;
+			}
+			long key = ( ( long ) s.startLine() << 32 ) | ( s.startCol() & 0xFFFFFFFFL );
+			if ( key > bestKey ) {
+				bestKey = key;
+			}
+		}
+		return bestKey < 0 ? -1 : getSpanId( bestKey );
 	}
 
 	/**
@@ -536,6 +616,41 @@ public abstract class Transpiler implements ITranspiler {
 	 */
 	public int[] takeSpanGroup( int spanId ) {
 		return this.spanGroups.remove( spanId );
+	}
+
+	/**
+	 * The CALL SHELL members keyed by the call's head span id — the atomic shell
+	 * fragments ({@code callee(} head + {@code )} tail) of a call, used to charge the
+	 * call-site bracket's INCLUSIVE time to the WHOLE shell, so the {@code )} span
+	 * reports the SAME on-stack time as the head. Unlike {@link #spanGroups}, this is
+	 * NEVER consumed (the flat mark path consumes the group for colouring), so the
+	 * transformer can always read it.
+	 */
+	private Map<Integer, int[]> callShells = new java.util.HashMap<>();
+
+	/**
+	 * Register a call's atomic shell members, keyed by the head span id. Idempotent;
+	 * see {@link #peekCallShell}.
+	 *
+	 * @param headSpanId the call head span id (the {@code callee(} span)
+	 * @param shellSpans the shell member span ids, in source order (head first)
+	 */
+	public void registerCallShell( int headSpanId, int[] shellSpans ) {
+		if ( shellSpans != null && shellSpans.length > 1 ) {
+			this.callShells.put( headSpanId, shellSpans );
+		}
+	}
+
+	/**
+	 * The call's atomic shell members for a head span id, WITHOUT consuming them (see
+	 * {@link #registerCallShell}).
+	 *
+	 * @param headSpanId the call head span id (or the call-site span id used by the bracket)
+	 *
+	 * @return the shell member span ids, or null when the call has no distinct shell
+	 */
+	public int[] peekCallShell( int headSpanId ) {
+		return this.callShells.get( headSpanId );
 	}
 
 	/**
