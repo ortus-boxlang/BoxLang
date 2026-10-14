@@ -30,18 +30,24 @@ import java.nio.file.Path;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.NamedParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.HexFormat;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
 
@@ -156,6 +162,22 @@ public final class EncryptionUtil {
 	    Key.of( "HmacSHA3-384" ), "HmacSHA3-384",
 	    Key.of( "HmacSHA3-512" ), "HmacSHA3-512"
 	);
+
+	/**
+	 * Allowed key pair algorithms, keyed by lower case name, mapped to the canonical JDK name
+	 */
+	public static final Map<String, String>			KEY_PAIR_ALGORITHMS				= Map.of(
+	    "ed25519", "Ed25519",
+	    "ed448", "Ed448",
+	    "x25519", "X25519",
+	    "x448", "X448",
+	    "rsa", "RSA",
+	    "ec", "EC"
+	);
+	public static final List<Integer>				RSA_KEY_SIZES					= List.of( 2048, 3072, 4096 );
+	public static final List<String>				EC_CURVES						= List.of( "secp256r1", "secp384r1", "secp521r1" );
+	public static final int							DEFAULT_RSA_KEY_SIZE			= 2048;
+	public static final String						DEFAULT_EC_CURVE				= "secp256r1";
 
 	/**
 	 * URL Encoding properties
@@ -539,6 +561,69 @@ public final class EncryptionUtil {
 	 */
 	public static SecretKey generateKey( String algorithm ) {
 		return generateKey( algorithm, null );
+	}
+
+	/**
+	 * Generates an asymmetric key pair. The JDK SecureRandom is supplemented with the runtime secret seed.
+	 * The private key is never logged.
+	 *
+	 * @param algorithm Ed25519, Ed448, X25519, X448, RSA or EC (case insensitive)
+	 * @param keySize   RSA only: 2048, 3072 or 4096. Null for the default.
+	 * @param curve     EC only: secp256r1, secp384r1 or secp521r1. Null for the default.
+	 *
+	 * @return A struct with algorithm, privateKey (base64 PKCS8 DER), publicKey (base64 X.509 SPKI DER), privatePem and publicPem
+	 */
+	public static IStruct generateKeyPair( String algorithm, Integer keySize, String curve ) {
+		String canonical = KEY_PAIR_ALGORITHMS.get( algorithm == null ? "" : algorithm.trim().toLowerCase() );
+		if ( canonical == null ) {
+			throw new BoxRuntimeException(
+			    String.format( "The key pair algorithm [%s] is not supported. Valid algorithms are: Ed25519, Ed448, X25519, X448, RSA, EC.", algorithm ) );
+		}
+		if ( keySize != null && !canonical.equals( "RSA" ) ) {
+			throw new BoxRuntimeException( String.format( "The keySize argument only applies to RSA, not [%s].", canonical ) );
+		}
+		if ( curve != null && !canonical.equals( "EC" ) ) {
+			throw new BoxRuntimeException( String.format( "The curve argument only applies to EC, not [%s].", canonical ) );
+		}
+		if ( keySize != null && !RSA_KEY_SIZES.contains( keySize ) ) {
+			throw new BoxRuntimeException( String.format( "The RSA keySize [%d] is not supported. Valid sizes are: %s.", keySize, RSA_KEY_SIZES ) );
+		}
+		String ecCurve = curve == null ? DEFAULT_EC_CURVE : curve.trim().toLowerCase();
+		if ( canonical.equals( "EC" ) && !EC_CURVES.contains( ecCurve ) ) {
+			throw new BoxRuntimeException( String.format( "The EC curve [%s] is not supported. Valid curves are: %s.", curve, EC_CURVES ) );
+		}
+
+		// Let the JDK self-seed first, then mix in the runtime secret seed so it can only add entropy
+		SecureRandom random = new SecureRandom();
+		random.nextBytes( new byte[ 1 ] );
+		random.setSeed( BoxRuntime.getInstance().getConfiguration().security.getSecretSeed().getBytes( StandardCharsets.UTF_8 ) );
+
+		try {
+			KeyPairGenerator generator = KeyPairGenerator.getInstance( canonical );
+			switch ( canonical ) {
+				case "RSA" :
+					generator.initialize( keySize == null ? DEFAULT_RSA_KEY_SIZE : keySize, random );
+					break;
+				case "EC" :
+					generator.initialize( new ECGenParameterSpec( ecCurve ), random );
+					break;
+				default :
+					generator.initialize( new NamedParameterSpec( canonical ), random );
+			}
+			KeyPair			pair		= generator.generateKeyPair();
+			byte[]			privateDer	= pair.getPrivate().getEncoded();
+			byte[]			publicDer	= pair.getPublic().getEncoded();
+			Base64.Encoder	pemEncoder	= Base64.getMimeEncoder( 64, new byte[] { '\n' } );
+			return Struct.linkedOf(
+			    Key.algorithm, canonical,
+			    Key.privateKey, Base64.getEncoder().encodeToString( privateDer ),
+			    Key.publicKey, Base64.getEncoder().encodeToString( publicDer ),
+			    Key.privatePem, "-----BEGIN PRIVATE KEY-----\n" + pemEncoder.encodeToString( privateDer ) + "\n-----END PRIVATE KEY-----\n",
+			    Key.publicPem, "-----BEGIN PUBLIC KEY-----\n" + pemEncoder.encodeToString( publicDer ) + "\n-----END PUBLIC KEY-----\n"
+			);
+		} catch ( NoSuchAlgorithmException | InvalidAlgorithmParameterException e ) {
+			throw new BoxRuntimeException( String.format( "Could not generate a [%s] key pair.", canonical ), e );
+		}
 	}
 
 	/**
