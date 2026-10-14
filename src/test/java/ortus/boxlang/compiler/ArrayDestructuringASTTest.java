@@ -25,11 +25,13 @@ import java.io.IOException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
+import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -178,5 +180,65 @@ public class ArrayDestructuringASTTest {
 		BoxAssignment assignment = ( BoxAssignment ) statement.getExpression();
 		assertTrue( assignment.getModifiers().contains( BoxAssignmentModifier.VAR ) );
 		assertTrue( assignment.getLeft() instanceof BoxArrayDestructuringPattern );
+	}
+
+	/**
+	 * Parse a single statement and return its assignment expression.
+	 */
+	private BoxAssignment parseAssignmentStatement( String source, BoxSourceType sourceType ) throws IOException {
+		ParsingResult result = new Parser().parse( source, sourceType );
+		assertTrue( result.isCorrect(), source + " -> " + result.getIssues().toString() );
+		BoxScript script = ( BoxScript ) result.getRoot();
+		assertEquals( 1, script.getStatements().size(), source );
+		BoxExpressionStatement statement = ( BoxExpressionStatement ) script.getStatements().get( 0 );
+		assertTrue( statement.getExpression() instanceof BoxAssignment, source );
+		return ( BoxAssignment ) statement.getExpression();
+	}
+
+	// BL-2750: a single bracket expression after `static` is static scope access, not a destructuring declaration
+	@Test
+	public void testStaticBracketAccessAssignmentAst() throws IOException {
+		for ( BoxSourceType sourceType : new BoxSourceType[] { BoxSourceType.BOXSCRIPT, BoxSourceType.CFSCRIPT } ) {
+			for ( String source : new String[] {
+			    "static[ name ] = value;",
+			    "static [ name ] = value;",
+			    "static[ \"lit\" ] = value;",
+			    "static[ keys[ 1 ] ] = value;",
+			    "static[ fn( a, b ) ] = value;",
+			    "static[ a.b ] = value;",
+			    "static[ \"a,b\" ] = value;",
+			    "static[ \"x#a[ 1 ]#\" ] = value;",
+			    "static[ a == b ] = value;"
+			} ) {
+				BoxAssignment assignment = parseAssignmentStatement( source, sourceType );
+				assertTrue( assignment.getModifiers().isEmpty(), sourceType + " " + source );
+				assertTrue( assignment.getLeft() instanceof BoxArrayAccess, sourceType + " " + source );
+				assertEquals( "static", ( ( BoxArrayAccess ) assignment.getLeft() ).getContext().getSourceText(), sourceType + " " + source );
+			}
+
+			BoxAssignment compound = parseAssignmentStatement( "static[ k ] += 1;", sourceType );
+			assertTrue( compound.getModifiers().isEmpty() );
+			assertEquals( BoxAssignmentOperator.PlusEqual, compound.getOp() );
+			assertTrue( compound.getLeft() instanceof BoxArrayAccess );
+		}
+	}
+
+	// BL-2750: comma, rest, default value or nested pattern inside the brackets keeps the static destructuring declaration
+	@Test
+	public void testStaticArrayDestructuringDeclarationAst() throws IOException {
+		for ( BoxSourceType sourceType : new BoxSourceType[] { BoxSourceType.BOXSCRIPT, BoxSourceType.CFSCRIPT } ) {
+			for ( String source : new String[] {
+			    "static [ a, b ] = data;",
+			    "static[a,b] = data;",
+			    "static [ a, ] = data;",
+			    "static [ ...rest ] = data;",
+			    "static [ a = 1 ] = data;",
+			    "static [ [ a ] ] = data;",
+			} ) {
+				BoxAssignment assignment = parseAssignmentStatement( source, sourceType );
+				assertTrue( assignment.getModifiers().contains( BoxAssignmentModifier.STATIC ), sourceType + " " + source );
+				assertTrue( assignment.getLeft() instanceof BoxArrayDestructuringPattern, sourceType + " " + source );
+			}
+		}
 	}
 }
