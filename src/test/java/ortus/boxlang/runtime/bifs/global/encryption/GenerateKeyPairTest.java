@@ -120,6 +120,34 @@ public class GenerateKeyPairTest {
 		assertThat( factory.generatePublic( new X509EncodedKeySpec( Base64.getDecoder().decode( kp.getAsString( Key.publicKey ) ) ) ) ).isNotNull();
 	}
 
+	@DisplayName( "Algorithm and curve lookups are case insensitive" )
+	@Test
+	public void testCaseInsensitive() throws Exception {
+		assertParseable( generate( "algorithm=\"ed25519\"" ), "Ed25519" );
+		assertParseable( generate( "algorithm=\"  rsa \"" ), "RSA" );
+		assertParseable( generate( "algorithm=\"ec\", curve=\"SECP256R1\"" ), "EC" );
+	}
+
+	@DisplayName( "Repeated and concurrent calls with the cached generator return distinct valid keys" )
+	@Test
+	public void testCachedGeneratorConcurrent() throws Exception {
+		java.util.Set<String>	keys	= java.util.concurrent.ConcurrentHashMap.newKeySet();
+		java.util.List<Thread>	threads	= new java.util.ArrayList<>();
+		for ( int i = 0; i < 8; i++ ) {
+			Thread t = new Thread( () -> {
+				for ( int j = 0; j < 5; j++ ) {
+					keys.add( ortus.boxlang.runtime.util.EncryptionUtil.generateKeyPair( "Ed25519", null, null ).getAsString( Key.privateKey ) );
+				}
+			} );
+			threads.add( t );
+			t.start();
+		}
+		for ( Thread t : threads ) {
+			t.join();
+		}
+		assertThat( keys ).hasSize( 40 );
+	}
+
 	@DisplayName( "Two calls never return the same key" )
 	@Test
 	public void testUnique() {
