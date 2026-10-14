@@ -540,6 +540,8 @@ public class CFLexerCustom extends CFLexer {
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because last token was a comma" );
 						isIdentifier = true;
 					} else if ( lastTokenWas( COLON ) && nextTokenType != DO
+					    && ! ( nextTokenType == NOT
+					        && ! ( nextNonWhiteSpaceCharIs( ',' ) || nextNonWhiteSpaceCharsAre( operatorStartingChars ) || nextNonWhiteSpaceCharIs( '}' ) ) )
 					    && ! ( labeledLoopTokens.contains( nextTokenType ) && nextNonWhiteSpaceCharIs( '(' ) )
 					    && ! ( inSwitchBody
 					        && ( ( ( nextTokenType == IF || nextTokenType == PREFIXEDIDENTIFIER || nextTokenType == SWITCH ) && nextNonWhiteSpaceCharIs( '(' ) )
@@ -550,6 +552,9 @@ public class CFLexerCustom extends CFLexer {
 						// but myLabel : for() is fine
 						// and myLabel : while()
 						// and myLabel : do {}
+						// and { key : not }
+						// and { key : not, key2 : val }
+						// and { key : not && value } // any operator after not
 						// and not case: if()
 						// but not case: try {} catch(){}
 						// and not case: include "foo"
