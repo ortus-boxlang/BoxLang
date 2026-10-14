@@ -303,48 +303,47 @@ public class CacheTest {
 
 	}
 
-	@DisplayName( "It uses the region attribute as the cache name")
+	@DisplayName( "It uses the region attribute as the cache name" )
 	@Test
 	public void testRegionAttribute() {
 		instance.executeSource(
 		    """
-		    bx:cache action="put" key="regionKey" value="inRegion" region="CacheTestCache";
-			bx:cache action="get" key="regionKey" name="result" region="CacheTestCache";
-			""",
+		       bx:cache action="put" key="regionKey" value="inRegion" region="CacheTestCache";
+		    bx:cache action="get" key="regionKey" name="result" region="CacheTestCache";
+		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertEquals( "inRegion", variables.getAsString( result ) );
 		assertTrue( instance.getCacheService().getCache( testCacheKey ).get( "regionKey" ).isPresent() );
 	}
 
-
 	@DisplayName( "cacheName takes precedence over region when both are passed" )
 	@Test
 	public void testCacheNameBeatsRegion() {
 		instance.executeSource(
-			"""
-			bx:cache action="put" key="bothKey" value="x" cacheName="CacheTestCache" region="default";
-			""",
-			context, BoxSourceType.BOXSCRIPT );
+		    """
+		    bx:cache action="put" key="bothKey" value="x" cacheName="CacheTestCache" region="default";
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
 
 		assertTrue( instance.getCacheService().getCache( testCacheKey ).get( "bothKey" ).isPresent() );
 	}
 
-	@DisplayName ( "Legacy connection attributes are accepted and ignored" )
+	@DisplayName( "Legacy connection attributes are accepted and ignored" )
 	@Test
 	public void testLegacyAttributesIgnored() {
 		instance.executeSource(
-			"""
-			bx:cache action="put" key="legacyKey" value="ok"
-				username="testUser" password="testPass" port="8080" protocol="https://";
-			bx:cache action="get" key="legacyKey" name="result";
-			""",
-			context, BoxSourceType.BOXSCRIPT );
+		    """
+		    bx:cache action="put" key="legacyKey" value="ok"
+		    	username="testUser" password="testPass" port="8080" protocol="https://";
+		    bx:cache action="get" key="legacyKey" name="result";
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
 
 		assertEquals( "ok", variables.getAsString( result ) );
 	}
 
-		@DisplayName( "Content caching still works with useQueryString outside of a web request" )
+	@DisplayName( "Content caching still works with useQueryString outside of a web request" )
 	@Test
 	public void testUseQueryStringOutsideWebRequest() {
 		instance.executeSource(
@@ -362,8 +361,8 @@ public class CacheTest {
 
 		assertEquals( "<h1>Hello bar!</h1>", variables.getAsString( result ).trim() );
 	}
-	
-		@DisplayName( "expireURL flushes only cached pages matching the pattern" )
+
+	@DisplayName( "expireURL flushes only cached pages matching the pattern" )
 	@Test
 	public void testExpireURL() {
 		instance.executeSource(
@@ -380,5 +379,5 @@ public class CacheTest {
 		assertFalse( cache.get( "BL_TEMPLATE_/products/b.cfm|def" ).isPresent() );
 		assertTrue( cache.get( "BL_TEMPLATE_/about.cfm|ghi" ).isPresent() );
 	}
-	
+
 }
