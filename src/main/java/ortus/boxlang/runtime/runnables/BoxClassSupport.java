@@ -527,8 +527,11 @@ public class BoxClassSupport {
 
 		// Do we have a super java class? Only positional arguments are supported for Java classes
 		if ( thisClass.isJavaExtends() ) {
-			return DynamicObject.of( thisClass ).setTargetClass( thisClass.getClass().getSuperclass() ).dereferenceAndInvoke( context, name,
-			    positionalArguments, safe );
+			DynamicObject javaSuper = DynamicObject.of( thisClass ).setTargetClass( thisClass.getClass().getSuperclass() );
+			if ( javaSuper.findMatchingMethod( context, name.getName(), DynamicObject.argumentsToClasses( positionalArguments ),
+			    positionalArguments ) != null ) {
+				return javaSuper.dereferenceAndInvoke( context, name, positionalArguments, safe );
+			}
 		}
 
 		// Do we have a static onMissingStaticMethod() method?

@@ -144,6 +144,22 @@ public class OnMissingStaticMethodTest {
 		assertThat( named.getAsStruct( Key.of( "args" ) ).get( Key.of( "email" ) ) ).isEqualTo( "x@y.com" );
 	}
 
+	@DisplayName( "Java superclass methods run before the missing static method handler" )
+	@Test
+	public void testJavaExtendsInstanceFallThrough() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.OnMissingStaticMethodJavaExtends();
+		    inherited = obj.getCount();
+		    missing = obj.findByEmail( "a@b.com" );
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( Key.of( "inherited" ) ).intValue() ).isEqualTo( 42 );
+		IStruct missing = variables.getAsStruct( Key.of( "missing" ) );
+		assertThat( missing.get( "name" ) ).isEqualTo( "findByEmail" );
+		assertThat( missing.getAsStruct( Key.of( "args" ) ).get( Key.of( "1" ) ) ).isEqualTo( "a@b.com" );
+	}
+
 	@DisplayName( "Instance onMissingMethod wins over onMissingStaticMethod for instance calls" )
 	@Test
 	public void testInstanceOnMissingMethodWins() {
