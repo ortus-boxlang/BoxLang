@@ -84,6 +84,51 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	public Key						name;
 
 	/**
+ * Stub driver that only advertises defaults through the proper getters.
+ */
+static class DefaultsTestDriver extends GenericJDBCDriver {
+
+	public DefaultsTestDriver() {
+		super();
+		this.name				= new Key( "DefaultsTestDriver" );
+		this.defaultProperties	= Struct.of( "vendorDefaultFlag", "fromDriver" );
+		this.defaultCustomParams	= Struct.of( "vendorParam", "abc" );
+		this.defaultDelimiter	= ";";
+		this.defaultURIDelimiter	= ";";
+	}
+}
+
+@DisplayName( "It applies driver default properties even when a connectionString is supplied" )
+@Test
+void testDriverDefaultPropertiesAppliedWithConnectionString() {
+	BoxRuntime.getInstance().getDataSourceService().registerDriver( new DefaultsTestDriver() );
+
+	DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "DefaultsDS" ), Struct.of(
+	    "driver", "DefaultsTestDriver",
+	    "connectionString", "jdbc:derby:memory:DefaultsDS;create=true"
+	) );
+	HikariConfig		hikariConfig	= datasource.toHikariConfig();
+
+	assertThat( hikariConfig.getDataSourceProperties().get( "vendorDefaultFlag" ) ).isEqualTo( "fromDriver" );
+	assertThat( hikariConfig.getJdbcUrl() ).contains( "vendorParam=abc" );
+}
+
+@DisplayName( "User-supplied properties win over driver defaults" )
+@Test
+void testUserPropertiesOverrideDriverDefaults() {
+	BoxRuntime.getInstance().getDataSourceService().registerDriver( new DefaultsTestDriver() );
+
+	DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "DefaultsDS2" ), Struct.of(
+	    "driver", "DefaultsTestDriver",
+	    "connectionString", "jdbc:derby:memory:DefaultsDS2;create=true",
+	    "vendorDefaultFlag", "fromUser"
+	) );
+	HikariConfig		hikariConfig	= datasource.toHikariConfig();
+
+	assertThat( hikariConfig.getDataSourceProperties().get( "vendorDefaultFlag" ) ).isEqualTo( "fromUser" );
+}
+
+	/**
 	 * Application name : will be empty if not in use
 	 */
 	public Key						applicationName					= Key._EMPTY;
