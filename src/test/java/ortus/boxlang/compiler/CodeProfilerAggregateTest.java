@@ -79,8 +79,8 @@ class CodeProfilerAggregateTest {
 	private void assertLineInclusive( String key, int line, long minNanos, long maxNanos ) {
 		CodeProfilerService.LineCoverage lc = service.lineAt( key, line );
 		assertThat( lc ).isNotNull();
-		assertThat( lc.inclusiveNanos() ).isAtLeast( minNanos );
-		assertThat( lc.inclusiveNanos() ).isAtMost( maxNanos );
+		assertThat( lc.nanos() ).isAtLeast( minNanos );
+		assertThat( lc.nanos() ).isAtMost( maxNanos );
 	}
 
 	/** Assert a line's execution count (first/outermost span). */
@@ -92,8 +92,8 @@ class CodeProfilerAggregateTest {
 
 	/** Assert the inclusive time of an OUTER line is at least that of an INNER line (jitter-tolerant). */
 	private void assertInclusiveAtLeast( String key, int outerLine, int innerLine ) {
-		long	outer	= service.lineAt( key, outerLine ).inclusiveNanos();
-		long	inner	= service.lineAt( key, innerLine ).inclusiveNanos();
+		long	outer	= service.lineAt( key, outerLine ).nanos();
+		long	inner	= service.lineAt( key, innerLine ).nanos();
 		assertThat( outer ).isAtLeast( inner - 10L * 1_000_000L );
 	}
 
@@ -142,7 +142,7 @@ class CodeProfilerAggregateTest {
 			assertLineCount( key, callLine, 1 );
 
 			// Inclusive time grows as we enclose more levels (generous band for jitter).
-			long actual = service.lineAt( key, callLine ).inclusiveNanos();
+			long actual = service.lineAt( key, callLine ).nanos();
 			assertThat( actual ).isAtLeast( ( long ) ( expected * 0.5 ) );
 			assertThat( actual ).isAtMost( expected * 2 + 100L * 1_000_000L );
 
@@ -353,8 +353,8 @@ class CodeProfilerAggregateTest {
 		// Four calls on line 4; the callee body ran 4x. The line's inclusive time is
 		// the SUM (~40ms), and its count comes from the outermost span.
 		assertLineCount( key, 2, 4 );
-		assertThat( service.lineAt( key, 4 ).inclusiveNanos() ).isAtLeast( 40L * 1_000_000L );
-		assertThat( service.lineAt( key, 4 ).inclusiveNanos() ).isAtMost( 400L * 1_000_000L );
+		assertThat( service.lineAt( key, 4 ).nanos() ).isAtLeast( 40L * 1_000_000L );
+		assertThat( service.lineAt( key, 4 ).nanos() ).isAtMost( 400L * 1_000_000L );
 	}
 
 	// -------------------------------------------------------------------------

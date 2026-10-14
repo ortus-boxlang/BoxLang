@@ -116,29 +116,29 @@ class SpanHeatmapHTMLRendererTest {
 		assertThat( html ).contains( "per-run=" );
 	}
 
-	@DisplayName( "It keeps sub-50ms spans barely tinted regardless of the page max" )
+	@DisplayName( "It keeps sub-50ms spans at the pale floor colour regardless of the page max" )
 	@Test
 	void testSubFloorSpansBarelyTinted() {
-		// HOT_AND_COLD has a 250ms span and many ~0ms spans. The sub-50ms spans must be
-		// barely tinted (0.120) even though the page max is 250ms; the 250ms span goes
-		// deep red (0.950).
+		// HOT_AND_COLD has a 250ms span and many ~0ms spans. The sub-50ms spans stay at
+		// the pale floor colour (rgb(255,243,176)) even though the page max is 250ms;
+		// the 250ms span reaches the deep-red end (rgb(163,0,0)).
 		String	key		= runDisk( "HeatFloor.bxs", HOT_AND_COLD );
 		String	html	= SpanHeatmapHTMLRenderer.renderHTML( service, key, null, Metric.TIME_TOTAL );
 
-		assertThat( html ).contains( "rgba(211,47,47,0.120)" );   // sub-floor bare tint
-		assertThat( html ).contains( "rgba(211,47,47,0.950)" );   // hottest span deep red
+		assertThat( html ).contains( "rgb(255,243,176)" );   // sub-floor pale yellow
+		assertThat( html ).contains( "rgb(163,0,0)" );       // hottest span deep red
 	}
 
-	@DisplayName( "It keeps spans running 5 or fewer times barely tinted" )
+	@DisplayName( "It keeps spans running 5 or fewer times at the pale floor colour" )
 	@Test
 	void testCountFloor() {
-		// The count metric floors at 5: spans running <= 5 times stay barely tinted even
-		// when another span ran 50 times.
+		// The count metric floors at 5: spans running <= 5 times stay pale even when
+		// another span ran 50 times.
 		String	key		= runDisk( "HeatCountFloor.bxs", HOT_AND_COLD );
 		String	html	= SpanHeatmapHTMLRenderer.renderHTML( service, key, null, Metric.COUNT );
 
-		assertThat( html ).contains( "rgba(211,47,47,0.120)" );   // <=5 runs bare tint
-		assertThat( html ).contains( "count=50" );                // the 50x span
+		assertThat( html ).contains( "rgb(255,243,176)" );   // <=5 runs pale floor
+		assertThat( html ).contains( "count=50" );          // the 50x span
 	}
 
 	@DisplayName( "It distinguishes total time from per-run cost" )

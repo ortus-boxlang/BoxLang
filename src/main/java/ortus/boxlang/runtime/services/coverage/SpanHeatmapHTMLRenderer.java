@@ -70,28 +70,43 @@ public final class SpanHeatmapHTMLRenderer {
 	 * "basically nothing" and stays barely tinted no matter how slow the page's worst
 	 * span is.
 	 */
-	private static final long	TIME_FLOOR_NANOS	= 50L * 1_000_000L;
+	private static final long		TIME_FLOOR_NANOS	= 50L * 1_000_000L;
 
 	/**
 	 * Absolute shading floor for the COUNT metric: a span that ran this many times
 	 * (5) or fewer is treated as "basically nothing".
 	 */
-	private static final long	COUNT_FLOOR			= 5L;
+	private static final long		COUNT_FLOOR			= 5L;
 
-	/** Bare-tint opacity for spans at or below the floor (and for uniform pages). */
-	private static final double	BASE_ALPHA			= 0.12;
+	/**
+	 * Bare-tint colour for spans at or below the floor (pale yellow — "basically
+	 * nothing").
+	 */
+	private static final int[]		FLOOR_RGB			= { 255, 243, 176 };
 
-	/** Deepest-red opacity for the hottest span on the page. */
-	private static final double	HOT_ALPHA			= 0.95;
+	/**
+	 * Continuous thermal ramp (pale yellow -&gt; orange -&gt; deep red), interpolated
+	 * from the floor (t=0) to the page maximum (t=1). Several well-spaced stops keep
+	 * the midtones clean vs a naive two-colour lerp. Higher &amp; hotter = worse.
+	 */
+	private static final int[][]	HEAT_STOPS			= {
+	    { 255, 243, 176 },  // pale yellow (just above the floor)
+	    { 255, 224, 130 },
+	    { 255, 199, 90 },
+	    { 255, 163, 46 },
+	    { 242, 106, 19 },
+	    { 214, 47, 10 },
+	    { 163, 0, 0 }       // deep red (hottest span on the page)
+	};
 
 	/**
 	 * The metric a heat map shades by.
 	 */
 	public enum Metric {
 
-		/** Total self time summed over all runs. */
+		/** Inclusive "on the stack" time summed over all runs. */
 		TIME_TOTAL( "Total time" ),
-		/** Self time divided by execution count (cost per run). */
+		/** Inclusive time divided by execution count (cost per run). */
 		TIME_PER_RUN( "Time per run" ),
 		/** Raw execution count. */
 		COUNT( "Execution count" );
@@ -235,7 +250,7 @@ public final class SpanHeatmapHTMLRenderer {
 		    .append( "tr:nth-child(odd) td{background:#fafafa;}\n" )
 		    .append( "span.sp{border-radius:2px;}\n" )
 		    .append(
-		        ".legend{display:inline-block;width:220px;height:14px;vertical-align:middle;border:1px solid #ccc;background:linear-gradient(90deg,rgba(211,47,47,.12),rgba(211,47,47,.95));}\n" )
+		        ".legend{display:inline-block;width:220px;height:14px;vertical-align:middle;border:1px solid #ccc;background:linear-gradient(90deg,#fff3b0,#ffe082,#ffc75a,#ffa32e,#f26a13,#d62f0a,#a30000);}\n" )
 		    .append( "</style>\n</head>\n<body>\n" )
 		    .append( "<h3>" ).append( escape( fileKey ) ).append( "</h3>\n" )
 		    .append( "<p style=\"padding-left:8px;margin:0 0 4px 0\"><b>Span heat map by " ).append( metric.label() )
@@ -251,25 +266,24 @@ public final class SpanHeatmapHTMLRenderer {
 	}
 
 	/**
-	 * A {@code title} tooltip carrying the span's count + time stats for mouse-over.
+	 * A {@code title} tooltip carrying the span's count + INCLUSIVE time stats for
+	 * mouse-over. Self time is an internal detail and is not shown.
 	 */
 	private static String tooltip( CodeProfilerService.Span s ) {
 		long	count	= s.stats().count();
-		long	total	= s.stats().totalNanos();
-		long	perRun	= count == 0 ? 0L : total / count;
-		String	incl	= s.stats().inclusiveNanos() > 0
-		    ? ", inclusive=" + SpanHTMLRenderer.formatDuration( s.stats().inclusiveNanos() )
-		    : "";
-		return " title=\"count=" + count + ", total=" + SpanHTMLRenderer.formatDuration( total )
-		    + ", per-run=" + SpanHTMLRenderer.formatDuration( perRun ) + incl + "\"";
+		long	time	= s.stats().onStackNanos();
+		long	perRun	= count == 0 ? 0L : time / count;
+		return " title=\"count=" + count + ", time=" + SpanHTMLRenderer.formatDuration( time )
+		    + ", per-run=" + SpanHTMLRenderer.formatDuration( perRun ) + "\"";
 	}
 
 	/**
 	 * The inline CSS for a span in the code view. Spans that never ran are uncolored.
 	 * Spans at or below the absolute {@code floor} (time &lt; 50ms, or count &le; 5)
 	 * are "basically nothing" and get only a bare tint, regardless of the page max.
-	 * Above the floor the shade scales from the floor to {@code scaleMax}, so a page
-	 * where EVERY span is below the floor stays uniformly light instead of all-dark.
+	 * Above the floor the shade scales from the floor to {@code scaleMax} through a
+	 * logarithmic transfer, so a heavy-tailed page (one huge outlier + many small
+	 * spans) spreads across the whole ramp instead of crushing everything to pale.
 	 *
 	 * @param metric   the span's metric value
 	 * @param floor    the absolute "basically nothing" threshold
@@ -279,16 +293,76 @@ public final class SpanHeatmapHTMLRenderer {
 	 */
 	private static String spanStyle( long metric, long floor, long scaleMax ) {
 		if ( metric <= 0L ) {
+			// Never ran: leave uncolored (the row background shows through).
 			return "";
 		}
-		// Below the floor: a bare tint; nothing to shout about.
 		if ( metric <= floor || scaleMax <= floor ) {
-			return String.format( "background:rgba(211,47,47,%.3f);color:#111;", BASE_ALPHA );
+			// "Basically nothing": the pale floor colour, regardless of the page max.
+			return css( FLOOR_RGB );
 		}
-		double	t		= clamp01( ( double ) ( metric - floor ) / ( double ) ( scaleMax - floor ) );
-		double	alpha	= BASE_ALPHA + ( HOT_ALPHA - BASE_ALPHA ) * t;
-		String	fg		= alpha > 0.55 ? "#fff" : "#111";
-		return String.format( "background:rgba(211,47,47,%.3f);color:%s;", alpha, fg );
+		// Continuous thermal ramp from the floor (t=0) to the page max (t=1), through a
+		// logarithmic transfer so multiplicative differences read evenly.
+		return css( rampColor( logScale( metric, floor, scaleMax ) ) );
+	}
+
+	/**
+	 * Map a metric to a ramp position (0..1) using a LOGARITHMIC transfer over
+	 * {@code [floor, scaleMax]}. A raw linear ratio crushes the low end when the
+	 * maximum is a heavy outlier (e.g. a 10-second span makes a 500ms span look
+	 * almost like a floor span). The log transfer compresses the top and expands the
+	 * bottom, so equal RATIOS get equal colour steps. Spans exactly at the floor map
+	 * to 0; the page maximum maps to 1.
+	 *
+	 * @param metric   the span's metric value (&gt; floor)
+	 * @param floor    the floor (values above it map to &gt; 0)
+	 * @param scaleMax the page maximum (maps to 1)
+	 *
+	 * @return the ramp position in [0,1]
+	 */
+	private static double logScale( long metric, long floor, long scaleMax ) {
+		double den = Math.log( ( double ) scaleMax / floor );
+		if ( den <= 0.0 ) {
+			// No meaningful range above the floor — pin to the top.
+			return 1.0;
+		}
+		return clamp01( Math.log( ( double ) metric / floor ) / den );
+	}
+
+	/**
+	 * Interpolate the {@link #HEAT_STOPS} thermal ramp at position {@code t} in [0,1].
+	 *
+	 * @param t the normalized position (0 = pale/floor, 1 = deep red/hottest)
+	 *
+	 * @return the interpolated RGB
+	 */
+	private static int[] rampColor( double t ) {
+		double	scaled	= clamp01( t ) * ( HEAT_STOPS.length - 1 );
+		int		lo		= ( int ) Math.floor( scaled );
+		int		hi		= Math.min( lo + 1, HEAT_STOPS.length - 1 );
+		double	frac	= scaled - lo;
+		int[]	a		= HEAT_STOPS[ lo ];
+		int[]	b		= HEAT_STOPS[ hi ];
+		return new int[] {
+		    ( int ) Math.round( a[ 0 ] + ( b[ 0 ] - a[ 0 ] ) * frac ),
+		    ( int ) Math.round( a[ 1 ] + ( b[ 1 ] - a[ 1 ] ) * frac ),
+		    ( int ) Math.round( a[ 2 ] + ( b[ 2 ] - a[ 2 ] ) * frac )
+		};
+	}
+
+	/**
+	 * Build a CSS background rule for an RGB, choosing black or white text for
+	 * contrast via the perceived luminance (bright yellow -> dark text, deep red ->
+	 * white text).
+	 *
+	 * @param rgb the background colour
+	 *
+	 * @return the inline CSS
+	 */
+	private static String css( int[] rgb ) {
+		// Perceived luminance (ITU-R BT.601); > 0.6 is bright -> use dark text.
+		double	luma	= ( 0.299 * rgb[ 0 ] + 0.587 * rgb[ 1 ] + 0.114 * rgb[ 2 ] ) / 255.0;
+		String	fg		= luma > 0.6 ? "#111" : "#fff";
+		return String.format( "background:rgb(%d,%d,%d);color:%s;", rgb[ 0 ], rgb[ 1 ], rgb[ 2 ], fg );
 	}
 
 	/**
@@ -318,11 +392,18 @@ public final class SpanHeatmapHTMLRenderer {
 
 	/**
 	 * The metric value for a span under the given metric.
+	 * <p>
+	 * For TIME metrics we report the INCLUSIVE time — "how long this span was on the
+	 * stack", including everything it called. That is the number users care about
+	 * (e.g. a <code>f1()</code> call that ran 70ms because <code>f1</code> called
+	 * <code>f2</code> which called <code>f3</code>...). Self time is an internal
+	 * detail and is NOT surfaced here. Leaf spans that make no BoxLang calls have no
+	 * inclusive value, so their self time stands in (they are the same thing).
 	 */
 	private static long metricValue( CodeProfilerService.Span s, Metric metric ) {
 		return switch ( metric ) {
-			case TIME_TOTAL -> s.stats().totalNanos();
-			case TIME_PER_RUN -> s.stats().count() == 0 ? 0L : s.stats().totalNanos() / s.stats().count();
+			case TIME_TOTAL -> s.stats().onStackNanos();
+			case TIME_PER_RUN -> s.stats().count() == 0 ? 0L : s.stats().onStackNanos() / s.stats().count();
 			case COUNT -> s.stats().count();
 		};
 	}

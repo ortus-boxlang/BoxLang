@@ -135,7 +135,7 @@ public final class SpanHTMLRenderer {
 			int							cov		= span.stats().count() > 0 ? 1 : 0;
 			for ( int ln = span.startLine(); ln <= span.endLine(); ln++ ) {
 				lineSpans.computeIfAbsent( ln, k -> new ArrayList<>() )
-				    .add( new Object[] { start, end, cov, span.stats().count(), span.stats().totalNanos(), span.stats().inclusiveNanos() } );
+				    .add( new Object[] { start, end, cov, span.stats().count(), span.stats().onStackNanos() } );
 			}
 		}
 		lineSpans.values().forEach( l -> l.sort( Comparator.comparingInt( a -> ( int ) a[ 0 ] ) ) );
@@ -161,14 +161,13 @@ public final class SpanHTMLRenderer {
 				lineCells.add( "<td class=\"c\">" + escaped + "<span class=\"fill\"></span></td>" );
 				continue;
 			}
-			// Mouse-over tooltip: covered, total count, total time for this line.
+			// Mouse-over tooltip: covered, total count, on-the-stack time for this line.
 			String	tooltip	= "";
 			long[]	lm		= lineMetrics.get( lineNum );
 			long	nanos	= lineNanos.getOrDefault( lineNum, 0L );
 			if ( lm != null ) {
-				long incl = lineInclusive.getOrDefault( lineNum, 0L );
 				tooltip = " title=\"" + ( lm[ 0 ] == 1 ? "covered" : "missed" ) + ", count=" + lm[ 1 ] + ", time="
-				    + formatDuration( nanos ) + ( incl > 0 ? ", incl=" + formatDuration( incl ) : "" ) + "\"";
+				    + formatDuration( nanos ) + "\"";
 			}
 			int		lineEnd		= srcLines[ i ].length();
 			// Colour per character index: 1 = covered, 0 = missed. Untracked
@@ -240,12 +239,10 @@ public final class SpanHTMLRenderer {
 				String	extra	= real ? "" : " pad";
 				String	tt		= "";
 				if ( real && charOwner[ cursor ] >= 0 ) {
-					Object[]	spg		= ls.get( charOwner[ cursor ] );
-					long		cnt		= ( long ) spg[ 3 ];
-					long		ns		= ( long ) spg[ 4 ];
-					long		incl	= spg.length > 5 ? ( long ) spg[ 5 ] : 0L;
-					tt = " title=\"count=" + cnt + ", time=" + formatDuration( ns )
-					    + ( incl > 0 ? ", incl=" + formatDuration( incl ) : "" ) + "\"";
+					Object[]	spg	= ls.get( charOwner[ cursor ] );
+					long		cnt	= ( long ) spg[ 3 ];
+					long		ns	= ( long ) spg[ 4 ];
+					tt = " title=\"count=" + cnt + ", time=" + formatDuration( ns ) + "\"";
 				}
 				sb.append( "<span class=\"" ).append( cls ).append( extra ).append( "\"" ).append( tt ).append( ">" )
 				    .append( escape( srcLines[ i ].substring( cursor, runEnd ) ) ).append( "</span>" );

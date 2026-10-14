@@ -56,15 +56,18 @@ sleep( 12 );
 
 // --- [DEEP] a 4-deep call chain: inclusive time forms a monotonic ladder.
 function f4() {
-    sleep( 70 );
+    sleep( 100 );
 }
 function f3() {
+    sleep( 100 );
     f4();
 }
 function f2() {
+    sleep( 100 );
     f3();
 }
 function f1() {
+    sleep( 100 );
     f2();
 }
 f1();
@@ -104,3 +107,7 @@ function ghost() {
     z = 1;
 }
 
+for( i in 1..5000 ) {
+    // This line will count for 5 seconds, but runs 5,000 times, so the per-run time is still tiny.
+    sleep( 1 );
+}

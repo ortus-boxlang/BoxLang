@@ -461,34 +461,34 @@ class CodeProfilerServiceTest {
 		assertThat( first.get( "id" ) ).isEqualTo( 0 );
 		assertThat( first.get( "startLine" ) ).isEqualTo( 1 );
 		assertThat( first.get( "count" ) ).isEqualTo( 1L );
-		assertThat( ( ( Number ) first.get( "totalNanos" ) ).longValue() ).isGreaterThan( 0L );
+		assertThat( ( ( Number ) first.get( "time" ) ).longValue() ).isGreaterThan( 0L );
 		assertThat( ( ( IStruct ) spans.get( 1 ) ).get( "count" ) ).isEqualTo( 1L );
 		assertThat( ( ( IStruct ) spans.get( 2 ) ).get( "count" ) ).isEqualTo( 0L );
 	}
 
-	@DisplayName( "It exports inclusive call time in the line and span coverage data" )
+	@DisplayName( "It exports the on-the-stack time in the line and span coverage data" )
 	@Test
 	void testInclusiveNanosInCoverageData() {
 		String fileId = service.registerBlueprintForFile( FILE, PLAIN_BLUEPRINT );
 
 		// Simulate a call-site bracket on span 0 (line 1): the span runs, a call is
-		// entered, ~20ms elapses, and the call exits -> inclusive time ~20ms.
+		// entered, ~20ms elapses, and the call exits -> on-the-stack time ~20ms.
 		CodeProfilerService.mark( fileId, 0, PLAIN_BLUEPRINT );
 		CodeProfilerService.markEnter( fileId, 0, PLAIN_BLUEPRINT );
 		sleep( 20 );
 		CodeProfilerService.markExit( fileId, PLAIN_BLUEPRINT );
 
-		// Per-line export: line 1 carries inclusiveNanos alongside totalNanos.
+		// Per-line export: line 1 carries the single `time` key.
 		IStruct	lineData	= ( IStruct ) service.buildLineCoverage().get( normalizePath( FILE ) );
 		IStruct	lines		= ( IStruct ) lineData.get( "lines" );
 		IStruct	line1		= ( IStruct ) lines.get( Key.of( 1 ) );
-		assertThat( ( ( Number ) line1.get( "inclusiveNanos" ) ).longValue() ).isAtLeast( 15L * 1_000_000L );
+		assertThat( ( ( Number ) line1.get( "time" ) ).longValue() ).isAtLeast( 15L * 1_000_000L );
 
-		// Per-span export: the call-site span carries inclusiveNanos.
+		// Per-span export: the call-site span carries the same `time`.
 		IStruct	spanData	= ( IStruct ) service.buildSpanCoverage().get( normalizePath( FILE ) );
 		Array	spans		= ( Array ) spanData.get( "spans" );
 		IStruct	first		= ( IStruct ) spans.get( 0 );
-		assertThat( ( ( Number ) first.get( "inclusiveNanos" ) ).longValue() ).isAtLeast( 15L * 1_000_000L );
+		assertThat( ( ( Number ) first.get( "time" ) ).longValue() ).isAtLeast( 15L * 1_000_000L );
 	}
 
 	@DisplayName( "It writes a per-line coverage JSON report" )
@@ -508,7 +508,7 @@ class CodeProfilerServiceTest {
 		assertThat( json ).contains( "\"numCoveredLines\"" );
 		assertThat( json ).contains( "\"percCoverage\"" );
 		assertThat( json ).contains( "\"lines\"" );
-		assertThat( json ).contains( "\"totalNanos\"" );
+		assertThat( json ).contains( "\"time\"" );
 		// Line 1 and 2 covered (count 1); line 3 missed (count 0).
 		assertThat( json ).contains( "\"1\"" );
 		assertThat( json ).contains( "\"3\"" );
@@ -533,7 +533,7 @@ class CodeProfilerServiceTest {
 		assertThat( json ).contains( "\"startCol\"" );
 		assertThat( json ).contains( "\"endLine\"" );
 		assertThat( json ).contains( "\"endCol\"" );
-		assertThat( json ).contains( "\"totalNanos\"" );
+		assertThat( json ).contains( "\"time\"" );
 		assertThat( json ).contains( "\"count\" : 1" );
 		assertThat( json ).contains( "\"count\" : 0" );
 	}

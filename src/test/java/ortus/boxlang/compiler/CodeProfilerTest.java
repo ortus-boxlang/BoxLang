@@ -2700,8 +2700,8 @@ class CodeProfilerTest {
 		// two metrics are distinct and both available.
 		assertThat( service.spanAt( key, 4, 0 ).stats().totalNanos() ).isAtMost( 100L * 1_000_000L );
 
-		// The line aggregate exposes inclusive as well.
-		assertThat( service.lineAt( key, 4 ).inclusiveNanos() ).isAtLeast( 1000L * 1_000_000L );
+		// The line aggregate exposes the same on-the-stack time.
+		assertThat( service.lineAt( key, 4 ).nanos() ).isAtLeast( 1000L * 1_000_000L );
 	}
 
 	@DisplayName( "It attributes inclusive time for a call whose argument is itself a call" )
@@ -2732,7 +2732,7 @@ class CodeProfilerTest {
 		assertThat( inclusive ).isAtMost( 450L * 1_000_000L );
 
 		// The line aggregate exposes it too.
-		assertThat( service.lineAt( key, 9 ).inclusiveNanos() ).isAtLeast( 150L * 1_000_000L );
+		assertThat( service.lineAt( key, 9 ).nanos() ).isAtLeast( 150L * 1_000_000L );
 	}
 
 	@DisplayName( "It closes a call bracket when the callee throws (inclusive time still recorded)" )

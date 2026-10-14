@@ -906,7 +906,8 @@ public class CodeProfilerService extends BaseService {
 	 * <ul>
 	 * <li>{@code covered} = any executable span touching the line has count &gt; 0</li>
 	 * <li>{@code count} = count of the FIRST/OUTERMOST span touching the line</li>
-	 * <li>{@code totalNanos} = SUM of totalNanos over all spans touching the line</li>
+	 * <li>{@code nanos} = SUM of the spans' ON-THE-STACK time over all spans touching
+	 * the line (inclusive when a span made calls, self otherwise)</li>
 	 * </ul>
 	 *
 	 * @param filePath the file path or adhoc source-hash key the blueprint was registered under
@@ -926,12 +927,10 @@ public class CodeProfilerService extends BaseService {
 		}
 		boolean	covered		= spans.stream().anyMatch( s -> s.stats().count() > 0 );
 		long	lineCount	= spans.get( 0 ).stats().count(); // first/outermost span
-		long	nanos		= spans.stream().mapToLong( s -> s.stats().totalNanos() ).sum();
-		// INCLUSIVE time for the line: sum over spans of inclusiveNanos (call-site
-		// brackets). Non-call spans contribute 0, so this is the total time spent in
-		// calls made ON this line (including what those calls ran).
-		long	inclusive	= spans.stream().mapToLong( s -> s.stats().inclusiveNanos() ).sum();
-		return new LineCoverage( line, covered, nanos, inclusive, lineCount );
+		// The single line time: SUM of the spans' ON-THE-STACK time (inclusive for
+		// call spans, self for leaf spans). This is the only time number surfaced.
+		long	nanos		= spans.stream().mapToLong( s -> s.stats().onStackNanos() ).sum();
+		return new LineCoverage( line, covered, nanos, lineCount );
 	}
 
 	/**
@@ -980,7 +979,7 @@ public class CodeProfilerService extends BaseService {
 	 *   "numCoveredLines"   : &lt;lines with count &gt; 0&gt;,
 	 *   "percCoverage"      : &lt;covered / executable, or 1 if none&gt;,
 	 *   "lines"             : {
-	 *       "&lt;lineNum&gt;"      : { "covered": bool, "count": n, "totalNanos": n }
+	 *       "&lt;lineNum&gt;"      : { "covered": bool, "count": n, "time": n }
 	 *   }
 	 * }
 	 * </pre>
@@ -1217,6 +1216,22 @@ public class CodeProfilerService extends BaseService {
 			return inclusiveNanos.get();
 		}
 
+		/**
+		 * The "ON THE STACK" time of this span — the single time number surfaced by
+		 * every report/export. It is the span's INCLUSIVE time when the span made
+		 * BoxLang calls (so a call like {@code f1()} reports the whole time it was on
+		 * the stack, e.g. 81ms because f1 called f2 called f3...), and its self time
+		 * otherwise (identical for a leaf span that makes no calls).
+		 * <p>
+		 * Self-vs-call time is an INTERNAL distinction (both counters are retained on
+		 * {@link SpanStats}); consumers should use THIS method.
+		 *
+		 * @return the inclusive nanoseconds if the span made calls, else self nanos
+		 */
+		public long onStackNanos() {
+			return Math.max( totalNanos.get(), inclusiveNanos.get() );
+		}
+
 		void incrementCount() {
 			count.incrementAndGet();
 		}
@@ -1238,19 +1253,16 @@ public class CodeProfilerService extends BaseService {
 	/**
 	 * Immutable per-line aggregate.
 	 *
-	 * @param line           the 1-based line number
-	 * @param covered        true when any executable span touching the line ran
-	 * @param totalNanos     SELF time: sum of {@code totalNanos} over all spans on the line
-	 * @param inclusiveNanos INCLUSIVE call time: sum of {@code inclusiveNanos} over all spans
-	 *                       on the line (time spent in calls made on this line, including
-	 *                       what those calls ran). 0 for lines with no calls.
-	 * @param count          execution count of the first/outermost span on the line
+	 * @param line    the 1-based line number
+	 * @param covered true when any executable span touching the line ran
+	 * @param nanos   the line's ON-THE-STACK time: sum of {@code onStackNanos} over all
+	 *                spans on the line (inclusive for call spans, self for leaf spans)
+	 * @param count   execution count of the first/outermost span on the line
 	 */
 	public record LineCoverage(
 	    int line,
 	    boolean covered,
-	    long totalNanos,
-	    long inclusiveNanos,
+	    long nanos,
 	    long count ) {
 	}
 

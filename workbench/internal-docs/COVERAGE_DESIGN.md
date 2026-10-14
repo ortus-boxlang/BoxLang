@@ -77,7 +77,7 @@ public static void mark( String id, int... spanIds )
 A line's data is derived from the spans that touch it:
 - **line covered** = ANY executable span touching the line has `count > 0`
 - **line count** = count of the FIRST/OUTERMOST executable span that covers the line (the statement's leading span, e.g. `foo =`). Well-defined per line.
-- **line totalNanos** = SUM of `totalNanos` over ALL spans touching the line (disjoint via probe-charging → exact)
+- **line nanos** = SUM of the ON-THE-STACK time over ALL spans touching the line (inclusive for call spans, self for leaf spans)
 
 The multi-span line (`foo = bar ? baz : bum`) resolves cleanly: count from the leading span; time/covered from all touching spans.
 
@@ -105,9 +105,10 @@ per-call INCLUSIVE time: a `sleeper()` call line reports the whole time the call
   still gets its inclusive time charged. This covers throw AND `AbortException` (bare `Throwable`).
   Normal fall-through and `return` close brackets via their existing `markEnd` sites (brackets are
   exited naturally as control returns through the call site).
-- **Metrics:** `SpanStats` now carries `totalNanos` (self) and `inclusiveNanos` (call). `LineCoverage`
-  carries both; totals stay on SELF so the file's sum remains real elapsed time (inclusive would
-  double-count nested call time).
+- **Metrics:** `SpanStats` internally carries `totalNanos` (self) and `inclusiveNanos` (call), but
+  everything surfaced uses the single `onStackNanos()` = `max(self, inclusive)` — inclusive for call
+  spans, self for leaf spans. `LineCoverage.nanos` aggregates it. The self/inclusive split is an
+  INTERNAL detail only; it is not exported (JSON/SonarQube emit a single `time`).
 - **Cost (measured):** ~30 ns per call (~+2.9% on a 50-call loop, ~0.1% call-heavy, 0% call-free).
   See `PROFILER_OVERHEAD.md`.
 - **Toggle:** `Transpiler.setInclusiveTimingEnabled(boolean)` (static) gates emission for A/B benchmarking.
@@ -303,8 +304,13 @@ LineCoverage
   int    line;
   boolean covered;    // any executable span touching this line has count > 0
   long   count;       // count of the FIRST/OUTERMOST executable span covering the line
-  long   totalNanos;  // SUM of totalNanos over all spans touching the line (disjoint)
+  long   nanos;       // SUM of the spans' ON-THE-STACK time (inclusive for call spans, self for leaf spans)
 ```
+**Time is inclusive EVERYWHERE it is surfaced.** The single reported time is
+`SpanStats.onStackNanos()` = `max(self, inclusive)` — the inclusive time when the span made
+BoxLang calls (so `f1()` reports the whole time it was on the stack, e.g. 81ms because
+f1 called f2 called f3...), self otherwise. The self/inclusive split is kept ONLY as an internal
+detail; it is not exported. Reports/HTML/JSON/SonarQube all surface this one number.
 
 ### 2.3 File-wide / capture-wide export
 ```java

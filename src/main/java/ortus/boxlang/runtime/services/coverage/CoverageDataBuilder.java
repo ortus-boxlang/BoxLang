@@ -80,7 +80,7 @@ public final class CoverageDataBuilder {
 	 *   "numCoveredLines"   : &lt;lines with count &gt; 0&gt;,
 	 *   "percCoverage"      : &lt;covered / executable, or 1 if none&gt;,
 	 *   "lines"             : {
-	 *       "&lt;lineNum&gt;"      : { "covered": bool, "count": n, "totalNanos": n }
+	 *       "&lt;lineNum&gt;"      : { "covered": bool, "count": n, "time": n }
 	 *   }
 	 * }
 	 * </pre>
@@ -114,8 +114,9 @@ public final class CoverageDataBuilder {
 				Struct								lv	= new Struct( IStruct.TYPES.LINKED );
 				lv.put( "covered", lc.covered() );
 				lv.put( "count", lc.count() );
-				lv.put( "totalNanos", lc.totalNanos() );
-				lv.put( "inclusiveNanos", lc.inclusiveNanos() );
+				// The single time number: ON-THE-STACK time (inclusive for call spans,
+				// self for leaf spans). Self/inclusive are NOT exported.
+				lv.put( "time", lc.nanos() );
 				lineObj.put( Key.of( line ), lv );
 				execLines++;
 				if ( lc.covered() ) {
@@ -141,7 +142,7 @@ public final class CoverageDataBuilder {
 	 *   "kind"    : "FILE" | "SOURCE",
 	 *   "spans"   : [
 	 *       { "id": 0, "startLine": 1, "startCol": 0, "endLine": 1, "endCol": 5,
-	 *         "count": n, "totalNanos": n }
+	 *         "count": n, "time": n }
 	 *   ]
 	 * }
 	 * </pre>
@@ -170,8 +171,9 @@ public final class CoverageDataBuilder {
 				sv.put( "endLine", s.endLine() );
 				sv.put( "endCol", s.endCol() );
 				sv.put( "count", s.stats().count() );
-				sv.put( "totalNanos", s.stats().totalNanos() );
-				sv.put( "inclusiveNanos", s.stats().inclusiveNanos() );
+				// The single time number: ON-THE-STACK time (inclusive for call spans,
+				// self for leaf spans). Self/inclusive are NOT exported.
+				sv.put( "time", s.stats().onStackNanos() );
 				spanArr.append( sv );
 			}
 			fileObj.put( "spans", spanArr );
