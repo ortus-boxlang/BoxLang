@@ -382,6 +382,32 @@ public class DumpTest {
 		assertThat( baos.toString() ).contains( "Class" );
 	}
 
+	@DisplayName( "It separates public instance and static methods in a Java class dump" )
+	@Test
+	public void testJavaClassDumpSeparatesPublicInstanceAndStaticMethods() {
+		variables.put( "fixture", new ClassDumpMethodFixture() );
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        dump( var = fixture, format = "html" );
+		    """,
+		    context );
+		// @formatter:on
+
+		String	output					= baos.toString();
+		int		instanceSectionIndex	= output.indexOf( "Instance Method(s)" );
+		int		staticSectionIndex		= output.indexOf( "Static Method(s)" );
+		int		instanceMethodIndex		= output.indexOf( "visibleInstanceMethod" );
+		int		staticMethodIndex		= output.indexOf( "visibleStaticMethod" );
+
+		assertThat( instanceSectionIndex ).isAtLeast( 0 );
+		assertThat( instanceMethodIndex ).isGreaterThan( instanceSectionIndex );
+		assertThat( instanceMethodIndex ).isLessThan( staticSectionIndex );
+		assertThat( staticMethodIndex ).isGreaterThan( staticSectionIndex );
+		assertThat( output ).doesNotContain( "hiddenPrivateInstanceMethod" );
+		assertThat( output ).doesNotContain( "hiddenPrivateStaticMethod" );
+	}
+
 	@DisplayName( "It can dump a DateTime data type" )
 	@Test
 	public void testCanDumpDateTime() {

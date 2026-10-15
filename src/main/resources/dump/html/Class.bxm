@@ -212,7 +212,7 @@
 					</tr>
 				</bx:if>
 
-				<!--- CLASS Methods --->
+				<!--- CLASS Instance Methods --->
 				<tr>
 					<th
 						aria-expanded="true"
@@ -221,23 +221,32 @@
 						valign="top"
 						tabindex="0"
 					>
-						Method(s)
+						Instance Method(s)
 					</th>
 					<td>
 						<div class="bx-onoff">
 							<bx:script>
 								import java.util.Arrays;
 								import java.util.Comparator;
-								variables.methods = Arrays.stream( theClass.getDeclaredMethods() )
-									.sorted( Comparator.comparing( m -> arguments.m.getName() ) )
-									.toList();
+								import java.util.List;
+						 
+								variables.instanceMethods = Arrays.stream( theClass.getDeclaredMethods() )
+								.filter( m -> Modifier.isPublic( arguments.m.getModifiers() ) )
+	                            .filter( m -> !Modifier.isStatic(arguments.m.getModifiers() ) )
+	                            .sorted( Comparator.comparing( m -> arguments.m.getName() ) )
+	                            .toList();
+
 							</bx:script>
 							<table class="bx-table-default">
 								<thead>
 									<tr><th>Name</th><th>Signature</th></tr>
 								</thead>
 								<tbody>
-									<bx:loop collection="#methods#" item="variables.method">
+									<bx:if variables.instanceMethods.size()>
+									<tr>
+											        <th colspan="2"> Instance Method(s) (#variables.instanceMethods.size()#)</th>
+									</tr> 
+													<bx:loop collection="#variables.instanceMethods#" item="variables.method">
 										<tr>
 											<td>
 												<strong>#encodeForHTML( variables.method.getName() )#</strong>
@@ -247,6 +256,57 @@
 											</td>
 										</tr>
 									</bx:loop>
+								</bx:if>
+								</tbody>
+							</table>
+						</div>
+					</td>
+				</tr>
+				<!--- CLASS Static Methods --->
+				<tr>
+					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
+						tabindex="0"
+					>
+						Static Method(s)
+					</th>
+					<td>
+						<div class="bx-onoff">
+							<bx:script>
+								import java.util.Arrays;
+								import java.util.Comparator;
+								import java.util.List; 
+							
+								variables.staticMethods = Arrays.stream( theClass.getDeclaredMethods() )
+								.filter( m -> Modifier.isPublic( arguments.m.getModifiers() ) )
+								.filter( m -> Modifier.isStatic( arguments.m.getModifiers() ) )
+								.sorted( Comparator.comparing( m -> arguments.m.getName() ) )
+								.toList();
+
+							</bx:script>
+							<table class="bx-table-default">
+								<thead>
+									<tr><th>Name</th><th>Signature</th></tr>
+								</thead>
+								<tbody>
+									<bx:if variables.staticMethods.size()>
+									<tr> 
+											        <th colspan="2"> Static Method(s) (#variables.staticMethods.size()#)</th>
+									</tr>
+									<bx:loop collection="#variables.staticMethods#" item="variables.method">
+										<tr>
+											<td>
+												<strong>#encodeForHTML( variables.method.getName() )#</strong>
+											</td>
+											<td>
+												<pre><code>#encodeForHTML( variables.method.toString() )#</code></pre>
+											</td>
+										</tr>
+									</bx:loop>
+									</bx:if>
 								</tbody>
 							</table>
 						</div>
