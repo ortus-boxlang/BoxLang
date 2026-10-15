@@ -124,3 +124,21 @@ processData(
     getData2(),
     getData3()
 );
+
+```
+    <bx:component name="customTag" attr="value" attr2="#sleep( 100 )#" attr3="#getData2()#">
+
+    <bx:component
+        name="customTag"
+        attr="value"
+        attr2="#sleep( 100 )#"
+        attr3="#getData2()#">
+
+        
+    <bx:_customTag attr="value" attr2="#sleep( 100 )#" attr3="#getData2()#">
+
+    <bx:_customTag
+        attr="value"
+        attr2="#sleep( 100 )#"
+        attr3="#getData2()#">
+```

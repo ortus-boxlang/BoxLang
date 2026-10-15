@@ -18,6 +18,7 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Stack;
 
@@ -38,12 +39,12 @@ import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
-import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
+import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
@@ -368,11 +369,11 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the position of the first backtick, or null
 	 */
 	private Point findDelimiterBefore( BoxNode node, Point before ) {
-		if ( before == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( before == null || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, before );
+		int offset = offsetOf( node, before );
 		if ( offset < 0 ) {
 			return null;
 		}
@@ -384,7 +385,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				while ( start > 0 && source.charAt( start - 1 ) == '`' ) {
 					start--;
 				}
-				return pointAt( source, start );
+				return pointAt( node, start );
 			}
 			if ( source.charAt( i ) == '\n' ) {
 				return null;
@@ -404,17 +405,17 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the position of the first backtick, or null
 	 */
 	private Point findDelimiterAfter( BoxNode node, Point after ) {
-		if ( after == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( after == null || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, after );
+		int offset = offsetOf( node, after );
 		if ( offset < 0 ) {
 			return null;
 		}
 		for ( int i = offset; i < source.length(); i++ ) {
 			if ( source.charAt( i ) == '`' ) {
-				return pointAt( source, i );
+				return pointAt( node, i );
 			}
 			if ( source.charAt( i ) == '\n' && i > offset ) {
 				return null;
@@ -560,6 +561,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		if ( isTagContext( node ) ) {
 			// TAG-based component with a body that reached here — thread the running
 			// span generically (each body statement opens its own span).
+			splitComponentAttributeValues( node );
 			visitChildren( node );
 			return;
 		}
@@ -609,15 +611,12 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return a two-point array {valueStart, valueEnd}, or null if no condition
 	 */
 	private Point[] findLoopConditionSpan( BoxComponent node ) {
-		if ( node.getPosition() == null || node.getPosition().getSource() == null ) {
-			return null;
-		}
-		String	source	= node.getPosition().getSource().getCode();
+		String	source	= node.getSourceText();
 		Point	start	= node.getStart();
-		if ( start == null ) {
+		if ( source == null || start == null ) {
 			return null;
 		}
-		int offset = offsetOf( source, start );
+		int offset = offsetOf( node, start );
 		if ( offset < 0 ) {
 			return null;
 		}
@@ -651,7 +650,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		if ( j >= source.length() ) {
 			return null;
 		}
-		return new Point[] { pointAt( source, openQuote ), pointAt( source, j + 1 ) };
+		return new Point[] { pointAt( node, openQuote ), pointAt( node, j + 1 ) };
 	}
 
 	/**
@@ -705,7 +704,10 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			// with the always-running head span so it is GREEN whenever the tag runs
 			// (not left untracked, and not glued to the deferred default).
 			if ( isTagContext( node ) && headId >= 0 && lastEnd != null ) {
-				Point tagClose = findTagCloseAfter( node, lastEnd );
+				// The tag's closing ">" belongs to the enclosing TAG node's own source
+				// text (the default value's text ends before the ">").
+				BoxNode	tagNode		= enclosingTagNode( node );
+				Point	tagClose	= tagNode == null ? null : findTagCloseAfter( tagNode, lastEnd );
 				if ( tagClose != null ) {
 					int closeId = addSpan( lastEnd, new Point( tagClose.getLine(), tagClose.getColumn() + 1 ) );
 					if ( closeId >= 0 ) {
@@ -797,11 +799,14 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// not glue its closing ">" onto the UNTAKEN false branch (that would show
 		// the ">" RED even though the tag itself ran). Close the false branch at its
 		// own end, then register the trailing ">" as its own span GROUPED with the
-		// ternary's always-run head so it is GREEN.
-		if ( isTagContext( node ) ) {
+		// ternary's always-run head so it is GREEN. The ">" is found via the
+		// ENCLOSING TAG's own source text — the inner expression's text ends BEFORE
+		// the tag's ">".
+		BoxNode tagNode = isTagContext( node ) ? enclosingTagNode( node ) : null;
+		if ( tagNode != null ) {
 			Point whenFalseEnd = leftmostEnd( whenFalse );
 			closeRunningSpan( whenFalseEnd );
-			Point tagClose = findTagCloseAfter( node, whenFalseEnd );
+			Point tagClose = findTagCloseAfter( tagNode, whenFalseEnd );
 			if ( tagClose != null && headId >= 0 ) {
 				int closeId = addSpan( whenFalseEnd, new Point( tagClose.getLine(), tagClose.getColumn() + 1 ) );
 				if ( closeId >= 0 ) {
@@ -824,8 +829,11 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			// nested ternary (`( a ? b : c ) ? 1 : 2`) has its `)` followed by an
 			// operator on the SAME line — neither must split, so their threading is
 			// untouched (preserving the existing span model).
-			Point	falseEnd	= leftmostEnd( whenFalse );
-			Point	parenClose	= findParenAfter( node, node.getEnd() );
+			Point			falseEnd	= leftmostEnd( whenFalse );
+			// The closing `)` belongs to the ENCLOSING PARENTHESIS's own source text
+			// (the inner ternary's text ends before the `)`).
+			BoxParenthesis	parenNode	= enclosingParenthesis( node );
+			Point			parenClose	= parenNode == null ? null : findParenAfter( parenNode, falseEnd );
 			if ( parenClose != null && parenClose.getLine() > falseEnd.getLine() ) {
 				// Close the false branch at its OWN end so the tail span is purely
 				// `[falseEnd, parenEnd]` and does NOT swallow the false branch (which
@@ -879,6 +887,15 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		List<BoxExpression>	values		= node.getValues();
 		int					lastValueId	= -1;
 		for ( int i = 0; i < values.size(); i += 2 ) {
+			// CRITICAL: reset the running span at the START of each entry. The struct's
+			// keys/values are registered with EXPLICIT addSpan bounds (below), so the
+			// running span must NOT leak from one entry into the next. Without this, a
+			// value whose visit leaves `runningStart` set (e.g. a call expression such
+			// as `hash( ... )`) leaks that start into the NEXT entry's nested visits,
+			// where the next `closeRunningSpan` mints a PHANTOM span from the previous
+			// value's end across the intervening keys/values (this swallowed the hash
+			// call's `)` and the following entries).
+			this.runningStart = null;
 			BoxExpression	key		= values.get( i );
 			// Register the key's tight span, then visit it.
 			int				keyId	= addSpan( leftmostStart( key ), leftmostEnd( key ) );
@@ -886,9 +903,11 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			if ( i + 1 >= values.size() ) {
 				break;
 			}
-			BoxExpression	value	= values.get( i + 1 );
+			BoxExpression value = values.get( i + 1 );
+			// A stale key visit may have left a running span; clear it before the value.
+			this.runningStart = null;
 			// Register the value's tight span, then visit it (Pass B marks it).
-			int				valueId	= addSpan( leftmostStart( value ), leftmostEnd( value ) );
+			int valueId = addSpan( leftmostStart( value ), leftmostEnd( value ) );
 			value.accept( this );
 			// Group the KEY's span with the VALUE's span: an identifier/scope key is
 			// compiled to a bare LdcInsnNode in BoxStructLiteralTransformer.transformKey,
@@ -1051,15 +1070,23 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 
 	@Override
 	public void visit( BoxMethodInvocation node ) {
-		// The object+name form: thread the running span through the object and the
-		// name (the "callee" is the whole dotted path), then the arguments.
-		visitInvocation( node, null, node.getArguments() );
+		// The RECEIVER is a separate operation that runs FIRST: visit it and close
+		// its span at its end, so the method call that follows gets its OWN span.
+		// Without this, `new X( ... ).run( ... )` collapsed into ONE span (receiver
+		// + call). e.g. → `new X( ... )` (one span), then `.run( ... )` (another).
 		if ( node.getObj() != null ) {
 			node.getObj().accept( this );
+			Point receiverEnd = leftmostEnd( node.getObj() );
+			if ( receiverEnd != null ) {
+				closeRunningSpan( receiverEnd );
+			}
 		}
+		// The method NAME threads the running head (it is the callee, not a boundary).
 		if ( node.getName() != null ) {
 			node.getName().accept( this );
 		}
+		// The arguments each get their own span (see visitInvocation).
+		visitInvocation( node, null, node.getArguments() );
 	}
 
 	@Override
@@ -1093,9 +1120,9 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		if ( callee != null ) {
 			callee.accept( this );
 		}
-		String	source		= node.getPosition() != null && node.getPosition().getSource() != null
-		    ? node.getPosition().getSource().getCode()
-		    : null;
+		// The invocation's OWN source text (the ANTLR slice for this node) — never the
+		// whole file. The shell trims below scan within this node's text only.
+		String			source		= node.getSourceText();
 
 		// Each argument's VALUE breaks out of the running head into its OWN span,
 		// ALWAYS — argument evaluation is separate from the call itself, and that has
@@ -1103,59 +1130,49 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// and a multi-line `foo(\n bar()\n)` MUST produce the same spans (bar() gets
 		// its own span in both). Line breaks and whitespace never change the span
 		// model.
-		Point	lastArgEnd	= null;
-		int[]	lastValueId	= { -1 };
-		int		headId		= -1;
+		Point			lastArgEnd	= null;
+		List<Integer>	shellIds	= new ArrayList<>();
+		int				headId		= -1;
 		for ( int i = 0; i < arguments.size(); i++ ) {
 			BoxArgument		arg		= arguments.get( i );
 			BoxExpression	value	= arg.getValue();
-			if ( arg.getName() != null ) {
-				arg.getName().accept( this );
-			}
 			if ( value != null ) {
-				// A TRIVIAL argument (a simple literal like `100`, or a bare identifier)
-				// is NOT split into its own span — it threads through the running head,
-				// exactly like a literal inside any other expression. Splitting it would
-				// fragment `sleep( 100 )` into `sleep(` / `100` / `)` and misattribute
-				// timing. Only a NON-trivial argument (a call, operator chain, ternary,
-				// literal-collection, ...) breaks into its own span, because its
-				// evaluation is genuinely separate work from the call.
-				if ( value instanceof IBoxSimpleLiteral || value instanceof BoxIdentifier ) {
+				// A TRIVIAL argument (a simple literal like `100`) is NOT split into its
+				// own span — it threads through the running head, exactly like a literal
+				// inside any other expression. Splitting it would fragment
+				// `sleep( 100 )` into `sleep(` / `100` / `)` and misattribute timing.
+				// EVERYTHING ELSE — including a bare IDENTIFIER argument like `target`
+				// in `foo( target )` (its evaluation is genuinely separate work: a scope
+				// lookup that can throw) — breaks into its own span.
+				if ( value instanceof IBoxSimpleLiteral ) {
 					value.accept( this );
 					continue;
 				}
 				Point	valueStart	= leftmostStart( value );
-				// The FIRST split argument ends the call HEAD. Trim the whitespace
-				// between `(` and the arg so the head is exactly `callee(` — the
-				// whitespace stays an unspanned gap (it is not code that runs).
-				Point	headEnd		= valueStart;
-				boolean	closingHead	= headId < 0;
-				if ( source != null && valueStart != null ) {
-					headEnd = trimTrailingWhitespace( source, valueStart );
+				// The SHELL segment from the previous shell/value end up to this arg's
+				// VALUE start belongs to the CALL: for a NAMED arg it is `name = ` (the
+				// `,` separator before it too), for a positional arg just the `,`
+				// separator. This keeps EVERY `name =` fragment in the shell —
+				// consistent across all args (the FIRST `name =` already lands in the
+				// call head). The VALUE itself is the separate arg span.
+				Point	shellEnd	= valueStart;
+				if ( source != null && shellEnd != null ) {
+					shellEnd = trimTrailingWhitespace( node, shellEnd );
 				}
-				int sepId = closeRunningSpan( headEnd );
-				if ( closingHead ) {
-					headId = sepId;
+				int shellId = closeRunningSpan( shellEnd );
+				if ( shellId >= 0 ) {
+					shellIds.add( shellId );
+					if ( headId < 0 ) {
+						headId = shellId;
+					}
 				}
-				// Skip the whitespace gap: EVERY split arg's own span starts at the arg
-				// itself, never at the trimmed head/separator end, so the arg never
-				// carries leading whitespace.
+				// The VALUE gets its OWN span (starts at the value, not the shell).
 				if ( valueStart != null ) {
 					this.runningStart = valueStart;
 				}
 				value.accept( this );
 				Point valueEnd = leftmostEnd( value );
 				closeRunningSpan( valueEnd );
-				if ( valueStart != null ) {
-					long packed = ( ( long ) valueStart.getLine() << 32 ) | ( valueStart.getColumn() & 0xFFFFFFFFL );
-					lastValueId[ 0 ] = transpiler.getSpanId( packed );
-				}
-				// Group the separator (`,` before this arg) with this arg's value so
-				// it stays GREEN when the value runs — mirroring struct/array
-				// separators. Skip i==0 where the separator IS the call head.
-				if ( i > 0 && sepId >= 0 && lastValueId[ 0 ] >= 0 && lastValueId[ 0 ] != sepId ) {
-					transpiler.registerSpanGroup( new int[] { lastValueId[ 0 ], sepId } );
-				}
 				if ( valueEnd != null && ( lastArgEnd == null
 				    || valueEnd.getLine() > lastArgEnd.getLine()
 				    || ( valueEnd.getLine() == lastArgEnd.getLine() && valueEnd.getColumn() > lastArgEnd.getColumn() ) ) ) {
@@ -1165,41 +1182,27 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		}
 		// The CLOSING `)` after the last argument is the call SHELL's tail — it runs
 		// whenever the call runs, on ONE line or MANY (line breaks never matter). It is
-		// marked ATOMICALLY with the call HEAD (`callee(`), because the callee-open-paren
-		// and the close-paren always run together as the fixed shell around the args.
-		// (The args themselves are the separate spans in between.) Only emitted when at
-		// least one argument was actually split — a call whose args are all trivial
-		// (e.g. `sleep( 100 )`) stays ONE span with no separate head/tail.
+		// marked ATOMICALLY with the call HEAD (`callee(`) and every interstitial shell
+		// fragment (`seen = ` / `,`), because the whole shell runs together as the fixed
+		// text around the args. (The args themselves are the separate spans in between.)
+		// Only emitted when at least one argument was actually split — a call whose args
+		// are all trivial (e.g. `sleep( 100 )`) stays ONE span with no separate shell.
 		if ( lastArgEnd != null && headId >= 0 && node.getEnd() != null ) {
 			Point tailEnd = leftmostEnd( node );
 			// Trim the whitespace between the last arg and `)` so the tail is exactly
 			// `)` — the whitespace stays an unspanned gap.
-			if ( source != null && lastArgEnd != null ) {
-				this.runningStart = trimLeadingWhitespace( source, lastArgEnd );
+			if ( source != null ) {
+				this.runningStart = trimLeadingWhitespace( node, lastArgEnd );
 			}
 			int tailId = closeRunningSpan( tailEnd );
 			if ( tailId >= 0 && tailId != headId ) {
-				List<Integer>	group		= new ArrayList<>();
-				int[]			existing	= transpiler.peekSpanGroup( headId );
-				if ( existing != null ) {
-					for ( int e : existing ) {
-						if ( !group.contains( e ) ) {
-							group.add( e );
-						}
-					}
-				} else {
-					group.add( headId );
-				}
-				if ( !group.contains( tailId ) ) {
-					group.add( tailId );
-				}
-				transpiler.registerSpanGroup( group.stream().mapToInt( Integer::intValue ).toArray() );
-				// The call's atomic SHELL (head `callee(` + tail `)`) — registered under
-				// the head so the call-site bracket can charge BOTH the same inclusive
-				// time (the shell is on the stack for the whole call). Keyed by the head
-				// span id, which IS the call-site span the bracket opens at.
-				transpiler.registerCallShell( headId, new int[] { headId, tailId } );
+				shellIds.add( tailId );
 			}
+			// Batch-mark the WHOLE shell (head + interstitials + closing `)`) as ONE
+			// atomic unit, and back it by the call-site bracket so every shell fragment
+			// reports the call's inclusive time.
+			transpiler.registerSpanGroup( shellIds.stream().mapToInt( Integer::intValue ).toArray() );
+			transpiler.registerCallShell( headId, shellIds.stream().mapToInt( Integer::intValue ).toArray() );
 		}
 	}
 
@@ -1381,6 +1384,56 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 */
 	private boolean isTagContext( BoxNode node ) {
 		return isTemplate();
+	}
+
+	/**
+	 * The node whose own source text is the enclosing TAG markup — the nearest node
+	 * (self or ancestor) whose {@link BoxNode#getSourceText()} begins with a tag
+	 * {@code <}. A self-closing tag's closing {@code >} belongs to the TAG's markup,
+	 * not the inner expression the visitor is currently on: for {@code <bx:set x =
+	 * a && b>} the tag statement's text is the WHOLE tag (inner expressions' text
+	 * ends before the {@code >}); for {@code <bx:param ...>} it is the component
+	 * itself. The {@code >} is therefore located by scanning THIS node's own source
+	 * text ({@link BoxNode#getSourceText()}), never the whole file.
+	 *
+	 * @param node the node to start from (checked first, then its ancestors)
+	 *
+	 * @return the enclosing tag node, or null if none
+	 */
+	private BoxNode enclosingTagNode( BoxNode node ) {
+		for ( BoxNode n = node; n != null; n = n.getParent() ) {
+			String text = n.getSourceText();
+			if ( text == null ) {
+				continue;
+			}
+			int k = 0;
+			while ( k < text.length() && Character.isWhitespace( text.charAt( k ) ) ) {
+				k++;
+			}
+			if ( k < text.length() && text.charAt( k ) == '<' ) {
+				return n;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * The nearest enclosing parenthesis of a node, or null if none. A parenthesized
+	 * expression's closing {@code )} is part of the PARENTHESIS node's own markup —
+	 * so the {@code )} is located by scanning the ENCLOSING PARENTHESIS's own source
+	 * text ({@link BoxNode#getSourceText()}), never the whole file.
+	 *
+	 * @param node the node to walk up from
+	 *
+	 * @return the enclosing parenthesis, or null
+	 */
+	private BoxParenthesis enclosingParenthesis( BoxNode node ) {
+		for ( BoxNode parent = node.getParent(); parent != null; parent = parent.getParent() ) {
+			if ( parent instanceof BoxParenthesis parenthesis ) {
+				return parenthesis;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -2015,21 +2068,22 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the finally open tag's {@code <} position, or null
 	 */
 	private Point findFinallyOpenTag( BoxTry node ) {
-		if ( node.getFinallyBody().isEmpty() || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( node.getFinallyBody().isEmpty() || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
 		Point	first	= node.getFinallyBody().get( 0 ).getStart();
-		int		offset	= offsetOf( source, first );
+		int		offset	= offsetOf( node, first );
 		if ( offset < 0 ) {
 			return null;
 		}
 		for ( int i = offset - 1; i >= 0; i-- ) {
 			if ( source.charAt( i ) == '<' ) {
+				// The tag match runs against the remainder of THIS node's own text.
 				String rest = source.substring( i, Math.min( source.length(), i + 30 ) );
 				// Tag names are case-insensitive — match ignoring case.
 				if ( rest.matches( "(?i)<(?:bx:|cf)?finally[\\s\\S]*" ) ) {
-					return pointAt( source, i );
+					return pointAt( node, i );
 				}
 				// Previous tag — the finally tag must be after it.
 				return null;
@@ -2050,7 +2104,8 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the catch open tag's {@code <} position, or null
 	 */
 	private Point findCatchOpenTag( BoxTry node, BoxTryCatch catchNode ) {
-		if ( node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( source == null ) {
 			return null;
 		}
 		// An empty catch body (CF) leaves no body statement to scan back from — use
@@ -2060,8 +2115,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			if ( s == null ) {
 				return null;
 			}
-			String	source	= node.getPosition().getSource().getCode();
-			int		off		= offsetOf( source, s );
+			int off = offsetOf( node, s );
 			if ( off < 0 ) {
 				return null;
 			}
@@ -2069,14 +2123,13 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			// Tag names are case-insensitive — match ignoring case.
 			return rest.matches( "(?i)<(?:bx:|cf)?catch[\\s\\S]*" ) ? s : null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		Point	first	= catchNode.getCatchBody().isEmpty() || catchNode.getCatchBody().get( 0 ).getStart() == null
+		Point first = catchNode.getCatchBody().isEmpty() || catchNode.getCatchBody().get( 0 ).getStart() == null
 		    ? catchNode.getEnd()
 		    : catchNode.getCatchBody().get( 0 ).getStart();
 		if ( first == null ) {
 			return null;
 		}
-		int offset = offsetOf( source, first );
+		int offset = offsetOf( node, first );
 		if ( offset < 0 ) {
 			return null;
 		}
@@ -2085,7 +2138,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				String rest = source.substring( i, Math.min( source.length(), i + 30 ) );
 				// Tag names are case-insensitive — match ignoring case.
 				if ( rest.matches( "(?i)<(?:bx:|cf)?catch[\\s\\S]*" ) ) {
-					return pointAt( source, i );
+					return pointAt( node, i );
 				}
 				// A closing tag (</...>) between the end and the open tag is skipped
 				// (the catch's own </cfcatch>); any OTHER tag before it means the
@@ -2112,11 +2165,11 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the closing tag's {@code <} position, or null
 	 */
 	private Point findTagCloseOpenBackward( BoxNode node, Point from, String tagName ) {
-		if ( from == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( from == null || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, from );
+		int offset = offsetOf( node, from );
 		if ( offset < 0 ) {
 			return null;
 		}
@@ -2125,7 +2178,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		for ( int i = offset - 1; i >= 0; i-- ) {
 			// Tag names are case-insensitive — compare ignoring case.
 			if ( source.regionMatches( true, i, close1, 0, close1.length() ) || source.regionMatches( true, i, close2, 0, close2.length() ) ) {
-				return pointAt( source, i );
+				return pointAt( node, i );
 			}
 		}
 		return null;
@@ -2219,25 +2272,25 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the closing tag's {@code <} position, or null
 	 */
 	private Point findTagCloseOpen( BoxNode node, Point from, String tagName ) {
-		if ( from == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( from == null || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, from );
+		int offset = offsetOf( node, from );
 		if ( offset < 0 ) {
 			return null;
 		}
 		// Match "</bx:tagName>" or "</cfTagName>". The CF form is SHORTER (</cf vs
 		// </bx:), so the scan bound must use the shorter pattern — otherwise a
-		// `</cfloop>` sitting at the very END of the file (no trailing newline)
-		// falls past `source.length() - "</bx:loop".length()` and is never found.
+		// `</cfloop>` sitting at the very END of THIS node's own text (no trailing
+		// newline) falls past `source.length() - "</bx:loop".length()` and is never found.
 		String	close1	= "</bx:" + tagName;
 		String	close2	= "</cf" + ( tagName.equalsIgnoreCase( "defaultcase" ) ? "defaultcase" : tagName );
 		int		maxLen	= Math.min( close1.length(), close2.length() );
 		for ( int i = offset; i <= source.length() - maxLen; i++ ) {
 			// Tag names are case-insensitive — compare ignoring case.
 			if ( source.regionMatches( true, i, close1, 0, close1.length() ) || source.regionMatches( true, i, close2, 0, close2.length() ) ) {
-				return pointAt( source, i );
+				return pointAt( node, i );
 			}
 		}
 		return null;
@@ -2280,18 +2333,18 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the closing brace point, or null
 	 */
 	private Point findBraceBefore( BoxNode node, Point point ) {
-		if ( point == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( point == null || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, point );
+		int offset = offsetOf( node, point );
 		if ( offset < 0 ) {
 			return null;
 		}
 		for ( int i = offset - 1; i >= 0; i-- ) {
 			char c = source.charAt( i );
 			if ( c == '}' ) {
-				return pointAt( source, i );
+				return pointAt( node, i );
 			}
 			if ( !Character.isWhitespace( c ) ) {
 				return null;
@@ -2312,11 +2365,11 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the keyword position, or null
 	 */
 	private Point findKeywordBraceStart( BoxNode node, Point after, String keyword ) {
-		if ( after == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( after == null || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, after );
+		int offset = offsetOf( node, after );
 		if ( offset < 0 ) {
 			return null;
 		}
@@ -2332,7 +2385,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 					kwStart--;
 				}
 				if ( source.substring( kwStart, kwEnd ).equalsIgnoreCase( keyword ) ) {
-					return pointAt( source, kwStart );
+					return pointAt( node, kwStart );
 				}
 			}
 		}
@@ -2352,11 +2405,11 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the keyword position, or null
 	 */
 	private Point findKeywordBefore( BoxNode node, Point before, String keyword ) {
-		if ( before == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( before == null || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, before );
+		int offset = offsetOf( node, before );
 		if ( offset < 0 ) {
 			return null;
 		}
@@ -2376,7 +2429,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 					wordStart--;
 				}
 				if ( source.substring( wordStart, wordEnd ).equalsIgnoreCase( keyword ) ) {
-					return pointAt( source, wordStart );
+					return pointAt( node, wordStart );
 				}
 				i = wordStart; // continue scanning before this word
 			}
@@ -2397,18 +2450,18 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the {@code <} position, or null
 	 */
 	private Point findTagOpenBefore( BoxNode node, Point before ) {
-		if ( before == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( before == null || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, before );
+		int offset = offsetOf( node, before );
 		if ( offset < 0 ) {
 			return null;
 		}
 		for ( int i = offset - 1; i >= 0; i-- ) {
 			char c = source.charAt( i );
 			if ( c == '<' ) {
-				return pointAt( source, i );
+				return pointAt( node, i );
 			}
 			// A statement boundary before the tag means the tag starts elsewhere.
 			if ( c == '\n' || c == '>' ) {
@@ -2429,18 +2482,18 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the {@code >} position (the tag's closing angle), or null
 	 */
 	private Point findTagCloseAfter( BoxNode node, Point from ) {
-		if ( from == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( from == null || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, from );
+		int offset = offsetOf( node, from );
 		if ( offset < 0 ) {
 			return null;
 		}
 		for ( int i = offset; i < source.length(); i++ ) {
 			char c = source.charAt( i );
 			if ( c == '>' ) {
-				return pointAt( source, i );
+				return pointAt( node, i );
 			}
 			// A newline before the > means this is not a single-line tag.
 			if ( c == '\n' ) {
@@ -2462,18 +2515,18 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the {@code >} position, or null if none / non-whitespace intervenes
 	 */
 	private Point tagCloseAfterWhitespaceOnly( BoxNode node, Point from ) {
-		if ( from == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( from == null || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, from );
+		int offset = offsetOf( node, from );
 		if ( offset < 0 ) {
 			return null;
 		}
 		for ( int i = offset; i < source.length(); i++ ) {
 			char c = source.charAt( i );
 			if ( c == '>' ) {
-				return pointAt( source, i );
+				return pointAt( node, i );
 			}
 			if ( !Character.isWhitespace( c ) ) {
 				return null;
@@ -2495,11 +2548,11 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the branch tag {@code <} position, or null
 	 */
 	private Point findBranchTagBefore( BoxNode node, Point before ) {
-		if ( before == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( before == null || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, before );
+		int offset = offsetOf( node, before );
 		if ( offset < 0 ) {
 			return null;
 		}
@@ -2522,7 +2575,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 					}
 					if ( j < source.length() && j > bestEnd ) {
 						bestEnd	= j;
-						best	= pointAt( source, i );
+						best	= pointAt( node, i );
 					}
 				}
 				// The immediate previous tag boundary — keep scanning past it for
@@ -2547,18 +2600,18 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the {@code )} position, or null
 	 */
 	private Point findParenAfter( BoxNode node, Point after ) {
-		if ( after == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( after == null || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, after );
+		int offset = offsetOf( node, after );
 		if ( offset < 0 ) {
 			return null;
 		}
 		for ( int i = offset; i < source.length(); i++ ) {
 			char c = source.charAt( i );
 			if ( c == ')' ) {
-				return pointAt( source, i );
+				return pointAt( node, i );
 			}
 			if ( !Character.isWhitespace( c ) ) {
 				return null;
@@ -2580,17 +2633,17 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the opening brace point, or null
 	 */
 	private Point findOpenBraceBefore( BoxNode node, Point before ) {
-		if ( before == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( before == null || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, before );
+		int offset = offsetOf( node, before );
 		if ( offset < 0 ) {
 			return null;
 		}
 		for ( int i = offset - 1; i >= 0; i-- ) {
 			if ( source.charAt( i ) == '{' ) {
-				return pointAt( source, i );
+				return pointAt( node, i );
 			}
 			if ( source.charAt( i ) == ';' || source.charAt( i ) == '}' ) {
 				// Passed a statement boundary / closing brace — not a block open.
@@ -2617,12 +2670,12 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the opening brace point, or null
 	 */
 	private Point findEmptyBodyOpenBrace( BoxNode node ) {
-		Point before = node.getEnd();
-		if ( before == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		Point	before	= node.getEnd();
+		String	source	= node.getSourceText();
+		if ( before == null || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, before );
+		int offset = offsetOf( node, before );
 		if ( offset < 0 ) {
 			return null;
 		}
@@ -2638,7 +2691,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			}
 			if ( seenClose ) {
 				if ( c == '{' ) {
-					return pointAt( source, i );
+					return pointAt( node, i );
 				}
 				if ( c == ';' ) {
 					// Passed a statement boundary without finding "{ }" — not an
@@ -2673,27 +2726,43 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 * @return the opening brace point, or null
 	 */
 	private Point findOpenBraceAfter( BoxNode node, Point from ) {
-		if ( from == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+		String source = node.getSourceText();
+		if ( from == null || source == null ) {
 			return null;
 		}
-		String	source	= node.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, from );
+		int offset = offsetOf( node, from );
 		if ( offset < 0 ) {
 			return null;
 		}
 		for ( int i = offset; i < source.length(); i++ ) {
 			if ( source.charAt( i ) == '{' ) {
-				return pointAt( source, i );
+				return pointAt( node, i );
 			}
 		}
 		return null;
 	}
 
 	/**
-	 * Convert a Point to a character offset in the source.
+	 * Convert a Point to a character offset within the given node's OWN
+	 * {@link BoxNode#getSourceText()} — that is, relative to the node's own start
+	 * point. The node's text is the exact slice the parser captured for this node
+	 * (from the ANTLR token stream, never a whole-file read), so all scanning stays
+	 * INSIDE the node and never consults the file. Returns -1 when the Point is NULL
+	 * (an AST node's position/start/end can ALWAYS be null), when the node has no
+	 * source text, or when the Point lies before the node's own start.
+	 *
+	 * @param node the node whose own source text defines the coordinate space
+	 * @param p    the point to convert
+	 *
+	 * @return the offset within the node's text, or -1
 	 */
-	private int offsetOf( String source, Point p ) {
-		int	line	= 1;
+	private int offsetOf( BoxNode node, Point p ) {
+		String	source	= node.getSourceText();
+		Point	origin	= node.getStart();
+		if ( p == null || source == null || origin == null ) {
+			return -1;
+		}
+		int	line	= origin.getLine();
 		int	offset	= 0;
 		while ( line < p.getLine() && offset < source.length() ) {
 			if ( source.charAt( offset ) == '\n' ) {
@@ -2701,15 +2770,31 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			}
 			offset++;
 		}
-		return offset + p.getColumn();
+		if ( line != p.getLine() ) {
+			return -1;
+		}
+		// On the node's own start line the column is relative to the node's start
+		// column; on any later line the text's line starts at column 0.
+		return line == origin.getLine() ? offset + ( p.getColumn() - origin.getColumn() ) : offset + p.getColumn();
 	}
 
 	/**
-	 * Convert a character offset back to a Point.
+	 * Convert a character offset within the given node's OWN
+	 * {@link BoxNode#getSourceText()} back to an absolute Point.
+	 *
+	 * @param node   the node whose own source text defines the coordinate space
+	 * @param offset the offset within the node's text
+	 *
+	 * @return the absolute point
 	 */
-	private Point pointAt( String source, int offset ) {
-		int	line	= 1;
-		int	col		= 0;
+	private Point pointAt( BoxNode node, int offset ) {
+		Point	origin	= node.getStart();
+		String	source	= node.getSourceText();
+		if ( origin == null || source == null ) {
+			return null;
+		}
+		int	line	= origin.getLine();
+		int	col		= origin.getColumn();
 		for ( int i = 0; i < offset && i < source.length(); i++ ) {
 			if ( source.charAt( i ) == '\n' ) {
 				line++;
@@ -2732,12 +2817,16 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 *
 	 * @return the trimmed point
 	 */
-	private Point trimTrailingWhitespace( String source, Point p ) {
-		int off = offsetOf( source, p );
+	private Point trimTrailingWhitespace( BoxNode node, Point p ) {
+		String	source	= node.getSourceText();
+		int		off		= offsetOf( node, p );
+		if ( source == null || off < 0 ) {
+			return p;
+		}
 		while ( off > 0 && Character.isWhitespace( source.charAt( off - 1 ) ) ) {
 			off--;
 		}
-		return pointAt( source, off );
+		return pointAt( node, off );
 	}
 
 	/**
@@ -2751,12 +2840,16 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 *
 	 * @return the trimmed point
 	 */
-	private Point trimLeadingWhitespace( String source, Point p ) {
-		int off = offsetOf( source, p );
+	private Point trimLeadingWhitespace( BoxNode node, Point p ) {
+		String	source	= node.getSourceText();
+		int		off		= offsetOf( node, p );
+		if ( source == null || off < 0 ) {
+			return p;
+		}
 		while ( off < source.length() && Character.isWhitespace( source.charAt( off ) ) ) {
 			off++;
 		}
-		return pointAt( source, off );
+		return pointAt( node, off );
 	}
 
 	/**
@@ -2875,7 +2968,10 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// before the ">" — nested operands have more expression text after them.
 		if ( isTagContext( node ) && headId >= 0 ) {
 			Point	rightEnd	= leftmostEnd( right );
-			Point	tagClose	= tagCloseAfterWhitespaceOnly( node, rightEnd );
+			// The tag's closing ">" belongs to the enclosing TAG node's own source
+			// text (the operand's text ends before the ">").
+			BoxNode	tagNode		= enclosingTagNode( node );
+			Point	tagClose	= tagNode == null ? null : tagCloseAfterWhitespaceOnly( tagNode, rightEnd );
 			if ( tagClose != null ) {
 				closeRunningSpan( rightEnd );
 				int closeId = addSpan( rightEnd, new Point( tagClose.getLine(), tagClose.getColumn() + 1 ) );
@@ -3791,6 +3887,156 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			consumer.accept( spanId, start );
 		}
 		return spanId;
+	}
+
+	/**
+	 * Split a tag component's RUNTIME EXPRESSION attribute values into their own
+	 * spans, exactly like function-call arguments: the tag SHELL ({@code <bx:name}
+	 * plus its literal attributes and punctuation) is one span, and each attribute
+	 * whose value is a runtime expression (e.g. {@code attr2="#sleep( 100 )#"})
+	 * breaks out into its OWN span, because evaluating it is separate work from
+	 * evaluating the tag. A LITERAL attribute value (e.g. {@code attr="value"}) stays
+	 * fused into the shell, because it cannot throw and always evaluates inline.
+	 * <p>
+	 * The span bounds come from the node Pass B actually TRANSFORMS/marks for the
+	 * value — for a single-interpolation value ({@code "#expr#"}) that is the INNER
+	 * expression (the interpolation is unwrapped, not forced to a string), so the
+	 * span starts at the inner expression and its mark resolves.
+	 * <p>
+	 * Whitespace and line breaks never affect the model: a single-line tag and its
+	 * multi-line equivalent produce the same span sequence. The always-run shell
+	 * pieces (head + interstitials + trailing {@code >}) are grouped so the shell is
+	 * marked atomically, mirroring a call's head + closing paren.
+	 *
+	 * @param node the tag component
+	 */
+	private void splitComponentAttributeValues( BoxComponent node ) {
+		List<BoxAnnotation> attributes = node.getAttributes();
+		if ( attributes == null || attributes.isEmpty() ) {
+			return;
+		}
+		// An all-literal tag has nothing to split — it stays ONE statement span.
+		boolean hasRuntimeValue = attributes.stream().anyMatch( a -> a.getValue() != null && !a.getValue().isLiteral() );
+		if ( !hasRuntimeValue || node.getStart() == null || node.getEnd() == null ) {
+			return;
+		}
+		// The tag's OWN source text (the ANTLR slice for this node) — never the whole
+		// file. Every region/token scan below stays INSIDE this node's text.
+		String source = node.getSourceText();
+		if ( source == null ) {
+			return;
+		}
+
+		// The RUNTIME value expressions (inner expression of a single-interpolation
+		// value), in source order. Positions CAN BE NULL on any AST node — skip any
+		// value (or inner expression) whose start/end is missing rather than assume
+		// it is present (that would NPE).
+		List<BoxExpression> valueExprs = new ArrayList<>();
+		for ( BoxAnnotation attr : attributes ) {
+			BoxExpression v = attr.getValue();
+			if ( v == null || v.isLiteral() ) {
+				continue;
+			}
+			BoxExpression expr = runtimeExprOf( v );
+			if ( expr == null || expr.getStart() == null || expr.getEnd() == null ) {
+				continue;
+			}
+			valueExprs.add( expr );
+		}
+		valueExprs.sort( Comparator.comparingInt( e -> offsetOf( node, e.getStart() ) ) );
+
+		// Walk the tag from start to end. The regions BETWEEN value expressions are
+		// the SHELL; each is split into whitespace-delimited TOKENS, and the
+		// whitespace between tokens is left UNSPANNED. This makes the span model
+		// dependent ONLY on tokens — a single-line tag and its multi-line equivalent
+		// produce the SAME token spans (line breaks and inter-attribute whitespace
+		// never change the model).
+		List<Integer>	shellIds	= new ArrayList<>();
+		Point			cursor		= node.getStart();
+		for ( BoxExpression expr : valueExprs ) {
+			Point	vStart	= expr.getStart();
+			Point	vEnd	= expr.getEnd();
+			if ( vStart == null || vEnd == null ) {
+				continue;
+			}
+			registerShellTokens( node, source, cursor, vStart, shellIds );
+			// The value's own span (the node Pass B marks at).
+			addSpan( vStart, vEnd );
+			cursor = vEnd;
+		}
+		registerShellTokens( node, source, cursor, node.getEnd(), shellIds );
+
+		// The enclosing statement must NOT mint a phantom whole-tag span over the
+		// gaps we deliberately left unspanned.
+		this.runningStart = null;
+
+		if ( !shellIds.isEmpty() ) {
+			int[] shell = shellIds.stream().mapToInt( Integer::intValue ).toArray();
+			// Back the shell tokens by the tag's call-site bracket: the tag's INCLUSIVE
+			// time is charged to EVERY shell token (head + interstitials + closing `>`),
+			// so the closing `>` reports the tag's time, never a separate ~0 probe.
+			// The component transformer ALSO emits a varargs shell mark (bumping every
+			// token's count) — so the shell does not rely on the generic statement-start
+			// hook, which resolves inconsistently for single-line vs multi-line tags.
+			transpiler.registerCallShell( shellIds.get( 0 ), shell );
+			// This tag's transformer emits the shell mark itself, so the generic
+			// statement-start hook must SKIP the head (else the head is double-marked).
+			transpiler.markShellSelfMarked( shellIds.get( 0 ) );
+		}
+	}
+
+	/**
+	 * Register each whitespace-delimited TOKEN in the source region {@code [from,
+	 * to)} as its own executable span, appending the ids to {@code shellIds}. The
+	 * whitespace BETWEEN tokens is intentionally left UNSPANNED, so formatting
+	 * (line breaks, indentation, spaces between attributes) never affects the model:
+	 * the same tokens are produced whether the tag is on one line or many.
+	 *
+	 * @param node     the node whose own source text defines the coordinate space
+	 * @param source   the node's own source text
+	 * @param from     the region start
+	 * @param to       the region end
+	 * @param shellIds the accumulator for the registered shell token span ids
+	 */
+	private void registerShellTokens( BoxNode node, String source, Point from, Point to, List<Integer> shellIds ) {
+		int	fromOff	= offsetOf( node, from );
+		int	toOff	= offsetOf( node, to );
+		if ( fromOff < 0 || toOff < 0 || toOff <= fromOff ) {
+			return;
+		}
+		int i = fromOff;
+		while ( i < toOff ) {
+			while ( i < toOff && Character.isWhitespace( source.charAt( i ) ) ) {
+				i++;
+			}
+			int tokenStart = i;
+			while ( i < toOff && !Character.isWhitespace( source.charAt( i ) ) ) {
+				i++;
+			}
+			if ( i > tokenStart ) {
+				int id = addSpan( pointAt( node, tokenStart ), pointAt( node, i ) );
+				if ( id >= 0 ) {
+					shellIds.add( id );
+				}
+			}
+		}
+	}
+
+	/**
+	 * The node Pass B actually transforms (and therefore marks) for an attribute
+	 * value. A single-interpolation value ({@code "#expr#"}) is unwrapped to its
+	 * INNER expression (see {@code Transpiler.transformAnnotations}); every other
+	 * value is used as-is.
+	 *
+	 * @param value the attribute value expression
+	 *
+	 * @return the expression whose start position the value's mark fires at
+	 */
+	private BoxExpression runtimeExprOf( BoxExpression value ) {
+		if ( value instanceof BoxStringInterpolation bsi && bsi.getValues().size() == 1 ) {
+			return bsi.getValues().get( 0 );
+		}
+		return value;
 	}
 
 	/** Consumer invoked whenever a span is added, used to capture shell span ids. */

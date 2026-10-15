@@ -654,6 +654,36 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	/**
+	 * Span ids that head a call shell whose OWN transformer emits the shell mark (a
+	 * tag/component), so the generic statement-start mark hook must SKIP them —
+	 * otherwise the tag head is marked twice. Function-call shells are NOT in this
+	 * set (the generic hook marks them normally).
+	 */
+	private final java.util.Set<Integer> selfMarkedShellHeads = new java.util.HashSet<>();
+
+	/**
+	 * Mark a call-shell head as SELF-MARKED: its construct's transformer emits the
+	 * shell mark itself, so the generic statement-start hook must not also mark it.
+	 *
+	 * @param headSpanId the shell head span id
+	 */
+	public void markShellSelfMarked( int headSpanId ) {
+		this.selfMarkedShellHeads.add( headSpanId );
+	}
+
+	/**
+	 * Whether a span heads a call shell whose transform self-marks (see
+	 * {@link #markShellSelfMarked}).
+	 *
+	 * @param headSpanId the span id to test
+	 *
+	 * @return true when the generic mark hook must skip this span
+	 */
+	public boolean isShellSelfMarked( int headSpanId ) {
+		return this.selfMarkedShellHeads.contains( headSpanId );
+	}
+
+	/**
 	 * Look up an atomic span group WITHOUT consuming it. Used when the same group
 	 * must be emitted in MULTIPLE bytecode copies (e.g. a finally block compiled
 	 * both inline and in the exception handler — only one runs at runtime, so both

@@ -223,4 +223,139 @@ public class ProfilerOverheadBenchmarkTest {
 		                """;
 		report( "call-heavy (5 UDF calls)", source, 20_000, 60_000 );
 	}
+
+	// -------------------------------------------------------------------------
+	// NO-OP overhead: profiling ENABLED (marks compiled in) but NEVER ACTIVATED
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Measure the cost of leaving profiling ENABLED while the capture service is
+	 * NEVER activated — i.e. the class files are instrumented (every `mark` /
+	 * `markEnter` / `markExit` call is baked into the bytecode) but every one of
+	 * those calls short-circuits to a no-op at runtime.
+	 * <p>
+	 * A/B: BOTH arms run with the profiler capture INACTIVE, so neither records;
+	 * the ONLY difference is whether the class files carry the mark bytecode:
+	 * <ul>
+	 * <li><b>ARM A</b> ({@code codeProfilerEnabled=false}) — compiled WITHOUT any
+	 * mark calls. Pure, uninstrumented execution.</li>
+	 * <li><b>ARM B</b> ({@code codeProfilerEnabled=true}) — compiled WITH mark
+	 * calls (flat marks + inclusive brackets), but {@code service.active=false}, so
+	 * every mark is a no-op.</li>
+	 * </ul>
+	 * The delta is the total cost of the no-op mark calls: one static invoke plus a
+	 * volatile field read and an early {@code return} per mark site. The number of
+	 * marks that DID NOTHING is measured separately (one short capture-on run) so the
+	 * report can give a per-mark nanosecond cost.
+	 */
+	private void reportNoOpOverhead( String label, String source, int warmup, int iters ) {
+		// ---- ARM A: UNINSTRUMENTED (no mark bytecode at all) ----
+		this.runtime.getConfiguration().codeProfilerEnabled = false;
+		this.service.setActive( false );
+		ortus.boxlang.compiler.asmboxpiler.Transpiler.setInclusiveTimingEnabled( true );
+		this.service.reset();
+		warm( source );
+		runRep( source, warmup );
+		Rep		baseline	= bestRep( source, iters );
+		double	baseMs		= baseline.nanos() / 1_000_000.0;
+
+		// ---- ARM B: INSTRUMENTED but INACTIVE (marks present, all no-ops) ----
+		this.runtime.getConfiguration().codeProfilerEnabled = true;
+		this.service.setActive( false ); // NEVER activated — marks must no-op
+		this.service.reset();
+		warm( source );
+		runRep( source, warmup );
+		Rep		noop	= bestRep( source, iters );
+		double	noopMs	= noop.nanos() / 1_000_000.0;
+
+		// Count the marks that did nothing: one short ACTIVE run over the SAME
+		// instrumented class (already compiled with marks), summed across spans.
+		this.service.reset();
+		this.service.setActive( true );
+		long marksPerRun = runRep( source, iters ).marks() / iters;
+		this.service.setActive( false );
+
+		double	perRunBaseUs	= baseline.nanos() / 1_000.0 / iters;
+		double	perRunNoopUs	= noop.nanos() / 1_000.0 / iters;
+		double	pct				= baseline.nanos() == 0 ? 0 : ( ( double ) noop.nanos() / baseline.nanos() - 1.0 ) * 100.0;
+		double	nsPerMark		= marksPerRun == 0 ? 0 : ( noop.nanos() - baseline.nanos() ) / ( double ) ( marksPerRun * iters );
+
+		String	block			= String.format(
+		    "%n=== %s (%d iters) [NO-OP: enabled but never activated] ===%n" +
+		        "  ARM A  uninstrumented (no marks) : %10.1f ms total  (%8.2f us/run)%n" +
+		        "  ARM B  instrumented, INACTIVE   : %10.1f ms total  (%8.2f us/run)%n" +
+		        "  NO-OP OVERHEAD                  : %+.1f%%  (%+.3f us/run)%n" +
+		        "  marks/run=%-8d  cost per no-op mark=%.2f ns%n",
+		    label, iters, baseMs, perRunBaseUs, noopMs, perRunNoopUs, pct, perRunNoopUs - perRunBaseUs, marksPerRun, nsPerMark
+		);
+		System.out.print( block );
+		appendReport( block );
+
+		// Leave the service inactive and the config off, as found.
+		this.service.setActive( false );
+		this.runtime.getConfiguration().codeProfilerEnabled = false;
+	}
+
+	@DisplayName( "Benchmark: no-op overhead (tight arithmetic loop)" )
+	@Test
+	void benchmarkNoOpTightLoop() {
+		String source = """
+		                total = 0;
+		                for( i = 1; i <= 50; i++ ) {
+		                    total = total + i;
+		                }
+		                """;
+		reportNoOpOverhead( "no-op tight loop (50 iters, no UDF)", source, 20_000, 60_000 );
+	}
+
+	@DisplayName( "Benchmark: no-op overhead (UDF call in a loop)" )
+	@Test
+	void benchmarkNoOpUDFLoop() {
+		String source = """
+		                function add( a, b ) {
+		                    return a + b;
+		                }
+		                total = 0;
+		                for( i = 1; i <= 50; i++ ) {
+		                    total = add( total, i );
+		                }
+		                """;
+		reportNoOpOverhead( "no-op UDF call loop (50 iters)", source, 10_000, 30_000 );
+	}
+
+	@DisplayName( "Benchmark: no-op overhead (call-heavy)" )
+	@Test
+	void benchmarkNoOpCallHeavy() {
+		String source = """
+		                function tick( n ) {
+		                    return n + 1;
+		                }
+		                x = 0;
+		                x = tick( x );
+		                x = tick( x );
+		                x = tick( x );
+		                x = tick( x );
+		                x = tick( x );
+		                """;
+		reportNoOpOverhead( "no-op call-heavy (5 UDF calls)", source, 20_000, 60_000 );
+	}
+
+	@DisplayName( "Benchmark: no-op overhead (branch-heavy, many spans)" )
+	@Test
+	void benchmarkNoOpBranchHeavy() {
+		String source = """
+		                total = 0;
+		                for( i = 1; i <= 50; i++ ) {
+		                    if( i % 2 == 0 ) {
+		                        total = total + i;
+		                    } else {
+		                        total = total - 1;
+		                    }
+		                    if( i > 25 ) {
+		                        total = total * 2;
+		                    }
+		                }
+		                """;
+		reportNoOpOverhead( "no-op branch-heavy (many spans)", source, 20_000, 60_000 );
+	}
 }

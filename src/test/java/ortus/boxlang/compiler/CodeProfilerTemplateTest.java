@@ -1068,4 +1068,101 @@ class CodeProfilerTemplateTest {
 		assertThat( service.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 1 ); // <bx:elseif true>
 		assertThat( service.spanAt( key, 4, 0 ).stats().count() ).isEqualTo( 1 ); // b = 2
 	}
+
+	@DisplayName( "It splits a tag's RUNTIME attribute values into their own spans" )
+	@Test
+	void testComponentRuntimeAttributeValuesSplit() {
+		// A tag's runtime-expression attribute values (e.g. var="#sleep( 5 )#") must
+		// break out into their OWN spans — exactly like function-call arguments —
+		// because evaluating them is separate work from evaluating the tag. Literal
+		// values stay fused into the tag shell. This must be IDENTICAL for the
+		// single-line and multi-line forms: line breaks and inter-attribute whitespace
+		// never change the span model.
+		String source = """
+		                <bx:dump var="#sleep( 5 )#" label="#sleep( 7 )#">
+
+		                <bx:dump
+		                    var="#sleep( 5 )#"
+		                    label="#sleep( 7 )#">
+		                """;
+		runtime.executeSource( source, context, BoxSourceType.BOXTEMPLATE );
+		String					key		= IBoxpiler.MD5( BoxSourceType.BOXTEMPLATE.toString() + source );
+
+		java.util.List<String>	single	= new java.util.ArrayList<>();
+		java.util.List<String>	multi	= new java.util.ArrayList<>();
+		for ( CodeProfilerService.Span s : service.fileSpans( key ) ) {
+			String text = sourceSlice( source, s );
+			if ( s.startLine() == 1 ) {
+				single.add( text );
+			} else if ( s.startLine() >= 3 ) {
+				multi.add( text );
+			}
+		}
+
+		// The EXACT token sequence — one-line and multi-line must be IDENTICAL.
+		// (This is the invariant that failed before: the shell pieces were cut
+		// differently by whitespace, and `#">` was missing on the one-liner.)
+		assertThat( single ).isEqualTo( multi );
+		assertThat( single ).containsExactly(
+		    "<bx:dump", "var=\"#", "sleep( 5 )", "#\"", "label=\"#", "sleep( 7 )", "#\">" ).inOrder();
+
+		// NO span may contain whitespace (the inter-attribute gaps must be unspanned),
+		// and no span may SPAN A LINE BREAK (which would prove line breaks matter).
+		// EVERY span must have run EXACTLY ONCE (no shell token double-counted, no
+		// shell token left unmarked) — uniform across BOTH tag forms.
+		for ( CodeProfilerService.Span s : service.fileSpans( key ) ) {
+			String raw = sourceSliceRaw( source, s );
+			assertThat( raw ).doesNotContain( "\n" );
+			assertThat( raw ).isEqualTo( raw.strip() );
+			assertThat( s.stats().count() ).isEqualTo( 1 );
+		}
+	}
+
+	@DisplayName( "It charges a tag's attribute evaluation time to the tag, and the closing > carries it" )
+	@Test
+	void testTagAttributeTimeIsInclusive() {
+		// The tag's on-stack (inclusive) time must INCLUDE evaluating its attributes:
+		// the two sleeps total ~12ms, so the tag SHELL tokens (including the closing
+		// `>`) must each report >= ~10ms — NOT a separate ~0 probe time. And each
+		// runtime value span reports its own ~5ms / ~7ms.
+		String source = """
+		                <bx:dump var="#sleep( 5 )#" label="#sleep( 7 )#">
+		                """;
+		runtime.executeSource( source, context, BoxSourceType.BOXTEMPLATE );
+		String						key		= IBoxpiler.MD5( BoxSourceType.BOXTEMPLATE.toString() + source );
+
+		// Find the shell's closing `>` span and the head span by their source text.
+		CodeProfilerService.Span	tail	= null;
+		for ( CodeProfilerService.Span s : service.fileSpans( key ) ) {
+			if ( "#\">".equals( sourceSliceRaw( source, s ) ) ) {
+				tail = s;
+			}
+		}
+		assertThat( tail ).isNotNull();
+		// The closing `>` ran once and carries the tag's inclusive time (~12ms of
+		// sleeps + tag overhead), NOT a separate ~0 probe time.
+		assertThat( tail.stats().count() ).isEqualTo( 1 );
+		assertThat( tail.stats().onStackNanos() ).isAtLeast( 10L * 1_000_000L );
+	}
+
+	/** The exact source characters of a span (whitespace preserved). */
+	private static String sourceSliceRaw( String source, CodeProfilerService.Span s ) {
+		String[] lines = source.split( "\n", -1 );
+		if ( s.startLine() == s.endLine() ) {
+			String line = lines[ s.startLine() - 1 ];
+			return line.substring( s.startCol(), Math.min( s.endCol(), line.length() ) );
+		}
+		StringBuilder sb = new StringBuilder();
+		sb.append( lines[ s.startLine() - 1 ].substring( s.startCol() ) );
+		for ( int ln = s.startLine() + 1; ln < s.endLine(); ln++ ) {
+			sb.append( '\n' ).append( lines[ ln - 1 ] );
+		}
+		sb.append( '\n' ).append( lines[ s.endLine() - 1 ], 0, s.endCol() );
+		return sb.toString();
+	}
+
+	/** The span text with whitespace runs collapsed to single spaces and trimmed. */
+	private static String sourceSlice( String source, CodeProfilerService.Span s ) {
+		return sourceSliceRaw( source, s ).replaceAll( "\\s+", " " ).trim();
+	}
 }

@@ -2709,8 +2709,8 @@ class CodeProfilerTest {
 	void testInclusiveNestedCalls() {
 		// foo( bar() ): the argument is evaluated before foo is invoked, so the
 		// call-site span's INCLUSIVE time is the WHOLE expression — bar's ~100ms +
-		// foo's own ~50ms = ~150ms. (Arguments are not separate spans in the current
-		// model; the whole `foo( bar() )` is one call-site span.)
+		// foo's own ~50ms = ~150ms. (bar() is ALSO its own argument span now, but the
+		// foo( call-site span still encloses the whole thing.)
 		String source = """
 		                function bar() {
 		                sleep( 100 );
@@ -2733,6 +2733,175 @@ class CodeProfilerTest {
 
 		// The line aggregate exposes it too.
 		assertThat( service.lineAt( key, 9 ).nanos() ).isAtLeast( 150L * 1_000_000L );
+	}
+
+	@DisplayName( "It splits a method call off its receiver and splits every argument into its own span" )
+	@Test
+	void testMethodCallReceiverAndArgsSplit() {
+		// `new X( ... ).run( target, ... )` is THREE operations, not one: the
+		// receiver (`new X( ... )`), the `.run( ... )` call, and each argument.
+		// Regression: the method-call visitor visited arguments BEFORE the receiver
+		// and never closed a boundary after it, so the whole expression collapsed
+		// into ONE span; identifier arguments were also rolled into the shell.
+		String source = """
+		                class X {
+		                    function init( o ) { return this }
+		                    function run( a, b, c ) { return 1 }
+		                }
+		                options = {}
+		                testResults = {}
+		                callbacks = {}
+		                target = 1
+		                new X( options ).run(
+		                    target,
+		                    testResults,
+		                    callbacks
+		                );
+		                """;
+		runtime.executeSource( source );
+		String					key		= IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// Collect normalized span texts for the statement lines.
+		java.util.List<String>	texts	= new java.util.ArrayList<>();
+		for ( CodeProfilerService.Span s : service.fileSpans( key ) ) {
+			if ( s.startLine() >= 8 ) {
+				texts.add( service.spanSourceText( key, source, s ).replaceAll( "\\s+", " " ).trim() );
+			}
+		}
+
+		// The receiver call, the .run( call, and EACH argument are all separate spans.
+		assertThat( texts ).contains( "new X( options )" );
+		assertThat( texts ).contains( ".run(" );
+		assertThat( texts ).contains( "target" );
+		assertThat( texts ).contains( "testResults" );
+		assertThat( texts ).contains( "callbacks" );
+	}
+
+	@DisplayName( "It splits every argument of a call into its own span, including bare identifiers and indexes" )
+	@Test
+	void testEveryArgumentGetsItsOwnSpan() {
+		// A bare identifier arg (`i`), an indexed access (`variables.actual[ i ]`),
+		// and identifier args (`missingMethodName`, `missingMethodArguments`) are ALL
+		// separate expressions. They must each get their own span — the span model is
+		// consistent: a simple literal stays in the shell, EVERYTHING else splits.
+		String source = """
+		                function tryElement( a, b, c, d ) { return 1 }
+		                variables.actual = [ 1, 2, 3 ]
+		                i = 1
+		                missingMethodName = "x"
+		                missingMethodArguments = {}
+		                result = tryElement(
+		                    i,
+		                    variables.actual[ i ],
+		                    missingMethodName,
+		                    missingMethodArguments
+		                );
+		                """;
+		runtime.executeSource( source );
+		String					key		= IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		java.util.List<String>	texts	= new java.util.ArrayList<>();
+		for ( CodeProfilerService.Span s : service.fileSpans( key ) ) {
+			if ( s.startLine() >= 6 ) {
+				texts.add( service.spanSourceText( key, source, s ).replaceAll( "\\s+", " " ).trim() );
+			}
+		}
+
+		assertThat( texts ).contains( "i" );
+		assertThat( texts ).contains( "variables.actual[ i ]" );
+		assertThat( texts ).contains( "missingMethodName" );
+		assertThat( texts ).contains( "missingMethodArguments" );
+	}
+
+	@DisplayName( "It keeps struct-literal entries spanned after a value that ends in a call" )
+	@Test
+	void testStructLiteralValueCallDoesNotSwallowFollowingEntries() {
+		// Regression: a struct VALUE that is (or ends with) a call — e.g.
+		// `"id" : hash( ... )` — left the running span set at the call's end. That
+		// leaked into the NEXT entry's nested visits, minting a PHANTOM span from the
+		// call's `)` across the following keys/values (so the `)` and the next several
+		// entries were swallowed). Every entry must be its own span, with no phantom.
+		String source = """
+		                function hash( s ) { return s }
+		                arguments = { title: 1, body: 2, data: 3, name: 4 }
+		                spec = {
+		                    "id"     : hash( arguments.title ),
+		                    "body"   : arguments.body,
+		                    "data"   : arguments.data,
+		                    "name"   : arguments.name
+		                };
+		                """;
+		runtime.executeSource( source );
+		String					key		= IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		java.util.List<String>	texts	= new java.util.ArrayList<>();
+		for ( CodeProfilerService.Span s : service.fileSpans( key ) ) {
+			if ( s.startLine() >= 4 ) {
+				texts.add( service.spanSourceText( key, source, s ).replaceAll( "\\s+", " " ).trim() );
+			}
+		}
+
+		// Every value is spanned, including those AFTER the call value.
+		assertThat( texts ).contains( "hash( arguments.title )" );
+		assertThat( texts ).contains( "arguments.body" );
+		assertThat( texts ).contains( "arguments.data" );
+		assertThat( texts ).contains( "arguments.name" );
+
+		// NO phantom: the bug minted a span from the call's `)` across the following
+		// keys/values. At most ONE span may cross a line (the struct's closing
+		// `}` tail); any OTHER multi-line span is the phantom.
+		int multiLine = 0;
+		for ( CodeProfilerService.Span s : service.fileSpans( key ) ) {
+			if ( s.startLine() >= 4 && s.endLine() != s.startLine() ) {
+				multiLine++;
+			}
+		}
+		assertThat( multiLine ).isAtMost( 1 );
+	}
+
+	@DisplayName( "It keeps every named-argument `name =` fragment in the call shell" )
+	@Test
+	void testNamedArgumentsShellConsistency() {
+		// Regression: for `fn( a = x, b = y, c = z )`, the FIRST `name =` landed in the
+		// call HEAD but the FOLLOWING `name =` fragments lived in spans grouped with
+		// their VALUES (inconsistent). Every `name =` must be in the call SHELL (which
+		// is marked+charged atomically), and each value a separate arg span.
+		String source = """
+		                function fn( spec, testResults, suiteStats, runner ) { return 1 }
+		                obj = { fn: fn }
+		                testResults = {}
+		                suiteStats = {}
+		                thisSpec = 1
+		                runner = 9
+		                obj.fn(
+		                    spec        = thisSpec,
+		                    testResults = testResults,
+		                    suiteStats  = suiteStats,
+		                    runner      = runner
+		                );
+		                """;
+		runtime.executeSource( source );
+		String					key		= IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		java.util.List<String>	texts	= new java.util.ArrayList<>();
+		for ( CodeProfilerService.Span s : service.fileSpans( key ) ) {
+			if ( s.startLine() >= 7 ) {
+				texts.add( service.spanSourceText( key, source, s ).replaceAll( "\\s+", " " ).trim() );
+			}
+		}
+
+		// The SHELL segments: the callee head, each `name =` interstitial, and the
+		// closing `);`. EVERY `name =` fragment is a shell segment (consistent — the
+		// first landed in the head, the rest are interstitials).
+		assertThat( texts ).contains( ".fn( spec =" );
+		assertThat( texts ).contains( ", testResults =" );
+		assertThat( texts ).contains( ", suiteStats =" );
+		assertThat( texts ).contains( ", runner =" );
+		assertThat( texts ).contains( ");" );
+
+		// Each VALUE is its own separate span (an ARG span, NOT a shell segment).
+		assertThat( texts ).contains( "thisSpec" );
+		assertThat( texts ).contains( "runner" );
 	}
 
 	@DisplayName( "It closes a call bracket when the callee throws (inclusive time still recorded)" )
@@ -4156,6 +4325,53 @@ class CodeProfilerTest {
 		assertThat( found ).isTrue();
 
 		runtime.getConfiguration().codeProfilerEnabled = false;
+	}
+
+	@DisplayName( "It DEFINES an interface that has only abstract methods (empty pseudo-constructor)" )
+	@Test
+	void testAbstractOnlyInterfaceDefines() throws Exception {
+		// Regression: an interface whose body holds ONLY abstract method declarations
+		// (no static block, no static/default method bodies — e.g. TestBox's
+		// IRunner.cfc) has an EMPTY _pseudoConstructor. The profiler's catch-all
+		// wrapper previously emitted a try range whose start == end (zero length),
+		// which the JVM rejects with:
+		// java.lang.ClassFormatError: Illegal exception table range in class file ...
+		// at defineClass time. This must COMPILE and DEFINE cleanly.
+		runtime.getConfiguration().codeProfilerEnabled = true;
+
+		var	boxpiler	= ( ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler ) RunnableLoader.getInstance().getBoxpiler();
+		var	classPath	= java.nio.file.Paths.get( "src/test/resources/profiler/ProfilerInterfaceAbstractOnly.bx" ).toAbsolutePath().normalize();
+		var	classInfo	= ortus.boxlang.compiler.ClassInfo.forClass(
+		    ResolvedFilePath.of( classPath ),
+		    ortus.boxlang.compiler.parser.Parser.detectFile( classPath.toFile(), true ),
+		    boxpiler );
+		boxpiler.getClassPool( classInfo.classPoolName() ).put( classInfo.fqn().toString(), classInfo );
+
+		java.util.List<byte[]>	compiled	= boxpiler.compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
+
+		// Defining the produced bytes is the operation that failed with
+		// Illegal exception table range before the fix. Any ClassFormatError here
+		// fails the test.
+		boolean					found		= false;
+		for ( byte[] bytes : compiled ) {
+			if ( bytes.length < 4 || bytes[ 0 ] != ( byte ) 0xCA || bytes[ 1 ] != ( byte ) 0xFE
+			    || bytes[ 2 ] != ( byte ) 0xBA || bytes[ 3 ] != ( byte ) 0xBE ) {
+				continue;
+			}
+			found = true;
+			new ByteClassLoader().define( bytes );
+		}
+		assertThat( found ).isTrue();
+
+		runtime.getConfiguration().codeProfilerEnabled = false;
+	}
+
+	/** Minimal loader that exposes the protected {@code defineClass} for tests. */
+	private static class ByteClassLoader extends ClassLoader {
+
+		Class<?> define( byte[] bytes ) {
+			return defineClass( null, bytes, 0, bytes.length );
+		}
 	}
 
 	@DisplayName( "It self-registers a blueprint from clinit and replaces stale span data" )

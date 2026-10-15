@@ -967,11 +967,14 @@ public class AsmTranspiler extends Transpiler {
 				// the class transformer's staticInitializer method (emitStaticInitMark),
 				// NOT at the pseudo-constructor site where this node is otherwise
 				// transformed (which would wrongly tie the static braces to instantiation).
+				// BoxComponent is EXCLUDED — its transformer marks the tag's atomic SHELL
+				// itself (head + interstitials + closing `>`), so the generic per-node mark
+				// here would double-count the tag head.
 				if ( isProfilingEnabled() && node.getPosition() != null && ! ( node instanceof BoxStaticInitializer ) ) {
 					long	packed	= ( ( long ) node.getPosition().getStart().getLine() << 32 )
 					    | ( node.getPosition().getStart().getColumn() & 0xFFFFFFFFL );
 					int		spanId	= getSpanId( packed );
-					if ( spanId >= 0 ) {
+					if ( spanId >= 0 && !isShellSelfMarked( spanId ) ) {
 						// If this span heads an atomic shell group (a declaration
 						// shell split at lazy defaults), batch the ENTIRE group into
 						// one varargs mark call — the whole shell runs atomically, so

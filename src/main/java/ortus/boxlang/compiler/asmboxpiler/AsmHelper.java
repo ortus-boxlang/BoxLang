@@ -1896,6 +1896,16 @@ public class AsmHelper {
 		if ( !transpiler.hasProfilerId() ) {
 			return body;
 		}
+		// An EMPTY body cannot throw, and wrapping it would emit a try range whose
+		// start and end are ADJACENT (zero length) — the JVM rejects that with
+		// "java.lang.ClassFormatError: Illegal exception table range in class file".
+		// This happens for an interface whose body holds ONLY abstract method
+		// declarations (no static block, no static/default method bodies), so its
+		// pseudo-constructor compiles to no instructions (e.g. TestBox's IRunner).
+		// Nothing to guard, so skip the wrapper entirely.
+		if ( body.isEmpty() ) {
+			return body;
+		}
 		List<AbstractInsnNode>	nodes		= new ArrayList<>( body );
 		LabelNode				tryStart	= new LabelNode();
 		LabelNode				tryEnd		= new LabelNode();
