@@ -1,0 +1,21 @@
+class {
+
+	static {
+		prefix       = "static:"
+		handlerCalls = 0
+	}
+
+	static function onMissingStaticMethod( string missingMethodName, struct missingMethodArguments ) {
+		static.handlerCalls++;
+		return {
+			"name"   : missingMethodName,
+			"args"   : missingMethodArguments,
+			"prefix" : static.prefix
+		};
+	}
+
+	static function existing() {
+		return "existing";
+	}
+
+}
