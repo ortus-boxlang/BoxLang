@@ -1772,14 +1772,29 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	/**
 	 * Convert a dot element to its intended meaning, as it may be something else
 	 * when not in a dot accessor.
+	 * <p>
+	 * The identifier NAME is always resolved from the node's TYPED value — a boolean
+	 * literal's value, the literal {@code null}, or a scope's name — NOT from its source
+	 * text. {@code visitExprOutString} widens a node's source text to cover the full
+	 * {@code #...#} wrapper, so using source text as the name would make {@code s.#true#}
+	 * look up the key {@code #true#} instead of {@code true}. The widened text is kept
+	 * only as source metadata on the resulting identifier.
+	 * </p>
 	 *
-	 * @param expr The expression to convert
+	 * @param expr      The expression to convert
+	 * @param withScope Whether a scope keyword should also be converted
 	 *
 	 * @return The converted expression
 	 */
 	private BoxExpression convertDotElement( BoxExpression expr, boolean withScope ) {
-		if ( expr instanceof BoxBooleanLiteral || expr instanceof BoxNull || ( withScope && expr instanceof BoxScope ) ) {
-			return new BoxIdentifier( expr.getSourceText(), expr.getPosition(), expr.getSourceText() );
+		if ( expr instanceof BoxBooleanLiteral booleanLiteral ) {
+			return new BoxIdentifier( String.valueOf( booleanLiteral.getValue() ), expr.getPosition(), expr.getSourceText() );
+		}
+		if ( expr instanceof BoxNull ) {
+			return new BoxIdentifier( "null", expr.getPosition(), expr.getSourceText() );
+		}
+		if ( withScope && expr instanceof BoxScope scope ) {
+			return new BoxIdentifier( scope.getName(), expr.getPosition(), expr.getSourceText() );
 		}
 		return expr;
 	}
