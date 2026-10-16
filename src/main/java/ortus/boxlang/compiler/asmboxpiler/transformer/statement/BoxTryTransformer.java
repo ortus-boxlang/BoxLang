@@ -95,8 +95,14 @@ public class BoxTryTransformer extends AbstractTransformer {
 			nodes.add( new TypeInsnNode( Opcodes.INSTANCEOF, Type.getInternalName( AbortException.class ) ) );
 			LabelNode abortLabel = new LabelNode();
 			nodes.add( new JumpInsnNode( Opcodes.IFEQ, abortLabel ) );
+			// An abort is NOT catchable by the user's catch clauses, but the finally
+			// clause MUST still run (issue #650). Reuse the shared exception-handler
+			// copy of the finally by jumping to it with the abort exception on the
+			// stack: it runs the finally and then rethrows the abort. Reusing this
+			// copy (rather than inlining yet another) keeps profiler marks correct
+			// and avoids duplicating the finally body.
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, eVar.index() ) );
-			nodes.add( new InsnNode( Opcodes.ATHROW ) );
+			nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyStartLabel ) );
 			nodes.add( abortLabel );
 
 			for ( BoxTryCatch catchNode : boxTry.getCatches() ) {
