@@ -1,6 +1,6 @@
 # Code Profiler — Instrumentation Overhead Report
 
-Status: **measured** (2026-10). Producer: `src/test/java/ortus/boxlang/compiler/ProfilerOverheadBenchmarkTest.java`
+Status: **measured** (2026-10). Producer: *(benchmark harness removed 2026-10-16 — it ran in every CI test run and slowed the suite)*
 (tagged `benchmark`). Raw output: `build/profiler-overhead-benchmark.txt`.
 
 ## The question this answers
