@@ -1755,6 +1755,27 @@ class CodeProfilerTest {
 		assertThat( service.lineAt( key, 4 ).count() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It marks an EMPTY default label when the switch reaches it" )
+	@Test
+	void testEmptySwitchDefaultLabel() {
+		String source = """
+		                x = 1;
+		                switch( x ) {
+		                default:
+		                }
+		                a = 2;
+		                """;
+		runtime.executeSource( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// The switch falls through to `default:` (no case matches), so the default
+		// LABEL executed even though it has no body statements. NOTE: assert the
+		// SPAN, not the line — the multi-line switch-header span also covers line 3,
+		// so `lineAt` would mask a missed default label.
+		assertThat( service.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 1 );   // "default:"
+	}
+
 	@DisplayName( "It charges a sleep inside a matching switch case" )
 	@Test
 	void testSwitchCaseTiming() {

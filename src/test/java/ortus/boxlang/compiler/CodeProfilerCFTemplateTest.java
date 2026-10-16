@@ -648,6 +648,25 @@ class CodeProfilerCFTemplateTest {
 		assertThat( service.lineAt( key, 12 ).count() ).isEqualTo( 1 ); // </cfswitch> reached
 	}
 
+	@DisplayName( "It marks an EMPTY <cfdefaultcase> when the switch reaches it (tag)" )
+	@Test
+	void testEmptyDefaultCaseTag() {
+		String source = """
+		                <cfset x = 1>
+		                <cfswitch expression="#x#">
+		                <cfdefaultcase>
+		                </cfdefaultcase>
+		                </cfswitch>
+		                """;
+		runtime.executeSource( source, context, BoxSourceType.CFTEMPLATE );
+
+		String key = IBoxpiler.MD5( BoxSourceType.CFTEMPLATE.toString() + source );
+
+		// No case matches, so the switch reaches the EMPTY default — its open tag
+		// executed and must be marked (it has no body statement to carry the mark).
+		assertThat( service.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 1 );   // <cfdefaultcase>
+	}
+
 	@DisplayName( "It profiles try/catch/finally block statements (tag)" )
 	@Test
 	void testTry() {

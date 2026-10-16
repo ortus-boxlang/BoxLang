@@ -1779,31 +1779,26 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		int		labelId		= closeRunningSpan( labelEnd );
 
 		// Each body statement opens/closes its own span (body may not run).
-		int		firstBodyId	= -1;
 		for ( BoxStatement stmt : node.getBody() ) {
 			this.runningStart = stmt.getStart();
 			stmt.accept( this );
-			int id = closeRunningSpan( stmt.getEnd() );
-			if ( firstBodyId < 0 ) {
-				firstBodyId = id;
-			}
+			closeRunningSpan( stmt.getEnd() );
 		}
 
-		// A default label has no condition node to mark it — batch it with the
-		// first body statement so both are marked when the default runs.
-		if ( node.getCondition() == null && labelId >= 0 && firstBodyId >= 0 && !node.getBody().isEmpty() ) {
-			transpiler.registerSpanGroup( new int[] { firstBodyId, labelId } );
-		}
+		// A default label has no condition node, so nothing would otherwise mark it.
+		// Pass B's switch transformer emits an explicit mark for the label at default
+		// ENTRY (see `emitUnbatchedDefaultLabelMark`), so the label must NOT also be
+		// grouped with a body statement — that would count a non-empty default twice.
 
 		// Tag-based case/defaultcase: the closing </bx:case> / </cfcase> (or
 		// </bx:defaultcase> / </cfdefaultcase>) is marked together with the case
-		// label when the case is evaluated. A default case has no condition — its
-		// label is batched with the first body statement (keyed by firstBodyId), so
-		// group the close tag with THAT so it fires when the default runs.
+		// label when the case is evaluated. A default case has no condition, so its
+		// open tag span IS the label span (keyed by labelId) — group the close tag
+		// with it so both fire at default entry (matching the Pass B label mark).
 		if ( isTagContext( node ) ) {
 			Point	afterBody	= node.getBody().isEmpty() ? node.getEnd() : node.getBody().get( node.getBody().size() - 1 ).getEnd();
 			boolean	isDefault	= node.getCondition() == null;
-			registerTagClose( node, afterBody, isDefault ? "defaultcase" : "case", isDefault ? firstBodyId : labelId );
+			registerTagClose( node, afterBody, isDefault ? "defaultcase" : "case", labelId );
 		}
 
 		// Reset so the next case / closing brace starts clean.

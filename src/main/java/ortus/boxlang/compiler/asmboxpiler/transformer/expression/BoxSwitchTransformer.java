@@ -221,6 +221,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				// nodes.add( new InsnNode( Opcodes.POP ) );
 				// pop the condition off the stack
 				// nodes.add( new InsnNode( Opcodes.POP ) );
+				emitUnbatchedDefaultLabelMark( nodes, c );
 				if ( c.getBody() != null ) {
 					c.getBody()
 					    .forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY_UNLESS_JUMPING ) ) );
@@ -248,6 +249,25 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		AsmHelper.addDebugLabel( nodes, "BoxSwitch - done" );
 
 		return AsmHelper.addLineNumberLabels( nodes, boxSwitch );
+	}
+
+	/**
+	 * Emit a mark for a {@code default:} label.
+	 * <p>
+	 * A {@code default} has no condition node, so Pass A registers its label span but
+	 * nothing else would ever mark it — the label would stay missed even when the
+	 * default ran. Pass B emits an explicit mark here at default ENTRY (the same point
+	 * the case-label marks fire), so an EMPTY default
+	 * ({@code switch( 1 ) { default: }} ) is covered too.
+	 * <p>
+	 * The label is deliberately NOT grouped with a body statement in Pass A, so this
+	 * mark is the ONLY one for the label — a non-empty default is not counted twice.
+	 *
+	 * @param nodes       the instruction list to append to
+	 * @param defaultCase the {@code default} case being emitted
+	 */
+	private void emitUnbatchedDefaultLabelMark( List<AbstractInsnNode> nodes, BoxSwitchCase defaultCase ) {
+		emitCaseLabelMark( nodes, defaultCase );
 	}
 
 	/**
@@ -400,6 +420,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				}
 				hasDefault = true;
 				AsmHelper.addDebugLabel( nodes, "BoxSwitch (breaking) - default case" );
+				emitUnbatchedDefaultLabelMark( nodes, c );
 				if ( c.getBody() != null ) {
 					c.getBody()
 					    .forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY ) ) );
@@ -558,6 +579,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			if ( c.getCondition() != null ) {
 				continue;
 			}
+			emitUnbatchedDefaultLabelMark( nodes, c );
 			if ( c.getBody() != null ) {
 				c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY ) ) );
 			}
@@ -710,6 +732,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			LabelNode skipDefault = new LabelNode();
 			nodes.add( new VarInsnNode( Opcodes.ILOAD, switchVarStore.index() ) );
 			nodes.add( new JumpInsnNode( Opcodes.IFNE, skipDefault ) );
+			emitUnbatchedDefaultLabelMark( nodes, c );
 			if ( c.getBody() != null ) {
 				c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY_UNLESS_JUMPING ) ) );
 			}

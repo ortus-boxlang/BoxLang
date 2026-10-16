@@ -1150,7 +1150,16 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		// if a simple name was given, then it's a simple function call (which may be converted to method in
 		// the dot handler. Expressions will sometimes come through as their primitive types.
 		if ( name instanceof BoxIdentifier || name instanceof BoxBooleanLiteral || name instanceof BoxNull || name instanceof BoxScope ) {
-			return new BoxFunctionInvocation( name.getSourceText(), args, pos, src );
+			// Use the resolved LOGICAL name for lookup, NOT the source text. `visitExprOutString` widens an
+			// identifier's source text to cover the whole `#name#` wrapper, so using source text here would
+			// make `#f#()` look up `#f#` instead of `f`. Keep the widened text only as source metadata.
+			//
+			// BACKWARD COMPATIBILITY: for every other case the source text is preserved verbatim (the
+			// boolean/null/scope cases keep their literal text, e.g. `true`, `null`, `variables`).
+			String invocationName = name instanceof BoxIdentifier identifier
+			    ? identifier.getName()
+			    : name.getSourceText();
+			return new BoxFunctionInvocation( invocationName, args, pos, src );
 		}
 
 		// if the function is invoked upon what at this point looks like an array access, but the array access was
@@ -1731,8 +1740,7 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	 */
 	private boolean isExplicitDestructuringScope( String scopeName ) {
 		return switch ( scopeName.toLowerCase() ) {
-			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread", "url",
-			    "variables" -> true;
+			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread", "url", "variables" -> true;
 			default -> false;
 		};
 	}
