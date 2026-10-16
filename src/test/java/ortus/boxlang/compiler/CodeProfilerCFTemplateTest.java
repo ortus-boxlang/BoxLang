@@ -432,6 +432,41 @@ class CodeProfilerCFTemplateTest {
 		assertThat( service.lineAt( key, 3 ).count() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It marks the <cfelse> tag span when the else branch runs (tag)" )
+	@Test
+	void testElseTagMarkedWhenElseRuns() {
+		// Regression: the else keyword locator in BoxIfElseTransformer scans back
+		// for the WORD "else". In CF tag form the source word is "cfelse", so the
+		// scan never matched and the registered <cfelse> tag span stayed MISSED
+		// even though the else branch executed.
+		String source = """
+		                <cfif false>
+		                <cfset a = 1>
+		                <cfelse>
+		                <cfset b = 2>
+		                </cfif>
+		                """;
+		runtime.executeSource( source, context, BoxSourceType.CFTEMPLATE );
+
+		String	key			= IBoxpiler.MD5( BoxSourceType.CFTEMPLATE.toString() + source );
+		// // DEBUG dump for ElseTagMarkedWhenElseRuns
+		// System.out.println( "=== dump ElseTagMarkedWhenElseRuns" );
+		// System.out.print( service.dumpSpans( key, source ) );
+
+		// The <cfif> head, the </cfif> close tag, and each branch body are spans.
+		var		spanDefs	= service.trackedBlueprints().get( key ).spans();
+		assertThat( spanDefs.get( 0 ) ).isEqualTo( new Blueprint.SpanDef( 1, 0, 1, 12, true ) ); // <cfif false>
+		assertThat( spanDefs.stream().anyMatch( d -> d.startLine() == 3 && d.startCol() == 0 ) ).isTrue(); // <cfelse>
+
+		// The condition is FALSE, so the else branch runs — the FULL <cfelse> tag
+		// (registered at the "<" on line 3) must be marked GREEN.
+		assertThat( service.spanAt( key, 3, 0 ).stats().count() ).isEqualTo( 1 );
+
+		// The then body never ran (missed); the else body ran once.
+		assertThat( service.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 0 );
+		assertThat( service.spanAt( key, 4, 0 ).stats().count() ).isEqualTo( 1 );
+	}
+
 	@DisplayName( "It splits a while loop into condition and body spans (tag)" )
 	@Test
 	void testWhile() {

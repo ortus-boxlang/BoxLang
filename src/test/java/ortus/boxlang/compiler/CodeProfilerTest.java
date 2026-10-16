@@ -826,6 +826,71 @@ class CodeProfilerTest {
 		assertThat( service.lineAt( key, 4 ).count() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It does not mark a nested try's finally when the outer try has no finally" )
+	@Test
+	void testOuterTryWithoutFinallyDoesNotMarkNestedFinally() {
+		// Regression (PR #653 review): a try/catch with NO finally clause also has an
+		// EMPTY getFinallyBody(), so finallyKeyword()'s backward scan from the outer
+		// try's end walks back INTO a nested try and selects the NESTED
+		// `finally { ... }` keyword. The outer try's exceptional cleanup then marks
+		// that nested finally even though it never executed (the throw happens before
+		// the nested try is ever reached). The scan must distinguish an ABSENT finally
+		// from an EMPTY one and restrict lookup to this try's own finally clause.
+		String source = """
+		                try {
+		                throw( "boom" );
+		                try {
+		                x = 1;
+		                } finally {
+		                y = 2;
+		                }
+		                }
+		                """;
+		try {
+			runtime.executeSource( source );
+		} catch ( RuntimeException e ) {
+			// expected — the throw propagates (the outer try has no catch/finally)
+		}
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// The throw occurs before the nested try, so the nested try body and its
+		// finally NEVER run — nothing on the nested try may be reported as covered.
+		assertThat( service.lineAt( key, 4 ).count() ).isEqualTo( 0 );   // x = 1
+		assertThat( service.lineAt( key, 5 ).count() ).isEqualTo( 0 );   // } finally {
+		assertThat( service.lineAt( key, 6 ).count() ).isEqualTo( 0 );   // y = 2
+	}
+
+	@DisplayName( "It does not double-count an earlier try's finally from a later try with no finally" )
+	@Test
+	void testLaterTryWithoutFinallyDoesNotRemarkEarlierFinally() {
+		// Regression (PR #653 review): CONSECUTIVE try statements where the FIRST has
+		// a finally and the SECOND has none. The second try's empty finally scans back
+		// from its own end and reaches the FIRST try's `finally { ... }` keyword,
+		// emitting a second brace-group mark for a block that only ran once — inflating
+		// its execution count to 2.
+		String source = """
+		                try {
+		                a = 1;
+		                } finally {
+		                b = 2;
+		                }
+		                try {
+		                c = 3;
+		                } catch( any e ) {
+		                }
+		                """;
+		runtime.executeSource( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// The first try's finally ran exactly ONCE — the second try (which has no
+		// finally) must not re-mark it.
+		assertThat( service.lineAt( key, 3 ).count() ).isEqualTo( 1 );   // } finally {
+		assertThat( service.lineAt( key, 4 ).count() ).isEqualTo( 1 );   // b = 2
+		assertThat( service.lineAt( key, 5 ).count() ).isEqualTo( 1 );   // }
+	}
+
 	@DisplayName( "It profiles an assert statement and its message" )
 	@Test
 	void testAssert() {

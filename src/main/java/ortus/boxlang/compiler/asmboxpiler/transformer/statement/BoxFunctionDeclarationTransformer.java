@@ -389,12 +389,13 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 	 * @return the opening brace point, or null
 	 */
 	private Point findOpenBraceBeforeEnd( BoxFunctionDeclaration function ) {
-		Point before = function.getEnd();
-		if ( before == null || function.getPosition() == null || function.getPosition().getSource() == null ) {
+		Point	before	= function.getEnd();
+		// Use the node's OWN source text (no whole-file read / disk I/O).
+		String	source	= function.getSourceText();
+		if ( before == null || source == null ) {
 			return null;
 		}
-		String	source	= function.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, before );
+		int offset = offsetOf( function, before );
 		if ( offset < 0 ) {
 			return null;
 		}
@@ -407,7 +408,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			}
 			if ( seenClose ) {
 				if ( c == '{' ) {
-					return pointAt( source, i );
+					return pointAt( function, i );
 				}
 				if ( c == ';' ) {
 					return null;
@@ -433,18 +434,19 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 	 * @return the opening brace point, or null
 	 */
 	private Point findOpenBrace( BoxFunctionDeclaration function, Point after ) {
-		if ( after == null || function.getPosition() == null || function.getPosition().getSource() == null ) {
+		// Use the node's OWN source text (no whole-file read / disk I/O).
+		String source = function.getSourceText();
+		if ( after == null || source == null ) {
 			return null;
 		}
-		String	source	= function.getPosition().getSource().getCode();
-		int		offset	= offsetOf( source, after );
+		int offset = offsetOf( function, after );
 		if ( offset < 0 ) {
 			return null;
 		}
 		for ( int i = offset - 1; i >= 0; i-- ) {
 			char c = source.charAt( i );
 			if ( c == '{' ) {
-				return pointAt( source, i );
+				return pointAt( function, i );
 			}
 			if ( c == ';' || c == '}' ) {
 				return null;
@@ -453,9 +455,23 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		return null;
 	}
 
-	/** Convert a Point to a character offset in the source. */
-	private int offsetOf( String source, Point p ) {
-		int	line	= 1;
+	/**
+	 * Convert a Point to a character offset within the given node's OWN source text
+	 * ({@link BoxNode#getSourceText()}) — no whole-file read. Returns -1 when the
+	 * node has no source text/position or the point precedes the node start.
+	 *
+	 * @param node the node whose own source text defines the coordinate space
+	 * @param p    the point to convert
+	 *
+	 * @return the offset within the node's text, or -1
+	 */
+	private int offsetOf( BoxNode node, Point p ) {
+		String	source	= node.getSourceText();
+		Point	origin	= node.getStart();
+		if ( p == null || source == null || origin == null ) {
+			return -1;
+		}
+		int	line	= origin.getLine();
 		int	offset	= 0;
 		while ( line < p.getLine() && offset < source.length() ) {
 			if ( source.charAt( offset ) == '\n' ) {
@@ -463,13 +479,31 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			}
 			offset++;
 		}
-		return offset + p.getColumn();
+		if ( line != p.getLine() ) {
+			return -1;
+		}
+		// On the node's own start line the column is relative to the node's start
+		// column; on any later line the text's line starts at column 0.
+		return line == origin.getLine() ? offset + ( p.getColumn() - origin.getColumn() ) : offset + p.getColumn();
 	}
 
-	/** Convert a character offset back to a Point. */
-	private Point pointAt( String source, int offset ) {
-		int	line	= 1;
-		int	col		= 0;
+	/**
+	 * Convert a character offset within the given node's OWN source text
+	 * ({@link BoxNode#getSourceText()}) back to an absolute Point.
+	 *
+	 * @param node   the node whose own source text defines the coordinate space
+	 * @param offset the offset within the node's text
+	 *
+	 * @return the absolute point
+	 */
+	private Point pointAt( BoxNode node, int offset ) {
+		Point	origin	= node.getStart();
+		String	source	= node.getSourceText();
+		if ( origin == null || source == null ) {
+			return null;
+		}
+		int	line	= origin.getLine();
+		int	col		= origin.getColumn();
 		for ( int i = 0; i < offset && i < source.length(); i++ ) {
 			if ( source.charAt( i ) == '\n' ) {
 				line++;

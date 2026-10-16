@@ -233,36 +233,54 @@ public class BoxTryTransformer extends AbstractTransformer {
 	 * Locate the {@code finally} keyword position for a try, by scanning the source
 	 * back from the first finally body statement past the preceding construct's
 	 * closing brace. Mirrors Pass A's {@code findKeywordBraceStart}.
+	 * <p>
+	 * The result is ONLY used to emit the profiler brace-group mark, so this scan is
+	 * skipped entirely when profiling is disabled — otherwise every ordinary
+	 * compilation performs repeated full-source reads ({@code SourceFile.getCode()}
+	 * re-reads the file) solely to locate an unused mark.
 	 *
 	 * @param boxTry the try node
 	 *
 	 * @return the finally keyword point, or null
 	 */
 	private Point finallyKeyword( BoxTry boxTry ) {
-		if ( boxTry.getPosition() == null || boxTry.getPosition().getSource() == null ) {
+		// No profiler mark will be emitted — skip the source scan entirely.
+		if ( !transpiler.hasProfilerId() ) {
 			return null;
 		}
-		// For a NON-empty finally, scan back from the first body statement. For an
-		// EMPTY finally (`finally {}`) there is no body statement — fall back to
-		// scanning back from the construct's end (the closing brace) so the finally
-		// braces are still located and marked.
-		Point	scanFrom	= boxTry.getFinallyBody().isEmpty() ? boxTry.getEnd() : boxTry.getFinallyBody().get( 0 ).getStart();
-		String	source		= boxTry.getPosition().getSource().getCode();
-		int		offset		= scanFrom == null ? -1 : offsetOf( source, scanFrom );
+		// Use the node's OWN source text (no whole-file read / disk I/O).
+		String source = boxTry.getSourceText();
+		if ( source == null ) {
+			return null;
+		}
+		// For a NON-empty finally, scan back from the first body statement — the try
+		// OWNS that body, so the keyword found is unambiguously this try's. For an
+		// EMPTY finally there is no body statement to anchor on, and the AST cannot
+		// distinguish an EMPTY finally (`finally {}`) from an ABSENT one (no finally
+		// clause at all): both expose an empty getFinallyBody(). Scanning back from the
+		// construct's end therefore risks walking into a NESTED try's finally (which
+		// lives inside this try's body or a catch body) and marking a finally that
+		// never executed. Bound the scan to the text AFTER this try's own body and
+		// catch clauses so only this try's own finally can match.
+		boolean	emptyFinally	= boxTry.getFinallyBody().isEmpty();
+		Point	scanFrom		= emptyFinally ? boxTry.getEnd() : boxTry.getFinallyBody().get( 0 ).getStart();
+		int		offset			= scanFrom == null ? -1 : offsetOf( boxTry, scanFrom );
+		int		lowerBound		= emptyFinally ? ownClauseLowerBound( boxTry ) : 0;
 		// Tag-based finally (<bx:finally> / <cffinally>): the open tag is a "<",
 		// and Pass A keyed its span group at that "<". Return the "<" position.
 		// ONLY template source can carry a tag form. Script source has no tags, so an
 		// unrelated "<" in script (e.g. inside a string literal like "<foo>") must NOT
 		// abort this scan before the script keyword lookup below.
-		String	sourceType	= transpiler.getProperty( "sourceType" );
-		boolean	isTemplate	= BoxSourceType.BOXTEMPLATE.name().equalsIgnoreCase( sourceType ) || BoxSourceType.CFTEMPLATE.name().equalsIgnoreCase( sourceType );
+		String	sourceType		= transpiler.getProperty( "sourceType" );
+		boolean	isTemplate		= BoxSourceType.BOXTEMPLATE.name().equalsIgnoreCase( sourceType )
+		    || BoxSourceType.CFTEMPLATE.name().equalsIgnoreCase( sourceType );
 		if ( isTemplate ) {
-			for ( int i = offset - 1; i >= 0; i-- ) {
+			for ( int i = offset - 1; i >= lowerBound; i-- ) {
 				if ( source.charAt( i ) == '<' ) {
 					String rest = source.substring( i, Math.min( source.length(), i + 30 ) );
 					// Tag names are case-insensitive — match the finally tag ignoring case.
 					if ( rest.matches( "(?i)<(?:bx:|cf)?finally[\\s\\S]*" ) ) {
-						return pointAt( source, i );
+						return pointAt( boxTry, i );
 					}
 					// A different tag — the finally tag must be after it. A "<" that is
 					// NOT followed by a tag-name letter (e.g. the less-than operator in
@@ -274,7 +292,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 			}
 		}
 		// Script finally: scan back past the preceding "}" for the keyword.
-		for ( int i = offset - 1; i >= 0; i-- ) {
+		for ( int i = offset - 1; i >= lowerBound; i-- ) {
 			if ( source.charAt( i ) == '{' ) {
 				int kwEnd = i;
 				while ( kwEnd > 0 && source.charAt( kwEnd - 1 ) == ' ' ) {
@@ -285,16 +303,65 @@ public class BoxTryTransformer extends AbstractTransformer {
 					kwStart--;
 				}
 				if ( source.substring( kwStart, kwEnd ).equalsIgnoreCase( "finally" ) ) {
-					return pointAt( source, kwStart );
+					return pointAt( boxTry, kwStart );
 				}
 			}
 		}
 		return null;
 	}
 
-	/** Convert a Point to a character offset in the source. */
-	private int offsetOf( String source, Point p ) {
-		int	line	= 1;
+	/**
+	 * The offset within a try's own source text at which THIS try's own clause region
+	 * begins — just after the last of its try-body / catch-body characters — used to
+	 * bound the empty-finally keyword scan so it cannot reach into a nested
+	 * construct that lives inside the try body or a catch body.
+	 * <p>
+	 * The AST does not record the presence of a finally clause, so for an empty
+	 * {@code getFinallyBody()} the scan must be restricted to the tail of the node.
+	 * The bound is the maximum offset of the try body's and every catch body's last
+	 * statement END. A nested finally's keyword sits BEFORE its body's closing brace,
+	 * which is still inside this body text, so it can never be at or past this bound.
+	 *
+	 * @param boxTry the try node whose own text defines the coordinate space
+	 *
+	 * @return the offset at which this try's own clause region begins, or 0 when no
+	 *         bound can be computed (falls back to the unbounded scan)
+	 */
+	private int ownClauseLowerBound( BoxTry boxTry ) {
+		int bound = 0;
+		for ( BoxStatement stmt : boxTry.getTryBody() ) {
+			bound = Math.max( bound, offsetOf( boxTry, stmt.getEnd() ) );
+		}
+		for ( BoxTryCatch catchNode : boxTry.getCatches() ) {
+			for ( BoxStatement stmt : catchNode.getCatchBody() ) {
+				bound = Math.max( bound, offsetOf( boxTry, stmt.getEnd() ) );
+			}
+			// A CF catch with no positioned body statements has no statement end to
+			// bound on; fall back to the catch node's own end.
+			if ( catchNode.getCatchBody().isEmpty() ) {
+				bound = Math.max( bound, offsetOf( boxTry, catchNode.getEnd() ) );
+			}
+		}
+		return Math.max( 0, bound );
+	}
+
+	/**
+	 * Convert a Point to a character offset within the given node's OWN source text
+	 * ({@link BoxNode#getSourceText()}) — no whole-file read. Returns -1 when the
+	 * node has no source text/position or the point precedes the node start.
+	 *
+	 * @param node the node whose own source text defines the coordinate space
+	 * @param p    the point to convert
+	 *
+	 * @return the offset within the node's text, or -1
+	 */
+	private int offsetOf( BoxNode node, Point p ) {
+		String	source	= node.getSourceText();
+		Point	origin	= node.getStart();
+		if ( p == null || source == null || origin == null ) {
+			return -1;
+		}
+		int	line	= origin.getLine();
 		int	offset	= 0;
 		while ( line < p.getLine() && offset < source.length() ) {
 			if ( source.charAt( offset ) == '\n' ) {
@@ -302,13 +369,31 @@ public class BoxTryTransformer extends AbstractTransformer {
 			}
 			offset++;
 		}
-		return offset + p.getColumn();
+		if ( line != p.getLine() ) {
+			return -1;
+		}
+		// On the node's own start line the column is relative to the node's start
+		// column; on any later line the text's line starts at column 0.
+		return line == origin.getLine() ? offset + ( p.getColumn() - origin.getColumn() ) : offset + p.getColumn();
 	}
 
-	/** Convert a character offset back to a Point. */
-	private Point pointAt( String source, int offset ) {
-		int	line	= 1;
-		int	col		= 0;
+	/**
+	 * Convert a character offset within the given node's OWN source text
+	 * ({@link BoxNode#getSourceText()}) back to an absolute Point.
+	 *
+	 * @param node   the node whose own source text defines the coordinate space
+	 * @param offset the offset within the node's text
+	 *
+	 * @return the absolute point
+	 */
+	private Point pointAt( BoxNode node, int offset ) {
+		Point	origin	= node.getStart();
+		String	source	= node.getSourceText();
+		if ( origin == null || source == null ) {
+			return null;
+		}
+		int	line	= origin.getLine();
+		int	col		= origin.getColumn();
 		for ( int i = 0; i < offset && i < source.length(); i++ ) {
 			if ( source.charAt( i ) == '\n' ) {
 				line++;
