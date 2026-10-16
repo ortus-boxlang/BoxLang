@@ -7,14 +7,14 @@
  *   ./gradlew shadowJar
  *   java -jar build/libs/boxlang-<version>-snapshot.jar workbench/scripts/benchmark-date-compare.bxs
  *
- * Optional positional args: <compares> <sortSize> <rounds>
- * Defaults: 1000000 compares, 10000 struct keys, 5 measured rounds (after 2 warmup rounds)
+ * Optional options: --compares=1000000 --sortSize=10000 --rounds=5
+ * Each case runs 2 warmup rounds, then reports the median of the measured rounds
  */
-args       = server.cli.parsed.positionals ?: [];
-compares   = args.len() >= 1 ? val( args[ 1 ] ) : 1000000;
-sortSize   = args.len() >= 2 ? val( args[ 2 ] ) : 10000;
-rounds     = args.len() >= 3 ? val( args[ 3 ] ) : 5;
-warmups    = 2;
+opts     = server.cli.parsed.options ?: {};
+compares = val( opts.compares ?: 1000000 );
+sortSize = val( opts.sortSize ?: 10000 );
+rounds   = val( opts.rounds ?: 5 );
+warmups  = 2;
 
 d1 = createDateTime( 2024, 1, 15, 10, 30, 0 );
 d2 = createDateTime( 2024, 1, 15, 10, 31, 0 );
@@ -86,5 +86,5 @@ for ( c in cases ) {
 	times.sort( "numeric" );
 	ms    = times[ ceiling( times.len() / 2 ) ];
 	opsPs = ms > 0 ? c.ops / ( ms / 1000 ) : 0;
-	println( "| #c.name# | #numberFormat( opsPs, "," )# | #numberFormat( ms, ",.0" )# |" );
+	println( "| #c.name# | #numberFormat( opsPs, ",.0" )# | #numberFormat( ms, ",.0" )# |" );
 }
