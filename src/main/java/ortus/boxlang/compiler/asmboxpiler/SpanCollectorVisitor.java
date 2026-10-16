@@ -1149,15 +1149,15 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 					continue;
 				}
 				Point valueStart = leftmostStart( value );
-				// The call HEAD (`callee(`) runs up to the FIRST split argument's VALUE;
-				// ONLY the first split argument closes a shell segment. Every LATER
-				// argument simply ADVANCES the running start to its own value, dropping
-				// the `,` separator (and any whitespace) into an UNSPANNED gap — a comma
-				// is NEVER a span all by itself. A comma only ever lives INSIDE a span
-				// when it sits in an UNSPLIT list whose entries are all literal/static
-				// (function declaration/invocation args that never break out), where the
-				// whole run is a single span.
-				if ( headId < 0 ) {
+				// A shell segment closes at this arg's VALUE start when the segment is
+				// real call text: the FIRST split arg's segment is the call HEAD
+				// (`callee(`), and a NAMED arg's segment is `, name = ` — both belong to
+				// the call shell. A POSITIONAL arg's segment is JUST a `,`, which is
+				// NEVER a span of its own: it is dropped into an UNSPANNED gap by simply
+				// advancing the running start to the value. (A comma only ever lives
+				// INSIDE a span when it sits in an UNSPLIT list whose entries are all
+				// literal/static, where the whole run is a single span.)
+				if ( headId < 0 || arg.isNamed() ) {
 					Point shellEnd = valueStart;
 					if ( source != null && shellEnd != null ) {
 						shellEnd = trimTrailingWhitespace( node, shellEnd );
@@ -1165,7 +1165,9 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 					int shellId = closeRunningSpan( shellEnd );
 					if ( shellId >= 0 ) {
 						shellIds.add( shellId );
-						headId = shellId;
+						if ( headId < 0 ) {
+							headId = shellId;
+						}
 					}
 				}
 				// The VALUE gets its OWN span (starts at the value, not the shell).
