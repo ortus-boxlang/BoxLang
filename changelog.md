@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [BL-2753](https://ortussolutions.atlassian.net/browse/BL-2753) New `generateKeyPair()` BIF for Ed25519, Ed448, X25519, X448, RSA and EC key pairs
 - [BL-2758](https://ortussolutions.atlassian.net/browse/BL-2758) Date compares and casts no longer rebuild the whole runtime config struct to read the default timezone
+- [BL-2759](https://ortussolutions.atlassian.net/browse/BL-2759) Interceptors announced without a context (BIF, query and transaction events) now run on the current request when there is one, so they see its settings and no longer rebuild the runtime config on every read
 
 ## [1.18.0] - 2026-10-02
 
