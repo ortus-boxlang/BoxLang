@@ -313,14 +313,20 @@ f1 called f2 called f3...), self otherwise. The self/inclusive split is kept ONL
 detail; it is not exported. Reports/HTML/JSON/SonarQube all surface this one number.
 
 **A call's atomic SHELL shares the call-site inclusive time.** A call `processData( a, b )` is
-split into `processData(`, each arg, each `,` and `)`. The head (`processData(`) and the tail
-(`)`) form the call's **atomic shell** — they are on the stack for the WHOLE call. The
+split into `processData(`, each arg, and `)` — the head (`processData(`) and the tail (`)`)
+form the call's **atomic shell**; they are on the stack for the WHOLE call. The
 call-site bracket (`markEnter`/`markExit`) therefore charges the SAME inclusive time to the
 head AND the `)`, so the `)` reports the SAME on-stack time as the head (never a separate,
 near-zero probe time). Each shell member ALSO records that amount as *line-nested*, so LINE
 aggregation counts the shell once (via the call-site/head span) rather than double-counting the
 head and the `)`. The shell is registered at compile time (`Transpiler.registerCallShell` →
 `peekCallShell`) and passed to `markEnter(id, spanId, blueprint, shellSpans)`.
+
+**Separators are NOT spans.** Only the FIRST split argument closes the call head; every LATER
+argument merely advances the running start to its own value, so the `,` between arguments (and
+any whitespace around it) is an UNSPANNED gap. A comma is never a span of its own. A comma only
+ever falls INSIDE a span when it sits in an UNSPLIT list — e.g. `foo( 1, 2, 3 )` (all-literal
+args) or a function declaration's arg list — where the whole run is a single span.
 
 ### 2.3 File-wide / capture-wide export
 ```java

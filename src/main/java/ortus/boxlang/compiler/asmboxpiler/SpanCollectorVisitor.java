@@ -1148,21 +1148,23 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 					value.accept( this );
 					continue;
 				}
-				Point	valueStart	= leftmostStart( value );
-				// The SHELL segment from the previous shell/value end up to this arg's
-				// VALUE start belongs to the CALL: for a NAMED arg it is `name = ` (the
-				// `,` separator before it too), for a positional arg just the `,`
-				// separator. This keeps EVERY `name =` fragment in the shell —
-				// consistent across all args (the FIRST `name =` already lands in the
-				// call head). The VALUE itself is the separate arg span.
-				Point	shellEnd	= valueStart;
-				if ( source != null && shellEnd != null ) {
-					shellEnd = trimTrailingWhitespace( node, shellEnd );
-				}
-				int shellId = closeRunningSpan( shellEnd );
-				if ( shellId >= 0 ) {
-					shellIds.add( shellId );
-					if ( headId < 0 ) {
+				Point valueStart = leftmostStart( value );
+				// The call HEAD (`callee(`) runs up to the FIRST split argument's VALUE;
+				// ONLY the first split argument closes a shell segment. Every LATER
+				// argument simply ADVANCES the running start to its own value, dropping
+				// the `,` separator (and any whitespace) into an UNSPANNED gap — a comma
+				// is NEVER a span all by itself. A comma only ever lives INSIDE a span
+				// when it sits in an UNSPLIT list whose entries are all literal/static
+				// (function declaration/invocation args that never break out), where the
+				// whole run is a single span.
+				if ( headId < 0 ) {
+					Point shellEnd = valueStart;
+					if ( source != null && shellEnd != null ) {
+						shellEnd = trimTrailingWhitespace( node, shellEnd );
+					}
+					int shellId = closeRunningSpan( shellEnd );
+					if ( shellId >= 0 ) {
+						shellIds.add( shellId );
 						headId = shellId;
 					}
 				}

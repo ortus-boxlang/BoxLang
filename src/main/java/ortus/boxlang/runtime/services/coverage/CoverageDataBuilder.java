@@ -17,9 +17,7 @@
  */
 package ortus.boxlang.runtime.services.coverage;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -92,42 +90,41 @@ public final class CoverageDataBuilder {
 	 * @return a {@link Struct} keyed by blueprint key, ordered by registration
 	 */
 	public static Struct buildLineCoverage( CodeProfilerService service, Blueprint.Kind... kinds ) {
-		Set<Blueprint.Kind>	allowed	= resolveKinds( kinds );
-		Struct				root	= new Struct( IStruct.TYPES.LINKED );
-		for ( Map.Entry<String, Blueprint> entry : service.trackedBlueprints().entrySet() ) {
+		Set<Blueprint.Kind>		allowed	= resolveKinds( kinds );
+		Map<String, Blueprint>	tracked	= service.trackedBlueprints();
+		Struct					root	= new Struct( IStruct.TYPES.LINKED, false, Math.max( 16, tracked.size() ) );
+		for ( Map.Entry<String, Blueprint> entry : tracked.entrySet() ) {
 			Blueprint bp = entry.getValue();
 			if ( !allowed.contains( bp.kind() ) ) {
 				continue;
 			}
-			Struct fileObj = new Struct( IStruct.TYPES.LINKED );
-			fileObj.put( "filePath", entry.getKey() );
-			fileObj.put( "kind", bp.kind().name() );
+			Struct fileObj = new Struct( IStruct.TYPES.LINKED, false, 7 );
+			fileObj.put( Key.filePath, entry.getKey() );
+			fileObj.put( Key.kind, bp.kind().name() );
 
 			Map<Integer, CodeProfilerService.LineCoverage>	lines		= service.fileLines( entry.getKey() );
-			Struct											lineObj		= new Struct( IStruct.TYPES.LINKED );
+			Struct											lineObj		= new Struct( IStruct.TYPES.LINKED, false, Math.max( 16, lines.size() ) );
 			long											execLines	= 0, coveredLines = 0;
-			// Sort for stable, readable output.
-			List<Integer>									lineNums	= new ArrayList<>( lines.keySet() );
-			lineNums.sort( Comparator.naturalOrder() );
-			for ( Integer line : lineNums ) {
+			// fileLines returns a TreeMap, so its keySet() is already in ascending line order.
+			for ( Integer line : lines.keySet() ) {
 				CodeProfilerService.LineCoverage	lc	= lines.get( line );
-				Struct								lv	= new Struct( IStruct.TYPES.LINKED );
-				lv.put( "covered", lc.covered() );
-				lv.put( "count", lc.count() );
+				Struct								lv	= new Struct( IStruct.TYPES.LINKED, false, 3 );
+				lv.put( Key.covered, lc.covered() );
+				lv.put( Key.count, lc.count() );
 				// The single time number: ON-THE-STACK time (inclusive for call spans,
 				// self for leaf spans). Self/inclusive are NOT exported.
-				lv.put( "time", lc.nanos() );
-				lineObj.put( Key.of( line ), lv );
+				lv.put( Key.time, lc.nanos() );
+				lineObj.put( Key.cachedInt( line ), lv );
 				execLines++;
 				if ( lc.covered() ) {
 					coveredLines++;
 				}
 			}
-			fileObj.put( "numExecutableLines", execLines );
-			fileObj.put( "numCoveredLines", coveredLines );
-			fileObj.put( "percCoverage", execLines == 0 ? 1.0 : ( double ) coveredLines / execLines );
-			fileObj.put( "lines", lineObj );
-			root.put( entry.getKey(), fileObj );
+			fileObj.put( Key.numExecutableLines, execLines );
+			fileObj.put( Key.numCoveredLines, coveredLines );
+			fileObj.put( Key.percCoverage, execLines == 0 ? 1.0 : ( double ) coveredLines / execLines );
+			fileObj.put( Key.lines, lineObj );
+			root.put( Key.of( entry.getKey() ), fileObj );
 		}
 		return root;
 	}
@@ -152,32 +149,34 @@ public final class CoverageDataBuilder {
 	 * @return a {@link Struct} keyed by blueprint key, ordered by registration
 	 */
 	public static Struct buildSpanCoverage( CodeProfilerService service, Blueprint.Kind... kinds ) {
-		Set<Blueprint.Kind>	allowed	= resolveKinds( kinds );
-		Struct				root	= new Struct( IStruct.TYPES.LINKED );
-		for ( Map.Entry<String, Blueprint> entry : service.trackedBlueprints().entrySet() ) {
+		Set<Blueprint.Kind>		allowed	= resolveKinds( kinds );
+		Map<String, Blueprint>	tracked	= service.trackedBlueprints();
+		Struct					root	= new Struct( IStruct.TYPES.LINKED, false, Math.max( 16, tracked.size() ) );
+		for ( Map.Entry<String, Blueprint> entry : tracked.entrySet() ) {
 			Blueprint bp = entry.getValue();
 			if ( !allowed.contains( bp.kind() ) ) {
 				continue;
 			}
-			Struct fileObj = new Struct( IStruct.TYPES.LINKED );
-			fileObj.put( "filePath", entry.getKey() );
-			fileObj.put( "kind", bp.kind().name() );
-			Array spanArr = new Array();
-			for ( CodeProfilerService.Span s : service.fileSpans( entry.getKey() ) ) {
-				Struct sv = new Struct( IStruct.TYPES.LINKED );
-				sv.put( "id", s.id() );
-				sv.put( "startLine", s.startLine() );
-				sv.put( "startCol", s.startCol() );
-				sv.put( "endLine", s.endLine() );
-				sv.put( "endCol", s.endCol() );
-				sv.put( "count", s.stats().count() );
+			Struct fileObj = new Struct( IStruct.TYPES.LINKED, false, 3 );
+			fileObj.put( Key.filePath, entry.getKey() );
+			fileObj.put( Key.kind, bp.kind().name() );
+			List<CodeProfilerService.Span>	fileSpans	= service.fileSpans( entry.getKey() );
+			Array							spanArr		= new Array( fileSpans.size(), false );
+			for ( CodeProfilerService.Span s : fileSpans ) {
+				Struct sv = new Struct( IStruct.TYPES.LINKED, false, 7 );
+				sv.put( Key.id, s.id() );
+				sv.put( Key.startLine, s.startLine() );
+				sv.put( Key.startCol, s.startCol() );
+				sv.put( Key.endLine, s.endLine() );
+				sv.put( Key.endCol, s.endCol() );
+				sv.put( Key.count, s.stats().count() );
 				// The single time number: ON-THE-STACK time (inclusive for call spans,
 				// self for leaf spans). Self/inclusive are NOT exported.
-				sv.put( "time", s.stats().onStackNanos() );
+				sv.put( Key.time, s.stats().onStackNanos() );
 				spanArr.append( sv );
 			}
-			fileObj.put( "spans", spanArr );
-			root.put( entry.getKey(), fileObj );
+			fileObj.put( Key.spans, spanArr );
+			root.put( Key.of( entry.getKey() ), fileObj );
 		}
 		return root;
 	}

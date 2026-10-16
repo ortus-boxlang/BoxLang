@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -815,9 +816,12 @@ public class CodeProfilerService extends BaseService {
 	 * @return map of registered key -> blueprint
 	 */
 	public Map<String, Blueprint> trackedBlueprints() {
-		Map<String, Blueprint> result = new ConcurrentHashMap<>();
-		if ( instance != null ) {
-			instance.byPath.forEach( ( key, fb ) -> result.put( key, fb.blueprint() ) );
+		if ( instance == null ) {
+			return Map.of();
+		}
+		Map<String, Blueprint> result = new ConcurrentHashMap<>( instance.byPath.size() );
+		for ( Map.Entry<String, FileBlueprint> entry : instance.byPath.entrySet() ) {
+			result.put( entry.getKey(), entry.getValue().blueprint() );
 		}
 		return result;
 	}
@@ -1028,15 +1032,20 @@ public class CodeProfilerService extends BaseService {
 		if ( spans.isEmpty() ) {
 			return null;
 		}
-		boolean	covered		= spans.stream().anyMatch( s -> s.stats().count() > 0 );
-		long	lineCount	= spans.get( 0 ).stats().count(); // first/outermost span
 		// The single line time: SUM of the spans' ON-THE-STACK time (inclusive for
 		// call spans, self for leaf spans), EXCLUDING spans whose bracket ran nested
 		// inside another call bracket on the same line — their time is already inside
 		// the enclosing span's inclusive time, so counting them would double it.
-		long	nanos		= spans.stream()
-		    .mapToLong( s -> Math.max( 0L, s.stats().onStackNanos() - s.stats().lineNestedNanos() ) )
-		    .sum();
+		boolean	covered	= false;
+		long	nanos	= 0L;
+		for ( Span s : spans ) {
+			SpanStats stats = s.stats();
+			if ( stats.count() > 0 ) {
+				covered = true;
+			}
+			nanos += Math.max( 0L, stats.onStackNanos() - stats.lineNestedNanos() );
+		}
+		long lineCount = spans.get( 0 ).stats().count(); // first/outermost span
 		return new LineCoverage( line, covered, nanos, lineCount );
 	}
 
@@ -1053,15 +1062,19 @@ public class CodeProfilerService extends BaseService {
 		if ( fb == null ) {
 			return Map.of();
 		}
-		Map<Integer, LineCoverage> result = new ConcurrentHashMap<>();
+		// TreeMap keeps the lines in ASCENDING numeric order so callers never have to
+		// re-sort — a ConcurrentHashMap iterates in hash-bin order, which is NOT sorted.
+		Map<Integer, LineCoverage> result = new TreeMap<>();
 		// A multi-line span covers every line in [startLine, endLine] — register a
 		// per-line aggregate for EACH of them (not just the start line), so the
 		// line-level renderers color all the lines an executable span touches.
-		fb.spans().forEach( s -> {
+		for ( Span s : fb.spans() ) {
 			for ( int line = s.startLine(); line <= s.endLine(); line++ ) {
-				result.computeIfAbsent( line, l -> lineAt( fb.filePath, l ) );
+				if ( !result.containsKey( line ) ) {
+					result.put( line, lineAt( fb.filePath, line ) );
+				}
 			}
-		} );
+		}
 		return result;
 	}
 
@@ -1415,19 +1428,28 @@ public class CodeProfilerService extends BaseService {
 			this.filePath	= filePath;
 			this.blueprint	= blueprint;
 			// Allocate counters for executable spans (span id = its position in the array).
-			int executableCount = ( int ) blueprint.spans().stream().filter( Blueprint.SpanDef::executable ).count();
-			this.spans = new Span[ executableCount ];
-			int[] idx = { 0 };
-			blueprint.spans().forEach( b -> {
-				if ( b.executable() ) {
-					Span sp = new Span( idx[ 0 ], b.startLine(), b.startCol(), b.endLine(), b.endCol(), new SpanStats() );
-					this.spans[ idx[ 0 ]++ ] = sp;
-					for ( int line = b.startLine(); line <= b.endLine(); line++ ) {
-						this.byLine.computeIfAbsent( line, k -> new ArrayList<>() ).add( sp );
-					}
+			List<Blueprint.SpanDef>	defs			= blueprint.spans();
+			int						executableCount	= 0;
+			for ( Blueprint.SpanDef def : defs ) {
+				if ( def.executable() ) {
+					executableCount++;
 				}
-			} );
-			this.byLine.values().forEach( l -> l.sort( ( a, c ) -> Integer.compare( a.startCol(), c.startCol() ) ) );
+			}
+			this.spans = new Span[ executableCount ];
+			int idx = 0;
+			for ( Blueprint.SpanDef b : defs ) {
+				if ( !b.executable() ) {
+					continue;
+				}
+				Span sp = new Span( idx, b.startLine(), b.startCol(), b.endLine(), b.endCol(), new SpanStats() );
+				this.spans[ idx++ ] = sp;
+				for ( int line = b.startLine(); line <= b.endLine(); line++ ) {
+					this.byLine.computeIfAbsent( line, k -> new ArrayList<>() ).add( sp );
+				}
+			}
+			for ( List<Span> lineSpans : this.byLine.values() ) {
+				lineSpans.sort( ( a, c ) -> Integer.compare( a.startCol(), c.startCol() ) );
+			}
 		}
 
 		Span span( int spanId ) {

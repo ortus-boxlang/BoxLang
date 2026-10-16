@@ -35,6 +35,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.Blueprint;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -86,13 +87,13 @@ public final class CoverageSonarQubeExporter {
 			lineCoverage.forEach( ( key, value ) -> {
 				IStruct	fileData	= ( IStruct ) value;
 				Element	fileNode	= doc.createElement( "file" );
-				fileNode.setAttribute( "path", fileData.get( "filePath" ).toString() );
-				IStruct lines = ( IStruct ) fileData.get( "lines" );
+				fileNode.setAttribute( "path", fileData.get( Key.filePath ).toString() );
+				IStruct lines = ( IStruct ) fileData.get( Key.lines );
 				lines.forEach( ( lineKey, lineVal ) -> {
 					IStruct	lineData	= ( IStruct ) lineVal;
 					Element	lineNode	= doc.createElement( "lineToCover" );
 					lineNode.setAttribute( "lineNumber", lineKey.toString() );
-					lineNode.setAttribute( "covered", Boolean.toString( ( Boolean ) lineData.get( "covered" ) ) );
+					lineNode.setAttribute( "covered", Boolean.toString( ( Boolean ) lineData.get( Key.covered ) ) );
 					fileNode.appendChild( lineNode );
 				} );
 				coverage.appendChild( fileNode );
