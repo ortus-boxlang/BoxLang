@@ -238,8 +238,11 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		if ( offset <= 0 ) {
 			return null;
 		}
+		// Defensive bound: clamp the start so a column-relative offset that lands
+		// past the captured text cannot index out of range (nested template elseif
+		// whose else branch extends beyond its then body).
+		int i = Math.min( offset - 1, source.length() - 1 );
 		// Walk back from the keyword to the tag's "<".
-		int i = offset - 1;
 		while ( i >= 0 && source.charAt( i ) != '<' ) {
 			i--;
 		}
@@ -275,7 +278,13 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		if ( offset < 0 ) {
 			return null;
 		}
-		for ( int i = offset - 1; i >= 0; i-- ) {
+		// Defensive bound: offsetOf derives a column-relative offset that can land
+		// PAST the end of the node's own source text when the else body sits beyond
+		// the text the parser captured for this node (a nested template elseif whose
+		// else branch extends past its then body). Clamp so the backward scan below
+		// can never index out of range.
+		int start = Math.min( offset - 1, source.length() - 1 );
+		for ( int i = start; i >= 0; i-- ) {
 			if ( Character.isLetterOrDigit( source.charAt( i ) ) ) {
 				int	wordEnd		= i + 1;
 				int	wordStart	= i;

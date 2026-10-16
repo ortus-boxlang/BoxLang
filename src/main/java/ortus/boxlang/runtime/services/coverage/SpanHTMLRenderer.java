@@ -75,16 +75,28 @@ public final class SpanHTMLRenderer {
 	 * @return the full HTML document string
 	 */
 	public static String renderHTML( CodeProfilerService service, String fileKey, String title ) {
-		List<CodeProfilerService.Span>	allSpans	= service.fileSpans( fileKey );
-		String							source		= readSource( fileKey );
+		List<CodeProfilerService.Span>	allSpans		= service.fileSpans( fileKey );
+		String							source			= readSource( fileKey );
 
 		// [startChar, endChar, span]
-		List<int[]>						bounds		= lineBounds( source );
-		List<Object[]>					spans		= new ArrayList<>();
+		List<int[]>						bounds			= lineBounds( source );
+		List<Object[]>					spans			= new ArrayList<>();
+		// Span coverage is measured in EXECUTABLE CHARACTERS: whitespace is not
+		// executable, so only the non-whitespace characters a span covers count. A
+		// span is covered when it ran at least once (count > 0). This weights a
+		// large multi-line span fairly against a single-token span, unlike counting
+		// spans one-for-one.
+		long							executableChars	= 0;
+		long							coveredChars	= 0;
 		for ( CodeProfilerService.Span s : allSpans ) {
-			int	start	= offset( bounds, s.startLine(), s.startCol() );
-			int	end		= offset( bounds, s.endLine(), s.endCol() );
+			int		start	= offset( bounds, s.startLine(), s.startCol() );
+			int		end		= offset( bounds, s.endLine(), s.endCol() );
+			long	chars	= countNonWhitespace( source, start, end );
 			spans.add( new Object[] { start, end, s } );
+			executableChars += chars;
+			if ( s.stats().count() > 0 ) {
+				coveredChars += chars;
+			}
 		}
 		spans.sort( Comparator.comparingInt( a -> ( int ) a[ 0 ] ) );
 
@@ -295,6 +307,13 @@ public final class SpanHTMLRenderer {
 		        "<label><input type=\"checkbox\" id=\"fillToggle\" checked onchange=\"document.body.classList.toggle('nofill',!this.checked)\"> Show fill colors</label>" )
 		    .append( "</p>" ).append( '\n' )
 		    .append( "<h3>" ).append( escape( fileKey ) ).append( "</h3>" ).append( '\n' )
+		    // Overall span coverage: the percentage of EXECUTABLE CHARACTERS inside
+		    // executable spans that ran. Whitespace is excluded (not executable), so
+		    // a big multi-line span counts proportionally to its real code.
+		    .append( "<p style=\"padding-left:8px\"><strong>Span coverage: " )
+		    .append( formatPercent( coveredChars, executableChars ) )
+		    .append( "</strong> &nbsp;(" ).append( coveredChars ).append( " of " ).append( executableChars )
+		    .append( " executable chars)</p>" ).append( '\n' )
 		    .append(
 		        "<p style=\"padding-left:8px\"><span class=\"cov\">covered</span>&nbsp;&nbsp;<span class=\"miss\">missed</span>&nbsp;(uncolored = no executable spans)</p>" )
 		    .append( '\n' ).append( "<table class=\"code\">" ).append( '\n' );
@@ -456,6 +475,48 @@ public final class SpanHTMLRenderer {
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Count the NON-WHITESPACE characters in {@code source} between two character
+	 * offsets (clamped to the source bounds). Whitespace is not executable code, so
+	 * this is the "executable character" count a span contributes to the overall
+	 * span-coverage percentage.
+	 *
+	 * @param source the normalized source text
+	 * @param start  the inclusive start char offset
+	 * @param end    the exclusive end char offset
+	 *
+	 * @return the number of non-whitespace characters in the range
+	 */
+	static long countNonWhitespace( String source, int start, int end ) {
+		int		from	= Math.max( 0, start );
+		int		to		= Math.min( source.length(), end );
+		long	chars	= 0;
+		for ( int i = from; i < to; i++ ) {
+			if ( !Character.isWhitespace( source.charAt( i ) ) ) {
+				chars++;
+			}
+		}
+		return chars;
+	}
+
+	/**
+	 * Format a covered/executable ratio as a whole-number percentage (rounded).
+	 * When the denominator is zero there is nothing executable, so 100% is
+	 * reported (matching the "no executable lines = fully covered" convention used
+	 * by the coverage exporters).
+	 *
+	 * @param covered    the covered count
+	 * @param executable the executable count
+	 *
+	 * @return a string such as {@code "72%"}
+	 */
+	static String formatPercent( long covered, long executable ) {
+		if ( executable <= 0 ) {
+			return "100%";
+		}
+		return Math.round( ( double ) covered * 100.0 / executable ) + "%";
 	}
 
 	/** Split the source into lines (LF-based; drop a trailing empty terminal line). */

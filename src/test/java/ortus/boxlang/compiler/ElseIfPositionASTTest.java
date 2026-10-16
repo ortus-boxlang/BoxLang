@@ -173,4 +173,46 @@ public class ElseIfPositionASTTest {
 		assertEquals( 0, elseIf2.getPosition().getStart().getColumn() );
 		assertTrue( elseIf2.getSourceText().startsWith( "<cfelseif" ) );
 	}
+
+	/**
+	 * A nested elseif's source extent must CONTAIN the else branch it owns (a deeper
+	 * elseif or the final else). When it does not, a consumer scanning the node's OWN
+	 * source text for the {@code else} keyword runs off the end and throws
+	 * StringIndexOutOfBoundsException (single-line chains crash profiled compilation).
+	 */
+	private void assertElseIfTextContainsElseBranch( String source, BoxSourceType type ) throws Exception {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parse( source, type );
+		assertTrue( result.isCorrect(), "parse should succeed" );
+		BoxTemplate	template	= ( BoxTemplate ) result.getRoot();
+		BoxIfElse	topIf		= ( BoxIfElse ) template.getStatements().get( 0 );
+		BoxIfElse	elseIf		= findElseIf( topIf );
+		assertNotNull( elseIf, "elseif node should exist" );
+
+		// The nested elseif's OWN text must include the "<...else" branch keyword that
+		// follows its then body (the else branch it owns), not stop at the then body.
+		String text = elseIf.getSourceText();
+		assertTrue( text.contains( "else>" ),
+		    "elseif sourceText must include its else branch but was: " + text );
+
+		// It must also include the else branch's BODY statement, proving the extent
+		// reaches all the way through the else branch, not just its keyword.
+		assertNotNull( elseIf.getElseBody() );
+		String elseBodyText = elseIf.getElseBody().getSourceText();
+		assertNotNull( elseBodyText );
+		assertTrue( text.endsWith( elseBodyText ),
+		    "elseif sourceText must end with its else body text; text=[" + text + "] elseBody=[" + elseBodyText + "]" );
+	}
+
+	@Test
+	public void testBoxSingleLineElseIfExtent() throws Exception {
+		String source = "<bx:if false><bx:set a=1><bx:elseif false><bx:set a=2><bx:else><bx:set a=3></bx:if>";
+		assertElseIfTextContainsElseBranch( source, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testCFSingleLineElseIfExtent() throws Exception {
+		String source = "<cfif false><cfset a=1><cfelseif false><cfset a=2><cfelse><cfset a=3></cfif>";
+		assertElseIfTextContainsElseBranch( source, BoxSourceType.CFTEMPLATE );
+	}
 }

@@ -58,12 +58,24 @@ public final class LineCoverageHTMLRenderer {
 	 * @return the full HTML document string
 	 */
 	public static String renderHTML( CodeProfilerService service, String fileKey, String title ) {
-		String											source		= readSource( fileKey );
+		String											source			= readSource( fileKey );
 		// line -> LineCoverage (only lines with executable spans present).
-		Map<Integer, CodeProfilerService.LineCoverage>	lines		= service.fileLines( fileKey );
-		String[]										srcLines	= splitLines( source );
+		Map<Integer, CodeProfilerService.LineCoverage>	lines			= service.fileLines( fileKey );
+		String[]										srcLines		= splitLines( source );
 
-		StringBuilder									html		= new StringBuilder();
+		// Overall LINE coverage: covered lines / executable lines. A line is
+		// executable when an executable span touches it (present in fileLines), and
+		// covered when any span on it ran.
+		long											execLines		= 0;
+		long											coveredLines	= 0;
+		for ( CodeProfilerService.LineCoverage lc : lines.values() ) {
+			execLines++;
+			if ( lc.covered() ) {
+				coveredLines++;
+			}
+		}
+
+		StringBuilder html = new StringBuilder();
 		html.append( "<html><head><meta charset=\"utf-8\"><title>" ).append( escape( title != null ? title : fileKey ) ).append( "</title><style>" )
 		    .append( "body{font-family:'SF Mono',Consolas,monospace;margin:24px;background:#fff;color:#111;} " )
 		    .append( "h3{padding-left:8px;} table.code{border-collapse:collapse;font-size:14px;line-height:1.5;} " )
@@ -75,6 +87,11 @@ public final class LineCoverageHTMLRenderer {
 		    .append( "span.cov{background:rgba(10,220,90,.28);} " )
 		    .append( "span.miss{background:rgba(230,60,60,.25);} " )
 		    .append( "</style></head><body><h3>" ).append( escape( fileKey ) ).append( "</h3>" )
+		    // Overall line coverage: covered lines / executable lines.
+		    .append( "<p style=\"padding-left:8px\"><strong>Line coverage: " )
+		    .append( SpanHTMLRenderer.formatPercent( coveredLines, execLines ) )
+		    .append( "</strong> &nbsp;(" ).append( coveredLines ).append( " of " ).append( execLines )
+		    .append( " executable lines)</p>" )
 		    .append(
 		        "<p style=\"padding-left:8px\"><span class=\"cov\">covered</span>&nbsp;&nbsp;<span class=\"miss\">missed</span>&nbsp;(uncolored = no executable spans)</p>" )
 		    .append( "<table class=\"code\">" );

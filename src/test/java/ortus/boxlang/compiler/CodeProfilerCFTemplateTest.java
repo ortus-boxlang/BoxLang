@@ -467,6 +467,44 @@ class CodeProfilerCFTemplateTest {
 		assertThat( service.spanAt( key, 4, 0 ).stats().count() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It profiles a SINGLE-LINE cfif/cfelseif/cfelse chain (no crash, correct spans)" )
+	@Test
+	void testSingleLineElseIfChain() {
+		// Regression: a nested <cfelseif>'s OWN source text stopped at its then body
+		// while its attached <cfelse> branch started BEYOND that text. The else-keyword
+		// scan then ran off the end and threw StringIndexOutOfBoundsException during
+		// profiled compilation. The parser now extends each elseif's extent over the
+		// else chain it owns.
+		String source = "<cfif false><cfset a=1><cfelseif false><cfset a=2><cfelse><cfset a=3></cfif>";
+		runtime.executeSource( source, context, BoxSourceType.CFTEMPLATE );
+
+		String key = IBoxpiler.MD5( BoxSourceType.CFTEMPLATE.toString() + source );
+
+		// if false → elseif false → else runs.
+		assertThat( service.spanAt( key, 1, 12 ).stats().count() ).isEqualTo( 0 ); // <cfset a=1> skipped
+		assertThat( service.spanAt( key, 1, 23 ).stats().count() ).isEqualTo( 0 ); // <cfelseif false> skipped
+		assertThat( service.spanAt( key, 1, 39 ).stats().count() ).isEqualTo( 0 ); // <cfset a=2> skipped
+		assertThat( service.spanAt( key, 1, 50 ).stats().count() ).isEqualTo( 1 ); // <cfelse> reached
+		assertThat( service.spanAt( key, 1, 58 ).stats().count() ).isEqualTo( 1 ); // <cfset a=3> ran
+	}
+
+	@DisplayName( "It profiles a SINGLE-LINE cfif/cfelseif/cfelseif/cfelse chain (no crash)" )
+	@Test
+	void testSingleLineMultipleElseIfChain() {
+		// Same regression with MORE than one cfelseif on one line.
+		String source = "<cfif false><cfset a=1><cfelseif true><cfset a=2><cfelseif false><cfset a=3><cfelse><cfset a=4></cfif>";
+		runtime.executeSource( source, context, BoxSourceType.CFTEMPLATE );
+
+		String key = IBoxpiler.MD5( BoxSourceType.CFTEMPLATE.toString() + source );
+
+		// if false → first cfelseif true → its body runs; the rest are skipped.
+		assertThat( service.spanAt( key, 1, 23 ).stats().count() ).isEqualTo( 1 ); // <cfelseif true> reached
+		assertThat( service.spanAt( key, 1, 38 ).stats().count() ).isEqualTo( 1 ); // <cfset a=2> ran
+		assertThat( service.spanAt( key, 1, 49 ).stats().count() ).isEqualTo( 0 ); // <cfelseif false> skipped
+		assertThat( service.spanAt( key, 1, 76 ).stats().count() ).isEqualTo( 0 ); // <cfelse> skipped
+		assertThat( service.spanAt( key, 1, 84 ).stats().count() ).isEqualTo( 0 ); // <cfset a=4> skipped
+	}
+
 	@DisplayName( "It splits a while loop into condition and body spans (tag)" )
 	@Test
 	void testWhile() {

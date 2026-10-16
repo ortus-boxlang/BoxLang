@@ -1069,6 +1069,46 @@ class CodeProfilerTemplateTest {
 		assertThat( service.spanAt( key, 4, 0 ).stats().count() ).isEqualTo( 1 ); // b = 2
 	}
 
+	@DisplayName( "It profiles a SINGLE-LINE if/elseif/else chain (no crash, correct spans)" )
+	@Test
+	void testSingleLineElseIfChain() {
+		// Regression: a nested template <bx:elseif>'s OWN source text stopped at its
+		// then body while its attached <bx:else> branch started BEYOND that text. The
+		// else-keyword scan (which walks the node's own text) then ran off the end and
+		// threw StringIndexOutOfBoundsException during profiled compilation. The parser
+		// now extends each elseif's extent over the else chain it owns.
+		String source = "<bx:if false><bx:set a=1><bx:elseif false><bx:set a=2><bx:else><bx:set a=3></bx:if>";
+		runtime.executeSource( source, context, BoxSourceType.BOXTEMPLATE );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXTEMPLATE.toString() + source );
+
+		// if false → elseif false → else runs. The keyword tags and bodies each get
+		// their own span; only the reached ones are marked.
+		assertThat( service.spanAt( key, 1, 13 ).stats().count() ).isEqualTo( 0 ); // <bx:set a=1> skipped
+		assertThat( service.spanAt( key, 1, 25 ).stats().count() ).isEqualTo( 0 ); // <bx:elseif false> skipped
+		assertThat( service.spanAt( key, 1, 42 ).stats().count() ).isEqualTo( 0 ); // <bx:set a=2> skipped
+		assertThat( service.spanAt( key, 1, 54 ).stats().count() ).isEqualTo( 1 ); // <bx:else> reached
+		assertThat( service.spanAt( key, 1, 63 ).stats().count() ).isEqualTo( 1 ); // <bx:set a=3> ran
+	}
+
+	@DisplayName( "It profiles a SINGLE-LINE if/elseif/elseif/else chain (no crash)" )
+	@Test
+	void testSingleLineMultipleElseIfChain() {
+		// Same regression with MORE than one elseif on one line: each nested elseif's
+		// extent must reach the <bx:else> so every keyword scan stays in bounds.
+		String source = "<bx:if false><bx:set a=1><bx:elseif true><bx:set a=2><bx:elseif false><bx:set a=3><bx:else><bx:set a=4></bx:if>";
+		runtime.executeSource( source, context, BoxSourceType.BOXTEMPLATE );
+
+		String key = IBoxpiler.MD5( BoxSourceType.BOXTEMPLATE.toString() + source );
+
+		// if false → first elseif true → its body runs; the rest are skipped.
+		assertThat( service.spanAt( key, 1, 25 ).stats().count() ).isEqualTo( 1 ); // <bx:elseif true> reached
+		assertThat( service.spanAt( key, 1, 41 ).stats().count() ).isEqualTo( 1 ); // <bx:set a=2> ran
+		assertThat( service.spanAt( key, 1, 53 ).stats().count() ).isEqualTo( 0 ); // <bx:elseif false> skipped
+		assertThat( service.spanAt( key, 1, 82 ).stats().count() ).isEqualTo( 0 ); // <bx:else> skipped
+		assertThat( service.spanAt( key, 1, 91 ).stats().count() ).isEqualTo( 0 ); // <bx:set a=4> skipped
+	}
+
 	@DisplayName( "It splits a tag's RUNTIME attribute values into their own spans" )
 	@Test
 	void testComponentRuntimeAttributeValuesSplit() {

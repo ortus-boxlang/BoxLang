@@ -2412,7 +2412,12 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		if ( offset < 0 ) {
 			return null;
 		}
-		for ( int i = offset - 1; i >= 0; i-- ) {
+		// Defensive bound: offsetOf derives a column-relative offset that can land
+		// PAST the end of the node's own source text when the scan target sits beyond
+		// the captured text (a nested template elseif whose else branch extends past
+		// its then body). Clamp so the backward scan cannot index out of range.
+		int start = Math.min( offset - 1, source.length() - 1 );
+		for ( int i = start; i >= 0; i-- ) {
 			char c = source.charAt( i );
 			// In template markup, a "<" begins a tag and a ">" ends one — do not
 			// scan past them for a keyword (prevents grabbing "else" out of a
@@ -2489,7 +2494,9 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		if ( offset < 0 ) {
 			return null;
 		}
-		for ( int i = offset; i < source.length(); i++ ) {
+		// Forward scan, clamped so an offset past the captured text (nested template
+		// elseif) cannot start beyond the string end.
+		for ( int i = Math.min( offset, source.length() ); i < source.length(); i++ ) {
 			char c = source.charAt( i );
 			if ( c == '>' ) {
 				return pointAt( node, i );
@@ -2557,10 +2564,11 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		}
 		// Scan back for the LAST else/elseif tag whose ">" is closest to "before":
 		// find each "<", resolve its tag, and keep the nearest one that precedes
-		// the else-body start.
+		// the else-body start. Clamp the start so an offset past the captured text
+		// (nested template elseif) cannot index out of range.
 		Point	best	= null;
 		int		bestEnd	= -1;
-		for ( int i = offset - 1; i >= 0; i-- ) {
+		for ( int i = Math.min( offset - 1, source.length() - 1 ); i >= 0; i-- ) {
 			if ( source.charAt( i ) == '<' ) {
 				String rest = source.substring( i, Math.min( source.length(), i + 50 ) );
 				// Match a plain else tag (<bx:else>/<cfelse>) OR an elseif tag

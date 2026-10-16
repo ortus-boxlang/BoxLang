@@ -1465,6 +1465,36 @@ public class CFParser extends AbstractParser {
 			elseBody = new BoxStatementBlock( elseBodyStatements, getPosition( node.elseBody ), getSourceText( node.elseBody ) );
 		}
 
+		// The end of the else chain that hangs below the elseifs: the <cfelse> body
+		// when present, otherwise the LAST elseif's then body. Each nested elseif
+		// extends its source extent to here so the branch keyword and else body it
+		// OWNS fall INSIDE its own source text. Without this the elseif's own text
+		// stops at its then body while its attached else branch (a deeper elseif or
+		// the <cfelse>) starts BEYOND it, and a consumer scanning the node's own text
+		// for the "else" keyword (BoxIfElseTransformer.findElseKeyword) runs off the
+		// end -> StringIndexOutOfBoundsException.
+		int		chainStopIndex;
+		Point	chainEnd;
+		if ( node.TEMPLATE_ELSE() != null && node.elseBody.getStop() != null ) {
+			Token stopToken = node.elseBody.getStop();
+			chainStopIndex	= stopToken.getStopIndex();
+			chainEnd		= new Point( stopToken.getLine(), stopToken.getCharPositionInLine() );
+		} else if ( !node.elseIfCondition.isEmpty() ) {
+			var lastElseIfBody = node.elseThenBody.get( node.elseThenBody.size() - 1 );
+			if ( !lastElseIfBody.template_statement().isEmpty() ) {
+				Token stopToken = lastElseIfBody.template_statement( lastElseIfBody.template_statement().size() - 1 ).getStop();
+				chainStopIndex	= stopToken.getStopIndex();
+				chainEnd		= new Point( stopToken.getLine(), stopToken.getCharPositionInLine() );
+			} else {
+				Token closeToken = node.elseIfComponentClose.get( node.elseIfComponentClose.size() - 1 );
+				chainStopIndex	= closeToken.getStopIndex();
+				chainEnd		= new Point( closeToken.getLine(), closeToken.getCharPositionInLine() );
+			}
+		} else {
+			chainStopIndex	= -1;
+			chainEnd		= null;
+		}
+
 		// Loop backward over elseif conditions, each one becoming the elseBody of the next.
 		for ( int i = node.elseIfCondition.size() - 1; i >= 0; i-- ) {
 			int		stopIndex;
@@ -1479,6 +1509,10 @@ public class CFParser extends AbstractParser {
 				stopIndex	= node.elseThenBody.get( i ).template_statement( node.elseThenBody.get( i ).template_statement().size() - 1 ).getStop()
 				    .getStopIndex();
 			}
+			// Extend this elseif's extent over the else chain below it (computed
+			// above) so its own else branch is contained in its source text.
+			Point			nodeEnd			= chainStopIndex > stopIndex ? chainEnd : end;
+			int				nodeStopIndex	= Math.max( stopIndex, chainStopIndex );
 			// The elseif tag's open "<" token. Index i+1 because COMPONENT_OPEN(0) is
 			// the <cfif> opener; each elseif iteration consumes its own
 			// COMPONENT_OPEN. Using the real token instead of a hardcoded -3 offset
@@ -1486,7 +1520,7 @@ public class CFParser extends AbstractParser {
 			Token			elseifOpen		= node.COMPONENT_OPEN( i + 1 ).getSymbol();
 			Position		pos				= new Position(
 			    new Point( elseifOpen.getLine(), elseifOpen.getCharPositionInLine() ),
-			    end, sourceToParse );
+			    nodeEnd, sourceToParse );
 			BoxExpression	thisCondition	= expressionVisitor.visit( node.elseIfCondition.get( i ) );
 			elseBodyStatements	= List.of(
 			    new BoxIfElse(
@@ -1495,11 +1529,11 @@ public class CFParser extends AbstractParser {
 			        new BoxStatementBlock( toAst( file, node.elseThenBody.get( i ) ), pos, getSourceText( node.elseThenBody.get( i ) ) ),
 			        elseBody,
 			        pos,
-			        getSourceText( node, elseifOpen.getStartIndex(), stopIndex )
+			        getSourceText( node, elseifOpen.getStartIndex(), nodeStopIndex )
 			    )
 			);
 			elseBody			= new BoxStatementBlock( elseBodyStatements, pos,
-			    getSourceText( node, elseifOpen.getStartIndex(), stopIndex ) );
+			    getSourceText( node, elseifOpen.getStartIndex(), nodeStopIndex ) );
 		}
 
 		BoxStatement thenBody = new BoxStatementBlock( thenBodyStatements, getPosition( node.thenBody ), getSourceText( node.thenBody ) );
