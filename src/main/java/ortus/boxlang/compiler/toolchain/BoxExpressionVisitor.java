@@ -1151,14 +1151,22 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		// the dot handler. Expressions will sometimes come through as their primitive types.
 		if ( name instanceof BoxIdentifier || name instanceof BoxBooleanLiteral || name instanceof BoxNull || name instanceof BoxScope ) {
 			// Use the resolved LOGICAL name for lookup, NOT the source text. `visitExprOutString` widens an
-			// identifier's source text to cover the whole `#name#` wrapper, so using source text here would
+			// expression's source text to cover the whole `#name#` wrapper, so using source text here would
 			// make `#f#()` look up `#f#` instead of `f`. Keep the widened text only as source metadata.
 			//
-			// BACKWARD COMPATIBILITY: for every other case the source text is preserved verbatim (the
-			// boolean/null/scope cases keep their literal text, e.g. `true`, `null`, `variables`).
-			String invocationName = name instanceof BoxIdentifier identifier
-			    ? identifier.getName()
-			    : name.getSourceText();
+			// Each node supplies its logical name from a typed accessor: an identifier's name, a boolean
+			// literal's value, a scope's name, or the literal "null". For un-widened nodes this is identical
+			// to the source text, so only the `#...#`-wrapped forms change.
+			String invocationName;
+			if ( name instanceof BoxIdentifier identifier ) {
+				invocationName = identifier.getName();
+			} else if ( name instanceof BoxBooleanLiteral booleanLiteral ) {
+				invocationName = String.valueOf( booleanLiteral.getValue() );
+			} else if ( name instanceof BoxNull ) {
+				invocationName = "null";
+			} else {
+				invocationName = ( ( BoxScope ) name ).getName();
+			}
 			return new BoxFunctionInvocation( invocationName, args, pos, src );
 		}
 

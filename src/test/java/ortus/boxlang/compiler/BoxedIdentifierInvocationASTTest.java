@@ -138,4 +138,53 @@ public class BoxedIdentifierInvocationASTTest {
 
 		assertEquals( "lookme", invocation.getName(), "`#lookme#()` must invoke `lookme` in CF script too" );
 	}
+
+	/**
+	 * The invocation lookup name for a boxed KEYWORD must be resolved from the node's
+	 * typed accessor (boolean value / scope name / literal null), NOT the widened
+	 * source text — otherwise `#true#()` would look up `#true#` instead of `true`.
+	 * A boolean literal, a scope keyword and `null` all widen their source text to the
+	 * full `#...#` wrapper exactly like an identifier does.
+	 */
+	private String boxedInvocationName( String code, BoxSourceType type ) throws IOException {
+		ParsingResult result = new Parser().parse( code, type );
+		assertTrue( result.isCorrect(), "parse issues: " + result.getIssues() );
+		return ( ( BoxFunctionInvocation ) result.getRoot()
+		    .getDescendants()
+		    .stream()
+		    .filter( BoxFunctionInvocation.class::isInstance )
+		    .findFirst()
+		    .orElseThrow( () -> new AssertionError( "expected a BoxFunctionInvocation" ) ) ).getName();
+	}
+
+	@Test
+	@DisplayName( "It resolves `#true#()` / `#false#()` to the literal names, not the widened text" )
+	public void testBoxedBooleanLiteralInvocationUsesLiteralName() throws IOException {
+		assertEquals( "true", boxedInvocationName( "variables[\"true\"] = () => 1; result = #true#();", BoxSourceType.BOXSCRIPT ),
+		    "`#true#()` must invoke `true`" );
+		assertEquals( "false", boxedInvocationName( "variables[\"false\"] = () => 1; result = #false#();", BoxSourceType.BOXSCRIPT ),
+		    "`#false#()` must invoke `false`" );
+	}
+
+	@Test
+	@DisplayName( "It resolves `#null#()` to the literal name `null`, not the widened text" )
+	public void testBoxedNullInvocationUsesLiteralName() throws IOException {
+		assertEquals( "null", boxedInvocationName( "variables[\"null\"] = () => 1; result = #null#();", BoxSourceType.BOXSCRIPT ),
+		    "`#null#()` must invoke `null`" );
+	}
+
+	@Test
+	@DisplayName( "It resolves a boxed SCOPE name (`#variables#()`) to the scope name" )
+	public void testBoxedScopeInvocationUsesScopeName() throws IOException {
+		assertEquals( "variables", boxedInvocationName( "result = #variables#();", BoxSourceType.BOXSCRIPT ),
+		    "`#variables#()` must invoke `variables`" );
+	}
+
+	@Test
+	@DisplayName( "It resolves boxed boolean/null/scope names in CF script too" )
+	public void testBoxedKeywordInvocationInCFScript() throws IOException {
+		assertEquals( "true", boxedInvocationName( "variables[\"true\"] = function() { return 1; }\nresult = #true#();", BoxSourceType.CFSCRIPT ) );
+		assertEquals( "null", boxedInvocationName( "variables[\"null\"] = function() { return 1; }\nresult = #null#();", BoxSourceType.CFSCRIPT ) );
+		assertEquals( "variables", boxedInvocationName( "result = #variables#();", BoxSourceType.CFSCRIPT ) );
+	}
 }
