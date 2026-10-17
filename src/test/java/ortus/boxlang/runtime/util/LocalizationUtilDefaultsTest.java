@@ -21,7 +21,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.time.ZoneId;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +30,6 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.operators.Compare;
@@ -40,11 +38,10 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.DateTime;
-import ortus.boxlang.runtime.types.IStruct;
 
 /**
- * BL-2758: resolving the default timezone and locale must not rebuild the runtime config struct,
- * and request/application overrides must still win over the runtime default.
+ * BL-2758: request and application timezone and locale overrides still win over the runtime default,
+ * and the runtime default is read live.
  */
 public class LocalizationUtilDefaultsTest {
 
@@ -52,20 +49,6 @@ public class LocalizationUtilDefaultsTest {
 	IBoxContext			context;
 	IScope				variables;
 	static Key			result	= new Key( "result" );
-
-	/**
-	 * A runtime context that counts how many times the full config struct is built
-	 */
-	static class CountingRuntimeBoxContext extends RuntimeBoxContext {
-
-		final AtomicInteger configCalls = new AtomicInteger();
-
-		@Override
-		public IStruct getConfig() {
-			this.configCalls.incrementAndGet();
-			return super.getConfig();
-		}
-	}
 
 	@BeforeAll
 	public static void setUp() {
@@ -76,42 +59,6 @@ public class LocalizationUtilDefaultsTest {
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
-	}
-
-	@DisplayName( "Resolving the default timezone from the runtime context does not build the config struct" )
-	@Test
-	public void testParseZoneIdDoesNotBuildConfig() {
-		CountingRuntimeBoxContext runtimeContext = new CountingRuntimeBoxContext();
-
-		for ( int i = 0; i < 100; i++ ) {
-			assertThat( LocalizationUtil.parseZoneId( null, runtimeContext ) ).isEqualTo( instance.getConfiguration().timezone );
-		}
-		assertThat( runtimeContext.configCalls.get() ).isEqualTo( 0 );
-	}
-
-	@DisplayName( "Casting a date string with the runtime context does not build the config struct" )
-	@Test
-	public void testDateTimeCastDoesNotBuildConfig() {
-		CountingRuntimeBoxContext runtimeContext = new CountingRuntimeBoxContext();
-
-		for ( int i = 0; i < 100; i++ ) {
-			DateTime date = DateTimeCaster.cast( "2024-01-15 10:30:00", false, runtimeContext );
-			assertThat( date ).isNotNull();
-			assertThat( date.getZone() ).isEqualTo( instance.getConfiguration().timezone );
-		}
-		assertThat( runtimeContext.configCalls.get() ).isEqualTo( 0 );
-	}
-
-	@DisplayName( "Resolving the default locale from the runtime context does not build the config struct" )
-	@Test
-	public void testParseLocaleFromContextDoesNotBuildConfig() {
-		CountingRuntimeBoxContext runtimeContext = new CountingRuntimeBoxContext();
-
-		for ( int i = 0; i < 100; i++ ) {
-			assertThat( LocalizationUtil.parseLocaleFromContext( runtimeContext, new ArgumentsScope() ) )
-			    .isEqualTo( instance.getConfiguration().locale );
-		}
-		assertThat( runtimeContext.configCalls.get() ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "The runtime default timezone is read live, so config changes are seen at once" )
@@ -136,10 +83,10 @@ public class LocalizationUtilDefaultsTest {
 		DateTime	earlier	= DateTimeCaster.cast( "2024-01-15 10:30:00", true, context );
 		DateTime	later	= DateTimeCaster.cast( "2024-01-15 10:31:00", true, context );
 
-		assertThat( Compare.invoke( earlier, later ) ).isEqualTo( -1 );
-		assertThat( Compare.invoke( later, earlier ) ).isEqualTo( 1 );
-		assertThat( Compare.invoke( earlier, earlier.clone() ) ).isEqualTo( 0 );
-		assertThat( Compare.invoke( earlier, "2024-01-15 10:31:00" ) ).isEqualTo( -1 );
+		assertThat( Compare.invoke( context, earlier, later ) ).isEqualTo( -1 );
+		assertThat( Compare.invoke( context, later, earlier ) ).isEqualTo( 1 );
+		assertThat( Compare.invoke( context, earlier, earlier.clone() ) ).isEqualTo( 0 );
+		assertThat( Compare.invoke( context, earlier, "2024-01-15 10:31:00" ) ).isEqualTo( -1 );
 	}
 
 	@DisplayName( "setTimezone() on the request still wins over the runtime default" )

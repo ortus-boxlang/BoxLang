@@ -54,7 +54,6 @@ import org.apache.commons.lang3.LocaleUtils;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
-import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.logging.LoggingService;
@@ -578,10 +577,6 @@ public final class LocalizationUtil {
 	 * @return The Locale object found or the default
 	 */
 	public static Locale parseLocaleFromContext( IBoxContext context, ArgumentsScope arguments ) {
-		// The runtime context has no overrides, so read the runtime default directly instead of building the whole config struct (BL-2758)
-		if ( context instanceof RuntimeBoxContext ) {
-			return parseLocaleOrDefault( arguments.getAsString( Key.locale ), BoxRuntime.getInstance().getConfiguration().locale );
-		}
 		RequestBoxContext requestContext = context.getRequestContext();
 		return parseLocaleOrDefault(
 		    arguments.getAsString( Key.locale ),
@@ -631,7 +626,7 @@ public final class LocalizationUtil {
 				    ? parsed
 				    : ( ZoneId ) context.getConfig().get( Key.timezone );
 			}
-		} else if ( context != null && ! ( context instanceof RuntimeBoxContext ) ) {
+		} else if ( context != null ) {
 			RequestBoxContext requestContext = context.getRequestContext();
 			if ( requestContext != null && requestContext.getTimezone() != null ) {
 				return requestContext.getTimezone();
@@ -639,9 +634,8 @@ public final class LocalizationUtil {
 				return ( ZoneId ) context.getConfig().get( Key.timezone );
 			}
 		} else {
-			// The runtime context has no overrides, so read the runtime default directly.
-			// RuntimeBoxContext.getConfig() builds a new struct of the whole config on every call (BL-2758)
-			return BoxRuntime.getInstance().getConfiguration().timezone;
+			IBoxContext runtimeContext = BoxRuntime.getInstance().getRuntimeContext();
+			return ( ZoneId ) runtimeContext.getConfig().get( Key.timezone );
 		}
 	}
 

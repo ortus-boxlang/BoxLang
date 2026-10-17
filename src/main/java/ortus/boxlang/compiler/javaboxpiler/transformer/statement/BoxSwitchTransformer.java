@@ -95,7 +95,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			String caseTemplate;
 			if ( c.getDelimiter() == null ) {
 				caseTemplate = """
-				               	if( EqualsEquals.invoke( ${condition}, ${switchValueName} ) ) {
+				               	if( EqualsEquals.invoke( ${contextName}, ${condition}, ${switchValueName} ) ) {
 				               }
 				               """;
 			} else {
@@ -189,7 +189,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				String caseTemplate;
 				if ( c.getDelimiter() == null ) {
 					caseTemplate = """
-					               	if( ${caseEnteredName} || EqualsEquals.invoke( ${condition}, ${switchValueName} ) ) {
+					               	if( ${caseEnteredName} || EqualsEquals.invoke( ${contextName}, ${condition}, ${switchValueName} ) ) {
 					               		${caseEnteredName} = true;
 					               }
 					               """;

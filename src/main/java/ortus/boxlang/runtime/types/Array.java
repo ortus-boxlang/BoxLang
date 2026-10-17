@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.Strings;
 
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -837,7 +838,8 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		int len = size();
 		for ( int i = 0; i < len; i++ ) {
 			Object elem = get( i );
-			if ( EqualsEquals.invoke( elem, value, caseSensitive ) || elem.equals( value ) ) {
+			if ( EqualsEquals.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), elem, value, caseSensitive )
+			    || elem.equals( value ) ) {
 				return i + 1;
 			}
 		}
