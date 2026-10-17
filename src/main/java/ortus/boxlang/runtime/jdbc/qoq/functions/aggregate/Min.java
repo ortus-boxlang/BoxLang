@@ -17,6 +17,8 @@ package ortus.boxlang.runtime.jdbc.qoq.functions.aggregate;
 import java.util.List;
 
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
+import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.jdbc.qoq.QoQAggregateFunctionDef;
 import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.operators.Compare;
@@ -52,7 +54,7 @@ public class Min extends QoQAggregateFunctionDef {
 		Object		max		= input[ 0 ];
 		if ( input.length > 1 ) {
 			for ( int i = 1; i < input.length; i++ ) {
-				if ( Compare.invoke( max, input[ i ] ) > 0 ) {
+				if ( Compare.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), max, input[ i ] ) > 0 ) {
 					max = input[ i ];
 				}
 			}

@@ -71,9 +71,9 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 		String					template	= "";
 
 		if ( operation.getOperator() == BoxComparisonOperator.Equal ) {
-			template = "EqualsEquals.invoke(${left},${right})";
+			template = "EqualsEquals.invoke(${contextName},(Object)(${left}),(Object)(${right}))";
 		} else if ( operation.getOperator() == BoxComparisonOperator.NotEqual ) {
-			template = "!EqualsEquals.invoke(${left},${right})";
+			template = "!EqualsEquals.invoke(${contextName},(Object)(${left}),(Object)(${right}))";
 		} else if ( operation.getOperator() == BoxComparisonOperator.TEqual ) {
 			template = "EqualsEqualsEquals.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxComparisonOperator.TNotEqual ) {
@@ -81,13 +81,13 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 		} else if ( operation.getOperator() == BoxComparisonOperator.Contains ) {
 			template = "Contains.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxComparisonOperator.GreaterThan ) {
-			template = "GreaterThan.invoke(${left},${right})";
+			template = "GreaterThan.invoke(${contextName},(Object)(${left}),(Object)(${right}))";
 		} else if ( operation.getOperator() == BoxComparisonOperator.GreaterThanEquals ) {
-			template = "GreaterThanEqual.invoke(${left},${right})";
+			template = "GreaterThanEqual.invoke(${contextName},(Object)(${left}),(Object)(${right}))";
 		} else if ( operation.getOperator() == BoxComparisonOperator.LessThan ) {
-			template = "LessThan.invoke(${left},${right})";
+			template = "LessThan.invoke(${contextName},(Object)(${left}),(Object)(${right}))";
 		} else if ( operation.getOperator() == BoxComparisonOperator.LessThanEquals ) {
-			template = "LessThanEqual.invoke(${left},${right})";
+			template = "LessThanEqual.invoke(${contextName},(Object)(${left}),(Object)(${right}))";
 		} else {
 			throw new ExpressionException( "not implemented", operation );
 		}
