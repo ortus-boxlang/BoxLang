@@ -180,8 +180,8 @@ st = {
 @foo
 @bar( baz )
 class brad luis="majano" extends=ProfilerSuper {
-    property name="threshold" default=localSeed;
-    property name="other" default=localSeed;
+    property name="threshold" default="#static.localSeed#";
+    property name="other" default="#static.localSeed#";
     static {
         localSeed = 42;
         s = 1;

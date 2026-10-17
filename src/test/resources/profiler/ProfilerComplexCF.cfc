@@ -1,9 +1,9 @@
 component accessors=true extends="ProfilerSuper" implements="ProfilerInterfaceCF" {
 
-	// SKIPPED: super already set `threshold` into the variables scope.
-	property name="threshold" default=complexSeed;
-	// RUNS: no preset exists, so defaultProperties() applies this default.
-	property name="other" default=complexSeed;
+	// SKIPPED: super preset `threshold`, so this runtime default is never evaluated.
+	property name="threshold" default="#static.complexSeed#";
+	// RUNS: no preset exists, so defaultProperties() evaluates this default (42).
+	property name="other" default="#static.complexSeed#";
 
 	static {
 		complexSeed = 42;

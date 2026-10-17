@@ -36,7 +36,6 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
-import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Source;
@@ -44,7 +43,6 @@ import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
-import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.InterfaceBoxContext;
@@ -399,12 +397,6 @@ public class BoxInterfaceTransformer {
 		    () -> {
 			    List<AbstractInsnNode> staticNodes = new ArrayList<AbstractInsnNode>();
 
-			    // The static { ... } braces are batch-marked when the static
-			    // initializer RUNS (interface load). Pass A registered the static
-			    // brace group keyed by the "static" keyword; emit it at static-init
-			    // entry, mirroring the class transformer.
-			    emitInterfaceStaticInitMark( transpiler, staticNodes, boxInterface );
-
 			    boxInterface.getDescendantsOfType( BoxFunctionDeclaration.class, ( expr ) -> {
 				    BoxFunctionDeclaration func = ( BoxFunctionDeclaration ) expr;
 
@@ -413,18 +405,33 @@ public class BoxInterfaceTransformer {
 				    staticNodes.addAll( transpiler.transform( func, TransformerContext.NONE ) );
 			    } );
 
+			    // Each static { ... } block's brace group is marked immediately BEFORE that
+			    // block's own body runs — never all groups up front at method entry. Marking
+			    // every group at entry reports a later block as entered even when an EARLIER
+			    // block threw: its braces would show covered while its body stayed uncovered.
+			    // An EMPTY block still gets its mark, because the block genuinely IS entered.
 			    staticNodes.addAll( transpiler.getBoxStaticInitializers()
 			        .stream()
 			        .map( ( staticInitializer ) -> {
-				        if ( staticInitializer == null || staticInitializer.getBody().size() == 0 ) {
-					        return new ArrayList<AbstractInsnNode>();
+				        List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+				        if ( staticInitializer == null ) {
+					        return nodes;
 				        }
 
-				        return staticInitializer.getBody()
+				        // The "static {" header (with its opening brace) and the closing "}" are
+				        // registered as one group in Pass A, keyed by this block's start position.
+				        emitInterfaceStaticInitMark( transpiler, nodes, staticInitializer );
+
+				        if ( staticInitializer.getBody().isEmpty() ) {
+					        return nodes;
+				        }
+
+				        nodes.addAll( staticInitializer.getBody()
 				            .stream()
 				            .map( statement -> transpiler.transform( statement, TransformerContext.NONE ) )
-				            .flatMap( nodes -> nodes.stream() )
-				            .collect( Collectors.toList() );
+				            .flatMap( bodyNodes -> bodyNodes.stream() )
+				            .collect( Collectors.toList() ) );
+				        return nodes;
 			        } )
 			        .flatMap( s -> s.stream() )
 			        .collect( Collectors.toList() )
@@ -655,43 +662,34 @@ public class BoxInterfaceTransformer {
 	}
 
 	/**
-	 * Emit the interface's static-initializer brace group mark. A static block's
-	 * {@code static { }} header (including the opening brace) and closing "}" are
-	 * REGISTERED as one group in Pass A keyed by the {@code static} keyword; this
-	 * batch-marks them when the static initializer RUNS (at interface load).
-	 * Handles static blocks written directly in the interface body or inside a
-	 * {@code <cfscript>} island (tag-based interfaces).
+	 * Emit ONE interface static-initializer block's brace group mark. A static
+	 * block's {@code static { }} header (including the opening brace) and its
+	 * closing "}" are REGISTERED as one group in Pass A, keyed by the
+	 * {@code static} keyword's start position; this batch-marks them when THAT
+	 * block actually runs. The mark must be emitted immediately before the block's
+	 * own body so a block that is never reached (an earlier block threw) is not
+	 * reported as entered. Empty blocks are marked too — they ARE entered.
 	 *
-	 * @param transpiler   the active transpiler
-	 * @param staticNodes  the static initializer instruction list to append to
-	 * @param boxInterface the interface AST
+	 * @param transpiler        the active transpiler
+	 * @param staticNodes       the static initializer instruction list to append to
+	 * @param staticInitializer the single static block whose braces to mark
 	 */
-	private static void emitInterfaceStaticInitMark( Transpiler transpiler, List<AbstractInsnNode> staticNodes, BoxInterface boxInterface ) {
+	private static void emitInterfaceStaticInitMark( Transpiler transpiler, List<AbstractInsnNode> staticNodes, BoxStaticInitializer staticInitializer ) {
 		if ( !transpiler.hasProfilerId() ) {
 			return;
 		}
-		for ( var stmt : boxInterface.getBody() ) {
-			List<BoxStatement> candidates = stmt instanceof BoxScriptIsland island
-			    ? island.getStatements()
-			    : List.of( stmt );
-			for ( BoxStatement candidate : candidates ) {
-				if ( ! ( candidate instanceof BoxStaticInitializer init ) ) {
-					continue;
-				}
-				Point kw = init.getStart();
-				if ( kw == null ) {
-					continue;
-				}
-				long	packed	= ( ( long ) kw.getLine() << 32 ) | ( kw.getColumn() & 0xFFFFFFFFL );
-				int		spanId	= transpiler.getSpanId( packed );
-				int[]	group	= spanId < 0 ? null : transpiler.takeSpanGroup( spanId );
-				if ( group != null ) {
-					for ( int member : group ) {
-						transpiler.claimSpanMark( member );
-					}
-					staticNodes.addAll( transpiler.emitMarkVarargs( group ) );
-				}
+		Point kw = staticInitializer.getStart();
+		if ( kw == null ) {
+			return;
+		}
+		long	packed	= ( ( long ) kw.getLine() << 32 ) | ( kw.getColumn() & 0xFFFFFFFFL );
+		int		spanId	= transpiler.getSpanId( packed );
+		int[]	group	= spanId < 0 ? null : transpiler.takeSpanGroup( spanId );
+		if ( group != null ) {
+			for ( int member : group ) {
+				transpiler.claimSpanMark( member );
 			}
+			staticNodes.addAll( transpiler.emitMarkVarargs( group ) );
 		}
 	}
 }

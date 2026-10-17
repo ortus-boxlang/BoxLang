@@ -778,15 +778,24 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				arg = node.getArguments().get( 1 );
 			}
 			if ( arg != null && ( arg.getValue() instanceof BoxIntegerLiteral || arg.getValue() instanceof BoxDecimalLiteral ) ) {
-				// Favor original text, as our parser strips leading zeros in the AST
-				String originalText = arg.getValue() instanceof BoxIntegerLiteral ? ( ( BoxIntegerLiteral ) arg.getValue() ).getSourceText()
-				    : ( ( BoxDecimalLiteral ) arg.getValue() ).getSourceText();
-				// If this AST has no source text, fall back on the value
-				if ( originalText == null ) {
-					originalText = arg.getValue() instanceof BoxIntegerLiteral ? ( ( BoxIntegerLiteral ) arg.getValue() ).getValue()
-					    : ( ( BoxDecimalLiteral ) arg.getValue() ).getValue();
+				BoxExpression	literal		= arg.getValue();
+				// Favor the literal's ORIGINAL source text, as the parser strips leading zeros
+				// from the value (e.g. the mask `000.000` must stay `000.000`).
+				//
+				// BUT `visitExprOutString` WIDENS an expression's source text to cover the whole
+				// `#...#` wrapper, so a boxed mask such as `numberFormat( x, #000.000# )` would
+				// otherwise become the mask `#000.000#` — and `#` is a digit placeholder in a
+				// mask, so the output silently changes. A numeric literal's own source text can
+				// never contain a `#`, so a `#...#` wrapper can only have come from the widening
+				// and is unwrapped to recover the literal's real text.
+				String			sourceText	= literal.getSourceText();
+				if ( sourceText != null && sourceText.length() >= 2 && sourceText.startsWith( "#" ) && sourceText.endsWith( "#" ) ) {
+					sourceText = sourceText.substring( 1, sourceText.length() - 1 );
 				}
-				arg.setValue( new BoxStringLiteral( originalText, arg.getValue().getPosition(), "\"" + originalText + "\"" ) );
+				String originalText = sourceText != null
+				    ? sourceText
+				    : ( literal instanceof BoxIntegerLiteral integerLiteral ? integerLiteral.getValue() : ( ( BoxDecimalLiteral ) literal ).getValue() );
+				arg.setValue( new BoxStringLiteral( originalText, literal.getPosition(), "\"" + originalText + "\"" ) );
 			}
 		}
 

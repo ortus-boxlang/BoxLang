@@ -2548,8 +2548,8 @@ class CodeProfilerCFScriptTest {
 		assertThat( blueprint.spans() ).isNotEmpty();
 
 		// High-level line coverage of the class file (see ProfilerComplexCF.cfc):
-		// 4 : property threshold default=complexSeed — SKIPPED (super preset it)
-		// 6 : property other default=complexSeed — applied (no preset)
+		// 4 : property threshold default="#throw( 'boom' )#" — SKIPPED (super preset it)
+		// 6 : property other default="#( 40 + 2 )#" — applied (no preset)
 		// 9 : complexSeed = 42 (static block ran at class load)
 		// 10 : staticInitRan = true (static block ran at class load)
 		// 13 : instanceInit = 0 (pseudo-constructor ran at instantiation)
@@ -2622,9 +2622,9 @@ class CodeProfilerCFScriptTest {
 		assertThat( complexBlue.spans().get( 18 ) ).isEqualTo( new Blueprint.SpanDef( 25, 25, 25, 26, true ) );// brace
 		assertThat( complexBlue.spans().get( 19 ) ).isEqualTo( new Blueprint.SpanDef( 27, 1, 27, 2, true ) ); // abstractOnly "}"
 		assertThat( complexBlue.spans().get( 20 ) ).isEqualTo( new Blueprint.SpanDef( 4, 1, 4, 35, true ) );  // threshold property head
-		assertThat( complexBlue.spans().get( 21 ) ).isEqualTo( new Blueprint.SpanDef( 4, 35, 4, 46, true ) );// complexSeed (SKIPPED)
+		assertThat( complexBlue.spans().get( 21 ) ).isEqualTo( new Blueprint.SpanDef( 4, 35, 4, 57, true ) );// runtime default (SKIPPED)
 		assertThat( complexBlue.spans().get( 22 ) ).isEqualTo( new Blueprint.SpanDef( 6, 1, 6, 31, true ) ); // other property head
-		assertThat( complexBlue.spans().get( 23 ) ).isEqualTo( new Blueprint.SpanDef( 6, 31, 6, 42, true ) );// complexSeed (USED)
+		assertThat( complexBlue.spans().get( 23 ) ).isEqualTo( new Blueprint.SpanDef( 6, 31, 6, 53, true ) );// runtime default (USED)
 
 		assertThat( service.spanAt( complexKey, 9, 2 ).stats().count() ).isEqualTo( 1 );   // static complexSeed
 		assertThat( service.spanAt( complexKey, 13, 1 ).stats().count() ).isEqualTo( 1 );  // instanceInit

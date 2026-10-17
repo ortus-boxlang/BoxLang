@@ -19,6 +19,7 @@ package ortus.boxlang.compiler;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,6 +39,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.services.Blueprint;
 import ortus.boxlang.runtime.services.CodeProfilerService;
+import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -3829,13 +3831,15 @@ class CodeProfilerTest {
 		assertThat( service.spanAt( scriptKey, 4, 0 ).stats().count() ).isEqualTo( 1 );   // new brad()
 	}
 
-	@DisplayName( "It tracks a non-literal identifier property default" )
+	@DisplayName( "It tracks a runtime-expression property default when it is applied" )
 	@Test
-	void testPropertyIdentifierDefault() {
+	void testPropertyRuntimeDefault() {
+		// A genuine RUNTIME default (an interpolated expression, not a literal) compiles
+		// to a deferred evaluator, so it only runs when defaultProperties() applies it.
 		String source = """
 		                seed = 42;
 		                class brad {
-		                property name="x" default=seed type="string";
+		                property name="x" default="#( 40 + 2 )#" type="string";
 		                }
 		                b = new brad();
 		                v = b.x;
@@ -3845,12 +3849,12 @@ class CodeProfilerTest {
 		String scriptKey = IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
 
 		// DEBUG: print every span's actual source chars to confirm coordinates/counts.
-		// System.out.println( "=== testPropertyIdentifierDefault dump" );
+		// System.out.println( "=== testPropertyRuntimeDefault dump" );
 		// System.out.print( service.dumpSpans( scriptKey, source ) );
 
-		// seed=42 (line 1) and the identifier default (line 3 col 26) both ran.
+		// seed=42 (line 1) and the runtime default (line 3 col 26) both ran.
 		assertThat( service.spanAt( scriptKey, 1, 0 ).stats().count() ).isEqualTo( 1 );   // seed = 42
-		assertThat( service.spanAt( scriptKey, 3, 26 ).stats().count() ).isEqualTo( 1 );  // default=seed
+		assertThat( service.spanAt( scriptKey, 3, 26 ).stats().count() ).isEqualTo( 1 );  // runtime default (applied)
 		assertThat( service.spanAt( scriptKey, 5, 0 ).stats().count() ).isEqualTo( 1 );   // new brad()
 	}
 
@@ -3877,20 +3881,22 @@ class CodeProfilerTest {
 		assertThat( service.spanAt( scriptKey, 4, 0 ).stats().count() ).isEqualTo( 1 );   // w = 9
 	}
 
-	@DisplayName( "It skips a bare-identifier property default preset by a super class" )
+	@DisplayName( "It skips a runtime property default preset by a super class" )
 	@Test
 	void testPropertyDefaultSkippedBySuper() {
 		// The super class presets `threshold` in its pseudo-constructor. The child
-		// declares `property name="threshold" default=seed;` — a BARE IDENTIFIER
-		// default. defaultProperties() sees the value already in scope and SKIPS
-		// the child's default, so its span must stay RED (count 0).
+		// declares `property name="threshold" default="#throw( 'boom' )#";` — a REAL
+		// runtime (non-literal) default expression. defaultProperties() sees the value
+		// already in scope and SKIPS the child's default, so its span must stay RED
+		// (count 0) — and the throw never fires. A LITERAL default could not test this:
+		// it is baked in at compile time and has no evaluator to skip.
 		String source = """
 		                seed = 42;
 		                class brad {
 		                threshold = "preset";
 		                }
 		                class child extends=brad {
-		                property name="threshold" default=seed;
+		                property name="threshold" default="#throw( 'boom' )#";
 		                }
 		                c = new child();
 		                """;
@@ -3902,9 +3908,9 @@ class CodeProfilerTest {
 		// System.out.println( "=== testPropertyDefaultSkippedBySuper dump" );
 		// System.out.print( service.dumpSpans( scriptKey, source ) );
 
-		// The child's `threshold` default (line 6, `default=seed` value at col 34)
-		// is SKIPPED because the super preset `threshold`. Count 0 = RED.
-		assertThat( service.spanAt( scriptKey, 6, 34 ).stats().count() ).isEqualTo( 0 );  // default=seed SKIPPED (super preset)
+		// The child's `threshold` runtime default (line 6, value at col 34) is SKIPPED
+		// because the super preset `threshold`. Count 0 = RED.
+		assertThat( service.spanAt( scriptKey, 6, 34 ).stats().count() ).isEqualTo( 0 );  // runtime default SKIPPED (super preset)
 		assertThat( service.spanAt( scriptKey, 8, 0 ).stats().count() ).isEqualTo( 1 );   // c = new child()
 	}
 
@@ -4207,9 +4213,9 @@ class CodeProfilerTest {
 		assertThat( complexBlue.spans().get( 56 ) ).isEqualTo( new Blueprint.SpanDef( 61, 25, 61, 26, true ) );// brace
 		assertThat( complexBlue.spans().get( 57 ) ).isEqualTo( new Blueprint.SpanDef( 63, 1, 63, 2, true ) ); // abstractOnly "}"
 		assertThat( complexBlue.spans().get( 58 ) ).isEqualTo( new Blueprint.SpanDef( 4, 1, 4, 35, true ) );  // threshold property head
-		assertThat( complexBlue.spans().get( 59 ) ).isEqualTo( new Blueprint.SpanDef( 4, 35, 4, 46, true ) );// complexSeed (SKIPPED)
+		assertThat( complexBlue.spans().get( 59 ) ).isEqualTo( new Blueprint.SpanDef( 4, 35, 4, 57, true ) );// runtime default (SKIPPED)
 		assertThat( complexBlue.spans().get( 60 ) ).isEqualTo( new Blueprint.SpanDef( 6, 1, 6, 31, true ) ); // other property head
-		assertThat( complexBlue.spans().get( 61 ) ).isEqualTo( new Blueprint.SpanDef( 6, 31, 6, 42, true ) );// complexSeed (USED)
+		assertThat( complexBlue.spans().get( 61 ) ).isEqualTo( new Blueprint.SpanDef( 6, 31, 6, 53, true ) );// runtime default (USED)
 
 		// Complex coverage: static + pseudo-ctor ran; members only on call; the
 		// skipped threshold default is count 0 while the applied other is count 1.
@@ -4369,6 +4375,41 @@ class CodeProfilerTest {
 		assertThat( service.lineAt( key, 21 ).count() ).isEqualTo( 1 );
 		assertThat( service.lineAt( key, 22 ).covered() ).isTrue(); // return msg
 		assertThat( service.lineAt( key, 22 ).count() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It does NOT mark an interface static block that was never entered (an earlier block threw)" )
+	@Test
+	void testUnreachedInterfaceStaticBlockStaysUncovered() {
+		// Regression: the interface transformer used to batch-mark EVERY static
+		// block's "static {" header + closing "}" group at static-init ENTRY. When
+		// the first block threw, the second block was never entered — yet its braces
+		// were reported COVERED while its body stayed RED, a false "entered" signal.
+		// The mark must be emitted immediately before each block's OWN body.
+		//
+		// Fixture layout:
+		// 1 interface displayName="ProfilerInterfaceThrowingStatic" {
+		// 4 static { ... throw ... } <- FIRST block: runs, then throws
+		// 8 static { static.reached = true; } <- SECOND block: NEVER entered
+		// 12 }
+		IBoxContext context = new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+
+		// Loading the interface runs its static blocks; the first one throws.
+		assertThrows( CustomException.class, () -> runtime.executeSource(
+		    "src.test.resources.profiler.ProfilerInterfaceThrowingStatic::reached;", context ) );
+
+		String key = keyFor( "src/test/resources/profiler/ProfilerInterfaceThrowingStatic.bx" );
+		assertThat( service.trackedBlueprints() ).containsKey( key );
+
+		// The FIRST block ran up to the throw: header, body and closing "}" covered.
+		assertThat( service.lineAt( key, 4 ).covered() ).isTrue();   // static { (first block)
+		assertThat( service.lineAt( key, 5 ).covered() ).isTrue();   // throw( ... )
+		assertThat( service.lineAt( key, 6 ).covered() ).isTrue();   // } (first block)
+
+		// The SECOND block was NEVER entered: its header, body and closing "}" must
+		// ALL be uncovered. Only the body used to be uncovered.
+		assertThat( service.lineAt( key, 8 ).covered() ).isFalse();  // static { (second block) — was true
+		assertThat( service.lineAt( key, 9 ).covered() ).isFalse();  // static.reached = true;
+		assertThat( service.lineAt( key, 10 ).covered() ).isFalse(); // } (second block) — was true
 	}
 
 	@DisplayName( "It embeds a clinit self-registration call into a compiled interface <clinit>" )

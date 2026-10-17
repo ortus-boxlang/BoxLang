@@ -1,7 +1,7 @@
 component accessors=true extends="ProfilerSuper" {
 
-	// COMPLEX property default — never evaluated (the class never loads).
-	property name="threshold" default=complexSeed;
+	// COMPLEX property default — a real runtime expression (the class's static var), never evaluated (the class never loads).
+	property name="threshold" default="#static.complexSeed#";
 
 	static {
 		complexSeed = 42;

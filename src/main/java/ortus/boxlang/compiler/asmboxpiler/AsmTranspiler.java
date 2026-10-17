@@ -1087,21 +1087,21 @@ public class AsmTranspiler extends Transpiler {
 		List<List<AbstractInsnNode>>	getterLookup	= new ArrayList<>();
 		List<List<AbstractInsnNode>>	setterLookup	= new ArrayList<>();
 		properties.forEach( prop -> {
-			List<AbstractInsnNode>	documentationStruct		= transformDocumentation( prop.getDocumentation() );
+			List<AbstractInsnNode>	documentationStruct	= transformDocumentation( prop.getDocumentation() );
 			/*
 			 * normalize annotations to allow for
 			 * property String userName;
 			 */
-			List<BoxAnnotation>		finalAnnotations		= normlizePropertyAnnotations( prop );
+			List<BoxAnnotation>		finalAnnotations	= normlizePropertyAnnotations( prop );
 			// Start wiith all inline annotatinos
 
-			BoxAnnotation			nameAnnotation			= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "name" ) )
+			BoxAnnotation			nameAnnotation		= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "name" ) )
 			    .findFirst()
 			    .orElseThrow( () -> new ExpressionException( "Property [" + prop.getSourceText() + "] missing name annotation", prop ) );
-			BoxAnnotation			typeAnnotation			= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "type" ) )
+			BoxAnnotation			typeAnnotation		= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "type" ) )
 			    .findFirst()
 			    .orElseThrow( () -> new ExpressionException( "Property [" + prop.getSourceText() + "] missing type annotation", prop ) );
-			BoxAnnotation			defaultAnnotation		= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "default" ) )
+			BoxAnnotation			defaultAnnotation	= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "default" ) )
 			    .findFirst()
 			    .orElse( null );
 
@@ -1115,41 +1115,27 @@ public class AsmTranspiler extends Transpiler {
 			// }
 			// }
 
-			BoxExpression			defaultValue			= defaultAnnotation.getValue();
+			BoxExpression			defaultValue		= defaultAnnotation.getValue();
 
-			// A property default written as a BARE IDENTIFIER
-			// (e.g. `property name="x" default=someVar;`) is folded by the
-			// parser into a BoxStringLiteral (value="someVar") — the string
-			// IS the default value (CFML annotation semantics). It MUST still
-			// be deferred (defaultExpr_N) so the default is only evaluated when
-			// defaultProperties() actually applies it (a super class may have
-			// already preset the value → the default never runs → its span
-			// stays RED). Treating it as an inline literal would bake its mark
-			// at clinit (class load) and falsely count it as run.
-			// Detect a bare identifier by sourceText: a quoted default
-			// ("foo" / 'foo') starts with a quote; a bare identifier does not.
-			boolean					bareIdentifier			= defaultValue instanceof BoxStringLiteral
-			    && defaultValue.getSourceText() != null
-			    && !defaultValue.getSourceText().isEmpty()
-			    && !defaultValue.getSourceText().startsWith( "\"" )
-			    && !defaultValue.getSourceText().startsWith( "'" );
-
-			// The default annotation's VALUE is kept in the metadata so
-			// annotations.default reports the real default (matching the Java
-			// boxpiler). For the DEFERRED bare-identifier default only, the value
-			// is cloned WITHOUT a source position: the profiler mark hook only
-			// fires for nodes carrying a position, so the metadata value is
-			// serialized without claiming the default's span mark at the clinit
-			// Property construction (which would falsely count a SKIPPED default
-			// as run — the real mark is emitted inside its defaultExpr_N).
-			List<BoxAnnotation>		annotationsForStruct	= bareIdentifier
-			    ? stripDefaultValuePositionFromAnnotations( finalAnnotations )
-			    : finalAnnotations;
-			List<AbstractInsnNode>	annotationStruct		= transformAnnotations( annotationsForStruct );
+			// A property default is EITHER a compile-time literal OR a runtime expression —
+			// never both. Ask the AST expression which it is via `isLiteral()`; NEVER guess
+			// from the node type. `isLiteral()` is authoritative and correctly reports
+			// composite literals such as `[1,2,3]`, `{ one: 1 }` or `#[1,2,3]#`, which LOOK
+			// dynamic but hold only literal keys/values.
+			//
+			// A literal — including a bare identifier such as `default=someVar`, which the
+			// parser folds into the STRING "someVar" (CFML annotation semantics; it is NOT a
+			// variable reference — use `default="#someVar#"` for that) — is set directly and
+			// cloned at runtime. It therefore has NO evaluator. Only a genuine runtime
+			// expression gets a deferred `defaultExpr_N`, so its mark fires only when
+			// defaultProperties() actually applies it. Do not route a literal through the
+			// deferred evaluator: that would (a) wrongly treat it as runtime-tracked and
+			// (b) report `defaultValue` as null in the metadata.
+			List<AbstractInsnNode>	annotationStruct	= transformAnnotations( finalAnnotations );
 
 			List<AbstractInsnNode>	init, initLambda;
 			if ( defaultValue != null ) {
-				if ( defaultValue.isLiteral() && !bareIdentifier ) {
+				if ( defaultValue.isLiteral() ) {
 					init		= transform( defaultValue, TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL );
 					initLambda	= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 				} else {
@@ -1278,38 +1264,6 @@ public class AsmTranspiler extends Transpiler {
 			    false ) );
 			return List.of( propertiesStruct, getterStruct, setterStruct );
 		}
-	}
-
-	/**
-	 * Return a copy of the property annotations with the {@code default}
-	 * annotation's VALUE cloned WITHOUT a source position (the value itself is
-	 * preserved). The deferred (bare-identifier) property default is evaluated
-	 * separately by the lazy {@code defaultExpr_N} method, so its span mark must
-	 * NOT be claimed when the annotation struct is transformed at the clinit
-	 * {@code Property} construction — that would falsely count a SKIPPED default
-	 * as run. The profiler mark hook only fires for nodes carrying a source
-	 * position, so a position-less clone keeps the metadata value
-	 * ({@code annotations.default} reports the real default, matching the Java
-	 * boxpiler) while skipping the spurious mark. The annotation KEY ("default")
-	 * is preserved too.
-	 *
-	 * @param annotations the normalized property annotations
-	 *
-	 * @return a new list with the default value cloned without a source position
-	 */
-	public static List<BoxAnnotation> stripDefaultValuePositionFromAnnotations( List<BoxAnnotation> annotations ) {
-		List<BoxAnnotation> stripped = new ArrayList<>( annotations.size() );
-		for ( BoxAnnotation annotation : annotations ) {
-			BoxExpression value = annotation.getValue();
-			if ( annotation.getKey().getValue().equalsIgnoreCase( "default" ) && value instanceof BoxStringLiteral literal ) {
-				// Keep the VALUE, drop the source position so the profiler mark hook skips it.
-				BoxStringLiteral positionless = new BoxStringLiteral( literal.getValue(), null, literal.getSourceText() );
-				stripped.add( new BoxAnnotation( annotation.getKey(), positionless, annotation.getPosition(), annotation.getSourceText() ) );
-			} else {
-				stripped.add( annotation );
-			}
-		}
-		return stripped;
 	}
 
 	public static List<BoxAnnotation> normlizePropertyAnnotations( BoxProperty prop ) {
