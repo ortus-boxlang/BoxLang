@@ -936,7 +936,15 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 
 	@Override
 	public BoxExpression visitExprOutString( ExprOutStringContext ctx ) {
-		return ctx.el2().accept( this );
+		// `#el2#` OUTSIDE a string literal (e.g. a tag attribute value like
+		// `default=#now()#`, or template output `#x#`). The pounds are markers
+		// around the inner expression, NOT a string interpolation — so preserve the
+		// inner expression's AST node (e.g. `#result#` stays a BoxIdentifier and can
+		// still be an assignment LHS). Only widen the SOURCE TEXT to cover the full
+		// `#...#` so the source/span text is correct.
+		BoxExpression inner = ctx.el2().accept( this );
+		inner.setSourceText( tools.getSourceText( ctx ) );
+		return inner;
 	}
 
 	@Override
@@ -1142,7 +1150,9 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		// if a simple name was given, then it's a simple function call (which may be converted to method in
 		// the dot handler. Expressions will sometimes come through as their primitive types.
 		if ( name instanceof BoxIdentifier || name instanceof BoxBooleanLiteral || name instanceof BoxNull || name instanceof BoxScope ) {
-			return new BoxFunctionInvocation( name.getSourceText(), args, pos, src );
+			// Use the resolved LOGICAL name for lookup, NOT the raw source text — see `logicalName`.
+			// `#f#()` must look up `f` (not the widened `#f#`), while `#TRUE#()` must look up `TRUE`.
+			return new BoxFunctionInvocation( logicalName( name ), args, pos, src );
 		}
 
 		// if the function is invoked upon what at this point looks like an array access, but the array access was
@@ -2011,20 +2021,74 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	/**
 	 * Convert a dot element to its intended meaning, as it may be something else
 	 * when not in a dot accessor.
+	 * <p>
+	 * The identifier NAME is resolved via {@link #logicalName}, which recovers the element's
+	 * ORIGINAL spelling — see that method for why a keyword's typed value must not be used. The
+	 * widened {@code #...#} source text is kept only as source metadata on the resulting identifier.
+	 * </p>
 	 *
-	 * @param expr The expression to convert
+	 * @param expr      The expression to convert
+	 * @param withScope Whether a scope keyword should also be converted
 	 *
 	 * @return The converted expression
 	 */
 	private BoxExpression convertDotElement( BoxExpression expr, boolean withScope ) {
 		if ( expr instanceof BoxBooleanLiteral || expr instanceof BoxNull || ( withScope && expr instanceof BoxScope ) ) {
-			return new BoxIdentifier( expr.getSourceText(), expr.getPosition(), expr.getSourceText() );
+			return new BoxIdentifier( logicalName( expr ), expr.getPosition(), expr.getSourceText() );
 		}
 		return expr;
 	}
 
 	/**
+	 * Resolve the lookup NAME of a bare element — an identifier, a scope keyword, or a
+	 * boolean / {@code null} keyword lifted out of a dot access or an invocation.
+	 * <p>
+	 * A dot dereference ({@code foo.bar}) addresses a STATIC name, so the name must be the
+	 * element's ORIGINAL spelling and never its typed value: a keyword's case is significant for
+	 * case-sensitive keys, so {@code TRUE} must stay {@code TRUE}, not the boolean value spelled
+	 * {@code true}. (Dynamic access, where the name is computed, uses {@code foo[ bar ]} instead and
+	 * does not pass through here.)
+	 * </p>
+	 * <p>
+	 * The spelling is recovered from the SOURCE TEXT, because {@code visitExprOutString} widens the
+	 * source text of a {@code #el2#} expression to cover the whole {@code #...#} wrapper (which keeps
+	 * span/source text correct). That wrapper is unwrapped here to recover the original text — a
+	 * keyword token's own text can never contain a {@code #}, so the presence of the wrapper is
+	 * unambiguous. Without the unwrapping, {@code #f#()} would look up {@code #f#} rather than
+	 * {@code f}.
+	 * </p>
+	 *
+	 * @param expr the element whose lookup name is required
+	 *
+	 * @return the element's original spelling (identifiers and scopes report their own name)
+	 */
+	private String logicalName( BoxExpression expr ) {
+		if ( expr instanceof BoxIdentifier identifier ) {
+			return identifier.getName();
+		}
+		if ( expr instanceof BoxScope scope ) {
+			return scope.getName();
+		}
+		String sourceText = expr.getSourceText();
+		if ( sourceText != null ) {
+			if ( sourceText.length() >= 2 && sourceText.startsWith( "#" ) && sourceText.endsWith( "#" ) ) {
+				return sourceText.substring( 1, sourceText.length() - 1 ).trim();
+			}
+			return sourceText;
+		}
+		// No source text at all (a programmatically built node) — fall back on the typed value.
+		if ( expr instanceof BoxBooleanLiteral booleanLiteral ) {
+			return String.valueOf( booleanLiteral.getValue() );
+		}
+		return "null";
+	}
+
+	/**
 	 * Builds the correct type for a value key or value in a struct literal.
+	 * <p>
+	 * The key NAME is resolved via {@link #logicalName} so it keeps the element's original
+	 * spelling; the widened {@code #...#} source text is kept only as source metadata.
+	 * </p>
 	 *
 	 * @param ctx the ParserContext to accept and convert
 	 *
@@ -2033,7 +2097,7 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	private BoxExpression buildKey( ExpressionContext ctx ) {
 		var expr = ctx.accept( this );
 		if ( expr instanceof BoxBooleanLiteral || expr instanceof BoxNull || expr instanceof BoxScope ) {
-			return new BoxIdentifier( expr.getSourceText(), expr.getPosition(), expr.getSourceText() );
+			return new BoxIdentifier( logicalName( expr ), expr.getPosition(), expr.getSourceText() );
 		}
 		return expr;
 	}

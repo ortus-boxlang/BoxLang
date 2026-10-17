@@ -90,8 +90,23 @@ public class BoxStaticMethodInvocationTransformer extends AbstractTransformer {
 		    false )
 		);
 
+		// INCLUSIVE timing: bracket the invocation so the call-site span records how
+		// long the call was on the stack (args + call). Additive only. Fall back to
+		// the receiver/class-reference start when the invocation's own start is not a
+		// span boundary.
+		int callSpan = transpiler.callSpanIdOf( invocation );
+		if ( callSpan < 0 && baseObject != null ) {
+			callSpan = transpiler.callSpanIdOf( baseObject );
+		}
+		int[] shell = callSpan >= 0 ? transpiler.peekCallShell( callSpan ) : null;
+		nodes.addAll( transpiler.emitMarkEnter( callSpan, shell ) );
+
 		nodes.addAll( AsmHelper.callReferencerGetAndInvoke( transpiler, invocation.getArguments(), invocation.getName().getName(), context, false,
 		    invocation.isNamedArgs(), invocation.hasSpread() ) );
+
+		if ( callSpan >= 0 ) {
+			nodes.addAll( transpiler.emitMarkExit() );
+		}
 
 		if ( returnValueContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );

@@ -166,6 +166,14 @@ public class Configuration implements IConfigSegment {
 	public Boolean																storeClassFilesOnDisk				= true;
 
 	/**
+	 * Enable compile-time code instrumentation (span/blueprint emission) in the ASM boxpiler.
+	 * When {@code true}, the boxpiler detects executable spans, builds a blueprint, and emits
+	 * {@code CodeProfilerService.mark(fileId, spanId)} calls so the runtime can record per-span
+	 * execution counts + time. When {@code false} (default), no instrumentation is emitted.
+	 */
+	public Boolean																codeProfilerEnabled					= false;
+
+	/**
 	 * Copy JAR files to a writable temp cache before loading them, which prevents file locking
 	 * on Windows and lets stale/duplicate versions be cleaned up safely. When disabled, JARs are
 	 * loaded directly from their original path, no temp copies are made, no cleaner is registered,
@@ -480,6 +488,11 @@ public class Configuration implements IConfigSegment {
 		// Store Class Files on Disk
 		if ( config.containsKey( Key.storeClassFilesOnDisk ) ) {
 			this.storeClassFilesOnDisk = BooleanCaster.cast( config.get( Key.storeClassFilesOnDisk ) );
+		}
+
+		// Code Profiler Enabled
+		if ( config.containsKey( Key.codeProfilerEnabled ) ) {
+			this.codeProfilerEnabled = BooleanCaster.cast( config.get( Key.codeProfilerEnabled ) );
 		}
 
 		// JAR Temp File Caching
@@ -1249,6 +1262,7 @@ public class Configuration implements IConfigSegment {
 		    Key.enableNestedTransactions, this.enableNestedTransactions,
 		    Key.enforceUDFTypeChecks, this.enforceUDFTypeChecks,
 		    Key.storeClassFilesOnDisk, this.storeClassFilesOnDisk,
+		    Key.codeProfilerEnabled, this.codeProfilerEnabled,
 		    Key.jarTempFileCaching, this.jarTempFileCaching,
 		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
 		    Key.maxTrackedCompletedThreads, this.maxTrackedCompletedThreads,

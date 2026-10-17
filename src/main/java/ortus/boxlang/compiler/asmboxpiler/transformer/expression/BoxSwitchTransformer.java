@@ -127,6 +127,12 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			// nodes.add( new InsnNode( Opcodes.DUP ) );
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, switchConditionVarStore.index() ) );
 
+			// The case label (case/default keyword + value + colon) is its own span,
+			// marked when this case is evaluated — emit a manual mark for it before
+			// testing the condition. The condition node's own mark would only cover
+			// the value expression, not the keyword.
+			emitCaseLabelMark( nodes, c );
+
 			if ( c.getDelimiter() == null ) {
 				nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
@@ -215,6 +221,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				// nodes.add( new InsnNode( Opcodes.POP ) );
 				// pop the condition off the stack
 				// nodes.add( new InsnNode( Opcodes.POP ) );
+				emitUnbatchedDefaultLabelMark( nodes, c );
 				if ( c.getBody() != null ) {
 					c.getBody()
 					    .forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY_UNLESS_JUMPING ) ) );
@@ -245,6 +252,64 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 	}
 
 	/**
+	 * Emit a mark for a {@code default:} label.
+	 * <p>
+	 * A {@code default} has no condition node, so Pass A registers its label span but
+	 * nothing else would ever mark it — the label would stay missed even when the
+	 * default ran. Pass B emits an explicit mark here at default ENTRY (the same point
+	 * the case-label marks fire), so an EMPTY default
+	 * ({@code switch( 1 ) { default: }} ) is covered too.
+	 * <p>
+	 * The label is deliberately NOT grouped with a body statement in Pass A, so this
+	 * mark is the ONLY one for the label — a non-empty default is not counted twice.
+	 *
+	 * @param nodes       the instruction list to append to
+	 * @param defaultCase the {@code default} case being emitted
+	 */
+	private void emitUnbatchedDefaultLabelMark( List<AbstractInsnNode> nodes, BoxSwitchCase defaultCase ) {
+		emitCaseLabelMark( nodes, defaultCase );
+	}
+
+	/**
+	 * Emit a manual {@code mark(fileId, labelSpanId)} for a case label — the
+	 * {@code case}/{@code default} KEYWORD + value + colon. Pass A registered the
+	 * label span starting at the case's start position (the keyword); the
+	 * condition node's own mark would only cover the value expression, not the
+	 * keyword, so this fires the mark for the whole label when the case is
+	 * evaluated.
+	 *
+	 * @param nodes the instruction list to append to
+	 * @param c     the case whose label span to mark
+	 */
+	private void emitCaseLabelMark( List<AbstractInsnNode> nodes, BoxSwitchCase c ) {
+		// No-op when profiling is disabled — never emit mark instructions otherwise.
+		if ( !transpiler.hasProfilerId() ) {
+			return;
+		}
+		if ( c.getPosition() == null || c.getPosition().getStart() == null ) {
+			return;
+		}
+		long	packed	= ( ( long ) c.getPosition().getStart().getLine() << 32 ) | ( c.getPosition().getStart().getColumn() & 0xFFFFFFFFL );
+		int		spanId	= transpiler.getSpanId( packed );
+		int[]	group	= spanId < 0 ? null : transpiler.takeSpanGroup( spanId );
+		if ( group != null ) {
+			// Batch-mark the label AND any grouped members (e.g. the case's
+			// </bx:case> close tag) together.
+			boolean anyClaimed = false;
+			for ( int member : group ) {
+				if ( transpiler.claimSpanMark( member ) ) {
+					anyClaimed = true;
+				}
+			}
+			if ( anyClaimed ) {
+				nodes.addAll( transpiler.emitMarkVarargs( group ) );
+			}
+		} else if ( spanId >= 0 && transpiler.claimSpanMark( spanId ) ) {
+			nodes.addAll( transpiler.emitMark( spanId ) );
+		}
+	}
+
+	/**
 	 * Transform a tag-based switch with breaking cases.
 	 * No fall-through: each case jumps to end after execution.
 	 * No break target registered: break statements propagate to enclosing loops.
@@ -272,6 +337,11 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 
 			AsmHelper.addDebugLabel( nodes, "BoxSwitch (breaking) - case start" );
 			LabelNode endOfCase = new LabelNode();
+
+			// The case label (case/default keyword + value + colon) is its own span,
+			// marked when this case is evaluated — emit a manual mark before testing
+			// the condition (the condition node's own mark only covers the value).
+			emitCaseLabelMark( nodes, c );
 
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, switchConditionVarStore.index() ) );
 
@@ -350,6 +420,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				}
 				hasDefault = true;
 				AsmHelper.addDebugLabel( nodes, "BoxSwitch (breaking) - default case" );
+				emitUnbatchedDefaultLabelMark( nodes, c );
 				if ( c.getBody() != null ) {
 					c.getBody()
 					    .forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY ) ) );
@@ -508,6 +579,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			if ( c.getCondition() != null ) {
 				continue;
 			}
+			emitUnbatchedDefaultLabelMark( nodes, c );
 			if ( c.getBody() != null ) {
 				c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY ) ) );
 			}
@@ -660,6 +732,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			LabelNode skipDefault = new LabelNode();
 			nodes.add( new VarInsnNode( Opcodes.ILOAD, switchVarStore.index() ) );
 			nodes.add( new JumpInsnNode( Opcodes.IFNE, skipDefault ) );
+			emitUnbatchedDefaultLabelMark( nodes, c );
 			if ( c.getBody() != null ) {
 				c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY_UNLESS_JUMPING ) ) );
 			}
