@@ -70,7 +70,7 @@ public class LocalizationUtilDefaultsTest {
 		try {
 			config.timezone = tokyo;
 			assertThat( LocalizationUtil.parseZoneId( null, instance.getRuntimeContext() ) ).isEqualTo( tokyo );
-			assertThat( DateTimeCaster.attempt( "2024-01-15 10:30:00" ).get().getZone() ).isEqualTo( tokyo );
+			assertThat( DateTimeCaster.attempt( "2024-01-15 10:30:00", instance.getRuntimeContext() ).get().getZone() ).isEqualTo( tokyo );
 		} finally {
 			config.timezone = original;
 		}
