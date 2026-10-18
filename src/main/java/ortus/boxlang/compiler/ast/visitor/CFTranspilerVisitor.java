@@ -788,9 +788,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				// mask, so the output silently changes. A numeric literal's own source text can
 				// never contain a `#`, so a `#...#` wrapper can only have come from the widening
 				// and is unwrapped to recover the literal's real text.
+				//
+				// The unwrapped text is TRIMMED, because whitespace padding inside the pounds is
+				// boxed-expression syntax (`# 000.000 #`) and never part of the mask: leaving it
+				// in would add unwanted spaces to the formatted output.
 				String			sourceText	= literal.getSourceText();
 				if ( sourceText != null && sourceText.length() >= 2 && sourceText.startsWith( "#" ) && sourceText.endsWith( "#" ) ) {
-					sourceText = sourceText.substring( 1, sourceText.length() - 1 );
+					sourceText = sourceText.substring( 1, sourceText.length() - 1 ).trim();
 				}
 				String originalText = sourceText != null
 				    ? sourceText

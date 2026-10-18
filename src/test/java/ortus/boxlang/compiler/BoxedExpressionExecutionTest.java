@@ -245,6 +245,9 @@ public class BoxedExpressionExecutionTest {
 		assertEquals( "005.500", String.valueOf( run( "result = numberFormat( 5.5, 000.000 );", BoxSourceType.CFSCRIPT ) ) );
 		assertEquals( "005.500", String.valueOf( run( "result = numberFormat( 5.5, #000.000# );", BoxSourceType.CFSCRIPT ) ),
 		    "a boxed numberFormat mask must preserve leading zeros" );
+		// Whitespace PADDING inside the pounds is boxed-expression syntax, not part of the mask.
+		assertEquals( "005.500", String.valueOf( run( "result = numberFormat( 5.5, # 000.000 # );", BoxSourceType.CFSCRIPT ) ),
+		    "a boxed numberFormat mask must not include the surrounding whitespace" );
 	}
 
 	@Test
