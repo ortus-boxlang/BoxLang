@@ -52,9 +52,21 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         uses: Ortus-Solutions/setup-commandbox@v2.0.1
 
+      # Download CommandBox directly instead of through Chocolatey, whose community feed fails often in CI.
+      # The win zip only holds box.exe; it runs on the JDK from setup-java.
       - name: Setup CommandBox CLI Windows
         if: ${{ matrix.os == 'windows-latest' }}
-        run: choco install commandbox
+        shell: pwsh
+        env:
+          COMMANDBOX_VERSION: "6.3.5"
+        run: |
+          $dest = Join-Path $env:RUNNER_TEMP "commandbox"
+          $zip  = Join-Path $env:RUNNER_TEMP "commandbox.zip"
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          Invoke-WebRequest -Uri "https://downloads.ortussolutions.com/ortussolutions/commandbox/$env:COMMANDBOX_VERSION/commandbox-win-$env:COMMANDBOX_VERSION.zip" -OutFile $zip -MaximumRetryCount 3 -RetryIntervalSec 5
+          Expand-Archive -Path $zip -DestinationPath $dest -Force
+          Add-Content -Path $env:GITHUB_PATH -Value $dest
+          & (Join-Path $dest "box.exe") version
 
       - name: Install Testbox
         run: box install testbox@be src/test/resources --verbose --noSave
