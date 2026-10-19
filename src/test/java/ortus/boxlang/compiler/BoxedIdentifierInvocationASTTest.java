@@ -187,4 +187,31 @@ public class BoxedIdentifierInvocationASTTest {
 		assertEquals( "null", boxedInvocationName( "variables[\"null\"] = function() { return 1; }\nresult = #null#();", BoxSourceType.CFSCRIPT ) );
 		assertEquals( "variables", boxedInvocationName( "result = #variables#();", BoxSourceType.CFSCRIPT ) );
 	}
+
+	/**
+	 * A COMMENT inside a boxed keyword must not become part of the lookup name. The lexer sends
+	 * comments to the hidden channel, so they never appear in the token stream the parser sees —
+	 * but {@code visitExprOutString} widens the source text by slicing the RAW character stream,
+	 * which DOES include the comment. The lookup name must come from the keyword's typed value,
+	 * never from that widened text. Comments may sit BEFORE or AFTER the keyword.
+	 */
+	@Test
+	@DisplayName( "It ignores comments inside a boxed keyword when resolving the invocation name" )
+	public void testCommentedBoxedKeywordInvocationUsesTypedValue() throws IOException {
+		// Leading comment.
+		assertEquals( "true", boxedInvocationName( "variables[\"true\"] = () => 1; result = #/*note*/true#();", BoxSourceType.BOXSCRIPT ),
+		    "a leading comment inside `#...#` must not become part of the invocation name" );
+		assertEquals( "false", boxedInvocationName( "variables[\"false\"] = () => 1; result = #/*note*/false#();", BoxSourceType.BOXSCRIPT ),
+		    "a leading comment inside `#...#` must not become part of the invocation name" );
+		assertEquals( "null", boxedInvocationName( "variables[\"null\"] = () => 1; result = #/*note*/null#();", BoxSourceType.BOXSCRIPT ),
+		    "a leading comment inside `#...#` must not become part of the invocation name" );
+		// Trailing comment — the keyword must not be resolved as `true /* note */`.
+		assertEquals( "true", boxedInvocationName( "variables[\"true\"] = () => 1; result = #true /* note */#();", BoxSourceType.BOXSCRIPT ),
+		    "a trailing comment inside `#...#` must not become part of the invocation name" );
+		assertEquals( "null", boxedInvocationName( "variables[\"null\"] = () => 1; result = #null /* note */#();", BoxSourceType.BOXSCRIPT ),
+		    "a trailing comment inside `#...#` must not become part of the invocation name" );
+		// Both syntaxes.
+		assertEquals( "true", boxedInvocationName( "variables[\"true\"] = function() { return 1; }\nresult = #true /* note */#();", BoxSourceType.CFSCRIPT ),
+		    "a trailing comment inside `#...#` must not become part of the invocation name in CF script either" );
+	}
 }

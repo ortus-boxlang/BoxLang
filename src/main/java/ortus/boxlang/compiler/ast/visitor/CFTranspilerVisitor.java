@@ -230,6 +230,16 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static final String						DUMP_DEPTH_ATTRIBUTE_NAME	= "depth";
 
 	/**
+	 * Matches a delimited comment ({@code /* ... *&#47;}) so it can be stripped from a widened source-text slice.
+	 */
+	private static final Pattern					BLOCK_COMMENT_PATTERN		= Pattern.compile( "/\\*.*?\\*/", Pattern.DOTALL );
+
+	/**
+	 * Matches a line comment ({@code // ...}) so it can be stripped from a widened source-text slice.
+	 */
+	private static final Pattern					LINE_COMMENT_PATTERN		= Pattern.compile( "//[^\\r\\n]*" );
+
+	/**
 	 * Configuration keys for transpiler settings
 	 */
 	private static Key								transpilerKey				= Key.of( "transpiler" );
@@ -778,27 +788,11 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				arg = node.getArguments().get( 1 );
 			}
 			if ( arg != null && ( arg.getValue() instanceof BoxIntegerLiteral || arg.getValue() instanceof BoxDecimalLiteral ) ) {
-				BoxExpression	literal		= arg.getValue();
+				BoxExpression	literal			= arg.getValue();
 				// Favor the literal's ORIGINAL source text, as the parser strips leading zeros
-				// from the value (e.g. the mask `000.000` must stay `000.000`).
-				//
-				// BUT `visitExprOutString` WIDENS an expression's source text to cover the whole
-				// `#...#` wrapper, so a boxed mask such as `numberFormat( x, #000.000# )` would
-				// otherwise become the mask `#000.000#` — and `#` is a digit placeholder in a
-				// mask, so the output silently changes. A numeric literal's own source text can
-				// never contain a `#`, so a `#...#` wrapper can only have come from the widening
-				// and is unwrapped to recover the literal's real text.
-				//
-				// The unwrapped text is TRIMMED, because whitespace padding inside the pounds is
-				// boxed-expression syntax (`# 000.000 #`) and never part of the mask: leaving it
-				// in would add unwanted spaces to the formatted output.
-				String			sourceText	= literal.getSourceText();
-				if ( sourceText != null && sourceText.length() >= 2 && sourceText.startsWith( "#" ) && sourceText.endsWith( "#" ) ) {
-					sourceText = sourceText.substring( 1, sourceText.length() - 1 ).trim();
-				}
-				String originalText = sourceText != null
-				    ? sourceText
-				    : ( literal instanceof BoxIntegerLiteral integerLiteral ? integerLiteral.getValue() : ( ( BoxDecimalLiteral ) literal ).getValue() );
+				// from the value (e.g. the mask `000.000` must stay `000.000`). See
+				// `getOriginalLiteralText` for why the widened `#...#` source text is post-processed.
+				String			originalText	= getOriginalLiteralText( literal );
 				arg.setValue( new BoxStringLiteral( originalText, literal.getPosition(), "\"" + originalText + "\"" ) );
 			}
 		}
@@ -856,6 +850,42 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 */
 	private BoxExpression transpileDumpTopToDepth( BoxExpression value ) {
 		return new BoxBinaryOperation( value, BoxBinaryOperator.Minus, new BoxIntegerLiteral( "1", null, "1" ), null, null );
+	}
+
+	/**
+	 * Recover the original MASK text of a numeric literal used as a {@code numberFormat()} mask.
+	 * <p>
+	 * Works purely off the literal node's OWN {@link BoxNode#getSourceText()} — never the whole file.
+	 * {@code visitExprOutString} WIDENS that field to a RAW character-stream slice covering a whole
+	 * {@code #...#} wrapper, and that slice also swallows hidden-channel trivia sitting between the
+	 * pounds (WHITESPACE and COMMENTS). So a boxed mask such as {@code #/*note*&#47;000.000#} would
+	 * otherwise become the mask {@code /*note*&#47;000.000}, and {@code #} is itself a digit placeholder
+	 * in a mask. Stripping the comments, then the pounds, then trimming leaves exactly the numeric
+	 * token — which is what a mask needs (leading zeros preserved, no wrapper, no comment).
+	 * </p>
+	 *
+	 * @param literal the numeric literal whose original mask text is required
+	 *
+	 * @return the literal's original mask text, or its typed value when it has no source text
+	 */
+	private String getOriginalLiteralText( BoxExpression literal ) {
+		String sourceText = literal.getSourceText();
+
+		if ( sourceText != null ) {
+			// Strip comments FIRST (a comment may itself contain a `#`), then the `#...#` wrapper.
+			sourceText	= BLOCK_COMMENT_PATTERN.matcher( sourceText ).replaceAll( "" );
+			sourceText	= LINE_COMMENT_PATTERN.matcher( sourceText ).replaceAll( "" );
+			if ( sourceText.length() >= 2 && sourceText.startsWith( "#" ) && sourceText.endsWith( "#" ) ) {
+				sourceText = sourceText.substring( 1, sourceText.length() - 1 );
+			}
+			return sourceText.trim();
+		}
+
+		// No source text at all (a programmatically built node) — fall back on the typed value.
+		if ( literal instanceof BoxIntegerLiteral integerLiteral ) {
+			return integerLiteral.getValue();
+		}
+		return ( ( BoxDecimalLiteral ) literal ).getValue();
 	}
 
 	private BoxNode transpileListAppend( BoxFunctionInvocation node ) {

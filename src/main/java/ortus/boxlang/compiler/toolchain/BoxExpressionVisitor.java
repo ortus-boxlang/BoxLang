@@ -43,6 +43,7 @@ import org.antlr.v4.runtime.tree.ErrorNode;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxExpressionError;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Position;
@@ -940,10 +941,17 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		// `default=#now()#`, or template output `#x#`). The pounds are markers
 		// around the inner expression, NOT a string interpolation — so preserve the
 		// inner expression's AST node (e.g. `#result#` stays a BoxIdentifier and can
-		// still be an assignment LHS). Only widen the SOURCE TEXT to cover the full
-		// `#...#` so the source/span text is correct.
+		// still be an assignment LHS).
+		//
+		// Widen BOTH the source text AND the position to cover the full `#...#`, so the
+		// text and the position describe the SAME slice. Widening only the text
+		// desynchronises them: `SpanCollectorVisitor.offsetOf()`/`pointAt()` treat the
+		// node's start as the text's origin, so a text that begins one char earlier
+		// than the start point offsets every derived position by one — boxed call
+		// shells then absorb the `#`/whitespace and spill a stray `#` span.
 		BoxExpression inner = ctx.el2().accept( this );
 		inner.setSourceText( tools.getSourceText( ctx ) );
+		inner.setPosition( tools.getPosition( ctx ) );
 		return inner;
 	}
 
@@ -2022,9 +2030,9 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	 * Convert a dot element to its intended meaning, as it may be something else
 	 * when not in a dot accessor.
 	 * <p>
-	 * The identifier NAME is resolved via {@link #logicalName}, which recovers the element's
-	 * ORIGINAL spelling — see that method for why a keyword's typed value must not be used. The
-	 * widened {@code #...#} source text is kept only as source metadata on the resulting identifier.
+	 * The identifier NAME is resolved via {@link #logicalName}, which uses each node's typed
+	 * accessor. The widened {@code #...#} source text is kept only as source metadata on the
+	 * resulting identifier.
 	 * </p>
 	 *
 	 * @param expr      The expression to convert
@@ -2043,24 +2051,17 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	 * Resolve the lookup NAME of a bare element — an identifier, a scope keyword, or a
 	 * boolean / {@code null} keyword lifted out of a dot access or an invocation.
 	 * <p>
-	 * A dot dereference ({@code foo.bar}) addresses a STATIC name, so the name must be the
-	 * element's ORIGINAL spelling and never its typed value: a keyword's case is significant for
-	 * case-sensitive keys, so {@code TRUE} must stay {@code TRUE}, not the boolean value spelled
-	 * {@code true}. (Dynamic access, where the name is computed, uses {@code foo[ bar ]} instead and
-	 * does not pass through here.)
-	 * </p>
-	 * <p>
-	 * The spelling is recovered from the SOURCE TEXT, because {@code visitExprOutString} widens the
-	 * source text of a {@code #el2#} expression to cover the whole {@code #...#} wrapper (which keeps
-	 * span/source text correct). That wrapper is unwrapped here to recover the original text — a
-	 * keyword token's own text can never contain a {@code #}, so the presence of the wrapper is
-	 * unambiguous. Without the unwrapping, {@code #f#()} would look up {@code #f#} rather than
-	 * {@code f}.
+	 * The name is taken from each node's TYPED ACCESSOR, never from
+	 * {@link BoxNode#getSourceText()}. {@code visitExprOutString} widens the source text of a
+	 * {@code #el2#} expression to a RAW character-stream slice covering the whole {@code #...#}
+	 * wrapper (which keeps span/source text correct) — and that slice ALSO picks up hidden-channel
+	 * COMMENTS (e.g. {@code #/*note*&#47;true#}), which are not keywords and must never leak into a
+	 * lookup name. Without this, {@code #f#()} would look up {@code #f#} rather than {@code f}.
 	 * </p>
 	 *
 	 * @param expr the element whose lookup name is required
 	 *
-	 * @return the element's original spelling (identifiers and scopes report their own name)
+	 * @return the element's name (identifiers and scopes report their own name)
 	 */
 	private String logicalName( BoxExpression expr ) {
 		if ( expr instanceof BoxIdentifier identifier ) {
@@ -2069,25 +2070,20 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		if ( expr instanceof BoxScope scope ) {
 			return scope.getName();
 		}
-		String sourceText = expr.getSourceText();
-		if ( sourceText != null ) {
-			if ( sourceText.length() >= 2 && sourceText.startsWith( "#" ) && sourceText.endsWith( "#" ) ) {
-				return sourceText.substring( 1, sourceText.length() - 1 ).trim();
-			}
-			return sourceText;
-		}
-		// No source text at all (a programmatically built node) — fall back on the typed value.
 		if ( expr instanceof BoxBooleanLiteral booleanLiteral ) {
 			return String.valueOf( booleanLiteral.getValue() );
 		}
-		return "null";
+		if ( expr instanceof BoxNull ) {
+			return "null";
+		}
+		return expr.getSourceText();
 	}
 
 	/**
 	 * Builds the correct type for a value key or value in a struct literal.
 	 * <p>
-	 * The key NAME is resolved via {@link #logicalName} so it keeps the element's original
-	 * spelling; the widened {@code #...#} source text is kept only as source metadata.
+	 * The key NAME is resolved via {@link #logicalName}; the widened {@code #...#} source text is
+	 * kept only as source metadata.
 	 * </p>
 	 *
 	 * @param ctx the ParserContext to accept and convert

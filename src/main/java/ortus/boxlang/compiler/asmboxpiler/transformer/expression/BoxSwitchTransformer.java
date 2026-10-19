@@ -64,10 +64,20 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxSwitch				boxSwitch	= ( BoxSwitch ) node;
-		boolean					isBreaking	= boxSwitch.hasBreakingCases();
-		List<AbstractInsnNode>	condition	= transpiler.transform( boxSwitch.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE );
-		MethodContextTracker	tracker		= transpiler.getCurrentMethodContextTracker().get();
+		BoxSwitch					boxSwitch		= ( BoxSwitch ) node;
+		boolean						isBreaking		= boxSwitch.hasBreakingCases();
+		List<AbstractInsnNode>		condition		= transpiler.transform( boxSwitch.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE );
+		MethodContextTracker		tracker			= transpiler.getCurrentMethodContextTracker().get();
+
+		// Snapshot the profiler mark state AFTER the shared condition has been
+		// transformed (its claims must be preserved — the condition instructions are
+		// REUSED by whichever path wins) but BEFORE the inline pass. The inline pass
+		// CLAIMS case/body marks and CONSUMES span groups; when it turns out to be
+		// oversized its bytecode is DISCARDED and the chunked fallback re-transforms
+		// the same nodes — which would then emit NO marks (already claimed) and leave
+		// every executed case reported as missed. Restoring before the fallback lets
+		// the chunked copy re-claim and re-consume.
+		Transpiler.SpanMarkSnapshot	markSnapshot	= transpiler.snapshotEmittedMarks();
 
 		if ( isBreaking ) {
 			List<AbstractInsnNode> breakingNodes = transformBreakingSwitch( boxSwitch, condition, tracker, returnContext );
@@ -75,6 +85,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				List<BoxSwitchCase>			regularCases	= boxSwitch.getCases().stream().filter( c -> c.getCondition() != null ).toList();
 				List<List<BoxSwitchCase>>	fallbackChunks	= createFallbackCaseChunks( regularCases );
 				if ( fallbackChunks.size() > 1 ) {
+					transpiler.restoreEmittedMarks( markSnapshot );
 					return transformChunkedBreakingSwitch( boxSwitch, condition, tracker, returnContext, fallbackChunks );
 				}
 			}
@@ -86,6 +97,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			List<BoxSwitchCase>			regularCases	= boxSwitch.getCases().stream().filter( c -> c.getCondition() != null ).toList();
 			List<List<BoxSwitchCase>>	fallbackChunks	= createFallbackCaseChunks( regularCases );
 			if ( fallbackChunks.size() > 1 ) {
+				transpiler.restoreEmittedMarks( markSnapshot );
 				return transformChunkedSwitch( boxSwitch, condition, tracker, returnContext, fallbackChunks );
 			}
 		}
@@ -1007,6 +1019,11 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		nodes.add( new JumpInsnNode( Opcodes.IFNE, startOfCase ) );
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, switchValueSlot ) );
 
+		// The case label (case/default keyword + value + colon) is its own span, marked
+		// when this case is EVALUATED — same as the inline path. Without this the chunked
+		// fallback leaves every evaluated case label unreported.
+		emitCaseLabelMark( nodes, c );
+
 		if ( c.getDelimiter() == null ) {
 			nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
@@ -1084,6 +1101,11 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		LabelNode endOfCase = new LabelNode();
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, switchValueSlot ) );
+
+		// The case label (case/default keyword + value + colon) is its own span, marked
+		// when this case is EVALUATED — same as the inline path. Without this the chunked
+		// fallback leaves every evaluated case label unreported.
+		emitCaseLabelMark( nodes, c );
 
 		if ( c.getDelimiter() == null ) {
 			nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );

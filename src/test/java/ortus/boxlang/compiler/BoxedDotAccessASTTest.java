@@ -106,6 +106,22 @@ public class BoxedDotAccessASTTest {
 		assertEquals( "#true#", access.getAccess().getSourceText(), "expected the widened `#true#` text to survive as source metadata" );
 	}
 
+	/**
+	 * A COMMENT inside a boxed keyword must not become part of the dot-access key. See
+	 * {@code visitExprOutString} — the widened source text slices the RAW character stream, so
+	 * hidden-channel comments leak in unless the key comes from the keyword's typed value.
+	 * Comments may sit BEFORE or AFTER the keyword.
+	 */
+	@Test
+	@DisplayName( "It ignores comments inside a boxed keyword used as a dot-access key" )
+	public void testCommentedBoxedKeywordDotAccessUsesTypedValue() throws IOException {
+		assertEquals( "true", dotAccessName( "s = {\"true\": 1}; result = s.#/*note*/true#;", BoxSourceType.BOXSCRIPT ),
+		    "a leading comment inside `#...#` must not become part of the dot-access key" );
+		// Trailing comment — the key must not become `true /* note */`.
+		assertEquals( "true", dotAccessName( "s = {\"true\": 1}; result = s.#true /* note */#;", BoxSourceType.BOXSCRIPT ),
+		    "a trailing comment inside `#...#` must not become part of the dot-access key" );
+	}
+
 	@Test
 	@DisplayName( "It resolves boxed boolean/null/scope dot-access names in CF script too" )
 	public void testBoxedKeywordDotAccessInCFScript() throws IOException {

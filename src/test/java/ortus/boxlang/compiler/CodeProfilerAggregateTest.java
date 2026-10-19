@@ -475,4 +475,54 @@ class CodeProfilerAggregateTest {
 		// THE INVARIANT: the `)` shares that time EXACTLY (same atomic shell).
 		assertThat( tail.stats().onStackNanos() ).isEqualTo( head.stats().onStackNanos() );
 	}
+
+	// -------------------------------------------------------------------------
+	// 11. Oversized switch: the chunked fallback still reports the executed case
+	// -------------------------------------------------------------------------
+
+	@DisplayName( "An OVERSIZED switch's chunked fallback still reports the executed case" )
+	@Test
+	void testOversizedSwitchReportsExecutedCase() {
+		// A switch too large for one method falls back to per-chunk helper methods.
+		// The inline pass runs FIRST and claims its marks, then its bytecode is
+		// DISCARDED when the size check trips; the chunked copy re-transforms the same
+		// nodes. Without restoring the mark state, the chunked copy emits no marks and
+		// the executed case reports as MISSED. The chunked path must also emit the case
+		// LABEL mark (the inline path does), or the label reads as missed too.
+		int				caseCount		= 300;
+		int				paddingPerCase	= 40;
+		StringBuilder	sb				= new StringBuilder();
+		sb.append( "result = 0;\n" );
+		int case2LabelLine = -1, case2BodyLine = -1;
+		sb.append( "switch( 2 ) {\n" );
+		for ( int i = 0; i < caseCount; i++ ) {
+			if ( i == 2 ) {
+				case2LabelLine = sb.toString().split( "\n", -1 ).length;
+			}
+			sb.append( "case " ).append( i ).append( ":\n" );
+			for ( int j = 0; j < paddingPerCase; j++ ) {
+				sb.append( "  noise" ).append( j ).append( " = 'pad-" ).append( i ).append( "-" ).append( j ).append( "';\n" );
+			}
+			if ( i == 2 ) {
+				case2BodyLine = sb.toString().split( "\n", -1 ).length;
+			}
+			sb.append( "  result = " ).append( i ).append( ";\n" );
+			sb.append( "  break;\n" );
+		}
+		sb.append( "default:\n" );
+		sb.append( "  result = -1;\n" );
+		sb.append( "}\n" );
+
+		String source = sb.toString();
+		runtime.executeSource( source );
+		String key = keyFor( source );
+
+		// The chunked fallback was taken (the inline pass would have fit far fewer spans).
+		assertThat( service.fileSpans( key ).size() ).isGreaterThan( 5000 );
+
+		// The EXECUTED case (2) must be reported: its label line AND its body line.
+		assertThat( service.lineAt( key, case2LabelLine ).covered() ).isTrue();
+		assertThat( service.lineAt( key, case2BodyLine ).covered() ).isTrue();
+		assertThat( service.lineAt( key, case2BodyLine ).count() ).isEqualTo( 1 );
+	}
 }

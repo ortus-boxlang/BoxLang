@@ -183,4 +183,62 @@ class CodeProfilerSpanEquivalenceTest {
 		// Both call forms produce the bare shell head + tail.
 		assertThat( texts ).containsAtLeast( "processData(", "getData1()", "getData2()", ")" ).inOrder();
 	}
+
+	/**
+	 * The {@code #...#} OUT-string wrapper is source METADATA only: it must not change
+	 * the span model. {@code visitExprOutString} widens the inner node's source text to
+	 * cover the full {@code #el2#}, so it must ALSO widen the node's POSITION — otherwise
+	 * the text and the position describe different slices, and
+	 * {@code SpanCollectorVisitor.offsetOf()}/{@code pointAt()} (which treat the node's
+	 * start as the text's origin) shift every derived point by one. That made a boxed
+	 * call's shell absorb the {@code #} plus trailing whitespace and spill a stray
+	 * {@code #} span.
+	 */
+	@DisplayName( "A boxed call's spans match the bare call's spans (BOXSCRIPT + CFSCRIPT)" )
+	@Test
+	void testBoxedCallSpansMatchBareCallSpans() {
+		String	def			= "x = 1\ny = 2\nf = (a,b) -> a\n";
+		String	bareTail	= "result = f( x, y );";
+		String	boxedTail	= "result = #f( x, y )#;";
+
+		for ( BoxSourceType type : List.of( BoxSourceType.BOXSCRIPT, BoxSourceType.CFSCRIPT ) ) {
+			List<String>	bare		= spanTextsForType( def + bareTail, type );
+			List<String>	boxed		= spanTextsForType( def + boxedTail, type );
+
+			// The `#` wrapper is metadata: the boxed spans must be the bare spans with the
+			// `#` on each END of the whole expression (the head and the tail) and NOTHING
+			// else — no stray `#` span, no absorbed whitespace, and the inner argument spans
+			// (`x`, `y`) must be untouched.
+			List<String>	expected	= new ArrayList<>( bare );
+			expected.set( 0, "result = #f(" );
+			expected.set( expected.size() - 1, ")#" );
+
+			assertThat( boxed ).isEqualTo( expected );
+			// And no span may carry surrounding whitespace, wrapper or not.
+			for ( String text : boxed ) {
+				assertThat( text ).isEqualTo( text.strip() );
+			}
+		}
+	}
+
+	/**
+	 * Span texts (normalized, {@code #} kept) for a given source and syntax.
+	 */
+	private List<String> spanTextsForType( String source, BoxSourceType type ) {
+		runtime.executeSource( source, new ortus.boxlang.runtime.context.ScriptingRequestBoxContext( runtime.getRuntimeContext() ), type );
+		String							key		= IBoxpiler.MD5( type.toString() + source );
+		List<CodeProfilerService.Span>	spans	= service.fileSpans( key );
+		List<String>					texts	= new ArrayList<>();
+		for ( CodeProfilerService.Span s : spans ) {
+			// Only the statement line(s) that matter (line 4).
+			if ( s.startLine() >= 4 ) {
+				texts.add( service.spanSourceText( key, source, s ).replaceAll( "\\s+", " " ).trim() );
+			}
+		}
+		service.reset();
+		RunnableLoader.getInstance().getBoxpiler().clearPagePool();
+		RunnableLoader.getInstance().getBoxpiler().clearClassFiles();
+		service.setActive( true );
+		return texts;
+	}
 }
