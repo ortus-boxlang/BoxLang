@@ -17,6 +17,7 @@ package ortus.boxlang.runtime.jdbc.qoq.functions.aggregate;
 import java.util.List;
 
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.jdbc.qoq.QoQAggregateFunctionDef;
@@ -53,8 +54,9 @@ public class Max extends QoQAggregateFunctionDef {
 
 		Object		max		= input[ 0 ];
 		if ( input.length > 1 ) {
+			IBoxContext context = RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() );
 			for ( int i = 1; i < input.length; i++ ) {
-				if ( Compare.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), max, input[ i ] ) < 0 ) {
+				if ( Compare.invoke( context, max, input[ i ] ) < 0 ) {
 					max = input[ i ];
 				}
 			}

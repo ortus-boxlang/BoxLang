@@ -198,7 +198,7 @@ public class Compare implements IOperator {
 	 *
 	 * @return The current request context or the runtime context
 	 */
-	private static IBoxContext defaultContext() {
+	static IBoxContext defaultContext() {
 		return RequestBoxContext.getCurrent( runtime.getRuntimeContext() );
 	}
 

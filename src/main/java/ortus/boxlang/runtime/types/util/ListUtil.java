@@ -1378,15 +1378,16 @@ public class ListUtil {
 	 * Returns a struct of sort directives
 	 */
 	private static final Struct newSortDirectives( Locale locale ) {
+		IBoxContext context = RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() );
 		if ( locale == null ) {
 			return new Struct(
 			    new HashMap<Key, Comparator<Object>>() {
 
 				    {
 					    put( Key.numericAsc,
-					        ( a, b ) -> Compare.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), a, b, false ) );
+					        ( a, b ) -> Compare.invoke( context, a, b, false ) );
 					    put( Key.numericDesc,
-					        ( b, a ) -> Compare.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), a, b, true ) );
+					        ( b, a ) -> Compare.invoke( context, a, b, true ) );
 					    put( Key.textAsc,
 					        ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
 					    put( Key.textDesc,
@@ -1404,9 +1405,9 @@ public class ListUtil {
 
 				    {
 					    put( Key.numericAsc,
-					        ( a, b ) -> Compare.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), a, b, false ) );
+					        ( a, b ) -> Compare.invoke( context, a, b, false ) );
 					    put( Key.numericDesc,
-					        ( b, a ) -> Compare.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), a, b, true ) );
+					        ( b, a ) -> Compare.invoke( context, a, b, true ) );
 					    put( Key.textAsc,
 					        ( a, b ) -> CollatorStringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true, locale ) );
 					    put( Key.textDesc,

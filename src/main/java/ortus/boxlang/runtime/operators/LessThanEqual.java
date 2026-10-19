@@ -46,7 +46,7 @@ public class LessThanEqual implements IOperator {
 	 */
 	@Deprecated
 	public static Boolean invoke( Object left, Object right ) {
-		return Compare.invoke( left, right ) <= 0;
+		return invoke( Compare.defaultContext(), left, right );
 	}
 
 }

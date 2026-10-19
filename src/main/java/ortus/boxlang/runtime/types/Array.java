@@ -835,10 +835,11 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * @return The one-based index value or zero if not found
 	 */
 	public int findIndex( Object value, Boolean caseSensitive ) {
-		int len = size();
+		int			len		= size();
+		IBoxContext	context	= RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() );
 		for ( int i = 0; i < len; i++ ) {
 			Object elem = get( i );
-			if ( EqualsEquals.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), elem, value, caseSensitive )
+			if ( EqualsEquals.invoke( context, elem, value, caseSensitive )
 			    || elem.equals( value ) ) {
 				return i + 1;
 			}

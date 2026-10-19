@@ -70,13 +70,7 @@ public class NotEqualsEquals implements IOperator {
 	 */
 	@Deprecated
 	public static Boolean invoke( Object left, Object right ) {
-		Integer comparison = Compare.attempt( left, right, false );
-
-		if ( comparison == null ) {
-			return !left.equals( right );
-		}
-
-		return comparison != 0;
+		return invoke( Compare.defaultContext(), left, right );
 	}
 
 	public static Boolean invokeInverse( Object left, Object right ) {
@@ -94,13 +88,7 @@ public class NotEqualsEquals implements IOperator {
 	 */
 	@Deprecated
 	public static Boolean invoke( Object left, Object right, boolean caseSensitive ) {
-		Integer comparison = Compare.attempt( left, right, caseSensitive );
-
-		if ( comparison == null ) {
-			return !left.equals( right );
-		}
-
-		return comparison != 0;
+		return invoke( Compare.defaultContext(), left, right, caseSensitive );
 	}
 
 }

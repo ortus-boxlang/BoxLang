@@ -650,12 +650,13 @@ public class LoopUtil {
 				int			currentRow		= getCurrentRow();
 				Object[]	thisGroupValues	= new Object[ groupKeys.length ];
 				isSameGroup = true;
+				IBoxContext context = RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() );
 				// System.out.println( "calc group data for Row: " + currentRow + " with group keys: ["
 				// + Arrays.toString( groupKeys ) + "]" );
 				for ( int j = 0; j < groupKeys.length; j++ ) {
 					thisGroupValues[ j ] = query.getCell( groupKeys[ j ], currentRow );
 					if ( lastGroupValues != null
-					    && Compare.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), thisGroupValues[ j ],
+					    && Compare.invoke( context, thisGroupValues[ j ],
 					        lastGroupValues[ j ], groupCaseSensitive ) != 0 ) {
 						/*
 						 * System.out
