@@ -249,9 +249,17 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		if ( i < 0 ) {
 			return null;
 		}
-		String tag = source.substring( i, Math.min( source.length(), i + 20 ) );
-		// Tag names are case-insensitive — match the else tag ignoring case.
-		if ( !tag.matches( "(?i)<(?:bx:|cf)?else(?!if)[\\s\\S]*" ) ) {
+		// The text between that "<" and the keyword must be EXACTLY a tag prefix
+		// ("<", "<bx:" or "<cf"). A "<" further away — e.g. the one starting a
+		// string literal in the PRECEDING branch, as in
+		// `if( false ) { x = "<cfelse>"; } else { y = 1; }` — has intervening
+		// text, so it is NOT this keyword's tag and must be rejected. Without this
+		// the backward scan mistook such a string for the else tag and marked a
+		// position where no span was registered, leaving the executed else-keyword
+		// span unmarked.
+		String prefix = source.substring( i, Math.min( offset, source.length() ) );
+		// Tag names are case-insensitive — match the else tag prefix ignoring case.
+		if ( !prefix.matches( "(?i)<(?:bx:|cf)?" ) ) {
 			return null;
 		}
 		return pointAt( ifElse, i );

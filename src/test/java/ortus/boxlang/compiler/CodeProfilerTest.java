@@ -483,6 +483,50 @@ class CodeProfilerTest {
 		assertThat( service.lineAt( key, 4 ).covered() ).isFalse();
 	}
 
+	@DisplayName( "It marks the executed else keyword even when the then branch holds an else-like string" )
+	@Test
+	void testElseKeywordMarkedDespiteElseTagLikeStringInThenBranch() {
+		// The else-keyword span is located by scanning BACKWARD from the else body for
+		// the keyword, then checking whether it is inside a template else TAG. A `<`
+		// appearing earlier in the source — such as the one starting the STRING LITERAL
+		// `"<cfelse>"` in the (skipped) then branch — must NOT be mistaken for this
+		// keyword's tag, or the executed else-keyword span is left unmarked.
+		String source = """
+		                x = 0;
+		                if( false ) { s = "<cfelse>"; } else { y = 1; }
+		                """;
+		runtime.executeSource( source );
+
+		String						key			= IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+		// The condition is false, so the else branch RAN: both the else keyword and its
+		// body must be reported as executed.
+		CodeProfilerService.Span	elseKeyword	= null;
+		CodeProfilerService.Span	elseBody	= null;
+		for ( CodeProfilerService.Span s : service.fileSpans( key ) ) {
+			String text = service.spanSourceText( key, source, s );
+			if ( "else".equals( text ) ) {
+				elseKeyword = s;
+			} else if ( "y = 1".equals( text ) ) {
+				elseBody = s;
+			}
+		}
+		assertThat( elseKeyword ).isNotNull();
+		assertThat( elseBody ).isNotNull();
+		assertThat( elseKeyword.stats().count() ).isEqualTo( 1 );
+		assertThat( elseBody.stats().count() ).isEqualTo( 1 );
+
+		// The skipped then-branch string literal must stay unexecuted.
+		boolean hasStringSpan = false;
+		for ( CodeProfilerService.Span s : service.fileSpans( key ) ) {
+			if ( service.spanSourceText( key, source, s ).contains( "<cfelse>" ) ) {
+				hasStringSpan = true;
+				assertThat( s.stats().count() ).isEqualTo( 0 );
+			}
+		}
+		assertThat( hasStringSpan ).isTrue();
+	}
+
 	@DisplayName( "It charges each span's self-time from the probe interval" )
 	@Test
 	void testTiming() {
