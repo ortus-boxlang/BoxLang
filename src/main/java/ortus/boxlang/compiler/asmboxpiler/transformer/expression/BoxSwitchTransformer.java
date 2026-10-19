@@ -128,11 +128,15 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, switchConditionVarStore.index() ) );
 
 			if ( c.getDelimiter() == null ) {
+				// Put the context under the switch value already on the stack: [ context, switchValue, condition ]
+				nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
+				nodes.add( new InsnNode( Opcodes.SWAP ) );
 				nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( EqualsEquals.class ),
 				    "invoke",
-				    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ), Type.getType( Object.class ) ),
+				    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ),
+				        Type.getType( Object.class ) ),
 				    false ) );
 			} else {
 				// If the switch value is null, skip the containsNoCase check and push false
@@ -276,11 +280,15 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, switchConditionVarStore.index() ) );
 
 			if ( c.getDelimiter() == null ) {
+				// Put the context under the switch value already on the stack: [ context, switchValue, condition ]
+				nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
+				nodes.add( new InsnNode( Opcodes.SWAP ) );
 				nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( EqualsEquals.class ),
 				    "invoke",
-				    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ), Type.getType( Object.class ) ),
+				    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ),
+				        Type.getType( Object.class ) ),
 				    false ) );
 			} else {
 				LabelNode	nullSkipLabel	= new LabelNode();
@@ -935,11 +943,15 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, switchValueSlot ) );
 
 		if ( c.getDelimiter() == null ) {
+			// Put the context under the switch value already on the stack: [ context, switchValue, condition ]
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
+			nodes.add( new InsnNode( Opcodes.SWAP ) );
 			nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( EqualsEquals.class ),
 			    "invoke",
-			    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ), Type.getType( Object.class ) ),
+			    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ),
+			        Type.getType( Object.class ) ),
 			    false ) );
 		} else {
 			LabelNode	nullSkipLabel	= new LabelNode();
@@ -1013,11 +1025,15 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, switchValueSlot ) );
 
 		if ( c.getDelimiter() == null ) {
+			// Put the context under the switch value already on the stack: [ context, switchValue, condition ]
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
+			nodes.add( new InsnNode( Opcodes.SWAP ) );
 			nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( EqualsEquals.class ),
 			    "invoke",
-			    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ), Type.getType( Object.class ) ),
+			    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ),
+			        Type.getType( Object.class ) ),
 			    false ) );
 		} else {
 			LabelNode	nullSkipLabel	= new LabelNode();
