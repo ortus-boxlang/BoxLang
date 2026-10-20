@@ -986,13 +986,27 @@ public class BoxClassTransformer extends AbstractTransformer {
 			String				defaultExpression	= "null";
 			if ( defaultAnnotation != null && defaultAnnotation.getValue() != null ) {
 
-				if ( defaultAnnotation.getValue().isLiteral() ) {
-					Node defaultValueExpr = transpiler.transform( defaultAnnotation.getValue() );
+				// A property default is EITHER a compile-time literal OR a runtime
+				// expression — never both. Ask the AST expression via `isLiteral()`; NEVER
+				// guess from the node type. `isLiteral()` is authoritative and correctly
+				// reports composite literals such as `[1,2,3]`, `{ one: 1 }` or `#[1,2,3]#`,
+				// which LOOK dynamic but hold only literal keys/values.
+				//
+				// A literal — including a bare identifier such as `default=someVar`, which
+				// the parser folds into the STRING "someVar" (CFML annotation semantics; it
+				// is NOT a variable reference — use `default="#someVar#"` for that) — is set
+				// directly and cloned at runtime, so it has NO evaluator. Do not route a
+				// literal through the deferred evaluator: that would wrongly treat it as
+				// runtime-tracked and report `defaultValue` as null in the metadata.
+				BoxExpression defValue = defaultAnnotation.getValue();
+
+				if ( defValue.isLiteral() ) {
+					Node defaultValueExpr = transpiler.transform( defValue );
 					defaultValue = defaultValueExpr.toString();
 				} else {
 					String lambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
 					transpiler.pushContextName( lambdaContextName );
-					Node initExpr = transpiler.transform( defaultAnnotation.getValue() );
+					Node initExpr = transpiler.transform( defValue );
 					transpiler.popContextName();
 
 					LambdaExpr lambda = new LambdaExpr();

@@ -201,10 +201,12 @@ public class NumberCaster implements IBoxCaster {
 		}
 
 		// Try to parse the string as a Number
-		String	stringValue	= StringCasterStrict.cast( object, false );
-		Number	result		= parseNumber( stringValue );
-		if ( result != null ) {
-			return result;
+		String stringValue = StringCasterStrict.cast( object, false );
+		if ( stringValue != null ) {
+			Number result = parseNumber( stringValue );
+			if ( result != null ) {
+				return result;
+			}
 		}
 
 		// Last ditch effort-- if it's a string and castDates is true, see if it's a string that can be cast to a date that can be cast to a number
@@ -233,9 +235,6 @@ public class NumberCaster implements IBoxCaster {
 	 *         null, floats, alpha characters, etc.
 	 */
 	private static Number parseNumber( String value ) {
-		if ( value == null ) {
-			return null;
-		}
 		value = value.trim();
 		// strip trailing period
 		if ( value.endsWith( "." ) ) {

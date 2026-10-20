@@ -24,6 +24,10 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.sql.SQLException;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -204,4 +208,25 @@ public class SQLErrorHandlingTest {
 		}
 	}
 
+	@Test
+	public void testSQLExceptionChainPreservesExistingCauseAndAddsSuppressedException() {
+		SQLException	existingCause	= new SQLException( "existing cause" );
+		SQLException	firstException	= new SQLException( "first exception" );
+		SQLException	secondException	= new SQLException( "second exception", "state", 2, existingCause );
+		SQLException	thirdException	= new SQLException( "third exception" );
+		firstException.setNextException( secondException );
+		secondException.setNextException( thirdException );
+
+		DatabaseException databaseException = new DatabaseException( firstException );
+
+		assertThat( databaseException.getCause() ).isSameInstanceAs( thirdException );
+		assertThat( thirdException.getCause() ).isSameInstanceAs( secondException );
+		assertThat( secondException.getCause() ).isSameInstanceAs( existingCause );
+		assertThat( secondException.getSuppressed() ).hasLength( 1 );
+		assertThat( secondException.getSuppressed()[ 0 ] ).isSameInstanceAs( firstException );
+
+		StringWriter stackTrace = new StringWriter();
+		databaseException.printStackTrace( new PrintWriter( stackTrace ) );
+		assertThat( stackTrace.toString() ).contains( "Suppressed:" );
+	}
 }

@@ -166,4 +166,87 @@ public class AbortTest {
 		assertThat( variables.getAsString( result ) ).contains( "before" );
 	}
 
+	@DisplayName( "finally runs when abort is inside a try with a catch clause" )
+	@Test
+	public void testFinallyRunsOnAbortWithCatch() {
+
+		instance.executeSource(
+		    """
+		    result = "did NOT run"
+		    try {
+		    	abort;
+		    } catch (any e) {
+		    	rethrow;
+		    } finally {
+		    	result = "ran";
+		    }
+		                   """,
+		    context );
+
+		assertThat( variables.getAsString( result ) ).isEqualTo( "ran" );
+	}
+
+	@DisplayName( "finally runs when abort is inside a try without a catch clause" )
+	@Test
+	public void testFinallyRunsOnAbortWithoutCatch() {
+
+		instance.executeSource(
+		    """
+		    result = "did NOT run"
+		    try {
+		    	abort;
+		    } finally {
+		    	result = "ran";
+		    }
+		                   """,
+		    context );
+
+		assertThat( variables.getAsString( result ) ).isEqualTo( "ran" );
+	}
+
+	@DisplayName( "finally runs when abort happens in a function called from a try that has a catch clause" )
+	@Test
+	public void testFinallyRunsOnAbortInCalledFunctionWithCatch() {
+
+		instance.executeSource(
+		    """
+		    result = "did NOT run"
+		    function doAbort() {
+		    	abort;
+		    }
+		    try {
+		    	doAbort();
+		    } catch (any e) {
+		    	rethrow;
+		    } finally {
+		    	result = "ran";
+		    }
+		                   """,
+		    context );
+
+		assertThat( variables.getAsString( result ) ).isEqualTo( "ran" );
+	}
+
+	@DisplayName( "finally runs when abort is inside a try/catch in tag syntax" )
+	@Test
+	public void testFinallyRunsOnAbortWithCatchTag() {
+
+		instance.executeSource(
+		    """
+		    <cfset result = "did NOT run">
+		    <cftry>
+		    	<cfabort>
+		    	<cfcatch type="any">
+		    		<cfrethrow>
+		    	</cfcatch>
+		    	<cffinally>
+		    		<cfset result = "ran">
+		    	</cffinally>
+		    </cftry>
+		                   """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ) ).isEqualTo( "ran" );
+	}
+
 }

@@ -36,6 +36,7 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -97,6 +98,14 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			    Type.getMethodDescriptor( Type.getType( IReferenceable.class ) ),
 			    false ) );
 			nodes.addAll( transpiler.createKey( id.getName() ) );
+			nodes.add( getMethodCallTemplateCompound( operation ) );
+		} else if ( expr instanceof BoxStaticAccess staticAccess && operator != BoxUnaryOperator.Not && operator != BoxUnaryOperator.Minus
+		    && operator != BoxUnaryOperator.Plus && operator != BoxUnaryOperator.BitwiseComplement ) {
+			// Foo::bar++
+			BoxStaticAccessTransformer staticTransformer = new BoxStaticAccessTransformer( transpiler );
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
+			nodes.addAll( staticTransformer.transformClassReference( staticAccess, TransformerContext.NONE ) );
+			nodes.addAll( staticTransformer.transformAccessKey( staticAccess ) );
 			nodes.add( getMethodCallTemplateCompound( operation ) );
 		} else if ( expr instanceof BoxAccess objectAccess && operator != BoxUnaryOperator.Not && operator != BoxUnaryOperator.Minus
 		    && operator != BoxUnaryOperator.Plus && operator != BoxUnaryOperator.BitwiseComplement ) {

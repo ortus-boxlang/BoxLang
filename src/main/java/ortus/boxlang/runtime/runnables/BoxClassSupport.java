@@ -527,8 +527,17 @@ public class BoxClassSupport {
 
 		// Do we have a super java class? Only positional arguments are supported for Java classes
 		if ( thisClass.isJavaExtends() ) {
-			return DynamicObject.of( thisClass ).setTargetClass( thisClass.getClass().getSuperclass() ).dereferenceAndInvoke( context, name,
-			    positionalArguments, safe );
+			DynamicObject javaSuper = DynamicObject.of( thisClass ).setTargetClass( thisClass.getClass().getSuperclass() );
+			if ( javaSuper.findMatchingMethod( context, name.getName(), DynamicObject.argumentsToClasses( positionalArguments ),
+			    positionalArguments ) != null ) {
+				return javaSuper.dereferenceAndInvoke( context, name, positionalArguments, safe );
+			}
+		}
+
+		// Do we have a static onMissingStaticMethod() method?
+		if ( thisClass.getStaticScope().get( Key.onMissingStaticMethod ) instanceof Function ) {
+			return invokeOnMissingStaticMethod( DynamicObject.of( thisClass.getClass() ), thisClass.getStaticScope(), context, name, positionalArguments,
+			    safe );
 		}
 
 		// If not safe, throw an exception
@@ -626,6 +635,11 @@ public class BoxClassSupport {
 			args.put( Key.missingMethodName, name.getName() );
 			args.put( Key.missingMethodArguments, ArgumentUtil.createArgumentsScope( context, namedArguments ) );
 			return thisClass.dereferenceAndInvoke( context, Key.onMissingMethod, args, safe );
+		}
+
+		// Do we have a static onMissingStaticMethod() method?
+		if ( thisClass.getStaticScope().get( Key.onMissingStaticMethod ) instanceof Function ) {
+			return invokeOnMissingStaticMethod( DynamicObject.of( thisClass.getClass() ), thisClass.getStaticScope(), context, name, namedArguments, safe );
 		}
 
 		// If not safe, throw an exception
@@ -920,6 +934,8 @@ public class BoxClassSupport {
 			return function.invoke( functionContext );
 		} else if ( func != null ) {
 			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
+		} else if ( staticScope.get( Key.onMissingStaticMethod ) instanceof Function ) {
+			return invokeOnMissingStaticMethod( targetClass, staticScope, context, name, namedArguments, safe );
 		} else {
 			throw new KeyNotFoundException(
 			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(),
@@ -948,12 +964,60 @@ public class BoxClassSupport {
 			return function.invoke( functionContext );
 		} else if ( func != null ) {
 			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
+		} else if ( staticScope.get( Key.onMissingStaticMethod ) instanceof Function ) {
+			return invokeOnMissingStaticMethod( targetClass, staticScope, context, name, positionalArguments, safe );
 		} else {
 			throw new KeyNotFoundException(
 			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(),
 			        Struct.formatKeysForError( staticScope.getKeysAsStrings() ) )
 			);
 		}
+	}
+
+	/**
+	 * Invoke the static {@code onMissingStaticMethod()} handler of a class for a static method that does not exist, using named arguments.
+	 * The handler receives {@code missingMethodName} and {@code missingMethodArguments}, the same shape as {@code onMissingMethod()}.
+	 *
+	 * @param targetClass    The class the static call was made on
+	 * @param staticScope    The static scope of the class
+	 * @param context        The context to use
+	 * @param name           The name of the missing method
+	 * @param namedArguments The arguments of the missing method call
+	 * @param safe           Whether to throw an exception if the handler is not found
+	 *
+	 * @return The return value of the handler
+	 */
+	public static Object invokeOnMissingStaticMethod( DynamicObject targetClass, StaticScope staticScope, IBoxContext context, Key name,
+	    Map<Key, Object> namedArguments, Boolean safe ) {
+		Map<Key, Object> args = new HashMap<>();
+		args.put( Key.missingMethodName, name.getName() );
+		args.put( Key.missingMethodArguments, ArgumentUtil.createArgumentsScope( context, namedArguments ) );
+		return dereferenceAndInvokeStatic( targetClass, staticScope, context, Key.onMissingStaticMethod, args, safe );
+	}
+
+	/**
+	 * Invoke the static {@code onMissingStaticMethod()} handler of a class for a static method that does not exist, using positional arguments.
+	 * The handler receives {@code missingMethodName} and {@code missingMethodArguments}, the same shape as {@code onMissingMethod()}.
+	 *
+	 * @param targetClass         The class the static call was made on
+	 * @param staticScope         The static scope of the class
+	 * @param context             The context to use
+	 * @param name                The name of the missing method
+	 * @param positionalArguments The arguments of the missing method call
+	 * @param safe                Whether to throw an exception if the handler is not found
+	 *
+	 * @return The return value of the handler
+	 */
+	public static Object invokeOnMissingStaticMethod( DynamicObject targetClass, StaticScope staticScope, IBoxContext context, Key name,
+	    Object[] positionalArguments, Boolean safe ) {
+		return dereferenceAndInvokeStatic(
+		    targetClass,
+		    staticScope,
+		    context,
+		    Key.onMissingStaticMethod,
+		    new Object[] { name.getName(), ArgumentUtil.createArgumentsScope( context, positionalArguments ) },
+		    safe
+		);
 	}
 
 	/**

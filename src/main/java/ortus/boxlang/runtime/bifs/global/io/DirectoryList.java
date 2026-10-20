@@ -125,7 +125,7 @@ public class DirectoryList extends BIF {
 
 		return switch ( returnType ) {
 			case "name" -> listingToNames( listing );
-			case "query" -> listingToQuery( listing, arguments.getAsString( Key.sort ) );
+			case "query" -> listingToQuery( context, listing, arguments.getAsString( Key.sort ) );
 			case "querynames" -> listingToQueryNames( listing, Paths.get( directoryPath ) );
 			default -> listingToPaths( listing );
 		};
@@ -140,7 +140,7 @@ public class DirectoryList extends BIF {
 		return ArrayCaster.cast( listing.map( item -> item.getFileName().toString() ).toArray() );
 	}
 
-	public Query listingToQuery( Stream<Path> listing, String sort ) {
+	public Query listingToQuery( IBoxContext context, Stream<Path> listing, String sort ) {
 		Query listingQuery = new Query();
 		listingQuery
 		    .addColumn( Key._NAME, QueryColumnType.VARCHAR )
@@ -186,7 +186,7 @@ public class DirectoryList extends BIF {
 				listingQuery.sortData( ( rowA, rowB ) -> {
 					Object	aValue	= rowA[ columnIndex ];
 					Object	bValue	= rowB[ columnIndex ];
-					return direction.equals( "desc" ) ? Compare.invoke( bValue, aValue, false ) : Compare.invoke( aValue, bValue, false );
+					return direction.equals( "desc" ) ? Compare.invoke( context, bValue, aValue, false ) : Compare.invoke( context, aValue, bValue, false );
 				} );
 			}
 		}

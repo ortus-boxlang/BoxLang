@@ -25,10 +25,15 @@ import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStructType;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -61,6 +66,57 @@ public class BoxComponentTransformer extends AbstractTransformer {
 
 		// Check for custom tag shortcut like <cf_brad>
 		if ( componentName.startsWith( "_" ) ) {
+			// if there is already a name attribute, move it to attribute collection.
+			// if there is alrady an attribute collection, don't override a name key already in it
+			BoxAnnotation	nameAttribute		= null;
+			BoxAnnotation	attributeCollection	= null;
+			for ( BoxAnnotation attr : attributes ) {
+				String key = attr.getKey().getValue();
+				if ( key.equalsIgnoreCase( "name" ) ) {
+					nameAttribute = attr;
+				} else if ( key.equalsIgnoreCase( "attributeCollection" ) ) {
+					attributeCollection = attr;
+				}
+			}
+			// If there is already a name attribute, move it to attribute collection.
+			if ( nameAttribute != null ) {
+				BoxStructLiteral attrCol = getStructLiteral( attributeCollection );
+				// If there is already an attribute collection, don't override a name key already in it
+				if ( attrCol != null ) {
+					List<BoxExpression>	attrColValues	= attrCol.getValues();
+					boolean				hasName			= false;
+					for ( int i = 0; i < attrColValues.size(); i += 2 ) {
+						BoxExpression keyExpr = attrColValues.get( i );
+						if ( ( keyExpr instanceof BoxIdentifier id && id.getName().equalsIgnoreCase( "name" ) )
+						    || ( keyExpr instanceof BoxFQN fqn && fqn.getValue().equalsIgnoreCase( "name" ) ) ) {
+							hasName = true;
+							break;
+						}
+					}
+					if ( !hasName ) {
+						attrColValues.add( new BoxIdentifier( "name", null, null ) );
+						attrColValues.add( nameAttribute.getValue() );
+						attrCol.setValues( attrColValues );
+					}
+					attributes.remove( nameAttribute );
+				} else {
+					attributes.remove( nameAttribute );
+					attributes.add(
+					    new BoxAnnotation(
+					        new BoxFQN( "attributeCollection", null, null ),
+					        new BoxStructLiteral(
+					            BoxStructType.Unordered,
+					            List.of(
+					                new BoxIdentifier( "name", null, null ),
+					                nameAttribute.getValue()
+					            ),
+					            null,
+					            null ),
+					        null,
+					        null )
+					);
+				}
+			}
 			attributes.add(
 			    new BoxAnnotation(
 			        new BoxFQN( "name", null, componentName ),
@@ -73,6 +129,37 @@ public class BoxComponentTransformer extends AbstractTransformer {
 
 		// create key of component name
 		nodes.addAll( transpiler.createKey( componentName ) );
+
+		// INCLUSIVE timing: open the tag's call-site bracket BEFORE the attribute
+		// struct is built, so the tag's on-stack time INCLUDES attribute evaluation
+		// (the attributes are evaluated as part of invoking the tag). Opened here,
+		// closed after invokeComponent below.
+		int		callSpan	= transpiler.callSpanIdOf( boxComponent );
+		int[]	shell		= callSpan >= 0 ? transpiler.peekCallShell( callSpan ) : null;
+		// Bump every shell token's execution count as ONE atomic mark — the whole
+		// shell (head + interstitials + closing `>`) runs together when the tag runs.
+		// The tag's inclusive bracket (markEnter/markExit) then charges the shell
+		// tokens the tag's time (via the same shell passed to markEnter).
+		//
+		// The shell mark is emitted HERE (not left to the generic statement-start
+		// hook) because, for a SINGLE-LINE tag, the construct's reset-null node
+		// consumes the generic mark before the shell alias is resolved, so leaving it
+		// to the generic hook fired the shell count only on multi-line tags.
+		if ( shell != null && shell.length > 0 ) {
+			// The component transformer is the SOLE marker of the tag SHELL (the generic
+			// statement-start hook is skipped for BoxComponent). Claim each token so a
+			// repeat transform of the same construct cannot mark it twice.
+			java.util.List<Integer> mark = new java.util.ArrayList<>();
+			for ( int token : shell ) {
+				if ( transpiler.claimSpanMark( token ) ) {
+					mark.add( token );
+				}
+			}
+			if ( !mark.isEmpty() ) {
+				nodes.addAll( transpiler.emitMarkVarargs( mark.stream().mapToInt( Integer::intValue ).toArray() ) );
+			}
+		}
+		nodes.addAll( transpiler.emitMarkEnter( callSpan, shell ) );
 
 		// convert attributes to struct
 		nodes.addAll( transpiler.transformAnnotations( attributes, true, false ) );
@@ -88,6 +175,10 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		    Type.getMethodDescriptor( Type.getType( Component.BodyResult.class ), Type.getType( Key.class ), Type.getType( IStruct.class ),
 		        Type.getType( Component.ComponentBody.class ) ),
 		    true ) );
+
+		if ( callSpan >= 0 ) {
+			nodes.addAll( transpiler.emitMarkExit() );
+		}
 
 		if ( transpiler.isInsideComponent() ) {
 			LabelNode ifLabel = new LabelNode();
@@ -161,6 +252,30 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		AsmHelper.addDebugLabel( nodes, "BoxComponent - done" );
 
 		return AsmHelper.addLineNumberLabels( nodes, node );
+	}
+
+	/**
+	 * Extract a {@link BoxStructLiteral} from the attribute collection value.
+	 * The value may be a direct struct literal, or wrapped in a single-value
+	 * {@link BoxStringInterpolation} (e.g. {@code attributeCollection="#{}#"}).
+	 *
+	 * @param attributeCollection The attributeCollection annotation, may be null.
+	 *
+	 * @return The struct literal, or null if it cannot be resolved.
+	 */
+	private BoxStructLiteral getStructLiteral( BoxAnnotation attributeCollection ) {
+		if ( attributeCollection == null ) {
+			return null;
+		}
+		BoxExpression value = attributeCollection.getValue();
+		if ( value instanceof BoxStructLiteral structLiteral ) {
+			return structLiteral;
+		}
+		if ( value instanceof BoxStringInterpolation interpolation && interpolation.getValues().size() == 1
+		    && interpolation.getValues().get( 0 ) instanceof BoxStructLiteral structLiteral ) {
+			return structLiteral;
+		}
+		return null;
 	}
 
 	private List<AbstractInsnNode> generateBodyNodes( List<BoxStatement> body ) {
