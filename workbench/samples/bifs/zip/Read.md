@@ -1,4 +1,4 @@
-###Read a file from a ZIP archive
+### Read a file from a ZIP archive
 
 Read a file from a ZIP archive and return its contents as a string.
 
@@ -8,7 +8,7 @@ read( "test.zip", "example.txt" );
 
 ```
 
-###Read a file from a ZIP archive with a charset
+### Read a file from a ZIP archive with a charset
 
 Specify the character encoding used to read the file from the archive.
 
@@ -18,7 +18,7 @@ read( "test.zip", "example.txt", "UTF-8" );
 
 ```
 
-###Additional Examples
+### Additional Examples
 
 Read a file located in a directory inside the ZIP archive.
 
@@ -28,7 +28,7 @@ read( "test.zip", "docs/readme.txt" );
 
 ```
 
-###Read a file using named arguments.
+### Read a file using named arguments.
 
 ```java
 
