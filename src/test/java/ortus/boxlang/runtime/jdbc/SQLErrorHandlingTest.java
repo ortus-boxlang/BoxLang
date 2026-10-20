@@ -177,16 +177,25 @@ public class SQLErrorHandlingTest {
 		try {
 			instance.executeSource(
 			    """
-			    queryExecute( "SELECT 1 AS sentry_cache_probe FROM SYSIBM.SYSDUMMY1", [], { datasource: "sqlErrorTest", cache: true, cacheKey: "sentry-probe-" & createUUID(), result: "probeFirst" } );
+			    queryExecute( "SELECT 1 AS sentry_cache_probe FROM SYSIBM.SYSDUMMY1 WHERE 1 = ?", [1], { datasource: "sqlErrorTest", cache: true, cacheKey: "sentry-probe-" & createUUID(), result: "probeFirst" } );
 			    probeKey = "sentry-probe-" & createUUID();
-			    queryExecute( "SELECT 1 AS sentry_cache_probe FROM SYSIBM.SYSDUMMY1", [], { datasource: "sqlErrorTest", cache: true, cacheKey: probeKey } );
-			    queryExecute( "SELECT 1 AS sentry_cache_probe FROM SYSIBM.SYSDUMMY1", [], { datasource: "sqlErrorTest", cache: true, cacheKey: probeKey, result: "probeCached" } );
+			    queryExecute( "SELECT 1 AS sentry_cache_probe FROM SYSIBM.SYSDUMMY1 WHERE 1 = ?", [1], { datasource: "sqlErrorTest", cache: true, cacheKey: probeKey } );
+			    queryExecute( "SELECT 1 AS sentry_cache_probe FROM SYSIBM.SYSDUMMY1 WHERE 1 = ?", [1], { datasource: "sqlErrorTest", cache: true, cacheKey: probeKey, result: "probeCached" } );
 			    assert probeCached.cached;
 			    """,
 			    context );
 			assertThat( before ).hasSize( 3 );
 			assertThat( after ).hasSize( 3 );
 			assertThat( before.get( 2 ).getAsBoolean( Key.cached ) ).isTrue();
+			assertThat( before.get( 2 ).get( Key.bindings ) ).isEqualTo( java.util.List.of( 1 ) );
+			assertThat( after.get( 2 ).getAsBoolean( Key.cached ) ).isTrue();
+			assertThat( after.get( 2 ).get( Key.bindings ) ).isEqualTo( after.get( 1 ).get( Key.bindings ) );
+			assertThat( after.get( 2 ).get( Key.bindings ) ).isEqualTo( java.util.List.of( 1 ) );
+			ExecutedQuery cachedQuery = ( ExecutedQuery ) after.get( 2 ).get( Key.executedQuery );
+			assertThat( after.get( 2 ).get( Key.data ) ).isSameInstanceAs( cachedQuery.getResults() );
+			assertThat( cachedQuery.getRecordCount() ).isEqualTo( 1 );
+			assertThat( after.get( 2 ).getAsStruct( Key.result ).getAsBoolean( Key.cached ) ).isTrue();
+			assertThat( after.get( 2 ).get( Key.context ) ).isSameInstanceAs( context );
 			assertThat( before.get( 2 ).get( Key.pendingQuery ) ).isSameInstanceAs( after.get( 2 ).get( Key.pendingQuery ) );
 			assertThat( ( ( Number ) after.get( 2 ).get( Key.executionTime ) ).longValue() ).isEqualTo( 0 );
 		} finally {

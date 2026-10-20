@@ -861,8 +861,20 @@ public class PendingQuery {
 
 		// Return a new ExecutedQuery instance with the cached results and generated key
 		ExecutedQuery	executedQuery	= new ExecutedQuery( results, cachedQuery.getGeneratedKey() );
-		this.interceptorService.announce( BoxEvent.POST_QUERY_EXECUTE, () -> Struct.ofNonConcurrent( Key.sql, this.sql, Key.executionTime, 0, Key.result,
-		    cacheMeta, Key.pendingQuery, this, Key.executedQuery, executedQuery, Key.context, this.context ) );
+		this.interceptorService.announce(
+		    BoxEvent.POST_QUERY_EXECUTE,
+		    () -> Struct.ofNonConcurrent(
+		        Key.sql, this.sql,
+		        Key.bindings, this.getParameterValues(),
+		        Key.cached, true,
+		        Key.executionTime, 0,
+		        Key.data, results,
+		        Key.result, cacheMeta,
+		        Key.pendingQuery, this,
+		        Key.executedQuery, executedQuery,
+		        Key.context, this.context
+		    )
+		);
 		return executedQuery;
 	}
 
