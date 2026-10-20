@@ -1,0 +1,6 @@
+<bx:script>
+	request.settings = getRuntimeSetting()
+	request.level = getRuntimeSetting( "features.level" )
+	request.second = getRuntimeSetting( "limits.2" )
+	request.missing = getRuntimeSetting( "nope.nada", "dflt" )
+</bx:script>
