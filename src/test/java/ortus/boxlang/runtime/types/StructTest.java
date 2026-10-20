@@ -117,6 +117,18 @@ class StructTest {
 		assertThat( struct.get( key ) ).isEqualTo( null );
 	}
 
+	@DisplayName( "Can pre-size a struct with an explicit initial capacity" )
+	@Test
+	void testCanConstructWithInitialCapacity() {
+		Struct struct = new Struct( Struct.TYPES.LINKED, false, 1000 );
+		for ( int i = 1; i <= 500; i++ ) {
+			struct.put( Key.of( "k" + i ), i );
+		}
+
+		assertThat( struct.size() ).isEqualTo( 500 );
+		assertThat( struct.get( Key.of( "k500" ) ) ).isEqualTo( 500 );
+	}
+
 	@DisplayName( "Key-not-found message truncates long valid key lists" )
 	@Test
 	void testKeyNotFoundMessageTruncatesKeyList() {
