@@ -3542,13 +3542,64 @@ class CodeProfilerTest {
 		assertThat( service.spanAt( key, 5, 0 ).stats().count() ).isEqualTo( 1 );
 		assertThat( service.spanAt( key, 5, 0 ).stats().totalNanos() ).isAtMost( 100L * 1_000_000L );
 
-		// Line-based: lines 1-3 and 5 covered; line 4 (spillover) not.
+		// Line-based: lines 1-5 are ALL covered. Line 4 is the lambda's closing brace
+		// (`};`), which runs whenever the lambda is invoked — the block lambda's braces
+		// are marked as an atomic group at body entry, so the executed `}` must be
+		// reported as covered.
 		assertThat( service.lineAt( key, 1 ).covered() ).isTrue();
 		assertThat( service.lineAt( key, 2 ).covered() ).isTrue();
 		assertThat( service.lineAt( key, 3 ).covered() ).isTrue();
-		assertThat( service.lineAt( key, 4 ).covered() ).isFalse();
+		assertThat( service.lineAt( key, 4 ).covered() ).isTrue();
 		assertThat( service.lineAt( key, 5 ).covered() ).isTrue();
 		assertThat( service.lineAt( key, 5 ).count() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It marks a block lambda's braces exactly when the lambda is invoked" )
+	@Test
+	void testBlockLambdaBraceCoverage() {
+		// Pass A registers a block lambda's "{" and "}" as ONE atomic span group keyed at
+		// the "{". The lambda INVOKER transforms the body's CHILDREN directly (never the
+		// BoxStatementBlock node), so nothing would emit that group — the braces read as
+		// missed even when the lambda ran. The invoker must emit the group at body entry,
+		// BEFORE the empty-body early return, so EMPTY block lambdas cover their braces too.
+		// The braces must stay MISSED when the lambda is defined but never invoked.
+		String[][] cases = {
+		    // label, source, expectsCovered
+		    { "invoked non-empty", "f = () -> { return 1; };\nf();\n", "true" },
+		    { "uninvoked non-empty", "f = () -> { return 1; };\n", "false" },
+		    { "invoked empty", "f = () -> {};\nf();\n", "true" },
+		    { "uninvoked empty", "f = () -> {};\n", "false" }
+		};
+		for ( String[] c : cases ) {
+			String	label	= c[ 0 ];
+			String	source	= c[ 1 ];
+			boolean	expect	= Boolean.parseBoolean( c[ 2 ] );
+
+			runtime.executeSource( source );
+			String						key			= IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source );
+
+			CodeProfilerService.Span	openBrace	= null;
+			CodeProfilerService.Span	closeBrace	= null;
+			for ( CodeProfilerService.Span s : service.fileSpans( key ) ) {
+				String text = service.spanSourceText( key, source, s );
+				if ( "{".equals( text ) ) {
+					openBrace = s;
+				} else if ( "}".equals( text ) ) {
+					closeBrace = s;
+				}
+			}
+			assertThat( openBrace ).isNotNull();
+			assertThat( closeBrace ).isNotNull();
+			long expectedCount = expect ? 1 : 0;
+			assertThat( openBrace.stats().count() ).isEqualTo( expectedCount );
+			assertThat( closeBrace.stats().count() ).isEqualTo( expectedCount );
+
+			// Reset so the next case recompiles with instrumentation enabled.
+			service.reset();
+			RunnableLoader.getInstance().getBoxpiler().clearPagePool();
+			RunnableLoader.getInstance().getBoxpiler().clearClassFiles();
+			service.setActive( true );
+		}
 	}
 
 	@DisplayName( "It emits a markEnd before the ARETURN of a returning closure/lambda/UDF invoker" )
