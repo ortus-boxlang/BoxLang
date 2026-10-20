@@ -831,8 +831,17 @@ public class PendingQuery {
 	 * cacheKey, cacheProvider, etc.
 	 */
 	private ExecutedQuery respondWithCachedQuery( ExecutedQuery cachedQuery ) {
-		this.interceptorService.announce( BoxEvent.PRE_QUERY_EXECUTE, () -> Struct.ofNonConcurrent( Key.sql, this.sql, Key.dbtype, this.queryOptions.dbtype,
-		    Key.cached, true, Key.pendingQuery, this, Key.context, this.context ) );
+		this.interceptorService.announce(
+		    BoxEvent.PRE_QUERY_EXECUTE,
+		    () -> Struct.ofNonConcurrent(
+		        Key.sql, this.sql,
+		        Key.dbtype, this.queryOptions.dbtype,
+		        Key.cached, true,
+		        Key.bindings, getParameterValues(),
+		        Key.pendingQuery, this,
+		        Key.context, this.context
+		    )
+		);
 
 		logger.debug( "Query is present, returning cached result: {}", this.cacheKey );
 
