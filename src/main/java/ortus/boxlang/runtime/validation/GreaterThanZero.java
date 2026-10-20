@@ -33,7 +33,7 @@ public class GreaterThanZero implements Validator {
 		// If it was passed...
 		if ( records.get( record.name() ) != null ) {
 			// But also check for non-empty
-			if ( GreaterThan.invoke( NumberCaster.cast( records.get( record.name() ) ), 0 ) ) {
+			if ( GreaterThan.invoke( context, NumberCaster.cast( records.get( record.name() ) ), 0 ) ) {
 				throw new BoxValidationException( caller, record, "must be greater than zero." );
 			}
 		}
