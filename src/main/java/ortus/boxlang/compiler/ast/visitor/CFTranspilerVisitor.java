@@ -238,7 +238,6 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * Matches a line comment ({@code // ...}) so it can be stripped from a widened source-text slice.
 	 */
 	private static final Pattern					LINE_COMMENT_PATTERN		= Pattern.compile( "//[^\\r\\n]*" );
-
 	/**
 	 * Configuration keys for transpiler settings
 	 */
@@ -857,11 +856,15 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * <p>
 	 * Works purely off the literal node's OWN {@link BoxNode#getSourceText()} — never the whole file.
 	 * {@code visitExprOutString} WIDENS that field to a RAW character-stream slice covering a whole
-	 * {@code #...#} wrapper, and that slice also swallows hidden-channel trivia sitting between the
-	 * pounds (WHITESPACE and COMMENTS). So a boxed mask such as {@code #/*note*&#47;000.000#} would
-	 * otherwise become the mask {@code /*note*&#47;000.000}, and {@code #} is itself a digit placeholder
-	 * in a mask. Stripping the comments, then the pounds, then trimming leaves exactly the numeric
-	 * token — which is what a mask needs (leading zeros preserved, no wrapper, no comment).
+	 * {@code #...#} wrapper, and that slice also swallows hidden-channel trivia sitting inside it. So a
+	 * boxed mask such as {@code #/*note*&#47;000.000#} would otherwise become the mask
+	 * {@code /*note*&#47;000.000}, and {@code #} is itself a digit placeholder in a mask. Stripping the
+	 * comments, then the pounds, then trimming leaves exactly the numeric token — which is what a mask
+	 * needs (leading zeros preserved, no wrapper, no comment).
+	 * </p>
+	 * <p>
+	 * ALL comment forms the lexers accept are stripped: Java-style {@code /* *&#47;} and {@code //}, plus
+	 * the CFML template comment {@code <!--- --->} (which NESTS, so it is scanned rather than regexed).
 	 * </p>
 	 *
 	 * @param literal the numeric literal whose original mask text is required
@@ -873,6 +876,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 		if ( sourceText != null ) {
 			// Strip comments FIRST (a comment may itself contain a `#`), then the `#...#` wrapper.
+			sourceText	= stripCfmlComments( sourceText );
 			sourceText	= BLOCK_COMMENT_PATTERN.matcher( sourceText ).replaceAll( "" );
 			sourceText	= LINE_COMMENT_PATTERN.matcher( sourceText ).replaceAll( "" );
 			if ( sourceText.length() >= 2 && sourceText.startsWith( "#" ) && sourceText.endsWith( "#" ) ) {
@@ -886,6 +890,48 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			return integerLiteral.getValue();
 		}
 		return ( ( BoxDecimalLiteral ) literal ).getValue();
+	}
+
+	/**
+	 * Remove CFML template comments ({@code <!--- ... --->}) from the given text.
+	 * <p>
+	 * CFML comments NEST (matching the lexer's {@code countModes} rules), which a regular expression
+	 * cannot balance, so this scans with a depth counter. Anything from an opener to its matching closer
+	 * is dropped; an unterminated opener drops the remainder (matching the parser's own behaviour).
+	 * </p>
+	 *
+	 * @param text the text to strip
+	 *
+	 * @return the text with all CFML comments removed
+	 */
+	private String stripCfmlComments( String text ) {
+		StringBuilder	out		= new StringBuilder( text.length() );
+		int				i		= 0;
+		int				length	= text.length();
+
+		while ( i < length ) {
+			if ( text.startsWith( "<!---", i ) ) {
+				// Consume to the matching closer, honouring nesting.
+				int depth = 1;
+				i += 5;
+				while ( i < length && depth > 0 ) {
+					if ( text.startsWith( "<!---", i ) ) {
+						depth++;
+						i += 5;
+					} else if ( text.startsWith( "--->", i ) ) {
+						depth--;
+						i += 4;
+					} else {
+						i++;
+					}
+				}
+				continue;
+			}
+			out.append( text.charAt( i ) );
+			i++;
+		}
+
+		return out.toString();
 	}
 
 	private BoxNode transpileListAppend( BoxFunctionInvocation node ) {

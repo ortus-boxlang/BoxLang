@@ -251,6 +251,16 @@ public class BoxedExpressionExecutionTest {
 		// A COMMENT inside the pounds is hidden-channel trivia, never part of the mask.
 		assertEquals( "005.500", String.valueOf( run( "result = numberFormat( 5.5, #/*note*/000.000# );", BoxSourceType.CFSCRIPT ) ),
 		    "a boxed numberFormat mask must not include an embedded comment" );
+		// CFML template comments (`<!--- --->`) are also hidden-channel trivia, and they NEST.
+		assertEquals( "005.500", String.valueOf( run( "result = numberFormat( 5.5, #<!---mask--->000.000# );", BoxSourceType.CFSCRIPT ) ),
+		    "a boxed numberFormat mask must not include a leading CFML comment" );
+		assertEquals( "005.500", String.valueOf( run( "result = numberFormat( 5.5, #000.000<!---mask---># );", BoxSourceType.CFSCRIPT ) ),
+		    "a boxed numberFormat mask must not include a trailing CFML comment" );
+		assertEquals( "005.500", String.valueOf( run( "result = numberFormat( 5.5, #<!---a<!---b--->c--->000.000# );", BoxSourceType.CFSCRIPT ) ),
+		    "a boxed numberFormat mask must not include a NESTED CFML comment" );
+		// Same in a CF tag expression.
+		assertEquals( "005.500", String.valueOf( run( "<cfset result = numberFormat( 5.5, #<!---mask--->000.000# )>", BoxSourceType.CFTEMPLATE ) ),
+		    "a CFML comment inside a tag-expression mask must not leak into the mask" );
 	}
 
 	@Test
