@@ -624,6 +624,19 @@
 		"disallowedFileOperationExtensions": []
 	},
 	/**
+	 * Your own global named settings. Values can be any type: strings, numbers, booleans, structs, arrays.
+	 * Values support ${env.VAR}, ${env.VAR:default} placeholders and bxsecret: encrypted values at any depth.
+	 * Read them with getRuntimeSetting( "key" ) or getRuntimeSetting( "nested.key", defaultValue ).
+	 * Applications can deep-merge overrides via `this.runtimeSettings = {}` in Application.bx.
+	 * Settings are read-only at runtime.
+	 * Example:
+	 * "runtimeSettings": {
+	 *     "apiUrl": "${env.API_URL:http://localhost}",
+	 *     "features": { "beta": true }
+	 * }
+	 */
+	"runtimeSettings": {},
+	/**
 	 * The BoxLang module settings
 	 * The key is the module name and the value is a struct of settings for that specific module
 	 * The `enabled` property is a boolean that determines if the module should be enabled or not.  Default is true

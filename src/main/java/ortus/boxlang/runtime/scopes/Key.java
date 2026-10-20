@@ -1015,6 +1015,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		run									= Key.of( "run" );
 	public static final Key		runnable							= Key.of( "runnable" );
 	public static final Key		runtime								= Key.of( "runtime" );
+	public static final Key		runtimeSettings						= Key.of( "runtimeSettings" );
 	public static final Key		runtimes							= Key.of( "runtimes" );
 	public static final Key		samesite							= Key.of( "samesite" );
 	public static final Key		scalar								= Key.of( "scalar" );

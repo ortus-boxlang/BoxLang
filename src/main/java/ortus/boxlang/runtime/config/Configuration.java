@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.util.RuntimeSettingsUtil;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.config.segments.ExecutorConfig;
@@ -382,6 +383,12 @@ public class Configuration implements IConfigSegment {
 	 * Experimental Features
 	 */
 	public IStruct																experimental						= new Struct();
+
+	/**
+	 * User-defined runtime settings. Named values of any type, with placeholders and secrets resolved. Unmodifiable.
+	 * Applications can override them via {@code this.runtimeSettings} in the Application descriptor.
+	 */
+	public IStruct																runtimeSettings						= Struct.EMPTY;
 
 	/**
 	 * The scheduler configuration
@@ -784,6 +791,15 @@ public class Configuration implements IConfigSegment {
 				castedStruct.entrySet().forEach( entry -> this.experimental.put( entry.getKey(), entry.getValue() ) );
 			} else {
 				logger.warn( "The [experimental] configuration is not a JSON Object, ignoring it." );
+			}
+		}
+
+		// Process user-defined runtime settings (placeholders and secrets are already resolved by the ConfigLoader)
+		if ( config.containsKey( Key.runtimeSettings ) ) {
+			if ( config.get( Key.runtimeSettings ) instanceof IStruct castedStruct ) {
+				this.runtimeSettings = RuntimeSettingsUtil.merge( this.runtimeSettings, castedStruct );
+			} else {
+				logger.warn( "The [runtimeSettings] configuration is not a JSON Object, ignoring it." );
 			}
 		}
 
@@ -1236,6 +1252,7 @@ public class Configuration implements IConfigSegment {
 		    Key.defaultJSONQuerySerializationFormat, this.defaultJSONQuerySerializationFormat,
 		    Key.executors, executorsCopy,
 		    Key.experimental, Struct.fromMap( this.experimental ),
+		    Key.runtimeSettings, this.runtimeSettings,
 		    Key.invokeImplicitAccessor, this.invokeImplicitAccessor,
 		    Key.whitespaceCompressionEnabled, this.whitespaceCompressionEnabled,
 		    Key.javaLibraryPaths, Array.copyFromList( this.javaLibraryPaths ),
