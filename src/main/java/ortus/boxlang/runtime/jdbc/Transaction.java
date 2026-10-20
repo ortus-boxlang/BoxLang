@@ -169,6 +169,16 @@ public class Transaction implements ITransaction {
 	}
 
 	/**
+	 * Get the connection already acquired by this transaction, or null if none has been acquired yet.
+	 * <p>
+	 * Unlike {@link #getBoxConnection()}, this method never acquires a connection and has no side effects.
+	 */
+	@Override
+	public BoxConnection getBoxConnectionIfPresent() {
+		return this.connection;
+	}
+
+	/**
 	 * Set the datasource associated with this transaction.
 	 * <p>
 	 * For transactions not initialized with a datasource, allows you to set the datasource after construction.

@@ -22,12 +22,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.UUID;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -207,6 +210,57 @@ public class ConnectionManagerTest {
 		String dsName = datasource.getUniqueName().toString();
 		assertTrue( dsName.contains( "_KeyNameTest" ) );
 		assertFalse( dsName.contains( "unnamed_" ) );
+	}
+
+	@DisplayName( "Connection Handling: a connection acquired for a datasource outside the transaction is released back to the pool" )
+	@Test
+	public void testNonTransactionalConnectionReleasedInsideTransaction() {
+		DataSource	dsA	= JDBCTestUtils.buildDatasource( "txnDsA_" + UUID.randomUUID() );
+		DataSource	dsB	= JDBCTestUtils.buildDatasource( "txnDsB_" + UUID.randomUUID() );
+
+		try {
+			manager.beginTransaction( dsA );
+
+			// A query against a different datasource gets its own pooled connection...
+			BoxConnection connection = manager.getBoxConnection( dsB );
+			assertThat( dsB.getPoolStats().getAsInteger( Key.activeConnections ) ).isEqualTo( 1 );
+
+			// ... and that connection must go back to the pool even though a transaction is in flight
+			assertThat( manager.releaseConnection( connection ) ).isTrue();
+			assertThat( dsB.getPoolStats().getAsInteger( Key.activeConnections ) ).isEqualTo( 0 );
+
+			// The transaction's own connection must still be left alone for the transaction to manage
+			BoxConnection transactionConnection = manager.getBoxConnection( dsA );
+			assertThat( dsA.getPoolStats().getAsInteger( Key.activeConnections ) ).isEqualTo( 1 );
+			assertThat( manager.releaseConnection( transactionConnection ) ).isFalse();
+			assertThat( dsA.getPoolStats().getAsInteger( Key.activeConnections ) ).isEqualTo( 1 );
+
+			// ... and released once the transaction ends
+			manager.endTransaction();
+			assertThat( dsA.getPoolStats().getAsInteger( Key.activeConnections ) ).isEqualTo( 0 );
+		} finally {
+			dsA.shutdown();
+			dsB.shutdown();
+		}
+	}
+
+	@DisplayName( "Connection Handling: a failure ending a child transaction does not abandon the parent transaction" )
+	@Test
+	public void testShutdownContinuesAfterChildTransactionFailure() throws Exception {
+		// A parent transaction whose savepoint creation - and thus the child's end() - always fails
+		ITransaction parent = Mockito.mock( ITransaction.class );
+		Mockito.when( parent.setSavepoint( Mockito.any() ) ).thenThrow( new DatabaseException( "Simulated child transaction failure" ) );
+		ChildTransaction		child				= new ChildTransaction( parent );
+
+		// beginTransaction() cannot produce a failing child, so inject one directly
+		java.lang.reflect.Field	transactionField	= ConnectionManager.class.getDeclaredField( "transaction" );
+		transactionField.setAccessible( true );
+		transactionField.set( manager, child );
+
+		// Shutting down must not throw, and must unwind the child AND the remaining parent transaction
+		manager.shutdown();
+
+		assertThat( manager.isInTransaction() ).isFalse();
 	}
 
 }
