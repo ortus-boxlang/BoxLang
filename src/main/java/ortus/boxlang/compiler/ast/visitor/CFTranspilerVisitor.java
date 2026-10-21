@@ -91,6 +91,7 @@ import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
@@ -1025,7 +1026,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 */
 	private String replaceIdentifiersInString( String input, String oldValue, String newValue ) {
 		// Quick smoke test to avoid regex
-		if ( !input.toLowerCase().contains( oldValue.toLowerCase() ) ) {
+		if ( !StringUtil.containsIgnoreCase( input, oldValue ) ) {
 			return input;
 		}
 		String pattern = "(?i)\\b" + Pattern.quote( oldValue ) + "\\b";

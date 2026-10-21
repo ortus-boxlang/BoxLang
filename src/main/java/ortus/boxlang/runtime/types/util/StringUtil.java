@@ -500,4 +500,128 @@ public class StringUtil {
 		return true;
 	}
 
+	/**
+	 * Case-insensitive, allocation-free region comparison using the same character folding as
+	 * {@link String#regionMatches(boolean, int, String, int, int)} with {@code ignoreCase = true}.
+	 * <p>
+	 * Comparisons are therefore Unicode aware and locale independent, unlike lower-casing both operands with the
+	 * default locale. Out of range offsets simply do not match instead of throwing.
+	 *
+	 * @param haystack       The sequence to compare from
+	 * @param haystackOffset The index in {@code haystack} to start comparing at
+	 * @param needle         The string to compare against
+	 * @param needleOffset   The index in {@code needle} to start comparing at
+	 * @param length         The number of characters to compare
+	 *
+	 * @return True when both regions match, ignoring case
+	 */
+	public static boolean regionMatchesIgnoreCase( CharSequence haystack, int haystackOffset, String needle, int needleOffset, int length ) {
+		if ( haystack == null || needle == null || haystackOffset < 0 || needleOffset < 0 || length < 0
+		    || haystackOffset + length > haystack.length()
+		    || needleOffset + length > needle.length() ) {
+			return false;
+		}
+		// String#regionMatches is coder aware (Latin-1 vs UTF-16), so prefer it whenever we have a String
+		if ( haystack instanceof String stringHaystack ) {
+			return stringHaystack.regionMatches( true, haystackOffset, needle, needleOffset, length );
+		}
+		for ( int i = 0; i < length; i++ ) {
+			char	c1	= haystack.charAt( haystackOffset + i );
+			char	c2	= needle.charAt( needleOffset + i );
+			if ( c1 == c2 ) {
+				continue;
+			}
+			// Mirrors the folding performed by String.regionMatches( true, ... ) so both paths behave the same
+			char	u1	= Character.toUpperCase( c1 );
+			char	u2	= Character.toUpperCase( c2 );
+			if ( u1 != u2 && Character.toLowerCase( u1 ) != Character.toLowerCase( u2 ) ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Case-insensitive search for the first occurrence of a substring. Nothing is allocated and the haystack is
+	 * never copied or lower-cased.
+	 *
+	 * @param str       The sequence to search in
+	 * @param search    The substring to search for
+	 * @param fromIndex The 0-based index to start searching from; negative values are treated as 0
+	 *
+	 * @return The 0-based index of the first match, or -1 when there is no match
+	 */
+	public static int indexOfIgnoreCase( CharSequence str, String search, int fromIndex ) {
+		if ( str == null || search == null ) {
+			return -1;
+		}
+		int	strLength		= str.length();
+		int	searchLength	= search.length();
+		if ( fromIndex < 0 ) {
+			fromIndex = 0;
+		}
+		// Parity with String.indexOf( String, int ): an empty search matches the clamped start position
+		if ( searchLength == 0 ) {
+			return Math.min( fromIndex, strLength );
+		}
+		int lastPossible = strLength - searchLength;
+		for ( int i = fromIndex; i <= lastPossible; i++ ) {
+			if ( regionMatchesIgnoreCase( str, i, search, 0, searchLength ) ) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * Case-insensitive search for the first occurrence of a substring. Nothing is allocated and the haystack is
+	 * never copied or lower-cased.
+	 *
+	 * @param str    The sequence to search in
+	 * @param search The substring to search for
+	 *
+	 * @return The 0-based index of the first match, or -1 when there is no match
+	 */
+	public static int indexOfIgnoreCase( CharSequence str, String search ) {
+		return indexOfIgnoreCase( str, search, 0 );
+	}
+
+	/**
+	 * Case-insensitive search for the last occurrence of a substring. Nothing is allocated and the haystack is
+	 * never copied or lower-cased.
+	 *
+	 * @param str    The sequence to search in
+	 * @param search The substring to search for
+	 *
+	 * @return The 0-based index of the last match, or -1 when there is no match
+	 */
+	public static int lastIndexOfIgnoreCase( CharSequence str, String search ) {
+		if ( str == null || search == null ) {
+			return -1;
+		}
+		int	strLength		= str.length();
+		int	searchLength	= search.length();
+		// Parity with String.lastIndexOf( String ): an empty search matches the end of the string
+		if ( searchLength == 0 ) {
+			return strLength;
+		}
+		for ( int i = strLength - searchLength; i >= 0; i-- ) {
+			if ( regionMatchesIgnoreCase( str, i, search, 0, searchLength ) ) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * Case-insensitive containment check. Nothing is allocated and the haystack is never copied or lower-cased.
+	 *
+	 * @param str    The sequence to search in
+	 * @param search The substring to search for
+	 *
+	 * @return True when the sequence contains the substring, ignoring case
+	 */
+	public static boolean containsIgnoreCase( CharSequence str, String search ) {
+		return indexOfIgnoreCase( str, search, 0 ) != -1;
+	}
 }
