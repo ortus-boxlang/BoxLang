@@ -2296,8 +2296,11 @@ public class BoxHttpClient {
 					throw new BoxRuntimeException( "NTLM login failed: No challenge received from server." );
 				}
 
+				// Parse the existing challenge (the complete encoded Type 2 message)
+				byte[] type2 = NtlmHelper.parseType2(challenge);
+
 				// Type 3 message
-				String		type3			= NtlmHelper.createType3( this.username, this.password, this.domain, this.workstation, challenge );
+				String		type3			= NtlmHelper.createType3( this.username, this.password, this.domain, this.workstation, type2 );
 
 				HttpRequest	type3Request	= HttpRequest.newBuilder( this.targetHttpRequest, ( name, value ) -> true )
 				    .header( "Authorization", "NTLM " + type3 )
