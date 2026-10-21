@@ -598,6 +598,25 @@
 				"resetTimeoutOnAccess": false,
 				"useLastAccessTimeouts": true
 			}
+		},
+		// Stores the rendered code snippets used to build exception tag contexts in debug mode.
+		// Keys are the source file path and line number, so entries are tiny, but there can be many of them.
+		"bxCodeSnippets": {
+			"provider": "BoxCacheProvider",
+			"properties": {
+				"evictCount": 1,
+				"evictionPolicy": "LRU",
+				"freeMemoryPercentageThreshold": 0,
+				"maxObjects": 10000,
+				// 30 minutes if not used
+				"defaultLastAccessTimeout": 1800,
+				// 60 minutes default
+				"defaultTimeout": 3600,
+				"objectStore": "ConcurrentSoftReferenceStore",
+				"reapFrequency": 120,
+				"resetTimeoutOnAccess": false,
+				"useLastAccessTimeouts": true
+			}
 		}
 	},
 	// These are the security settings for the runtime
