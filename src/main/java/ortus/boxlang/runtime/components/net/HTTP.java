@@ -220,6 +220,14 @@ public class HTTP extends Component {
 	 *         password="pass"
 	 *         authType="BASIC" {}
 	 *
+	 * // NTLM Authentication
+	 * bx:http url="https://api.example.com/protected"
+	 *         username="user"
+	 *         password="pass"
+	 *         authType="NTLM"
+	 *         domain="DOMAIN"
+	 *         workstation="WORKSTATION" {}
+	 *
 	 * // Client Certificate (Mutual TLS)
 	 * bx:http url="https://api.example.com/secure"
 	 *         clientCert="/path/to/cert.p12"
