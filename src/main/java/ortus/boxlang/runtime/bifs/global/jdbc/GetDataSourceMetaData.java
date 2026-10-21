@@ -12,14 +12,15 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 
 @BoxBIF( description = "Returns datasource configuration and pool metadata" )
 public class GetDataSourceMetaData extends BIF {
 
-	// Constructor
+	/**
+	 * Constructor
+	 */
 	public GetDataSourceMetaData() {
 		super();
 		declaredArguments = new Argument[] {
@@ -27,6 +28,12 @@ public class GetDataSourceMetaData extends BIF {
 		};
 	}
 
+	/**
+	 * Returns datasource configuration and pool metadata.
+	 * 
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments If specified, returns the metadata for a specific named datasource. If not, returns all datasource metadata.
+	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		DatasourceService	datasourceService	= context.getRuntime().getDataSourceService();
 		String				datasourceName		= arguments.getAsString( Key.datasource );
@@ -38,16 +45,7 @@ public class GetDataSourceMetaData extends BIF {
 
 		// Check if one specific datasource is requested and return accordingly
 		if ( datasourceName != null && !datasourceName.isEmpty() ) {
-			System.out.println( "finding" + datasourceName );
-			// TODO: Key.of ( datasourceName ) returning NULL. datasourceName is being passed
-			DataSource datasource = connectionManager.getDatasourceOrThrow( Key.of( datasourceName ) );
-			System.out.println( datasource );
-			// Check if datasource doesn't exist, otherwise later functions will fail
-			if ( datasource == null ) {
-				throw new BoxRuntimeException(
-				    "Datasource [" + datasourceName + "] does not exist"
-				);
-			}
+			DataSource			datasource		= connectionManager.getDatasourceOrThrow( Key.of( datasourceName ) );
 			DatasourceConfig	configuration	= datasource.getConfiguration();
 
 			IStruct				metadata		= Struct.of(
