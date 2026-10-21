@@ -16,6 +16,12 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+/**
+ * Builds the NTLM Type 1 and Type 3 messages and parses the Type 2 challenge
+ * for HTTP authentication (NTLMv2 only). Used by BoxHttpClient when
+ * authType="NTLM".
+ * MD4 is included only because NTLM requires it and the JDK has none.
+ */
 public class NtlmHelper {
 	// ============================================================
 	// NTLM TYPE 1 — NEGOTIATE MESSAGE

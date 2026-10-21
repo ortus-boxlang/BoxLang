@@ -548,7 +548,7 @@ public class BoxHttpClient {
 		// Basic Authentication
 		private String											username;
 		private String											password;
-		// just in case, but never used
+		// BASIC (default) or NTLM
 		private String											authType			= "BASIC";
 
 		// NTLM Authentication
@@ -2278,7 +2278,7 @@ public class BoxHttpClient {
 				// Type 1 message
 				HttpRequest			type1			= HttpRequest.newBuilder( this.targetHttpRequest, ( name, value ) -> true )
 				    .method( this.method, HttpRequest.BodyPublishers.noBody() )
-				    .header( "Authorization", "NTLM " + NtlmHelper.createType1( this.domain, this.workstation ) )
+				    .setHeader( "Authorization", "NTLM " + NtlmHelper.createType1( this.domain, this.workstation ) )
 				    .build();
 				HttpResponse<Void>	type1Response	= httpClient
 				    .sendAsync( type1, HttpResponse.BodyHandlers.discarding() )
@@ -2303,7 +2303,7 @@ public class BoxHttpClient {
 				String		type3			= NtlmHelper.createType3( this.username, this.password, this.domain, this.workstation, type2 );
 
 				HttpRequest	type3Request	= HttpRequest.newBuilder( this.targetHttpRequest, ( name, value ) -> true )
-				    .header( "Authorization", "NTLM " + type3 )
+				    .setHeader( "Authorization", "NTLM " + type3 )
 				    .build();
 				response = httpClient
 				    .sendAsync( type3Request, HttpResponse.BodyHandlers.ofByteArray() )
