@@ -199,7 +199,7 @@ public class ExceptionUtilCodeSnippetCacheTest {
 		ExceptionUtil.getSurroundingLinesOfCode( file.toString(), 1 );
 		assertThat( cache.getKeys().size() ).isEqualTo( 1 );
 
-		instance.executeStatement( "systemsnippet.lastModified == lastModifiedear( \"codesnippets\" )", context );
+		instance.executeStatement( "systemCacheClear( \"codesnippets\" )", context );
 		assertThat( cache.getKeys().isEmpty() ).isTrue();
 	}
 
