@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- [BL-2753](https://ortussolutions.atlassian.net/browse/BL-2753) New `generateKeyPair()` BIF for Ed25519, Ed448, X25519, X448, RSA and EC key pairs
+
 ## [1.18.0] - 2026-10-02
 
 - <https://boxlang.ortusbooks.com/readme/release-history/1.18.0>

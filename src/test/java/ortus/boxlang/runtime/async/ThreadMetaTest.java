@@ -73,7 +73,7 @@ public class ThreadMetaTest {
 		ThreadMeta	meta	= new ThreadMeta( Key.of( "sleeper" ), thread, System.currentTimeMillis() );
 		try {
 			Thread.sleep( 200 );
-			// reading other keys, as every unscoped lookup inside a thread does, leaves the stack alone
+			// reading other keys leaves the stack alone
 			meta.getRaw( Key._NAME );
 			meta.get( Key.output );
 			meta.getOrDefault( Key.priority, "" );
@@ -160,7 +160,7 @@ public class ThreadMetaTest {
 				thread name="myThread" {
 					variables.innerStatus = thread.status;
 					variables.innerTrace  = myThread.stackTrace;
-					variables.innerName   = name;
+					variables.innerName   = thread.name;
 				}
 				threadJoin( "myThread" );
 				result = myThread;

@@ -295,16 +295,8 @@ public class ThreadComponentBoxContext extends BaseBoxContext implements IJDBCCa
 				return parentSearchResult;
 			}
 		}
-		if ( !isKeyVisibleScope( key ) ) {
-			// Unscoped access to a metadata key (status, elapsedTime, ...) inside the thread
-			IStruct	threadMeta	= threadManager.getThreadMeta( threadName );
-			Object	result		= threadMeta.getRaw( key );
-			// Null means not found
-			if ( isDefined( result, forAssign ) ) {
-				return new ScopeSearchResult( threadMeta, Struct.unWrapNull( result ), key );
-			}
-		}
 
+		// Unscoped lookups do not search the thread scope, matching Adobe and Lucee
 		return parent.scopeFind( key, defaultScope, forAssign );
 	}
 

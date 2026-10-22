@@ -564,6 +564,11 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		key									= Key.of( "key" );
 	public static final Key		keyMap								= Key.of( "keyMap" );
 	public static final Key		keySize								= Key.of( "keySize" );
+	public static final Key		curve								= Key.of( "curve" );
+	public static final Key		privateKey							= Key.of( "privateKey" );
+	public static final Key		publicKey							= Key.of( "publicKey" );
+	public static final Key		privatePem							= Key.of( "privatePem" );
+	public static final Key		publicPem							= Key.of( "publicPem" );
 	public static final Key		label								= Key.of( "label" );
 	public static final Key		lambda								= Key.of( "lambda" );
 	public static final Key		language							= Key.of( "language" );
@@ -704,6 +709,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onMessage							= Key.of( "onMessage" );
 	public static final Key		onMisfire							= Key.of( "onMisfire" );
 	public static final Key		onMissingMethod						= Key.of( "onMissingMethod" );
+	public static final Key		onMissingStaticMethod				= Key.of( "onMissingStaticMethod" );
 	public static final Key		onMissingTemplate					= Key.of( "onMissingTemplate" );
 	public static final Key		onParse								= Key.of( "onParse" );
 	public static final Key		onRequest							= Key.of( "onRequest" );
