@@ -619,7 +619,8 @@ public class DumpUtil {
 
 		// If we are NOT in jar mode and in debug mode, then re-read the file from the
 		// file system
-		if ( !context.getRuntime().inJarMode() && context.getRuntime().inDebugMode() ) {
+		// Put back in the debug mode check if hacking on the dump templatse. otherwise, it's just too much overhead
+		if ( !context.getRuntime().inJarMode() ) { // && context.getRuntime().inDebugMode()
 			Path filePath = Paths.get( "src", "main", "resources", dumpTemplatePath ).toAbsolutePath();
 			if ( Files.exists( filePath ) ) {
 				try {

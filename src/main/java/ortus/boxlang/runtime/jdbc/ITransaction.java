@@ -60,6 +60,17 @@ public interface ITransaction {
 	public BoxConnection getBoxConnection();
 
 	/**
+	 * Get the connection already acquired by this transaction, or null if no connection has been acquired yet.
+	 * <p>
+	 * Unlike {@link #getBoxConnection()}, this method never acquires a connection and has no side effects. It is
+	 * intended for callers that need to inspect the transaction's current connection without triggering a lazy
+	 * acquisition - for example, deciding whether a connection may be released back to the pool.
+	 *
+	 * @return The transaction's current connection, or null if none has been acquired.
+	 */
+	public BoxConnection getBoxConnectionIfPresent();
+
+	/**
 	 * Set the datasource associated with this transaction.
 	 * <p>
 	 * For transactions not initialized with a datasource, allows you to set the datasource after construction.

@@ -42,7 +42,7 @@ public class Min implements Validator {
 		// If it was passed...
 		if ( records.get( record.name() ) != null ) {
 			// then make sure it's not less than our threshold
-			if ( LessThan.invoke( NumberCaster.cast( records.get( record.name() ) ), this.min ) ) {
+			if ( LessThan.invoke( context, NumberCaster.cast( records.get( record.name() ) ), this.min ) ) {
 				throw new BoxValidationException( caller, record, "cannot be less than [" + StringCaster.cast( this.min ) + "]." );
 			}
 		}

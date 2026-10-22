@@ -91,6 +91,7 @@ import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
@@ -229,6 +230,15 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static final String						DUMP_TOP_ATTRIBUTE_NAME		= "top";
 	private static final String						DUMP_DEPTH_ATTRIBUTE_NAME	= "depth";
 
+	/**
+	 * Matches a delimited comment ({@code /* ... *&#47;}) so it can be stripped from a widened source-text slice.
+	 */
+	private static final Pattern					BLOCK_COMMENT_PATTERN		= Pattern.compile( "/\\*.*?\\*/", Pattern.DOTALL );
+
+	/**
+	 * Matches a line comment ({@code // ...}) so it can be stripped from a widened source-text slice.
+	 */
+	private static final Pattern					LINE_COMMENT_PATTERN		= Pattern.compile( "//[^\\r\\n]*" );
 	/**
 	 * Configuration keys for transpiler settings
 	 */
@@ -778,15 +788,12 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				arg = node.getArguments().get( 1 );
 			}
 			if ( arg != null && ( arg.getValue() instanceof BoxIntegerLiteral || arg.getValue() instanceof BoxDecimalLiteral ) ) {
-				// Favor original text, as our parser strips leading zeros in the AST
-				String originalText = arg.getValue() instanceof BoxIntegerLiteral ? ( ( BoxIntegerLiteral ) arg.getValue() ).getSourceText()
-				    : ( ( BoxDecimalLiteral ) arg.getValue() ).getSourceText();
-				// If this AST has no source text, fall back on the value
-				if ( originalText == null ) {
-					originalText = arg.getValue() instanceof BoxIntegerLiteral ? ( ( BoxIntegerLiteral ) arg.getValue() ).getValue()
-					    : ( ( BoxDecimalLiteral ) arg.getValue() ).getValue();
-				}
-				arg.setValue( new BoxStringLiteral( originalText, arg.getValue().getPosition(), "\"" + originalText + "\"" ) );
+				BoxExpression	literal			= arg.getValue();
+				// Favor the literal's ORIGINAL source text, as the parser strips leading zeros
+				// from the value (e.g. the mask `000.000` must stay `000.000`). See
+				// `getOriginalLiteralText` for why the widened `#...#` source text is post-processed.
+				String			originalText	= getOriginalLiteralText( literal );
+				arg.setValue( new BoxStringLiteral( originalText, literal.getPosition(), "\"" + originalText + "\"" ) );
 			}
 		}
 
@@ -843,6 +850,89 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 */
 	private BoxExpression transpileDumpTopToDepth( BoxExpression value ) {
 		return new BoxBinaryOperation( value, BoxBinaryOperator.Minus, new BoxIntegerLiteral( "1", null, "1" ), null, null );
+	}
+
+	/**
+	 * Recover the original MASK text of a numeric literal used as a {@code numberFormat()} mask.
+	 * <p>
+	 * Works purely off the literal node's OWN {@link BoxNode#getSourceText()} — never the whole file.
+	 * {@code visitExprOutString} WIDENS that field to a RAW character-stream slice covering a whole
+	 * {@code #...#} wrapper, and that slice also swallows hidden-channel trivia sitting inside it. So a
+	 * boxed mask such as {@code #/*note*&#47;000.000#} would otherwise become the mask
+	 * {@code /*note*&#47;000.000}, and {@code #} is itself a digit placeholder in a mask. Stripping the
+	 * comments, then the pounds, then trimming leaves exactly the numeric token — which is what a mask
+	 * needs (leading zeros preserved, no wrapper, no comment).
+	 * </p>
+	 * <p>
+	 * ALL comment forms the lexers accept are stripped: Java-style {@code /* *&#47;} and {@code //}, plus
+	 * the CFML template comment {@code <!--- --->} (which NESTS, so it is scanned rather than regexed).
+	 * </p>
+	 *
+	 * @param literal the numeric literal whose original mask text is required
+	 *
+	 * @return the literal's original mask text, or its typed value when it has no source text
+	 */
+	private String getOriginalLiteralText( BoxExpression literal ) {
+		String sourceText = literal.getSourceText();
+
+		if ( sourceText != null ) {
+			// Strip comments FIRST (a comment may itself contain a `#`), then the `#...#` wrapper.
+			sourceText	= stripCfmlComments( sourceText );
+			sourceText	= BLOCK_COMMENT_PATTERN.matcher( sourceText ).replaceAll( "" );
+			sourceText	= LINE_COMMENT_PATTERN.matcher( sourceText ).replaceAll( "" );
+			if ( sourceText.length() >= 2 && sourceText.startsWith( "#" ) && sourceText.endsWith( "#" ) ) {
+				sourceText = sourceText.substring( 1, sourceText.length() - 1 );
+			}
+			return sourceText.trim();
+		}
+
+		// No source text at all (a programmatically built node) — fall back on the typed value.
+		if ( literal instanceof BoxIntegerLiteral integerLiteral ) {
+			return integerLiteral.getValue();
+		}
+		return ( ( BoxDecimalLiteral ) literal ).getValue();
+	}
+
+	/**
+	 * Remove CFML template comments ({@code <!--- ... --->}) from the given text.
+	 * <p>
+	 * CFML comments NEST (matching the lexer's {@code countModes} rules), which a regular expression
+	 * cannot balance, so this scans with a depth counter. Anything from an opener to its matching closer
+	 * is dropped; an unterminated opener drops the remainder (matching the parser's own behaviour).
+	 * </p>
+	 *
+	 * @param text the text to strip
+	 *
+	 * @return the text with all CFML comments removed
+	 */
+	private String stripCfmlComments( String text ) {
+		StringBuilder	out		= new StringBuilder( text.length() );
+		int				i		= 0;
+		int				length	= text.length();
+
+		while ( i < length ) {
+			if ( text.startsWith( "<!---", i ) ) {
+				// Consume to the matching closer, honouring nesting.
+				int depth = 1;
+				i += 5;
+				while ( i < length && depth > 0 ) {
+					if ( text.startsWith( "<!---", i ) ) {
+						depth++;
+						i += 5;
+					} else if ( text.startsWith( "--->", i ) ) {
+						depth--;
+						i += 4;
+					} else {
+						i++;
+					}
+				}
+				continue;
+			}
+			out.append( text.charAt( i ) );
+			i++;
+		}
+
+		return out.toString();
 	}
 
 	private BoxNode transpileListAppend( BoxFunctionInvocation node ) {
@@ -936,7 +1026,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 */
 	private String replaceIdentifiersInString( String input, String oldValue, String newValue ) {
 		// Quick smoke test to avoid regex
-		if ( !input.toLowerCase().contains( oldValue.toLowerCase() ) ) {
+		if ( !StringUtil.containsIgnoreCase( input, oldValue ) ) {
 			return input;
 		}
 		String pattern = "(?i)\\b" + Pattern.quote( oldValue ) + "\\b";

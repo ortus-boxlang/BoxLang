@@ -40,6 +40,7 @@ import org.antlr.v4.runtime.tree.ErrorNode;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxExpressionError;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Position;
@@ -777,7 +778,22 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 
 	@Override
 	public BoxExpression visitExprOutString( ExprOutStringContext ctx ) {
-		return ctx.el2().accept( this );
+		// `#el2#` OUTSIDE a string literal (e.g. a tag attribute value like
+		// `default=#now()#`, or template output `#x#`). The pounds are markers
+		// around the inner expression, NOT a string interpolation — so preserve the
+		// inner expression's AST node (e.g. `#result#` stays a BoxIdentifier and can
+		// still be an assignment LHS).
+		//
+		// Widen BOTH the source text AND the position to cover the full `#...#`, so the
+		// text and the position describe the SAME slice. Widening only the text
+		// desynchronises them: `SpanCollectorVisitor.offsetOf()`/`pointAt()` treat the
+		// node's start as the text's origin, so a text that begins one char earlier
+		// than the start point offsets every derived position by one — boxed call
+		// shells then absorb the `#`/whitespace and spill a stray `#` span.
+		BoxExpression inner = ctx.el2().accept( this );
+		inner.setSourceText( tools.getSourceText( ctx ) );
+		inner.setPosition( tools.getPosition( ctx ) );
+		return inner;
 	}
 
 	@Override
@@ -941,7 +957,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		// if a simple name was given, then it's a simple function call (which may be converted to method in
 		// the dot handler. Expressions will sometimes come through as their primitive types.
 		if ( name instanceof BoxIdentifier || name instanceof BoxBooleanLiteral || name instanceof BoxNull || name instanceof BoxScope ) {
-			return new BoxFunctionInvocation( name.getSourceText(), args, pos, src );
+			// Use the resolved LOGICAL name for lookup, NOT the raw source text — see `logicalName`.
+			// `#f#()` must look up `f` (not the widened `#f#`), while `#TRUE#()` must look up `TRUE`.
+			return new BoxFunctionInvocation( logicalName( name ), args, pos, src );
 		}
 
 		// if the function is invoked upon what at this point looks like an array access, but the array access was
@@ -1747,20 +1765,62 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	/**
 	 * Convert a dot element to its intended meaning, as it may be something else
 	 * when not in a dot accessor.
+	 * <p>
+	 * The identifier NAME is resolved via {@link #logicalName}, which uses each node's typed
+	 * accessor. The widened {@code #...#} source text is kept only as source metadata on the
+	 * resulting identifier.
+	 * </p>
 	 *
-	 * @param expr The expression to convert
+	 * @param expr      The expression to convert
+	 * @param withScope Whether a scope keyword should also be converted
 	 *
 	 * @return The converted expression
 	 */
 	private BoxExpression convertDotElement( BoxExpression expr, boolean withScope ) {
 		if ( expr instanceof BoxBooleanLiteral || expr instanceof BoxNull || ( withScope && expr instanceof BoxScope ) ) {
-			return new BoxIdentifier( expr.getSourceText(), expr.getPosition(), expr.getSourceText() );
+			return new BoxIdentifier( logicalName( expr ), expr.getPosition(), expr.getSourceText() );
 		}
 		return expr;
 	}
 
 	/**
+	 * Resolve the lookup NAME of a bare element — an identifier, a scope keyword, or a
+	 * boolean / {@code null} keyword lifted out of a dot access or an invocation.
+	 * <p>
+	 * The name is taken from each node's TYPED ACCESSOR, never from
+	 * {@link BoxNode#getSourceText()}. {@code visitExprOutString} widens the source text of a
+	 * {@code #el2#} expression to a RAW character-stream slice covering the whole {@code #...#}
+	 * wrapper (which keeps span/source text correct) — and that slice ALSO picks up hidden-channel
+	 * COMMENTS (e.g. {@code #/*note*&#47;true#}), which are not keywords and must never leak into a
+	 * lookup name. Without this, {@code #f#()} would look up {@code #f#} rather than {@code f}.
+	 * </p>
+	 *
+	 * @param expr the element whose lookup name is required
+	 *
+	 * @return the element's name (identifiers and scopes report their own name)
+	 */
+	private String logicalName( BoxExpression expr ) {
+		if ( expr instanceof BoxIdentifier identifier ) {
+			return identifier.getName();
+		}
+		if ( expr instanceof BoxScope scope ) {
+			return scope.getName();
+		}
+		if ( expr instanceof BoxBooleanLiteral booleanLiteral ) {
+			return String.valueOf( booleanLiteral.getValue() );
+		}
+		if ( expr instanceof BoxNull ) {
+			return "null";
+		}
+		return expr.getSourceText();
+	}
+
+	/**
 	 * Builds the correct type for a value key or value in a struct literal.
+	 * <p>
+	 * The key NAME is resolved via {@link #logicalName}; the widened {@code #...#} source text is
+	 * kept only as source metadata.
+	 * </p>
 	 *
 	 * @param ctx the ParserContext to accept and convert
 	 *
@@ -1769,7 +1829,7 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	private BoxExpression buildKey( ExpressionContext ctx ) {
 		var expr = ctx.accept( this );
 		if ( expr instanceof BoxBooleanLiteral || expr instanceof BoxNull || expr instanceof BoxScope ) {
-			return new BoxIdentifier( expr.getSourceText(), expr.getPosition(), expr.getSourceText() );
+			return new BoxIdentifier( logicalName( expr ), expr.getPosition(), expr.getSourceText() );
 		}
 		return expr;
 	}

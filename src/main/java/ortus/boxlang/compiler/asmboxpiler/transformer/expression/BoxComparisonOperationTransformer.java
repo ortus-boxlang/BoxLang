@@ -34,6 +34,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperator;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.operators.EqualsEqualsEquals;
 import ortus.boxlang.runtime.operators.GreaterThan;
@@ -79,11 +80,22 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 			throw new ExpressionException( "not implemented", operation );
 		}
 
-		List<AbstractInsnNode> nodes = new ArrayList<>();
+		// Strict equality never converts types, so it needs no context. The other comparisons pass the context
+		// so things like date strings are read with the request's settings.
+		boolean					withContext	= dispatcher != EqualsEqualsEquals.class;
+
+		List<AbstractInsnNode>	nodes		= new ArrayList<>();
+		if ( withContext ) {
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
+		}
 		nodes.addAll( left );
 		nodes.addAll( right );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC, Type.getInternalName( dispatcher ), "invoke",
-		    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ), Type.getType( Object.class ) ), false ) );
+		    withContext
+		        ? Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ),
+		            Type.getType( Object.class ) )
+		        : Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ), Type.getType( Object.class ) ),
+		    false ) );
 
 		if ( negated ) {
 			nodes.add(

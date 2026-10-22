@@ -47,6 +47,7 @@ public enum BoxEvent {
 	ON_BIF_INSTANCE( "onBIFInstance" ),
 	ON_BIF_INVOCATION( "onBIFInvocation" ),
 	POST_BIF_INVOCATION( "postBIFInvocation" ),
+	ON_BIF_EXCEPTION( "onBIFException" ),
 	ON_COMPONENT_INSTANCE( "onComponentInstance" ),
 	ON_COMPONENT_INVOCATION( "onComponentInvocation" ),
 	ON_CACHE_COMPONENT_ACTION( "onCacheComponentAction" ),
@@ -110,6 +111,7 @@ public enum BoxEvent {
 	ON_QUERY_BUILD( "onQueryBuild" ),
 	PRE_QUERY_EXECUTE( "preQueryExecute" ),
 	POST_QUERY_EXECUTE( "postQueryExecute" ),
+	ON_QUERY_EXECUTE_ERROR( "onQueryExecuteError" ),
 	QUERY_ADD_ROW( "queryAddRow" ),
 
 	/**

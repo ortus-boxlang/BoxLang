@@ -460,6 +460,12 @@ public class BoxLexerCustom extends BoxLexer {
 						// static foo = "bar"
 						// var { foo } = data
 						isIdentifier = false;
+					} else if ( nextTokenType == STATIC && !lastTokenWas( DOT ) && nextNonWhiteSpaceCharIs( '[' ) && !isStaticArrayDestructuring() ) {
+						// static[ name ] = value is bracket access into the static scope (BL-2750)
+						// static [ a, b ] = data stays a destructuring declaration
+						if ( debug )
+							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is static scope bracket access" );
+						isIdentifier = true;
 					} else if ( ( nextTokenType == VAR || nextTokenType == FINAL || nextTokenType == STATIC ) && !lastTokenWas( DOT )
 					    && nextNonWhiteSpaceCharIs( '[' )
 					    && ( lastToken == null || lastTokenWas( SEMICOLON ) || lastTokenWas( LBRACE ) || lastTokenWas( RBRACE )
@@ -531,6 +537,8 @@ public class BoxLexerCustom extends BoxLexer {
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because last token was a comma" );
 						isIdentifier = true;
 					} else if ( lastTokenWas( COLON ) && nextTokenType != DO
+					    && ! ( nextTokenType == NOT
+					        && ! ( nextNonWhiteSpaceCharIs( ',' ) || nextNonWhiteSpaceCharsAre( operatorStartingChars ) || nextNonWhiteSpaceCharIs( '}' ) ) )
 					    && ! ( labeledLoopTokens.contains( nextTokenType ) && nextNonWhiteSpaceCharIs( '(' ) )
 					    && ! ( inSwitchBody
 					        && ( ( ( nextTokenType == IF || nextTokenType == SWITCH ) && nextNonWhiteSpaceCharIs( '(' ) )
@@ -541,6 +549,9 @@ public class BoxLexerCustom extends BoxLexer {
 						// but myLabel : for() is fine
 						// and myLabel : while()
 						// and myLabel : do {}
+						// and { key : not }
+						// and { key : not, key2 : val }
+						// and { key : not && value } // any operator after not
 						// and not case: if()
 						// but not case: try {} catch(){}
 						// and not case: include "foo"
@@ -1121,6 +1132,96 @@ public class BoxLexerCustom extends BoxLexer {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Decide if the {@code [} after a STATIC keyword starts a static array destructuring declaration (BL-2750).
+	 *
+	 * It is a declaration only when the matching {@code ]} is followed by {@code =} and the brackets hold something that
+	 * cannot be a single key expression: a top-level comma, a rest binding ({@code ...}), a default value ({@code =}),
+	 * a nested pattern, or nothing at all. Anything else, such as {@code static[ name ] = value}, is bracket access into
+	 * the static scope.
+	 *
+	 * @return true if the brackets after STATIC are an array destructuring pattern
+	 */
+	private boolean isStaticArrayDestructuring() {
+		CharStream	input		= getInputStream();
+		int			pos			= skipWhiteSpace( 1 );
+		int			depth		= 0;
+		boolean		isPattern	= false;
+		boolean		seenContent	= false;
+		while ( true ) {
+			int c = input.LA( pos );
+			if ( c == CharStream.EOF ) {
+				return false;
+			}
+			if ( depth == 1 && !seenContent && !Character.isWhitespace( c ) ) {
+				seenContent = true;
+				// nested pattern, empty pattern or leading rest binding
+				if ( c == '[' || c == ']' || ( c == '.' && input.LA( pos + 1 ) == '.' && input.LA( pos + 2 ) == '.' ) ) {
+					isPattern = true;
+				}
+			}
+			if ( c == '"' || c == '\'' ) {
+				pos = skipQuotedString( pos, c );
+				continue;
+			}
+			if ( c == '[' || c == '(' || c == '{' ) {
+				depth++;
+			} else if ( c == ']' || c == ')' || c == '}' ) {
+				depth--;
+				if ( depth == 0 ) {
+					int next = skipWhiteSpace( pos + 1 );
+					return isPattern && input.LA( next ) == '=' && input.LA( next + 1 ) != '=';
+				}
+			} else if ( depth == 1 ) {
+				if ( c == ',' ) {
+					isPattern = true;
+				} else if ( c == '.' && input.LA( pos + 1 ) == '.' && input.LA( pos + 2 ) == '.' ) {
+					isPattern = true;
+				} else if ( c == '=' && input.LA( pos + 1 ) != '=' && "=!<>".indexOf( input.LA( pos - 1 ) ) < 0 ) {
+					isPattern = true;
+				}
+			}
+			pos++;
+		}
+	}
+
+	/**
+	 * Skip a quoted string starting at the given lookahead position, honoring doubled quotes and #expression# blocks.
+	 *
+	 * @param pos   lookahead position of the opening quote
+	 * @param quote the quote character
+	 *
+	 * @return the lookahead position just after the closing quote, or of EOF
+	 */
+	private int skipQuotedString( int pos, int quote ) {
+		CharStream input = getInputStream();
+		pos++;
+		while ( true ) {
+			int c = input.LA( pos );
+			if ( c == CharStream.EOF ) {
+				return pos;
+			}
+			if ( c == quote ) {
+				if ( input.LA( pos + 1 ) != quote ) {
+					return pos + 1;
+				}
+				pos += 2;
+				continue;
+			}
+			if ( c == '#' ) {
+				if ( input.LA( pos + 1 ) == '#' ) {
+					pos += 2;
+					continue;
+				}
+				pos++;
+				while ( input.LA( pos ) != '#' && input.LA( pos ) != CharStream.EOF ) {
+					pos++;
+				}
+			}
+			pos++;
+		}
 	}
 
 	/**
