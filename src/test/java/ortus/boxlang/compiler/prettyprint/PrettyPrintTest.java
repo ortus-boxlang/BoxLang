@@ -36,7 +36,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 
 public abstract class PrettyPrintTest extends TestBase {
 
-	protected static BoxRuntime		instance;
+	protected static BoxRuntime		instance			= BoxRuntime.getInstance( true );
 
 	protected static final String	TEST_RESOURCES_PATH	= "src/test/resources/prettyprint/";
 	protected static final String[]	fileExts			= { "bx", "bxs", "bxm", "cfc", "cfm", "cfs" };
@@ -45,7 +45,6 @@ public abstract class PrettyPrintTest extends TestBase {
 
 	@BeforeAll
 	public static void setUp() {
-		instance = BoxRuntime.getInstance( true );
 	}
 
 	protected void singlePrintTest( String inputFilePath, String expectedFilePath, Config config ) throws IOException {

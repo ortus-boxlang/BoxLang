@@ -37,6 +37,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
+import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
@@ -49,6 +50,7 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
+import ortus.boxlang.runtime.services.Blueprint;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
@@ -260,6 +262,23 @@ public class BoxInterfaceTransformer {
 		    null,
 		    null ).visitEnd();
 
+		// The blueprint KEY (id) static field, added ONLY when profiling is enabled.
+		// Holds the file path (or source hash) that identifies this interface's
+		// blueprint; the mark bytecode loads it as the first arg of each
+		// CodeProfilerService.mark call. Not present when profiling is off.
+		if ( transpiler.isProfilingEnabled() ) {
+			classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			    Transpiler.PROFILER_ID_FIELD,
+			    Type.getDescriptor( String.class ),
+			    null,
+			    null ).visitEnd();
+			classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			    Transpiler.PROFILER_BLUEPRINT_FIELD,
+			    Type.getDescriptor( Blueprint.class ),
+			    null,
+			    null ).visitEnd();
+		}
+
 		// Add udfs, lambdas, closures static fields for the new function compilation pattern
 		AsmHelper.addNullStaticField( classNode, "udfs", Type.getType( Map.class ), false );
 		AsmHelper.addNullStaticField( classNode, "lambdas", Type.getType( List.class ), false );
@@ -386,28 +405,82 @@ public class BoxInterfaceTransformer {
 				    staticNodes.addAll( transpiler.transform( func, TransformerContext.NONE ) );
 			    } );
 
+			    // Each static { ... } block's brace group is marked immediately BEFORE that
+			    // block's own body runs — never all groups up front at method entry. Marking
+			    // every group at entry reports a later block as entered even when an EARLIER
+			    // block threw: its braces would show covered while its body stayed uncovered.
+			    // An EMPTY block still gets its mark, because the block genuinely IS entered.
 			    staticNodes.addAll( transpiler.getBoxStaticInitializers()
 			        .stream()
 			        .map( ( staticInitializer ) -> {
-				        if ( staticInitializer == null || staticInitializer.getBody().size() == 0 ) {
-					        return new ArrayList<AbstractInsnNode>();
+				        List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+				        if ( staticInitializer == null ) {
+					        return nodes;
 				        }
 
-				        return staticInitializer.getBody()
+				        // The "static {" header (with its opening brace) and the closing "}" are
+				        // registered as one group in Pass A, keyed by this block's start position.
+				        emitInterfaceStaticInitMark( transpiler, nodes, staticInitializer );
+
+				        if ( staticInitializer.getBody().isEmpty() ) {
+					        return nodes;
+				        }
+
+				        nodes.addAll( staticInitializer.getBody()
 				            .stream()
 				            .map( statement -> transpiler.transform( statement, TransformerContext.NONE ) )
-				            .flatMap( nodes -> nodes.stream() )
-				            .collect( Collectors.toList() );
+				            .flatMap( bodyNodes -> bodyNodes.stream() )
+				            .collect( Collectors.toList() ) );
+				        return nodes;
 			        } )
 			        .flatMap( s -> s.stream() )
 			        .collect( Collectors.toList() )
 			    );
+
+			    // Close the probe-charging interval after the static initializer's
+			    // last statement so the final span's self-time is charged.
+			    if ( transpiler.hasProfilerId() ) {
+				    staticNodes.addAll( transpiler.emitMarkEnd() );
+			    }
 
 			    return staticNodes;
 		    }
 		);
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
+			// Initialize the profiler blueprint KEY (id) static field FIRST — before
+			// any mark instruction runs — so marks never read a null id. Then
+			// self-register the blueprint on load so an interface loaded from disk
+			// (not recompiled in this session) still has its span map available.
+			// Idempotent per key; only when profiling is enabled.
+			if ( transpiler.getFileId() != null ) {
+				methodVisitor.visitLdcInsn( transpiler.getFileId() );
+				methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+				    type.getInternalName(),
+				    Transpiler.PROFILER_ID_FIELD,
+				    Type.getDescriptor( String.class ) );
+
+				List<ortus.boxlang.runtime.services.Blueprint.SpanDef> interfaceSpanDefs = transpiler.getSpanDefs();
+				if ( interfaceSpanDefs != null && !interfaceSpanDefs.isEmpty() ) {
+					List<AbstractInsnNode> regNodes = AsmHelper.emitBlueprintRegistrationNodes(
+					    transpiler.getFileId(), transpiler.getLastModified(), transpiler.getBlueprintKind(), interfaceSpanDefs,
+					    type.getInternalName(), Transpiler.PROFILER_BLUEPRINT_FIELD );
+					for ( AbstractInsnNode n : regNodes ) {
+						n.accept( methodVisitor );
+					}
+				}
+			}
+
+			// Emit the interface SHELL + closing "}" batch mark AFTER the id field is
+			// initialized (the mark reads the id via GETSTATIC codeProfilerId). The
+			// shell runs ONCE when the interface is loaded.
+			if ( transpiler.hasProfilerId() ) {
+				List<AbstractInsnNode> shellNodes = emitInterfaceShellMark( transpiler, boxInterface );
+				for ( AbstractInsnNode n : shellNodes ) {
+					n.accept( methodVisitor );
+				}
+			}
+
 			AsmHelper.resolvedFilePath( methodVisitor, mappingName, mappingPath, relativePath, filePath );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
@@ -553,5 +626,70 @@ public class BoxInterfaceTransformer {
 		} );
 
 		return classNode;
+	}
+
+	/**
+	 * Emit the interface SHELL + closing "}" batch mark. The interface header
+	 * (annotations + "interface" keyword + post-annotations + opening "{") and the
+	 * closing "}" run ONCE at interface load (clinit), so they are emitted here as
+	 * a single varargs mark. No-op when profiling is off or the shell span isn't in
+	 * the blueprint.
+	 *
+	 * @param transpiler   the active transpiler (span registry + fileId)
+	 * @param boxInterface the interface AST
+	 *
+	 * @return the instructions (or an empty list)
+	 */
+	private static List<AbstractInsnNode> emitInterfaceShellMark( Transpiler transpiler, BoxInterface boxInterface ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		if ( !transpiler.hasProfilerId() ) {
+			return nodes;
+		}
+		Point shellStart = boxInterface.getStart();
+		if ( shellStart == null ) {
+			return nodes;
+		}
+		long	packed	= ( ( long ) shellStart.getLine() << 32 ) | ( shellStart.getColumn() & 0xFFFFFFFFL );
+		int		spanId	= transpiler.getSpanId( packed );
+		int[]	group	= spanId < 0 ? null : transpiler.takeSpanGroup( spanId );
+		if ( group != null ) {
+			for ( int member : group ) {
+				transpiler.claimSpanMark( member );
+			}
+			nodes.addAll( transpiler.emitMarkVarargs( group ) );
+		}
+		return nodes;
+	}
+
+	/**
+	 * Emit ONE interface static-initializer block's brace group mark. A static
+	 * block's {@code static { }} header (including the opening brace) and its
+	 * closing "}" are REGISTERED as one group in Pass A, keyed by the
+	 * {@code static} keyword's start position; this batch-marks them when THAT
+	 * block actually runs. The mark must be emitted immediately before the block's
+	 * own body so a block that is never reached (an earlier block threw) is not
+	 * reported as entered. Empty blocks are marked too — they ARE entered.
+	 *
+	 * @param transpiler        the active transpiler
+	 * @param staticNodes       the static initializer instruction list to append to
+	 * @param staticInitializer the single static block whose braces to mark
+	 */
+	private static void emitInterfaceStaticInitMark( Transpiler transpiler, List<AbstractInsnNode> staticNodes, BoxStaticInitializer staticInitializer ) {
+		if ( !transpiler.hasProfilerId() ) {
+			return;
+		}
+		Point kw = staticInitializer.getStart();
+		if ( kw == null ) {
+			return;
+		}
+		long	packed	= ( ( long ) kw.getLine() << 32 ) | ( kw.getColumn() & 0xFFFFFFFFL );
+		int		spanId	= transpiler.getSpanId( packed );
+		int[]	group	= spanId < 0 ? null : transpiler.takeSpanGroup( spanId );
+		if ( group != null ) {
+			for ( int member : group ) {
+				transpiler.claimSpanMark( member );
+			}
+			staticNodes.addAll( transpiler.emitMarkVarargs( group ) );
+		}
 	}
 }

@@ -17,12 +17,17 @@
  */
 package ortus.boxlang.runtime.types.exceptions;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.Files;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -36,6 +41,7 @@ import ortus.boxlang.compiler.SourceMap;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
 import ortus.boxlang.runtime.dynamic.casters.ThrowableCaster;
@@ -43,6 +49,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.InstanceOf;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -54,6 +61,16 @@ public class ExceptionUtil {
 
 	private static final int	MAX_CAUSE_DEPTH				= 50;
 	private static BoxRuntime	runtime						= BoxRuntime.getInstance();
+
+	/**
+	 * Name of the runtime cache that holds the rendered code snippets a tag context shows
+	 */
+	private static final Key	CODE_SNIPPETS_CACHE			= Key.of( "bxCodeSnippets" );
+
+	/**
+	 * Message rendered in place of the source snippet when we can't read the source of a precompiled file
+	 */
+	private static final String	PRECOMPILED_SOURCE_MESSAGE	= "Precompiled source not available.";
 
 	public static final String	LICENSE_MODULE_NAME			= "bx-plus";
 	public static final String	LICENSE_SUBSCRIPTION_NAME	= "BoxLang+";
@@ -196,6 +213,7 @@ public class ExceptionUtil {
 	public static Array buildTagContext( Throwable e, int depth ) {
 		Array											tagContext				= new Array();
 		boolean											isInComponent			= false;
+		boolean											debugMode				= runtime.inDebugMode();
 		String											skipNext				= "";
 		boolean											argumentDefaultValue	= false;
 		int												i						= -1;
@@ -272,9 +290,12 @@ public class ExceptionUtil {
 						id				= id + "()";
 					}
 
+					// The code snippets are only gathered in debug mode
+					CodeSnippet codeSnippet = debugMode ? getSurroundingLinesOfCode( BLFileName, lineNo ) : CodeSnippet.EMPTY;
+
 					thisTagContext.add( Struct.of(
-					    Key.codePrintHTML, getSurroudingLinesOfCode( BLFileName, lineNo, true ),
-					    Key.codePrintPlain, getSurroudingLinesOfCode( BLFileName, lineNo, false ),
+					    Key.codePrintHTML, codeSnippet.html,
+					    Key.codePrintPlain, codeSnippet.plain,
 					    Key.column, -1,
 					    Key.id, id,
 					    Key.function, functionName,
@@ -360,57 +381,166 @@ public class ExceptionUtil {
 	}
 
 	/**
-	 * Utility to get the surrounding lines of code for a given line number in a file
+	 * Utility to get the surrounding lines of code for a given line number in a file, 2 before and 2 after,
+	 * rendered as both HTML and plain text. Only the lines being rendered are ever read from disk, and the
+	 * result is cached per file + line so repeated dumps of the same exception don't touch the file system.
 	 *
 	 * @param fileName The file name
 	 * @param lineNo   The line number
-	 * @param html     True if the output should be HTML
 	 *
-	 * @return The surrounding lines of code
+	 * @return The rendered code snippet
 	 */
-	private static String getSurroudingLinesOfCode( String fileName, int lineNo, boolean html ) {
-		// Only return source lines when in debug mode
-		if ( !runtime.inDebugMode() ) {
-			return "";
-		}
-
+	static CodeSnippet getSurroundingLinesOfCode( String fileName, int lineNo ) {
 		if ( fileName == null || fileName.isEmpty() ) {
-			return "";
+			return CodeSnippet.EMPTY;
 		}
 
-		// read file, if exists, and return the surrounding lines of code, 2 before and 2 after
-		File srcFile = new File( fileName );
-		if ( srcFile.exists() ) {
+		File			srcFile			= new File( fileName );
+		long			lastModified	= srcFile.lastModified();
+		String			cacheKey		= fileName + ":" + lineNo;
+		ICacheProvider	cache			= getCodeSnippetCache();
 
-			// If this is a pre-compiled source file, then we can't read it
-			if ( DiskClassUtil.isJavaByteCode( srcFile ) ) {
-				return "Precompiled source not available.";
+		if ( cache != null ) {
+			Object cached = cache.get( cacheKey ).orElse( null );
+			if ( cached instanceof CodeSnippet snippet ) {
+				// The entry is good while the local file isn't newer than the file it was rendered from. Only
+				// requiring that the file isn't newer lets a shared cache be used between servers whose files
+				// were deployed at different times.
+				if ( lastModified > 0 && lastModified <= snippet.lastModified ) {
+					return snippet;
+				}
+				// The file changed, so every snippet cached for it is stale, not just this line. Discard them.
+				purgeCachedSnippets( cache, fileName );
+			}
+		}
+
+		CodeSnippet rendered = renderSnippet( srcFile, lineNo );
+
+		// Only snippets that came from a file we could read are worth keeping around
+		if ( cache != null && rendered.lastModified > 0 ) {
+			cache.set( cacheKey, rendered );
+		}
+
+		return rendered;
+	}
+
+	/**
+	 * Actively discard every snippet cached for a source file. This runs when a file is detected as changed,
+	 * so the other line numbers cached for it don't linger as stale entries.
+	 *
+	 * @param cache    The snippet cache
+	 * @param fileName The source file name
+	 */
+	private static void purgeCachedSnippets( ICacheProvider cache, String fileName ) {
+		String		prefix		= fileName + ":";
+		String[]	staleKeys	= cache.getKeysStream()
+		    .filter( key -> key.startsWith( prefix ) )
+		    .toArray( String[]::new );
+
+		if ( staleKeys.length > 0 ) {
+			cache.clear( staleKeys );
+		}
+	}
+
+	/**
+	 * Read a source file from disk and render the 5 lines around the given line number. The file is opened a
+	 * single time: the header is checked for Java bytecode and the same channel is then rewound to read the lines.
+	 *
+	 * @param srcFile The file to read
+	 * @param lineNo  The line number
+	 *
+	 * @return The rendered code snippet, empty when the file can't be read
+	 */
+	static CodeSnippet renderSnippet( File srcFile, int lineNo ) {
+		int		startLine		= Math.max( 1, lineNo - 2 );
+		int		endLine			= lineNo + 2;
+
+		// Stat the file before reading it, a change that lands after this point is caught on the next lookup
+		long	lastModified	= srcFile.lastModified();
+
+		try ( FileChannel channel = FileChannel.open( srcFile.toPath(), StandardOpenOption.READ ) ) {
+			// Read the header from the same channel that reads the lines so the file is only opened once
+			ByteBuffer header = ByteBuffer.allocate( 4 );
+			while ( header.hasRemaining() && channel.read( header ) > 0 ) {
+			}
+			// Only a complete header can be checked, truncated files are treated as source
+			if ( header.position() == 4 && DiskClassUtil.isJavaByteCode( header.array() ) ) {
+				return new CodeSnippet( PRECOMPILED_SOURCE_MESSAGE, PRECOMPILED_SOURCE_MESSAGE, lastModified );
 			}
 
-			try {
-				List<String>	lines		= Files.readAllLines( srcFile.toPath() );
-				int				startLine	= Math.max( 1, lineNo - 2 );
-				int				endLine		= Math.min( lines.size(), lineNo + 2 );
+			channel.position( 0 );
+			try ( BufferedReader reader = new BufferedReader( Channels.newReader( channel, StandardCharsets.UTF_8.name() ) ) ) {
+				StringBuilder	html	= new StringBuilder();
+				StringBuilder	plain	= new StringBuilder();
 
-				StringBuilder	codeSnippet	= new StringBuilder();
-				for ( int i = startLine; i <= endLine; i++ ) {
-					String theLine = lines.get( i - 1 );
-					if ( html ) {
-						theLine = StringEscapeUtils.escapeHtml4( theLine );
+				// Read up to the last line we render and stop, there is no reason to read the rest of the file
+				for ( int i = 1; i <= endLine; i++ ) {
+					String theLine = reader.readLine();
+					if ( theLine == null ) {
+						break;
 					}
-					if ( i == lineNo && html ) {
-						codeSnippet.append( "<b>" ).append( i ).append( ": " ).append( theLine ).append( "</b>" ).append( "<br>" );
+					if ( i < startLine ) {
+						continue;
+					}
+					String escaped = StringEscapeUtils.escapeHtml4( theLine );
+					if ( i == lineNo ) {
+						html.append( "<b>" ).append( i ).append( ": " ).append( escaped ).append( "</b>" ).append( "<br>" );
 					} else {
-						codeSnippet.append( i ).append( ": " ).append( theLine ).append( html ? "<br>" : "\n" );
+						html.append( i ).append( ": " ).append( escaped ).append( "<br>" );
 					}
+					plain.append( i ).append( ": " ).append( theLine ).append( "\n" );
 				}
 
-				return codeSnippet.toString();
-			} catch ( IOException e ) {
-				e.printStackTrace();
+				return new CodeSnippet( html.toString(), plain.toString(), lastModified );
+			}
+		} catch ( IOException e ) {
+			// The file is missing or can't be read. We don't have anything useful to do here, and logging
+			// while an exception is being formatted has a habit of making things worse.
+			return CodeSnippet.EMPTY;
+		}
+	}
+
+	/**
+	 * Get the cache that holds the rendered code snippets. The runtime ships a <code>bxCodeSnippets</code>
+	 * cache, but a runtime home config that predates it won't have one registered, so create it on first use.
+	 *
+	 * @return The code snippet cache or null if one can't be resolved
+	 */
+	private static ICacheProvider getCodeSnippetCache() {
+		CacheService cacheService = runtime.getCacheService();
+		if ( cacheService == null ) {
+			return null;
+		}
+
+		if ( !cacheService.hasCache( CODE_SNIPPETS_CACHE ) ) {
+			try {
+				cacheService.createCacheIfAbsent(
+				    CODE_SNIPPETS_CACHE,
+				    Key.boxCacheProvider,
+				    Struct.of(
+				        "evictionPolicy", "LRU",
+				        "maxObjects", 10_000,
+				        "objectStore", "ConcurrentSoftReferenceStore"
+				    )
+				);
+			} catch ( Exception e ) {
+				// Another thread beat us to it, or the runtime does not allow it. Either way, no caching.
+				return null;
 			}
 		}
-		return "";
+
+		return cacheService.getCache( CODE_SNIPPETS_CACHE );
+	}
+
+	/**
+	 * Clear the cached code snippets used to render tag contexts. Use this when source files have changed on
+	 * disk and stale snippets need to go away before the file timestamps catch up.
+	 */
+	public static void clearCodeSnippetCache() {
+		ICacheProvider cache = getCodeSnippetCache();
+		if ( cache != null ) {
+			cache.clearAll();
+		}
 	}
 
 	/**
@@ -623,5 +753,25 @@ public class ExceptionUtil {
 		    && instance.inCLIMode()
 		    && instance.getCliOptions().targetModule() != null
 		    && instance.getCliOptions().targetModule().equalsIgnoreCase( ExceptionUtil.LICENSE_MODULE_NAME );
+	}
+
+	/**
+	 * A rendered snippet of source code, in both the HTML and the plain text flavor a tag context exposes.
+	 * The timestamp of the file it was rendered from travels with it, so a cache entry can be discarded the
+	 * moment that file changes.
+	 */
+	static final class CodeSnippet {
+
+		private static final CodeSnippet	EMPTY	= new CodeSnippet( "", "", 0L );
+
+		final String						html;
+		final String						plain;
+		final long							lastModified;
+
+		private CodeSnippet( String html, String plain, long lastModified ) {
+			this.html			= html;
+			this.plain			= plain;
+			this.lastModified	= lastModified;
+		}
 	}
 }

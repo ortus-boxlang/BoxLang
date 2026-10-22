@@ -113,6 +113,7 @@ BoxLang has a collection of domain-specific agent skills located in `.agents/ski
 - **`boxlang-core-dev-component-development`** — Creating custom components (tags): file structure, attribute declarations, body/output handling, registering component paths
 - **`boxlang-core-dev-interceptors`** — Creating interceptors: Observer/Intercepting Filter patterns, interceptor pools, BoxLang vs Java interceptors, registration, interception points
 - **`boxlang-core-dev-logging`** — BoxLang logging: LoggingService, BoxLangLogger, pre-configured loggers, named loggers, parameterized messages, context-based logging
+- **`boxlang-core-dev-performance`** — Performance patterns for core Java code: substring() allocation, startsWith/regionMatches, regex precompiling, Key allocation, StringBuilder, boxing, virtual-thread pinning, JMH and profiling, hot-path review checklist
 - **`boxlang-core-dev-module-development`** — Creating modules: ModuleConfig.bx structure, lifecycle methods, metadata, registering interceptors and BIFs, Gradle setup, publishing
 - **`boxlang-core-dev-runtime-architecture`** — Understanding internals: BoxRuntime services, IBoxContext hierarchy, scope chain, DynamicObject, type system, parsing pipeline, class loader isolation
 
@@ -214,6 +215,16 @@ BoxLang has a collection of domain-specific agent skills located in `.agents/ski
     - How: Add `private final int hashCode;` field, create `computeHashCode()` private method using standard pattern (`31 * result + field.hashCode()`), call in constructor
     - Example: See `ortus.boxlang.runtime.types.NameValuePair` for reference implementation
     - Performance rationale: Avoids O(n) hashCode computation on every HashMap/HashSet operation, especially beneficial for objects frequently used as keys
+
+  - **`String.substring()` is not free:** It allocates a new `String` and copies characters. Do not use it just to compare or search, especially in loops or on large inputs.
+    - Instead of `s.substring( n ).startsWith( p )` use `s.startsWith( p, n )`
+    - Instead of `s.substring( a, b ).equals( p )` use `s.regionMatches( a, p, 0, p.length() )`
+    - Instead of `s.substring( n ).indexOf( x )` use `s.indexOf( x, n )`
+    - Instead of `s.substring( i, i + 1 )` use `s.charAt( i )`
+  - **Avoid `Key.of()` in hot paths:** It allocates a new `Key` per call. Use `Key.xxx` constants or `static final Key` fields.
+  - **Precompile regex:** Do not call `split()`, `replaceAll()`, or `matches()` with a regex per invocation. Use a `static final Pattern`.
+  - **Avoid repeated case conversion and string concatenation in loops:** Hoist `toLowerCase()` out of loops and use a presized `StringBuilder`.
+  - **Measure first:** Use JMH or a profiler before optimizing. See the `boxlang-core-dev-performance` skill for details.
 
 - **Services:** Implement `IService` and register in `BoxRuntime` for global services.
 - **Components:** Annotate with `@BoxComponent` and place in `runtime/components/` for auto-discovery.

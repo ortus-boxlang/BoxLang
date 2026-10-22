@@ -17,11 +17,13 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
@@ -220,6 +222,30 @@ public class StoredProcTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.BOXTEMPLATE );
 		Integer subsequentActive = getDatasource().getPoolStats().getAsInteger( Key.of( "ActiveConnections" ) );
+		assertEquals( initiallyActive, subsequentActive );
+	}
+
+	@DisplayName( "It closes the connection when the call setup fails" )
+	@Test
+	public void testConnectionCloseOnSetupFailure() {
+		// Resolve the datasource exactly as the component does, so we observe the pool the connection comes from
+		DataSource	resolved		= ( ( IJDBCCapableContext ) getContext() ).getConnectionManager()
+		    .getDatasourceOrThrow( Key.of( getDatasource().getOriginalName() ) );
+
+		Integer		initiallyActive	= resolved.getPoolStats().getAsInteger( Key.of( "ActiveConnections" ) );
+
+		// Mixing positional and named params fails call string generation, which happens after the connection is
+		// acquired but before the statement is prepared. The connection must still be released.
+		assertThrows( BoxRuntimeException.class, () -> getInstance().executeSource(
+		    """
+		    <bx:storedproc procedure="doNothing">
+		        <bx:procparam value="1" variable="positional">
+		        <bx:procparam value="2" dbvarname="namedParam" variable="namedOut" type="out" sqltype="INTEGER">
+		    </bx:storedproc>
+		    """,
+		    getContext(), BoxSourceType.BOXTEMPLATE ) );
+
+		Integer subsequentActive = resolved.getPoolStats().getAsInteger( Key.of( "ActiveConnections" ) );
 		assertEquals( initiallyActive, subsequentActive );
 	}
 
