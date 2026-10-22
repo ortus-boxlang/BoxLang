@@ -983,10 +983,20 @@ public class AsmTranspiler extends Transpiler {
 						// (they run later at call time).
 						int[] group = takeSpanGroup( spanId );
 						if ( group != null ) {
+							// Batch-mark the whole group in ONE varargs call — but SKIP any
+							// member whose mark this compilation already emitted elsewhere
+							// (a fragment may be anchored by a node of its own, e.g. the
+							// tail of a call-shaped condition). Without the filter such a
+							// member would be counted twice.
+							java.util.List<Integer> fresh = new java.util.ArrayList<>();
 							for ( int member : group ) {
-								claimSpanMark( member );
+								if ( claimSpanMark( member ) ) {
+									fresh.add( member );
+								}
 							}
-							nodes.addAll( 0, emitMarkVarargs( group ) );
+							if ( !fresh.isEmpty() ) {
+								nodes.addAll( 0, emitMarkVarargs( fresh.stream().mapToInt( Integer::intValue ).toArray() ) );
+							}
 						} else if ( claimSpanMark( spanId ) ) {
 							nodes.addAll( 0, emitMark( spanId ) );
 						}

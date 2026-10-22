@@ -844,8 +844,21 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				// so it is GREEN when the ternary completes, but NEVER counts the branch.
 				this.runningStart = falseEnd;
 				int tailId = closeRunningSpan( tailEnd );
-				if ( tailId >= 0 && headId >= 0 && tailId != headId ) {
-					transpiler.registerSpanGroup( new int[] { headId, tailId } );
+				if ( tailId >= 0 && tailId != headId ) {
+					// The head the ternary closed may itself begin where no node starts
+					// (e.g. at the ` ? ` operator when the condition ended in a call), so
+					// the group must be keyed on the nearest ANCESTOR span Pass B does
+					// resolve — otherwise it is never consumed and the `)` stays red.
+					int	anchorId	= anchoredSpanId( node );
+					int	groupHead	= anchorId >= 0 ? anchorId : headId;
+					if ( groupHead >= 0 && groupHead != tailId ) {
+						if ( headId >= 0 && headId != groupHead ) {
+							mergeSpanGroup( groupHead, new int[] { headId, tailId } );
+							transpiler.takeSpanGroup( headId );
+						} else {
+							mergeSpanGroup( groupHead, new int[] { tailId } );
+						}
+					}
 				}
 			}
 		}
@@ -1122,7 +1135,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		}
 		// The invocation's OWN source text (the ANTLR slice for this node) — never the
 		// whole file. The shell trims below scan within this node's text only.
-		String			source		= node.getSourceText();
+		String			source			= node.getSourceText();
 
 		// Each argument's VALUE breaks out of the running head into its OWN span,
 		// ALWAYS — argument evaluation is separate from the call itself, and that has
@@ -1130,9 +1143,10 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		// and a multi-line `foo(\n bar()\n)` MUST produce the same spans (bar() gets
 		// its own span in both). Line breaks and whitespace never change the span
 		// model.
-		Point			lastArgEnd	= null;
-		List<Integer>	shellIds	= new ArrayList<>();
-		int				headId		= -1;
+		Point			lastArgEnd		= null;
+		List<Integer>	shellIds		= new ArrayList<>();
+		int				headId			= -1;
+		Point			shellHeadStart	= null;
 		for ( int i = 0; i < arguments.size(); i++ ) {
 			BoxArgument		arg		= arguments.get( i );
 			BoxExpression	value	= arg.getValue();
@@ -1161,6 +1175,12 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 					Point shellEnd = valueStart;
 					if ( source != null && shellEnd != null ) {
 						shellEnd = trimTrailingWhitespace( node, shellEnd );
+					}
+					if ( headId < 0 ) {
+						// Remember where the shell HEAD begins: for a chained method
+						// call that is the RECEIVER's end, a position no node starts at
+						// (see the re-anchoring below).
+						shellHeadStart = this.runningStart;
 					}
 					int shellId = closeRunningSpan( shellEnd );
 					if ( shellId >= 0 ) {
@@ -1205,7 +1225,31 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			// Batch-mark the WHOLE shell (head + interstitials + closing `)`) as ONE
 			// atomic unit, and back it by the call-site bracket so every shell fragment
 			// reports the call's inclusive time.
-			transpiler.registerSpanGroup( shellIds.stream().mapToInt( Integer::intValue ).toArray() );
+			//
+			// The shell head normally begins AT the invocation's own start, which is a
+			// position Pass B resolves (the invocation's own mark hook) — but for a
+			// CHAINED call (`receiver\n.method( arg )`) it begins at the RECEIVER's END,
+			// a position no node starts at. A group keyed there is never consumed, so the
+			// `.method(` and `)` fragments would report as never executed. Re-anchor the
+			// shell on the nearest ancestor span Pass B does resolve (e.g. the statement
+			// head) whenever the head is not anchored on the invocation itself.
+			int		groupHead		= headId;
+			Point	nodeStart		= node.getStart();
+			boolean	headAnchored	= shellHeadStart != null && nodeStart != null
+			    && shellHeadStart.getLine() == nodeStart.getLine()
+			    && shellHeadStart.getColumn() == nodeStart.getColumn();
+			if ( !headAnchored ) {
+				int anchorId = anchoredSpanId( node );
+				if ( anchorId >= 0 && anchorId != headId ) {
+					groupHead = anchorId;
+				}
+			}
+			mergeSpanGroup( groupHead, shellIds.stream().mapToInt( Integer::intValue ).toArray() );
+			if ( groupHead != headId ) {
+				// The shell is batch-marked at the ANCHOR now, so the group that would
+				// have been keyed at the (unanchorable) head must not also fire.
+				transpiler.takeSpanGroup( headId );
+			}
 			transpiler.registerCallShell( headId, shellIds.stream().mapToInt( Integer::intValue ).toArray() );
 		}
 	}
@@ -1374,7 +1418,14 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			} else if ( node.getThenBody() != null && node.getThenBody().getEnd() != null ) {
 				afterBody = node.getThenBody().getEnd();
 			}
-			registerTagClose( node, afterBody, "if", headerId );
+			// Anchor on the if's ENTRY span, not on the running header fragment: a
+			// condition ending in a call or a short-circuit leaves that fragment
+			// starting at a position no node begins at (the tag's ">", a " && " run,
+			// ...), so a group keyed on it is never consumed by Pass B and the close
+			// tag is reported as never executed. The entry span (the condition's own
+			// head span) is always resolved when the if is entered.
+			int anchorId = entrySpanId( node );
+			registerTagClose( node, afterBody, "if", anchorId >= 0 ? anchorId : headerId );
 		}
 	}
 
@@ -1739,10 +1790,13 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		}
 
 		// Tag-based switch: the closing </bx:switch> / </cfswitch> is marked with
-		// the opening tag when the switch is entered.
+		// the opening tag when the switch is entered. Anchor on the switch's ENTRY
+		// span (its condition's own head span) rather than the running header
+		// fragment, which may begin where no node does (see {@link #entrySpanId}).
 		if ( isTagContext( node ) && end != null && ( sourceText == null || !sourceText.endsWith( "}" ) ) ) {
-			Point afterBody = node.getCases().isEmpty() ? end : node.getCases().get( node.getCases().size() - 1 ).getEnd();
-			registerTagClose( node, afterBody, "switch", headerId );
+			Point	afterBody	= node.getCases().isEmpty() ? end : node.getCases().get( node.getCases().size() - 1 ).getEnd();
+			int		anchorId	= entrySpanId( node );
+			registerTagClose( node, afterBody, "switch", anchorId >= 0 ? anchorId : headerId );
 		}
 
 		// Reset so the enclosing statement close doesn't mint a phantom span over
@@ -1875,7 +1929,20 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				stmt.accept( this );
 				closeRunningSpan( stmt.getEnd() );
 			}
-			registerBraceGroup( catchHeader, catchClose );
+			// The catch's braces are batch-marked when the catch ENTERS. Unlike `try`
+			// (which has its own node), the `catch` keyword has NO node of its own, so
+			// a group keyed at the catch header is never consumed by Pass B and both
+			// the header span and the closing brace stayed red even though the catch
+			// ran (the bug behind unexecuted `} catch ( Any e ) {` lines). Anchor the
+			// group on the first catch BODY statement's span instead: it is anchored by
+			// that statement's node and is reached exactly when the catch is entered.
+			int	catchAnchor		= catchFirst == null ? -1 : transpiler.getSpanId( pack( catchFirst ) );
+			int	catchCloseId	= catchClose == null ? -1 : addSpan( catchClose, new Point( catchClose.getLine(), catchClose.getColumn() + 1 ) );
+			if ( catchAnchor >= 0 ) {
+				mergeSpanGroup( catchAnchor, catchHeader, catchCloseId );
+			} else {
+				mergeSpanGroup( catchHeader, catchCloseId );
+			}
 			this.runningStart = null;
 		}
 
@@ -1901,7 +1968,15 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				stmt.accept( this );
 				closeRunningSpan( stmt.getEnd() );
 			}
-			registerBraceGroup( finallyHeader, finallyClose );
+			// As with the catch above, the `finally` keyword has no node of its own, so
+			// anchor the header/brace group on the first finally BODY statement's span.
+			int	finallyAnchor	= firstFinally == null ? -1 : transpiler.getSpanId( pack( firstFinally ) );
+			int	finallyCloseId	= finallyClose == null ? -1 : addSpan( finallyClose, new Point( finallyClose.getLine(), finallyClose.getColumn() + 1 ) );
+			if ( finallyAnchor >= 0 ) {
+				mergeSpanGroup( finallyAnchor, finallyHeader, finallyCloseId );
+			} else {
+				mergeSpanGroup( finallyHeader, finallyCloseId );
+			}
 			this.runningStart = null;
 		}
 	}
@@ -2217,16 +2292,7 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		if ( closeId < 0 ) {
 			return;
 		}
-		List<Integer> ids = new ArrayList<>();
-		if ( headerId >= 0 ) {
-			ids.add( headerId );
-		}
-		if ( !ids.contains( closeId ) ) {
-			ids.add( closeId );
-		}
-		if ( ids.size() > 1 ) {
-			transpiler.registerSpanGroup( ids.stream().mapToInt( Integer::intValue ).toArray() );
-		}
+		groupWithEntrySpan( headerId, closeId );
 	}
 
 	/**
@@ -2247,13 +2313,98 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		if ( closeId < 0 ) {
 			return;
 		}
-		List<Integer> ids = new ArrayList<>();
-		if ( headerId >= 0 ) {
-			ids.add( headerId );
+		groupWithEntrySpan( headerId, closeId );
+	}
+
+	/**
+	 * The span id Pass B resolves when this construct is ENTERED: the span that
+	 * starts exactly at the construct's own start position (its opening tag's
+	 * {@code <}), or -1 when no span is registered there.
+	 * <p>
+	 * A closing tag's group MUST be keyed on such a span. Pass B consumes a group by
+	 * resolving the head span at a NODE's start position, so keying it on a
+	 * "running header" fragment — which can begin at a position no node starts at,
+	 * e.g. the tag's trailing {@code >} or a {@code &&} run for a call-shaped
+	 * condition — leaves the group permanently unconsumed and the close tag reported
+	 * as never executed even though the construct ran.
+	 *
+	 * @param node the construct whose entry the close tag belongs to
+	 *
+	 * @return the entry span id, or -1
+	 */
+	private int entrySpanId( BoxNode node ) {
+		return node.getStart() == null ? -1 : transpiler.getSpanId( pack( node.getStart() ) );
+	}
+
+	/**
+	 * Batch-mark a construct's closing tag span together with the span of the
+	 * construct/branch it belongs to (see {@link #entrySpanId}).
+	 * <p>
+	 * An existing group already keyed at the entry is MERGED rather than
+	 * overwritten, so fragments that were split out of the construct's header (a
+	 * call shell, a loop condition, ...) keep their marks.
+	 *
+	 * @param entryId the entry span id the group is keyed on (or -1 to do nothing)
+	 * @param closeId the closing tag's span id
+	 */
+	private void groupWithEntrySpan( int entryId, int closeId ) {
+		mergeSpanGroup( entryId, closeId );
+	}
+
+	/**
+	 * The nearest span-anchored position for a node: the first span, walking from the
+	 * node itself up through its ancestors, whose start position IS that node's start
+	 * position. Those are exactly the spans Pass B always resolves (a node's own mark
+	 * hook looks the span up at the node's start).
+	 * <p>
+	 * Used to re-anchor a group whose natural head begins where NO node starts — e.g.
+	 * the call shell of a chained method call, which begins at the RECEIVER's end, or
+	 * the closing {@code )} tail of a multi-line parenthesized ternary, which follows
+	 * the false branch. Keying such a group on an unanchorable position means Pass B
+	 * never consumes it and the fragments it carries report as never executed.
+	 *
+	 * @param node the node to start the search from
+	 *
+	 * @return the nearest ancestor's anchored span id, or -1 when there is none
+	 */
+	private int anchoredSpanId( BoxNode node ) {
+		for ( BoxNode cursor = node; cursor != null; cursor = cursor.getParent() ) {
+			int spanId = entrySpanId( cursor );
+			if ( spanId >= 0 ) {
+				return spanId;
+			}
 		}
-		if ( !ids.contains( closeId ) ) {
-			ids.add( closeId );
+		return -1;
+	}
+
+	/**
+	 * Merge spans into the group keyed at {@code headId}, keeping every member the
+	 * group already had. A group is batch-marked where Pass B consumes its head, so
+	 * merging (rather than replacing) never drops an already-grouped fragment.
+	 *
+	 * @param headId  the group head (a span id Pass B resolves); -1 does nothing
+	 * @param members the span ids to add to the group
+	 */
+	private void mergeSpanGroup( int headId, int... members ) {
+		if ( headId < 0 ) {
+			return;
 		}
+		List<Integer>	ids			= new ArrayList<>();
+		int[]			existing	= transpiler.peekSpanGroup( headId );
+		if ( existing != null ) {
+			for ( int id : existing ) {
+				ids.add( id );
+			}
+		}
+		for ( int id : members ) {
+			if ( id >= 0 && !ids.contains( id ) ) {
+				ids.add( id );
+			}
+		}
+		if ( ids.contains( headId ) ) {
+			ids.remove( Integer.valueOf( headId ) );
+		}
+		ids.add( 0, headId );
 		if ( ids.size() > 1 ) {
 			transpiler.registerSpanGroup( ids.stream().mapToInt( Integer::intValue ).toArray() );
 		}

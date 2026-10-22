@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,6 +29,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -430,6 +433,77 @@ class CodeProfilerCFTemplateTest {
 		assertThat( service.lineAt( key, 2 ).count() ).isEqualTo( 1 );
 		assertThat( service.lineAt( key, 3 ).covered() ).isTrue();
 		assertThat( service.lineAt( key, 3 ).count() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It marks the tag if close tag for every condition shape (tag)" )
+	@ParameterizedTest( name = "[{index}] {0}" )
+	@MethodSource( "ifConditionShapes" )
+	void testCloseTagMarkedForEveryConditionShape( String condition ) {
+		// Regression: the </cfif> span was grouped on the if's running HEADER span,
+		// which only begins where an AST node does when the condition's last
+		// sub-expression happens to end there. A condition ending in a call or a
+		// short-circuit leaves the header starting at the tag's ">" (or a " && "
+		// run) — a position no node starts at — so Pass B never consumed the group
+		// and the closing tag reported as never executed even though the if ran
+		// (exactly the red </cfif> lines in real-world CFML report partials).
+		String source = "<cfset arr = [ 1, 2, 3 ]>\n<cfif " + condition + ">\n\t<cfset a = 1>\n</cfif>\n";
+		runtime.executeSource( source, context, BoxSourceType.CFTEMPLATE );
+
+		String key = IBoxpiler.MD5( BoxSourceType.CFTEMPLATE.toString() + source );
+
+		// The <cfif> entry span (the condition's own head) and the </cfif> span both
+		// start at column 0 of their line and must be marked exactly once.
+		assertThat( service.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 1 );
+		assertThat( service.spanAt( key, 4, 0 ).stats().count() ).isEqualTo( 1 );
+
+		// No fragment of the construct may be counted twice (both the entry span and
+		// the condition's tail span live on line 2).
+		service.spansOnLine( key, 2 ).forEach( span -> assertThat( span.stats().count() ).isAtMost( 1 ) );
+		service.spansOnLine( key, 4 ).forEach( span -> assertThat( span.stats().count() ).isAtMost( 1 ) );
+
+		// Line-based: the </cfif> line is covered.
+		assertThat( service.lineAt( key, 4 ).covered() ).isTrue();
+	}
+
+	/**
+	 * Condition shapes that used to leave a tag {@code </cfif>} unmarked: bare
+	 * calls, method calls, short-circuits, member access and parentheses all move
+	 * the running header away from the construct's start position.
+	 *
+	 * @return the condition expressions to test
+	 */
+	static Stream<String> ifConditionShapes() {
+		return Stream.of(
+		    "true",
+		    "arrayLen( arr )",
+		    "len( arr ) GT 0",
+		    "arr.len()",
+		    "arr[ 1 ] EQ 1",
+		    "arrayLen( arr ) && len( arr )",
+		    "!arrayLen( arr ) || true",
+		    "isNull( variables.zzz ) || arrayLen( arr )"
+		);
+	}
+
+	@DisplayName( "It marks the </cfswitch> close tag when the expression is a call (tag)" )
+	@Test
+	void testSwitchCloseTagWithCallExpression() {
+		// Regression: the same anchoring gap as </cfif>. A call-shaped expression
+		// leaves the switch HEADER span starting at a position no node begins at, so
+		// the </cfswitch> close-tag group was never consumed and the close tag
+		// reported as never executed.
+		String source = "<cfset arr = [ 1, 2, 3 ]>\n<cfswitch expression=\"#arrayLen( arr )#\">\n<cfcase value=\"3\">\n<cfset a = 1>\n</cfcase>\n</cfswitch>\n";
+		runtime.executeSource( source, context, BoxSourceType.CFTEMPLATE );
+
+		String key = IBoxpiler.MD5( BoxSourceType.CFTEMPLATE.toString() + source );
+
+		assertThat( service.spanAt( key, 2, 0 ).stats().count() ).isEqualTo( 1 ); // switch entry
+		assertThat( service.spanAt( key, 5, 0 ).stats().count() ).isEqualTo( 1 ); // </cfcase> (matched)
+		assertThat( service.spanAt( key, 6, 0 ).stats().count() ).isEqualTo( 1 ); // </cfswitch>
+
+		// The switch header line must not be double counted.
+		service.spansOnLine( key, 2 ).forEach( span -> assertThat( span.stats().count() ).isAtMost( 1 ) );
+		assertThat( service.lineAt( key, 6 ).covered() ).isTrue();
 	}
 
 	@DisplayName( "It marks the <cfelse> tag span when the else branch runs (tag)" )

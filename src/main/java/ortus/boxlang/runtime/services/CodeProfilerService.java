@@ -1012,7 +1012,12 @@ public class CodeProfilerService extends BaseService {
 	 * Aggregated data for a single line.
 	 * <ul>
 	 * <li>{@code covered} = any executable span touching the line has count &gt; 0</li>
-	 * <li>{@code count} = count of the FIRST/OUTERMOST span touching the line</li>
+	 * <li>{@code count} = execution count of the first/outermost span touching the
+	 * line <b>that ran</b> (0 when none ran). This is always consistent with
+	 * {@code covered}: the first span on the line can be a fragment that never gets
+	 * its own mark (e.g. the {@code )>} gap before a block's opening brace), so
+	 * blindly taking the first span's count would report 0 for a line that executed.
+	 * Like before it is ONE span's count, never a sum across nested spans.</li>
 	 * <li>{@code nanos} = SUM of the spans' ON-THE-STACK time over all spans touching
 	 * the line (inclusive when a span made calls, self otherwise)</li>
 	 * </ul>
@@ -1036,16 +1041,26 @@ public class CodeProfilerService extends BaseService {
 		// call spans, self for leaf spans), EXCLUDING spans whose bracket ran nested
 		// inside another call bracket on the same line — their time is already inside
 		// the enclosing span's inclusive time, so counting them would double it.
-		boolean	covered	= false;
-		long	nanos	= 0L;
+		boolean	covered		= false;
+		long	nanos		= 0L;
+		long	lineCount	= -1L;
 		for ( Span s : spans ) {
-			SpanStats stats = s.stats();
-			if ( stats.count() > 0 ) {
+			SpanStats	stats	= s.stats();
+			long		count	= stats.count();
+			if ( count > 0 ) {
 				covered = true;
+				// The line's count is the first span that RAN, so `count` can never
+				// contradict `covered`.
+				if ( lineCount < 0 ) {
+					lineCount = count;
+				}
 			}
 			nanos += Math.max( 0L, stats.onStackNanos() - stats.lineNestedNanos() );
 		}
-		long lineCount = spans.get( 0 ).stats().count(); // first/outermost span
+		if ( lineCount < 0 ) {
+			// Nothing ran: report the first/outermost span's count (0).
+			lineCount = spans.get( 0 ).stats().count();
+		}
 		return new LineCoverage( line, covered, nanos, lineCount );
 	}
 
@@ -1401,7 +1416,8 @@ public class CodeProfilerService extends BaseService {
 	 * @param covered true when any executable span touching the line ran
 	 * @param nanos   the line's ON-THE-STACK time: sum of {@code onStackNanos} over all
 	 *                spans on the line (inclusive for call spans, self for leaf spans)
-	 * @param count   execution count of the first/outermost span on the line
+	 * @param count   execution count of the first/outermost span on the line that ran
+	 *                (0 when nothing on the line ran), matching {@code lineAt}
 	 */
 	public record LineCoverage(
 	    int line,

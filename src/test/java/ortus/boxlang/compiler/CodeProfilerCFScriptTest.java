@@ -2764,4 +2764,166 @@ class CodeProfilerCFScriptTest {
 		assertThat( service.lineAt( key, 2 ).covered() ).isTrue();
 		assertThat( service.lineAt( key, 2 ).count() ).isEqualTo( 1 );
 	}
+
+	@DisplayName( "It marks the closing paren of a multi-line parenthesized ternary (cfscript)" )
+	@Test
+	void testMultiLineParenthesizedTernaryTail() {
+		// Regression: the `)` tail after a multi-line parenthesized ternary was grouped
+		// on the ternary's ` ? ` fragment — a position no AST node starts at — so Pass B
+		// never consumed the group and the `);` line reported as never executed (seen in
+		// real-world reports, e.g. TestBox's BDDRunner.cfc).
+		String source = "arr = { foo : true };\n"
+		    + "name = (\n"
+		    + "\tarr.keyExists( \"bar\" ) ? arr.foo : \"n\"\n"
+		    + ");\n"
+		    + "result = name;";
+		executeCFScript( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.CFSCRIPT.toString() + source );
+
+		// The closing paren line ran once, and no fragment on it is left red.
+		assertThat( service.lineAt( key, 4 ).covered() ).isTrue();
+		assertThat( service.lineAt( key, 4 ).count() ).isEqualTo( 1 );
+		service.spansOnLine( key, 4 ).forEach( span -> assertThat( span.stats().count() ).isEqualTo( 1 ) );
+
+		// The ternary's false branch did NOT run (the key exists) and stays red.
+		assertThat( service.lineAt( key, 3 ).covered() ).isTrue();
+	}
+
+	@DisplayName( "It marks a multi-line chained method call's fragments (cfscript)" )
+	@Test
+	void testMultiLineMethodChain() {
+		// Regression: the shell of a chained call (`receiver\n.method( arg )`) begins at
+		// the RECEIVER's end — a position no AST node starts at — so its group was never
+		// consumed and the `.method(` / `)` fragments reported as never executed.
+		String source = "targetMD = { name : \"b\" };\n"
+		    + "obj = { getUtility : function() { return { getAnnotatedMethods : function( annotation, metadata ) { return 1; } }; } };\n"
+		    + "found = obj\n"
+		    + "\t.getUtility()\n"
+		    + "\t.getAnnotatedMethods( annotation = \"x\", metadata = targetMD );\n"
+		    + "result = found;";
+		executeCFScript( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.CFSCRIPT.toString() + source );
+
+		// The chain's continuation lines ran: the `.method(` shell and the closing `)`
+		// are grouped with the call entry, so they are marked (before the fix they were
+		// carried by a group keyed where no node starts, and stayed red).
+		assertThat( service.lineAt( key, 4 ).covered() ).isTrue();
+		assertThat( service.lineAt( key, 5 ).covered() ).isTrue();
+		service.spansOnLine( key, 4 ).forEach( span -> assertThat( span.stats().count() ).isAtMost( 1 ) );
+		service.spansOnLine( key, 5 ).forEach( span -> assertThat( span.stats().count() ).isAtMost( 1 ) );
+
+		// The closing `)` fragment of the chained call is marked.
+		boolean closingParenMarked = service.fileSpans( key ).stream()
+		    .filter( span -> span.startLine() == 5 && span.endLine() == 5 && span.endCol() - span.startCol() == 1 )
+		    .anyMatch( span -> span.stats().count() == 1 );
+		assertThat( closingParenMarked ).isTrue();
+	}
+
+	@DisplayName( "A covered line never reports count 0 when its first span is a gap (cfscript)" )
+	@Test
+	void testCoveredLineCountIsNeverZero() {
+		// Regression: `LineCoverage.count()` used to be the count of the FIRST span on
+		// the line, which can be an unmarked GAP (e.g. the `)>` fragment before a block's
+		// opening brace). A line that ran then reported covered=true with count=0, and
+		// consumers that derive coverage from the count (TestBox's report) painted it red.
+		String source = "md = { name : \"b\" };\n"
+		    + "tr = {};\n"
+		    + "skip = function() { return false; };\n"
+		    + "canRun = function( bundlePath, testResults, targetMD ) { return true; };\n"
+		    + "if (\n"
+		    + "\t!skip() &&\n"
+		    + "\tcanRun(\n"
+		    + "\t\tbundlePath  = md.name,\n"
+		    + "\t\ttestResults = tr,\n"
+		    + "\t\ttargetMD    = md\n"
+		    + "\t)\n"
+		    + ") {\n"
+		    + "\tok = true;\n"
+		    + "}";
+		executeCFScript( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.CFSCRIPT.toString() + source );
+
+		// The `) {` line holds the gap span + the body's `{` span.
+		assertThat( service.lineAt( key, 12 ).covered() ).isTrue();
+		assertThat( service.lineAt( key, 12 ).count() ).isEqualTo( 1 );
+
+		// Invariant across the whole file: covered lines always have a non-zero count.
+		service.fileLines( key ).forEach( ( line, coverage ) -> {
+			if ( coverage.covered() ) {
+				assertThat( coverage.count() ).isGreaterThan( 0L );
+			}
+		} );
+	}
+
+	@DisplayName( "It marks the catch/finally headers when those branches run (cfscript)" )
+	@Test
+	void testCatchAndFinallyHeadersMarked() {
+		// Regression: the `catch` (and `finally`) KEYWORD has no AST node of its own, so
+		// the brace group holding the header span was keyed on a position Pass B never
+		// resolves — the header and the branch's closing brace stayed unmarked even
+		// though the branch ran (real-world reports show `} catch ( Any e ) {` red).
+		String source = "try {\n"
+		    + "\tthrow( message = \"boom\" );\n"
+		    + "} catch ( Any e ) {\n"
+		    + "\thandled = true;\n"
+		    + "} finally {\n"
+		    + "\tcleaned = true;\n"
+		    + "}";
+		executeCFScript( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.CFSCRIPT.toString() + source );
+
+		// The catch header span starts on line 3 at the `catch` keyword; the finally
+		// header on line 5. Both branches ran, so both must be marked.
+		assertThat( service.lineAt( key, 3 ).covered() ).isTrue();
+		assertThat( service.spanAt( key, 3, 2 ).stats().count() ).isEqualTo( 1 ); // catch header
+		assertThat( service.lineAt( key, 5 ).covered() ).isTrue();
+		assertThat( service.spanAt( key, 5, 2 ).stats().count() ).isEqualTo( 1 ); // finally header
+	}
+
+	@DisplayName( "It leaves an UNREACHED catch's header and braces red (cfscript)" )
+	@Test
+	void testUnreachedCatchStaysRed() {
+		String source = "try {\n"
+		    + "\tok = true;\n"
+		    + "} catch ( Any e ) {\n"
+		    + "\thandled = true;\n"
+		    + "}";
+		executeCFScript( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.CFSCRIPT.toString() + source );
+
+		// No exception was thrown: the catch header and its body must stay red.
+		assertThat( service.spanAt( key, 3, 2 ).stats().count() ).isEqualTo( 0 );
+		assertThat( service.lineAt( key, 4 ).covered() ).isFalse();
+	}
+
+	@DisplayName( "It leaves chained-call fragments in an UNTAKEN branch red (cfscript)" )
+	@Test
+	void testChainedCallInUntakenBranchStaysRed() {
+		// The re-anchoring must never mark a fragment that sits in a branch that did not
+		// run: the anchor is the nearest ANCESTOR span, so an untaken branch's own span
+		// is what carries the fragments — and that span stays red.
+		String source = "cond = false;\n"
+		    + "targetMD = { getAnnotatedMethods : function( annotation, metadata ) { return 1; } };\n"
+		    + "picked = cond\n"
+		    + "\t? targetMD.getAnnotatedMethods( annotation = \"x\", metadata = targetMD )\n"
+		    + "\t: 0;";
+		executeCFScript( source );
+
+		String key = IBoxpiler.MD5( BoxSourceType.CFSCRIPT.toString() + source );
+
+		// No fragment of the UNTAKEN branch may be marked: every span that STARTS on
+		// the branch's line must be missed. (The LINE itself can still read as covered,
+		// because the ternary's always-run head span reaches through the ` ? ` into it.)
+		service.fileSpans( key ).stream()
+		    .filter( span -> span.startLine() == 4 )
+		    .forEach( span -> assertThat( span.stats().count() ).isEqualTo( 0 ) );
+
+		// The taken false branch ran.
+		assertThat( service.lineAt( key, 5 ).covered() ).isTrue();
+	}
 }
