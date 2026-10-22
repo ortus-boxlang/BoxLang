@@ -330,6 +330,28 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		BIFArgMap.put( "extract", Map.of( "target", "destination" ) );
 		BIFArgMap.put( "getsafehtml", Map.of( "inputstring", "string", "policyfile", "policy" ) );
 		BIFArgMap.put( "xmlparse", Map.of( "xmltext", "xml", "xmlstring", "xml", "parseroptions", "validator" ) );
+		/*
+		 * Lucee's invoke() accepts many aliases for its three arguments. BoxLang's invoke() BIF only knows
+		 * object / method / arguments, so rename any alias to the canonical name (keys are lowercase).
+		 * "object", "method" and "arguments" themselves already match, so they need no entry.
+		 * Map.ofEntries() is used because Map.of() is capped at 10 pairs.
+		 */
+		BIFArgMap.put( "invoke", Map.ofEntries(
+		    // object
+		    Map.entry( "cfcinstance", "object" ),
+		    Map.entry( "obj", "object" ),
+		    Map.entry( "value", "object" ),
+		    Map.entry( "variable", "object" ),
+		    // method
+		    Map.entry( "name", "method" ),
+		    Map.entry( "methodname", "method" ),
+		    Map.entry( "functionname", "method" ),
+		    Map.entry( "function", "method" ),
+		    // arguments
+		    Map.entry( "params", "arguments" ),
+		    Map.entry( "args", "arguments" ),
+		    Map.entry( "argumentcollection", "arguments" )
+		) );
 
 		/*
 		 * These are BIFs that return something useless like true, but would be much more useful to return the actual data structure.
