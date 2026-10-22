@@ -791,6 +791,75 @@ public class CFTranspilerTest {
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "098f6bcd4621d373cade4e832627b4f6" );
 	}
+	/**
+	 * Helper: runs a CF invoke() call against a struct "object" with a greet( name ) method
+	 * and returns the result variable.
+	 */
+	private Object runCFInvoke( String invokeArgs ) {
+		instance.executeSource(
+		    """
+		    obj = {
+		    	greet : function( name ) {
+		    		return "hi " & arguments.name;
+		    	}
+		    };
+		    result = invoke( %s );
+		    """.formatted( invokeArgs ),
+		    context, BoxSourceType.CFSCRIPT );
+		return variables.get( result );
+	}
+
+	@DisplayName( "It leaves invoke() with the canonical object/method/arguments names alone" )
+	@Test
+	public void testInvokeCanonicalNames() {
+		assertThat( runCFInvoke( "object=obj, method=\"greet\", arguments={ name : \"Luis\" }" ) ).isEqualTo( "hi Luis" );
+	}
+
+	@DisplayName( "It transpiles invoke() object aliases to object" )
+	@Test
+	public void testInvokeObjectAliases() {
+		for ( String alias : new String[] { "obj", "cfcInstance", "value", "variable" } ) {
+			assertThat( runCFInvoke( alias + "=obj, method=\"greet\", arguments={ name : \"Luis\" }" ) ).isEqualTo( "hi Luis" );
+		}
+	}
+
+	@DisplayName( "It transpiles invoke() method aliases to method" )
+	@Test
+	public void testInvokeMethodAliases() {
+		for ( String alias : new String[] { "name", "methodName", "functionName", "function" } ) {
+			assertThat( runCFInvoke( "object=obj, " + alias + "=\"greet\", arguments={ name : \"Luis\" }" ) ).isEqualTo( "hi Luis" );
+		}
+	}
+
+	@DisplayName( "It transpiles invoke() arguments aliases to arguments" )
+	@Test
+	public void testInvokeArgumentsAliases() {
+		for ( String alias : new String[] { "params", "args", "argumentCollection" } ) {
+			assertThat( runCFInvoke( "object=obj, method=\"greet\", " + alias + "={ name : \"Luis\" }" ) ).isEqualTo( "hi Luis" );
+		}
+	}
+
+	@DisplayName( "It transpiles a mix of invoke() aliases in the same call" )
+	@Test
+	public void testInvokeMixedAliases() {
+		assertThat( runCFInvoke( "cfcInstance=obj, methodName=\"greet\", params={ name : \"Luis\" }" ) ).isEqualTo( "hi Luis" );
+	}
+
+	@DisplayName( "It renames invoke() aliases in the transpiled AST" )
+	@Test
+	public void testInvokeAliasesRemovedFromAST() {
+		ParsingResult parsed = instance.parse( """
+		                                       result = invoke( cfcInstance=obj, methodName="greet", params={ name : "Luis" } );
+		                                       """, BoxSourceType.CFSCRIPT );
+		assertThat( parsed.isCorrect() ).isTrue();
+		String transpiled = parsed.getRoot().toString();
+		assertThat( transpiled ).contains( "object" );
+		assertThat( transpiled ).contains( "method" );
+		assertThat( transpiled ).contains( "arguments" );
+		assertThat( transpiled ).doesNotContain( "cfcInstance" );
+		assertThat( transpiled ).doesNotContain( "methodName" );
+		assertThat( transpiled ).doesNotContain( "params" );
+	}
 
 	@Test
 	public void testLoopWithStructInsteadOfCollection() {
