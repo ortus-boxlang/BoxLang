@@ -518,6 +518,71 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( true );
 	}
 
+	@DisplayName( "property default metadata reports a literal's value, not a runtime placeholder" )
+	@Test
+	public void testPropertyDefaultMetadata() {
+
+		DynamicObject	loadedClass	= BoxRuntime.getInstance().getClassLocator()
+		    .load(
+		        context,
+		        "src.test.java.TestCases.phase3.PropertyDefaultMeta",
+		        ClassLocator.BX_PREFIX,
+		        true,
+		        context.getCurrentImports()
+		    );
+
+		// A property default is EITHER a compile-time literal OR a runtime expression.
+		// A bare identifier such as `default=someSeed` is folded into the literal STRING
+		// "someSeed" (it is NOT a variable reference); only `#...#` is a runtime
+		// expression. Its metadata must therefore report the literal value — never the
+		// `[Runtime Expression]` placeholder, which is reserved for the evaluator case.
+		IStruct			legacyMeta	= ( IStruct ) loadedClass.invokeStatic( context, "getMetaDataStatic" );
+		Array			legacyProps	= legacyMeta.getAsArray( Key.properties );
+		assertThat( legacyPropertyDefault( legacyProps, "literalDefault" ) ).isEqualTo( "someSeed" );
+		assertThat( legacyPropertyDefault( legacyProps, "runtimeDefault" ) ).isEqualTo( "[Runtime Expression]" );
+
+		IStruct	newMeta	= ( IStruct ) loadedClass.invokeStatic( context, "getMetaStatic" );
+		Array	props	= newMeta.getAsArray( Key.properties );
+		assertThat( propertyMetaDefault( props, "literalDefault" ) ).isEqualTo( "someSeed" );
+		assertThat( propertyMetaDefault( props, "runtimeDefault" ) ).isEqualTo( "[Runtime Expression]" );
+	}
+
+	/**
+	 * Read the `default` key of a property in the LEGACY runtime metadata struct array.
+	 *
+	 * @param props the `properties` array from getMetaDataStatic
+	 * @param name  the property name to find
+	 *
+	 * @return the property's default value
+	 */
+	private Object legacyPropertyDefault( Array props, String name ) {
+		for ( Object entry : props ) {
+			IStruct prop = ( IStruct ) entry;
+			if ( name.equals( prop.get( Key.of( "name" ) ) ) ) {
+				return prop.get( Key.of( "default" ) );
+			}
+		}
+		throw new AssertionError( "property not found in legacy metadata: " + name );
+	}
+
+	/**
+	 * Read the `defaultValue` key of a property in the NEW runtime metadata struct array.
+	 *
+	 * @param props the `properties` array from getMetaStatic
+	 * @param name  the property name to find
+	 *
+	 * @return the property's default value
+	 */
+	private Object propertyMetaDefault( Array props, String name ) {
+		for ( Object entry : props ) {
+			IStruct prop = ( IStruct ) entry;
+			if ( Key.of( name ).equals( prop.get( Key.nameAsKey ) ) ) {
+				return prop.get( Key.defaultValue );
+			}
+		}
+		throw new AssertionError( "property not found in metadata: " + name );
+	}
+
 	@DisplayName( "legacy meta CF" )
 	@Test
 	public void testlegacyMetaCF() {
@@ -729,6 +794,7 @@ public class ClassTest {
 
 		var prop1Annotations = prop1.getAsStruct( Key.of( "annotations" ) );
 		assertThat( prop1Annotations.size() ).isEqualTo( 5 );
+		assertThat( prop1Annotations.get( Key.of( "default" ) ) ).isEqualTo( "myDefaultValue" );
 
 		assertThat( prop1Annotations.containsKey( Key.of( "preAnno" ) ) ).isTrue();
 		assertThat( prop1Annotations.get( Key.of( "preAnno" ) ) ).isEqualTo( "" );
@@ -1348,6 +1414,24 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+	}
+
+	@Test
+	public void testStaticBlockInScriptIslandTagCFC() {
+		// A TAG-based CFC whose static block is written inside a <cfscript> island.
+		// The static block must run ONCE at CLASS LOAD — its static-scope values
+		// must be set before any instance is created, and instance code must see
+		// them — mirroring testStaticInstance but for tag-based CFC source.
+		instance.executeSource(
+		    """
+		             clazz = new src.test.java.TestCases.phase3.StaticInScriptIsland();
+		    result1 = clazz.getFoo();
+		    result2 = clazz.getScoped();
+		    result3 = clazz.getInstanceVar();
+		               """, context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "instance" );
 	}
 
 	@Test

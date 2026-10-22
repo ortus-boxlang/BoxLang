@@ -1,0 +1,2 @@
+// Fixture for ExceptionTest, the error below is intentional
+throw( "snippet test error" )

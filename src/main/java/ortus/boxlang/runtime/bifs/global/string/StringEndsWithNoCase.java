@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.util.StringUtil;
 
 @BoxBIF( description = "Determines whether a string ends with a specified suffix, case-insensitive" )
 @BoxMember( type = BoxLangType.STRING_STRICT )
@@ -54,6 +55,6 @@ public class StringEndsWithNoCase extends BIF {
 		String	input	= arguments.getAsString( Key.string );
 		String	suffix	= arguments.getAsString( Key.substring );
 
-		return input.toLowerCase().endsWith( suffix.toLowerCase() );
+		return StringUtil.regionMatchesIgnoreCase( input, input.length() - suffix.length(), suffix, 0, suffix.length() );
 	}
 }

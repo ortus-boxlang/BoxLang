@@ -1,0 +1,11 @@
+class {
+
+	static function hello() {
+		return "hello";
+	}
+
+	function instanceHello() {
+		return "hello";
+	}
+
+}

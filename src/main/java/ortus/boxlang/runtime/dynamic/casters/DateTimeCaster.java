@@ -52,7 +52,7 @@ public class DateTimeCaster implements IBoxCaster {
 	 * @return The value
 	 */
 	public static CastAttempt<DateTime> attempt( Object object ) {
-		return attempt( object, BoxRuntime.getInstance().getRuntimeContext() );
+		return attempt( object, RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ) );
 	}
 
 	/**

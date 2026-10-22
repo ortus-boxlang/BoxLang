@@ -1,0 +1,15 @@
+class {
+
+	static {
+		counter = 1
+	}
+
+	static function getCounter() {
+		return static.counter;
+	}
+
+	static function getStaticKey( required string name ) {
+		return static[ arguments.name ];
+	}
+
+}

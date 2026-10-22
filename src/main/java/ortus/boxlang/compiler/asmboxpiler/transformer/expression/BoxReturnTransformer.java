@@ -53,6 +53,13 @@ public class BoxReturnTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 
 		if ( !transpiler.canReturn() ) {
+			// Script-level return (no enclosing function/closure/lambda invoker).
+			// The script body appends a fall-through markEnd, but this ARETURN
+			// bypasses it — close the probe interval here so the current span's
+			// self-time is charged and no interval leaks into the caller.
+			if ( transpiler.hasProfilerId() ) {
+				nodes.addAll( transpiler.emitMarkEnd() );
+			}
 			nodes.add( new InsnNode( Opcodes.RETURN ) );
 			if ( returnContext.nullable ) {
 				nodes.add( new InsnNode( Opcodes.ARETURN ) );
@@ -93,20 +100,41 @@ public class BoxReturnTransformer extends AbstractTransformer {
 		var returnDepth = tracker.getReturnDepth();
 		tracker.incrementReturnDepth();
 
+		// The finally body is compiled into MULTIPLE bytecode copies (this return path,
+		// the try-inline copy, each catch-inline copy, the no-catch-matched copy and the
+		// exception-handler copy) and only ONE runs at runtime. Snapshot the profiler
+		// mark state so THIS copy's claims do NOT starve the copies transformed later —
+		// every copy must carry the finally marks (body AND braces) for whichever path
+		// actually executes.
+		var finallyMarksSnapshot = transpiler.snapshotEmittedMarks();
+
 		reversed.stream().skip( returnDepth ).forEach( finallyBody -> {
+			// The finally braces are batch-marked when the finally runs (this copy).
+			transpiler.emitBraceGroupMark( nodes, finallyBody.keywordPos(), false );
 			nodes.addAll( AsmHelper.transformBodyExpressions(
 			    transpiler,
-			    finallyBody,
+			    finallyBody.body(),
 			    context,
 			    returnContext
 			) );
 		} );
+
+		transpiler.restoreEmittedMarks( finallyMarksSnapshot );
 
 		tracker.decrementReturnDepth();
 		// finish iterating through return blocks
 
 		// load our original value to return
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, varStore.index() ) );
+
+		// Close the probe-charging interval immediately before the ARETURN so the
+		// current span's self-time is charged. A function/closure/lambda/UDF body
+		// appends a fall-through markEnd, but this ARETURN bypasses it; without a
+		// close here, the open interval would be charged to the CALLER's next mark,
+		// inflating this return span's time and misattributing caller time.
+		if ( transpiler.hasProfilerId() ) {
+			nodes.addAll( transpiler.emitMarkEnd() );
+		}
 		nodes.add( new InsnNode( Opcodes.ARETURN ) );
 
 		return AsmHelper.addLineNumberLabels( nodes, node );

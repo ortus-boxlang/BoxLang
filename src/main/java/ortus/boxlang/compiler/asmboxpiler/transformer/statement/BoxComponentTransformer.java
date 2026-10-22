@@ -130,6 +130,37 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		// create key of component name
 		nodes.addAll( transpiler.createKey( componentName ) );
 
+		// INCLUSIVE timing: open the tag's call-site bracket BEFORE the attribute
+		// struct is built, so the tag's on-stack time INCLUDES attribute evaluation
+		// (the attributes are evaluated as part of invoking the tag). Opened here,
+		// closed after invokeComponent below.
+		int		callSpan	= transpiler.callSpanIdOf( boxComponent );
+		int[]	shell		= callSpan >= 0 ? transpiler.peekCallShell( callSpan ) : null;
+		// Bump every shell token's execution count as ONE atomic mark — the whole
+		// shell (head + interstitials + closing `>`) runs together when the tag runs.
+		// The tag's inclusive bracket (markEnter/markExit) then charges the shell
+		// tokens the tag's time (via the same shell passed to markEnter).
+		//
+		// The shell mark is emitted HERE (not left to the generic statement-start
+		// hook) because, for a SINGLE-LINE tag, the construct's reset-null node
+		// consumes the generic mark before the shell alias is resolved, so leaving it
+		// to the generic hook fired the shell count only on multi-line tags.
+		if ( shell != null && shell.length > 0 ) {
+			// The component transformer is the SOLE marker of the tag SHELL (the generic
+			// statement-start hook is skipped for BoxComponent). Claim each token so a
+			// repeat transform of the same construct cannot mark it twice.
+			java.util.List<Integer> mark = new java.util.ArrayList<>();
+			for ( int token : shell ) {
+				if ( transpiler.claimSpanMark( token ) ) {
+					mark.add( token );
+				}
+			}
+			if ( !mark.isEmpty() ) {
+				nodes.addAll( transpiler.emitMarkVarargs( mark.stream().mapToInt( Integer::intValue ).toArray() ) );
+			}
+		}
+		nodes.addAll( transpiler.emitMarkEnter( callSpan, shell ) );
+
 		// convert attributes to struct
 		nodes.addAll( transpiler.transformAnnotations( attributes, true, false ) );
 
@@ -144,6 +175,10 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		    Type.getMethodDescriptor( Type.getType( Component.BodyResult.class ), Type.getType( Key.class ), Type.getType( IStruct.class ),
 		        Type.getType( Component.ComponentBody.class ) ),
 		    true ) );
+
+		if ( callSpan >= 0 ) {
+			nodes.addAll( transpiler.emitMarkExit() );
+		}
 
 		if ( transpiler.isInsideComponent() ) {
 			LabelNode ifLabel = new LabelNode();

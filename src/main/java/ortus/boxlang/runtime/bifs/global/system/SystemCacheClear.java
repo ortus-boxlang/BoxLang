@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF( description = "Clear system-level caches" )
@@ -43,6 +44,7 @@ public class SystemCacheClear extends BIF {
 	    "cfc",
 	    "class",
 	    "classfiles",
+	    "codesnippets",
 	    "component",
 	    "ct",
 	    "customtag",
@@ -79,6 +81,7 @@ public class SystemCacheClear extends BIF {
 	 * <li><code>cfc</code> - Alias for <code>class</code>; clear the class path resolvers (kept for backwards compatibility)</li>
 	 * <li><code>class</code> - Clear the class path resolvers</li>
 	 * <li><code>classfiles</code> - Clear the cached class files on disk</li>
+	 * <li><code>codesnippets</code> - Clear the cached source code snippets used to build exception tag contexts</li>
 	 * <li><code>component</code> - Alias for <code>class</code>; clear the class path resolvers</li>
 	 * <li><code>ct</code> - Accepted for backwards compatibility; no cache is currently cleared by this value</li>
 	 * <li><code>customtag</code> - Accepted for backwards compatibility; no cache is currently cleared by this value</li>
@@ -140,6 +143,11 @@ public class SystemCacheClear extends BIF {
 		// Class files cache
 		if ( clearAll || cacheName.equals( "classfiles" ) ) {
 			RunnableLoader.getInstance().getBoxpiler().clearClassFiles();
+		}
+
+		// Tag context code snippet cache
+		if ( clearAll || cacheName.equals( "codesnippets" ) ) {
+			ExceptionUtil.clearCodeSnippetCache();
 		}
 
 		return null;

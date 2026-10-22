@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.util.StringUtil;
 
 @BoxBIF( description = "Find the position of a substring in a string" )
 @BoxBIF( alias = "FindNoCase" )
@@ -69,7 +70,8 @@ public class Find extends BIF {
 		if ( start < 1 ) {
 			start = 1;
 		}
-		int position = noCase ? input.toLowerCase().indexOf( substring.toLowerCase(), start - 1 ) + 1 : input.indexOf( substring, start - 1 ) + 1;
+		// Compare in place instead of lower-casing the whole haystack to find a match
+		int position = noCase ? StringUtil.indexOfIgnoreCase( input, substring, start - 1 ) + 1 : input.indexOf( substring, start - 1 ) + 1;
 		return position > 0 ? position : 0;
 	}
 }

@@ -42,7 +42,7 @@ public class Max implements Validator {
 		// If it was passed...
 		if ( records.get( record.name() ) != null ) {
 			// then make sure it's not greater than our threshold
-			if ( GreaterThan.invoke( NumberCaster.cast( records.get( record.name() ) ), this.max ) ) {
+			if ( GreaterThan.invoke( context, NumberCaster.cast( records.get( record.name() ) ), this.max ) ) {
 				throw new BoxValidationException( caller, record, "cannot be greater than [" + StringCaster.cast( this.max ) + "]." );
 			}
 		}
