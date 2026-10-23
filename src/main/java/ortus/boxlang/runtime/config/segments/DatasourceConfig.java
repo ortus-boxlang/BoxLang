@@ -529,6 +529,37 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
+	 * Merge the driver's advertised default properties and default custom params
+	 * into this configuration. User-supplied values always win.
+	 * <p>
+	 * Drivers MUST advertise their defaults via {@link IJDBCDriver#getDefaultProperties()}
+	 * and {@link IJDBCDriver#getDefaultCustomParams()} so they are applied regardless of
+	 * whether the connection URL is built by the driver or supplied by the user.
+	 *
+	 * @return The datasource configuration object
+	 */
+	public DatasourceConfig applyDriverDefaults() {
+		IJDBCDriver jdbcDriver = getDriver();
+
+		// Incorporate the driver's default properties
+		jdbcDriver.getDefaultProperties()
+		    .forEach( ( key, value ) -> this.properties.putIfAbsent( key, value ) );
+
+		// Make sure the `custom` property is a struct: Normalize it using the driver's delimiter
+		if ( this.properties.get( Key.custom ) instanceof String castedCustomParams ) {
+			this.properties.put( Key.custom, StructUtil.fromQueryString( castedCustomParams, jdbcDriver.getDefaultDelimiter() ) );
+		}
+
+		// Incorporate the driver's default 'custom' properties
+		IStruct customParams = this.properties.getAsStruct( Key.custom );
+		jdbcDriver.getDefaultCustomParams()
+		    .forEach( ( key, value ) -> customParams.putIfAbsent( key, value ) );
+		this.properties.put( Key.custom, customParams );
+
+		return this;
+	}
+
+	/**
 	 * Retrieve the configuration properties.
 	 *
 	 * @return Struct representation of all datasource configuration properties.
@@ -629,19 +660,8 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		// If we can't find the driver, we default to the generic driver
 		IJDBCDriver		JDBCdriver	= getDriver();
 
-		// Incorporate the driver's default properties
-		JDBCdriver.getDefaultProperties().entrySet().stream()
-		    .forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
-
-		// Make sure the `custom` property is a struct: Normalize it
-		if ( this.properties.get( Key.custom ) instanceof String castedCustomParams ) {
-			this.properties.put( Key.custom, StructUtil.fromQueryString( castedCustomParams ) );
-		}
-		// Incorporate the driver's default 'custom' properties
-		IStruct customParams = this.properties.getAsStruct( Key.custom );
-		JDBCdriver.getDefaultCustomParams().entrySet().stream()
-		    .forEach( entry -> customParams.putIfAbsent( entry.getKey(), entry.getValue() ) );
-		this.properties.put( Key.custom, customParams );
+		// Incorporate the driver's default properties and custom params
+		applyDriverDefaults();
 
 		// Build out the JDBC URL according to the driver chosen or url chosen
 		result.setJdbcUrl( getOrBuildConnectionString( JDBCdriver ) );
