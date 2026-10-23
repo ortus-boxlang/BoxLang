@@ -4,6 +4,19 @@ Use `transactionSetSavepoint(name)`, `transactionRollback(name)`, and
 `transactionReleaseSavepoint(name)` inside a native transaction. Release removes
 rollback markers without committing or rolling back the database changes.
 
+Release is optional cleanup, not a requirement for transaction atomicity or partial
+rollback. Existing code can continue using set-savepoint and rollback APIs without
+release; the outer commit, rollback, or transaction end clears the markers. This
+addition therefore does not require consumers to upgrade before adopting native
+transactions.
+
+Explicit release is useful in long transactions that process many independent
+batch items: after an item succeeds or its failure has been rolled back, its
+recovery boundary is no longer needed. Release lets the driver reclaim that
+savepoint and removes its runtime handle immediately instead of retaining every
+completed item until the outer transaction finishes. It also permits deliberate
+name reuse. Driver support is required only when explicit release is requested.
+
 ```boxlang
 transaction {
     transactionSetSavepoint("optionalWork")
@@ -15,6 +28,24 @@ transaction {
     }
     transactionReleaseSavepoint("optionalWork")
     performRequiredWork()
+}
+```
+
+A batch can use a distinct name per item and discard each finished recovery boundary:
+
+```boxlang
+transaction {
+    for (var item in batch) {
+        var recoveryPoint = "item_" & createUUID().replace("-", "", "all")
+        transactionSetSavepoint(recoveryPoint)
+        try {
+            importItem(item)
+        } catch (any error) {
+            transactionRollback(recoveryPoint)
+            recordImportFailure(item, error)
+        }
+        transactionReleaseSavepoint(recoveryPoint)
+    }
 }
 ```
 
