@@ -1256,7 +1256,10 @@ public class CodeProfilerService extends BaseService {
 	}
 
 	private static FileBlueprint fileBlueprint( String key ) {
-		if ( instance == null ) {
+		if ( instance == null || key == null ) {
+			// Profiling is best-effort instrumentation: a null key (e.g. a class whose
+			// blueprint id static field never got initialized) must NEVER be able to
+			// break the host program, so it is treated as "no blueprint".
 			return null;
 		}
 		FileBlueprint fb = instance.byPath.get( key );

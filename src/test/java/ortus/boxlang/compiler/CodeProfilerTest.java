@@ -5024,4 +5024,68 @@ class CodeProfilerTest {
 		assertThat( service.lineAt( key, 8 ).covered() ).isTrue();   // s.setup() call
 		assertThat( service.lineAt( key, 11 ).covered() ).isTrue();  // s.beforeTests() call
 	}
+
+	@DisplayName( "It does not NPE in markEnd when a profiled file has NO executable spans" )
+	@Test
+	void testZeroSpanTemplateDoesNotNpeInMarkEnd() throws Exception {
+		// The reported case: a helper TEMPLATE whose entire content is a server-side
+		// comment (ColdBox's ApplicationHelper.bxm). It has NO executable spans, so
+		// Pass A registers an empty blueprint and Pass B emits no `mark` at all — but
+		// the end-of-body `markEnd` is emitted for EVERY profiled body, spans or not.
+		// Regression: the template's <clinit> skipped storing codeProfilerId when the
+		// span list was empty, so that markEnd passed a null id and the service NPE'ed
+		// on its blueprint lookup ("Cannot invoke Object.hashCode() because
+		// <parameter1> is null") as soon as an enclosing profiled frame had an
+		// interval open on the thread.
+		java.nio.file.Path	dir		= java.nio.file.Files.createTempDirectory( "bx-profiler-zero-span" );
+		java.nio.file.Path	file	= dir.resolve( "ApplicationHelper.bxm" );
+		java.nio.file.Files.writeString( file,
+		    "<!--- All methods in this helper will be available in all handlers, views & layouts --->" );
+
+		// Simulate the enclosing profiled frame (e.g. the ColdBox helper loader) by
+		// opening a probe-charging interval on THIS thread, so the template's markEnd
+		// enters the interval-closing branch that resolves the blueprint id — the
+		// branch that used to NPE.
+		String outerHash = "feedfacefeedfacefeedfacefeedface";
+		CodeProfilerService.registerBlueprintFromClinit( outerHash, 0L, Blueprint.Kind.SOURCE, new int[] { 1, 0, 1, 5, 1 } );
+		CodeProfilerService.mark( outerHash, 0 );
+
+		IBoxContext context = new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+
+		try {
+			// Must not throw.
+			context.includeTemplate( file.toAbsolutePath().toString(), true, false );
+
+			// The zero-span template is still registered (with no executable spans), so
+			// its marks resolve by hash lookup instead of the linear case-insensitive
+			// scan. It is the only FILE blueprint in this test.
+			List<Blueprint> fileBlueprints = service.trackedBlueprints().values().stream()
+			    .filter( blueprint -> blueprint.kind() == Blueprint.Kind.FILE )
+			    .toList();
+			assertThat( fileBlueprints ).hasSize( 1 );
+			assertThat( fileBlueprints.get( 0 ).spans() ).isEmpty();
+		} finally {
+			java.nio.file.Files.deleteIfExists( file );
+			java.nio.file.Files.deleteIfExists( dir );
+		}
+	}
+
+	@DisplayName( "It loads a profiled script whose body is EMPTY (no statements) without a VerifyError" )
+	@Test
+	void testEmptyBodyScriptDoesNotVerifyError() {
+		// A script with no statements at all still gets the end-of-body markEnd, which
+		// makes the generated method body NON-empty. The method's return type is Object,
+		// so it ends in ARETURN — but an empty statement list leaves nothing on the
+		// operand stack, and the "push null for an empty node list" fallback in
+		// AsmHelper.methodWithContextAndClassLocator no longer fires. Regression: the
+		// class failed to LOAD with "VerifyError: Operand stack underflow" instead of
+		// simply returning null.
+		String	source	= "// nothing but a comment";
+
+		// Must not throw.
+		Object	result	= runtime.executeSource( source );
+
+		assertThat( result ).isNull();
+		assertThat( service.trackedBlueprints() ).containsKey( IBoxpiler.MD5( BoxSourceType.BOXSCRIPT.toString() + source ) );
+	}
 }
