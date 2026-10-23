@@ -1,0 +1,12 @@
+interface displayName="ProfilerInterfaceThrowingStatic" {
+
+	// The FIRST static block throws, so the SECOND must never be entered.
+	static {
+		throw( "boom from first static block" );
+	}
+
+	static {
+		static.reached = true;
+	}
+
+}

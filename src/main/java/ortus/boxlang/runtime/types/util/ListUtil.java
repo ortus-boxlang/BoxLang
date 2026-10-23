@@ -32,6 +32,8 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
+import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
@@ -110,8 +112,10 @@ public class ListUtil {
 		    new HashMap<Key, Comparator<Object>>() {
 
 			    {
-				    put( Key.of( "numericAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
-				    put( Key.of( "numericDesc" ), ( b, a ) -> Compare.invoke( a, b, true ) );
+				    put( Key.of( "numericAsc" ),
+				        ( a, b ) -> Compare.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), a, b, false ) );
+				    put( Key.of( "numericDesc" ),
+				        ( b, a ) -> Compare.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), a, b, true ) );
 				    put( Key.of( "textAsc" ),
 				        ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
 				    put( Key.of( "textDesc" ),
@@ -1374,13 +1378,16 @@ public class ListUtil {
 	 * Returns a struct of sort directives
 	 */
 	private static final Struct newSortDirectives( Locale locale ) {
+		IBoxContext context = RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() );
 		if ( locale == null ) {
 			return new Struct(
 			    new HashMap<Key, Comparator<Object>>() {
 
 				    {
-					    put( Key.numericAsc, ( a, b ) -> Compare.invoke( a, b, false ) );
-					    put( Key.numericDesc, ( b, a ) -> Compare.invoke( a, b, true ) );
+					    put( Key.numericAsc,
+					        ( a, b ) -> Compare.invoke( context, a, b, false ) );
+					    put( Key.numericDesc,
+					        ( b, a ) -> Compare.invoke( context, a, b, true ) );
 					    put( Key.textAsc,
 					        ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
 					    put( Key.textDesc,
@@ -1397,8 +1404,10 @@ public class ListUtil {
 			    new HashMap<Key, Comparator<Object>>() {
 
 				    {
-					    put( Key.numericAsc, ( a, b ) -> Compare.invoke( a, b, false ) );
-					    put( Key.numericDesc, ( b, a ) -> Compare.invoke( a, b, true ) );
+					    put( Key.numericAsc,
+					        ( a, b ) -> Compare.invoke( context, a, b, false ) );
+					    put( Key.numericDesc,
+					        ( b, a ) -> Compare.invoke( context, a, b, true ) );
 					    put( Key.textAsc,
 					        ( a, b ) -> CollatorStringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true, locale ) );
 					    put( Key.textDesc,

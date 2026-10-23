@@ -36,6 +36,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
@@ -654,8 +656,31 @@ public class StructUtil {
 	 * @param path      An optional nested string path to perform the sort on
 	 *
 	 * @return an array containing the sorted keys
+	 *
+	 * @deprecated Use {@link #sort(IBoxContext, IStruct, String, String, String)} so the caller's context is used
+	 */
+	@Deprecated
+	public static Array sort(
+	    IStruct struct,
+	    String sortType,
+	    String sortOrder,
+	    String path ) {
+		return sort( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), struct, sortType, sortOrder, path );
+	}
+
+	/**
+	 * Performs a sort of a struct and returns the top-level keys in the sorted order
+	 *
+	 * @param context   The context of the caller, used to resolve settings such as the timezone for dates
+	 * @param struct    the struct to sort
+	 * @param sortType  the textual sort directive ( numeric, text, textNoCase )
+	 * @param sortOrder the sort order (asc, desc)
+	 * @param path      An optional nested string path to perform the sort on
+	 *
+	 * @return an array containing the sorted keys
 	 */
 	public static Array sort(
+	    IBoxContext context,
 	    IStruct struct,
 	    String sortType,
 	    String sortOrder,
@@ -691,7 +716,7 @@ public class StructUtil {
 			            ( a, b ) -> {
 				            Object leftValue = isDescending ? b.getValue() : a.getValue();
 				            Object rightValue = isDescending ? a.getValue() : b.getValue();
-				            Integer result = Compare.attempt( leftValue, rightValue, caseSensitive );
+				            Integer result = Compare.attempt( context, leftValue, rightValue, caseSensitive );
 				            // If comparison fails (returns null), treat values as equal to maintain comparator contract consistency
 				            return result != null ? result : 0;
 			            }
@@ -866,14 +891,31 @@ public class StructUtil {
 	 * @param value  the value to search for
 	 *
 	 * @return a stream of structs containing the owner, path, and key of the found value
+	 *
+	 * @deprecated Use {@link #findValue(IBoxContext, IStruct, Object)} so the caller's context is used
 	 */
+	@Deprecated
 	public static Stream<IStruct> findValue( IStruct struct, Object value ) {
+		return findValue( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), struct, value );
+	}
+
+	/**
+	 * Finds all instances of a value in a struct and returns a stream of structs
+	 * containing the owner struct, the path to the value, and the key of the value.
+	 *
+	 * @param context The context of the caller, used to resolve settings such as the timezone for dates
+	 * @param struct  the struct to search within
+	 * @param value   the value to search for
+	 *
+	 * @return a stream of structs containing the owner, path, and key of the found value
+	 */
+	public static Stream<IStruct> findValue( IBoxContext context, IStruct struct, Object value ) {
 		IStruct			flatMap			= toFlatMap( struct );
 
 		// First get regular struct matches (non-List values)
 		Stream<IStruct>	regularMatches	= flatMap.entrySet()
 		    .stream()
-		    .filter( entry -> ! ( entry.getValue() instanceof List ) && Compare.invoke( value, entry.getValue() ) == 0 )
+		    .filter( entry -> ! ( entry.getValue() instanceof List ) && Compare.invoke( context, value, entry.getValue() ) == 0 )
 		    .map( entry -> extractValueResult( entry, flatMap, struct ) );
 
 		// Then get matches from within arrays/lists
@@ -1315,10 +1357,12 @@ public class StructUtil {
 					        // lazy cast second value if first is a number
 					        && ( bNum = NumberCaster.attempt( b.getOriginalValue() ) ).wasSuccessful()
 					            ? Compare.invoke(
+					                RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ),
 					                aNum.get(),
 					                bNum.get()
 					            )
-					            : Compare.invoke( a.toString(), b.toString(), true );
+					            : Compare.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), a.toString(), b.toString(),
+					                true );
 				    }
 				);
 				put( Key.of( "numericDesc" ),
@@ -1329,10 +1373,12 @@ public class StructUtil {
 					        // lazy cast second value if first is a number
 					        && ( bNum = NumberCaster.attempt( b.getOriginalValue() ) ).wasSuccessful()
 					            ? Compare.invoke(
+					                RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ),
 					                aNum.get(),
 					                bNum.get()
 					            )
-					            : Compare.invoke( a.toString(), b.toString(), true );
+					            : Compare.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), a.toString(), b.toString(),
+					                true );
 				    }
 				);
 			}
@@ -1371,10 +1417,12 @@ public class StructUtil {
 					        // lazy cast second value if first is a number
 					        && ( bNum = NumberCaster.attempt( b.getValue() ) ).wasSuccessful()
 					            ? Compare.invoke(
+					                RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ),
 					                aNum.get(),
 					                bNum.get()
 					            )
-					            : Compare.invoke( a.toString(), b.toString(), true );
+					            : Compare.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), a.toString(), b.toString(),
+					                true );
 				    }
 				);
 				put( Key.of( "numericDesc" ),
@@ -1385,10 +1433,12 @@ public class StructUtil {
 					        // lazy cast second value if first is a number
 					        && ( bNum = NumberCaster.attempt( b.getValue() ) ).wasSuccessful()
 					            ? Compare.invoke(
+					                RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ),
 					                aNum.get(),
 					                bNum.get()
 					            )
-					            : Compare.invoke( a.toString(), b.toString(), true );
+					            : Compare.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), a.toString(), b.toString(),
+					                true );
 				    }
 				);
 			}

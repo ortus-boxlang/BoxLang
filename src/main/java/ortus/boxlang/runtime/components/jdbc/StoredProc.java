@@ -49,6 +49,7 @@ import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( description = "Execute stored procedures with parameters and result capture", requiresBody = true )
@@ -117,10 +118,10 @@ public class StoredProc extends Component {
 			return bodyResult;
 		}
 
-		BoxConnection	conn	= connectionManager.getBoxConnection( options );
-		IJDBCDriver		driver;
-		boolean			hasReturnCode;
-		String			callString;
+		BoxConnection	conn			= connectionManager.getBoxConnection( options );
+		IJDBCDriver		driver			= null;
+		boolean			hasReturnCode	= false;
+		String			callString		= null;
 		try {
 			driver			= conn.getDataSource().getConfiguration().getDriver();
 			// TODO: If the stored proc call requests a return code but the driver doesn't support it,
@@ -135,6 +136,12 @@ public class StoredProc extends Component {
 		} catch ( SQLException e ) {
 			connectionManager.releaseConnection( conn );
 			throw new DatabaseException( e );
+		} catch ( Throwable e ) {
+			// Call setup can fail with something other than a SQLException - for example the BoxRuntimeException
+			// raised for mixed positional/named parameters. That path never reaches the finally block below, so
+			// the connection must be released here or it leaks out of the pool.
+			connectionManager.releaseConnection( conn );
+			ExceptionUtil.throwException( e );
 		}
 		try (
 

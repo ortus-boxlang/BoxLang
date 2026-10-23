@@ -23,6 +23,7 @@ import java.util.Objects;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.BoxStringBuilderMeta;
+import ortus.boxlang.runtime.types.util.StringUtil;
 
 /**
  * BoxLang first-class {@code StringBuilder} type.
@@ -312,8 +313,8 @@ public class BoxStringBuilder implements IType, Comparable<BoxStringBuilder>, Se
 		}
 		String search = substring == null ? "" : substring.toString();
 		if ( noCase ) {
-			String	haystack	= this.buffer.toString().toLowerCase();
-			int		position	= haystack.indexOf( search.toLowerCase(), start - 1 ) + 1;
+			// Compare in place instead of lower-casing a copy of the whole buffer
+			int position = StringUtil.indexOfIgnoreCase( this.buffer, search, start - 1 ) + 1;
 			return Math.max( position, 0 );
 		}
 		int position = this.buffer.indexOf( search, start - 1 ) + 1;

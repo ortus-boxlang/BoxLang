@@ -134,6 +134,34 @@ public class ExceptionTest {
 	}
 
 	@Test
+	public void testTagContextCodeSnippet() {
+		// @formatter:off
+		Throwable t = assertThrows( Throwable.class, () -> instance.executeTemplate(
+		"src/test/java/TestCases/phase3/TagContextSnippetThrower.bx" ) );
+		// @formatter:on
+
+		IStruct		frame	= null;
+		for ( Object entry : ExceptionUtil.buildTagContext( t ) ) {
+			IStruct	candidate	= ( IStruct ) entry;
+			String	template	= candidate.getAsString( Key.template );
+			if ( template != null && template.endsWith( "TagContextSnippetThrower.bx" ) ) {
+				frame = candidate;
+				break;
+			}
+		}
+		assertThat( frame ).isNotNull();
+
+		// Snippets are only gathered in debug mode
+		if ( instance.inDebugMode() ) {
+			assertThat( frame.getAsString( Key.codePrintPlain ) ).contains( "snippet test error" );
+			assertThat( frame.getAsString( Key.codePrintHTML ) ).contains( "&quot;snippet test error&quot;" );
+		} else {
+			assertThat( frame.getAsString( Key.codePrintPlain ) ).isEmpty();
+			assertThat( frame.getAsString( Key.codePrintHTML ) ).isEmpty();
+		}
+	}
+
+	@Test
 	public void testMergedStackTraceStopsAtCauseCycle() {
 		RuntimeException	first	= new RuntimeException( "first" );
 		RuntimeException	second	= new RuntimeException( "second" );

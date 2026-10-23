@@ -132,6 +132,16 @@ public class ChildTransaction implements ITransaction {
 	}
 
 	/**
+	 * Get the connection already acquired by the parent transaction, or null if none has been acquired yet.
+	 * <p>
+	 * Unlike {@link #getBoxConnection()}, this method never acquires a connection and has no side effects.
+	 */
+	@Override
+	public BoxConnection getBoxConnectionIfPresent() {
+		return this.connection != null ? this.connection : this.parent.getBoxConnectionIfPresent();
+	}
+
+	/**
 	 * Set the datasource on the parent transaction.
 	 * <p>
 	 * Calls the same method on the parent transaction, allowing the child transaction to inherit the datasource. Will no-op if the parent transaction already has a datasource set.

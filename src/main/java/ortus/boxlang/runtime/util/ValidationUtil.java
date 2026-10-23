@@ -16,6 +16,8 @@ package ortus.boxlang.runtime.util;
 
 import org.apache.commons.lang3.math.NumberUtils;
 
+import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
@@ -338,7 +340,8 @@ public class ValidationUtil {
 		CastAttempt<Number> castedValue = NumberCaster.attempt( value );
 		if ( castedValue.wasSuccessful() ) {
 			Number nValue = castedValue.get();
-			return GreaterThanEqual.invoke( nValue, min ) && LessThanEqual.invoke( nValue, max );
+			return GreaterThanEqual.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), nValue, min )
+			    && LessThanEqual.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), nValue, max );
 		}
 		return false;
 	}
