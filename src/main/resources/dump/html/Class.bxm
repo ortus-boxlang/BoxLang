@@ -228,7 +228,6 @@
 							<bx:script>
 								import java.util.Arrays;
 								import java.util.Comparator;
-								import java.util.List;
 						 
 								variables.instanceMethods = Arrays.stream( theClass.getDeclaredMethods() )
 								.filter( m -> Modifier.isPublic( arguments.m.getModifiers() ) )
@@ -278,7 +277,6 @@
 							<bx:script>
 								import java.util.Arrays;
 								import java.util.Comparator;
-								import java.util.List; 
 							
 								variables.staticMethods = Arrays.stream( theClass.getDeclaredMethods() )
 								.filter( m -> Modifier.isPublic( arguments.m.getModifiers() ) )
