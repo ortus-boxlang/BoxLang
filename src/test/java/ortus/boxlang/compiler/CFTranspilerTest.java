@@ -808,7 +808,6 @@ public class CFTranspilerTest {
 		    context, BoxSourceType.CFSCRIPT );
 		return variables.get( result );
 	}
-
 	@DisplayName( "It leaves invoke() with the canonical object/method/arguments names alone" )
 	@Test
 	public void testInvokeCanonicalNames() {
