@@ -624,6 +624,7 @@ el2
     : ILLEGAL_IDENTIFIER                                                    # exprIllegalIdentifier // 50foo
     | LPAREN expression RPAREN                                              # exprPrecedence        // ( foo )
     | new                                                                   # exprNew               // new foo.bar.Baz()
+    | { isSaveContentExpression(_input) }? identifier (componentAttribute COMMA?)* normalStatementBlock # exprSaveContent // x = savecontent { ... } (Adobe)
     | el2 LPAREN argumentList? RPAREN                                       # exprFunctionCall      // foo(bar, baz)
     | el2 (QM? DOT DOT? | COLONCOLON) el2                                   # exprDotOrColonAccess  // xc.y?.z or foo::bar recursive and Adobe's stupid foo..bar bug they allow
     | el2 QM? DOT? DOT_FLOAT_LITERAL                                        # exprDotFloat          // foo.50

@@ -153,4 +153,124 @@ public class SaveContentTest {
 		assertThat( variables.getAsString( result ) ).isEqualTo( "before-Hello World" );
 	}
 
+	@DisplayName( "It can capture content with the ACF savecontent expression syntax" )
+	@Test
+	public void testCanCaptureContentExpressionSyntax() {
+		instance.executeSource(
+		    """
+		    result = savecontent {
+		    	echo( "Hello World" );
+		    }
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
+	}
+
+	@DisplayName( "It can capture content with the expression syntax into bracket notation" )
+	@Test
+	public void testCanCaptureContentExpressionSyntaxBracket() {
+		instance.executeSource(
+		    """
+		    data = {};
+		    data[ "html" ] = savecontent {
+		    	echo( "Hello World" );
+		    }
+		    result = data.html;
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
+	}
+
+	@DisplayName( "It can capture trimmed content with the expression syntax" )
+	@Test
+	public void testCanCaptureTrimmedContentExpressionSyntax() {
+		instance.executeSource(
+		    """
+		    result = savecontent trim=true {
+		    	echo( "   Hello World   " );
+		    }
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
+	}
+
+	@DisplayName( "It can capture content with the expression syntax into a var scoped variable" )
+	@Test
+	public void testCanCaptureContentExpressionSyntaxVar() {
+		instance.executeSource(
+		    """
+		    function getContent() {
+		    	var html = savecontent {
+		    		echo( "Hello World" );
+		    	}
+		    	return html;
+		    }
+		    result = getContent();
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
+		// var keeps it local to the function, so it must not leak into variables
+		assertThat( variables.containsKey( new Key( "html" ) ) ).isFalse();
+	}
+
+	@DisplayName( "It still supports the regular savecontent statement in script" )
+	@Test
+	public void testRegularSaveContentStatementStillWorks() {
+		instance.executeSource(
+		    """
+		    savecontent variable="result" {
+		    	echo( "Hello World" );
+		    }
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
+	}
+
+	@DisplayName( "It errors when final is used with the expression syntax" )
+	@Test
+	public void testExpressionSyntaxRejectsFinal() {
+		org.junit.jupiter.api.Assertions.assertThrows( ortus.boxlang.runtime.types.exceptions.ParseException.class,
+		    () -> instance.executeSource(
+		        """
+		        function getContent() {
+		        	final var html = savecontent { echo( "Hello World" ); }
+		        	return html;
+		        }
+		        """,
+		        context, BoxSourceType.CFSCRIPT ) );
+	}
+
+	@DisplayName( "It errors when static is used with the expression syntax" )
+	@Test
+	public void testExpressionSyntaxRejectsStatic() {
+		org.junit.jupiter.api.Assertions.assertThrows( ortus.boxlang.runtime.types.exceptions.ParseException.class,
+		    () -> instance.executeSource(
+		        """
+		        static html = savecontent { echo( "Hello World" ); }
+		        """,
+		        context, BoxSourceType.CFSCRIPT ) );
+	}
+
+	@DisplayName( "It errors when the variable attribute is also passed to the expression syntax" )
+	@Test
+	public void testExpressionSyntaxRejectsVariableAttribute() {
+		org.junit.jupiter.api.Assertions.assertThrows( ortus.boxlang.runtime.types.exceptions.ParseException.class,
+		    () -> instance.executeSource(
+		        """
+		        result = savecontent variable="other" { echo( "Hello World" ); }
+		        """,
+		        context, BoxSourceType.CFSCRIPT ) );
+	}
+
+	@DisplayName( "It errors when the expression syntax is not a plain assignment statement" )
+	@Test
+	public void testExpressionSyntaxRejectsNestedAssignment() {
+		org.junit.jupiter.api.Assertions.assertThrows( ortus.boxlang.runtime.types.exceptions.ParseException.class,
+		    () -> instance.executeSource(
+		        """
+		        a = b = savecontent { echo( "Hello World" ); }
+		        """,
+		        context, BoxSourceType.CFSCRIPT ) );
+	}
+
 }

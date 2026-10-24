@@ -198,6 +198,23 @@ public abstract class CFParserControl extends Parser {
 	}
 
 	/**
+	 * Provides a gate for Adobe's savecontent expression syntax: result = savecontent { ... }
+	 * Only matches when savecontent directly follows an = sign, so the regular
+	 * savecontent variable="x" { ... } component statement is never affected.
+	 *
+	 * @param input the token input stream
+	 *
+	 * @return true if this should be seen as a savecontent expression
+	 */
+	protected boolean isSaveContentExpression( TokenStream input ) {
+		var	previous	= input.LT( -1 );
+		var	current		= input.LT( 1 );
+		return previous != null && previous.getType() == EQUALSIGN
+		    && identifiers.contains( current.getType() )
+		    && current.getText().equalsIgnoreCase( "savecontent" );
+	}
+
+	/**
 	 * Provides a gate for the [throw expr] rule if the token after throw is `(` don't match since we'll assume it's the throw() BIF.
 	 * This DOES rule out code like `throw (new Exception())` but that's a rare case.
 	 *
