@@ -25,9 +25,18 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -48,6 +57,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.BoxSet;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -752,4 +762,220 @@ public class DuplicateTest {
 		assertThat( variables.getAsClassRunnable( Key.of( "result2" ) ) ).isInstanceOf( IClassRunnable.class );
 	}
 
+	@DisplayName( "duplicate() shallow-copies a Java ArrayList" )
+	@Test
+
+	public void testDuplicateJavaListShallow() {
+		IStruct				inner	= Struct.of( "a", 1 );
+		ArrayList<Object>	list	= new ArrayList<>();
+		list.add( inner );
+		variables.put( refKey, list );
+
+		instance.executeSource( "result = duplicate( ref, false )", context );
+
+		Object result = variables.get( resultKey );
+		assertThat( result ).isInstanceOf( ArrayList.class );
+		assertThat( result ).isNotSameInstanceAs( list );
+		assertThat( ( ( List<?> ) result ).get( 0 ) ).isSameInstanceAs( inner );
+	}
+
+	@DisplayName( "duplicate() deep-copies a Java ArrayList" )
+	@Test
+
+	public void testDuplicateJavaListDeep() {
+		IStruct				inner	= Struct.of( "a", 1 );
+		ArrayList<Object>	list	= new ArrayList<>();
+		list.add( inner );
+		variables.put( refKey, list );
+
+		instance.executeSource( "result = duplicate( ref, true )", context );
+
+		Object result = variables.get( resultKey );
+		assertThat( result ).isInstanceOf( ArrayList.class );
+		assertThat( result ).isNotSameInstanceAs( list );
+		assertThat( ( ( List<?> ) result ).get( 0 ) ).isNotSameInstanceAs( inner );
+	}
+
+	@DisplayName( "duplicate() shallow-copies a list holding a non-serializable object" )
+	@Test
+
+	public void testDuplicateShallowElements() {
+		IStruct				inner	= Struct.of( "a", 1 );
+		ArrayList<Object>	list	= new ArrayList<>();
+		list.add( new Object() );
+		list.add( inner );
+		variables.put( refKey, list );
+
+		instance.executeSource( "result = duplicate( ref, false )", context );
+		Object result = variables.get( resultKey );
+		assertThat( result ).isInstanceOf( ArrayList.class );
+		assertThat( ( ( List<?> ) result ).size() ).isEqualTo( 2 );
+		assertThat( ( ( List<?> ) result ).get( 0 ) ).isSameInstanceAs( list.get( 0 ) );
+
+	}
+
+	@DisplayName( "duplicate() keeps the key order of a LinkedHashMap" )
+	@Test
+	public void testDuplicateLinkedHashMap() {
+		IStruct							inner	= Struct.of( "a", 1 );
+		LinkedHashMap<String, Object>	map		= new LinkedHashMap<>();
+		map.put( "z", 1 );
+		map.put( "a", inner );
+		map.put( "m", 3 );
+		variables.put( refKey, map );
+
+		instance.executeSource( "result = duplicate( ref, true )", context );
+		Object result = variables.get( resultKey );
+		assertThat( result ).isInstanceOf( LinkedHashMap.class );
+		assertThat( result ).isNotSameInstanceAs( map );
+		assertThat( ( ( Map<?, ?> ) result ).keySet() ).containsExactly( "z", "a", "m" ).inOrder();
+		// deep: the nested struct is a copy, not the original
+		assertThat( ( ( Map<?, ?> ) result ).get( "a" ) ).isNotSameInstanceAs( inner );
+	}
+
+	@DisplayName( "duplicate() keeps the comparator of a TreeMap" )
+	@Test
+	public void testDuplicateTreeMap() {
+		TreeMap<String, Object> map = new TreeMap<>( Comparator.reverseOrder() );
+		map.put( "a", 1 );
+		map.put( "b", 2 );
+		map.put( "c", 3 );
+		variables.put( refKey, map );
+
+		instance.executeSource( "result = duplicate( ref, false )", context );
+		Object result = variables.get( resultKey );
+		assertThat( result ).isInstanceOf( TreeMap.class );
+		assertThat( result ).isNotSameInstanceAs( map );
+		assertThat( ( ( TreeMap<?, ?> ) result ).comparator() ).isEqualTo( Comparator.reverseOrder() );
+		assertThat( ( ( Map<?, ?> ) result ).keySet() ).containsExactly( "c", "b", "a" ).inOrder();
+	}
+
+	@DisplayName( "duplicate() shallow-copies a Java HashSet" )
+	@Test
+	public void testDuplicateHashSetShallow() {
+		IStruct			inner	= Struct.of( "a", 1 );
+		HashSet<Object>	set		= new HashSet<>();
+		set.add( inner );
+		variables.put( refKey, set );
+
+		instance.executeSource( "result = duplicate( ref, false )", context );
+		Object result = variables.get( resultKey );
+		assertThat( result ).isInstanceOf( HashSet.class );
+		assertThat( result ).isNotSameInstanceAs( set );
+		assertThat( ( ( Set<?> ) result ).iterator().next() ).isSameInstanceAs( inner );
+	}
+
+	@DisplayName( "duplicate() keeps the comparator of a TreeSet" )
+	@Test
+	public void testDuplicateTreeSet() {
+		TreeSet<String> set = new TreeSet<>( Comparator.reverseOrder() );
+		set.add( "a" );
+		set.add( "b" );
+		set.add( "c" );
+		variables.put( refKey, set );
+
+		instance.executeSource( "result = duplicate( ref, true )", context );
+		Object result = variables.get( resultKey );
+		assertThat( result ).isInstanceOf( TreeSet.class );
+		assertThat( result ).isNotSameInstanceAs( set );
+		assertThat( ( ( TreeSet<?> ) result ).comparator() ).isEqualTo( Comparator.reverseOrder() );
+		assertThat( ( Set<?> ) result ).containsExactly( "c", "b", "a" ).inOrder();
+	}
+
+	@DisplayName( "duplicate() copies a sorted BoxSet and keeps it sorted" )
+	@Test
+	public void testDuplicateSortedBoxSet() {
+		instance.executeSource(
+		    """
+		    ref = setNew( type="sorted", values=[ "c", "a", "b" ] );
+		    result = duplicate( ref );
+		    result.add( "d" );
+		    """,
+		    context );
+		BoxSet	ref		= ( BoxSet ) variables.get( refKey );
+		BoxSet	result	= ( BoxSet ) variables.get( resultKey );
+		assertThat( result ).isNotSameInstanceAs( ref );
+		assertThat( result.getType() ).isEqualTo( BoxSet.Type.SORTED );
+		assertThat( ref.size() ).isEqualTo( 3 );
+		assertThat( result.toArray() ).asList().containsExactly( "a", "b", "c", "d" ).inOrder();
+	}
+
+	@DisplayName( "duplicate() handles a Java List that contains itself" )
+	@Test
+	public void testDuplicateRecursiveJavaList() {
+		ArrayList<Object> list = new ArrayList<>();
+		list.add( list );
+		variables.put( refKey, list );
+
+		instance.executeSource( "result = duplicate( ref, true )", context );
+		List<?> result = ( List<?> ) variables.get( resultKey );
+		assertThat( result ).isNotSameInstanceAs( list );
+		assertThat( result.get( 0 ) ).isSameInstanceAs( result );
+	}
+
+	@DisplayName( "duplicate() falls back to serialization for immutable lists" )
+	@Test
+	public void testDuplicateImmutableList() {
+		List<Integer> list = List.of( 1, 2, 3 );
+		variables.put( refKey, list );
+
+		instance.executeSource( "result = duplicate( ref )", context );
+		Object result = variables.get( resultKey );
+		assertThat( result ).isNotSameInstanceAs( list );
+		assertThat( ( List<?> ) result ).containsExactly( 1, 2, 3 ).inOrder();
+	}
+
+	@DisplayName( "duplicate() deep-copies query rows without sharing nested values" )
+	@Test
+	public void testDuplicateQueryDeepRows() {
+		instance.executeSource(
+		    """
+		    ref = queryNew( "id,data", "integer,object", [ [ 1, { "a" : 1 } ] ] );
+		    result = duplicate( ref, true );
+		    ref.data[ 1 ].a = 2;
+		    """,
+		    context );
+		Query	ref		= variables.getAsQuery( refKey );
+		Query	result	= variables.getAsQuery( resultKey );
+		assertThat( StructCaster.cast( ref.getCell( Key.of( "data" ), 0 ) ).get( Key.of( "a" ) ) ).isEqualTo( 2 );
+		assertThat( StructCaster.cast( result.getCell( Key.of( "data" ), 0 ) ).get( Key.of( "a" ) ) ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "duplicate() keeps a ConcurrentSkipListMap concurrent and keeps its comparator" )
+	@Test
+	public void testDuplicateConcurrentSkipListMap() {
+		ConcurrentSkipListMap<String, Object> map = new ConcurrentSkipListMap<>( Comparator.reverseOrder() );
+		map.put( "a", 1 );
+		map.put( "b", 2 );
+		variables.put( refKey, map );
+
+		instance.executeSource( "result = duplicate( ref )", context );
+		Object result = variables.get( resultKey );
+		assertThat( result ).isInstanceOf( ConcurrentSkipListMap.class );
+		assertThat( result ).isNotSameInstanceAs( map );
+		assertThat( ( ( ConcurrentSkipListMap<?, ?> ) result ).comparator() ).isEqualTo( Comparator.reverseOrder() );
+	}
+
+	@DisplayName( "duplicate() keeps the extra fields of a custom Map subclass" )
+	@Test
+	public void testDuplicateMapSubclassKeepsFields() {
+		TaggedMap map = new TaggedMap();
+		map.tag = "keep me";
+		map.put( "a", 1 );
+		variables.put( refKey, map );
+
+		instance.executeSource( "result = duplicate( ref, false )", context );
+		Object result = variables.get( resultKey );
+		assertThat( result ).isInstanceOf( TaggedMap.class );
+		assertThat( result ).isNotSameInstanceAs( map );
+		assertThat( ( ( TaggedMap ) result ).tag ).isEqualTo( "keep me" );
+		assertThat( ( ( TaggedMap ) result ).get( "a" ) ).isEqualTo( 1 );
+	}
+
+	// A HashMap subclass with its own field, like a user's Java class might have
+	public static class TaggedMap extends HashMap<String, Object> {
+
+		private static final long	serialVersionUID	= 1L;
+		public String				tag;
+	}
 }
