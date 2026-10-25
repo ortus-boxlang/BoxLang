@@ -47,10 +47,13 @@
      - Add visitExprSaveContent() as a safety net that reports a clear error for any unsupported position.
 
 4. Validation Plan
-   - Tests added to SaveContentTest.java (9):
+   - Tests added to SaveContentTest.java (14):
      - Expression syntax, bracket target, trim=true, and var inside a function without leaking into variables
      - The regular savecontent variable="result" { } statement still works
      - Errors for final, static, a duplicate variable attribute, and a = b = savecontent { }
+     - Combined from the other team branches: the captured content is not written to the page, a scoped
+       and mixed-case target, cfscript inside a template, an existing local variable in a function, and
+       a variable named savecontent still works
    - Verification steps:
      - ./gradlew spotlessApply
      - ./gradlew test --tests "*SaveContentTest"
@@ -58,7 +61,14 @@
      - Manually ran CF scripts covering nested savecontent, loops, closures, classes, return inside
        the body, error line numbers, BoxLang script files, and CF to BX transpiling
    - Success criteria:
-     - All added behavior is documented and tested, and all SaveContentTest tests pass (15: 6 existing, 9 new)
+     - All added behavior is documented and tested, and all SaveContentTest tests pass (20: 6 existing, 14 new)
      - The ticket's example now captures and prints its content
      - Existing savecontent forms behave exactly as before
      - The full test suite passes (./gradlew test)
+
+5. Combined Branch
+   - Compared the three team branches by running every branch's tests against every implementation.
+   - BL-1046-support-savecontent passed all 24 combined tests. BL-1046-Adobe-savecontent-fix-2 and
+     BL-1046-savecontent-fix-jose passed 17 (same approach as each other, without var, bracket or attribute support).
+   - Used BL-1046-support-savecontent as the base and added 5 tests from the other two branches.
+     No code changes were needed.

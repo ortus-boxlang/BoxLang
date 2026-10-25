@@ -273,4 +273,81 @@ public class SaveContentTest {
 		        context, BoxSourceType.CFSCRIPT ) );
 	}
 
+	@DisplayName( "It does not write the captured content to the page with the expression syntax" )
+	@Test
+	public void testExpressionSyntaxDoesNotWriteToPage() {
+		instance.executeSource(
+		    """
+		    echo( "before" );
+		    result = savecontent {
+		    	echo( "Hello World" );
+		    }
+		    echo( "after" );
+		    output = getBoxContext().getBuffer().toString();
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "Hello World" );
+		// The captured content is not written to the page
+		assertThat( variables.getAsString( Key.of( "output" ) ) ).isEqualTo( "beforeafter" );
+	}
+
+	@DisplayName( "It can capture content into a scoped variable with the expression syntax" )
+	@Test
+	public void testCanCaptureContentExpressionSyntaxScoped() {
+		instance.executeSource(
+		    """
+		    variables.result = saveContent {
+		    	writeOutput( "Hello World" );
+		    };
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "Hello World" );
+	}
+
+	@DisplayName( "It can capture content with the expression syntax inside cfscript in a template" )
+	@Test
+	public void testCanCaptureContentExpressionSyntaxInTemplate() {
+		instance.executeSource(
+		    """
+		    <cfscript>
+		    	result = savecontent {
+		    		writeOutput( "Hello World" );
+		    	}
+		    </cfscript>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "Hello World" );
+	}
+
+	@DisplayName( "It can capture content with the expression syntax into an existing local variable" )
+	@Test
+	public void testCanCaptureContentExpressionSyntaxExistingLocal() {
+		instance.executeSource(
+		    """
+		    function getContent() {
+		    	var out = "";
+		    	out = savecontent {
+		    		echo( "Hello World" );
+		    	}
+		    	return out;
+		    }
+		    result = getContent();
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
+		assertThat( variables.containsKey( Key.of( "out" ) ) ).isFalse();
+	}
+
+	@DisplayName( "A variable named savecontent can still be assigned" )
+	@Test
+	public void testVariableNamedSaveContent() {
+		instance.executeSource(
+		    """
+		    savecontent = "Hello World";
+		    result = savecontent;
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
+	}
+
 }
