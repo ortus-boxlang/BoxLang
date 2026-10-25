@@ -15,22 +15,23 @@ import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.Point;
 
 public class MethodContextTracker {
 
-	private int							varCount			= 0;
-	private int							classLocatorSlot	= -1;
-	private int							unusedStackEntries	= 0;
-	private int							returnDepth			= 0;
-	private List<Integer>				contextStack		= new ArrayList<Integer>();
-	private List<TryCatchBlockNode>		tryCatchBlockNodes	= new ArrayList<TryCatchBlockNode>();
-	private List<List<BoxStatement>>	finallyBodies		= new ArrayList<List<BoxStatement>>();
-	private Map<String, LabelNode>		breaks				= new LinkedHashMap<>();
-	private Map<String, LabelNode>		continues			= new LinkedHashMap<>();
-	private final CompilationType		type;
-	private Map<BoxNode, LabelNode>		nodeBreaks			= new LinkedHashMap<>();
-	private Map<BoxNode, LabelNode>		nodeContinues		= new LinkedHashMap<>();
-	private Map<String, BoxNode>		stringLabel			= new LinkedHashMap<>();
+	private int						varCount			= 0;
+	private int						classLocatorSlot	= -1;
+	private int						unusedStackEntries	= 0;
+	private int						returnDepth			= 0;
+	private List<Integer>			contextStack		= new ArrayList<Integer>();
+	private List<TryCatchBlockNode>	tryCatchBlockNodes	= new ArrayList<TryCatchBlockNode>();
+	private List<FinallyBody>		finallyBodies		= new ArrayList<FinallyBody>();
+	private Map<String, LabelNode>	breaks				= new LinkedHashMap<>();
+	private Map<String, LabelNode>	continues			= new LinkedHashMap<>();
+	private final CompilationType	type;
+	private Map<BoxNode, LabelNode>	nodeBreaks			= new LinkedHashMap<>();
+	private Map<BoxNode, LabelNode>	nodeContinues		= new LinkedHashMap<>();
+	private Map<String, BoxNode>	stringLabel			= new LinkedHashMap<>();
 
 	public enum CompilationType {
 		BoxClass,
@@ -39,6 +40,19 @@ public class MethodContextTracker {
 	}
 
 	public record VarStore( int index, List<AbstractInsnNode> nodes ) {
+
+	}
+
+	/**
+	 * A {@code finally} body queued for inlining by an enclosing {@code return},
+	 * paired with the {@code finally} keyword position so the return path can emit
+	 * the finally brace-group mark (the header + closing brace) — the SAME group the
+	 * fall-through, no-catch-matched and exception-handler copies emit.
+	 *
+	 * @param body       the finally body statements
+	 * @param keywordPos the {@code finally} keyword start position (brace-group key)
+	 */
+	public record FinallyBody( List<BoxStatement> body, Point keywordPos ) {
 
 	}
 
@@ -63,12 +77,21 @@ public class MethodContextTracker {
 		this.returnDepth -= 1;
 	}
 
-	public List<List<BoxStatement>> getFinallyBodies() {
+	public List<FinallyBody> getFinallyBodies() {
 		return this.finallyBodies;
 	}
 
-	public void addFinallyBody( List<BoxStatement> finallyBody ) {
-		this.finallyBodies.add( finallyBody );
+	/**
+	 * Queue a {@code finally} body for inlining by any enclosing {@code return}.
+	 * The {@code finally} keyword position is retained so the return path can also
+	 * emit the finally brace-group mark (its body is compiled into several bytecode
+	 * copies of which only one runs).
+	 *
+	 * @param finallyBody the finally body statements
+	 * @param keywordPos  the {@code finally} keyword start position
+	 */
+	public void addFinallyBody( List<BoxStatement> finallyBody, Point keywordPos ) {
+		this.finallyBodies.add( new FinallyBody( finallyBody, keywordPos ) );
 	}
 
 	public void popFinallyBody() {

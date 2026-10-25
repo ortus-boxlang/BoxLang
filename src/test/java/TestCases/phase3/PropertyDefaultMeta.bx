@@ -1,0 +1,16 @@
+/**
+ * Property-default metadata fixture.
+ *
+ * `literalDefault` is a LITERAL default: the parser folds the bare identifier into
+ * the string "someSeed" (CFML annotation semantics — not a variable reference).
+ * `runtimeDefault` is a genuine RUNTIME expression, so it compiles to a deferred evaluator.
+ *
+ * Used to assert the runtime class metadata reports the literal's VALUE for the former
+ * and the `[Runtime Expression]` placeholder for the latter.
+ */
+class {
+
+	property name="literalDefault" default="someSeed";
+	property name="runtimeDefault" default="#( 40 + 2 )#";
+
+}

@@ -401,13 +401,19 @@ public class ConnectionManager {
 	 * @return True if the connection was successfully released, otherwise false.
 	 */
 	public boolean releaseConnection( BoxConnection connection ) {
-		if ( isInTransaction() ) {
-			logger.debug( "Am inside transaction context; skipping connection release." );
+		if ( connection == null ) {
+			return false;
+		}
+		// Only the active transaction's OWN connection is left open for the transaction to manage. Any other
+		// connection - for example one acquired for a different datasource, or with credential overrides - is ours
+		// to release, even while a transaction is in flight. Skipping those returns leaks them out of the pool.
+		if ( isActiveTransactionConnection( connection ) ) {
+			logger.debug( "Connection belongs to the active transaction; skipping connection release." );
 			return false;
 		}
 		try {
-			if ( connection == null || connection.isClosed() ) {
-				logger.debug( "Connection is null or already closed; skipping connection release." );
+			if ( connection.isClosed() ) {
+				logger.debug( "Connection is already closed; skipping connection release." );
 				return false;
 			}
 			logger.debug( "Releasing connection {}", connection );
@@ -416,6 +422,30 @@ public class ConnectionManager {
 			throw new DatabaseException( "Error releasing connection: " + e.getMessage(), e );
 		}
 		return true;
+	}
+
+	/**
+	 * Is the provided connection the connection currently held by our active transaction?
+	 * <p>
+	 * Note comparisons are performed against the transaction's already-acquired connection, so this method never
+	 * triggers a lazy connection acquisition. The underlying JDBC connection is compared as well, so re-wrapped
+	 * BoxConnection instances - such as those passed to the deprecated {@link #releaseConnection(Connection)}
+	 * overload - are still recognized.
+	 *
+	 * @param connection The connection to check
+	 *
+	 * @return True if the connection belongs to the active transaction.
+	 */
+	private boolean isActiveTransactionConnection( BoxConnection connection ) {
+		if ( !isInTransaction() ) {
+			return false;
+		}
+		BoxConnection transactionConnection = getTransaction().getBoxConnectionIfPresent();
+		if ( transactionConnection == null ) {
+			return false;
+		}
+		return transactionConnection == connection
+		    || transactionConnection.getConnection() == connection.getConnection();
 	}
 
 	/**
@@ -874,9 +904,17 @@ public class ConnectionManager {
 		this.datasources.clear();
 		this.defaultDatasource = null;
 
-		// End any active transaction or child transactions
+		// End any active transaction or child transactions.
+		// Each transaction end is isolated so that a failure closing one transaction cannot prevent the
+		// remaining (parent) transactions from being closed and their connections returned to the pool.
+		// `endTransaction()` always re-points or nullifies our transaction reference, even when it throws,
+		// so this loop is guaranteed to terminate.
 		while ( this.transaction != null ) {
-			endTransaction();
+			try {
+				endTransaction();
+			} catch ( Throwable e ) {
+				logger.error( "Error encountered while ending a transaction during connection manager shutdown: " + e.getMessage(), e );
+			}
 		}
 	}
 

@@ -90,8 +90,11 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 			// This method already takes into account looking
 			// - relative to the current template
 			// - relative to a mapping
-			String	templateFileName	= new File( template ).getName();
-			String	templateName		= templateFileName.substring( 0, templateFileName.lastIndexOf( '.' ) );
+			String	templateName	= new File( template ).getName();
+			int		indexOfDot		= templateName.lastIndexOf( '.' );
+			if ( indexOfDot > 0 ) {
+				templateName = templateName.substring( 0, indexOfDot );
+			}
 			tagName = Key.of( templateName );
 			executionState.put( Key.customTagName, tagName );
 			bTemplate = RunnableLoader.getInstance().loadTemplateRelative( context, template, false );

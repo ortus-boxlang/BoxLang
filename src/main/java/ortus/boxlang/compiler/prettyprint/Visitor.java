@@ -18,7 +18,9 @@
 package ortus.boxlang.compiler.prettyprint;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 
 import ortus.boxlang.compiler.ast.BoxClass;
@@ -28,6 +30,7 @@ import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
+import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
@@ -127,25 +130,34 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class Visitor extends VoidBoxVisitor {
 
-	private Stack<BoxSourceType>	currentSourceType				= new Stack<>();
-	private BoxSourceType			rootSourceType;
-	private Stack<Doc>				docStack						= new Stack<>();
+	private Stack<BoxSourceType>		currentSourceType				= new Stack<>();
+	private BoxSourceType				rootSourceType;
+	private Stack<Doc>					docStack						= new Stack<>();
 
-	Config							config;
-	String							componentPrefix;
-	boolean							stripBufferLeadingWhitespace	= false;
+	Config								config;
+	String								componentPrefix;
+	boolean								stripBufferLeadingWhitespace	= false;
 
-	CommentsPrinter					commentsPrinter;
-	ClassPrinter					classPrinter;
-	StringPrinter					stringPrinter;
-	ComponentPrinter				componentPrinter;
-	HelperPrinter					helperPrinter;
-	ArgumentsPrinter				argumentsPrinter;
-	ParametersPrinter				parametersPrinter;
-	FunctionDeclarationPrinter		functionDeclaration;
-	StructLiteralPrinter			structLiteralPrinter;
-	ArrayLiteralPrinter				arrayLiteralPrinter;
-	SetLiteralPrinter				setLiteralPrinter;
+	/**
+	 * Per-format-run cache of source files split into lines.
+	 * <p>
+	 * Keyed by identity so each underlying {@link Source} is read from disk at most once, no matter how many AST nodes
+	 * reference it. The cache lives only as long as this visitor (a single format operation) and nothing is stored on
+	 * the {@link Source} itself.
+	 */
+	private final Map<Source, String[]>	sourceLinesCache				= new IdentityHashMap<>();
+
+	CommentsPrinter						commentsPrinter;
+	ClassPrinter						classPrinter;
+	StringPrinter						stringPrinter;
+	ComponentPrinter					componentPrinter;
+	HelperPrinter						helperPrinter;
+	ArgumentsPrinter					argumentsPrinter;
+	ParametersPrinter					parametersPrinter;
+	FunctionDeclarationPrinter			functionDeclaration;
+	StructLiteralPrinter				structLiteralPrinter;
+	ArrayLiteralPrinter					arrayLiteralPrinter;
+	SetLiteralPrinter					setLiteralPrinter;
 
 	/**
 	 * Constructor
@@ -229,15 +241,14 @@ public class Visitor extends VoidBoxVisitor {
 			return null;
 		}
 
-		String code = node.getPosition().getSource().getCode();
-		if ( code == null ) {
+		String[] lines = getCachedSourceLines( node.getPosition().getSource() );
+		if ( lines.length == 0 ) {
 			return null;
 		}
 
 		try {
-			String[]	lines		= code.split( "\\r?\\n", -1 );
-			int			startLine	= node.getPosition().getStart().getLine() - 1;
-			int			endLine		= node.getPosition().getEnd().getLine() - 1;
+			int	startLine	= node.getPosition().getStart().getLine() - 1;
+			int	endLine		= node.getPosition().getEnd().getLine() - 1;
 
 			if ( startLine < 0 || endLine < startLine || startLine >= lines.length ) {
 				return null;
@@ -310,47 +321,22 @@ public class Visitor extends VoidBoxVisitor {
 		}
 	}
 
-	private boolean hasTrailingSemicolonInSource( BoxNode node ) {
-		if ( node == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
-			return false;
-		}
-		String code = node.getPosition().getSource().getCode();
-		if ( code == null ) {
-			return false;
-		}
-		try {
-			String[]	lines	= code.split( "\\r?\\n", -1 );
-			int			endLine	= node.getPosition().getEnd().getLine() - 1;
-			if ( endLine < 0 || endLine >= lines.length ) {
-				return false;
-			}
-			String	line	= lines[ endLine ];
-			int		endCol	= Math.max( 0, node.getPosition().getEnd().getColumn() );
-			int		idx		= Math.min( endCol, line.length() );
-			while ( idx < line.length() ) {
-				char ch = line.charAt( idx );
-				if ( ch == ' ' || ch == '\t' ) {
-					idx++;
-					continue;
-				}
-				return ch == ';';
-			}
-			int lastNonWhitespace = line.length() - 1;
-			while ( lastNonWhitespace >= 0 ) {
-				char ch = line.charAt( lastNonWhitespace );
-				if ( ch == ' ' || ch == '\t' ) {
-					lastNonWhitespace--;
-					continue;
-				}
-				break;
-			}
-			if ( lastNonWhitespace >= 0 && line.charAt( lastNonWhitespace ) == ';' ) {
-				return true;
-			}
-			return false;
-		} catch ( Exception e ) {
-			return false;
-		}
+	/**
+	 * Returns the given source split into lines, caching the result for this format run.
+	 * <p>
+	 * A {@link Visitor} instance lives for a single format operation, so caching here guarantees each source file is
+	 * read from disk at most once regardless of how many nodes share it. Failed reads are cached as an empty array to
+	 * avoid repeated I/O attempts.
+	 *
+	 * @param source the source whose lines are required
+	 *
+	 * @return the source split on line boundaries, or an empty array when the source is unavailable
+	 */
+	private String[] getCachedSourceLines( Source source ) {
+		return sourceLinesCache.computeIfAbsent( source, s -> {
+			String code = s.getCode();
+			return code == null ? new String[ 0 ] : code.split( "\\r?\\n", -1 );
+		} );
 	}
 
 	private boolean printSourceForCFCompat( BoxNode node ) {

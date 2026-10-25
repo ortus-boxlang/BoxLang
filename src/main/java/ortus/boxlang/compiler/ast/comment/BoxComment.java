@@ -21,6 +21,7 @@ import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.runtime.types.util.StringUtil;
 
 /**
  * abstract class for comments
@@ -84,7 +85,7 @@ public abstract class BoxComment extends BoxNode {
 	 * @return true if the comment text contains the given text (ignoring case)
 	 */
 	public boolean textContains( String text ) {
-		return this.commentText.toLowerCase().contains( text.toLowerCase() );
+		return StringUtil.containsIgnoreCase( this.commentText, text );
 	}
 
 	/**
@@ -95,7 +96,7 @@ public abstract class BoxComment extends BoxNode {
 	 * @return true if the trimmed comment text starts with the given text (ignoring case)
 	 */
 	public boolean textStartsWith( String text ) {
-		return this.commentText.trim().toLowerCase().startsWith( text.toLowerCase() );
+		return StringUtil.startsWithIgnoreCase( this.commentText.trim(), text );
 	}
 
 	/**

@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF( description = "Replace occurrences of a substring in a string (case-insensitive)" )
@@ -69,48 +70,58 @@ public class ReplaceNoCase extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	string		= arguments.getAsString( Key.string );
-		String	substring1	= arguments.getAsString( Key.substring1 );
-		Object	obj			= arguments.get( Key.obj );
-		String	scope		= arguments.getAsString( Key.scope ).toLowerCase();
-		if ( scope.equalsIgnoreCase( "one" ) ) {
-			String	lowerCaseString		= string.toLowerCase();
-			String	lowerCaseSubstring	= substring1.toLowerCase();
-			int		idx					= lowerCaseString.indexOf( lowerCaseSubstring );
-			if ( idx != -1 ) {
-				CastAttempt<String> stringCastAttempt = StringCaster.attempt( obj );
-				return stringCastAttempt.wasSuccessful()
-				    ? string.substring( 0, idx ) + stringCastAttempt.get() + string.substring( idx + substring1.length() )
+		String									string				= arguments.getAsString( Key.string );
+		String									substring1			= arguments.getAsString( Key.substring1 );
+		Object									obj					= arguments.get( Key.obj );
+		String									scope				= arguments.getAsString( Key.scope ).toLowerCase();
+
+		// The replacement is either a plain string or a callable; work that out once up front
+		// instead of re-casting the same value on every match inside the loop.
+		CastAttempt<String>						replacementString	= StringCaster.attempt( obj );
+		ortus.boxlang.runtime.types.Function	replacementFunction	= replacementString.wasSuccessful() ? null : FunctionCaster.cast( obj );
+
+		switch ( scope ) {
+			case "one" -> {
+				// Search in place instead of lower-casing a copy of the whole string
+				int idx = StringUtil.indexOfIgnoreCase( string, substring1, 0 );
+				if ( idx == -1 ) {
+					return string;
+				}
+				return replacementString.wasSuccessful()
+				    ? string.substring( 0, idx ) + replacementString.get() + string.substring( idx + substring1.length() )
 				    : string.substring( 0, idx )
-				        + context.invokeFunction( FunctionCaster.cast( obj ),
+				        + context.invokeFunction( replacementFunction,
 				            new Object[] { string.substring( idx, idx + substring1.length() ), idx + 1, string } )
 				        + string.substring( idx + substring1.length() );
-			} else {
-				return string;
 			}
-		} else if ( scope.equalsIgnoreCase( "all" ) ) {
-			String			lowerCaseString		= string.toLowerCase();
-			String			lowerCaseSubstring	= substring1.toLowerCase();
-			StringBuilder	result				= new StringBuilder();
-			int				i					= 0;
-			while ( i < string.length() ) {
-				if ( lowerCaseString.substring( i ).startsWith( lowerCaseSubstring ) ) {
-					CastAttempt<String> stringCastAttempt = StringCaster.attempt( obj );
-					if ( stringCastAttempt.wasSuccessful() ) {
-						result.append( stringCastAttempt.get() );
-					} else {
-						result.append( context.invokeFunction( FunctionCaster.cast( obj ),
-						    new Object[] { string.substring( i, i + substring1.length() ), i + 1, string } ) );
-					}
-					i += substring1.length();
-				} else {
-					result.append( string.charAt( i ) );
-					i++;
+			case "all" -> {
+				// Nothing to match on; return the input untouched rather than looping forever
+				if ( substring1.isEmpty() ) {
+					return string;
 				}
+				int				substringLength	= substring1.length();
+				String			replacement		= replacementString.wasSuccessful() ? replacementString.get() : null;
+				StringBuilder	result			= new StringBuilder();
+				int				totalLength		= string.length();
+				int				i				= 0;
+				while ( true ) {
+					// In-place, case-insensitive search; the haystack is never lower-cased
+					int matchIndex = StringUtil.indexOfIgnoreCase( string, substring1, i );
+					if ( matchIndex == -1 ) {
+						// What is left can not hold a match, copy the tail in one shot and stop
+						result.append( string, i, totalLength );
+						break;
+					}
+					result.append( string, i, matchIndex );
+					result.append( replacement != null
+					    ? replacement
+					    : context.invokeFunction( replacementFunction,
+					        new Object[] { string.substring( matchIndex, matchIndex + substringLength ), matchIndex + 1, string } ) );
+					i = matchIndex + substringLength;
+				}
+				return result.toString();
 			}
-			return result.toString();
-		} else {
-			throw new BoxRuntimeException( "Invalid replacement scope: [" + scope + "]. Valid options are 'one' or 'all'." );
+			default -> throw new BoxRuntimeException( "Invalid replacement scope: [" + scope + "]. Valid options are 'one' or 'all'." );
 		}
 	}
 
