@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-public class ReadTest {
+public class ZipReadTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -81,7 +81,7 @@ public class ReadTest {
 		// call the BIF through BoxLang.
 		instance.executeSource(
 		    """
-		    result = read( source, 'docs/message.txt', 'UTF-16LE' );
+		    result = zipRead( source, 'docs/message.txt', 'UTF-16LE' );
 		    """,
 		    this.context
 		);
@@ -106,7 +106,7 @@ public class ReadTest {
 		// call the BIF through BoxLang.
 		instance.executeSource(
 		    """
-		    result = read( source, 'docs/message.txt' );
+		    result = zipRead( source, 'docs/message.txt' );
 		    """,
 		    this.context
 		);
@@ -129,7 +129,7 @@ public class ReadTest {
 		    BoxRuntimeException.class,
 		    () -> instance.executeSource(
 		        """
-		        result = read( source, 'docs/message.txt' );
+		        result = zipRead( source, 'docs/message.txt' );
 		        """,
 		        this.context
 		    )

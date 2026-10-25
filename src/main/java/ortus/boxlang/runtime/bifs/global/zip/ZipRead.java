@@ -23,10 +23,10 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.ZipUtil;
 
 @BoxBIF( description = "Read a file from an archive" )
-public class Read extends BIF {
+public class ZipRead extends BIF {
 
 	// Constructor
-	public Read() {
+	public ZipRead() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.STRING, Key.source ),
