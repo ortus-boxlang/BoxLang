@@ -1933,6 +1933,30 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testReturnPlus() {
+		instance.executeSource(
+		    """
+		       function foo() {
+		    	return +"4";
+		    }
+		    foo()
+		        """,
+		    context, BoxSourceType.BOXSCRIPT );
+	}
+
+	@Test
+	public void testReturnPlusCF() {
+		instance.executeSource(
+		    """
+		       function foo() {
+		    	return +"4";
+		    }
+		    foo()
+		        """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
 	public void testPrefixedIdentifierAsType() {
 		instance.executeSource(
 		    """
