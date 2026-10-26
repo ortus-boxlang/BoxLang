@@ -136,4 +136,60 @@ public class PrintlnTest {
 		assertThat( new String( outContent.toByteArray() ) ).contains( System.lineSeparator() );
 	}
 
+	@Test
+	public void testMultipleArguments() {
+		context.getRequestContext().setOut( new PrintStream( outContent ) );
+		instance.executeSource( """
+		                        println("Name:", "Peter", 21, "Peter");
+		                        """, context );
+		assertThat( new String( outContent.toByteArray() ) )
+		    .isEqualTo( String.join( System.lineSeparator(), "Name:", "Peter", "21", "Peter" ) + System.lineSeparator() );
+	}
+
+	@Test
+	public void testEmptyArguments() {
+		context.getRequestContext().setOut( new PrintStream( outContent ) );
+		instance.executeSource( """
+		                        println("", "A", "");
+		                        """, context );
+		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( System.lineSeparator() + "A" + System.lineSeparator() + System.lineSeparator() );
+	}
+
+	@Test
+	public void testNamedMessage() {
+		context.getRequestContext().setOut( new PrintStream( outContent ) );
+		instance.executeSource( """
+		                        println(message="Hello");
+		                        """, context );
+		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( "Hello" + System.lineSeparator() );
+	}
+
+	@Test
+	public void testJavaArrayAmongArguments() {
+		context.getRequestContext().setOut( new PrintStream( outContent ) );
+		instance.executeSource( """
+		                        println("bytes:", "abc".getBytes(), "end");
+		                        """, context );
+		assertThat( new String( outContent.toByteArray() ) )
+		    .isEqualTo( String.join( System.lineSeparator(), "bytes:", "[97, 98, 99]", "end" ) + System.lineSeparator() );
+	}
+
+	@Test
+	public void testArgumentCollection() {
+		context.getRequestContext().setOut( new PrintStream( outContent ) );
+		instance.executeSource( """
+		                        println(argumentCollection=["A", "B", 3]);
+		                        """, context );
+		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( String.join( System.lineSeparator(), "A", "B", "3" ) + System.lineSeparator() );
+	}
+
+	@Test
+	public void testEmptyCall() {
+		context.getRequestContext().setOut( new PrintStream( outContent ) );
+		instance.executeSource( """
+		                        println();
+		                        """, context );
+		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( System.lineSeparator() );
+	}
+
 }
