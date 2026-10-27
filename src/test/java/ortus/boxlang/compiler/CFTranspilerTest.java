@@ -791,6 +791,7 @@ public class CFTranspilerTest {
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "098f6bcd4621d373cade4e832627b4f6" );
 	}
+
 	/**
 	 * Helper: runs a CF invoke() call against a struct "object" with a greet( name ) method
 	 * and returns the result variable.
@@ -808,6 +809,7 @@ public class CFTranspilerTest {
 		    context, BoxSourceType.CFSCRIPT );
 		return variables.get( result );
 	}
+
 	@DisplayName( "It leaves invoke() with the canonical object/method/arguments names alone" )
 	@Test
 	public void testInvokeCanonicalNames() {
