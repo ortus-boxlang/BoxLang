@@ -587,7 +587,13 @@ public class ConnectionManager {
 					    .toConfigStruct();
 					adHocUserPassOptions.put( Key.username, options.username );
 					adHocUserPassOptions.put( Key.password, options.password );
-					return getOnTheFlyDataSource( adHocUserPassOptions );
+
+					// Name it so it can be identified at a glance as an override of the named datasource:
+					// {original_name}_user_{username}_{properties_hash}
+					return getOnTheFlyDataSource(
+					    adHocUserPassOptions,
+					    DatasourceConfig.getOnTheFlyUserPrefix( datasourceName, options.username )
+					);
 				}
 
 				return getDatasourceOrThrow( Key.of( datasourceName ) );
@@ -768,11 +774,32 @@ public class ConnectionManager {
 	 * @return A new or already registered datasource
 	 */
 	public DataSource getOnTheFlyDataSource( IStruct properties ) {
-		Key datasourceName = Key.of( "onthefly_" + properties.hashCode() );
+		return getOnTheFlyDataSource( properties, DatasourceConfig.ON_THE_FLY_PREFIX );
+	}
+
+	/**
+	 * Get an on-the-fly datasource from a struct configuration, using a custom name
+	 * prefix so the datasource is identifiable at a glance in the registered datasource
+	 * listing.
+	 * <p>
+	 * The final name follows the pattern <code>{namePrefix}{properties_hash}</code>, so a prefix
+	 * of <code>myDB_user_jdoe_</code> produces <code>myDB_user_jdoe_1234567</code>.
+	 *
+	 * @param properties The datasource properties to declared for the on the fly
+	 *                   datasource
+	 * @param namePrefix The prefix to name the on the fly datasource with. A null or empty prefix
+	 *                   falls back to {@link DatasourceConfig#ON_THE_FLY_PREFIX}
+	 *
+	 * @return A new or already registered datasource
+	 */
+	public DataSource getOnTheFlyDataSource( IStruct properties, String namePrefix ) {
+		String	namePrefixFinal	= ( namePrefix == null || namePrefix.isEmpty() ) ? DatasourceConfig.ON_THE_FLY_PREFIX : namePrefix;
+		Key		datasourceName	= Key.of( namePrefixFinal + Math.abs( properties.hashCode() ) );
+
 		return this.datasources.computeIfAbsent( datasourceName, ( theName ) -> {
 
 			// What is the "unique" name of this datasource definition
-			Key uniqueName = DatasourceConfig.getUniqueName( "", true, theName.getName(), properties );
+			Key uniqueName = DatasourceConfig.getUniqueName( "", true, theName.getName(), properties, namePrefixFinal );
 
 			// See if the datasource service already has this definition
 			if ( this.datasourceService.has( uniqueName ) ) {
@@ -786,7 +813,8 @@ public class ConnectionManager {
 			DatasourceConfig config = new DatasourceConfig(
 			    Key.of( datasourceName.getName() ),
 			    properties )
-			    .setOnTheFly();
+			    .setOnTheFly()
+			    .withOnTheFlyPrefix( namePrefixFinal );
 
 			// Register it
 			return this.datasourceService.register( config ).beginPooling();

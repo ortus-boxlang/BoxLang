@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -194,6 +195,83 @@ public class ConnectionManagerTest {
 		) );
 		assertThat( datasource ).isNotNull();
 		assertThat( datasource.getConfiguration().isOnTheFly() ).isTrue();
+	}
+
+	@DisplayName( "It can get a datasource on the fly with a custom name prefix" )
+	@Test
+	public void testGetDatasourceOnTheFlyWithCustomPrefix() {
+
+		DataSource datasource = manager.getOnTheFlyDataSource(
+		    Struct.of(
+		        "driver", "derby",
+		        "database", "myDB",
+		        "connectionString", "jdbc:derby:memory:myDB;create=true"
+		    ),
+		    DatasourceConfig.getOnTheFlyUserPrefix( "myDB", "jdoe" )
+		);
+
+		assertThat( datasource ).isNotNull();
+		assertThat( datasource.getConfiguration().isOnTheFly() ).isTrue();
+
+		// The name should identify the source datasource and the credential override at a glance
+		String name = datasource.getUniqueName().getName();
+		assertThat( name ).startsWith( "myDB_user_jdoe_" );
+		assertThat( name.substring( "myDB_user_jdoe_".length() ) ).matches( "\\d+" );
+		assertThat( instance.getDataSourceService().getNames() ).asList().contains( name );
+	}
+
+	@DisplayName( "It names an on the fly datasource when username/password overrides a named datasource" )
+	@Test
+	public void testGetDatasourceByNameWithUsernamePasswordOverride() {
+
+		// Set up a named datasource
+		instance.getConfiguration().datasources.put(
+		    Key.of( "overrideTarget" ),
+		    JDBCTestUtils.buildDatasourceConfig( "overrideTarget" )
+		);
+
+		// Request it with a username/password override, which produces an ad-hoc datasource
+		DataSource datasource = manager.getDataSource(
+		    new QueryOptions( Struct.of(
+		        "datasource", "overrideTarget",
+		        "username", "jdoe",
+		        "password", "secret"
+		    ) )
+		);
+
+		assertThat( datasource ).isNotNull();
+		assertThat( datasource.getConfiguration().isOnTheFly() ).isTrue();
+
+		String	name		= datasource.getUniqueName().getName();
+		String	expected	= DatasourceConfig.getOnTheFlyUserPrefix( "overrideTarget", "jdoe" );
+
+		assertThat( name ).startsWith( expected );
+		assertThat( name.substring( expected.length() ) ).matches( "\\d+" );
+		// The original named datasource must be left untouched
+		assertThat( manager.getDatasource( Key.of( "overrideTarget" ) ).getConfiguration().isOnTheFly() ).isFalse();
+		// The ad-hoc name must not use the generic on the fly prefix
+		assertThat( name ).doesNotContain( DatasourceConfig.ON_THE_FLY_PREFIX );
+	}
+
+	@DisplayName( "It reuses the same ad-hoc datasource for the same named datasource and credentials" )
+	@Test
+	public void testGetDatasourceByNameWithUsernamePasswordOverrideIsCached() {
+		instance.getConfiguration().datasources.put(
+		    Key.of( "overrideCached" ),
+		    JDBCTestUtils.buildDatasourceConfig( "overrideCached" )
+		);
+
+		IStruct		options	= Struct.of(
+		    "datasource", "overrideCached",
+		    "username", "jdoe",
+		    "password", "secret"
+		);
+
+		DataSource	first	= manager.getDataSource( new QueryOptions( options ) );
+		DataSource	second	= manager.getDataSource( new QueryOptions( options ) );
+
+		assertThat( first.getUniqueName() ).isEqualTo( second.getUniqueName() );
+		assertThat( first ).isSameInstanceAs( second );
 	}
 
 	@DisplayName( "It can register a datasource of key name and properties struct" )
