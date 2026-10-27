@@ -424,7 +424,7 @@ public class CFLexerCustom extends CFLexer {
 						// switch( foo ) { case 1: break; }
 						isIdentifier = false;
 					} else if ( nextTokenType == RETURN && !lastTokenWas( DOT ) && !wrappedInPounds( nextToken ) &&
-					    ( nextNonWhiteSpaceCharIsOneOf( new int[] { '(', '{', '[', ';', '}', '\'', '"', '-', '_', '$' } ) || nextNonWhiteSpaceIsAnyChar()
+					    ( nextNonWhiteSpaceCharIsOneOf( new int[] { '(', '{', '[', ';', '}', '\'', '"', '-', '+', '_', '$' } ) || nextNonWhiteSpaceIsAnyChar()
 					        || nextNonWhiteSpaceIsAnyDigit() ) ) {
 						// return foo;
 						// return 42
@@ -432,6 +432,7 @@ public class CFLexerCustom extends CFLexer {
 						// return []
 						// return {}
 						// return -4
+						// return +"4"
 						// return _foo;
 						// return $foo;
 						// { return }

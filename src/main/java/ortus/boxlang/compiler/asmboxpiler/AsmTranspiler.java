@@ -557,6 +557,17 @@ public class AsmTranspiler extends Transpiler {
 			        returnType == Type.VOID_TYPE ? ReturnValueContext.EMPTY : ReturnValueContext.VALUE_OR_NULL );
 			    nodes.addAll( getUDFRegistrations() );
 			    nodes.addAll( body );
+			    // A body with NO statements leaves nothing on the operand stack, yet the
+			    // method still ends in ARETURN when the return type is not void. Without
+			    // profiling this case is handled by the "empty node list" null-push in
+			    // AsmHelper.methodWithContextAndClassLocator, but the profiling nodes
+			    // below make the node list non-empty, so the null must be pushed here —
+			    // otherwise the JVM rejects the class with "VerifyError: Operand stack
+			    // underflow" at the final ARETURN. Pushed BEFORE the markEnd so it stays
+			    // the method's result, exactly like the last statement of a non-empty body.
+			    if ( body.isEmpty() && returnType != Type.VOID_TYPE ) {
+				    nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			    }
 			    // Close the probe-charging interval after the last statement so the
 			    // final span's self-time is charged, not lost.
 			    if ( hasProfilerId() ) {
@@ -700,13 +711,15 @@ public class AsmTranspiler extends Transpiler {
 		if ( !hasProfilerId() ) {
 			return nodes;
 		}
-		List<Blueprint.SpanDef> spanDefs = getSpanDefs();
-		if ( spanDefs == null || spanDefs.isEmpty() ) {
-			return nodes;
-		}
 
 		String id = getFileId();
-		// Store the id into the static field.
+		// Store the id into the static field FIRST and UNCONDITIONALLY. The field is
+		// declared whenever profiling is enabled (see transpile()), and EVERY emitted
+		// mark/markEnd reads it — including the end-of-body markEnd that is emitted
+		// for a body with no statements at all. A file with NO executable spans (e.g.
+		// a comment-only helper template) never registers a span, but still runs that
+		// markEnd: if the id were left unset, the mark would pass null and the service
+		// would NPE on its blueprint lookup.
 		nodes.add( new LdcInsnNode( id ) );
 		nodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, internalClassName, PROFILER_ID_FIELD, Type.getDescriptor( String.class ) ) );
 
@@ -715,8 +728,11 @@ public class AsmTranspiler extends Transpiler {
 		// per-method 64KB limit. The old inline int[] array-build kept the array
 		// reference on the stack the whole block, so the clinit splitter could
 		// never subdivide it, causing MethodTooLargeException on big files.
+		// An EMPTY span list is still registered (as an empty chunk) so the key maps
+		// to a blueprint on load — otherwise every mark for such a file would miss the
+		// map and fall back to the linear case-insensitive scan.
 		nodes.addAll( AsmHelper.emitBlueprintRegistrationNodes(
-		    id, getLastModified(), getBlueprintKind(), spanDefs, internalClassName, PROFILER_BLUEPRINT_FIELD ) );
+		    id, getLastModified(), getBlueprintKind(), getSpanDefs(), internalClassName, PROFILER_BLUEPRINT_FIELD ) );
 		return nodes;
 	}
 

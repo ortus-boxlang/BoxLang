@@ -422,7 +422,7 @@ public class BoxLexerCustom extends BoxLexer {
 						// switch( foo ) { case 1: break; }
 						isIdentifier = false;
 					} else if ( nextTokenType == RETURN && !lastTokenWas( DOT ) && !wrappedInPounds( nextToken ) &&
-					    ( nextNonWhiteSpaceCharIsOneOf( new int[] { '(', '{', '[', ';', '}', '\'', '"', '-', '_', '$' } ) || nextNonWhiteSpaceIsAnyChar()
+					    ( nextNonWhiteSpaceCharIsOneOf( new int[] { '(', '{', '[', ';', '}', '\'', '"', '-', '+', '_', '$' } ) || nextNonWhiteSpaceIsAnyChar()
 					        || nextNonWhiteSpaceIsAnyDigit() ) ) {
 						// return foo;
 						// return 42
@@ -430,6 +430,7 @@ public class BoxLexerCustom extends BoxLexer {
 						// return []
 						// return {}
 						// return -4
+						// return +"4"
 						// { return }
 						// ignore foo.return
 						// ignore #return#
