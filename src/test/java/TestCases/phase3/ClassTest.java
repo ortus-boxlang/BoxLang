@@ -1331,6 +1331,17 @@ public class ClassTest {
 	}
 
 	@Test
+	public void testJavaExtendsCoercionToObjectParameter() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.JavaExtendsArrayList();
+		    obj.add( "a" );
+		    result = obj.size();
+		    """, context );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
+	@Test
 	public void testJavaImplementsWithImportAlias() {
 		instance.executeSource(
 		    """

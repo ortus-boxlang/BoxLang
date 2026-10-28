@@ -1,0 +1,7 @@
+class extends="java:java.util.ArrayList" {
+
+	function whoAmI() {
+		return "JavaExtendsArrayList";
+	}
+
+}
