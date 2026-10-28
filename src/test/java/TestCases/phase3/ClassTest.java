@@ -31,6 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.api.io.TempDir;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -1358,6 +1359,9 @@ public class ClassTest {
 	}
 
 	@Test
+	// ASM boxpiler only: the Java boxpiler emits Java source and javac must see the parent class,
+	// which by design only lives in the runtime/module class loaders here.
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	public void testJavaExtendsClassFromRuntimeClassLoader( @TempDir Path tempDir ) throws Exception {
 		// The Java parent only exists in the runtime class loader, emulating a JAR supplied by
 		// BOXLANG_HOME/lib or by a module, never present on the application class path.
