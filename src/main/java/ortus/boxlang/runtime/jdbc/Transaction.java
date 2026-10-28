@@ -20,6 +20,7 @@ import java.sql.Savepoint;
 import java.util.LinkedHashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -137,12 +138,11 @@ public class Transaction implements ITransaction {
 					this.connection.setTransactionIsolation( this.isolationLevel );
 				}
 
-				IStruct eventData = Struct.of(
+				announce( BoxEvent.ON_TRANSACTION_ACQUIRE, () -> Struct.of(
 				    "transaction", this,
 				    "connection", this.connection,
-				    "context", context
-				);
-				announce( BoxEvent.ON_TRANSACTION_ACQUIRE, eventData );
+				    "context", this.context
+				) );
 				// Savepoints may be requested before the first query establishes a datasource.
 				for ( Map.Entry<Key, Savepoint> entry : this.savepoints.entrySet() ) {
 					if ( entry.getValue() == null ) {
@@ -215,11 +215,10 @@ public class Transaction implements ITransaction {
 	 * Begin the transaction - essentially a no-nop, as the transaction is only started when the connection is first acquired.
 	 */
 	public Transaction begin() {
-		IStruct eventData = Struct.of(
+		announce( BoxEvent.ON_TRANSACTION_BEGIN, () -> Struct.of(
 		    "transaction", this,
-		    "context", context
-		);
-		announce( BoxEvent.ON_TRANSACTION_BEGIN, eventData );
+		    "context", this.context
+		) );
 		return this;
 	}
 
@@ -227,12 +226,11 @@ public class Transaction implements ITransaction {
 	 * Commit the transaction
 	 */
 	public Transaction commit() {
-		IStruct eventData = Struct.of(
-		    "connection", connection == null ? null : connection,
+		announce( BoxEvent.ON_TRANSACTION_COMMIT, () -> Struct.of(
+		    "connection", this.connection,
 		    "transaction", this,
-		    "context", context
-		);
-		announce( BoxEvent.ON_TRANSACTION_COMMIT, eventData );
+		    "context", this.context
+		) );
 		if ( this.connection != null ) {
 			try {
 				logger.debug( "Committing transaction" );
@@ -260,13 +258,12 @@ public class Transaction implements ITransaction {
 	 * @param savepoint The name of the savepoint to rollback to or NULL for no savepoint.
 	 */
 	public Transaction rollback( Key savepoint ) {
-		IStruct eventData = Struct.of(
+		announce( BoxEvent.ON_TRANSACTION_ROLLBACK, () -> Struct.of(
 		    "savepoint", savepoint == null ? null : savepoint.toString(),
-		    "connection", connection == null ? null : connection,
+		    "connection", this.connection,
 		    "transaction", this,
-		    "context", context
-		);
-		announce( BoxEvent.ON_TRANSACTION_ROLLBACK, eventData );
+		    "context", this.context
+		) );
 
 		if ( this.connection != null ) {
 			try {
@@ -304,13 +301,12 @@ public class Transaction implements ITransaction {
 	 */
 	public Savepoint setSavepoint( Key savepoint ) {
 		validateSavepointName( savepoint );
-		IStruct eventData = Struct.of(
+		announce( BoxEvent.ON_TRANSACTION_SET_SAVEPOINT, () -> Struct.of(
 		    "savepoint", savepoint == null ? null : savepoint.toString(),
-		    "connection", connection == null ? null : connection,
+		    "connection", this.connection,
 		    "transaction", this,
-		    "context", context
-		);
-		announce( BoxEvent.ON_TRANSACTION_SET_SAVEPOINT, eventData );
+		    "context", this.context
+		) );
 
 		if ( this.savepoints.containsKey( savepoint ) ) {
 			throw new DatabaseException( "Savepoint {} already exists, not creating again", savepoint.getNameNoCase() );
@@ -336,7 +332,7 @@ public class Transaction implements ITransaction {
 	public Transaction releaseSavepoint( Key savepoint ) {
 		validateSavepointName( savepoint );
 		assertSavepointExists( savepoint );
-		announce( BoxEvent.ON_TRANSACTION_RELEASE_SAVEPOINT, Struct.of(
+		announce( BoxEvent.ON_TRANSACTION_RELEASE_SAVEPOINT, () -> Struct.of(
 		    "savepoint", savepoint.toString(), "connection", this.connection, "transaction", this, "context", this.context
 		) );
 		if ( this.connection != null ) {
@@ -385,21 +381,19 @@ public class Transaction implements ITransaction {
 	 */
 	public Transaction end() {
 		try {
-			IStruct eventData = Struct.of(
-			    "connection", connection == null ? null : connection,
+			announce( BoxEvent.ON_TRANSACTION_END, () -> Struct.of(
+			    "connection", this.connection,
 			    "transaction", this,
-			    "context", context
-			);
-			announce( BoxEvent.ON_TRANSACTION_END, eventData );
+			    "context", this.context
+			) );
 
 			logger.debug( "Ending transaction, resetting connection properties, and releasing connection to connection pool" );
 
-			IStruct releaseEventData = Struct.of(
+			announce( BoxEvent.ON_TRANSACTION_RELEASE, () -> Struct.of(
 			    "transaction", this,
 			    "connection", this.connection,
-			    "context", context
-			);
-			announce( BoxEvent.ON_TRANSACTION_RELEASE, releaseEventData );
+			    "context", this.context
+			) );
 
 			if ( this.connection != null ) {
 				if ( !this.connection.getAutoCommit() ) {
@@ -441,16 +435,17 @@ public class Transaction implements ITransaction {
 
 	/**
 	 * Announce a transactional event on BOTH the runtime-level and application-level interceptor pools.
+	 * Pass the transaction context explicitly and let each pool produce event data on demand.
 	 */
-	private void announce( BoxEvent event, IStruct eventData ) {
+	private void announce( BoxEvent event, Supplier<IStruct> dataProducer ) {
 		RequestBoxContext requestContext = this.context.getRequestContext();
 		if ( requestContext != null ) {
 			requestContext.getApplicationListener()
 			    .getInterceptorPool()
-			    .announce( event, eventData );
+			    .announce( event.key(), dataProducer, this.context );
 		}
 
 		BoxRuntime.getInstance().getInterceptorService()
-		    .announce( event, eventData );
+		    .announce( event.key(), dataProducer, this.context );
 	}
 }
