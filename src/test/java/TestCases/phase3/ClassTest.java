@@ -1334,11 +1334,10 @@ public class ClassTest {
 	public void testJavaExtendsCoercionToObjectParameter() {
 		instance.executeSource(
 		    """
-		    obj = new src.test.java.TestCases.phase3.JavaExtendsArrayList();
-		    obj.add( "a" );
-		    result = obj.size();
+		    obj = new src.test.java.TestCases.phase3.JavaExtendsObjectParam();
+		    result = obj.echoObject( "a" );
 		    """, context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "obj:a" );
 	}
 
 	@Test
