@@ -1,0 +1,7 @@
+class extends="java:TestCases.phase3.JavaProtectedTarget" {
+
+	function greet() {
+		return "overridden by BoxLang";
+	}
+
+}

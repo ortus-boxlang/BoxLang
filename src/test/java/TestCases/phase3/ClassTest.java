@@ -1342,6 +1342,16 @@ public class ClassTest {
 	}
 
 	@Test
+	public void testJavaExtendsProtectedMethodOverride() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.JavaExtendsProtectedOverride();
+		    result = obj.callGreet();
+		    """, context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "overridden by BoxLang" );
+	}
+
+	@Test
 	public void testJavaImplementsWithImportAlias() {
 		instance.executeSource(
 		    """
