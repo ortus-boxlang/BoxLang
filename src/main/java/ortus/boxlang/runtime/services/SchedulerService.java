@@ -243,9 +243,9 @@ public class SchedulerService extends BaseService {
 				problems.add( "Entry is not a struct: " + entry );
 				continue;
 			}
-			IStruct	taskDef			= ( IStruct ) entry;
+			IStruct	taskDef		= ( IStruct ) entry;
 
-			String	taskName		= taskDef.getAsString( Key.task );
+			String	taskName	= taskDef.getAsString( Key.task );
 			if ( taskName == null || taskName.isBlank() ) {
 				problems.add( "Entry has no task name: " + taskDef );
 				continue;
