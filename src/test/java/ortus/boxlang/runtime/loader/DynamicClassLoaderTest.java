@@ -23,17 +23,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -178,110 +171,6 @@ public class DynamicClassLoaderTest {
 		assertThat( loadedClass ).isNotNull();
 		assertThat( loadedClass.getName() ).isEqualTo( targetClass );
 
-	}
-
-	/**
-	 * A test-only service used to prove that {@code ServiceLoader} discovery through the runtime
-	 * loader sees the provider files bundled inside module libraries.
-	 */
-	public interface ModuleResourceService {
-	}
-
-	/**
-	 * Provider for {@link ModuleResourceService}. It lives on the test class path (so the module
-	 * loader resolves the implementation through its parent chain) because only the service
-	 * <em>file</em> has to come from the module's library to exercise the resource lookup.
-	 */
-	public static class ModuleResourceServiceProvider implements ModuleResourceService {
-	}
-
-	@Test
-	@DisplayName( "The runtime loader resolves resources bundled in module libraries" )
-	void testRuntimeLoaderResolvesModuleResources() throws Exception {
-		// A module whose libs jar bundles resources that exist nowhere else: a plain resource and
-		// a ServiceLoader provider file, which is what module libraries such as JLine and JGit ship
-		String	markerName		= "boxlang/test/module-resource-marker.txt";
-		String	serviceName		= "META-INF/services/" + ModuleResourceService.class.getName();
-		Path	modulePath		= Files.createTempDirectory( "boxlang-module-resources" );
-		Path	libsPath		= Files.createDirectories( modulePath.resolve( "libs" ) );
-		Path	moduleJarPath	= libsPath.resolve( "module-resources.jar" );
-
-		try ( JarOutputStream moduleJar = new JarOutputStream( Files.newOutputStream( moduleJarPath ) ) ) {
-			addJarEntry( moduleJar, markerName, "module resource marker" );
-			addJarEntry( moduleJar, serviceName, ModuleResourceServiceProvider.class.getName() );
-		}
-
-		// Build the isolated module class loader the same way module registration does
-		ModuleRecord moduleRecord = new ModuleRecord( modulePath.toString() );
-		moduleRecord.getOrCreateModuleClassLoader();
-
-		ModuleService			moduleService	= runtime.getModuleService();
-		Map<Key, ModuleRecord>	registry		= moduleService.getRegistry();
-		registry.put( moduleRecord.name, moduleRecord );
-
-		try {
-			// A module loader always sees its own libraries
-			assertThat( moduleRecord.getModuleClassLoader().findModuleResource( markerName ) ).isNotNull();
-
-			// The runtime loader is the thread context class loader on CLI, so it must see them too
-			assertThat( runtime.getRuntimeLoader().getResource( markerName ) ).isNotNull();
-			assertThat( runtime.getRuntimeLoader().getResourceAsStream( markerName ) ).isNotNull();
-			assertThat( Collections.list( runtime.getRuntimeLoader().getResources( markerName ) ) ).hasSize( 1 );
-
-			// So SPI discovery through the runtime loader finds module-bundled provider files
-			assertThat( ServiceLoader.load( ModuleResourceService.class, runtime.getRuntimeLoader() ) ).hasSize( 1 );
-
-			// Misses stay misses
-			assertThat( runtime.getRuntimeLoader().getResource( "boxlang/test/does-not-exist.txt" ) ).isNull();
-		} finally {
-			registry.remove( moduleRecord.name );
-			moduleRecord.getModuleClassLoader().close();
-		}
-
-		// Unloaded modules stop resolving
-		assertThat( runtime.getRuntimeLoader().getResource( markerName ) ).isNull();
-	}
-
-	@Test
-	@DisplayName( "The module resource fallback is scoped to the runtime loader" )
-	void testModuleResourceFallbackIsRuntimeLoaderOnly() throws Exception {
-		String	markerName	= "boxlang/test/module-resource-marker.txt";
-		Path	modulePath	= Files.createTempDirectory( "boxlang-module-isolation" );
-		Path	libsPath	= Files.createDirectories( modulePath.resolve( "libs" ) );
-
-		try ( JarOutputStream moduleJar = new JarOutputStream( Files.newOutputStream( libsPath.resolve( "module-resources.jar" ) ) ) ) {
-			addJarEntry( moduleJar, markerName, "module resource marker" );
-		}
-
-		ModuleRecord moduleRecord = new ModuleRecord( modulePath.toString() );
-		moduleRecord.getOrCreateModuleClassLoader();
-
-		ModuleService			moduleService	= runtime.getModuleService();
-		Map<Key, ModuleRecord>	registry		= moduleService.getRegistry();
-		registry.put( moduleRecord.name, moduleRecord );
-
-		try {
-			assertThat( runtime.getRuntimeLoader().getResource( markerName ) ).isNotNull();
-
-			// Only the runtime loader — the thread context class loader — fans out to modules, so
-			// another module loader does not pick up a sibling module's libraries
-			try ( DynamicClassLoader siblingLoader = new DynamicClassLoader( Key.of( "ModuleIsolationTest" ), new URL[] {}, runtime.getRuntimeLoader(),
-			    false ) ) {
-				assertThat( siblingLoader.getResource( markerName ) ).isNull();
-			}
-		} finally {
-			registry.remove( moduleRecord.name );
-			moduleRecord.getModuleClassLoader().close();
-		}
-	}
-
-	/**
-	 * Write a single UTF-8 text entry into an open jar stream.
-	 */
-	private static void addJarEntry( JarOutputStream jar, String name, String content ) throws IOException {
-		jar.putNextEntry( new JarEntry( name ) );
-		jar.write( content.getBytes( StandardCharsets.UTF_8 ) );
-		jar.closeEntry();
 	}
 
 	@Test

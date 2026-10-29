@@ -93,9 +93,8 @@ public class InterceptorService extends InterceptorPool implements IService {
 			        }
 		        } );
 
-		// Auto-Load all interceptors found in the same class loader the other provider scans use
-		// (BIFs, components, boxpilers), so discovery is consistent across provider types
-		ServiceLoader.load( IInterceptor.class, BoxRuntime.class.getClassLoader() )
+		// Auto-Load all interceptors found in the runtime classloader
+		ServiceLoader.load( IInterceptor.class, this.runtime.getRuntimeLoader() )
 		    .stream()
 		    // Only load interceptors that are set to auto-load by default or by configuration
 		    .filter( provider -> canLoadInterceptor( provider.type() ) )

@@ -33,8 +33,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -50,9 +48,7 @@ import ortus.boxlang.runtime.bifs.global.type.NullValue;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.interop.MethodRecord;
-import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -543,136 +539,6 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 		}
 
 		return cachedClass;
-	}
-
-	/**
-	 * Find a resource on this class loader's own class path, falling back to the registered
-	 * module class loaders when this loader is the runtime loader.
-	 * <p>
-	 * Modules are isolated: each module's {@code libs} jars are seeded on that module's own class
-	 * loader, which is a <em>child</em> of the runtime loader, and a parent can never see a child's
-	 * URLs. Without this fallback the runtime loader — which is the thread context class loader on
-	 * CLI and other non-web deployments — reports every module-bundled resource as missing, which
-	 * silently breaks anything resolving resources through the context class loader:
-	 * {@code ServiceLoader} (JDBC drivers, logging backends, JLine terminal providers) and
-	 * libraries reading their own {@code META-INF} metadata.
-	 * <p>
-	 * This mirrors the module fallback {@link #findClass(String, Boolean, boolean)} already performs
-	 * for classes.
-	 *
-	 * @param name The resource name, using {@code /} as the separator
-	 *
-	 * @return The resource URL, or {@code null} when neither this loader nor any module has it
-	 */
-	@Override
-	public URL findResource( String name ) {
-		// Always search our own URLs first
-		URL resource = findModuleResource( name );
-		if ( resource != null ) {
-			return resource;
-		}
-
-		// Only the runtime loader can reach modules; module loaders delegate upwards instead
-		ModuleService moduleService = getResourceFallbackModuleService();
-		if ( moduleService == null ) {
-			return null;
-		}
-
-		for ( ModuleRecord moduleRecord : moduleService.getRegistry().values() ) {
-			IModuleClassLoader moduleLoader = moduleRecord.getModuleClassLoader();
-			if ( moduleLoader == null ) {
-				continue;
-			}
-			URL moduleResource = moduleLoader.findModuleResource( name );
-			if ( moduleResource != null ) {
-				getLogger().trace( "[{}] Resource [{}] found in module [{}]", this.nameAsKey.getName(), name, moduleRecord.name.getName() );
-				return moduleResource;
-			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * Find every resource with the given name, including the ones bundled by the registered modules
-	 * when this loader is the runtime loader. See {@link #findResource(String)} for why the module
-	 * fallback is required.
-	 *
-	 * @param name The resource name, using {@code /} as the separator
-	 *
-	 * @return An enumeration of every matching resource URL
-	 *
-	 * @throws IOException If an I/O error occurs while locating the resources
-	 */
-	@Override
-	public Enumeration<URL> findResources( String name ) throws IOException {
-		// Always search our own URLs first
-		List<URL>			resources		= new ArrayList<>();
-		Enumeration<URL>	localResources	= findModuleResources( name );
-		while ( localResources.hasMoreElements() ) {
-			resources.add( localResources.nextElement() );
-		}
-
-		// Then any resources the modules bundle under the same name
-		ModuleService moduleService = getResourceFallbackModuleService();
-		if ( moduleService == null ) {
-			return Collections.enumeration( resources );
-		}
-
-		for ( ModuleRecord moduleRecord : moduleService.getRegistry().values() ) {
-			IModuleClassLoader moduleLoader = moduleRecord.getModuleClassLoader();
-			if ( moduleLoader == null ) {
-				continue;
-			}
-			Enumeration<URL> moduleResources = moduleLoader.findModuleResources( name );
-			while ( moduleResources.hasMoreElements() ) {
-				resources.add( moduleResources.nextElement() );
-			}
-		}
-
-		getLogger().trace( "[{}] Resource [{}] found [{}] time(s) including modules", this.nameAsKey.getName(), name, resources.size() );
-
-		return Collections.enumeration( resources );
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * <p>
-	 * Searches only this class loader's own URLs, never the parent chain.
-	 */
-	@Override
-	public URL findModuleResource( String name ) {
-		return super.findResource( name );
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * <p>
-	 * Searches only this class loader's own URLs, never the parent chain.
-	 */
-	@Override
-	public Enumeration<URL> findModuleResources( String name ) throws IOException {
-		return super.findResources( name );
-	}
-
-	/**
-	 * The module service resource lookups fan out to, but only for the runtime loader, which is the
-	 * only loader modules are isolated behind.
-	 *
-	 * @return The module service, or {@code null} when this is not the runtime loader or the runtime
-	 *         has no module service yet
-	 */
-	private ModuleService getResourceFallbackModuleService() {
-		// Safe during boot: hasInstance() never triggers runtime creation, and the runtime loader
-		// is not assigned until the runtime instance is fully constructed
-		if ( !BoxRuntime.hasInstance() ) {
-			return null;
-		}
-		BoxRuntime runtimeInstance = BoxRuntime.getInstance();
-		if ( this != runtimeInstance.getRuntimeLoader() ) {
-			return null;
-		}
-		return runtimeInstance.getModuleService();
 	}
 
 	/**

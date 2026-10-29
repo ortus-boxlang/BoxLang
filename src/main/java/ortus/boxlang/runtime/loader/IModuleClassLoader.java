@@ -18,10 +18,6 @@
 package ortus.boxlang.runtime.loader;
 
 import java.io.Closeable;
-import java.io.IOException;
-import java.net.URL;
-import java.util.Collections;
-import java.util.Enumeration;
 
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -64,46 +60,4 @@ public interface IModuleClassLoader extends Closeable {
 	 * @return This loader viewed as a {@link ClassLoader} (for {@code ServiceLoader} and interop)
 	 */
 	ClassLoader toClassLoader();
-
-	/**
-	 * Find a resource bundled with this module, searching only this module's own class path
-	 * (its own URLs and {@code libs} jars) — never delegating to the parent chain.
-	 * <p>
-	 * Because modules are isolated, the runtime loader cannot see a module's URLs. The runtime
-	 * loader uses this method to expose module-bundled resources to code that resolves resources
-	 * through the thread context class loader — which is the runtime loader on CLI and other
-	 * non-web deployments — such as {@link java.util.ServiceLoader} and libraries reading their
-	 * own {@code META-INF} metadata.
-	 * <p>
-	 * The default reports the resource as not found; override it when the target can resolve
-	 * resources itself (the standard JVM {@link DynamicClassLoader} does).
-	 *
-	 * @param name The resource name, using {@code /} as the separator
-	 *
-	 * @return The resource URL, or {@code null} when this module does not bundle the resource
-	 */
-	default URL findModuleResource( String name ) {
-		return null;
-	}
-
-	/**
-	 * Find every resource with the given name bundled with this module, searching only this
-	 * module's own class path (its own URLs and {@code libs} jars) — never delegating to the
-	 * parent chain.
-	 * <p>
-	 * This is the plural counterpart of {@link #findModuleResource(String)} and exists so that
-	 * {@code ServiceLoader} style discovery sees every provider file a module bundles.
-	 * <p>
-	 * The default reports no resources; override it when the target can resolve resources itself
-	 * (the standard JVM {@link DynamicClassLoader} does).
-	 *
-	 * @param name The resource name, using {@code /} as the separator
-	 *
-	 * @return An enumeration of the resource URLs, empty when this module bundles none
-	 *
-	 * @throws IOException If an I/O error occurs while locating the resources
-	 */
-	default Enumeration<URL> findModuleResources( String name ) throws IOException {
-		return Collections.emptyEnumeration();
-	}
 }
