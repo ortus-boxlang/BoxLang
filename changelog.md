@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [BL-2753](https://ortussolutions.atlassian.net/browse/BL-2753) New `generateKeyPair()` BIF for Ed25519, Ed448, X25519, X448, RSA and EC key pairs
 - [BL-2758](https://ortussolutions.atlassian.net/browse/BL-2758) Comparisons now pass the caller's context down to the date caster, so date compares no longer rebuild the whole runtime config struct, and a date string compared inside a request is read in the request timezone. `Compare` and the comparison operators gain context-taking overloads; the old ones are deprecated
 - [BL-2759](https://ortussolutions.atlassian.net/browse/BL-2759) Interceptors announced without a context (BIF, query and transaction events) now run on the current request when there is one, so they see its settings and no longer rebuild the runtime config on every read
+- Module-bundled resources (e.g. `META-INF/services` SPI files and library metadata inside a module's `libs` jars) are now visible through the runtime class loader, so `getResource`/`getResources`/`ServiceLoader` discovery works for the thread context class loader on CLI and other non-web deployments, fixing module libraries such as JLine terminal providers and JGit SSH providers
 
 ## [1.18.0] - 2026-10-02
 
