@@ -835,20 +835,18 @@ public class SchedulerService extends BaseService {
 		if ( !Files.exists( tasksFile ) ) {
 			return new Array();
 		}
+		Object parsed;
 		try {
-			Object parsed = JSONUtil.fromJSON( tasksFile.toFile(), true );
-			if ( parsed instanceof Array ) {
-				Array tasks = ( Array ) parsed;
-				decryptTaskValues( tasks );
-				return tasks;
-			}
-			// File exists but contains non-array JSON — treat as corrupt
-			throw new BoxRuntimeException( "Scheduled tasks file [" + tasksFile + "] is corrupted: it does not contain a JSON array." );
-		} catch ( BoxRuntimeException e ) {
-			throw e;
+			parsed = JSONUtil.fromJSON( tasksFile.toFile(), true );
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Scheduled tasks file [" + tasksFile + "] is corrupted or unreadable: " + e.getMessage(), e );
 		}
+		if ( ! ( parsed instanceof Array tasks ) ) {
+			// File exists but contains non-array JSON — treat as corrupt
+			throw new BoxRuntimeException( "Scheduled tasks file [" + tasksFile + "] is corrupted: it does not contain a JSON array." );
+		}
+		decryptTaskValues( tasks );
+		return tasks;
 	}
 
 	/**
