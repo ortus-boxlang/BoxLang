@@ -29,27 +29,26 @@ import java.util.HexFormat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-
 public class NTLMHelperTest {
 
 	@DisplayName( "MD4 matches known test vectors" )
 	@Test
 	public void testMd4() {
 		assertThat( HexFormat.of().formatHex( NTLMHelper.md4( new byte[ 0 ] ) ) )
-			.isEqualTo( "31d6cfe0d16ae931b73c59d7e0c089c0" );
+		    .isEqualTo( "31d6cfe0d16ae931b73c59d7e0c089c0" );
 
 		assertThat( HexFormat.of().formatHex( NTLMHelper.md4( "abc".getBytes( StandardCharsets.US_ASCII ) ) ) )
-			.isEqualTo( "a448017aaf21d8525fc10ae87aa6729d" );
+		    .isEqualTo( "a448017aaf21d8525fc10ae87aa6729d" );
 
 		assertThat( HexFormat.of().formatHex( NTLMHelper.md4( "message digest".getBytes( StandardCharsets.US_ASCII ) ) ) )
-			.isEqualTo( "d9130a8164549fe818874806e1c7014b" );
+		    .isEqualTo( "d9130a8164549fe818874806e1c7014b" );
 	}
 
 	@DisplayName( "It computes the NT password hash" )
 	@Test
 	public void testNtPasswordHash() {
 		assertThat( HexFormat.of().formatHex( NTLMHelper.ntPasswordHash( "password" ) ) )
-			.isEqualTo( "8846f7eaee8fb117ad06bdd830b7586c" );
+		    .isEqualTo( "8846f7eaee8fb117ad06bdd830b7586c" );
 	}
 
 	@DisplayName( "HMAC-MD5 matches the RFC 2202 test vector" )
@@ -59,14 +58,14 @@ public class NTLMHelperTest {
 		Arrays.fill( hmacKey, ( byte ) 0x0b );
 
 		assertThat( HexFormat.of().formatHex( NTLMHelper.hmacMd5( hmacKey, "Hi There".getBytes( StandardCharsets.US_ASCII ) ) ) )
-			.isEqualTo( "9294727a3638bb1c13f48ef8158bfc9d" );
+		    .isEqualTo( "9294727a3638bb1c13f48ef8158bfc9d" );
 	}
 
 	@DisplayName( "It derives the NTLMv2 response key" )
 	@Test
 	public void testNtlmV2Hash() {
 		assertThat( HexFormat.of().formatHex( NTLMHelper.ntlmV2Hash( "User", "Password", "Domain" ) ) )
-			.isEqualTo( "0c868a403bfd7a93a3001ef22ef02e3f" );
+		    .isEqualTo( "0c868a403bfd7a93a3001ef22ef02e3f" );
 	}
 
 	@DisplayName( "It builds a Type 1 message" )

@@ -1829,7 +1829,7 @@ public class BoxHttpClient {
 		 *     .method( "POST" )
 		 *     .header( "Content-Type", "application/json" )
 		 *     .onComplete( result -> {
-		 * 							} )
+		 * 	} )
 		 *     .send();
 		 *
 		 * IStruct result = request.getHttpResult();
@@ -2351,7 +2351,7 @@ public class BoxHttpClient {
 				}
 
 				// Parse the existing challenge (the complete encoded Type 2 message)
-				byte[] type2 = NTLMHelper.parseType2(challenge);
+				byte[]		type2			= NTLMHelper.parseType2( challenge );
 
 				// Type 3 message
 				String		type3			= NTLMHelper.createType3( this.username, this.password, this.domain, this.workstation, type2 );
