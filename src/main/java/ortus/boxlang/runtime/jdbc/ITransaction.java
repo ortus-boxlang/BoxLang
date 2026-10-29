@@ -126,6 +126,15 @@ public interface ITransaction {
 	public Savepoint setSavepoint( Key savepoint );
 
 	/**
+	 * Release a named savepoint and invalidate savepoints created after it.
+	 * This does not commit or roll back any changes. Unsupported JDBC drivers throw a DatabaseException.
+	 * Returns this transaction for chainability.
+	 *
+	 * @param savepoint The name of an existing savepoint.
+	 */
+	public ITransaction releaseSavepoint( Key savepoint );
+
+	/**
 	 * Get the savepoints used in this transaction.
 	 * <p>
 	 * This method returns a map of savepoint names to their associated savepoint objects, allowing you to manage and rollback to specific points in the transaction.

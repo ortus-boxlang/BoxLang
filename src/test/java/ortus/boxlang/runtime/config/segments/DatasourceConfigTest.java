@@ -285,6 +285,63 @@ class DatasourceConfigTest {
 		assertThat( name.getName().split( "_" )[ 1 ] ).matches( "\\d+" );
 	}
 
+	@DisplayName( "It can create a unique name for an on the fly datasource with a custom prefix" )
+	@Test
+	void testItCanCreateUniqueNameForOnTheFlyWithCustomPrefix() {
+		DatasourceConfig	datasource	= new DatasourceConfig( Key.of( "myDB" ), Struct.of(
+		    "driver", "postgresql",
+		    "host", "localhost",
+		    "port", 5432,
+		    "database", "foo",
+		    "custom", "useSSL=false"
+		) )
+		    .setOnTheFly()
+		    .withOnTheFlyPrefix( DatasourceConfig.getOnTheFlyUserPrefix( "myDB", "jdoe" ) );
+
+		Key					name		= datasource.getUniqueName();
+
+		// The result should be: myDB_user_jdoe_<hashcode>
+		assertThat( name.getName() ).startsWith( "myDB_user_jdoe_" );
+		// fourth element should be a hashcode
+		assertThat( name.getName().split( "_" )[ 3 ] ).matches( "\\d+" );
+
+		// The static version with an explicit prefix must agree with the instance method
+		assertThat( name ).isEqualTo(
+		    DatasourceConfig.getUniqueName( "", true, datasource.getOriginalName(), datasource.getProperties(), "myDB_user_jdoe_" )
+		);
+	}
+
+	@DisplayName( "It falls back to the default on the fly prefix when a blank prefix is provided" )
+	@Test
+	void testItFallsBackToDefaultPrefixForOnTheFly() {
+		DatasourceConfig datasource = new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "driver", "postgresql",
+		    "host", "localhost",
+		    "port", 5432,
+		    "database", "foo"
+		) )
+		    .setOnTheFly()
+		    .withOnTheFlyPrefix( "" );
+
+		assertThat( datasource.getUniqueName().getName() ).startsWith( DatasourceConfig.ON_THE_FLY_PREFIX );
+		assertThat( DatasourceConfig.getUniqueName( "", true, "Foo", datasource.getProperties(), null ).getName() )
+		    .startsWith( DatasourceConfig.ON_THE_FLY_PREFIX );
+	}
+
+	@DisplayName( "It ignores the on the fly prefix for a non on the fly datasource" )
+	@Test
+	void testItIgnoresOnTheFlyPrefixForNamedDatasources() {
+		DatasourceConfig datasource = new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "driver", "postgresql",
+		    "host", "localhost",
+		    "port", 5432,
+		    "database", "foo"
+		) )
+		    .withOnTheFlyPrefix( "myDB_user_jdoe_" );
+
+		assertThat( datasource.getUniqueName().getName() ).startsWith( DatasourceConfig.SERVER_PREFIX );
+	}
+
 	@DisplayName( "Its unique name matches as long as properties are the same" )
 	@Test
 	void testUniqueNameMatches() {

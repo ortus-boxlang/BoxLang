@@ -21,6 +21,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.junit.jupiter.api.AfterAll;
@@ -29,6 +31,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
+import org.junit.jupiter.api.io.TempDir;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import ortus.boxlang.compiler.JavaMethodResolver;
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -40,6 +47,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
@@ -1328,6 +1336,74 @@ public class ClassTest {
 		assertThat( variables.getAsString( Key.of( "result2" ) ) ).isEqualTo( "alias:one:world" );
 		assertThat( variables.getAsString( Key.of( "result3" ) ) ).isEqualTo( "alias:one:7" );
 		assertThat( variables.getAsString( Key.of( "result4" ) ) ).isEqualTo( "alias:two:x:3" );
+	}
+
+	@Test
+	public void testJavaExtendsCoercionToObjectParameter() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.JavaExtendsObjectParam();
+		    result = obj.echoObject( "a" );
+		    """, context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "obj:a" );
+	}
+
+	@Test
+	public void testJavaExtendsProtectedMethodOverride() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.JavaExtendsProtectedOverride();
+		    result = obj.callGreet();
+		    """, context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "overridden by BoxLang" );
+	}
+
+	@Test
+	// ASM boxpiler only: the Java boxpiler emits Java source and javac must see the parent class,
+	// which by design only lives in the runtime/module class loaders here.
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	public void testJavaExtendsClassFromRuntimeClassLoader( @TempDir Path tempDir ) throws Exception {
+		// The Java parent only exists in the runtime class loader, emulating a JAR supplied by
+		// BOXLANG_HOME/lib or by a module, never present on the application class path.
+		Path classFile = tempDir.resolve( "com/example/bx/RuntimeOnlyParent.class" );
+		Files.createDirectories( classFile.getParent() );
+		Files.write( classFile, runtimeOnlyJavaParentBytes() );
+		( ( DynamicClassLoader ) instance.getRuntimeLoader() ).addURL( tempDir.toUri().toURL() );
+
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.JavaExtendsRuntimeLibParent();
+		    assert obj instanceof "com.example.bx.RuntimeOnlyParent";
+		    result = obj.whoAmI();
+		    """, context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "boxlang-runtime-lib" );
+	}
+
+	/**
+	 * Bytecode for com.example.bx.RuntimeOnlyParent: a public class with a no-arg constructor and a
+	 * public whoAmI() method, used to stand in for a Java class delivered in a JAR.
+	 */
+	private static byte[] runtimeOnlyJavaParentBytes() {
+		ClassWriter classWriter = new ClassWriter( 0 );
+		classWriter.visit( Opcodes.V21, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, "com/example/bx/RuntimeOnlyParent", null, "java/lang/Object", null );
+
+		MethodVisitor constructor = classWriter.visitMethod( Opcodes.ACC_PUBLIC, "<init>", "()V", null, null );
+		constructor.visitCode();
+		constructor.visitVarInsn( Opcodes.ALOAD, 0 );
+		constructor.visitMethodInsn( Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false );
+		constructor.visitInsn( Opcodes.RETURN );
+		constructor.visitMaxs( 1, 1 );
+		constructor.visitEnd();
+
+		MethodVisitor whoAmI = classWriter.visitMethod( Opcodes.ACC_PUBLIC, "whoAmI", "()Ljava/lang/String;", null, null );
+		whoAmI.visitCode();
+		whoAmI.visitLdcInsn( "RuntimeOnlyParent" );
+		whoAmI.visitInsn( Opcodes.ARETURN );
+		whoAmI.visitMaxs( 1, 1 );
+		whoAmI.visitEnd();
+
+		classWriter.visitEnd();
+		return classWriter.toByteArray();
 	}
 
 	@Test

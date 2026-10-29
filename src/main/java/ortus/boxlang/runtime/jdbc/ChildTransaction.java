@@ -10,6 +10,7 @@ import org.apache.commons.text.RandomStringGenerator;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 /**
  * A child transaction object used for implementing nested JDBC transactions.
@@ -61,7 +62,7 @@ public class ChildTransaction implements ITransaction {
 	 * Stores the savepoints used in this transaction, referenced from <code>transactionSetSavepoint( "mySavepoint" )</code> and
 	 * <code>transactionRollback( "mySavepoint" )</code>.
 	 *
-	 * Each savepoint name uses a Key to avoid case sensitivity issues with the lookup, and each JDBC savepoint is created with the name in UPPERCASE for
+	 * Each savepoint name uses a Key to avoid case sensitivity issues with the lookup, and each JDBC savepoint is created with a normalized name for
 	 * the same reason.
 	 */
 	private Map<Key, Savepoint>			savepoints	= new HashMap<>();
@@ -114,7 +115,7 @@ public class ChildTransaction implements ITransaction {
 		if ( this.connection == null ) {
 			this.connection = this.parent.getBoxConnection();
 			// now that we've obtained a connection, we can "begin" the child transaction.
-			if ( !this.savepoints.containsKey( generateSavepointKey( ChildTransaction.BEGIN ) ) ) {
+			if ( !getSavepoints().containsKey( generateSavepointKey( ChildTransaction.BEGIN ) ) ) {
 				begin();
 			}
 		}
@@ -175,7 +176,7 @@ public class ChildTransaction implements ITransaction {
 	 * Commit the transaction
 	 */
 	public ChildTransaction commit() {
-		if ( !this.savepoints.containsKey( generateSavepointKey( ChildTransaction.COMMIT ) ) ) {
+		if ( !getSavepoints().containsKey( generateSavepointKey( ChildTransaction.COMMIT ) ) ) {
 			setSavepoint( ChildTransaction.COMMIT );
 		}
 		return this;
@@ -198,7 +199,9 @@ public class ChildTransaction implements ITransaction {
 	public ChildTransaction rollback( Key savepoint ) {
 		Key savepointKey = generateSavepointKey( savepoint );
 		logger.debug( "Rolling back child transaction to savepoint {}", savepointKey );
+		assertSavepointExists( savepointKey );
 		this.parent.rollback( savepointKey );
+		getSavepoints();
 		return this;
 	}
 
@@ -210,10 +213,28 @@ public class ChildTransaction implements ITransaction {
 	public Savepoint setSavepoint( Key savepoint ) {
 		Key			savepointKey	= generateSavepointKey( savepoint );
 		Savepoint	jdbcSavepoint	= this.parent.setSavepoint( savepointKey );
-		if ( jdbcSavepoint != null ) {
-			this.savepoints.put( savepointKey, jdbcSavepoint );
-		}
+		this.savepoints.put( savepointKey, jdbcSavepoint );
 		return jdbcSavepoint;
+	}
+
+	/**
+	 * Release a savepoint owned by this child transaction. Parent savepoints are not accessible by name.
+	 */
+	public ChildTransaction releaseSavepoint( Key savepoint ) {
+		if ( BEGIN.equals( savepoint ) || COMMIT.equals( savepoint ) || END.equals( savepoint ) ) {
+			throw new DatabaseException( "Cannot release an internal child transaction savepoint" );
+		}
+		Key savepointKey = generateSavepointKey( savepoint );
+		assertSavepointExists( savepointKey );
+		this.parent.releaseSavepoint( savepointKey );
+		getSavepoints();
+		return this;
+	}
+
+	private void assertSavepointExists( Key savepoint ) {
+		if ( !getSavepoints().containsKey( savepoint ) ) {
+			throw new DatabaseException( "Savepoint not found in child transaction: " + savepoint );
+		}
 	}
 
 	/**
@@ -227,6 +248,9 @@ public class ChildTransaction implements ITransaction {
 	 * @return A map of savepoint Keys to JDBC savepoint objects.
 	 */
 	public Map<Key, Savepoint> getSavepoints() {
+		Map<Key, Savepoint> parentSavepoints = this.parent.getSavepoints();
+		this.savepoints.keySet().removeIf( key -> !parentSavepoints.containsKey( key ) );
+		this.savepoints.replaceAll( ( key, value ) -> parentSavepoints.get( key ) );
 		return this.savepoints;
 	}
 
@@ -249,6 +273,9 @@ public class ChildTransaction implements ITransaction {
 	}
 
 	private Key generateSavepointKey( Key savepoint ) {
+		if ( savepoint == null || savepoint == Key.nulls || savepoint.getName().isBlank() ) {
+			throw new DatabaseException( "Savepoint name cannot be null or empty" );
+		}
 		return savepoint.getNameNoCase().startsWith( "child_" ) ? savepoint : Key.of( this.savepointPrefix + savepoint.getName().toUpperCase() );
 	}
 }

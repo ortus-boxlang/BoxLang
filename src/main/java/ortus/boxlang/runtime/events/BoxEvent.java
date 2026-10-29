@@ -124,6 +124,7 @@ public enum BoxEvent {
 	ON_TRANSACTION_COMMIT( "onTransactionCommit" ),
 	ON_TRANSACTION_ROLLBACK( "onTransactionRollback" ),
 	ON_TRANSACTION_SET_SAVEPOINT( "onTransactionSetSavepoint" ),
+	ON_TRANSACTION_RELEASE_SAVEPOINT( "onTransactionReleaseSavepoint" ),
 
 	/**
 	 * Cache Store Events

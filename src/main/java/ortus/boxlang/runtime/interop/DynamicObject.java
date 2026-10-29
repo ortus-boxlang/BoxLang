@@ -497,7 +497,11 @@ public class DynamicObject implements IReferenceable, Serializable {
 	 *
 	 */
 	public Method findMatchingMethod( IBoxContext context, String methodName, Class<?>[] argumentsAsClasses, Object... arguments ) {
-		return DynamicInteropService.findMatchingMethod( context, this.targetClass, methodName, argumentsAsClasses, BooleanRef.of( true ), arguments );
+		// The arguments must be passed twice: once as the array the resolver writes coerced values
+		// into (a clone, so coercion never mutates the caller's array), and once as the actual
+		// argument values. Without both, coercion-based matching is skipped entirely.
+		return DynamicInteropService.findMatchingMethod( context, this.targetClass, methodName, argumentsAsClasses, BooleanRef.of( true ),
+		    arguments.clone(), arguments );
 	}
 
 	/**

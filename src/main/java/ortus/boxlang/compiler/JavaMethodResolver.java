@@ -38,8 +38,8 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
  * BoxLang UDF names. Used by both the Java and ASM boxpilers to generate accurate
  * method stubs when a BoxLang class extends a Java class.
  * <p>
- * For each UDF name defined in the BoxLang class, this resolver finds all public methods
- * (including overloads) with that name from the Java class hierarchy. Each overload gets
+ * For each UDF name defined in the BoxLang class, this resolver finds all public and protected
+ * methods (including overloads) with that name from the Java class hierarchy. Each overload gets
  * its own stub that delegates to the same BoxLang UDF.
  */
 public class JavaMethodResolver {
@@ -98,8 +98,8 @@ public class JavaMethodResolver {
 	}
 
 	/**
-	 * Collects all public methods from the given Java class and its entire hierarchy
-	 * (superclasses and interfaces), then filters to only those whose name matches
+	 * Collects all overridable (public or protected) methods from the given Java class and its
+	 * entire hierarchy (superclasses and interfaces), then filters to only those whose name matches
 	 * one of the provided UDF names (case-insensitive).
 	 *
 	 * @param javaClass The Java class being extended
@@ -110,8 +110,8 @@ public class JavaMethodResolver {
 	public static Map<String, List<ResolvedMethod>> resolveMatchingMethods( Class<?> javaClass, Set<String> udfNames ) {
 		Map<String, List<ResolvedMethod>>	result		= new LinkedHashMap<>();
 
-		// Collect all unique public methods from the hierarchy
-		List<Method>						allMethods	= collectPublicMethods( javaClass );
+		// Collect all unique overridable methods from the hierarchy
+		List<Method>						allMethods	= collectOverridableMethods( javaClass );
 
 		for ( Method method : allMethods ) {
 			String nameLower = method.getName().toLowerCase();
@@ -129,15 +129,15 @@ public class JavaMethodResolver {
 	}
 
 	/**
-	 * Collects all public methods from a class and its entire hierarchy, deduplicating
-	 * by exact signature (name + parameter types). Only includes methods that are
-	 * overridable (public, non-static, non-final).
+	 * Collects all overridable (public or protected) methods from a class and its entire hierarchy,
+	 * deduplicating by exact signature (name + parameter types). Only includes methods that are
+	 * overridable (public or protected, non-static, non-final).
 	 *
 	 * @param javaClass The class to inspect
 	 *
-	 * @return List of unique overridable public methods
+	 * @return List of unique overridable methods
 	 */
-	private static List<Method> collectPublicMethods( Class<?> javaClass ) {
+	private static List<Method> collectOverridableMethods( Class<?> javaClass ) {
 		Map<String, Method>	seen	= new LinkedHashMap<>();
 		Class<?>			current	= javaClass;
 
@@ -175,11 +175,14 @@ public class JavaMethodResolver {
 	}
 
 	/**
-	 * Returns true if a method can be overridden: public, non-static, non-final.
+	 * Returns true if a method can be overridden: public or protected, non-static, non-final.
 	 */
 	private static boolean isOverridable( Method m ) {
 		int mods = m.getModifiers();
-		return Modifier.isPublic( mods ) && !Modifier.isStatic( mods ) && !Modifier.isFinal( mods );
+		// Protected methods are inherited and are the usual shape of a library's overridable hook
+		// (e.g. JGit's JschConfigSessionFactory#configure). The generated stub is public, which Java
+		// allows since visibility is widened.
+		return ( Modifier.isPublic( mods ) || Modifier.isProtected( mods ) ) && !Modifier.isStatic( mods ) && !Modifier.isFinal( mods );
 	}
 
 	/**
