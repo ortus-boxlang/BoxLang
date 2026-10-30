@@ -26,6 +26,8 @@ plugins {
 	id 'com.gradleup.nmcp.aggregation' version "1.4.4"
     // Download task
     id "de.undercouch.download" version "5.7.0"
+    // CycloneDX SBOM generation
+    id "org.cyclonedx.bom" version "2.3.1"
 }
 
 /**
@@ -126,8 +128,11 @@ dependencies {
 	implementation "commons-io:commons-io:2.22.0"
 	// https://mvnrepository.com/artifact/org.itadaki/bzip2
 	implementation "org.itadaki:bzip2:0.9.1"
-	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
-	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.28.2'
+	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-core
+	// Note: We intentionally use javaparser-core (NOT javaparser-symbol-solver-core).
+	// The symbol solver transitively bundles Guava, which is unused by BoxLang and
+	// was flagged by CVE-2026-102554. BoxLang only needs javaparser-core's AST classes.
+	implementation 'com.github.javaparser:javaparser-core:3.28.2'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 	implementation 'org.apache.commons:commons-lang3:3.20.0'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
@@ -161,6 +166,10 @@ dependencies {
 	// Compile Only Dependencies
 	// Java Annotations Checks, this are for compile documentation only. It's not included in the final build
 	compileOnly 'org.checkerframework:checker-qual:3.54.0'
+	// Javassist is only used for its bytecode opcode constants (ACONST_NULL, GOTO, etc.)
+	// in a few asmboxpiler transformers. Previously supplied transitively by the symbol
+	// solver; declared explicitly as compileOnly so it stays out of the shipped JAR.
+	compileOnly 'org.javassist:javassist:3.31.0-GA'
 
 }
 
@@ -516,6 +525,11 @@ shadowJar {
 	exclude 'com/google/**'
 	exclude 'org/checkerframework/**'
 
+	// Strip bundled dependency metadata (META-INF/maven/**/pom.properties) so
+	// SCA scanners cannot fingerprint transitive dependencies that aren't actually
+	// shipped as classes. BoxLang's own version info lives in META-INF/boxlang/.
+	exclude 'META-INF/maven/**'
+
 	minimize{
 		exclude( dependency( "org.slf4j:.*:.*" ) )
 		exclude( dependency( "ch.qos.logback:.*:.*" ) )
@@ -572,6 +586,9 @@ task shadowJarNoop( type: com.github.jengelman.gradle.plugins.shadow.tasks.Shado
 	exclude 'org/javassist/**'
 	exclude 'com/google/**'
 	exclude 'org/checkerframework/**'
+
+	// Strip bundled dependency metadata (see shadowJar for rationale)
+	exclude 'META-INF/maven/**'
 	// Note: We keep ASM in runtime as it's used for bytecode manipulation beyond compilation
 
 	manifest {
@@ -885,11 +902,27 @@ task createDistributionFile( type: Zip ){
 	}
 }
 /**
+ * CycloneDX SBOM
+ * Generated from the resolved runtime dependency graph, NOT from the shaded jar, because shading strips
+ * META-INF/maven and scanners cannot see the bundled dependencies. Test dependencies are excluded.
+ * Output: build/sbom/boxlang-{version}.cdx.json
+ */
+tasks.named( "cyclonedxBom" ) {
+	includeConfigs = [ "runtimeClasspath" ]
+	projectType = "library"
+	schemaVersion = "1.6"
+	outputFormat = "json"
+	includeLicenseText = false
+	destination = layout.buildDirectory.dir( "sbom" ).get().asFile
+	outputName = "boxlang-${version}.cdx"
+}
+
+/**
  * Task moves the contents of the `libs` folder to the `distributions` folder
  * Includes all BoxLang JAR variants: main, noop, java-compiler, and asm-compiler
  */
 task libsToDistro( type: Copy ) {
-	dependsOn build, createDistributionFile, shadowJarNoop, jarJavaCompiler, jarAsmCompiler,
+	dependsOn build, createDistributionFile, cyclonedxBom, shadowJarNoop, jarJavaCompiler, jarAsmCompiler,
 		javadocJarJavaCompiler, sourcesJarJavaCompiler,
 		javadocJarAsmCompiler, sourcesJarAsmCompiler,
 		javadocJarNoop, sourcesJarNoop
@@ -912,6 +945,11 @@ task libsToDistro( type: Copy ) {
 	from( 'build/resources/main/META-INF/boxlang/version.properties' ){
 	}
 
+	// SBOM ships beside the binaries
+	from( 'build/sbom' ) {
+		include 'boxlang-' + version + '.cdx.json'
+	}
+
 	destinationDir = file( "build/distributions" )
 
 	doLast {
@@ -922,6 +960,10 @@ task libsToDistro( type: Copy ) {
 				generateChecksum( file, 'MD5' )
 			}
 		}
+
+		// SBOM checksum: boxlang-{version}.cdx.json.sha256
+		def sbom = file( "build/distributions/boxlang-${version}.cdx.json" )
+		generateChecksum( sbom, 'SHA-256', 'sha256' )
 
 		// Move the distribution files to the evergreen folder
 		file( "build/evergreen" ).mkdirs()
@@ -957,15 +999,16 @@ build.finalizedBy( libsToDistro )
 
  * @param file The file to generate the checksum for
  * @param algorithm The algorithm to use (e.g., "SHA-256", "MD5")
+ * @param extension Optional checksum file extension, defaults to the lowercased algorithm name
  */
-def generateChecksum( File file, String algorithm ) {
+def generateChecksum( File file, String algorithm, String extension = null ) {
 	def digest = java.security.MessageDigest.getInstance( algorithm )
 	file.eachByte( 4096 ) { bytes, size ->
 		digest.update( bytes, 0, size )
 	}
 	def checksum = digest.digest().collect { String.format( '%02x', it ) }.join()
 
-	def checksumFile = new File( file.parent, "${file.name}.${algorithm.toLowerCase()}" )
+	def checksumFile = new File( file.parent, "${file.name}.${extension ?: algorithm.toLowerCase()}" )
 	checksumFile.text = "${checksum}  ${file.name}\n"
 }
 
