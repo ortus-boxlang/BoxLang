@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -230,64 +231,81 @@ public class SchedulerService extends BaseService {
 		IBoxContext	runtimeContext	= runtime.getRuntimeContext();
 		try {
 			tasks = loadTasksFromDisk();
-		} catch ( Exception e ) {
-			this.logger.error( "Failed to load persisted schedule tasks — startup will continue without them: {}", e.getMessage() );
-			return;
+		} catch ( BoxRuntimeException e ) {
+			// A corrupted tasks file is a hard stop: starting without it would silently drop every persisted task
+			reportCorruptTasksFile( tasksFile, e, true );
+			throw e;
 		}
 
+		List<String> problems = new ArrayList<>();
 		for ( Object entry : tasks ) {
 			if ( ! ( entry instanceof IStruct ) ) {
+				problems.add( "Entry is not a struct: " + entry );
 				continue;
 			}
-			IStruct	taskDef			= ( IStruct ) entry;
+			IStruct	taskDef		= ( IStruct ) entry;
 
-			String	taskName		= taskDef.getAsString( Key.task );
-
-			// Get the scheduler name from the task definition
-			Object	schedulerField	= taskDef.get( Key.scheduler );
-			String	schedulerName	= schedulerField != null ? schedulerField.toString() : null;
-			if ( schedulerName == null || schedulerName.isBlank() ) {
-				schedulerName = DEFAULT_SCHEDULER_NAME;
-			}
+			String	taskName	= taskDef.getAsString( Key.task );
 			if ( taskName == null || taskName.isBlank() ) {
-				this.logger.warn( "Skipping persisted task with no name" );
+				problems.add( "Entry has no task name: " + taskDef );
 				continue;
 			}
 
-			boolean	paused			= BooleanCaster.cast( taskDef.getOrDefault( Key.paused, false ) );
-
-			// Get or create the named scheduler (register only — startup happens later via startupRegisteredSchedulers)
-			Key		schedulerKey	= Key.of( schedulerName );
-			if ( !hasScheduler( schedulerKey ) ) {
-				ortus.boxlang.runtime.async.tasks.BaseScheduler s = new ortus.boxlang.runtime.async.tasks.BaseScheduler( schedulerName, runtimeContext );
-				registerScheduler( s, false );
+			try {
+				registerPersistedTask( taskDef, taskName, runtimeContext );
+				this.logger.info( "  + Loaded persisted task [{}]", taskName );
+			} catch ( Exception e ) {
+				problems.add( "Task [" + taskName + "] failed to load: " + e.getMessage() );
 			}
-			ortus.boxlang.runtime.async.tasks.BaseScheduler	scheduler	= ( ortus.boxlang.runtime.async.tasks.BaseScheduler ) getScheduler( schedulerKey );
+		}
+		warnTaskLoadProblems( tasksFile, problems );
+	}
 
-			String											group		= taskDef.getAsString( Key.group );
-			String											className	= taskDef.getAsString( Key._CLASS );
-			ortus.boxlang.runtime.async.tasks.ScheduledTask	scheduledTask;
-			Runnable										callable	= null;
+	/**
+	 * Build a persisted task definition into its scheduler. The scheduler is registered, but not started, if it does not exist yet.
+	 *
+	 * @param taskDef        The persisted task definition
+	 * @param taskName       The name of the task
+	 * @param runtimeContext The runtime context
+	 */
+	private void registerPersistedTask( IStruct taskDef, String taskName, IBoxContext runtimeContext ) {
+		// Get the scheduler name from the task definition
+		Object	schedulerField	= taskDef.get( Key.scheduler );
+		String	schedulerName	= schedulerField != null ? schedulerField.toString() : null;
+		if ( schedulerName == null || schedulerName.isBlank() ) {
+			schedulerName = DEFAULT_SCHEDULER_NAME;
+		}
 
-			if ( className != null && !className.isBlank() ) {
-				// Class-based task: instantiate once and wire life-cycle methods (identical to doUpdate)
-				scheduledTask = ortus.boxlang.runtime.components.async.Schedule.registerClassTask(
-				    scheduler, taskName, group != null ? group : "", runtimeContext, taskDef );
-			} else {
-				// Build callable and register the task
-				callable		= ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext, taskDef );
-				scheduledTask	= scheduler.task( taskName, group != null ? group : "" ).call( callable );
-			}
+		boolean	paused			= BooleanCaster.cast( taskDef.getOrDefault( Key.paused, false ) );
 
-			// Apply full configuration (identical to doUpdate — repeat, exclude, callbacks, metadata, scheduling)
-			ortus.boxlang.runtime.components.async.Schedule.applyTaskConfiguration( scheduledTask, callable, taskDef, runtimeContext );
+		// Get or create the named scheduler (register only — startup happens later via startupRegisteredSchedulers)
+		Key		schedulerKey	= Key.of( schedulerName );
+		if ( !hasScheduler( schedulerKey ) ) {
+			registerScheduler( new BaseScheduler( schedulerName, runtimeContext ), false );
+		}
+		BaseScheduler	scheduler	= ( BaseScheduler ) getScheduler( schedulerKey );
 
-			// Restore paused state last so it overrides any enable set by configuration
-			if ( paused ) {
-				scheduledTask.disable();
-			}
+		String			group		= taskDef.getAsString( Key.group );
+		String			className	= taskDef.getAsString( Key._CLASS );
+		ScheduledTask	scheduledTask;
+		Runnable		callable	= null;
 
-			this.logger.info( "  + Loaded persisted task [{}] in scheduler [{}]", taskName, schedulerName );
+		if ( className != null && !className.isBlank() ) {
+			// Class-based task: instantiate once and wire life-cycle methods (identical to doUpdate)
+			scheduledTask = ortus.boxlang.runtime.components.async.Schedule.registerClassTask(
+			    scheduler, taskName, group != null ? group : "", runtimeContext, taskDef );
+		} else {
+			// Build callable and register the task
+			callable		= ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext, taskDef );
+			scheduledTask	= scheduler.task( taskName, group != null ? group : "" ).call( callable );
+		}
+
+		// Apply full configuration (identical to doUpdate — repeat, exclude, callbacks, metadata, scheduling)
+		ortus.boxlang.runtime.components.async.Schedule.applyTaskConfiguration( scheduledTask, callable, taskDef, runtimeContext );
+
+		// Restore paused state last so it overrides any enable set by configuration
+		if ( paused ) {
+			scheduledTask.disable();
 		}
 	}
 
@@ -686,26 +704,29 @@ public class SchedulerService extends BaseService {
 		String name = schedulerName.getName();
 		this.logger.info( "+ Reloading scheduler [{}] from disk...", name );
 
+		// Read the file BEFORE tearing anything down: a corrupted file must not wipe a running scheduler
+		Path		tasksFilePath	= getTasksFilePath();
+		IBoxContext	runtimeContext	= runtime.getRuntimeContext();
+		Array		tasks			= null;
+		if ( Files.exists( tasksFilePath ) ) {
+			try {
+				tasks = loadTasksFromDisk();
+			} catch ( BoxRuntimeException e ) {
+				reportCorruptTasksFile( tasksFilePath, e, false );
+				throw e;
+			}
+		}
+
 		// Shutdown and remove the existing scheduler
 		if ( hasScheduler( schedulerName ) ) {
 			removeScheduler( schedulerName, force, timeout );
 		}
 
-		// Re-load tasks from tasks.json for this scheduler only
-		Path		tasksFilePath	= getTasksFilePath();
-		IBoxContext	runtimeContext	= runtime.getRuntimeContext();
-
-		if ( java.nio.file.Files.exists( tasksFilePath ) ) {
-			Array tasks;
-			try {
-				tasks = loadTasksFromDisk();
-			} catch ( Exception e ) {
-				this.logger.error( "Failed to reload tasks for scheduler [{}] — scheduler will start empty: {}", name, e.getMessage() );
-				tasks = new Array();
-			}
-
+		if ( tasks != null ) {
+			List<String> problems = new ArrayList<>();
 			for ( Object entry : tasks ) {
 				if ( ! ( entry instanceof IStruct ) ) {
+					problems.add( "Entry is not a struct: " + entry );
 					continue;
 				}
 				IStruct	taskDef			= ( IStruct ) entry;
@@ -719,40 +740,18 @@ public class SchedulerService extends BaseService {
 
 				String taskName = taskDef.getAsString( Key.task );
 				if ( taskName == null || taskName.isBlank() ) {
-					this.logger.warn( "Skipping persisted task with no name during reload of scheduler [{}]", name );
+					problems.add( "Entry has no task name: " + taskDef );
 					continue;
 				}
 
-				boolean paused = BooleanCaster.cast( taskDef.getOrDefault( Key.paused, false ) );
-
-				// Get or create the (now-empty) scheduler
-				if ( !hasScheduler( schedulerName ) ) {
-					BaseScheduler s = new BaseScheduler( name, runtimeContext );
-					registerScheduler( s, false );
+				try {
+					registerPersistedTask( taskDef, taskName, runtimeContext );
+					this.logger.info( "  + Reloaded task [{}] in scheduler [{}]", taskName, name );
+				} catch ( Exception e ) {
+					problems.add( "Task [" + taskName + "] failed to load: " + e.getMessage() );
 				}
-				BaseScheduler	scheduler	= ( BaseScheduler ) getScheduler( schedulerName );
-
-				String			group		= taskDef.getAsString( Key.group );
-				String			className	= taskDef.getAsString( Key._CLASS );
-				ScheduledTask	scheduledTask;
-				Runnable		callable	= null;
-
-				if ( className != null && !className.isBlank() ) {
-					scheduledTask = ortus.boxlang.runtime.components.async.Schedule.registerClassTask(
-					    scheduler, taskName, group != null ? group : "", runtimeContext, taskDef );
-				} else {
-					callable		= ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext, taskDef );
-					scheduledTask	= scheduler.task( taskName, group != null ? group : "" ).call( callable );
-				}
-
-				ortus.boxlang.runtime.components.async.Schedule.applyTaskConfiguration( scheduledTask, callable, taskDef, runtimeContext );
-
-				if ( paused ) {
-					scheduledTask.disable();
-				}
-
-				this.logger.info( "  + Reloaded task [{}] in scheduler [{}]", taskName, name );
 			}
+			warnTaskLoadProblems( tasksFilePath, problems );
 		} else {
 			this.logger.info( "+ No tasks.json found — scheduler [{}] will start empty after reload", name );
 		}
@@ -829,27 +828,25 @@ public class SchedulerService extends BaseService {
 	 *
 	 * @return The array of persisted task definition structs, or an empty array if the file does not exist.
 	 *
-	 * @throws BoxRuntimeException if the file exists but cannot be read or parsed.
+	 * @throws BoxRuntimeException if the file exists but cannot be read or parsed. The file is never modified.
 	 */
 	public Array loadTasksFromDisk() {
 		Path tasksFile = getTasksFilePath();
 		if ( !Files.exists( tasksFile ) ) {
 			return new Array();
 		}
+		Object parsed;
 		try {
-			Object parsed = JSONUtil.fromJSON( tasksFile.toFile(), true );
-			if ( parsed instanceof Array ) {
-				Array tasks = ( Array ) parsed;
-				decryptTaskValues( tasks );
-				return tasks;
-			}
-			// File exists but contains non-array JSON — treat as corrupt
-			throw new BoxRuntimeException( "tasks.json exists but does not contain a JSON array; refusing to overwrite." );
-		} catch ( BoxRuntimeException e ) {
-			throw e;
+			parsed = JSONUtil.fromJSON( tasksFile.toFile(), true );
 		} catch ( Exception e ) {
-			throw new BoxRuntimeException( "Failed to read tasks.json: " + e.getMessage(), e );
+			throw new BoxRuntimeException( "Scheduled tasks file [" + tasksFile + "] is corrupted or unreadable: " + e.getMessage(), e );
 		}
+		if ( ! ( parsed instanceof Array tasks ) ) {
+			// File exists but contains non-array JSON — treat as corrupt
+			throw new BoxRuntimeException( "Scheduled tasks file [" + tasksFile + "] is corrupted: it does not contain a JSON array." );
+		}
+		decryptTaskValues( tasks );
+		return tasks;
 	}
 
 	/**
@@ -1004,6 +1001,53 @@ public class SchedulerService extends BaseService {
 		}
 	}
 
+	/**
+	 * Report a corrupted tasks file with a banner that is hard to miss.
+	 *
+	 * @param tasksFile The tasks file
+	 * @param cause     The failure
+	 * @param fatal     True when the runtime is about to stop because of it; the banner is then also written to stderr
+	 */
+	private void reportCorruptTasksFile( Path tasksFile, Exception cause, boolean fatal ) {
+		String	bar		= "=".repeat( 78 );
+		String	banner	= String.format(
+		    "%n%s%n!!! SCHEDULED TASKS COULD NOT BE LOADED: tasks.json IS CORRUPTED !!!%n%s%nFile:  %s%nError: %s%n%s%n%s%n",
+		    bar,
+		    bar,
+		    tasksFile.toAbsolutePath(),
+		    cause.getMessage(),
+		    fatal
+		        ? "BoxLang cannot start without its persisted tasks. The file has NOT been modified.\nFix or remove the file, then restart."
+		        : "The running schedulers were left untouched and the file has NOT been modified.\nFix or remove the file, then reload.",
+		    bar );
+		this.logger.error( banner );
+		if ( fatal ) {
+			System.err.println( banner );
+		}
+	}
+
+	/**
+	 * Log a warning banner for persisted entries that could not be loaded. Does nothing when there are no problems.
+	 *
+	 * @param tasksFile The tasks file
+	 * @param problems  One description per problem entry
+	 */
+	private void warnTaskLoadProblems( Path tasksFile, List<String> problems ) {
+		if ( problems.isEmpty() ) {
+			return;
+		}
+		String	bar		= "=".repeat( 78 );
+		String	banner	= String.format(
+		    "%n%s%n!!! WARNING: %d scheduled task(s) in [%s] could not be loaded !!!%n%s%n%s%n%s%n",
+		    bar,
+		    problems.size(),
+		    tasksFile.toAbsolutePath(),
+		    bar,
+		    String.join( System.lineSeparator(), problems.stream().map( p -> "  - " + p ).toList() ),
+		    bar );
+		this.logger.warn( banner );
+	}
+
 	// --------------------------------------------------------------------------
 	// Tasks-file watcher methods (reloadOnChange support)
 	// --------------------------------------------------------------------------
@@ -1080,7 +1124,8 @@ public class SchedulerService extends BaseService {
 				}
 			}
 		} catch ( Exception e ) {
-			this.logger.error( "Failed to read tasks.json during reload-on-change: {}", e.getMessage() );
+			// Server is already running: keep the in-memory tasks and shout about the file
+			reportCorruptTasksFile( getTasksFilePath(), e, false );
 			return;
 		}
 
