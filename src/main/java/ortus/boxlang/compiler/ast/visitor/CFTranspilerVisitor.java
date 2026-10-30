@@ -192,6 +192,12 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static Set<String>						BIFReturnTypeFixSet			= new HashSet<>();
 
 	/**
+	 * BIF/member functions whose CFML "scope" argument accepts {@code once}, which BoxLang only
+	 * understands as {@code one}. All keys must be lowercase for consistent matching.
+	 */
+	private static final Set<String>				REPLACE_ONCE_SCOPE_METHODS	= Set.of( "replace", "replacenocase", "rereplace", "rereplacenocase" );
+
+	/**
 	 * Maps CF BIF names to BoxLang BIF names.
 	 * Used to rename function calls during transpilation.
 	 */
@@ -786,15 +792,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 		// swap "once" for "one"
 		// Only handling position args for now. We can add named arg support later if needed.
-		if ( ( name.equals( "replacenocase" ) || name.equals( "replace" ) || name.equals( "rereplace" ) || name.equals( "rereplacenocase" ) )
-		    && node.getArguments().size() > 3
-		    && node.getArguments().get( 0 ).getName() == null ) {
-			if ( node.getArguments().get( 3 ).getValue() instanceof BoxStringLiteral bsl ) {
-				String val = bsl.getValue().toLowerCase();
-				if ( val.equals( "once" ) ) {
-					bsl.setValue( "one" );
-				}
-			}
+		// The string is argument 0, so the scope is argument 3 in the BIF form
+		if ( REPLACE_ONCE_SCOPE_METHODS.contains( name ) ) {
+			transpileReplaceOnceScope( node.getArguments(), 3 );
 		}
 
 		// If second arg (positional) or "mask" arg (named) is a BoxIntegerLiteral or BoxDecimalLiteral, force it to a string literal with the original text
@@ -845,6 +845,8 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 *
 	 * Currently handles:
 	 * - listAppend() member function: defaults includeEmptyFields to true (CF-compat)
+	 * - replace()/replaceNoCase()/reReplace()/reReplaceNoCase() member functions: swaps the CFML
+	 * "once" scope for BoxLang's "one"
 	 *
 	 * @param node The BoxMethodInvocation node to transform
 	 *
@@ -858,8 +860,33 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			if ( name.equals( "listappend" ) ) {
 				return transpileListAppend( node );
 			}
+			// swap "once" for "one"
+			// Only handling position args for now. We can add named arg support later if needed.
+			// The receiver IS the string, so the scope shifts down to argument 2
+			if ( REPLACE_ONCE_SCOPE_METHODS.contains( name ) ) {
+				transpileReplaceOnceScope( node.getArguments(), 2 );
+			}
 		}
 		return super.visit( node );
+	}
+
+	/**
+	 * Swaps the CFML {@code once} scope for BoxLang's {@code one} on a replace family call.
+	 * <p>
+	 * {@code replace()}, {@code replaceNoCase()}, {@code reReplace()} and {@code reReplaceNoCase()}
+	 * take the scope as the 4th argument in BIF form, but the 3rd in member form since the receiver
+	 * supplies the string. Only positional args are handled.
+	 *
+	 * @param args       The mutable argument list of the call
+	 * @param scopeIndex The index of the scope argument, or beyond the list size when it was omitted
+	 */
+	private void transpileReplaceOnceScope( List<BoxArgument> args, int scopeIndex ) {
+		if ( args.size() <= scopeIndex || args.get( 0 ).getName() != null ) {
+			return;
+		}
+		if ( args.get( scopeIndex ).getValue() instanceof BoxStringLiteral bsl && bsl.getValue().equalsIgnoreCase( "once" ) ) {
+			bsl.setValue( "one" );
+		}
 	}
 
 	/**

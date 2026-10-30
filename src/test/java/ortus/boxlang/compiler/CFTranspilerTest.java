@@ -611,6 +611,30 @@ public class CFTranspilerTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bradgreenbluered" );
 	}
 
+	@DisplayName( "Can replace once with one in the replace family member method calls" )
+	@Test
+	public void testMemberMethodReplaceOnce() {
+		// In the member form the receiver is the string, so the scope is the 3rd argument
+		instance.executeSource(
+		    """
+		        subjectString = "redgreenbluered";
+		        memberReplace         = subjectString.replace( "red", "brad", "once" );
+		        memberReplaceNoCase   = subjectString.replaceNoCase( "RED", "brad", "once" );
+		        memberReplaceAll      = subjectString.replace( "red", "brad", "all" );
+		        memberReReplace       = subjectString.reReplace( "r[ae]d", "brad", "once" );
+		        memberReReplaceNoCase = subjectString.reReplaceNoCase( "R[AE]D", "brad", "once" );
+		        memberReReplaceUpper  = subjectString.reReplace( "r[ae]d", "brad", "ONE" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsString( Key.of( "memberReplace" ) ) ).isEqualTo( "bradgreenbluered" );
+		assertThat( variables.getAsString( Key.of( "memberReplaceNoCase" ) ) ).isEqualTo( "bradgreenbluered" );
+		assertThat( variables.getAsString( Key.of( "memberReplaceAll" ) ) ).isEqualTo( "bradgreenbluebrad" );
+		assertThat( variables.getAsString( Key.of( "memberReReplace" ) ) ).isEqualTo( "bradgreenbluered" );
+		assertThat( variables.getAsString( Key.of( "memberReReplaceNoCase" ) ) ).isEqualTo( "bradgreenbluered" );
+		assertThat( variables.getAsString( Key.of( "memberReReplaceUpper" ) ) ).isEqualTo( "bradgreenbluered" );
+	}
+
 	@DisplayName( "It transpiles directoryList absolute_path arg to path" )
 	@Test
 	public void testDirectoryListArgRename() {
