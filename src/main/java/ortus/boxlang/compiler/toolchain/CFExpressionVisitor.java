@@ -129,6 +129,7 @@ import ortus.boxlang.parser.antlr.CFGrammar.ExprPowerContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprPrecedenceContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprPrefixContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprRelationalContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprSaveContentContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprStatInvocableContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprTernaryContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprUnaryContext;
@@ -1074,6 +1075,23 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	@Override
 	public BoxExpression visitExprLiterals( ExprLiteralsContext ctx ) {
 		return ctx.literals().accept( this );
+	}
+
+	/**
+	 * Visit the savecontent expression context. Adobe's savecontent expression syntax is only supported
+	 * as a full assignment statement, which CFVisitor rewrites before reaching here, so any other
+	 * position such as a = b = savecontent { ... } is reported as an error.
+	 *
+	 * @param ctx the parse tree
+	 *
+	 * @return a placeholder null node, since the error stops compilation
+	 */
+	@Override
+	public BoxExpression visitExprSaveContent( ExprSaveContentContext ctx ) {
+		var	pos	= tools.getPosition( ctx );
+		var	src	= tools.getSourceText( ctx );
+		tools.reportError( "savecontent can only be used as the value of an assignment, e.g. result = savecontent { ... }", pos );
+		return new BoxNull( pos, src );
 	}
 
 	/**

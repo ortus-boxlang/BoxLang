@@ -62,6 +62,7 @@ import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.CFParser;
+import ortus.boxlang.parser.antlr.CFGrammar.AssignmentModifierContext;
 import ortus.boxlang.parser.antlr.CFGrammar.AtomsContext;
 import ortus.boxlang.parser.antlr.CFGrammar.BoxClassContext;
 import ortus.boxlang.parser.antlr.CFGrammar.BreakContext;
@@ -100,10 +101,12 @@ import ortus.boxlang.parser.antlr.CFGrammar.ExprPowerContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprPrecedenceContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprPrefixContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprRelationalContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprSaveContentContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprStatAnonymousFunctionContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprStatInvocableContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprTernaryContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprUnaryContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprVarDeclContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprXorContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExpressionContext;
 import ortus.boxlang.parser.antlr.CFGrammar.FinallyBlockContext;
@@ -644,6 +647,10 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 	}
 
 	public BoxNode visitExprStatInvocable( ExprStatInvocableContext ctx ) {
+		BoxNode saveContent = buildSaveContentAssignment( ctx );
+		if ( saveContent != null ) {
+			return saveContent;
+		}
 		return buildExprStat( ctx );
 	}
 
@@ -907,6 +914,65 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 		var				src		= tools.getSourceText( ctx );
 		BoxExpression	value	= ctx.accept( expressionVisitor );
 		return new BoxExpressionStatement( value, pos, src );
+	}
+
+	/**
+	 * Rewrites Adobe's savecontent expression syntax into the regular savecontent component.
+	 * result = savecontent { body } becomes savecontent variable="result" { body }
+	 * var result = savecontent { body } becomes var result; savecontent variable="result" { body }
+	 *
+	 * @param ctx the parse tree
+	 *
+	 * @return the rewritten statement, or null if this is not a savecontent assignment
+	 */
+	private BoxNode buildSaveContentAssignment( ExprStatInvocableContext ctx ) {
+		var								expr		= ctx.el2();
+		List<AssignmentModifierContext>	modifiers	= List.of();
+
+		// var result = savecontent { ... }
+		if ( expr instanceof ExprVarDeclContext varDecl && varDecl.expression() instanceof InvocableContext invocable ) {
+			modifiers	= varDecl.assignmentModifier();
+			expr		= invocable.el2();
+		}
+
+		// It must be exactly: target = savecontent { ... }
+		if ( ! ( expr instanceof ExprAssignContext assign )
+		    || assign.EQUALSIGN() == null
+		    || ! ( assign.expression() instanceof InvocableContext right )
+		    || ! ( right.el2() instanceof ExprSaveContentContext saveContent ) ) {
+			return null;
+		}
+
+		var		pos			= tools.getPosition( ctx );
+		var		src			= tools.getSourceText( ctx );
+		// The left side exactly as written: result, local.result, data["html"], items[i].html
+		String	variable	= tools.getSourceText( assign.el2() );
+
+		// Reject final and static. Without this check, static would silently write to the wrong scope
+		// and final would be silently ignored, so a clear error is reported instead
+		if ( modifiers.stream().anyMatch( modifier -> modifier.VAR() == null ) ) {
+			tools.reportError( "Only [var] is supported with the savecontent expression syntax", pos );
+		}
+
+		// Keep any attributes the user wrote, such as trim=true or append=true
+		List<BoxAnnotation> attributes = new ArrayList<>();
+		saveContent.componentAttribute().forEach( attribute -> attributes.add( ( BoxAnnotation ) attribute.accept( this ) ) );
+
+		// The variable comes from the left side, so the user cannot also pass one
+		if ( attributes.stream().anyMatch( attribute -> attribute.getKey().getValue().equalsIgnoreCase( "variable" ) ) ) {
+			tools.reportError( "The [variable] attribute cannot be used with the savecontent expression syntax", pos );
+		}
+		attributes.add( new BoxAnnotation( new BoxFQN( "variable", pos, src ), new BoxStringLiteral( variable, pos, src ), pos, src ) );
+
+		BoxComponent component = new BoxComponent( "savecontent", attributes, buildStatementBlock( saveContent.normalStatementBlock() ), 0, pos, src );
+		if ( modifiers.isEmpty() ) {
+			return component;
+		}
+
+		// var result = savecontent { ... } declares the local variable first so savecontent writes into it
+		var declaration = new BoxAssignment( assign.el2().accept( expressionVisitor ), null, null,
+		    modifiers.stream().map( expressionVisitor::buildAssignmentModifier ).toList(), pos, src );
+		return new BoxStatementBlock( List.of( new BoxExpressionStatement( declaration, pos, src ), component ), pos, src );
 	}
 
 	/**
