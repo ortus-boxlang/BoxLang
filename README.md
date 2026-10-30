@@ -229,6 +229,18 @@ cd boxlang
 
 If you discover a security vulnerability within BoxLang, please send an email to [security@ortussolutions.com](mailto:security@ortussolutions.com). All security vulnerabilities will be promptly addressed.
 
+## Software Bill of Materials (SBOM)
+
+Every release publishes a [CycloneDX](https://cyclonedx.org/) SBOM that lists the runtime dependencies of this artifact.
+
+- **Files:** `boxlang-<version>.cdx.json` and `boxlang-<version>.cdx.json.sha256`
+- **Where:** next to the other release artifacts at `https://downloads.ortussolutions.com/ortussolutions/boxlang/<version>/`, and attached to the GitHub release.
+- **Verify:** `sha256sum -c boxlang-<version>.cdx.json.sha256`
+- **Scan:** `grype sbom:boxlang-<version>.cdx.json`
+- **Scope:** runtime dependencies only (no test dependencies), generated from the resolved dependency graph and not from the shaded jar.
+
+See the [SBOM documentation](https://boxlang.ortusbooks.com/getting-started/configuration/security#software-bill-of-materials-sbom) for details.
+
 ## Resources
 
 - 🌐 [Website](https://boxlang.io)
