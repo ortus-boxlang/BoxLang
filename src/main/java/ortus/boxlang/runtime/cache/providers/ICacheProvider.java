@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import java.util.List;
 
 import ortus.boxlang.runtime.cache.ICacheEntry;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
@@ -33,6 +34,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * A BoxLang cache provider that can talk to any cache implementation.
@@ -204,6 +206,36 @@ public interface ICacheProvider {
 	 * @return A struct of keys and their clear status
 	 */
 	public IStruct clear( String... keys );
+
+	/**
+	 * Clear all cache objects that have keys starting with any of the specified prefixes.
+	 *
+	 * @param prefixes The list of prefixes to match against cache keys
+	 * @param maxKeys  The maximum number of keys to clear
+	 *
+	 * @return A struct of keys and their clear status
+	 */
+	public default IStruct clearByPrefix( List<String> prefixes, long maxKeys ) {
+		long	startMillis	= System.currentTimeMillis();
+		long	deleted		= getKeysStream().filter( key -> {
+								for ( String prefix : prefixes ) {
+									if ( key.startsWith( prefix ) ) {
+										return true;
+									}
+								}
+								return false;
+							} ).limit( maxKeys ).reduce( 0L, ( count, key ) -> {
+								clear( key );
+								return count + 1;
+							}, Long::sum );
+
+		return Struct.of(
+		    "cacheName", getName().getName(),
+		    "prefixes", Array.fromList( prefixes ),
+		    "deleted", deleted,
+		    "durationMs", System.currentTimeMillis() - startMillis
+		);
+	}
 
 	/**
 	 * Get all the keys in the cache provider

@@ -19,6 +19,8 @@ package ortus.boxlang.runtime.cache.providers;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.List;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -144,6 +146,15 @@ public class BoxCacheProviderTest {
 		boxCache.set( "testKey", "test" );
 		assertThat( boxCache.lookup( "testKey" ) ).isTrue();
 		boxCache.clear( "testKey" );
+		assertThat( boxCache.lookup( "testKey" ) ).isFalse();
+	}
+
+	@Test
+	@DisplayName( "It can clear cache items by prefix" )
+	void testClearByPrefix() {
+		boxCache.set( "testKey", "test" );
+		assertThat( boxCache.lookup( "testKey" ) ).isTrue();
+		boxCache.clearByPrefix( List.of( "test" ), 10 );
 		assertThat( boxCache.lookup( "testKey" ) ).isFalse();
 	}
 
