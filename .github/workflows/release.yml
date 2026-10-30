@@ -193,6 +193,19 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: refs/tags/v${{ env.VERSION }}
 
+      # The SBOM and its checksum are already in build/distributions, so the
+      # "Upload Distributions to S3" step publishes them next to the binaries.
+      - name: Attach SBOM to Github Release
+        if: env.SNAPSHOT == 'false'
+        continue-on-error: true
+        run: |
+          gh release upload "v${VERSION}" \
+            "build/distributions/boxlang-${VERSION}.cdx.json" \
+            "build/distributions/boxlang-${VERSION}.cdx.json.sha256" \
+            --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Inform Slack
         if: ${{ always() }}
         uses: rtCamp/action-slack-notify@v2
