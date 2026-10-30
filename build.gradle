@@ -26,6 +26,8 @@ plugins {
 	id 'com.gradleup.nmcp.aggregation' version "1.4.4"
     // Download task
     id "de.undercouch.download" version "5.7.0"
+	// CycloneDX SBOM
+	id "org.cyclonedx.bom" version "3.5.1"
 }
 
 /**
@@ -900,6 +902,51 @@ task createDistributionFile( type: Zip ){
 	}
 }
 /**
+ * CycloneDX SBOM (Software Bill of Materials)
+ * Generates build/reports/sbom/boxlang-{version}.cdx.json from the runtimeClasspath only
+ * (the full transitive runtime tree shaded into the JAR). Test, compileOnly and build tool
+ * configurations are excluded. libsToDistro copies it to build/distributions with its checksums.
+ * https://github.com/CycloneDX/cyclonedx-gradle-plugin
+ */
+tasks.named( "cyclonedxDirectBom" ) {
+	def ortus = new org.cyclonedx.model.OrganizationalEntity()
+	ortus.name = "Ortus Solutions, Corp"
+	ortus.urls = [ "https://www.ortussolutions.com" ]
+	def apache = new org.cyclonedx.model.License()
+	apache.id = "Apache-2.0"
+	def licenses = new org.cyclonedx.model.LicenseChoice()
+	licenses.addLicense( apache )
+
+	includeConfigs			= [ "runtimeClasspath" ]
+	skipConfigs				= [ "(?i).*test.*", "compileOnly", "annotationProcessor" ]
+	projectType				= org.cyclonedx.model.Component.Type.LIBRARY
+	componentGroup			= "io.boxlang"
+	componentName			= "boxlang"
+	componentDescription	= "BoxLang is a modern, dynamic JVM language that can be deployed on multiple runtimes."
+	organizationalEntity	= ortus
+	licenseChoice			= licenses
+	jsonOutput				= layout.buildDirectory.file( "reports/sbom/boxlang-${version}.cdx.json" )
+	xmlOutput.convention( (RegularFile) null )
+
+	// The plugin only sets metadata.manufacturer and the BOM license, so we add the supplier and
+	// license to the main component and drop the Gradle-only project_path qualifier from its purl.
+	doLast {
+		def sbomFile	= jsonOutput.get().asFile
+		def sbom		= new groovy.json.JsonSlurper().parseText( sbomFile.getText( "UTF-8" ).replace( "?project_path=%3A", "" ) )
+		def supplier	= [ name: ortus.name, url: ortus.urls ]
+		sbom.metadata.supplier				= supplier
+		sbom.metadata.component.supplier	= supplier
+		sbom.metadata.component.licenses	= [ [ license: [ id: "Apache-2.0" ] ] ]
+		sbomFile.setText( groovy.json.JsonOutput.prettyPrint( groovy.json.JsonOutput.toJson( sbom ) ), "UTF-8" )
+		println "+ CycloneDX SBOM generated at ${sbomFile}"
+	}
+}
+// The src/modules/* projects are test fixtures, not shipped artifacts
+subprojects {
+	tasks.matching { it.name == "cyclonedxDirectBom" }.configureEach { enabled = false }
+}
+
+/**
  * Task moves the contents of the `libs` folder to the `distributions` folder
  * Includes all BoxLang JAR variants: main, noop, java-compiler, and asm-compiler
  */
@@ -907,7 +954,7 @@ task libsToDistro( type: Copy ) {
 	dependsOn build, createDistributionFile, shadowJarNoop, jarJavaCompiler, jarAsmCompiler,
 		javadocJarJavaCompiler, sourcesJarJavaCompiler,
 		javadocJarAsmCompiler, sourcesJarAsmCompiler,
-		javadocJarNoop, sourcesJarNoop
+		javadocJarNoop, sourcesJarNoop, cyclonedxDirectBom
 
 	from( 'build/libs' ) {
 		include 'boxlang-' + version + '.jar'
@@ -927,12 +974,17 @@ task libsToDistro( type: Copy ) {
 	from( 'build/resources/main/META-INF/boxlang/version.properties' ){
 	}
 
+	// CycloneDX SBOM
+	from( 'build/reports/sbom' ) {
+		include 'boxlang-' + version + '.cdx.json'
+	}
+
 	destinationDir = file( "build/distributions" )
 
 	doLast {
-		// Generate checksums for all zip and jar files in distributions folder
+		// Generate checksums for all zip, jar and SBOM files in distributions folder
 		file( "build/distributions" ).listFiles().each { file ->
-			if ( file.name.endsWith( '.zip' ) || file.name.endsWith( '.jar' ) ) {
+			if ( file.name.endsWith( '.zip' ) || file.name.endsWith( '.jar' ) || file.name.endsWith( '.cdx.json' ) ) {
 				generateChecksum( file, 'SHA-256' )
 				generateChecksum( file, 'MD5' )
 			}
@@ -962,7 +1014,7 @@ task libsToDistro( type: Copy ) {
 	   }
 
 		println "+ Libs have been moved to the distribution and evergreen folders"
-		println "+ Checksums generated for all zip and jar files"
+		println "+ Checksums generated for all zip, jar and SBOM files"
 	}
 }
 build.finalizedBy( libsToDistro )
@@ -994,6 +1046,12 @@ publishing {
 			artifact shadowJar
 			artifact javadocJar
 			artifact sourcesJar
+			// CycloneDX SBOM: boxlang-{version}-cyclonedx.json
+			artifact( tasks.named( "cyclonedxDirectBom" ).flatMap { it.jsonOutput } ) {
+				classifier = "cyclonedx"
+				extension = "json"
+				builtBy tasks.named( "cyclonedxDirectBom" )
+			}
 
 			// This is the only one sonatype accepts, not ortus.boxlang
 			// https://central.sonatype.com/
