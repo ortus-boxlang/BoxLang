@@ -17,12 +17,22 @@
  */
 package ortus.boxlang.compiler.prettyprint;
 
+import java.util.regex.Pattern;
+
+import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxClosure;
+import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructType;
+import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 
 public class StructLiteralPrinter {
 
-	private Visitor visitor;
+	/** A run of whitespace. */
+	private static final Pattern	WHITESPACE	= Pattern.compile( "\\s+" );
+
+	private Visitor					visitor;
 
 	public StructLiteralPrinter( Visitor visitor ) {
 		this.visitor = visitor;
@@ -47,9 +57,11 @@ public class StructLiteralPrinter {
 		if ( isMultiline && visitor.config.getAlignConsecutiveAssignments() ) {
 			for ( int start = 0; start < size; ) {
 				int end = size - 2;
+				// A run of aligned keys ends at a value that prints on several lines. That is decided from how the value
+				// will print, not from its source: a nested literal written on one line may print on several, and
+				// deciding from the source made the next pass align differently.
 				for ( int j = start; j < size; j += 2 ) {
-					String valueSource = values.get( j + 1 ).getSourceText();
-					if ( valueSource != null && ( valueSource.contains( "\n" ) || valueSource.contains( "\r" ) ) ) {
+					if ( printsMultiline( values.get( j + 1 ) ) ) {
 						end = j;
 						break;
 					}
@@ -151,13 +163,40 @@ public class StructLiteralPrinter {
 		visitor.printPostComments( structNode );
 	}
 
+	/**
+	 * Whether a struct value will print on several lines: a struct or array literal that is laid out multi-line, or a
+	 * closure or lambda with a block body.
+	 *
+	 * @param value the value expression
+	 *
+	 * @return true when it prints multi-line
+	 */
+	private boolean printsMultiline( BoxExpression value ) {
+		if ( value instanceof BoxStructLiteral struct ) {
+			return !struct.getValues().isEmpty() && shouldBeMultiline( struct );
+		}
+		if ( value instanceof BoxArrayLiteral array ) {
+			return !array.getValues().isEmpty() && visitor.config.getArray().getMultiline().getElementCount() < array.getValues().size();
+		}
+		if ( value instanceof BoxClosure closure ) {
+			return closure.getBody() instanceof BoxStatementBlock;
+		}
+		if ( value instanceof BoxLambda lambda ) {
+			return lambda.getBody() instanceof BoxStatementBlock;
+		}
+		return false;
+	}
+
 	private boolean shouldBeMultiline( BoxStructLiteral structNode ) {
 		if ( visitor.config.getCFFormatCompatibility() && structNode.getSourceText() != null
 		    && ( structNode.getSourceText().contains( "\n" ) || structNode.getSourceText().contains( "\r" ) ) ) {
 			return true;
 		}
+		// Measured with whitespace collapsed, so the formatter's own line breaks and alignment do not change the decision
+		// on the next pass
 		if ( structNode.getSourceText() != null
-		    && visitor.config.getStruct().getMultiline().getMinLength() < structNode.getSourceText().length() ) {
+		    && visitor.config.getStruct().getMultiline().getMinLength() < WHITESPACE.matcher( structNode.getSourceText().strip() ).replaceAll( " " )
+		        .length() ) {
 			return true;
 		}
 		var	size		= structNode.getValues().size();

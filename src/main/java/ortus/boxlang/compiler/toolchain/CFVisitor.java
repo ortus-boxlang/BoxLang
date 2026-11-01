@@ -603,7 +603,8 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 			// When we have an assignment, we want the text of the entire LHS, and not the text of the say dot access
 			// expression as in variables.x = n that only yields .x for other reasons. So the easiest way to do
 			// that is just to split out the left of the equals.
-			accessText		= assignment.getSourceText().split( "=" )[ 0 ];
+			// trimmed: the source between the name and "=" (often alignment spaces) is not part of the name
+			accessText		= assignment.getSourceText().split( "=" )[ 0 ].strip();
 			defaultValue	= assignment.getRight();
 		} else {
 			accessExpr	= expr;

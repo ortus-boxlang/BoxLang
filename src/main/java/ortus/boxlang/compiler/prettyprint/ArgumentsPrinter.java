@@ -18,6 +18,7 @@
 package ortus.boxlang.compiler.prettyprint;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
@@ -45,7 +46,7 @@ public class ArgumentsPrinter {
 			// Named argument: name = value
 			if ( arg.getName() != null ) {
 				if ( arg.getName() instanceof BoxStringLiteral str ) {
-					length += str.getValue().length();
+					length += nameText( str ).length();
 				} else {
 					String nameSource = arg.getName().getSourceText();
 					if ( nameSource != null ) {
@@ -56,9 +57,16 @@ public class ArgumentsPrinter {
 			}
 
 			// Argument value
-			String valueSource = arg.getValue().getSourceText();
-			if ( valueSource != null ) {
-				length += calculateSingleLineSourceLength( valueSource );
+			// Measured as printed, not from the source: the printer may rewrite the value (a concatenation printed as
+			// an interpolation, quotes changed), and measuring the source made the next pass break differently
+			int valueWidth = visitor.flatWidth( arg.getValue() );
+			if ( valueWidth >= 0 ) {
+				length += valueWidth;
+			} else {
+				String valueSource = arg.getValue().getSourceText();
+				if ( valueSource != null ) {
+					length += calculateSingleLineSourceLength( valueSource );
+				}
 			}
 
 			if ( i < arguments.size() - 1 ) {
@@ -104,7 +112,7 @@ public class ArgumentsPrinter {
 			multilineByLength	= false;
 		} else {
 			multilineByCount	= size > ( visitor.config.getArguments().getMultilineCount() - 1 );
-			multilineByLength	= !suppressMultilineByLength && wouldBreakByLength( arguments );
+			multilineByLength	= !suppressMultilineByLength && !visitor.measuring && wouldBreakByLength( arguments );
 		}
 		var	multiline				= multilineByCount || multilineByLength;
 
@@ -116,7 +124,7 @@ public class ArgumentsPrinter {
 				}
 				int nameLength;
 				if ( arg.getName() instanceof BoxStringLiteral str ) {
-					nameLength = str.getValue().length();
+					nameLength = nameText( str ).length();
 				} else {
 					String nameSource = arg.getName().getSourceText();
 					nameLength = nameSource != null ? nameSource.length() : 0;
@@ -146,7 +154,7 @@ public class ArgumentsPrinter {
 				if ( arg.getName() != null ) {
 					int currentNameLength = 0;
 					if ( arg.getName() instanceof BoxStringLiteral str ) {
-						String value = str.getValue();
+						String value = nameText( str );
 						contentsDoc.append( value );
 						currentNameLength = value.length();
 					} else {
@@ -216,4 +224,20 @@ public class ArgumentsPrinter {
 
 	}
 
+
+	/** A name that can be written bare as a named argument. */
+	private static final Pattern IDENTIFIER = Pattern.compile( "[A-Za-z_$][A-Za-z0-9_$]*" );
+
+	/**
+	 * The text of a named argument's name: bare when it is an identifier, quoted otherwise ({@code "strategy-outputDir" = x}).
+	 * Printed bare, a name like {@code strategy-outputDir} would parse as an expression and the argument as positional.
+	 *
+	 * @param name the argument name
+	 *
+	 * @return the name as it must be written
+	 */
+	private static String nameText( BoxStringLiteral name ) {
+		String value = name.getValue();
+		return IDENTIFIER.matcher( value ).matches() ? value : "\"" + value.replace( "\"", "\"\"" ) + "\"";
+	}
 }

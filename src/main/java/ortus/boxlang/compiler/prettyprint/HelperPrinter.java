@@ -26,7 +26,9 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.comment.BoxComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
+import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
@@ -366,14 +368,14 @@ public class HelperPrinter {
 
 			printStatements( statements );
 
+			// The block has already started a new line, so the first comment of an empty block takes no spacing of its
+			// own (measured from the signature, it added a blank line on every pass). After statements, the comment
+			// spacing measured from the last statement provides the line break.
 			var	insideCommentsDoc	= visitor.pushDoc( DocType.ARRAY );
-			var	printed				= visitor.printInsideComments( node, false );
+			var	printed				= visitor.commentsPrinter.printInsideComments( node, false, statements.isEmpty() );
 			visitor.popDoc(); // pop inside comments doc
 
 			if ( printed ) {
-				if ( !statements.isEmpty() ) {
-					blockDoc.append( Line.HARD );
-				}
 				blockDoc.append( insideCommentsDoc );
 			}
 
@@ -464,7 +466,9 @@ public class HelperPrinter {
 		var	currentDoc		= visitor.getCurrentDoc();
 		var	attrsDoc		= visitor.pushDoc( DocType.GROUP );
 		int	maxKeyLength	= 0;
-		// Alignment only applies to script mode (e.g. struct literals), not template tag attributes
+		// Alignment only applies to script mode (e.g. struct literals), not template tag attributes, and only when every
+		// attribute is on its own line: padding keys on a single line just inserts runs of spaces before the "="
+		alignAssignments = alignAssignments && forceLineBreaks;
 		if ( alignAssignments && visitor.config.getAlignConsecutiveAssignments() && !visitor.isTemplate() ) {
 			for ( var attr : attrs ) {
 				if ( attr.getValue() != null && attr.getKey() != null ) {
@@ -489,9 +493,18 @@ public class HelperPrinter {
 					if ( alignAssignments && visitor.config.getAlignConsecutiveAssignments() && maxKeyLength > 0 ) {
 						contentsDoc.append( " ".repeat( Math.max( 0, maxKeyLength - keyText.length() ) ) );
 					}
-					contentsDoc.append( "=\"" );
-					visitor.stringPrinter.printQuotedExpression( attr.getValue() );
-					contentsDoc.append( "\"" );
+					BoxExpression value = attr.getValue();
+					if ( !visitor.isTemplate()
+					    && ! ( value instanceof BoxStringLiteral || value instanceof BoxStringInterpolation || value instanceof BoxAssignment ) ) {
+						// Script attribute values are expressions: print them as written. Quoting one as "#expr#" turns
+						// a boolean, number, struct or object value into a string, and an identifier into a literal.
+						contentsDoc.append( "=" );
+						value.accept( visitor );
+					} else {
+						contentsDoc.append( "=\"" );
+						visitor.stringPrinter.printQuotedExpression( value );
+						contentsDoc.append( "\"" );
+					}
 				}
 			}
 			attrsDoc.append( visitor.popDoc() );

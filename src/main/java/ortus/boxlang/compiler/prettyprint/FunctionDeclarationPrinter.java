@@ -19,11 +19,14 @@ package ortus.boxlang.compiler.prettyprint;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
@@ -32,7 +35,16 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 
 public class FunctionDeclarationPrinter {
 
-	private Visitor visitor;
+	/** The non-access modifiers printed after the access modifier, in Java's canonical order. */
+	private static final List<BoxMethodDeclarationModifier>	ORDERED_MODIFIERS	= List.of(
+	    BoxMethodDeclarationModifier.ABSTRACT,
+	    BoxMethodDeclarationModifier.STATIC,
+	    BoxMethodDeclarationModifier.FINAL );
+
+	/** Text that ends with a line break followed only by spaces or tabs. */
+	private static final Pattern							TRAILING_NEWLINE	= Pattern.compile( "[\\r\\n][\\t ]*$" );
+
+	private Visitor											visitor;
 
 	public FunctionDeclarationPrinter( Visitor visitor ) {
 		this.visitor = visitor;
@@ -43,7 +55,8 @@ public class FunctionDeclarationPrinter {
 			case BOXSCRIPT -> printScriptFunctionDeclaration( node );
 			case BOXTEMPLATE -> printTemplateFunctionDeclaration( node );
 			case CFSCRIPT -> printCFScriptFunctionDeclaration( node );
-			case CFTEMPLATE -> printCFTemplateFunctionDeclaration( node );
+			// Same tag layout as bx: templates (with the cf prefix): arguments as <cfargument>, always a closing tag
+			case CFTEMPLATE -> printTemplateFunctionDeclaration( node );
 			default -> {
 			}
 		}
@@ -66,15 +79,7 @@ public class FunctionDeclarationPrinter {
 
 		printBoxAnnotations( preAnnotations );
 
-		if ( node.getModifiers() != null && node.getModifiers().contains( BoxMethodDeclarationModifier.DEFAULT ) ) {
-			currentDoc.append( "default " );
-		}
-
-		if ( node.getAccessModifier() != null ) {
-			currentDoc
-			    .append( node.getAccessModifier().toString().toLowerCase() )
-			    .append( " " );
-		}
+		printModifiers( currentDoc, node );
 
 		if ( node.getType() != null ) {
 			node.getType().accept( visitor );
@@ -123,6 +128,10 @@ public class FunctionDeclarationPrinter {
 		if ( node.getAccessModifier() != null ) {
 			addIfAbsent( attrs, node.getAnnotations(), "access", node.getAccessModifier().toString().toLowerCase() );
 		}
+		String modifiers = modifierList( node );
+		if ( !modifiers.isEmpty() ) {
+			addIfAbsent( attrs, node.getAnnotations(), "modifier", modifiers );
+		}
 		attrs.addAll( node.getAnnotations() );
 
 		currentDoc.append( "<" + prefix + "function" );
@@ -138,11 +147,72 @@ public class FunctionDeclarationPrinter {
 		currentDoc.append( this.visitor.popDoc() );
 
 		// Body statements already print as tags in template mode
-		if ( node.getBody() != null ) {
-			this.visitor.helperPrinter.printTemplateBody( node.getBody() );
+		List<BoxStatement> body = node.getBody() != null ? node.getBody() : List.of();
+		if ( body.stream().anyMatch( statement -> !isBlankBuffer( statement ) ) ) {
+			if ( this.visitor.config.getTemplate().getIndentContent() ) {
+				// Re-indents the body and ends it with a hard line for the closing tag
+				this.visitor.helperPrinter.printTemplateBody( body );
+				currentDoc.append( "</" + prefix + "function>" );
+				return;
+			}
+			// Content kept as-is. The parser drops the whitespace before the first statement, so the body starts on a
+			// new, indented line unless it already opens with a newline; it ends on its own trailing whitespace, if any.
+			var bodyDoc = this.visitor.pushDoc( DocType.INDENT );
+			if ( !startsWithNewline( body.get( 0 ) ) ) {
+				bodyDoc.append( Line.HARD );
+			}
+			for ( var statement : body ) {
+				statement.accept( this.visitor );
+			}
+			currentDoc.append( this.visitor.popDoc() );
+			if ( !endsWithNewline( body.get( body.size() - 1 ) ) ) {
+				currentDoc.append( Line.HARD );
+			}
+			currentDoc.append( "</" + prefix + "function>" );
+			return;
 		}
 
 		currentDoc.append( Line.HARD ).append( "</" + prefix + "function>" );
+	}
+
+	/**
+	 * Whether a template statement is text output holding only whitespace.
+	 *
+	 * @param statement the statement
+	 *
+	 * @return true for a whitespace-only text node
+	 */
+	private boolean isBlankBuffer( BoxStatement statement ) {
+		return statement instanceof BoxBufferOutput buffer
+		    && buffer.getExpression() instanceof BoxStringLiteral text
+		    && text.getValue().isBlank();
+	}
+
+	/**
+	 * Whether a template statement is text output that starts with a line break.
+	 *
+	 * @param statement the statement
+	 *
+	 * @return true when it starts with a line break
+	 */
+	private boolean startsWithNewline( BoxStatement statement ) {
+		return statement instanceof BoxBufferOutput buffer
+		    && buffer.getExpression() instanceof BoxStringLiteral text
+		    && ( text.getValue().startsWith( "\n" ) || text.getValue().startsWith( "\r" ) );
+	}
+
+	/**
+	 * Whether a template statement is text output whose last line holds only whitespace, so it already moves the closing
+	 * tag onto its own line.
+	 *
+	 * @param statement the statement
+	 *
+	 * @return true when it ends with a line break followed only by spaces or tabs
+	 */
+	private boolean endsWithNewline( BoxStatement statement ) {
+		return statement instanceof BoxBufferOutput buffer
+		    && buffer.getExpression() instanceof BoxStringLiteral text
+		    && TRAILING_NEWLINE.matcher( text.getValue() ).find();
 	}
 
 	/**
@@ -172,6 +242,53 @@ public class FunctionDeclarationPrinter {
 		currentDoc.append( "<" + this.visitor.componentPrefix + "argument" );
 		this.visitor.helperPrinter.printKeyValueAnnotations( attrs, false, this.visitor.config.getTemplate().getSingleAttributePerLine() );
 		currentDoc.append( this.visitor.config.getTemplate().getSelfClosing() ? " />" : ">" );
+	}
+
+	/**
+	 * Prints a script function's modifiers: {@code default}, the access modifier, then {@code abstract}, {@code static} and
+	 * {@code final} (Java's canonical order). The parser accepts them in any order, so the order is normalized; dropping one
+	 * would change the function's meaning.
+	 *
+	 * @param currentDoc the doc being printed into
+	 * @param node       the function declaration
+	 */
+	private void printModifiers( Doc currentDoc, BoxFunctionDeclaration node ) {
+		List<BoxMethodDeclarationModifier> modifiers = node.getModifiers() != null ? node.getModifiers() : List.of();
+		if ( modifiers.contains( BoxMethodDeclarationModifier.DEFAULT ) ) {
+			currentDoc.append( "default " );
+		}
+		if ( node.getAccessModifier() != null ) {
+			currentDoc
+			    .append( node.getAccessModifier().toString().toLowerCase() )
+			    .append( " " );
+		}
+		for ( BoxMethodDeclarationModifier modifier : ORDERED_MODIFIERS ) {
+			if ( modifiers.contains( modifier ) ) {
+				currentDoc.append( modifier.toString().toLowerCase() ).append( " " );
+			}
+		}
+	}
+
+	/**
+	 * The function's {@code default}, {@code abstract}, {@code static} and {@code final} modifiers as the comma-delimited
+	 * value of a {@code <bx:function modifier="...">} attribute.
+	 *
+	 * @param node the function declaration
+	 *
+	 * @return the modifier list, empty when the function has none
+	 */
+	private String modifierList( BoxFunctionDeclaration node ) {
+		List<BoxMethodDeclarationModifier>	modifiers	= node.getModifiers() != null ? node.getModifiers() : List.of();
+		List<String>						names		= new ArrayList<>();
+		if ( modifiers.contains( BoxMethodDeclarationModifier.DEFAULT ) ) {
+			names.add( "default" );
+		}
+		for ( BoxMethodDeclarationModifier modifier : ORDERED_MODIFIERS ) {
+			if ( modifiers.contains( modifier ) ) {
+				names.add( modifier.toString().toLowerCase() );
+			}
+		}
+		return String.join( ",", names );
 	}
 
 	/**
@@ -215,15 +332,7 @@ public class FunctionDeclarationPrinter {
 	public void printCFScriptFunctionDeclaration( BoxFunctionDeclaration node ) {
 		var currentDoc = visitor.getCurrentDoc();
 
-		if ( node.getModifiers() != null && node.getModifiers().contains( BoxMethodDeclarationModifier.DEFAULT ) ) {
-			currentDoc.append( "default " );
-		}
-
-		if ( node.getAccessModifier() != null ) {
-			currentDoc
-			    .append( node.getAccessModifier().toString().toLowerCase() )
-			    .append( " " );
-		}
+		printModifiers( currentDoc, node );
 
 		if ( node.getType() != null ) {
 			node.getType().accept( visitor );
@@ -246,32 +355,6 @@ public class FunctionDeclarationPrinter {
 		} else {
 			visitor.printSemicolon();
 		}
-	}
-
-	public void printCFTemplateFunctionDeclaration( BoxFunctionDeclaration node ) {
-		var currentDoc = visitor.getCurrentDoc();
-		currentDoc.append( "<cffunction" );
-		visitor.helperPrinter.printKeyValueAnnotations( node.getAnnotations(), false );
-
-		if ( node.getBody() != null ) {
-			if ( node.getBody().isEmpty() ) {
-				currentDoc.append( "/>" );
-			} else {
-				currentDoc.append( ">" );
-				var bodyDoc = visitor.pushDoc( DocType.INDENT );
-				bodyDoc.append( Line.HARD );
-				// visitor.helperPrinter.printStatements( node.getBody() );
-				for ( var statement : node.getBody() ) {
-					statement.accept( visitor );
-				}
-				currentDoc.append( visitor.popDoc() );
-				currentDoc.append( "</cffunction>" );
-			}
-		} else {
-			currentDoc.append( ">" );
-		}
-
-		visitor.printPostComments( node );
 	}
 
 	private void printBoxAnnotations( List<BoxAnnotation> annotations ) {

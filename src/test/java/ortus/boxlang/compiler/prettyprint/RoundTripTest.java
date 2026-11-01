@@ -1,0 +1,413 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package ortus.boxlang.compiler.prettyprint;
+
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.ParsingResult;
+import ortus.boxlang.compiler.prettyprint.config.Config;
+
+/**
+ * Formatting must not change what code means, and formatting formatted code must change nothing. Each case formats the
+ * source, parses the result and compares the two ASTs (ignoring positions, source text, comments and structural
+ * template whitespace), then formats the result again and expects the same text.
+ */
+@DisplayName( "Formatter round trip tests" )
+public class RoundTripTest extends PrettyPrintTest {
+
+	@Test
+	@DisplayName( "static, final and abstract function modifiers are kept (BL-2780)" )
+	public void testFunctionModifiers() throws IOException {
+		String out = roundTrip( BoxSourceType.BOXSCRIPT, true, """
+		    abstract class {
+		    	static function count(){ return 1; }
+		    	public static final function make(){ return 2; }
+		    	abstract function todo();
+		    }
+		    """ );
+		assertThat( out ).contains( "static function count()" );
+		assertThat( out ).contains( "public static final function make()" );
+		assertThat( out ).contains( "abstract function todo()" );
+
+		out = roundTrip( BoxSourceType.CFSCRIPT, true, """
+		    component {
+		    	static function count(){ return 1; }
+		    }
+		    """ );
+		assertThat( out ).contains( "static function count()" );
+	}
+
+	@Test
+	@DisplayName( "final and abstract class keywords print before class and component" )
+	public void testClassModifiers() throws IOException {
+		assertThat( roundTrip( BoxSourceType.BOXSCRIPT, true, "final class { }" ) ).startsWith( "final class" );
+		assertThat( roundTrip( BoxSourceType.CFSCRIPT, true, "abstract component { }" ) ).startsWith( "abstract component" );
+	}
+
+	@Test
+	@DisplayName( "a single-expression lambda body has no semicolon" )
+	public void testLambdaExpressionBody() throws IOException {
+		String out = roundTrip( BoxSourceType.BOXSCRIPT, false, "names = list.map( item -> item.getName() );" );
+		assertThat( out ).contains( "-> item.getName() );" );
+		assertThat( out ).doesNotContain( ";;" );
+	}
+
+	@Test
+	@DisplayName( "script attribute values keep their type" )
+	public void testScriptAttributeValues() throws IOException {
+		String out = roundTrip( BoxSourceType.BOXSCRIPT, true, """
+		    class serializable=false {
+		    	function f(){
+		    		lock name="x" timeout=10 throwOnTimeout=true { a = 1; }
+		    	}
+		    }
+		    """ );
+		assertThat( out ).contains( "serializable=false" );
+		assertThat( out ).contains( "lock name=\"x\" timeout=10 throwOnTimeout=true {" );
+	}
+
+	@Test
+	@DisplayName( "empty component bodies and body-less tags are kept" )
+	public void testComponentBodies() throws IOException {
+		assertThat( roundTrip( BoxSourceType.BOXSCRIPT, false, "bx:thread name=\"t\" {}" ) ).contains( "{" );
+		String out = roundTrip( BoxSourceType.CFTEMPLATE, false, "<cf_foo>\n<cf_bar />\n<cfabort>\n" );
+		assertThat( out ).contains( "<cf_foo>" );
+		assertThat( out ).contains( "<cf_bar />" );
+	}
+
+	@Test
+	@DisplayName( "CF script components print without a cf prefix" )
+	public void testCFScriptComponentPrefix() throws IOException {
+		String out = roundTrip( BoxSourceType.CFSCRIPT, true, """
+		    component {
+		    	function f(){
+		    		savecontent variable="local.out" { writeOutput( "x" ); }
+		    		return local.out;
+		    	}
+		    }
+		    """ );
+		assertThat( out ).contains( "savecontent variable=\"local.out\" {" );
+		assertThat( out ).doesNotContain( "cfsavecontent" );
+	}
+
+	@Test
+	@DisplayName( "tag components: imports, arguments, empty functions and interfaces" )
+	public void testTagComponents() throws IOException {
+		String out = roundTrip( BoxSourceType.CFTEMPLATE, true, """
+		    <cfimport prefix="java" name="java.lang.String">
+		    <cfcomponent output="false">
+		    	<cffunction name="init" access="public" returntype="any">
+		    	</cffunction>
+		    	<cffunction name="foo">
+		    		<cfargument name="a" type="string" required="false">
+		    		<cfreturn arguments.a>
+		    	</cffunction>
+		    </cfcomponent>
+		    """ );
+		assertThat( out ).contains( "<cfimport prefix=\"java\" name=\"java.lang.String\">" );
+		assertThat( out ).contains( "<cfargument name=\"a\"" );
+		assertThat( out ).doesNotContain( "/>\n\t<cffunction" );
+
+		roundTrip( BoxSourceType.CFTEMPLATE, true, """
+		    <cfinterface>
+		    	<cffunction name="init">
+		    	</cffunction>
+		    	<cffunction name="foo">
+		    	</cffunction>
+		    </cfinterface>
+		    """ );
+	}
+
+	@Test
+	@DisplayName( "a plain block comment never becomes a doc comment" )
+	public void testPlainCommentStaysPlain() throws IOException {
+		String out = roundTrip( BoxSourceType.BOXSCRIPT, true, """
+		    class {
+		    	/* ****************
+		    	 ** DI
+		    	 ***************** */
+		    	property name="log";
+		    }
+		    """ );
+		assertThat( out ).contains( "/* " );
+		assertThat( out ).doesNotContain( "/**" );
+	}
+
+	@Test
+	@DisplayName( "doc comment banners keep the hint" )
+	public void testDocCommentBanners() throws IOException {
+		roundTrip( BoxSourceType.BOXSCRIPT, true, """
+		    /**
+		    ********************************************************
+		    Copyright Ortus Solutions
+		    ********************************************************
+		    * @author Luis
+		    */
+		    class {
+		    	/**
+		    	 ** PROPERTIES
+		    	 */
+		    	property name="a";
+		    	/**
+		    	 *	* bullet item
+		    	 */
+		    	property name="b";
+		    }
+		    """ );
+	}
+
+	@Test
+	@DisplayName( "a comment before else or catch keeps the branch" )
+	public void testCommentBeforeElseAndCatch() throws IOException {
+		String out = roundTrip( BoxSourceType.BOXSCRIPT, false, """
+		    if ( a ) {
+		    	x = 1;
+		    }
+		    // the string case
+		    else if ( b ) {
+		    	x = 2;
+		    } // end of b
+		    else {
+		    	x = 3;
+		    }
+		    try {
+		    	y = 1;
+		    }
+		    // assertion failures
+		    catch ( "TestBox.AssertionFailed" e ) {
+		    	y = 2;
+		    }
+		    """ );
+		assertThat( out ).contains( "// the string case\nelse if ( b ) {" );
+		assertThat( out ).contains( "// assertion failures\ncatch (" );
+	}
+
+	@Test
+	@DisplayName( "destructuring patterns and the second for-in variable" )
+	public void testDestructuringAndForIn() throws IOException {
+		String out = roundTrip( BoxSourceType.BOXSCRIPT, false, """
+		    var [ a, b = 2, [ c, d ], ...rest ] = arr;
+		    var { name, address: { city }, zip: z, n = 5, ...others } = user;
+		    static [ only, ] = data;
+		    for ( var item, i in items ) { println( i ); }
+		    """ );
+		assertThat( out ).contains( "var [ a, b = 2, [ c, d ], ...rest ] = arr;" );
+		assertThat( out ).contains( "var { name, address: { city }, zip: z, n = 5, ...others } = user;" );
+		assertThat( out ).contains( "static [ only, ] = data;" );
+		assertThat( out ).contains( "for ( var item, i in items )" );
+	}
+
+	@Test
+	@DisplayName( "castAs types, open ranges, member references and quoted argument names" )
+	public void testExpressions() throws IOException {
+		String out = roundTrip( BoxSourceType.BOXSCRIPT, false, """
+		    a = x & ( Math.pow( 2, s ) castAs int - 1 );
+		    b = ..10;
+		    c = 5..;
+		    d = tools.map( .getSchema );
+		    command( "docbox" ).params( "strategy-outputDir" = dir, source = "models" );
+		    """ );
+		assertThat( out ).contains( "castAs int - 1" );
+		assertThat( out ).contains( "b = ..10;" );
+		assertThat( out ).contains( "c = 5..;" );
+		assertThat( out ).contains( ".map( .getSchema )" );
+		assertThat( out ).contains( "\"strategy-outputDir\" = dir" );
+	}
+
+	@Test
+	@DisplayName( "template output, comments and conditions" )
+	public void testTemplates() throws IOException {
+		String out = roundTrip( BoxSourceType.BOXTEMPLATE, false, """
+		    <!--- header ---><bx:script>x = 1;</bx:script>
+		    <bx:set i = 0>
+		    <bx:while condition="i < 3">
+		    	<bx:set i++>
+		    </bx:while>
+		    <bx:if a>
+		    	<!--- one --->
+		    	one
+		    <bx:elseif b>
+		    	two
+		    <bx:else>
+		    	<!--- three --->
+		    	three
+		    </bx:if>
+		    <bx:try>
+		    	<bx:set a = 1>
+		    	<bx:catch>
+		    		<bx:set c = 3>
+		    	</bx:catch>
+		    	<bx:finally>
+		    		<bx:set d = 4>
+		    	</bx:finally>
+		    </bx:try>
+		    """ );
+		assertThat( out ).contains( "---><bx:script>" );
+		assertThat( out ).contains( "condition=\"i < 3\"" );
+		assertThat( out ).contains( "<!--- three --->" );
+		assertThat( out ).contains( "<bx:finally>" );
+	}
+
+	@Test
+	@DisplayName( "comments between chained calls stay with their call" )
+	public void testChainComments() throws IOException {
+		String out = roundTrip( BoxSourceType.BOXSCRIPT, false, """
+		    var r = qb
+		    	.from( "x" )
+		    	// Filter by a
+		    	.when( a, function( q ){ q.where( 1 ); } )
+		    	// Filter by b
+		    	.when( b, function( q ){ q.where( 2 ); } )
+		    	.first()[ "total" ];
+		    logLines
+		    	.append(
+		    		jsonSerialize( data = arguments.dataPacket, pretty = true )
+		    	); // Pretty print JSON
+		    """ );
+		assertThat( out.indexOf( "// Filter by a" ) ).isLessThan( out.indexOf( ".when(" ) );
+		assertThat( out.indexOf( "// Filter by b" ) ).isGreaterThan( out.indexOf( ".when(" ) );
+		assertThat( out ).contains( "// Pretty print JSON" );
+	}
+
+	@Test
+	@DisplayName( "struct key alignment and line breaks are stable" )
+	public void testStableLayout() throws IOException {
+		roundTrip( BoxSourceType.BOXSCRIPT, true, """
+		    class {
+		    	this.settings = {
+		    		apiUrl   : "x",
+		    		features : { beta : false, level : 5 },
+		    		limits   : [ 1, 2, 3 ]
+		    	};
+		    	function onError( task, exception ){
+		    		println( "Any task [#task.getName()#]  blew up " & exception.getMessage() );
+		    	}
+		    	function empty( data ){
+		    		// nothing yet
+		    	}
+		    }
+		    """ );
+	}
+
+	/**
+	 * Formats the source, checks that the result means the same and formats to itself, and returns it.
+	 *
+	 * @param type             the source type
+	 * @param classOrInterface whether the source is a class or interface
+	 * @param source           the source
+	 *
+	 * @return the formatted source
+	 */
+	private String roundTrip( BoxSourceType type, boolean classOrInterface, String source ) throws IOException {
+		Config			config		= new Config();
+		ParsingResult	original	= parser.parse( source, type, classOrInterface, false );
+		assertWithMessage( "input parses: " + original.getIssues() ).that( original.isCorrect() ).isTrue();
+		Object			before		= normalize( original.getRoot().toMap() );
+
+		String			once		= PrettyPrint.prettyPrint( original.getRoot(), config );
+		ParsingResult	reparsed	= parser.parse( once, type, classOrInterface, false );
+		assertWithMessage( "formatted output parses: " + reparsed.getIssues() + "\n" + once ).that( reparsed.isCorrect() ).isTrue();
+		assertWithMessage( "formatting changed the code:\n" + once ).that( normalize( reparsed.getRoot().toMap() ) ).isEqualTo( before );
+
+		String twice = PrettyPrint.prettyPrint( reparsed.getRoot(), config );
+		assertWithMessage( "formatting is not idempotent" ).that( normalizeLineEndings( twice ) ).isEqualTo( normalizeLineEndings( once ) );
+		return normalizeLineEndings( once );
+	}
+
+	/**
+	 * An AST map without what formatting is allowed to change: positions, source text, comments, structural template
+	 * whitespace, a self-closed body-less component's empty body, and blocks around a single statement.
+	 */
+	@SuppressWarnings( "unchecked" )
+	private static Object normalize( Object value ) {
+		if ( value instanceof Map<?, ?> map ) {
+			Object type = map.get( "ASTType" );
+			if ( "BoxStatementBlock".equals( type ) && map.get( "body" ) instanceof List<?> body && body.size() == 1 ) {
+				return normalize( body.get( 0 ) );
+			}
+			Map<String, Object> copy = new LinkedHashMap<>( ( Map<String, Object> ) map );
+			if ( "BoxComponent".equals( type ) && copy.get( "body" ) instanceof List<?> body && body.isEmpty() ) {
+				copy.put( "body", null );
+			}
+			// a catch type is a name either way: <bx:catch> (any) prints as type="any"
+			if ( "BoxTryCatch".equals( type ) && copy.get( "catchTypes" ) instanceof List<?> types ) {
+				copy.put( "catchTypes", types.stream().map( t -> t instanceof Map<?, ?> m ? String.valueOf( m.get( "value" ) ).toLowerCase() : t ).toList() );
+			}
+			boolean				node	= copy.containsKey( "position" ) || copy.containsKey( "comments" );
+			Map<String, Object>	result	= new TreeMap<>();
+			for ( var entry : copy.entrySet() ) {
+				String key = entry.getKey();
+				if ( key.equals( "position" ) || key.equals( "comments" ) || ( node && key.equals( "sourceText" ) ) ) {
+					continue;
+				}
+				if ( key.equals( "documentation" ) || ( "BoxBufferOutput".equals( type ) && key.equals( "expression" ) ) ) {
+					result.put( key, normalizeText( entry.getValue() ) );
+					continue;
+				}
+				result.put( key, normalize( entry.getValue() ) );
+			}
+			return result;
+		}
+		if ( value instanceof List<?> list ) {
+			List<Object> result = new ArrayList<>();
+			for ( Object item : list ) {
+				if ( !isStructuralWhitespace( item ) ) {
+					result.add( normalize( item ) );
+				}
+			}
+			return result;
+		}
+		return value;
+	}
+
+	/** Collapses whitespace in the string values of a subtree (template text and doc text are re-flowed by design). */
+	@SuppressWarnings( "unchecked" )
+	private static Object normalizeText( Object value ) {
+		Object normalized = normalize( value );
+		if ( normalized instanceof Map<?, ?> map ) {
+			Map<String, Object> copy = new TreeMap<>( ( Map<String, Object> ) map );
+			copy.replaceAll( ( k, v ) -> v instanceof String s && k.equals( "value" ) ? s.replaceAll( "\\s+", " " ).strip() : normalizeText( v ) );
+			return copy;
+		}
+		if ( normalized instanceof List<?> list ) {
+			return list.stream().map( RoundTripTest::normalizeText ).toList();
+		}
+		return normalized;
+	}
+
+	private static boolean isStructuralWhitespace( Object item ) {
+		return item instanceof Map<?, ?> map
+		    && "BoxBufferOutput".equals( map.get( "ASTType" ) )
+		    && map.get( "expression" ) instanceof Map<?, ?> expression
+		    && "BoxStringLiteral".equals( expression.get( "ASTType" ) )
+		    && String.valueOf( expression.get( "value" ) ).isBlank()
+		    && ( String.valueOf( expression.get( "value" ) ).isEmpty() || String.valueOf( expression.get( "value" ) ).contains( "\n" ) );
+	}
+}

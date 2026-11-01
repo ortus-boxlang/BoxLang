@@ -119,9 +119,12 @@ public class ClassPrinter {
 		// split annotations into pre and post based on whether the source of the annotation starts with `@`
 		var	preAnnotations	= new ArrayList<BoxAnnotation>();
 		var	postAnnotations	= new ArrayList<BoxAnnotation>();
+		var	keywords		= new ArrayList<BoxAnnotation>();
 		for ( var anno : classNode.getAnnotations() ) {
 			// .getSourceText() _could_ be null, assume pre in that case
-			if ( anno.getSourceText() == null || anno.getSourceText().startsWith( "@" ) ) {
+			if ( isKeywordModifier( anno ) ) {
+				keywords.add( anno );
+			} else if ( anno.getSourceText() == null || anno.getSourceText().startsWith( "@" ) ) {
 				preAnnotations.add( anno );
 			} else {
 				postAnnotations.add( anno );
@@ -130,6 +133,7 @@ public class ClassPrinter {
 
 		printBoxAnnotations( preAnnotations );
 
+		printKeywordModifiers( keywords );
 		currentDoc.append( "class" );
 		visitor.helperPrinter.printKeyValueAnnotations( postAnnotations, false, false, false );
 		currentDoc.append( " {" );
@@ -141,7 +145,8 @@ public class ClassPrinter {
 			visitor.newLine();
 		}
 		visitor.helperPrinter.printStatements( sortedBody );
-		visitor.printInsideComments( classNode, false );
+		// an empty body has already started a new line: the first comment takes no spacing of its own
+		visitor.commentsPrinter.printInsideComments( classNode, false, classNode.getProperties().isEmpty() && sortedBody.isEmpty() );
 
 		currentDoc
 		    .append( visitor.popDoc() )
@@ -167,8 +172,11 @@ public class ClassPrinter {
 		// split annotations into pre and post
 		var	preAnnotations	= new ArrayList<BoxAnnotation>();
 		var	postAnnotations	= new ArrayList<BoxAnnotation>();
+		var	keywords		= new ArrayList<BoxAnnotation>();
 		for ( var anno : localClass.getAnnotations() ) {
-			if ( anno.getSourceText() == null || anno.getSourceText().startsWith( "@" ) ) {
+			if ( isKeywordModifier( anno ) ) {
+				keywords.add( anno );
+			} else if ( anno.getSourceText() == null || anno.getSourceText().startsWith( "@" ) ) {
 				preAnnotations.add( anno );
 			} else {
 				postAnnotations.add( anno );
@@ -177,6 +185,7 @@ public class ClassPrinter {
 
 		printBoxAnnotations( preAnnotations );
 
+		printKeywordModifiers( keywords );
 		currentDoc.append( "class " + localClass.getName().getName() );
 		visitor.helperPrinter.printKeyValueAnnotations( postAnnotations, false, false, false );
 		currentDoc.append( " {" );
@@ -188,7 +197,8 @@ public class ClassPrinter {
 			visitor.newLine();
 		}
 		visitor.helperPrinter.printStatements( sortedBody );
-		visitor.printInsideComments( localClass, false );
+		// an empty body has already started a new line: the first comment takes no spacing of its own
+		visitor.commentsPrinter.printInsideComments( localClass, false, localClass.getProperties().isEmpty() && sortedBody.isEmpty() );
 
 		currentDoc
 		    .append( visitor.popDoc() )
@@ -245,8 +255,11 @@ public class ClassPrinter {
 
 		printImports( classNode.getImports() );
 		visitor.printPreComments( classNode );
+		var	keywords	= classNode.getAnnotations().stream().filter( ClassPrinter::isKeywordModifier ).toList();
+		var	attributes	= classNode.getAnnotations().stream().filter( anno -> !isKeywordModifier( anno ) ).toList();
+		printKeywordModifiers( keywords );
 		currentDoc.append( "component" );
-		visitor.helperPrinter.printKeyValueAnnotations( classNode.getAnnotations(), true, visitor.config.getCFFormatCompatibility(), false );
+		visitor.helperPrinter.printKeyValueAnnotations( attributes, true, visitor.config.getCFFormatCompatibility(), false );
 		currentDoc.append( "{" );
 
 		pushClassBody( !classNode.getProperties().isEmpty() || !classNode.getBody().isEmpty() );
@@ -259,10 +272,14 @@ public class ClassPrinter {
 			}
 		}
 		visitor.helperPrinter.printStatements( sortedBody );
-		if ( !sortedBody.isEmpty() ) {
+		// Trailing comments are spaced from the last member by the comment printer (which keeps one blank line if the
+		// source had one); an extra line here would add a blank line before them on every pass
+		boolean trailingComments = classNode.getComments().stream().anyMatch( comment -> comment.isInside( classNode ) );
+		if ( !sortedBody.isEmpty() && !trailingComments ) {
 			visitor.newLine();
 		}
-		visitor.printInsideComments( classNode, false );
+		// an empty body has already started a new line: the first comment takes no spacing of its own
+		visitor.commentsPrinter.printInsideComments( classNode, false, classNode.getProperties().isEmpty() && sortedBody.isEmpty() );
 
 		currentDoc
 		    .append( visitor.popDoc() )
@@ -313,6 +330,7 @@ public class ClassPrinter {
 		var		methodOrder		= visitor.config.getClassConfig().getMethodOrder();
 		boolean	methodGrouping	= visitor.config.getClassConfig().getMethodGrouping();
 
+		printImports( classNode.getImports() );
 		currentDoc.append( "<cfcomponent" );
 		visitor.helperPrinter.printKeyValueAnnotations( classNode.getAnnotations(), false );
 		currentDoc.append( ">" );
@@ -346,22 +364,59 @@ public class ClassPrinter {
 		var		methodOrder		= visitor.config.getClassConfig().getMethodOrder();
 		boolean	methodGrouping	= visitor.config.getClassConfig().getMethodGrouping();
 
+		printImports( interfaceNode.getImports() );
 		currentDoc.append( "<cfinterface" );
 		visitor.helperPrinter.printKeyValueAnnotations( interfaceNode.getAnnotations(), false );
 		currentDoc.append( ">" );
 
-		visitor.pushDoc( DocType.INDENT );
-		List<BoxStatement> sortedBody = sortClassBody( interfaceNode.getBody(), methodOrder, methodGrouping );
+		var					bodyDoc		= visitor.pushDoc( DocType.INDENT );
+		List<BoxStatement>	sortedBody	= sortClassBody( interfaceNode.getBody(), methodOrder, methodGrouping );
+		// An interface body holds only declarations (no whitespace text nodes), so each one goes on its own line
 		for ( var statement : sortedBody ) {
+			bodyDoc.append( Line.HARD );
 			statement.accept( visitor );
 		}
 
 		visitor.printInsideComments( interfaceNode, false );
-		currentDoc
-		    .append( visitor.popDoc() )
-		    .append( "</cfinterface>" );
+		currentDoc.append( visitor.popDoc() );
+		if ( !sortedBody.isEmpty() ) {
+			currentDoc.append( Line.HARD );
+		}
+		currentDoc.append( "</cfinterface>" );
 
 		visitor.printPostComments( interfaceNode );
+	}
+
+	/**
+	 * Whether an annotation is the parser's record of an {@code abstract} or {@code final} keyword before {@code class} or
+	 * {@code component}: a valueless annotation whose source is the bare keyword. It must be printed back as a keyword
+	 * before the declaration, since {@code class final} does not parse.
+	 *
+	 * @param annotation the class annotation
+	 *
+	 * @return true for a keyword modifier
+	 */
+	private static boolean isKeywordModifier( BoxAnnotation annotation ) {
+		String key = annotation.getKey().getValue();
+		return annotation.getValue() == null
+		    && ( key.equalsIgnoreCase( "abstract" ) || key.equalsIgnoreCase( "final" ) )
+		    && annotation.getSourceText() != null
+		    && annotation.getSourceText().equalsIgnoreCase( key );
+	}
+
+	/**
+	 * Prints keyword modifiers before the {@code class} or {@code component} keyword, {@code abstract} first (the order
+	 * the grammar requires).
+	 *
+	 * @param keywords the keyword modifier annotations
+	 */
+	private void printKeywordModifiers( List<BoxAnnotation> keywords ) {
+		var currentDoc = visitor.getCurrentDoc();
+		for ( String keyword : List.of( "abstract", "final" ) ) {
+			if ( keywords.stream().anyMatch( anno -> anno.getKey().getValue().equalsIgnoreCase( keyword ) ) ) {
+				currentDoc.append( keyword ).append( " " );
+			}
+		}
 	}
 
 	/**
