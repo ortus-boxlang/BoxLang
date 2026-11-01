@@ -295,11 +295,11 @@ public class RoundTripTest extends PrettyPrintTest {
 	@DisplayName( "a comment after a multi-line call is kept" )
 	public void testCommentAfterMultiLineCall() throws IOException {
 		String out = roundTrip( BoxSourceType.BOXSCRIPT, false, """
-		    logLines
-		    	.append(
-		    		jsonSerialize( data = arguments.dataPacket, pretty = true )
-		    	); // Pretty print JSON
-		    """ );
+		                                                        logLines
+		                                                        	.append(
+		                                                        		jsonSerialize( data = arguments.dataPacket, pretty = true )
+		                                                        	); // Pretty print JSON
+		                                                        """ );
 		assertThat( out ).contains( "); // Pretty print JSON" );
 	}
 
