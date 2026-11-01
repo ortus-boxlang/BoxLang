@@ -2299,4 +2299,88 @@ public class HTTPTest {
 		return new JcaX509CertificateConverter().setProvider( "BC" ).getCertificate( certBuilder.build( signer ) );
 	}
 
+	@DisplayName( "It can process an NTLM authentication request" )
+	@Test
+	public void testNtlm( WireMockRuntimeInfo wmRuntimeInfo ) {
+		String type2Challenge = createType2Challenge();
+
+		// Type 1 request: return the Type 2 challenge.
+		stubFor( get( "/secure" )
+		    .atPriority( 1 )
+		    .withHeader( "Authorization", matching( "(?i)NTLM TlRMTVNTUAAB.*" ) )
+		    .willReturn(
+		        aResponse()
+		            .withStatus( 401 )
+		            .withHeader( "WWW-Authenticate", "NTLM " + type2Challenge )
+		    )
+		);
+
+		// Type 3 request: return success.
+		stubFor( get( "/secure" )
+		    .atPriority( 2 )
+		    .withHeader( "Authorization", matching( "(?i)NTLM TlRMTVNTUAAD.*" ) )
+		    .willReturn(
+		        aResponse()
+		            .withStatus( 200 )
+		            .withBody( "success" )
+		    )
+		);
+
+		instance.executeSource(
+		    String.format(
+		        """
+		        <cfhttp result="result" url="%s" authType="NTLM"
+		        		username="user" password="pass" domain="DOMAIN"></cfhttp>
+		        """,
+		        wmRuntimeInfo.getHttpBaseUrl() + "/secure"
+		    ),
+		    context,
+		    BoxSourceType.CFTEMPLATE
+		);
+
+		IStruct r = variables.getAsStruct( Key.of( "result" ) );
+
+		assertThat( r.getAsInteger( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( r.getAsString( Key.fileContent ) ).isEqualTo( "success" );
+	}
+
+	private String createType2Challenge() {
+		// Type 2 header (48 bytes) + 4-byte target-information terminator.
+		byte[]	message		= new byte[ 52 ];
+
+		byte[]	signature	= {
+		    'N', 'T', 'L', 'M', 'S', 'S', 'P', 0
+		};
+		System.arraycopy( signature, 0, message, 0, signature.length );
+
+		// Message type: 2.
+		message[ 8 ]	= 2;
+
+		// Target name security buffer: empty, offset 48.
+		message[ 16 ]	= 48;
+
+		// Negotiate flags: Unicode, NTLM, extended session security,
+		// and target information (little-endian).
+		message[ 20 ]	= 0x01;
+		message[ 21 ]	= 0x02;
+		message[ 22 ]	= ( byte ) 0x88;
+		message[ 23 ]	= 0x00;
+
+		// Server challenge.
+		byte[] challenge = {
+		    0x01, 0x23, 0x45, 0x67,
+		    ( byte ) 0x89, ( byte ) 0xAB, ( byte ) 0xCD, ( byte ) 0xEF
+		};
+		System.arraycopy( challenge, 0, message, 24, challenge.length );
+
+		// Target information security buffer: 4-byte AV_EOL, offset 48.
+		message[ 40 ]	= 4;
+		message[ 42 ]	= 4;
+		message[ 44 ]	= 48;
+
+		// Bytes 48-51 are already zero, encoding AV_EOL (ID=0, length=0).
+
+		return Base64.getEncoder().encodeToString( message );
+	}
+
 }

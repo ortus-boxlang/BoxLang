@@ -1024,15 +1024,16 @@ build.finalizedBy( libsToDistro )
 
  * @param file The file to generate the checksum for
  * @param algorithm The algorithm to use (e.g., "SHA-256", "MD5")
+ * @param extension Optional checksum file extension, defaults to the lowercased algorithm name
  */
-def generateChecksum( File file, String algorithm ) {
+def generateChecksum( File file, String algorithm, String extension = null ) {
 	def digest = java.security.MessageDigest.getInstance( algorithm )
 	file.eachByte( 4096 ) { bytes, size ->
 		digest.update( bytes, 0, size )
 	}
 	def checksum = digest.digest().collect { String.format( '%02x', it ) }.join()
 
-	def checksumFile = new File( file.parent, "${file.name}.${algorithm.toLowerCase()}" )
+	def checksumFile = new File( file.parent, "${file.name}.${extension ?: algorithm.toLowerCase()}" )
 	checksumFile.text = "${checksum}  ${file.name}\n"
 }
 
