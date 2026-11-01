@@ -476,12 +476,13 @@ public class BoxLexerCustom extends BoxLexer {
 						isIdentifier = false;
 					} else if ( nextTokenType == NEW && !lastTokenWas( DOT )
 					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' )
-					        || nextNonWhiteSpaceCharIs( '_' ) )
+					        || nextNonWhiteSpaceCharIs( '_' ) || nextNonWhiteSpaceCharIs( '#' ) )
 					    && !nextNonWhiteSpaceCharsAre( operatorStartingChars ) ) {
 						// foo = new Bar() is fine
 						// new "Bar"() is fine
 						// new 'Bar'() is fine
 						// new _Bar() is fine
+						// new #path#() is fine
 						// but ignore "new is 1" because there is an operator after new
 						isIdentifier = false;
 					} else if ( nextTokenType == FUNCTION && !isFunctionDeclaration( nextToken ) ) {

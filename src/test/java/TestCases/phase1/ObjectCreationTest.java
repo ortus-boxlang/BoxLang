@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -188,6 +189,58 @@ public class ObjectCreationTest {
 		assertThat( variables.get( resultKey ) instanceof DynamicObject ).isEqualTo( true );
 		assertThat( ( ( DynamicObject ) variables.get( resultKey ) ).getTargetInstance() ).isEqualTo( "My String" );
 
+	}
+
+	@DisplayName( "new keyword with a pound sign expression" )
+	@Test
+	public void testNewKeywordPoundExpression() {
+		instance.executeSource(
+		    """
+		    classNameToCreate = 'java:java.lang.String';
+		    result = new #classNameToCreate#( 'My String' );
+		    """,
+		    context );
+		assertThat( variables.get( resultKey ) instanceof DynamicObject ).isEqualTo( true );
+		assertThat( ( ( DynamicObject ) variables.get( resultKey ) ).getTargetInstance() ).isEqualTo( "My String" );
+
+		// a scoped expression, and no semicolon before the next statement
+		instance.executeSource(
+		    """
+		    function make( required any target ){
+		    	if( isSimpleValue( arguments.target ) ){
+		    		arguments.target = new #arguments.target#( 'From Function' )
+		    	}
+		    	return arguments.target
+		    }
+		    result = make( 'java:java.lang.String' )
+		    """,
+		    context );
+		assertThat( ( ( DynamicObject ) variables.get( resultKey ) ).getTargetInstance() ).isEqualTo( "From Function" );
+	}
+
+	@DisplayName( "new keyword with a pound sign expression in CF" )
+	@Test
+	public void testNewKeywordPoundExpressionCF() {
+		instance.executeSource(
+		    """
+		    classNameToCreate = 'java:java.lang.String';
+		    result = new #classNameToCreate#( 'My String' );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( resultKey ) instanceof DynamicObject ).isEqualTo( true );
+		assertThat( ( ( DynamicObject ) variables.get( resultKey ) ).getTargetInstance() ).isEqualTo( "My String" );
+	}
+
+	@DisplayName( "new is still a variable name when no class follows it" )
+	@Test
+	public void testNewAsVariableName() {
+		instance.executeSource(
+		    """
+		    new = 'value';
+		    result = new;
+		    """,
+		    context );
+		assertThat( variables.get( resultKey ) ).isEqualTo( "value" );
 	}
 
 }
