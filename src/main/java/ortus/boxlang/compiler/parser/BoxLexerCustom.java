@@ -975,6 +975,10 @@ public class BoxLexerCustom extends BoxLexer {
 	private boolean nextNonWhiteSpaceCharsAre( Map<Integer, Object> charMap ) {
 		int	pos			= skipWhiteSpace( 1 );
 		int	nextChar	= Character.toUpperCase( getInputStream().LA( pos++ ) );
+		// A comment is not an operator: "continue // note" must keep continue a keyword
+		if ( nextChar == '/' && ( getInputStream().LA( pos ) == '/' || getInputStream().LA( pos ) == '*' ) ) {
+			return false;
+		}
 
 		// Start matching from the first non-whitespace character
 		return matchOperator( getInputStream(), pos, charMap, nextChar, false );

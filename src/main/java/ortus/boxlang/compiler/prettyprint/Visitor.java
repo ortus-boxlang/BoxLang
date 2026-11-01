@@ -22,15 +22,19 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxInterface;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.Source;
+import ortus.boxlang.compiler.ast.comment.BoxComment;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
@@ -40,7 +44,12 @@ import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
+import ortus.boxlang.compiler.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperator;
 import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
@@ -130,13 +139,31 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class Visitor extends VoidBoxVisitor {
 
-	private Stack<BoxSourceType>		currentSourceType				= new Stack<>();
-	private BoxSourceType				rootSourceType;
-	private Stack<Doc>					docStack						= new Stack<>();
+	/** A run of whitespace. */
+	private static final java.util.regex.Pattern	WHITESPACE_RUN					= java.util.regex.Pattern.compile( "\\s+" );
 
-	Config								config;
-	String								componentPrefix;
-	boolean								stripBufferLeadingWhitespace	= false;
+	private Stack<BoxSourceType>					currentSourceType				= new Stack<>();
+	private BoxSourceType							rootSourceType;
+	private Stack<Doc>								docStack						= new Stack<>();
+
+	Config											config;
+	String											componentPrefix;
+	boolean											stripBufferLeadingWhitespace	= false;
+	/** True for a printer used only to measure how wide a node prints on one line. */
+	boolean											measuring						= false;
+
+	/**
+	 * A plain number literal: digits, an optional decimal point and an optional exponent. It starts with a digit, so a
+	 * key like the 1 in {@code args.1}, whose source text includes the dot, prints from its value.
+	 */
+	/** Binary operators the parser reads without spaces around them */
+	private static final java.util.Set<String>		UNSPACED_OPERATORS				= java.util.Set.of( "+", "-", "*", "/", "%", "?:" );
+	private static final Pattern					NUMBER_LITERAL					= Pattern.compile( "[0-9]+\\.?[0-9]*([eE][+-]?[0-9]+)?" );
+	/**
+	 * Comments that an outer property access ({@code chain.first().total}) claimed but that belong between the calls of
+	 * the method chain it wraps; handed to that chain's printer, which removes the ones it places.
+	 */
+	List<BoxComment>								pendingChainComments			= null;
 
 	/**
 	 * Per-format-run cache of source files split into lines.
@@ -145,19 +172,19 @@ public class Visitor extends VoidBoxVisitor {
 	 * reference it. The cache lives only as long as this visitor (a single format operation) and nothing is stored on
 	 * the {@link Source} itself.
 	 */
-	private final Map<Source, String[]>	sourceLinesCache				= new IdentityHashMap<>();
+	private final Map<Source, String[]>				sourceLinesCache				= new IdentityHashMap<>();
 
-	CommentsPrinter						commentsPrinter;
-	ClassPrinter						classPrinter;
-	StringPrinter						stringPrinter;
-	ComponentPrinter					componentPrinter;
-	HelperPrinter						helperPrinter;
-	ArgumentsPrinter					argumentsPrinter;
-	ParametersPrinter					parametersPrinter;
-	FunctionDeclarationPrinter			functionDeclaration;
-	StructLiteralPrinter				structLiteralPrinter;
-	ArrayLiteralPrinter					arrayLiteralPrinter;
-	SetLiteralPrinter					setLiteralPrinter;
+	CommentsPrinter									commentsPrinter;
+	ClassPrinter									classPrinter;
+	StringPrinter									stringPrinter;
+	ComponentPrinter								componentPrinter;
+	HelperPrinter									helperPrinter;
+	ArgumentsPrinter								argumentsPrinter;
+	ParametersPrinter								parametersPrinter;
+	FunctionDeclarationPrinter						functionDeclaration;
+	StructLiteralPrinter							structLiteralPrinter;
+	ArrayLiteralPrinter								arrayLiteralPrinter;
+	SetLiteralPrinter								setLiteralPrinter;
 
 	/**
 	 * Constructor
@@ -187,6 +214,48 @@ public class Visitor extends VoidBoxVisitor {
 		this.functionDeclaration	= new FunctionDeclarationPrinter( this );
 		this.parametersPrinter		= new ParametersPrinter( this );
 		this.argumentsPrinter		= new ArgumentsPrinter( this );
+	}
+
+	/**
+	 * The width a node prints at on a single line, measured by printing it with the same settings.
+	 *
+	 * @param node the node
+	 *
+	 * @return the width, or -1 when the node always prints on several lines
+	 */
+	int flatWidth( BoxNode node ) {
+		String text = flatText( node );
+		return text == null ? -1 : text.length();
+	}
+
+	/**
+	 * The length of a node's printed text with its line breaks left out and runs of whitespace counted as one space, for
+	 * measuring a node that cannot print on one line (a closure with a body) the same way on every pass.
+	 *
+	 * @param node the node
+	 *
+	 * @return the length
+	 */
+	int unbrokenWidth( BoxNode node ) {
+		Visitor measure = new Visitor( currentSourceType.peek(), config );
+		measure.measuring = true;
+		node.accept( measure );
+		return WHITESPACE_RUN.matcher( measure.getRoot().textWithoutBreaks() ).replaceAll( " " ).strip().length();
+	}
+
+	/**
+	 * A node printed on a single line with the same settings. The measuring printer does not measure again: its chains
+	 * and argument lists take no length-based breaks, which keeps measuring linear and free of recursion.
+	 *
+	 * @param node the node
+	 *
+	 * @return the text, or null when the node always prints on several lines
+	 */
+	String flatText( BoxNode node ) {
+		Visitor measure = new Visitor( currentSourceType.peek(), config );
+		measure.measuring = true;
+		node.accept( measure );
+		return measure.getRoot().flatText();
 	}
 
 	public Doc getRoot() {
@@ -234,6 +303,14 @@ public class Visitor extends VoidBoxVisitor {
 		if ( config.getSemicolons() ) {
 			getCurrentDoc().append( ";" );
 		}
+	}
+
+	/**
+	 * Print a semicolon the statement needs whatever the semicolons option says, because without it the next line would
+	 * be read as part of the statement: a bare return, break or continue, an import, a param, a function without a body.
+	 */
+	public void printRequiredSemicolon() {
+		getCurrentDoc().append( ";" );
 	}
 
 	String extractRawSourceFromPosition( BoxNode node ) {
@@ -288,32 +365,13 @@ public class Visitor extends VoidBoxVisitor {
 				sb.append( "\n" ).append( lastLine.substring( 0, safeEnd ) );
 			}
 
+			// The current indentation is printed before the first line, so only its own leading whitespace is dropped.
+			// The other lines are kept exactly as written: they are inside an ignored region, and may be inside a
+			// multi-line string, whose content must not change.
 			String		snippet			= sb.toString();
 			String[]	snippetLines	= snippet.split( "\n", -1 );
-			String		first			= snippetLines.length > 0 ? snippetLines[ 0 ] : snippet;
-			int			dedent			= 0;
-			while ( dedent < first.length() ) {
-				char ch = first.charAt( dedent );
-				if ( ch == ' ' || ch == '\t' ) {
-					dedent++;
-				} else {
-					break;
-				}
-			}
-			if ( dedent > 0 ) {
-				for ( int i = 0; i < snippetLines.length; i++ ) {
-					String	line	= snippetLines[ i ];
-					int		remove	= 0;
-					while ( remove < line.length() && remove < dedent ) {
-						char ch = line.charAt( remove );
-						if ( ch == ' ' || ch == '\t' ) {
-							remove++;
-						} else {
-							break;
-						}
-					}
-					snippetLines[ i ] = line.substring( remove );
-				}
+			if ( snippetLines.length > 0 ) {
+				snippetLines[ 0 ] = snippetLines[ 0 ].stripLeading();
 			}
 			return String.join( "\n", snippetLines );
 		} catch ( Exception e ) {
@@ -544,10 +602,179 @@ public class Visitor extends VoidBoxVisitor {
 				// no-op
 			} else {
 				node.getExpression().accept( this );
-				printSemicolon();
+				if ( !config.getSemicolons() && ( nextStatementStartsWithParenOrBracket( node ) || endsWithOpenRange( node ) ) ) {
+					// without it "f()" followed by "( a ) => b" or "[ 1 ].each()" reads as one expression, and so does
+					// an open-ended range "x = 1.." followed by the next line
+					printRequiredSemicolon();
+				} else {
+					printSemicolon();
+				}
 			}
 		}
 		printPostComments( node );
+	}
+
+	/**
+	 * Whether a statement prints ending in an open-ended range ({@code 1..}).
+	 *
+	 * @param node the statement
+	 *
+	 * @return true when it ends with ".."
+	 */
+	private boolean endsWithOpenRange( BoxExpressionStatement node ) {
+		Visitor measure = new Visitor( currentSourceType.peek(), config );
+		measure.measuring = true;
+		node.getExpression().accept( measure );
+		return measure.getRoot().textWithoutBreaks().strip().endsWith( ".." );
+	}
+
+	/**
+	 * Whether the statement after this one starts with "(" or "[", as written or as printed.
+	 *
+	 * @param node the statement
+	 *
+	 * @return true when the next statement would join this one without a semicolon
+	 */
+	private boolean nextStatementStartsWithParenOrBracket( BoxStatement node ) {
+		BoxNode parent = node.getParent();
+		if ( parent == null ) {
+			return false;
+		}
+		boolean seen = false;
+		for ( BoxNode sibling : parent.getChildren() ) {
+			if ( sibling == node ) {
+				seen = true;
+			} else if ( seen && sibling instanceof BoxStatement next ) {
+				String source = next.getSourceText() == null ? "" : next.getSourceText().strip();
+				if ( source.startsWith( "(" ) || source.startsWith( "[" ) ) {
+					return true;
+				}
+				Visitor measure = new Visitor( currentSourceType.peek(), config );
+				measure.measuring = true;
+				next.accept( measure );
+				String printed = measure.getRoot().textWithoutBreaks().strip();
+				return printed.startsWith( "(" ) || printed.startsWith( "[" );
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Prints an array destructuring pattern: {@code [ a, b = 1, [ c ], ...rest ]}.
+	 */
+	@Override
+	public void visit( BoxArrayDestructuringPattern node ) {
+		printPreComments( node );
+		var bindings = node.getBindings();
+		if ( bindings.isEmpty() ) {
+			print( "[]" );
+		} else {
+			print( "[ " );
+			for ( int i = 0; i < bindings.size(); i++ ) {
+				if ( i > 0 ) {
+					print( ", " );
+				}
+				bindings.get( i ).accept( this );
+			}
+			// A single binding keeps a trailing comma: "static [ a ]" would parse as an array access
+			if ( bindings.size() == 1 && !bindings.get( 0 ).isRest() ) {
+				print( "," );
+			}
+			print( " ]" );
+		}
+		printPostComments( node );
+	}
+
+	/**
+	 * Prints one array destructuring binding: a target or nested pattern with an optional default, or a rest binding.
+	 */
+	@Override
+	public void visit( BoxArrayDestructuringBinding node ) {
+		if ( node.isRest() ) {
+			print( "..." );
+			node.getTarget().accept( this );
+			return;
+		}
+		if ( node.getPattern() != null ) {
+			node.getPattern().accept( this );
+		} else {
+			node.getTarget().accept( this );
+		}
+		if ( node.getDefaultValue() != null ) {
+			print( " = " );
+			node.getDefaultValue().accept( this );
+		}
+	}
+
+	/**
+	 * Prints an object destructuring pattern: {@code { a, b: target, c: { d }, e = 1, ...rest }}.
+	 */
+	@Override
+	public void visit( BoxObjectDestructuringPattern node ) {
+		printPreComments( node );
+		var bindings = node.getBindings();
+		if ( bindings.isEmpty() ) {
+			print( "{}" );
+		} else {
+			print( "{ " );
+			for ( int i = 0; i < bindings.size(); i++ ) {
+				if ( i > 0 ) {
+					print( ", " );
+				}
+				bindings.get( i ).accept( this );
+			}
+			print( " }" );
+		}
+		printPostComments( node );
+	}
+
+	/**
+	 * Prints one object destructuring binding. A key bound to a variable of the same name prints in shorthand ({@code a});
+	 * otherwise the target or nested pattern follows a colon.
+	 */
+	@Override
+	public void visit( BoxObjectDestructuringBinding node ) {
+		if ( node.isRest() ) {
+			print( "..." );
+			node.getTarget().accept( this );
+			return;
+		}
+		String bareKey = bareDestructuringKey( node.getKey() );
+		if ( bareKey != null ) {
+			print( bareKey );
+		} else {
+			node.getKey().accept( this );
+		}
+		if ( node.getPattern() != null ) {
+			print( ": " );
+			node.getPattern().accept( this );
+		} else if ( node.getTarget() != null && ! ( bareKey != null && node.getTarget() instanceof BoxIdentifier target
+		    && bareKey.equalsIgnoreCase( target.getName() ) ) ) {
+			print( ": " );
+			node.getTarget().accept( this );
+		}
+		if ( node.getDefaultValue() != null ) {
+			print( " = " );
+			node.getDefaultValue().accept( this );
+		}
+	}
+
+	/**
+	 * The text of a destructuring key written as a bare name ({@code name}, not {@code "name"}), or null for any other key.
+	 *
+	 * @param key the key expression
+	 *
+	 * @return the bare key, or null
+	 */
+	private String bareDestructuringKey( BoxExpression key ) {
+		if ( key instanceof BoxIdentifier id ) {
+			return id.getName();
+		}
+		if ( key instanceof BoxStringLiteral str && str.getSourceText() != null && !str.getSourceText().startsWith( "\"" )
+		    && !str.getSourceText().startsWith( "'" ) ) {
+			return str.getValue();
+		}
+		return null;
 	}
 
 	@Override
@@ -588,6 +815,28 @@ public class Visitor extends VoidBoxVisitor {
 		var		binaryDoc			= pushDoc( DocType.GROUP );
 		var		indentDoc			= pushDoc( DocType.INDENT );
 
+		// An open-ended range has no left (..10) or no right (5..) operand: print the operator against the other side
+		if ( node.getLeft() == null || node.getRight() == null ) {
+			if ( node.getLeft() != null ) {
+				node.getLeft().accept( this );
+			}
+			indentDoc.append( node.getOperator().getSymbol() );
+			if ( node.getRight() != null ) {
+				node.getRight().accept( this );
+			}
+			binaryDoc.append( popDoc() );
+			currentDoc.append( popDoc() );
+			return;
+		}
+
+		// Spaces are dropped only around operators the parser reads without them. A word operator (instanceOf, mod...)
+		// would run into its operands, and the parser does not read "b&&c", "b&c", "b||c" or "b^c"; a sign before an
+		// operand that starts with a sign keeps its space too (a - -b is not a--b).
+		String symbol = node.getOperator().getSymbol();
+		if ( !needsPadding && ( !UNSPACED_OPERATORS.contains( symbol ) || startsWithSign( symbol, node.getRight() ) ) ) {
+			needsPadding = true;
+		}
+
 		node.getLeft().accept( this );
 
 		if ( operatorPosition.equals( "start" ) ) {
@@ -604,10 +853,35 @@ public class Visitor extends VoidBoxVisitor {
 			    .append( needsPadding ? Line.LINE : Line.SOFT );
 		}
 
-		node.getRight().accept( this );
+		// "x castAs int" names the type bare; printing the parser's string literal ("int") would let a following
+		// operator bind to it instead ("x castAs "int" - 1"), changing the expression
+		if ( node.getOperator() == BoxBinaryOperator.CastAs && node.getRight() instanceof BoxStringLiteral type
+		    && type.getSourceText() != null && !type.getSourceText().startsWith( "\"" ) && !type.getSourceText().startsWith( "'" ) ) {
+			print( type.getSourceText() );
+		} else {
+			node.getRight().accept( this );
+		}
 		binaryDoc.append( popDoc() );
 
 		currentDoc.append( popDoc() );
+	}
+
+	/**
+	 * Whether an operator ends in a sign and the operand after it prints starting with one, so that without a space the
+	 * two would read as a single operator.
+	 *
+	 * @param symbol  the operator
+	 * @param operand the operand after it
+	 *
+	 * @return true when they must be kept apart
+	 */
+	private boolean startsWithSign( String symbol, BoxNode operand ) {
+		char last = symbol.charAt( symbol.length() - 1 );
+		if ( last != '-' && last != '+' ) {
+			return false;
+		}
+		String text = flatText( operand );
+		return text == null || text.startsWith( "-" ) || text.startsWith( "+" );
 	}
 
 	@Override
@@ -725,7 +999,15 @@ public class Visitor extends VoidBoxVisitor {
 		print( " -> " );
 		// Lambda bodies are always script, even when embedded in template attributes
 		currentSourceType.push( BoxSourceType.BOXSCRIPT );
-		node.getBody().accept( this );
+		// A single-expression body is an expression statement in the AST: print the bare expression, since a
+		// trailing semicolon inside the argument list does not parse (same as an arrow closure)
+		if ( node.getBody() instanceof BoxExpressionStatement exprStmt ) {
+			printPreComments( exprStmt );
+			exprStmt.getExpression().accept( this );
+			printPostComments( exprStmt );
+		} else {
+			node.getBody().accept( this );
+		}
 		currentSourceType.pop();
 		printPostComments( node );
 	}
@@ -776,19 +1058,47 @@ public class Visitor extends VoidBoxVisitor {
 		} else if ( !chain.isEmpty() && chain.getLast().isDotAccess() ) {
 			root = chain.getLast().asDotAccess().getContext();
 		}
+
+		// Each call's position starts at its own ".name", so the outermost call is "after" every comment written between
+		// the calls and claims them all. Put each comment back before the call it precedes in the source, and print the
+		// ones written before the whole chain ahead of its root.
+		List<BoxComment> pending = this.pendingChainComments != null ? this.pendingChainComments : new ArrayList<>();
+		this.pendingChainComments = null;
+		List<BoxComment> chainComments = new ArrayList<>();
+		for ( var element : chain ) {
+			if ( element.isMethodInvocation() ) {
+				var methodNode = element.asMethodInvocation();
+				methodNode.getComments().stream().filter( comment -> comment.isBefore( methodNode ) ).forEach( chainComments::add );
+			}
+		}
+		chainComments.sort( ( a, b ) -> comparePositions( a, b ) );
+		final BoxNode		chainRoot	= root;
+		List<BoxComment>	leading		= new ArrayList<>( Stream.concat( chainComments.stream(), pending.stream() )
+		    .filter( comment -> startsBefore( comment, chainRoot ) ).toList() );
+		chainComments.removeAll( leading );
+		pending.removeAll( leading );
+		leading.sort( ( a, b ) -> comparePositions( a, b ) );
+		for ( var comment : leading ) {
+			comment.accept( this );
+			getCurrentDoc().append( Line.HARD );
+		}
 		root.accept( this );
 
 		int		chainSize					= chain.size();
 		int		breakCount					= config.getChain().getBreakCount();
 		int		breakLength					= config.getChain().getBreakLength();
-		int		chainLength					= calculateChainLength( chain, root );
+		int		chainLength					= measuring ? 0 : printedChainLength( node, chain, root );
 		long	methodCallCount				= chain.stream().filter( ChainElement::isMethodInvocation ).count();
 		boolean	chainFirstLengthStrategy	= "chain-first".equals( config.getChain().getLengthStrategy() ) && methodCallCount > 1;
-		boolean	argumentLengthRequiresBreak	= chainFirstLengthStrategy && chain.stream()
+		boolean	argumentLengthRequiresBreak	= !measuring && chainFirstLengthStrategy && chain.stream()
 		    .filter( ChainElement::isMethodInvocation )
 		    .map( ChainElement::asMethodInvocation )
 		    .anyMatch( method -> argumentsPrinter.wouldBreakByLength( method.getArguments() ) );
-		boolean	shouldBreak					= chainSize >= breakCount || chainLength >= breakLength || argumentLengthRequiresBreak;
+		// A comment written between the calls prints on its own line before the next call, so the chain breaks there
+		boolean	commentInChain				= !chainComments.isEmpty() || !pending.isEmpty();
+
+		boolean	shouldBreak					= chainSize >= breakCount || ( !measuring && chainLength >= breakLength ) || argumentLengthRequiresBreak
+		    || commentInChain;
 
 		var		chainGroup					= pushDoc( DocType.GROUP );
 		var		chainContents				= pushDoc( shouldBreak ? DocType.INDENT : DocType.ARRAY );
@@ -806,8 +1116,20 @@ public class Visitor extends VoidBoxVisitor {
 			}
 
 			if ( element.isMethodInvocation() ) {
-				var methodNode = element.asMethodInvocation();
-				printPreComments( methodNode );
+				var					methodNode	= element.asMethodInvocation();
+				// the comments written before this call: on their own lines, ahead of it
+				final boolean		last		= i == 0;
+				List<BoxComment>	before		= new ArrayList<>(
+				    chainComments.stream().filter( comment -> last || startsBefore( comment, methodNode ) ).toList() );
+				chainComments.removeAll( before );
+				var outer = pending.stream().filter( comment -> startsBefore( comment, methodNode ) ).toList();
+				pending.removeAll( outer );
+				before.addAll( outer );
+				before.sort( ( a, b ) -> comparePositions( a, b ) );
+				for ( var comment : before ) {
+					comment.accept( this );
+					getCurrentDoc().append( Line.HARD );
+				}
 
 				if ( methodNode.getUsedDotAccess() ) {
 					if ( methodNode.isSafe() ) {
@@ -874,14 +1196,27 @@ public class Visitor extends VoidBoxVisitor {
 			currentNode = dotAccess.getContext();
 		}
 
+		// Comments written before the property accesses, in source order. When the root is a method chain, the ones that
+		// sit between its calls are handed to it (see pendingChainComments); the rest print before their access.
+		List<BoxComment> dotComments = new ArrayList<>();
+		for ( var element : chain ) {
+			var access = element.asDotAccess();
+			access.getComments().stream().filter( comment -> comment.isBefore( access ) ).forEach( dotComments::add );
+		}
+		dotComments.sort( ( a, b ) -> comparePositions( a, b ) );
+
 		// Get the root of the chain
+		if ( currentNode instanceof BoxMethodInvocation && !dotComments.isEmpty() ) {
+			this.pendingChainComments = dotComments;
+		}
 		currentNode.accept( this );
+		this.pendingChainComments = null;
 
 		int		chainSize	= chain.size();
 		int		breakCount	= config.getChain().getBreakCount();
 		int		breakLength	= config.getChain().getBreakLength();
-		int		chainLength	= calculateChainLength( chain, currentNode );
-		boolean	shouldBreak	= chainSize >= breakCount || chainLength >= breakLength;
+		int		chainLength	= measuring ? 0 : printedChainLength( node, chain, currentNode );
+		boolean	shouldBreak	= chainSize >= breakCount || ( !measuring && chainLength >= breakLength );
 
 		var		chainGroup	= pushDoc( DocType.GROUP );
 		var		indentGroup	= pushDoc( DocType.INDENT );
@@ -898,8 +1233,18 @@ public class Visitor extends VoidBoxVisitor {
 				indentGroup.append( Line.HARD );
 			}
 
-			var dotAccess = element.asDotAccess();
-			printPreComments( dotAccess );
+			var				dotAccess	= element.asDotAccess();
+			final boolean	last		= i == 0;
+			var				before		= dotComments.stream().filter( comment -> last || startsBefore( comment, dotAccess ) ).toList();
+			dotComments.removeAll( before );
+			for ( var comment : before ) {
+				// on its own line ahead of the access ("first()// note" would comment out nothing but read wrong)
+				if ( !shouldBreak ) {
+					indentGroup.append( Line.HARD );
+				}
+				comment.accept( this );
+				indentGroup.append( Line.HARD );
+			}
 			if ( dotAccess.isSafe() ) {
 				print( "?" );
 			}
@@ -922,8 +1267,24 @@ public class Visitor extends VoidBoxVisitor {
 
 	@Override
 	public void visit( BoxArrayAccess node ) {
-		printPreComments( node );
-		node.getContext().accept( this );
+		// chain.first()[ "key" ]: comments the access claimed from between the calls go back to the method chain
+		List<BoxComment> leading = node.getComments().stream().filter( comment -> comment.isBefore( node ) ).toList();
+		if ( node.getContext() instanceof BoxMethodInvocation && !leading.isEmpty() ) {
+			List<BoxComment> handed = new ArrayList<>( leading );
+			handed.sort( ( a, b ) -> comparePositions( a, b ) );
+			this.pendingChainComments = handed;
+			node.getContext().accept( this );
+			this.pendingChainComments = null;
+			// any the chain did not place come before the brackets
+			for ( var comment : handed ) {
+				getCurrentDoc().append( Line.HARD );
+				comment.accept( this );
+				getCurrentDoc().append( Line.HARD );
+			}
+		} else {
+			printPreComments( node );
+			node.getContext().accept( this );
+		}
 		print( "[ " );
 		node.getAccess().accept( this );
 		print( " ]" );
@@ -943,7 +1304,10 @@ public class Visitor extends VoidBoxVisitor {
 		printPreComments( node );
 		print( "." );
 		print( node.getName() );
-		argumentsPrinter.print( node, node.getArguments() );
+		// A bare member reference (.getSchema) has no argument list
+		if ( node.getArguments() != null ) {
+			argumentsPrinter.print( node, node.getArguments() );
+		}
 		printPostComments( node );
 	}
 
@@ -974,6 +1338,7 @@ public class Visitor extends VoidBoxVisitor {
 		printPreComments( node );
 		print( node.getName() );
 		printPostComments( node );
+		commentsPrinter.printLeafInsideComments( node );
 	}
 
 	@Override
@@ -983,17 +1348,37 @@ public class Visitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	/**
+	 * A number literal as it was written. The parser stores some numbers normalized ({@code 0.95} as {@code .95}),
+	 * which is the same value but not what the author wrote.
+	 *
+	 * @param node  the literal
+	 * @param value the stored value
+	 *
+	 * @return the source text when it is a plain number, otherwise the stored value
+	 */
+	private String numberText( BoxNode node, String value ) {
+		String source = node.getSourceText();
+		if ( source != null ) {
+			source = source.strip();
+			if ( !source.isEmpty() && NUMBER_LITERAL.matcher( source ).matches() ) {
+				return source;
+			}
+		}
+		return value;
+	}
+
 	@Override
 	public void visit( BoxIntegerLiteral node ) {
 		printPreComments( node );
-		print( node.getValue() );
+		print( numberText( node, node.getValue() ) );
 		printPostComments( node );
 	}
 
 	@Override
 	public void visit( BoxDecimalLiteral node ) {
 		printPreComments( node );
-		print( node.getValue() );
+		print( numberText( node, node.getValue() ) );
 		printPostComments( node );
 	}
 
@@ -1287,11 +1672,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( " " );
 				print( node.getLabel() );
 			}
-			if ( isCF() ) {
-				print( ";" );
-			} else {
-				printSemicolon();
-			}
+			printRequiredSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -1317,11 +1698,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( " " );
 				print( node.getLabel() );
 			}
-			if ( isCF() ) {
-				print( ";" );
-			} else {
-				printSemicolon();
-			}
+			printRequiredSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -1345,6 +1722,11 @@ public class Visitor extends VoidBoxVisitor {
 			print( "var " );
 		}
 		node.getVariable().accept( this );
+		// for ( var item, index in collection ): the second (index/value) variable
+		if ( node.getSecondVariable() != null ) {
+			print( ", " );
+			node.getSecondVariable().accept( this );
+		}
 		print( " in " );
 		node.getExpression().accept( this );
 		if ( config.getParensPadding() ) {
@@ -1402,8 +1784,13 @@ public class Visitor extends VoidBoxVisitor {
 	@Override
 	public void visit( BoxImport node ) {
 		printPreComments( node );
-		// work around for unsupported taglib imports
+		// A taglib import (<cfimport prefix="x" taglib="/path">) has no expression in the AST: print it as written,
+		// since dropping it breaks every custom tag that uses its prefix
 		if ( node.getExpression() == null ) {
+			if ( node.getSourceText() != null ) {
+				print( node.getSourceText().strip() );
+			}
+			printPostComments( node );
 			return;
 		}
 		if ( isTemplate() ) {
@@ -1418,7 +1805,7 @@ public class Visitor extends VoidBoxVisitor {
 			} else {
 				className = fqn.getValue();
 			}
-			print( "<bx:import" );
+			print( "<" + componentPrefix + "import" );
 			if ( prefix != null ) {
 				print( " prefix=\"" );
 				print( prefix );
@@ -1442,7 +1829,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( " as " );
 				node.getAlias().accept( this );
 			}
-			printSemicolon();
+			printRequiredSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -1486,7 +1873,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( " " );
 			}
 			if ( node.getVariable() instanceof BoxStringLiteral str ) {
-				print( str.getValue() );
+				print( str.getValue().strip() );
 			} else {
 				node.getVariable().accept( this );
 			}
@@ -1494,7 +1881,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( " = " );
 				node.getDefaultValue().accept( this );
 			}
-			printSemicolon();
+			printRequiredSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -1549,7 +1936,19 @@ public class Visitor extends VoidBoxVisitor {
 				multiline = true;
 			}
 			if ( !multiline && node.getSourceText() != null ) {
-				multiline = config.getProperty().getMultiline().getMinLength() < node.getSourceText().trim().length();
+				// The length is the width the property prints at on one line, not its source length: the source changes
+				// with each pass (indentation, line breaks), and measuring it made the next pass decide differently
+				int width = "property;".length();
+				for ( var anno : node.getPostAnnotations() ) {
+					int	keyWidth	= flatWidth( anno.getKey() );
+					int	valueWidth	= anno.getValue() == null ? 0 : flatWidth( anno.getValue() );
+					if ( keyWidth < 0 || valueWidth < 0 ) {
+						width = Integer.MAX_VALUE;
+						break;
+					}
+					width += 1 + keyWidth + ( anno.getValue() == null ? 0 : ( keyValuePadding ? 3 : 1 ) + valueWidth );
+				}
+				multiline = config.getProperty().getMultiline().getMinLength() < width;
 			}
 
 			Doc	currentDoc	= getCurrentDoc();
@@ -1621,8 +2020,10 @@ public class Visitor extends VoidBoxVisitor {
 			if ( node.getExpression() != null ) {
 				print( " " );
 				node.getExpression().accept( this );
+				printSemicolon();
+			} else {
+				printRequiredSemicolon();
 			}
-			printSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -1693,12 +2094,34 @@ public class Visitor extends VoidBoxVisitor {
 				}
 
 				// Check if else body is a direct if statement (not in a block)
-				boolean	isDirectElseIf	= node.getElseBody() instanceof BoxIfElse;
+				boolean	isDirectElseIf		= node.getElseBody() instanceof BoxIfElse;
 
 				// Determine spacing before "else" based on configuration
-				String	elseStyle		= config.getBraces().getElseConfig().getStyle();
+				String	elseStyle			= config.getBraces().getElseConfig().getStyle();
 
-				if ( elseStyle.equals( "new-line" ) ) {
+				// A comment written before the else branch ("}\n// note\nelse if ...") stays before the else, on its own
+				// line: printed between "else" and "if" ("} else // note\nif") it changes how the else parses.
+				BoxNode	elseTarget			= isElseIf ? ( ( BoxStatementBlock ) node.getElseBody() ).getBody().get( 0 ) : node.getElseBody();
+				boolean	commentedElse		= hasPreComments( elseTarget ) || ( isElseIf && hasPreComments( node.getElseBody() ) );
+
+				// A comment trailing the then block ("} // end if") stays on that line, so "else" starts the next one;
+				// on the same line it would end up after "else {", attached to the else body on the next pass
+				// (only for a braced then block: a single statement's trailing comment prints inside the braces added
+				// around it, so it does not reach the else line)
+				boolean	trailingThenComment	= node.getThenBody() instanceof BoxStatementBlock
+				    && node.getThenBody().getComments().stream().anyMatch( comment -> comment.isAfter( node.getThenBody() ) );
+
+				if ( commentedElse || trailingThenComment ) {
+					newLine();
+				}
+				if ( commentedElse ) {
+					if ( isElseIf ) {
+						commentsPrinter.printPreComments( node.getElseBody(), true );
+					}
+					commentsPrinter.printPreComments( elseTarget, true );
+				} else if ( trailingThenComment ) {
+					// already on a new line
+				} else if ( elseStyle.equals( "new-line" ) ) {
 					// Always put else on a new line
 					newLine();
 				} else if ( elseStyle.equals( "same-line" ) ) {
@@ -1724,12 +2147,74 @@ public class Visitor extends VoidBoxVisitor {
 					BoxStatementBlock	elseBlock	= ( BoxStatementBlock ) node.getElseBody();
 					BoxIfElse			elseIfNode	= ( BoxIfElse ) elseBlock.getBody().get( 0 );
 					doBoxIfElse( elseIfNode, false );
+				} else if ( isDirectElseIf && commentedElse ) {
+					// its leading comments were printed before "else"
+					doBoxIfElse( ( BoxIfElse ) node.getElseBody(), false );
+					printPostComments( node.getElseBody() );
 				} else if ( isDirectElseIf ) {
 					node.getElseBody().accept( this );
+				} else if ( commentedElse ) {
+					printStatementBodyWithoutPreComments( node, node.getElseBody() );
 				} else {
 					helperPrinter.printStatementBody( node, node.getElseBody() );
 				}
 			}
+		}
+	}
+
+	/**
+	 * Orders two nodes by where they start in the source.
+	 *
+	 * @param a a node
+	 * @param b another node
+	 *
+	 * @return negative, zero or positive as a starts before, with or after b
+	 */
+	private static int comparePositions( BoxNode a, BoxNode b ) {
+		if ( a.getPosition() == null || b.getPosition() == null ) {
+			return 0;
+		}
+		var	sa	= a.getPosition().getStart();
+		var	sb	= b.getPosition().getStart();
+		return sa.getLine() != sb.getLine() ? sa.getLine() - sb.getLine() : sa.getColumn() - sb.getColumn();
+	}
+
+	/**
+	 * Whether a comment starts before a node does.
+	 *
+	 * @param comment the comment
+	 * @param node    the node
+	 *
+	 * @return true when the comment comes first
+	 */
+	private static boolean startsBefore( BoxComment comment, BoxNode node ) {
+		return node.getPosition() == null || comparePositions( comment, node ) < 0;
+	}
+
+	/**
+	 * Whether a node has comments that print before it.
+	 *
+	 * @param node the node
+	 *
+	 * @return true when at least one comment precedes it
+	 */
+	private boolean hasPreComments( BoxNode node ) {
+		return node != null && node.getComments().stream().anyMatch( comment -> comment.isBefore( node ) );
+	}
+
+	/**
+	 * Prints an else body whose leading comments were already printed before the {@code else} keyword.
+	 *
+	 * @param node the if/else node
+	 * @param body the else body
+	 */
+	private void printStatementBodyWithoutPreComments( BoxIfElse node, BoxStatement body ) {
+		var leading = body.getComments().stream().filter( comment -> comment.isBefore( body ) ).toList();
+		body.getComments().removeAll( leading );
+		try {
+			helperPrinter.printStatementBody( node, body );
+		} finally {
+			body.getComments().addAll( 0, leading );
 		}
 	}
 
@@ -1853,21 +2338,28 @@ public class Visitor extends VoidBoxVisitor {
 			return;
 		}
 		if ( isTemplate() ) {
-			printPreComments( node );
 			print( "<" + componentPrefix + "try>" );
 			// Combine try body, catches, and finally into one sequence so they all
 			// print at the same indent level (one level inside <cftry>).
 			var tryCombined = new ArrayList<BoxStatement>( node.getTryBody() );
 			tryCombined.addAll( node.getCatches() );
 			if ( node.getFinallyBody() != null && !node.getFinallyBody().isEmpty() ) {
+				// Printed as a "finally" component: the component printer adds the prefix. The component adopts the
+				// statements, so they are handed back to the try afterwards (printing must not change the AST).
 				tryCombined.add( new ortus.boxlang.compiler.ast.statement.component.BoxComponent(
-				    componentPrefix + "finally",
+				    "finally",
 				    List.of(),
-				    node.getFinallyBody(),
+				    new ArrayList<>( node.getFinallyBody() ),
 				    node.getPosition(),
 				    null ) );
 			}
-			helperPrinter.printTemplateBody( tryCombined );
+			try {
+				helperPrinter.printTemplateBody( tryCombined );
+			} finally {
+				if ( node.getFinallyBody() != null ) {
+					node.getFinallyBody().forEach( statement -> statement.setParent( node ) );
+				}
+			}
 			print( "</" + componentPrefix + "try>" );
 		} else {
 			print( "try " );
@@ -1888,6 +2380,12 @@ public class Visitor extends VoidBoxVisitor {
 
 	@Override
 	public void visit( BoxTryCatch node ) {
+		// In script, a comment written before "catch" goes on its own line after the closing brace of the try, with
+		// "catch" on the next line ("}\n// note\ncatch"); printed right after the brace it gave "}// note\n catch"
+		boolean commentedCatch = !isTemplate() && hasPreComments( node );
+		if ( commentedCatch ) {
+			newLine();
+		}
 		printPreComments( node );
 		if ( printSourceForCFCompat( node ) ) {
 			printPostComments( node );
@@ -1911,7 +2409,7 @@ public class Visitor extends VoidBoxVisitor {
 			helperPrinter.printTemplateBody( node.getCatchBody() );
 			print( "</" + componentPrefix + "catch>" );
 		} else {
-			print( " catch (" );
+			print( commentedCatch ? "catch (" : " catch (" );
 			int numCatchTypes = node.getCatchTypes().size();
 			for ( int i = 0; i < numCatchTypes; i++ ) {
 				var type = node.getCatchTypes().get( i );
@@ -1936,9 +2434,15 @@ public class Visitor extends VoidBoxVisitor {
 			return;
 		}
 		if ( isTemplate() ) {
-			print( "<" + componentPrefix + "while condition=\"" );
-			stringPrinter.printQuotedExpression( node.getCondition() );
-			print( "\"" );
+			// The condition attribute holds the expression's source text as a plain string ("i < 3"); "#i < 3#" does
+			// not parse there
+			String condition = node.getCondition().getSourceText() != null ? node.getCondition().getSourceText()
+			    : node.getCondition().toString().trim();
+			if ( condition.contains( "\"" ) && !condition.contains( "'" ) ) {
+				print( "<" + componentPrefix + "while condition='" + condition + "'" );
+			} else {
+				print( "<" + componentPrefix + "while condition=\"" + condition.replace( "\"", "\"\"" ) + "\"" );
+			}
 			if ( node.getLabel() != null ) {
 				print( " label=\"" );
 				print( node.getLabel() );
@@ -2210,36 +2714,23 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	/**
-	 * Calculate the total length of a chain based on source text.
-	 * This is used to determine if the chain should be broken based on length.
+	 * The length of a chain as it prints on one line, without whitespace (the measure the break length is set against).
+	 * Measured from the printed form, so the decision does not change when the formatter has rewritten the chain's
+	 * source; falls back to the source measure when part of the chain always prints on several lines.
 	 *
-	 * @param chain The list of chain elements
-	 * @param root  The root node of the chain
+	 * @param chainNode the outermost node of the chain
+	 * @param chain     the chain elements
+	 * @param root      the chain's receiver
 	 *
-	 * @return The total length of the chain
+	 * @return the length
 	 */
-	private int calculateChainLength( List<ChainElement> chain, BoxNode root ) {
-		int length = getNormalizedSourceLength( root );
-		for ( ChainElement element : chain ) {
-			// Each element's source text includes the dot/accessor prefix
-			if ( element.isMethodInvocation() ) {
-				var m = element.asMethodInvocation();
-				// Source text already includes the dot for method invocations built from dot
-				// access
-				length += getNormalizedSourceLength( m );
-			} else {
-				var d = element.asDotAccess();
-				length += getNormalizedSourceLength( d );
-			}
-		}
-		return length;
-	}
-
-	private int getNormalizedSourceLength( BoxNode node ) {
-		if ( node == null || node.getSourceText() == null ) {
-			return 0;
-		}
-		return node.getSourceText().replaceAll( "\\s+", "" ).length();
+	private int printedChainLength( BoxNode chainNode, List<ChainElement> chain, BoxNode root ) {
+		// A chain that cannot print on one line (a closure with a body) is measured from its printed text without the line
+		// breaks, not from its source: the source changes between passes (semicolons, comments, spacing)
+		Visitor measure = new Visitor( currentSourceType.peek(), config );
+		measure.measuring = true;
+		chainNode.accept( measure );
+		return WHITESPACE_RUN.matcher( measure.getRoot().textWithoutBreaks() ).replaceAll( "" ).length();
 	}
 
 	/**

@@ -92,6 +92,68 @@ public class Doc {
 	}
 
 	/**
+	 * The width of this doc printed on a single line: text counts its length, {@link Line#LINE} one space and
+	 * {@link Line#SOFT} nothing.
+	 *
+	 * @return the width, or -1 when the doc contains a hard line break and cannot print on one line
+	 */
+	public int flatWidth() {
+		String text = flatText();
+		return text == null ? -1 : text.length();
+	}
+
+	/**
+	 * This doc printed on a single line: {@link Line#LINE} as one space, {@link Line#SOFT} as nothing.
+	 *
+	 * @return the text, or null when the doc contains a hard line break and cannot print on one line
+	 */
+	public String flatText() {
+		StringBuilder sb = new StringBuilder();
+		return appendFlat( sb ) ? sb.toString() : null;
+	}
+
+	/**
+	 * The text of this doc with every line break left out, for measuring a doc that cannot print on one line.
+	 *
+	 * @return the text
+	 */
+	public String textWithoutBreaks() {
+		StringBuilder sb = new StringBuilder();
+		appendText( sb );
+		return sb.toString();
+	}
+
+	private void appendText( StringBuilder sb ) {
+		for ( Object item : contents ) {
+			if ( item instanceof String str ) {
+				sb.append( str );
+			} else if ( item instanceof Doc doc ) {
+				doc.appendText( sb );
+			}
+		}
+	}
+
+	private boolean appendFlat( StringBuilder sb ) {
+		for ( Object item : contents ) {
+			if ( item instanceof String str ) {
+				sb.append( str );
+			} else if ( item instanceof Line line ) {
+				switch ( line ) {
+					case LINE -> sb.append( ' ' );
+					case SOFT -> {
+					}
+					default -> {
+						return false;
+					}
+				}
+			} else if ( item instanceof Doc doc && !doc.appendFlat( sb ) ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
 	 * I propagate the willBreak flag up the tree to ensure that if any child node
 	 * will break, the parent will also be marked as willBreak.
 	 * This is technically only applicable to DocType.GROUP, but easier to

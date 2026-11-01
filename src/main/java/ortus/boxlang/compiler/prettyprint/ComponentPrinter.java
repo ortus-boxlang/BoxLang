@@ -17,13 +17,18 @@
  */
 package ortus.boxlang.compiler.prettyprint;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.components.ComponentDescriptor;
 
 public class ComponentPrinter {
 
@@ -60,17 +65,17 @@ public class ComponentPrinter {
 		// Unwrap condition closures: the CF parser wraps cfloop condition expressions
 		// in a BoxClosure(BoxReturn(expr)). For pretty printing, we want to output
 		// just the original expression text, not the closure wrapper.
-		unwrapConditionClosures( node );
+		List<BoxAnnotation>	attributes				= unwrapConditionClosures( node );
 
 		// Check if single_attribute_per_line is enabled for templates
-		boolean singleAttributePerLine = visitor.config.getTemplate().getSingleAttributePerLine();
-		visitor.helperPrinter.printKeyValueAnnotations( node.getAttributes(), false, singleAttributePerLine );
+		boolean				singleAttributePerLine	= visitor.config.getTemplate().getSingleAttributePerLine();
+		visitor.helperPrinter.printKeyValueAnnotations( attributes, false, singleAttributePerLine );
 
 		if ( node.getBody() != null ) {
 			if ( node.getBody().isEmpty() ) {
 				// existing, but empty body gives us <bx:componentName />
 				// This is important for custom tags that expect to execute twice-- start and end
-				currentDoc.append( "/>" );
+				currentDoc.append( " />" );
 			} else {
 				// existing body with statements gives us <bx:componentName> statements... </bx:componentName>
 				currentDoc.append( ">" );
@@ -80,8 +85,10 @@ public class ComponentPrinter {
 				currentDoc.append( ">" );
 			}
 		} else {
-			// not existing body gives us <bx:componentName> or <bx:componentName /> based on config
-			if ( visitor.config.getTemplate().getSelfClosing() ) {
+			// not existing body gives us <bx:componentName>, or <bx:componentName /> based on config. A self-closed tag
+			// parses back with an empty body, which a custom tag runs twice (start and end), so only self-close a
+			// registered component that cannot have a body, for which the two forms are equivalent.
+			if ( visitor.config.getTemplate().getSelfClosing() && cannotHaveBody( node ) ) {
 				currentDoc.append( " />" );
 			} else {
 				currentDoc.append( ">" );
@@ -89,10 +96,23 @@ public class ComponentPrinter {
 		}
 	}
 
+	/**
+	 * Whether a component is registered with the runtime and declares that it does not allow a body.
+	 *
+	 * @param node the component
+	 *
+	 * @return true when the component cannot have a body
+	 */
+	private boolean cannotHaveBody( BoxComponent node ) {
+		ComponentDescriptor descriptor = BoxRuntime.getInstance().getComponentService().getComponent( node.getName() );
+		return descriptor != null && !descriptor.allowsBody();
+	}
+
 	private void printCFScriptCall( BoxComponent node ) {
 		visitor.print( getCFScriptCallHeader( node ) );
 
-		if ( node.getBody() != null && !node.getBody().isEmpty() ) {
+		// An empty body ({}) is kept: it parses differently from no body (;)
+		if ( node.getBody() != null ) {
 			visitor.helperPrinter.printBlock( node, node.getBody() );
 		} else {
 			visitor.print( ";" );
@@ -102,7 +122,8 @@ public class ComponentPrinter {
 	private void printScript( BoxComponent node ) {
 		printScriptComponentName( node );
 
-		var hasBody = node.getBody() != null && !node.getBody().isEmpty();
+		// An empty body ({}) is kept: it parses differently from no body (;)
+		var hasBody = node.getBody() != null;
 
 		// The shorthand `include "path"` form is parsed with a synthesized `template` attribute
 		// whose key source text is the path expression source (not "template"). Detect this case
@@ -129,7 +150,9 @@ public class ComponentPrinter {
 		// but BoxLang script requires it for everything that is not a keyword.
 		String	sourceText	= node.getSourceText();
 		boolean	hadPrefix	= sourceText != null && sourceText.toLowerCase().startsWith( visitor.componentPrefix.toLowerCase() );
-		boolean	needsPrefix	= !BARE_SCRIPT_COMPONENTS.contains( node.getName().toLowerCase() );
+		// CFML script writes components bare (`savecontent variable="x" {}`); a "cf" prefix is only valid in the call
+		// syntax (`cfhttp( url="..." )`), which is printed elsewhere, so a prefix is never added there.
+		boolean	needsPrefix	= !visitor.isCF() && !BARE_SCRIPT_COMPONENTS.contains( node.getName().toLowerCase() );
 		if ( hadPrefix || needsPrefix ) {
 			visitor.print( visitor.componentPrefix );
 		}
@@ -217,10 +240,12 @@ public class ComponentPrinter {
 	 * containing the original expression text so it prints as a plain attribute value.
 	 * This ONLY applies to the "condition" attribute of the "loop" component.
 	 */
-	private void unwrapConditionClosures( BoxComponent node ) {
-		if ( !node.getName().equalsIgnoreCase( "loop" ) ) {
-			return;
+	private List<BoxAnnotation> unwrapConditionClosures( BoxComponent node ) {
+		if ( !node.getName().equalsIgnoreCase( "loop" ) && !node.getName().equalsIgnoreCase( "while" ) ) {
+			return node.getAttributes();
 		}
+		// Built as a copy: printing must not change the AST it prints
+		List<BoxAnnotation> attributes = new ArrayList<>();
 		for ( var attr : node.getAttributes() ) {
 			if ( attr.getKey().getSourceText() != null
 			    && attr.getKey().getSourceText().equalsIgnoreCase( "condition" )
@@ -235,10 +260,15 @@ public class ComponentPrinter {
 				} else if ( retStmt.getExpression() != null ) {
 					conditionText = retStmt.getExpression().toString();
 				} else {
+					attributes.add( attr );
 					continue;
 				}
-				attr.setValue( new BoxStringLiteral( conditionText, null, null ) );
+				attributes.add( new BoxAnnotation( attr.getKey(), new BoxStringLiteral( conditionText, null, null ), attr.getPosition(),
+				    attr.getSourceText() ) );
+			} else {
+				attributes.add( attr );
 			}
 		}
+		return attributes;
 	}
 }

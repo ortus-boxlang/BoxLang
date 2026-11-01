@@ -46,6 +46,19 @@ public class CommentsPrinter {
 	 * @param node
 	 */
 	boolean printPreComments( BoxNode node ) {
+		return printPreComments( node, false );
+	}
+
+	/**
+	 * Prints the comments before a node.
+	 *
+	 * @param node  the node
+	 * @param tight end the comments with a single line break, without keeping a blank line from the source before the
+	 *              node: used where something the AST has no position for (the else keyword) prints between them
+	 *
+	 * @return true when a comment was printed
+	 */
+	boolean printPreComments( BoxNode node, boolean tight ) {
 		BoxNode lastNodeToPrint = null;
 
 		for ( var comment : node.getComments() ) {
@@ -60,19 +73,40 @@ public class CommentsPrinter {
 		}
 
 		if ( lastNodeToPrint != null ) {
-			printCommentSpacing( lastNodeToPrint, node );
+			if ( tight ) {
+				visitor.getCurrentDoc().append( Line.HARD );
+			} else {
+				printCommentSpacing( lastNodeToPrint, node );
+			}
 		}
 
 		return lastNodeToPrint != null;
 	}
 
 	boolean printPostComments( BoxNode node ) {
+		return printTrailingComments( node, false );
+	}
+
+	/**
+	 * Prints the comments of a leaf node (one with nothing inside it to print them next to, like an identifier) that
+	 * the parser placed inside it, as trailing comments. A source position that spans too far (a method name in a
+	 * multi-line call) puts a later comment "inside" the name; nothing printed those, so the comment was lost.
+	 *
+	 * @param node the leaf node
+	 *
+	 * @return true when a comment was printed
+	 */
+	boolean printLeafInsideComments( BoxNode node ) {
+		return printTrailingComments( node, true );
+	}
+
+	private boolean printTrailingComments( BoxNode node, boolean inside ) {
 		var		currentDoc		= visitor.getCurrentDoc();
 		boolean	printed			= false;
 		BoxNode	lastNodeToPrint	= node;
 
 		for ( var comment : node.getComments() ) {
-			if ( comment.isAfter( node ) ) {
+			if ( inside ? comment.isInside( node ) : comment.isAfter( node ) ) {
 				var	isBlockComment	= comment instanceof BoxMultiLineComment;
 				var	commentDoc		= visitor.pushDoc( isBlockComment ? DocType.ARRAY : DocType.LINE_SUFFIX );
 
@@ -97,6 +131,20 @@ public class CommentsPrinter {
 	}
 
 	boolean printInsideComments( BoxNode node, boolean indent ) {
+		return printInsideComments( node, indent, false );
+	}
+
+	/**
+	 * Prints the comments inside a node (after its last child).
+	 *
+	 * @param node             the node
+	 * @param indent           whether to indent the comments on a new line
+	 * @param atStartOfNewLine true when the caller has already started a new line for them: the first comment then takes
+	 *                         no spacing before it
+	 *
+	 * @return true when at least one comment was printed
+	 */
+	boolean printInsideComments( BoxNode node, boolean indent, boolean atStartOfNewLine ) {
 		var		currentDoc		= visitor.getCurrentDoc();
 
 		Doc		commentsDoc		= null;
@@ -105,7 +153,7 @@ public class CommentsPrinter {
 		for ( var comment : node.getComments() ) {
 			if ( comment.isInside( node ) ) {
 				if ( commentsDoc == null ) {
-					lastNodeToPrint	= findPreviousNode( node, comment );
+					lastNodeToPrint	= atStartOfNewLine ? null : findPreviousNode( node, comment );
 					commentsDoc		= visitor.pushDoc( DocType.ARRAY );
 				}
 				if ( lastNodeToPrint != null ) {
@@ -139,8 +187,15 @@ public class CommentsPrinter {
 		var		currentDoc			= visitor.getCurrentDoc();
 		boolean	preserveBlankLines	= visitor.config.getComments().getPreserveBlankLines();
 
-		// If we have printed a comment, and this one starts on the same line, we need to append a space
-		if ( node.startsOnEndLineOf( lastNodeToPrint ) ) {
+		// In a template every character between tags is output, and source whitespace is its own text node: a comment
+		// directly followed by a tag ("---><cfscript>") must stay directly followed by it
+		if ( visitor.isTemplate() && startsRightAfter( node, lastNodeToPrint ) ) {
+			return;
+		}
+		// If we have printed a comment, and this one starts on the same line, we need to append a space. Never after a
+		// "//" comment, which runs to the end of the line: what follows would become part of it (a file with CR-only
+		// line endings reports the next statement as being on the same line).
+		if ( node.startsOnEndLineOf( lastNodeToPrint ) && ! ( lastNodeToPrint instanceof BoxSingleLineComment ) ) {
 			currentDoc.append( " " );
 		} else {
 			// this node starts on a new line
@@ -153,6 +208,23 @@ public class CommentsPrinter {
 				currentDoc.append( Line.HARD );
 			}
 		}
+	}
+
+	/**
+	 * Whether a node starts exactly where another one ends, with nothing in between.
+	 *
+	 * @param node     the later node
+	 * @param previous the earlier node
+	 *
+	 * @return true when they are adjacent in the source
+	 */
+	private boolean startsRightAfter( BoxNode node, BoxNode previous ) {
+		if ( node.getPosition() == null || previous.getPosition() == null ) {
+			return false;
+		}
+		var	start	= node.getPosition().getStart();
+		var	end		= previous.getPosition().getEnd();
+		return start.getLine() == end.getLine() && start.getColumn() == end.getColumn();
 	}
 
 	/**
@@ -173,14 +245,29 @@ public class CommentsPrinter {
 	 * @param text The text to print
 	 */
 	public void printMultiLine( String text ) {
-		String[]	lines		= text.split( "\\r?\\n", -1 );
-		int			numLines	= lines.length;
-		boolean		first		= true;
-		var			currentDoc	= visitor.getCurrentDoc();
+		printMultiLine( text, null );
+	}
+
+	/**
+	 * Prints the lines of a block comment, prefixing each middle line with {@code " * "}.
+	 *
+	 * @param text     the comment text
+	 * @param rawLines the comment's source lines, or null. For a doc comment the prefix of each line is taken from its
+	 *                 source line, because the parsed text reads {@code " ** x"} and {@code " * ** x"} the same while the
+	 *                 documentation parser does not: the first yields {@code x}, the second {@code ** x}.
+	 */
+	public void printMultiLine( String text, String[] rawLines ) {
+		String[] lines = text.split( "\\r?\\n", -1 );
+		if ( rawLines != null && rawLines.length != lines.length ) {
+			rawLines = null;
+		}
+		int		numLines	= lines.length;
+		boolean	first		= true;
+		var		currentDoc	= visitor.getCurrentDoc();
 		for ( int i = 0; i < numLines; i++ ) {
 			boolean last = i == numLines - 1;
 			if ( !first && !last ) {
-				currentDoc.append( " * " );
+				currentDoc.append( linePrefix( lines[ i ], rawLines != null ? rawLines[ i ] : null ) );
 			} else if ( numLines > 1 && last ) {
 				currentDoc.append( " " );
 			}
@@ -191,6 +278,25 @@ public class CommentsPrinter {
 			}
 			first = false;
 		}
+	}
+
+	/**
+	 * The prefix of a middle comment line.
+	 *
+	 * @param line    the parsed line text
+	 * @param rawLine the line as written (doc comments), or null (plain comments)
+	 *
+	 * @return {@code " * "}, or a single space when the line itself starts with stars that must stay in place
+	 */
+	private String linePrefix( String line, String rawLine ) {
+		if ( rawLine != null ) {
+			// Doc comment: keep the star prefix as written. A line written as "** x" or "****" keeps its own stars in place
+			// of the prefix; a line with a normal prefix ("* x", "*\t* x") gets " * ".
+			return rawLine.strip().startsWith( "**" ) && line.startsWith( "*" ) ? " " : " * ";
+		}
+		// Plain comment: the parser keeps a line that starts with "**" (a banner row of stars) whole, so it takes the
+		// place of the prefix; " * ****" would add a star on every pass
+		return line.startsWith( "**" ) ? " " : " * ";
 	}
 
 	public void printSingleLineComment( BoxSingleLineComment node ) {
@@ -223,13 +329,18 @@ public class CommentsPrinter {
 			    .append( "<!--- " )
 			    .append( text )
 			    .append( " --->" );
+		} else if ( text.isBlank() ) {
+			// an empty comment prints as "/* */": padding its whitespace would grow it on every pass
+			currentDoc.append( "/* */" );
 		} else {
 			currentDoc.append( "/*" );
-			if ( !text.startsWith( "*" ) && !text.startsWith( "\n" ) ) {
+			// A plain comment whose text starts with "*" (from "/* ****") keeps the space: "/***" would open a doc
+			// comment, which attaches to the next declaration as its documentation (hint)
+			if ( !text.startsWith( "\n" ) ) {
 				currentDoc.append( " " );
 			}
 			if ( wrap ) {
-				printMultiLineWrapped( text );
+				printMultiLineWrapped( text, null );
 			} else {
 				printMultiLine( text );
 			}
@@ -238,6 +349,25 @@ public class CommentsPrinter {
 			}
 			currentDoc.append( "*/" );
 		}
+	}
+
+	/**
+	 * A doc comment's source lines between {@code /**} and the closing {@code *}{@code /}, or null when unknown.
+	 *
+	 * @param node the doc comment
+	 *
+	 * @return the source lines
+	 */
+	private String[] rawDocLines( BoxDocComment node ) {
+		String source = node.getSourceText();
+		if ( source == null ) {
+			return null;
+		}
+		source = source.strip();
+		if ( !source.startsWith( "/**" ) || !source.endsWith( "*/" ) || source.length() < 5 ) {
+			return null;
+		}
+		return source.substring( 3, source.length() - 2 ).split( "\\r?\\n", -1 );
 	}
 
 	public void printDocComment( BoxDocComment node ) {
@@ -256,9 +386,9 @@ public class CommentsPrinter {
 				currentDoc.append( " " );
 			}
 			if ( wrap ) {
-				printMultiLineWrapped( text );
+				printMultiLineWrapped( text, rawDocLines( node ) );
 			} else {
-				printMultiLine( text );
+				printMultiLine( text, rawDocLines( node ) );
 			}
 			if ( !text.endsWith( "*" ) && !text.endsWith( "\n" ) ) {
 				currentDoc.append( " " );
@@ -352,25 +482,79 @@ public class CommentsPrinter {
 	 *
 	 * @param text The text to print
 	 */
-	private void printMultiLineWrapped( String text ) {
-		var				currentDoc		= visitor.getCurrentDoc();
-		int				maxWidth		= getAvailableWidth( MULTI_LINE_PREFIX_LENGTH );
-		List<String>	wrappedLines	= wrapText( text, maxWidth );
-		int				numLines		= wrappedLines.size();
-
-		for ( int i = 0; i < numLines; i++ ) {
-			boolean	first	= i == 0;
-			boolean	last	= i == numLines - 1;
-
-			// For wrapped comments, all continuation lines get " * " prefix
-			if ( !first ) {
-				currentDoc.append( " * " );
+	/**
+	 * Prints a block comment with its long middle lines wrapped at word boundaries. The first line, the closing line and
+	 * banner rows of stars are kept as they are, and the result prints like an unwrapped comment, so the prefixes and the
+	 * closing line are the same in both modes and a second pass changes nothing.
+	 *
+	 * @param text     the comment text
+	 * @param rawLines the comment's source lines (doc comments), or null
+	 */
+	private void printMultiLineWrapped( String text, String[] rawLines ) {
+		String[] lines = text.split( "\\r?\\n", -1 );
+		if ( rawLines != null && rawLines.length != lines.length ) {
+			rawLines = null;
+		}
+		int				maxWidth	= getAvailableWidth( MULTI_LINE_PREFIX_LENGTH );
+		List<String>	outLines	= new ArrayList<>();
+		List<String>	outRaw		= new ArrayList<>();
+		// A one-line comment that is too long: the first piece stays on the opening line, the rest get a " * " prefix. The
+		// parser keeps the star of a closing line that has text ("* end */"), so the last piece carries it.
+		if ( lines.length == 1 && lines[ 0 ].length() > maxWidth && !lines[ 0 ].strip().startsWith( "*" )
+		    && ! ( rawLines != null && lines[ 0 ].contains( "@" ) ) ) {
+			List<String> pieces = new ArrayList<>();
+			wrapParagraph( lines[ 0 ].strip(), maxWidth, pieces );
+			keepTagsInline( pieces );
+			for ( int i = 0; i < pieces.size(); i++ ) {
+				boolean last = i == pieces.size() - 1 && i > 0;
+				outLines.add( last ? "* " + pieces.get( i ) : pieces.get( i ) );
+				outRaw.add( " * " + pieces.get( i ) );
 			}
+			printMultiLine( String.join( "\n", outLines ), rawLines != null ? outRaw.toArray( new String[ 0 ] ) : null );
+			return;
+		}
+		for ( int i = 0; i < lines.length; i++ ) {
+			String	line	= lines[ i ];
+			String	raw		= rawLines != null ? rawLines[ i ] : null;
+			boolean	middle	= i > 0 && i < lines.length - 1;
+			// A doc comment line with an "@" is left whole: the doc parser reads an "@" on a continuation line, even inside
+			// a word (an email address), as the start of a new tag
+			boolean	docTag	= rawLines != null && line.contains( "@" );
+			if ( !middle || docTag || line.length() <= maxWidth || line.strip().startsWith( "*" ) || line.isBlank() ) {
+				outLines.add( line );
+				outRaw.add( raw );
+				continue;
+			}
+			String			indent	= line.substring( 0, line.length() - line.stripLeading().length() );
+			List<String>	pieces	= new ArrayList<>();
+			wrapParagraph( line.strip(), maxWidth - indent.length(), pieces );
+			keepTagsInline( pieces );
+			for ( String piece : pieces ) {
+				outLines.add( indent + piece );
+				outRaw.add( raw != null ? " * " + piece : null );
+			}
+		}
+		printMultiLine( String.join( "\n", outLines ), rawLines != null ? outRaw.toArray( new String[ 0 ] ) : null );
+	}
 
-			if ( last ) {
-				currentDoc.append( wrappedLines.get( i ) );
-			} else {
-				currentDoc.append( wrappedLines.get( i ) ).append( Line.HARD );
+	/**
+	 * Keeps a wrapped line from starting with "@": in a doc comment a line that starts with "@" begins a new tag (the
+	 * "@page@" in a hint would become a tag named "page@"), so such a word stays on the line before.
+	 *
+	 * @param pieces the wrapped lines, changed in place
+	 */
+	private static void keepTagsInline( List<String> pieces ) {
+		for ( int i = 1; i < pieces.size(); i++ ) {
+			while ( i < pieces.size() && pieces.get( i ).startsWith( "@" ) ) {
+				String	piece	= pieces.get( i );
+				int		space	= piece.indexOf( ' ' );
+				String	word	= space < 0 ? piece : piece.substring( 0, space );
+				pieces.set( i - 1, pieces.get( i - 1 ) + " " + word );
+				if ( space < 0 ) {
+					pieces.remove( i );
+				} else {
+					pieces.set( i, piece.substring( space + 1 ).stripLeading() );
+				}
 			}
 		}
 	}

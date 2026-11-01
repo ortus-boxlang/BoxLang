@@ -17,10 +17,17 @@
  */
 package ortus.boxlang.compiler.prettyprint;
 
+import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxClosure;
+import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructType;
+import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 
 public class StructLiteralPrinter {
+
+	/** A run of whitespace. */
 
 	private Visitor visitor;
 
@@ -47,9 +54,11 @@ public class StructLiteralPrinter {
 		if ( isMultiline && visitor.config.getAlignConsecutiveAssignments() ) {
 			for ( int start = 0; start < size; ) {
 				int end = size - 2;
+				// A run of aligned keys ends at a value that prints on several lines. That is decided from how the value
+				// will print, not from its source: a nested literal written on one line may print on several, and
+				// deciding from the source made the next pass align differently.
 				for ( int j = start; j < size; j += 2 ) {
-					String valueSource = values.get( j + 1 ).getSourceText();
-					if ( valueSource != null && ( valueSource.contains( "\n" ) || valueSource.contains( "\r" ) ) ) {
+					if ( printsMultiline( values.get( j + 1 ) ) ) {
 						end = j;
 						break;
 					}
@@ -151,13 +160,38 @@ public class StructLiteralPrinter {
 		visitor.printPostComments( structNode );
 	}
 
+	/**
+	 * Whether a struct value will print on several lines: a struct or array literal that is laid out multi-line, or a
+	 * closure or lambda with a block body.
+	 *
+	 * @param value the value expression
+	 *
+	 * @return true when it prints multi-line
+	 */
+	private boolean printsMultiline( BoxExpression value ) {
+		if ( value instanceof BoxStructLiteral struct ) {
+			if ( struct.getValues().isEmpty() || !shouldBeMultiline( struct ) ) {
+				return false;
+			}
+			// Only the breaks between keys are hard: a multi-line struct with one key still prints on one line when it
+			// fits, unless its value prints on several lines
+			return struct.getValues().size() > 2 || printsMultiline( struct.getValues().get( 1 ) );
+		}
+		if ( value instanceof BoxArrayLiteral array ) {
+			return !array.getValues().isEmpty() && visitor.config.getArray().getMultiline().getElementCount() < array.getValues().size();
+		}
+		if ( value instanceof BoxClosure closure ) {
+			return closure.getBody() instanceof BoxStatementBlock;
+		}
+		if ( value instanceof BoxLambda lambda ) {
+			return lambda.getBody() instanceof BoxStatementBlock;
+		}
+		return false;
+	}
+
 	private boolean shouldBeMultiline( BoxStructLiteral structNode ) {
 		if ( visitor.config.getCFFormatCompatibility() && structNode.getSourceText() != null
 		    && ( structNode.getSourceText().contains( "\n" ) || structNode.getSourceText().contains( "\r" ) ) ) {
-			return true;
-		}
-		if ( structNode.getSourceText() != null
-		    && visitor.config.getStruct().getMultiline().getMinLength() < structNode.getSourceText().length() ) {
 			return true;
 		}
 		var	size		= structNode.getValues().size();
@@ -166,7 +200,14 @@ public class StructLiteralPrinter {
 		    && ( visitor.config.getCFFormatCompatibility()
 		        ? size / 2 > visitor.config.getStruct().getMultiline().getElementCount()
 		        : size / 2 >= visitor.config.getStruct().getMultiline().getElementCount() );
-		return isMultiline;
+		if ( isMultiline || visitor.measuring ) {
+			return isMultiline;
+		}
+		// The length is the width the struct prints at on one line, not its source length: the source changes with each
+		// pass (the formatter adds spaces before separators and alignment), and measuring it made the next pass decide
+		// differently. A struct holding a value that always prints on several lines (-1) prints on several lines too.
+		int width = visitor.flatWidth( structNode );
+		return width < 0 || visitor.config.getStruct().getMultiline().getMinLength() < width;
 	}
 
 }
