@@ -1525,10 +1525,11 @@ public class CFParser extends AbstractParser {
 			elseBodyStatements	= List.of(
 			    new BoxIfElse(
 			        thisCondition,
-			        // The block spans only its own body: the elseif's position also covers the rest of the chain, and
-			        // comments are attached to the innermost node containing them, so the comments of a later <cfelse>
-			        // would otherwise land in this block
-			        new BoxStatementBlock( toAst( file, node.elseThenBody.get( i ) ), getPosition( node.elseThenBody.get( i ) ),
+			        // The block starts at the elseif tag but ends with its own body: the elseif's position also covers
+			        // the rest of the chain, and comments attach to the innermost node containing them, so the
+			        // comments of a later <cfelse> would otherwise land in this block
+			        new BoxStatementBlock( toAst( file, node.elseThenBody.get( i ) ),
+			            new Position( new Point( elseifOpen.getLine(), elseifOpen.getCharPositionInLine() ), end, sourceToParse ),
 			            getSourceText( node.elseThenBody.get( i ) ) ),
 			        elseBody,
 			        pos,

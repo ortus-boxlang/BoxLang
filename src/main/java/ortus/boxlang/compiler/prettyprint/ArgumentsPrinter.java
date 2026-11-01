@@ -224,7 +224,6 @@ public class ArgumentsPrinter {
 
 	}
 
-
 	/** A name that can be written bare as a named argument. */
 	private static final Pattern IDENTIFIER = Pattern.compile( "[A-Za-z_$][A-Za-z0-9_$]*" );
 

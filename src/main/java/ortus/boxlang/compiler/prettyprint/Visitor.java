@@ -138,23 +138,22 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class Visitor extends VoidBoxVisitor {
 
 	/** A run of whitespace. */
-	private static final java.util.regex.Pattern WHITESPACE_RUN = java.util.regex.Pattern.compile( "\\s+" );
+	private static final java.util.regex.Pattern	WHITESPACE_RUN					= java.util.regex.Pattern.compile( "\\s+" );
 
+	private Stack<BoxSourceType>					currentSourceType				= new Stack<>();
+	private BoxSourceType							rootSourceType;
+	private Stack<Doc>								docStack						= new Stack<>();
 
-	private Stack<BoxSourceType>		currentSourceType				= new Stack<>();
-	private BoxSourceType				rootSourceType;
-	private Stack<Doc>					docStack						= new Stack<>();
-
-	Config								config;
-	String								componentPrefix;
-	boolean								stripBufferLeadingWhitespace	= false;
+	Config											config;
+	String											componentPrefix;
+	boolean											stripBufferLeadingWhitespace	= false;
 	/** True for a printer used only to measure how wide a node prints on one line. */
-	boolean								measuring						= false;
+	boolean											measuring						= false;
 	/**
 	 * Comments that an outer property access ({@code chain.first().total}) claimed but that belong between the calls of
 	 * the method chain it wraps; handed to that chain's printer, which removes the ones it places.
 	 */
-	List<BoxComment>					pendingChainComments			= null;
+	List<BoxComment>								pendingChainComments			= null;
 
 	/**
 	 * Per-format-run cache of source files split into lines.
@@ -163,19 +162,19 @@ public class Visitor extends VoidBoxVisitor {
 	 * reference it. The cache lives only as long as this visitor (a single format operation) and nothing is stored on
 	 * the {@link Source} itself.
 	 */
-	private final Map<Source, String[]>	sourceLinesCache				= new IdentityHashMap<>();
+	private final Map<Source, String[]>				sourceLinesCache				= new IdentityHashMap<>();
 
-	CommentsPrinter						commentsPrinter;
-	ClassPrinter						classPrinter;
-	StringPrinter						stringPrinter;
-	ComponentPrinter					componentPrinter;
-	HelperPrinter						helperPrinter;
-	ArgumentsPrinter					argumentsPrinter;
-	ParametersPrinter					parametersPrinter;
-	FunctionDeclarationPrinter			functionDeclaration;
-	StructLiteralPrinter				structLiteralPrinter;
-	ArrayLiteralPrinter					arrayLiteralPrinter;
-	SetLiteralPrinter					setLiteralPrinter;
+	CommentsPrinter									commentsPrinter;
+	ClassPrinter									classPrinter;
+	StringPrinter									stringPrinter;
+	ComponentPrinter								componentPrinter;
+	HelperPrinter									helperPrinter;
+	ArgumentsPrinter								argumentsPrinter;
+	ParametersPrinter								parametersPrinter;
+	FunctionDeclarationPrinter						functionDeclaration;
+	StructLiteralPrinter							structLiteralPrinter;
+	ArrayLiteralPrinter								arrayLiteralPrinter;
+	SetLiteralPrinter								setLiteralPrinter;
 
 	/**
 	 * Constructor
@@ -973,9 +972,9 @@ public class Visitor extends VoidBoxVisitor {
 
 		// Each call's position starts at its own ".name", so the outermost call is "after" every comment written between
 		// the calls and claims them all. Put each comment back before the call it precedes in the source.
-		List<BoxComment>	pending			= this.pendingChainComments != null ? this.pendingChainComments : new ArrayList<>();
+		List<BoxComment> pending = this.pendingChainComments != null ? this.pendingChainComments : new ArrayList<>();
 		this.pendingChainComments = null;
-		List<BoxComment>	chainComments	= new ArrayList<>();
+		List<BoxComment> chainComments = new ArrayList<>();
 		for ( var element : chain ) {
 			if ( element.isMethodInvocation() ) {
 				var methodNode = element.asMethodInvocation();
@@ -992,12 +991,13 @@ public class Visitor extends VoidBoxVisitor {
 			}
 
 			if ( element.isMethodInvocation() ) {
-				var methodNode = element.asMethodInvocation();
+				var					methodNode	= element.asMethodInvocation();
 				// the comments written before this call: on their own lines, ahead of it
-				final boolean		last	= i == 0;
-				List<BoxComment>	before	= new ArrayList<>( chainComments.stream().filter( comment -> last || startsBefore( comment, methodNode ) ).toList() );
+				final boolean		last		= i == 0;
+				List<BoxComment>	before		= new ArrayList<>(
+				    chainComments.stream().filter( comment -> last || startsBefore( comment, methodNode ) ).toList() );
 				chainComments.removeAll( before );
-				var					outer	= pending.stream().filter( comment -> startsBefore( comment, methodNode ) ).toList();
+				var outer = pending.stream().filter( comment -> startsBefore( comment, methodNode ) ).toList();
 				pending.removeAll( outer );
 				before.addAll( outer );
 				before.sort( ( a, b ) -> comparePositions( a, b ) );
@@ -1934,19 +1934,19 @@ public class Visitor extends VoidBoxVisitor {
 				}
 
 				// Check if else body is a direct if statement (not in a block)
-				boolean	isDirectElseIf	= node.getElseBody() instanceof BoxIfElse;
+				boolean	isDirectElseIf		= node.getElseBody() instanceof BoxIfElse;
 
 				// Determine spacing before "else" based on configuration
-				String	elseStyle		= config.getBraces().getElseConfig().getStyle();
+				String	elseStyle			= config.getBraces().getElseConfig().getStyle();
 
 				// A comment written before the else branch ("}\n// note\nelse if ...") stays before the else, on its own
 				// line: printed between "else" and "if" ("} else // note\nif") it changes how the else parses.
-				BoxNode	elseTarget		= isElseIf ? ( ( BoxStatementBlock ) node.getElseBody() ).getBody().get( 0 ) : node.getElseBody();
-				boolean	commentedElse	= hasPreComments( elseTarget ) || ( isElseIf && hasPreComments( node.getElseBody() ) );
+				BoxNode	elseTarget			= isElseIf ? ( ( BoxStatementBlock ) node.getElseBody() ).getBody().get( 0 ) : node.getElseBody();
+				boolean	commentedElse		= hasPreComments( elseTarget ) || ( isElseIf && hasPreComments( node.getElseBody() ) );
 
 				// A comment trailing the then block ("} // end if") stays on that line, so "else" starts the next one;
 				// on the same line it would end up after "else {", attached to the else body on the next pass
-				boolean trailingThenComment = node.getThenBody().getComments().stream().anyMatch( comment -> comment.isAfter( node.getThenBody() ) );
+				boolean	trailingThenComment	= node.getThenBody().getComments().stream().anyMatch( comment -> comment.isAfter( node.getThenBody() ) );
 
 				if ( commentedElse || trailingThenComment ) {
 					newLine();

@@ -46,21 +46,21 @@ public class RoundTripTest extends PrettyPrintTest {
 	@DisplayName( "static, final and abstract function modifiers are kept (BL-2780)" )
 	public void testFunctionModifiers() throws IOException {
 		String out = roundTrip( BoxSourceType.BOXSCRIPT, true, """
-		    abstract class {
-		    	static function count(){ return 1; }
-		    	public static final function make(){ return 2; }
-		    	abstract function todo();
-		    }
-		    """ );
+		                                                       abstract class {
+		                                                       	static function count(){ return 1; }
+		                                                       	public static final function make(){ return 2; }
+		                                                       	abstract function todo();
+		                                                       }
+		                                                       """ );
 		assertThat( out ).contains( "static function count()" );
 		assertThat( out ).contains( "public static final function make()" );
 		assertThat( out ).contains( "abstract function todo()" );
 
 		out = roundTrip( BoxSourceType.CFSCRIPT, true, """
-		    component {
-		    	static function count(){ return 1; }
-		    }
-		    """ );
+		                                               component {
+		                                               	static function count(){ return 1; }
+		                                               }
+		                                               """ );
 		assertThat( out ).contains( "static function count()" );
 	}
 
@@ -83,12 +83,12 @@ public class RoundTripTest extends PrettyPrintTest {
 	@DisplayName( "script attribute values keep their type" )
 	public void testScriptAttributeValues() throws IOException {
 		String out = roundTrip( BoxSourceType.BOXSCRIPT, true, """
-		    class serializable=false {
-		    	function f(){
-		    		lock name="x" timeout=10 throwOnTimeout=true { a = 1; }
-		    	}
-		    }
-		    """ );
+		                                                       class serializable=false {
+		                                                       	function f(){
+		                                                       		lock name="x" timeout=10 throwOnTimeout=true { a = 1; }
+		                                                       	}
+		                                                       }
+		                                                       """ );
 		assertThat( out ).contains( "serializable=false" );
 		assertThat( out ).contains( "lock name=\"x\" timeout=10 throwOnTimeout=true {" );
 	}
@@ -106,13 +106,13 @@ public class RoundTripTest extends PrettyPrintTest {
 	@DisplayName( "CF script components print without a cf prefix" )
 	public void testCFScriptComponentPrefix() throws IOException {
 		String out = roundTrip( BoxSourceType.CFSCRIPT, true, """
-		    component {
-		    	function f(){
-		    		savecontent variable="local.out" { writeOutput( "x" ); }
-		    		return local.out;
-		    	}
-		    }
-		    """ );
+		                                                      component {
+		                                                      	function f(){
+		                                                      		savecontent variable="local.out" { writeOutput( "x" ); }
+		                                                      		return local.out;
+		                                                      	}
+		                                                      }
+		                                                      """ );
 		assertThat( out ).contains( "savecontent variable=\"local.out\" {" );
 		assertThat( out ).doesNotContain( "cfsavecontent" );
 	}
@@ -121,41 +121,41 @@ public class RoundTripTest extends PrettyPrintTest {
 	@DisplayName( "tag components: imports, arguments, empty functions and interfaces" )
 	public void testTagComponents() throws IOException {
 		String out = roundTrip( BoxSourceType.CFTEMPLATE, true, """
-		    <cfimport prefix="java" name="java.lang.String">
-		    <cfcomponent output="false">
-		    	<cffunction name="init" access="public" returntype="any">
-		    	</cffunction>
-		    	<cffunction name="foo">
-		    		<cfargument name="a" type="string" required="false">
-		    		<cfreturn arguments.a>
-		    	</cffunction>
-		    </cfcomponent>
-		    """ );
+		                                                        <cfimport prefix="java" name="java.lang.String">
+		                                                        <cfcomponent output="false">
+		                                                        	<cffunction name="init" access="public" returntype="any">
+		                                                        	</cffunction>
+		                                                        	<cffunction name="foo">
+		                                                        		<cfargument name="a" type="string" required="false">
+		                                                        		<cfreturn arguments.a>
+		                                                        	</cffunction>
+		                                                        </cfcomponent>
+		                                                        """ );
 		assertThat( out ).contains( "<cfimport prefix=\"java\" name=\"java.lang.String\">" );
 		assertThat( out ).contains( "<cfargument name=\"a\"" );
 		assertThat( out ).doesNotContain( "/>\n\t<cffunction" );
 
 		roundTrip( BoxSourceType.CFTEMPLATE, true, """
-		    <cfinterface>
-		    	<cffunction name="init">
-		    	</cffunction>
-		    	<cffunction name="foo">
-		    	</cffunction>
-		    </cfinterface>
-		    """ );
+		                                           <cfinterface>
+		                                           	<cffunction name="init">
+		                                           	</cffunction>
+		                                           	<cffunction name="foo">
+		                                           	</cffunction>
+		                                           </cfinterface>
+		                                           """ );
 	}
 
 	@Test
 	@DisplayName( "a plain block comment never becomes a doc comment" )
 	public void testPlainCommentStaysPlain() throws IOException {
 		String out = roundTrip( BoxSourceType.BOXSCRIPT, true, """
-		    class {
-		    	/* ****************
-		    	 ** DI
-		    	 ***************** */
-		    	property name="log";
-		    }
-		    """ );
+		                                                       class {
+		                                                       	/* ****************
+		                                                       	 ** DI
+		                                                       	 ***************** */
+		                                                       	property name="log";
+		                                                       }
+		                                                       """ );
 		assertThat( out ).contains( "/* " );
 		assertThat( out ).doesNotContain( "/**" );
 	}
@@ -164,47 +164,47 @@ public class RoundTripTest extends PrettyPrintTest {
 	@DisplayName( "doc comment banners keep the hint" )
 	public void testDocCommentBanners() throws IOException {
 		roundTrip( BoxSourceType.BOXSCRIPT, true, """
-		    /**
-		    ********************************************************
-		    Copyright Ortus Solutions
-		    ********************************************************
-		    * @author Luis
-		    */
-		    class {
-		    	/**
-		    	 ** PROPERTIES
-		    	 */
-		    	property name="a";
-		    	/**
-		    	 *	* bullet item
-		    	 */
-		    	property name="b";
-		    }
-		    """ );
+		                                          /**
+		                                          ********************************************************
+		                                          Copyright Ortus Solutions
+		                                          ********************************************************
+		                                          * @author Luis
+		                                          */
+		                                          class {
+		                                          	/**
+		                                          	 ** PROPERTIES
+		                                          	 */
+		                                          	property name="a";
+		                                          	/**
+		                                          	 *	* bullet item
+		                                          	 */
+		                                          	property name="b";
+		                                          }
+		                                          """ );
 	}
 
 	@Test
 	@DisplayName( "a comment before else or catch keeps the branch" )
 	public void testCommentBeforeElseAndCatch() throws IOException {
 		String out = roundTrip( BoxSourceType.BOXSCRIPT, false, """
-		    if ( a ) {
-		    	x = 1;
-		    }
-		    // the string case
-		    else if ( b ) {
-		    	x = 2;
-		    } // end of b
-		    else {
-		    	x = 3;
-		    }
-		    try {
-		    	y = 1;
-		    }
-		    // assertion failures
-		    catch ( "TestBox.AssertionFailed" e ) {
-		    	y = 2;
-		    }
-		    """ );
+		                                                        if ( a ) {
+		                                                        	x = 1;
+		                                                        }
+		                                                        // the string case
+		                                                        else if ( b ) {
+		                                                        	x = 2;
+		                                                        } // end of b
+		                                                        else {
+		                                                        	x = 3;
+		                                                        }
+		                                                        try {
+		                                                        	y = 1;
+		                                                        }
+		                                                        // assertion failures
+		                                                        catch ( "TestBox.AssertionFailed" e ) {
+		                                                        	y = 2;
+		                                                        }
+		                                                        """ );
 		assertThat( out ).contains( "// the string case\nelse if ( b ) {" );
 		assertThat( out ).contains( "// assertion failures\ncatch (" );
 	}
@@ -213,11 +213,11 @@ public class RoundTripTest extends PrettyPrintTest {
 	@DisplayName( "destructuring patterns and the second for-in variable" )
 	public void testDestructuringAndForIn() throws IOException {
 		String out = roundTrip( BoxSourceType.BOXSCRIPT, false, """
-		    var [ a, b = 2, [ c, d ], ...rest ] = arr;
-		    var { name, address: { city }, zip: z, n = 5, ...others } = user;
-		    static [ only, ] = data;
-		    for ( var item, i in items ) { println( i ); }
-		    """ );
+		                                                        var [ a, b = 2, [ c, d ], ...rest ] = arr;
+		                                                        var { name, address: { city }, zip: z, n = 5, ...others } = user;
+		                                                        static [ only, ] = data;
+		                                                        for ( var item, i in items ) { println( i ); }
+		                                                        """ );
 		assertThat( out ).contains( "var [ a, b = 2, [ c, d ], ...rest ] = arr;" );
 		assertThat( out ).contains( "var { name, address: { city }, zip: z, n = 5, ...others } = user;" );
 		assertThat( out ).contains( "static [ only, ] = data;" );
@@ -228,12 +228,12 @@ public class RoundTripTest extends PrettyPrintTest {
 	@DisplayName( "castAs types, open ranges, member references and quoted argument names" )
 	public void testExpressions() throws IOException {
 		String out = roundTrip( BoxSourceType.BOXSCRIPT, false, """
-		    a = x & ( Math.pow( 2, s ) castAs int - 1 );
-		    b = ..10;
-		    c = 5..;
-		    d = tools.map( .getSchema );
-		    command( "docbox" ).params( "strategy-outputDir" = dir, source = "models" );
-		    """ );
+		                                                        a = x & ( Math.pow( 2, s ) castAs int - 1 );
+		                                                        b = ..10;
+		                                                        c = 5..;
+		                                                        d = tools.map( .getSchema );
+		                                                        command( "docbox" ).params( "strategy-outputDir" = dir, source = "models" );
+		                                                        """ );
 		assertThat( out ).contains( "castAs int - 1" );
 		assertThat( out ).contains( "b = ..10;" );
 		assertThat( out ).contains( "c = 5..;" );
@@ -245,30 +245,30 @@ public class RoundTripTest extends PrettyPrintTest {
 	@DisplayName( "template output, comments and conditions" )
 	public void testTemplates() throws IOException {
 		String out = roundTrip( BoxSourceType.BOXTEMPLATE, false, """
-		    <!--- header ---><bx:script>x = 1;</bx:script>
-		    <bx:set i = 0>
-		    <bx:while condition="i < 3">
-		    	<bx:set i++>
-		    </bx:while>
-		    <bx:if a>
-		    	<!--- one --->
-		    	one
-		    <bx:elseif b>
-		    	two
-		    <bx:else>
-		    	<!--- three --->
-		    	three
-		    </bx:if>
-		    <bx:try>
-		    	<bx:set a = 1>
-		    	<bx:catch>
-		    		<bx:set c = 3>
-		    	</bx:catch>
-		    	<bx:finally>
-		    		<bx:set d = 4>
-		    	</bx:finally>
-		    </bx:try>
-		    """ );
+		                                                          <!--- header ---><bx:script>x = 1;</bx:script>
+		                                                          <bx:set i = 0>
+		                                                          <bx:while condition="i < 3">
+		                                                          	<bx:set i++>
+		                                                          </bx:while>
+		                                                          <bx:if a>
+		                                                          	<!--- one --->
+		                                                          	one
+		                                                          <bx:elseif b>
+		                                                          	two
+		                                                          <bx:else>
+		                                                          	<!--- three --->
+		                                                          	three
+		                                                          </bx:if>
+		                                                          <bx:try>
+		                                                          	<bx:set a = 1>
+		                                                          	<bx:catch>
+		                                                          		<bx:set c = 3>
+		                                                          	</bx:catch>
+		                                                          	<bx:finally>
+		                                                          		<bx:set d = 4>
+		                                                          	</bx:finally>
+		                                                          </bx:try>
+		                                                          """ );
 		assertThat( out ).contains( "---><bx:script>" );
 		assertThat( out ).contains( "condition=\"i < 3\"" );
 		assertThat( out ).contains( "<!--- three --->" );
@@ -279,41 +279,53 @@ public class RoundTripTest extends PrettyPrintTest {
 	@DisplayName( "comments between chained calls stay with their call" )
 	public void testChainComments() throws IOException {
 		String out = roundTrip( BoxSourceType.BOXSCRIPT, false, """
-		    var r = qb
-		    	.from( "x" )
-		    	// Filter by a
-		    	.when( a, function( q ){ q.where( 1 ); } )
-		    	// Filter by b
-		    	.when( b, function( q ){ q.where( 2 ); } )
-		    	.first()[ "total" ];
-		    logLines
-		    	.append(
-		    		jsonSerialize( data = arguments.dataPacket, pretty = true )
-		    	); // Pretty print JSON
-		    """ );
+		                                                        var r = qb
+		                                                        	.from( "x" )
+		                                                        	// Filter by a
+		                                                        	.when( a, function( q ){ q.where( 1 ); } )
+		                                                        	// Filter by b
+		                                                        	.when( b, function( q ){ q.where( 2 ); } )
+		                                                        	.first()[ "total" ];
+		                                                        """ );
 		assertThat( out.indexOf( "// Filter by a" ) ).isLessThan( out.indexOf( ".when(" ) );
 		assertThat( out.indexOf( "// Filter by b" ) ).isGreaterThan( out.indexOf( ".when(" ) );
-		assertThat( out ).contains( "// Pretty print JSON" );
+	}
+
+	@Test
+	@DisplayName( "a comment after a multi-line call is kept" )
+	public void testCommentAfterMultiLineCall() throws IOException {
+		// The parser gives the method name a position that ends on the call's last line, so the comment lands "inside"
+		// the name; it may move into the call, but it must never be dropped
+		String	source	= """
+		                  logLines
+		                  	.append(
+		                  		jsonSerialize( data = arguments.dataPacket, pretty = true )
+		                  	); // Pretty print JSON
+		                  """;
+		String	once	= PrettyPrint.prettyPrint( parser.parse( source, BoxSourceType.BOXSCRIPT, false, false ).getRoot(), new Config() );
+		String	twice	= PrettyPrint.prettyPrint( parser.parse( once, BoxSourceType.BOXSCRIPT, false, false ).getRoot(), new Config() );
+		assertThat( once ).contains( "// Pretty print JSON" );
+		assertThat( twice ).contains( "// Pretty print JSON" );
 	}
 
 	@Test
 	@DisplayName( "struct key alignment and line breaks are stable" )
 	public void testStableLayout() throws IOException {
 		roundTrip( BoxSourceType.BOXSCRIPT, true, """
-		    class {
-		    	this.settings = {
-		    		apiUrl   : "x",
-		    		features : { beta : false, level : 5 },
-		    		limits   : [ 1, 2, 3 ]
-		    	};
-		    	function onError( task, exception ){
-		    		println( "Any task [#task.getName()#]  blew up " & exception.getMessage() );
-		    	}
-		    	function empty( data ){
-		    		// nothing yet
-		    	}
-		    }
-		    """ );
+		                                          class {
+		                                          	this.settings = {
+		                                          		apiUrl   : "x",
+		                                          		features : { beta : false, level : 5 },
+		                                          		limits   : [ 1, 2, 3 ]
+		                                          	};
+		                                          	function onError( task, exception ){
+		                                          		println( "Any task [#task.getName()#]  blew up " & exception.getMessage() );
+		                                          	}
+		                                          	function empty( data ){
+		                                          		// nothing yet
+		                                          	}
+		                                          }
+		                                          """ );
 	}
 
 	/**

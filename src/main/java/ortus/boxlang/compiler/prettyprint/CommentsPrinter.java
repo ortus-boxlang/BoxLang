@@ -240,13 +240,13 @@ public class CommentsPrinter {
 	 *                 documentation parser does not: the first yields {@code x}, the second {@code ** x}.
 	 */
 	public void printMultiLine( String text, String[] rawLines ) {
-		String[]	lines		= text.split( "\\r?\\n", -1 );
+		String[] lines = text.split( "\\r?\\n", -1 );
 		if ( rawLines != null && rawLines.length != lines.length ) {
 			rawLines = null;
 		}
-		int			numLines	= lines.length;
-		boolean		first		= true;
-		var			currentDoc	= visitor.getCurrentDoc();
+		int		numLines	= lines.length;
+		boolean	first		= true;
+		var		currentDoc	= visitor.getCurrentDoc();
 		for ( int i = 0; i < numLines; i++ ) {
 			boolean last = i == numLines - 1;
 			if ( !first && !last ) {
