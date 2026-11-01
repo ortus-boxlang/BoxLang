@@ -1268,7 +1268,21 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		    .map( argumentList -> argumentList.argument().stream().map( arg -> ( BoxArgument ) arg.accept( this ) ).toList() )
 		    .orElse( Collections.emptyList() );
 
-		BoxExpression		expr	= Optional.ofNullable( ctx.fqn() ).map( fqn -> fqn.accept( this ) ).orElseGet( () -> ctx.stringLiteral().accept( this ) );
+		BoxExpression		expr;
+		if ( ctx.fqn() != null ) {
+			// new foo.Bar()
+			expr = ctx.fqn().accept( this );
+		} else if ( ctx.stringLiteral() != null ) {
+			// new "#path#"()
+			expr = ctx.stringLiteral().accept( this );
+		} else {
+			// new #path#() names the class with an expression. It means the same as new "#path#"(),
+			// so it builds the same string interpolation node.
+			Token	open	= ctx.ICHAR( 0 ).getSymbol();
+			Token	close	= ctx.ICHAR( 1 ).getSymbol();
+			expr = new BoxStringInterpolation( List.of( ctx.el2().accept( this ) ), tools.getPosition( open, close ),
+			    tools.getSourceText( ctx, open.getStartIndex(), close.getStopIndex() ) );
+		}
 		// If it was new foo.bar@baz() then convert it to a string literal and append the module name
 		// we can't store an @ sign in a FQN. Or rather, we shouldn't
 		if ( ctx.moduleName() != null ) {

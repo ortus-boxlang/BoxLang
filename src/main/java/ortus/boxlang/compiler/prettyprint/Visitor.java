@@ -1449,7 +1449,16 @@ public class Visitor extends VoidBoxVisitor {
 			node.getPrefix().accept( this );
 			print( ":" );
 		}
-		node.getExpression().accept( this );
+		// new #path#() keeps its pound signs: it is parsed as the interpolation of new "#path#"(),
+		// but its source text starts with the pound sign rather than a quote
+		if ( node.getExpression() instanceof BoxStringInterpolation interpolation && interpolation.getValues().size() == 1
+		    && interpolation.getSourceText() != null && interpolation.getSourceText().startsWith( "#" ) ) {
+			print( "#" );
+			interpolation.getValues().get( 0 ).accept( this );
+			print( "#" );
+		} else {
+			node.getExpression().accept( this );
+		}
 		argumentsPrinter.print( node, node.getArguments() );
 		printPostComments( node );
 	}

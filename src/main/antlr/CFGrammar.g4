@@ -588,7 +588,8 @@ arrayDestructuringRest: ELLIPSIS fqn
 arrayDestructuringValue: fqn | arrayDestructuringPattern
     ;
 
-new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
+// new #className#( ... ) is a dynamic new, like new "#className#"( ... )
+new: NEW preFix? (fqn | stringLiteral | ICHAR el2 ICHAR) LPAREN argumentList? RPAREN
     ;
 
 // foo.bar.Baz

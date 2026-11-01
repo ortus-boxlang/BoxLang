@@ -1,0 +1,5 @@
+path = "Foo";
+a = new Foo();
+b = new "#path#"();
+c = new #path#();
+d = new #arguments.target#( 1, 2 );
