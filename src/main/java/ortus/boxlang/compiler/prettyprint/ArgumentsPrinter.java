@@ -60,14 +60,7 @@ public class ArgumentsPrinter {
 			// Measured as printed, not from the source: the printer may rewrite the value (a concatenation printed as
 			// an interpolation, quotes changed), and measuring the source made the next pass break differently
 			int valueWidth = visitor.flatWidth( arg.getValue() );
-			if ( valueWidth >= 0 ) {
-				length += valueWidth;
-			} else {
-				String valueSource = arg.getValue().getSourceText();
-				if ( valueSource != null ) {
-					length += calculateSingleLineSourceLength( valueSource );
-				}
-			}
+			length += valueWidth >= 0 ? valueWidth : visitor.unbrokenWidth( arg.getValue() );
 
 			if ( i < arguments.size() - 1 ) {
 				length += 2; // ", "

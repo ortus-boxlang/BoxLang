@@ -100,7 +100,7 @@ public class FunctionDeclarationPrinter {
 			}
 			visitor.helperPrinter.printBlock( node, node.getBody() );
 		} else {
-			visitor.printSemicolon();
+			visitor.printRequiredSemicolon();
 		}
 
 	}
@@ -353,7 +353,7 @@ public class FunctionDeclarationPrinter {
 			}
 			visitor.helperPrinter.printBlock( node, node.getBody() );
 		} else {
-			visitor.printSemicolon();
+			visitor.printRequiredSemicolon();
 		}
 	}
 

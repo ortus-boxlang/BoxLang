@@ -449,6 +449,122 @@ public class RoundTripTest extends PrettyPrintTest {
 		assertThat( out.indexOf( "// Only go through" ) ).isLessThan( out.indexOf( ".filter(" ) );
 	}
 
+	@Test
+	@DisplayName( "non-default options keep the code and format the same on the next pass" )
+	public void testNonDefaultOptions() throws IOException {
+		// operators without padding: a word operator keeps its spaces, a sign before a negative operand too
+		Config	config	= new Config().setBinaryOperatorsPadding( false );
+		String	out		= roundTrip( BoxSourceType.BOXSCRIPT, false, """
+		                                                             isStruct = x instanceOf "Struct";
+		                                                             y = a - -b;
+		                                                             z = a + b;
+		                                                             """, config );
+		assertThat( out ).contains( "x instanceOf \"Struct\"" );
+		assertThat( out ).contains( "a - -b" );
+		assertThat( out ).contains( "a+b" );
+		// the parser does not read these operators without spaces
+		out = roundTrip( BoxSourceType.BOXSCRIPT, false, "x = ( b && c ) || ( d & e );", config );
+		assertThat( out ).contains( "b && c" );
+		assertThat( out ).contains( "d & e" );
+
+		// semicolons off: the ones the next line would otherwise join are kept
+		config	= new Config().setSemicolons( false );
+		out		= roundTrip( BoxSourceType.BOXSCRIPT, true, """
+		                                                    import java.lang.String;
+
+		                                                    @BoxBIF
+		                                                    class {
+		                                                    	function f( items ){
+		                                                    		param name = "x";
+		                                                    		for ( item in items ) {
+		                                                    			if ( item ) {
+		                                                    				continue;
+		                                                    			}
+		                                                    			break;
+		                                                    		}
+		                                                    		return;
+		                                                    	}
+		                                                    }
+		                                                    """, config );
+		assertThat( out ).contains( "import java.lang.String;" );
+		assertThat( out ).contains( "continue;" );
+		assertThat( out ).contains( "return;" );
+		roundTrip( BoxSourceType.CFSCRIPT, true, """
+		                                         interface {
+		                                         	any function configure( required properties );
+		                                         	any function set( required key );
+		                                         }
+		                                         """, config );
+		// a statement the next line would join: before "(" or "[", and after an open-ended range
+		out = roundTrip( BoxSourceType.BOXSCRIPT, false, """
+		                                                 a = function( x ){ return x; };
+		                                                 ( y ) => !y;
+		                                                 r = 1..;
+		                                                 variables.next = 2;
+		                                                 """, config );
+		assertThat( out ).contains( "r = 1..;" );
+
+		// comment wrapping keeps the closing line and star banners
+		config = new Config().setMaxLineLength( 60 );
+		config.getComments().setWrap( true );
+		out = roundTrip( BoxSourceType.BOXSCRIPT, true, """
+		                                                /**
+		                                                 * BL-2759: records which context a context-less announcement runs on, which is long
+		                                                 */
+		                                                class {
+		                                                	/********************* Methods *********************/
+		                                                	function f(){
+		                                                		/* This is a very long comment that should be wrapped because it exceeds the line length */
+		                                                		return 1;
+		                                                	}
+		                                                }
+		                                                """, config );
+		assertThat( out ).doesNotContain( "* */" );
+
+		// a doc comment line with an "@" is not wrapped: the doc parser would read the "@" as a new tag
+		out = roundTrip( BoxSourceType.BOXSCRIPT, true, """
+		                                                /**
+		                                                 * This service manages all the disks in your application.
+		                                                 *
+		                                                 * @author Luis Majano <lmajano@ortussolutions.com>, Grant Copley <gcopley@ortussolutions.com>
+		                                                 */
+		                                                class {
+		                                                }
+		                                                """, config );
+		assertThat( out ).contains( "@author Luis Majano <lmajano@ortussolutions.com>, Grant Copley <gcopley@ortussolutions.com>" );
+
+		// blank lines not preserved, and wider member spacing
+		config = new Config();
+		config.getComments().setPreserveBlankLines( false );
+		config.getClassConfig().setMemberSpacing( 2 );
+		roundTrip( BoxSourceType.BOXSCRIPT, true, """
+		                                          class {
+		                                          	function init(){
+		                                          		return this;
+		                                          	}
+
+		                                          	// these events fire on the global handler
+		                                          	function onEvict(){
+		                                          	}
+		                                          }
+		                                          """, config );
+
+		// dangling commas in arguments with a closure argument, and braces on their own line with a commented else
+		config = new Config();
+		config.getArguments().setCommaDangle( true );
+		config.getBraces().setStyle( "new-line" );
+		roundTrip( BoxSourceType.CFSCRIPT, false, """
+		                                          expect( routes.filter( function( item ){ return item.name == "home"; } ) ).notToBeEmpty();
+		                                          if ( x ) {
+		                                          	y = 1;
+		                                          }
+		                                          // otherwise block
+		                                          else {
+		                                          	y = 2;
+		                                          }
+		                                          """, config );
+	}
+
 	/**
 	 * Formats the source, checks that the result means the same and formats to itself, and returns it.
 	 *

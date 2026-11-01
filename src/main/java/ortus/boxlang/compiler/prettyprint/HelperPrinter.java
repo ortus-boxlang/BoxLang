@@ -114,9 +114,13 @@ public class HelperPrinter {
 			boolean isClassMember = statement instanceof BoxFunctionDeclaration &&
 			    ( statement.getParent() instanceof BoxClass || statement.getParent() instanceof BoxInterface );
 
-			// if there is a previous statement, check for empty lines in source
-			// if so, add a hard line break
-			if ( previousStatement != null && statement.hasLinesBetweenWithComments( previousStatement ) ) {
+			// Class members are separated by member_spacing blank lines whatever the source has: deciding from the source
+			// gave a different count on the next pass (a blank line dropped before a comment, then added back)
+			if ( previousStatement != null && isClassMember ) {
+				for ( int i = 0; i < memberSpacing; i++ ) {
+					visitor.newLine();
+				}
+			} else if ( previousStatement != null && statement.hasLinesBetweenWithComments( previousStatement ) ) {
 				// Check if we should preserve blank lines before comments
 				boolean	preserveBlankLines	= visitor.config.getComments().getPreserveBlankLines();
 				boolean	hasPreComments		= statement.getComments().stream().anyMatch( c -> c.isBefore( statement ) );

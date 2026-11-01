@@ -46,6 +46,19 @@ public class CommentsPrinter {
 	 * @param node
 	 */
 	boolean printPreComments( BoxNode node ) {
+		return printPreComments( node, false );
+	}
+
+	/**
+	 * Prints the comments before a node.
+	 *
+	 * @param node  the node
+	 * @param tight end the comments with a single line break, without keeping a blank line from the source before the
+	 *              node: used where something the AST has no position for (the else keyword) prints between them
+	 *
+	 * @return true when a comment was printed
+	 */
+	boolean printPreComments( BoxNode node, boolean tight ) {
 		BoxNode lastNodeToPrint = null;
 
 		for ( var comment : node.getComments() ) {
@@ -60,7 +73,11 @@ public class CommentsPrinter {
 		}
 
 		if ( lastNodeToPrint != null ) {
-			printCommentSpacing( lastNodeToPrint, node );
+			if ( tight ) {
+				visitor.getCurrentDoc().append( Line.HARD );
+			} else {
+				printCommentSpacing( lastNodeToPrint, node );
+			}
 		}
 
 		return lastNodeToPrint != null;
@@ -323,7 +340,7 @@ public class CommentsPrinter {
 				currentDoc.append( " " );
 			}
 			if ( wrap ) {
-				printMultiLineWrapped( text );
+				printMultiLineWrapped( text, null );
 			} else {
 				printMultiLine( text );
 			}
@@ -369,7 +386,7 @@ public class CommentsPrinter {
 				currentDoc.append( " " );
 			}
 			if ( wrap ) {
-				printMultiLineWrapped( text );
+				printMultiLineWrapped( text, rawDocLines( node ) );
 			} else {
 				printMultiLine( text, rawDocLines( node ) );
 			}
@@ -465,25 +482,79 @@ public class CommentsPrinter {
 	 *
 	 * @param text The text to print
 	 */
-	private void printMultiLineWrapped( String text ) {
-		var				currentDoc		= visitor.getCurrentDoc();
-		int				maxWidth		= getAvailableWidth( MULTI_LINE_PREFIX_LENGTH );
-		List<String>	wrappedLines	= wrapText( text, maxWidth );
-		int				numLines		= wrappedLines.size();
-
-		for ( int i = 0; i < numLines; i++ ) {
-			boolean	first	= i == 0;
-			boolean	last	= i == numLines - 1;
-
-			// For wrapped comments, all continuation lines get " * " prefix
-			if ( !first ) {
-				currentDoc.append( " * " );
+	/**
+	 * Prints a block comment with its long middle lines wrapped at word boundaries. The first line, the closing line and
+	 * banner rows of stars are kept as they are, and the result prints like an unwrapped comment, so the prefixes and the
+	 * closing line are the same in both modes and a second pass changes nothing.
+	 *
+	 * @param text     the comment text
+	 * @param rawLines the comment's source lines (doc comments), or null
+	 */
+	private void printMultiLineWrapped( String text, String[] rawLines ) {
+		String[] lines = text.split( "\\r?\\n", -1 );
+		if ( rawLines != null && rawLines.length != lines.length ) {
+			rawLines = null;
+		}
+		int				maxWidth	= getAvailableWidth( MULTI_LINE_PREFIX_LENGTH );
+		List<String>	outLines	= new ArrayList<>();
+		List<String>	outRaw		= new ArrayList<>();
+		// A one-line comment that is too long: the first piece stays on the opening line, the rest get a " * " prefix. The
+		// parser keeps the star of a closing line that has text ("* end */"), so the last piece carries it.
+		if ( lines.length == 1 && lines[ 0 ].length() > maxWidth && !lines[ 0 ].strip().startsWith( "*" )
+		    && ! ( rawLines != null && lines[ 0 ].contains( "@" ) ) ) {
+			List<String> pieces = new ArrayList<>();
+			wrapParagraph( lines[ 0 ].strip(), maxWidth, pieces );
+			keepTagsInline( pieces );
+			for ( int i = 0; i < pieces.size(); i++ ) {
+				boolean last = i == pieces.size() - 1 && i > 0;
+				outLines.add( last ? "* " + pieces.get( i ) : pieces.get( i ) );
+				outRaw.add( " * " + pieces.get( i ) );
 			}
+			printMultiLine( String.join( "\n", outLines ), rawLines != null ? outRaw.toArray( new String[ 0 ] ) : null );
+			return;
+		}
+		for ( int i = 0; i < lines.length; i++ ) {
+			String	line	= lines[ i ];
+			String	raw		= rawLines != null ? rawLines[ i ] : null;
+			boolean	middle	= i > 0 && i < lines.length - 1;
+			// A doc comment line with an "@" is left whole: the doc parser reads an "@" on a continuation line, even inside
+			// a word (an email address), as the start of a new tag
+			boolean	docTag	= rawLines != null && line.contains( "@" );
+			if ( !middle || docTag || line.length() <= maxWidth || line.strip().startsWith( "*" ) || line.isBlank() ) {
+				outLines.add( line );
+				outRaw.add( raw );
+				continue;
+			}
+			String			indent	= line.substring( 0, line.length() - line.stripLeading().length() );
+			List<String>	pieces	= new ArrayList<>();
+			wrapParagraph( line.strip(), maxWidth - indent.length(), pieces );
+			keepTagsInline( pieces );
+			for ( String piece : pieces ) {
+				outLines.add( indent + piece );
+				outRaw.add( raw != null ? " * " + piece : null );
+			}
+		}
+		printMultiLine( String.join( "\n", outLines ), rawLines != null ? outRaw.toArray( new String[ 0 ] ) : null );
+	}
 
-			if ( last ) {
-				currentDoc.append( wrappedLines.get( i ) );
-			} else {
-				currentDoc.append( wrappedLines.get( i ) ).append( Line.HARD );
+	/**
+	 * Keeps a wrapped line from starting with "@": in a doc comment a line that starts with "@" begins a new tag (the
+	 * "@page@" in a hint would become a tag named "page@"), so such a word stays on the line before.
+	 *
+	 * @param pieces the wrapped lines, changed in place
+	 */
+	private static void keepTagsInline( List<String> pieces ) {
+		for ( int i = 1; i < pieces.size(); i++ ) {
+			while ( i < pieces.size() && pieces.get( i ).startsWith( "@" ) ) {
+				String	piece	= pieces.get( i );
+				int		space	= piece.indexOf( ' ' );
+				String	word	= space < 0 ? piece : piece.substring( 0, space );
+				pieces.set( i - 1, pieces.get( i - 1 ) + " " + word );
+				if ( space < 0 ) {
+					pieces.remove( i );
+				} else {
+					pieces.set( i, piece.substring( space + 1 ).stripLeading() );
+				}
 			}
 		}
 	}

@@ -156,6 +156,8 @@ public class Visitor extends VoidBoxVisitor {
 	 * A plain number literal: digits, an optional decimal point and an optional exponent. It starts with a digit, so a
 	 * key like the 1 in {@code args.1}, whose source text includes the dot, prints from its value.
 	 */
+	/** Binary operators the parser reads without spaces around them */
+	private static final java.util.Set<String>		UNSPACED_OPERATORS				= java.util.Set.of( "+", "-", "*", "/", "%", "?:" );
 	private static final Pattern					NUMBER_LITERAL					= Pattern.compile( "[0-9]+\\.?[0-9]*([eE][+-]?[0-9]+)?" );
 	/**
 	 * Comments that an outer property access ({@code chain.first().total}) claimed but that belong between the calls of
@@ -227,6 +229,21 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	/**
+	 * The length of a node's printed text with its line breaks left out and runs of whitespace counted as one space, for
+	 * measuring a node that cannot print on one line (a closure with a body) the same way on every pass.
+	 *
+	 * @param node the node
+	 *
+	 * @return the length
+	 */
+	int unbrokenWidth( BoxNode node ) {
+		Visitor measure = new Visitor( currentSourceType.peek(), config );
+		measure.measuring = true;
+		node.accept( measure );
+		return WHITESPACE_RUN.matcher( measure.getRoot().textWithoutBreaks() ).replaceAll( " " ).strip().length();
+	}
+
+	/**
 	 * A node printed on a single line with the same settings. The measuring printer does not measure again: its chains
 	 * and argument lists take no length-based breaks, which keeps measuring linear and free of recursion.
 	 *
@@ -286,6 +303,14 @@ public class Visitor extends VoidBoxVisitor {
 		if ( config.getSemicolons() ) {
 			getCurrentDoc().append( ";" );
 		}
+	}
+
+	/**
+	 * Print a semicolon the statement needs whatever the semicolons option says, because without it the next line would
+	 * be read as part of the statement: a bare return, break or continue, an import, a param, a function without a body.
+	 */
+	public void printRequiredSemicolon() {
+		getCurrentDoc().append( ";" );
 	}
 
 	String extractRawSourceFromPosition( BoxNode node ) {
@@ -577,10 +602,61 @@ public class Visitor extends VoidBoxVisitor {
 				// no-op
 			} else {
 				node.getExpression().accept( this );
-				printSemicolon();
+				if ( !config.getSemicolons() && ( nextStatementStartsWithParenOrBracket( node ) || endsWithOpenRange( node ) ) ) {
+					// without it "f()" followed by "( a ) => b" or "[ 1 ].each()" reads as one expression, and so does
+					// an open-ended range "x = 1.." followed by the next line
+					printRequiredSemicolon();
+				} else {
+					printSemicolon();
+				}
 			}
 		}
 		printPostComments( node );
+	}
+
+	/**
+	 * Whether a statement prints ending in an open-ended range ({@code 1..}).
+	 *
+	 * @param node the statement
+	 *
+	 * @return true when it ends with ".."
+	 */
+	private boolean endsWithOpenRange( BoxExpressionStatement node ) {
+		Visitor measure = new Visitor( currentSourceType.peek(), config );
+		measure.measuring = true;
+		node.getExpression().accept( measure );
+		return measure.getRoot().textWithoutBreaks().strip().endsWith( ".." );
+	}
+
+	/**
+	 * Whether the statement after this one starts with "(" or "[", as written or as printed.
+	 *
+	 * @param node the statement
+	 *
+	 * @return true when the next statement would join this one without a semicolon
+	 */
+	private boolean nextStatementStartsWithParenOrBracket( BoxStatement node ) {
+		BoxNode parent = node.getParent();
+		if ( parent == null ) {
+			return false;
+		}
+		boolean seen = false;
+		for ( BoxNode sibling : parent.getChildren() ) {
+			if ( sibling == node ) {
+				seen = true;
+			} else if ( seen && sibling instanceof BoxStatement next ) {
+				String source = next.getSourceText() == null ? "" : next.getSourceText().strip();
+				if ( source.startsWith( "(" ) || source.startsWith( "[" ) ) {
+					return true;
+				}
+				Visitor measure = new Visitor( currentSourceType.peek(), config );
+				measure.measuring = true;
+				next.accept( measure );
+				String printed = measure.getRoot().textWithoutBreaks().strip();
+				return printed.startsWith( "(" ) || printed.startsWith( "[" );
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -753,6 +829,14 @@ public class Visitor extends VoidBoxVisitor {
 			return;
 		}
 
+		// Spaces are dropped only around operators the parser reads without them. A word operator (instanceOf, mod...)
+		// would run into its operands, and the parser does not read "b&&c", "b&c", "b||c" or "b^c"; a sign before an
+		// operand that starts with a sign keeps its space too (a - -b is not a--b).
+		String symbol = node.getOperator().getSymbol();
+		if ( !needsPadding && ( !UNSPACED_OPERATORS.contains( symbol ) || startsWithSign( symbol, node.getRight() ) ) ) {
+			needsPadding = true;
+		}
+
 		node.getLeft().accept( this );
 
 		if ( operatorPosition.equals( "start" ) ) {
@@ -780,6 +864,24 @@ public class Visitor extends VoidBoxVisitor {
 		binaryDoc.append( popDoc() );
 
 		currentDoc.append( popDoc() );
+	}
+
+	/**
+	 * Whether an operator ends in a sign and the operand after it prints starting with one, so that without a space the
+	 * two would read as a single operator.
+	 *
+	 * @param symbol  the operator
+	 * @param operand the operand after it
+	 *
+	 * @return true when they must be kept apart
+	 */
+	private boolean startsWithSign( String symbol, BoxNode operand ) {
+		char last = symbol.charAt( symbol.length() - 1 );
+		if ( last != '-' && last != '+' ) {
+			return false;
+		}
+		String text = flatText( operand );
+		return text == null || text.startsWith( "-" ) || text.startsWith( "+" );
 	}
 
 	@Override
@@ -1570,11 +1672,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( " " );
 				print( node.getLabel() );
 			}
-			if ( isCF() ) {
-				print( ";" );
-			} else {
-				printSemicolon();
-			}
+			printRequiredSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -1600,11 +1698,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( " " );
 				print( node.getLabel() );
 			}
-			if ( isCF() ) {
-				print( ";" );
-			} else {
-				printSemicolon();
-			}
+			printRequiredSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -1735,7 +1829,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( " as " );
 				node.getAlias().accept( this );
 			}
-			printSemicolon();
+			printRequiredSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -1787,7 +1881,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( " = " );
 				node.getDefaultValue().accept( this );
 			}
-			printSemicolon();
+			printRequiredSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -1926,8 +2020,10 @@ public class Visitor extends VoidBoxVisitor {
 			if ( node.getExpression() != null ) {
 				print( " " );
 				node.getExpression().accept( this );
+				printSemicolon();
+			} else {
+				printRequiredSemicolon();
 			}
-			printSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -2020,9 +2116,9 @@ public class Visitor extends VoidBoxVisitor {
 				}
 				if ( commentedElse ) {
 					if ( isElseIf ) {
-						printPreComments( node.getElseBody() );
+						commentsPrinter.printPreComments( node.getElseBody(), true );
 					}
-					printPreComments( elseTarget );
+					commentsPrinter.printPreComments( elseTarget, true );
 				} else if ( trailingThenComment ) {
 					// already on a new line
 				} else if ( elseStyle.equals( "new-line" ) ) {
@@ -2629,41 +2725,12 @@ public class Visitor extends VoidBoxVisitor {
 	 * @return the length
 	 */
 	private int printedChainLength( BoxNode chainNode, List<ChainElement> chain, BoxNode root ) {
-		String text = flatText( chainNode );
-		return text != null ? WHITESPACE_RUN.matcher( text ).replaceAll( "" ).length() : calculateChainLength( chain, root );
-	}
-
-	/**
-	 * Calculate the total length of a chain based on source text.
-	 * This is used to determine if the chain should be broken based on length.
-	 *
-	 * @param chain The list of chain elements
-	 * @param root  The root node of the chain
-	 *
-	 * @return The total length of the chain
-	 */
-	private int calculateChainLength( List<ChainElement> chain, BoxNode root ) {
-		int length = getNormalizedSourceLength( root );
-		for ( ChainElement element : chain ) {
-			// Each element's source text includes the dot/accessor prefix
-			if ( element.isMethodInvocation() ) {
-				var m = element.asMethodInvocation();
-				// Source text already includes the dot for method invocations built from dot
-				// access
-				length += getNormalizedSourceLength( m );
-			} else {
-				var d = element.asDotAccess();
-				length += getNormalizedSourceLength( d );
-			}
-		}
-		return length;
-	}
-
-	private int getNormalizedSourceLength( BoxNode node ) {
-		if ( node == null || node.getSourceText() == null ) {
-			return 0;
-		}
-		return node.getSourceText().replaceAll( "\\s+", "" ).length();
+		// A chain that cannot print on one line (a closure with a body) is measured from its printed text without the line
+		// breaks, not from its source: the source changes between passes (semicolons, comments, spacing)
+		Visitor measure = new Visitor( currentSourceType.peek(), config );
+		measure.measuring = true;
+		chainNode.accept( measure );
+		return WHITESPACE_RUN.matcher( measure.getRoot().textWithoutBreaks() ).replaceAll( "" ).length();
 	}
 
 	/**

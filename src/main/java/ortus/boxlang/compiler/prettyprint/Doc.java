@@ -112,6 +112,27 @@ public class Doc {
 		return appendFlat( sb ) ? sb.toString() : null;
 	}
 
+	/**
+	 * The text of this doc with every line break left out, for measuring a doc that cannot print on one line.
+	 *
+	 * @return the text
+	 */
+	public String textWithoutBreaks() {
+		StringBuilder sb = new StringBuilder();
+		appendText( sb );
+		return sb.toString();
+	}
+
+	private void appendText( StringBuilder sb ) {
+		for ( Object item : contents ) {
+			if ( item instanceof String str ) {
+				sb.append( str );
+			} else if ( item instanceof Doc doc ) {
+				doc.appendText( sb );
+			}
+		}
+	}
+
 	private boolean appendFlat( StringBuilder sb ) {
 		for ( Object item : contents ) {
 			if ( item instanceof String str ) {
