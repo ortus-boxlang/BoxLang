@@ -22,6 +22,8 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxInterface;
@@ -149,6 +151,12 @@ public class Visitor extends VoidBoxVisitor {
 	boolean											stripBufferLeadingWhitespace	= false;
 	/** True for a printer used only to measure how wide a node prints on one line. */
 	boolean											measuring						= false;
+
+	/**
+	 * A plain number literal: digits, an optional decimal point and an optional exponent. It starts with a digit, so a
+	 * key like the 1 in {@code args.1}, whose source text includes the dot, prints from its value.
+	 */
+	private static final Pattern					NUMBER_LITERAL					= Pattern.compile( "[0-9]+\\.?[0-9]*([eE][+-]?[0-9]+)?" );
 	/**
 	 * Comments that an outer property access ({@code chain.first().total}) claimed but that belong between the calls of
 	 * the method chain it wraps; handed to that chain's printer, which removes the ones it places.
@@ -948,6 +956,30 @@ public class Visitor extends VoidBoxVisitor {
 		} else if ( !chain.isEmpty() && chain.getLast().isDotAccess() ) {
 			root = chain.getLast().asDotAccess().getContext();
 		}
+
+		// Each call's position starts at its own ".name", so the outermost call is "after" every comment written between
+		// the calls and claims them all. Put each comment back before the call it precedes in the source, and print the
+		// ones written before the whole chain ahead of its root.
+		List<BoxComment> pending = this.pendingChainComments != null ? this.pendingChainComments : new ArrayList<>();
+		this.pendingChainComments = null;
+		List<BoxComment> chainComments = new ArrayList<>();
+		for ( var element : chain ) {
+			if ( element.isMethodInvocation() ) {
+				var methodNode = element.asMethodInvocation();
+				methodNode.getComments().stream().filter( comment -> comment.isBefore( methodNode ) ).forEach( chainComments::add );
+			}
+		}
+		chainComments.sort( ( a, b ) -> comparePositions( a, b ) );
+		final BoxNode		chainRoot	= root;
+		List<BoxComment>	leading		= new ArrayList<>( Stream.concat( chainComments.stream(), pending.stream() )
+		    .filter( comment -> startsBefore( comment, chainRoot ) ).toList() );
+		chainComments.removeAll( leading );
+		pending.removeAll( leading );
+		leading.sort( ( a, b ) -> comparePositions( a, b ) );
+		for ( var comment : leading ) {
+			comment.accept( this );
+			getCurrentDoc().append( Line.HARD );
+		}
 		root.accept( this );
 
 		int		chainSize					= chain.size();
@@ -960,7 +992,11 @@ public class Visitor extends VoidBoxVisitor {
 		    .filter( ChainElement::isMethodInvocation )
 		    .map( ChainElement::asMethodInvocation )
 		    .anyMatch( method -> argumentsPrinter.wouldBreakByLength( method.getArguments() ) );
-		boolean	shouldBreak					= chainSize >= breakCount || ( !measuring && chainLength >= breakLength ) || argumentLengthRequiresBreak;
+		// A comment written between the calls prints on its own line before the next call, so the chain breaks there
+		boolean	commentInChain				= !chainComments.isEmpty() || !pending.isEmpty();
+
+		boolean	shouldBreak					= chainSize >= breakCount || ( !measuring && chainLength >= breakLength ) || argumentLengthRequiresBreak
+		    || commentInChain;
 
 		var		chainGroup					= pushDoc( DocType.GROUP );
 		var		chainContents				= pushDoc( shouldBreak ? DocType.INDENT : DocType.ARRAY );
@@ -969,19 +1005,6 @@ public class Visitor extends VoidBoxVisitor {
 		if ( shouldBreak ) {
 			chainContents.append( Line.BREAK_PARENT );
 		}
-
-		// Each call's position starts at its own ".name", so the outermost call is "after" every comment written between
-		// the calls and claims them all. Put each comment back before the call it precedes in the source.
-		List<BoxComment> pending = this.pendingChainComments != null ? this.pendingChainComments : new ArrayList<>();
-		this.pendingChainComments = null;
-		List<BoxComment> chainComments = new ArrayList<>();
-		for ( var element : chain ) {
-			if ( element.isMethodInvocation() ) {
-				var methodNode = element.asMethodInvocation();
-				methodNode.getComments().stream().filter( comment -> comment.isBefore( methodNode ) ).forEach( chainComments::add );
-			}
-		}
-		chainComments.sort( ( a, b ) -> comparePositions( a, b ) );
 
 		for ( int i = chain.size() - 1; i >= 0; i-- ) {
 			var element = chain.get( i );
@@ -1223,17 +1246,37 @@ public class Visitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	/**
+	 * A number literal as it was written. The parser stores some numbers normalized ({@code 0.95} as {@code .95}),
+	 * which is the same value but not what the author wrote.
+	 *
+	 * @param node  the literal
+	 * @param value the stored value
+	 *
+	 * @return the source text when it is a plain number, otherwise the stored value
+	 */
+	private String numberText( BoxNode node, String value ) {
+		String source = node.getSourceText();
+		if ( source != null ) {
+			source = source.strip();
+			if ( !source.isEmpty() && NUMBER_LITERAL.matcher( source ).matches() ) {
+				return source;
+			}
+		}
+		return value;
+	}
+
 	@Override
 	public void visit( BoxIntegerLiteral node ) {
 		printPreComments( node );
-		print( node.getValue() );
+		print( numberText( node, node.getValue() ) );
 		printPostComments( node );
 	}
 
 	@Override
 	public void visit( BoxDecimalLiteral node ) {
 		printPreComments( node );
-		print( node.getValue() );
+		print( numberText( node, node.getValue() ) );
 		printPostComments( node );
 	}
 
@@ -1799,7 +1842,19 @@ public class Visitor extends VoidBoxVisitor {
 				multiline = true;
 			}
 			if ( !multiline && node.getSourceText() != null ) {
-				multiline = config.getProperty().getMultiline().getMinLength() < node.getSourceText().trim().length();
+				// The length is the width the property prints at on one line, not its source length: the source changes
+				// with each pass (indentation, line breaks), and measuring it made the next pass decide differently
+				int width = "property;".length();
+				for ( var anno : node.getPostAnnotations() ) {
+					int	keyWidth	= flatWidth( anno.getKey() );
+					int	valueWidth	= anno.getValue() == null ? 0 : flatWidth( anno.getValue() );
+					if ( keyWidth < 0 || valueWidth < 0 ) {
+						width = Integer.MAX_VALUE;
+						break;
+					}
+					width += 1 + keyWidth + ( anno.getValue() == null ? 0 : ( keyValuePadding ? 3 : 1 ) + valueWidth );
+				}
+				multiline = config.getProperty().getMultiline().getMinLength() < width;
 			}
 
 			Doc	currentDoc	= getCurrentDoc();

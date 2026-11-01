@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.compiler.prettyprint;
 
-import java.util.regex.Pattern;
-
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
@@ -30,9 +28,8 @@ import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 public class StructLiteralPrinter {
 
 	/** A run of whitespace. */
-	private static final Pattern	WHITESPACE	= Pattern.compile( "\\s+" );
 
-	private Visitor					visitor;
+	private Visitor visitor;
 
 	public StructLiteralPrinter( Visitor visitor ) {
 		this.visitor = visitor;
@@ -173,7 +170,12 @@ public class StructLiteralPrinter {
 	 */
 	private boolean printsMultiline( BoxExpression value ) {
 		if ( value instanceof BoxStructLiteral struct ) {
-			return !struct.getValues().isEmpty() && shouldBeMultiline( struct );
+			if ( struct.getValues().isEmpty() || !shouldBeMultiline( struct ) ) {
+				return false;
+			}
+			// Only the breaks between keys are hard: a multi-line struct with one key still prints on one line when it
+			// fits, unless its value prints on several lines
+			return struct.getValues().size() > 2 || printsMultiline( struct.getValues().get( 1 ) );
 		}
 		if ( value instanceof BoxArrayLiteral array ) {
 			return !array.getValues().isEmpty() && visitor.config.getArray().getMultiline().getElementCount() < array.getValues().size();
@@ -192,20 +194,20 @@ public class StructLiteralPrinter {
 		    && ( structNode.getSourceText().contains( "\n" ) || structNode.getSourceText().contains( "\r" ) ) ) {
 			return true;
 		}
-		// Measured with whitespace collapsed, so the formatter's own line breaks and alignment do not change the decision
-		// on the next pass
-		if ( structNode.getSourceText() != null
-		    && visitor.config.getStruct().getMultiline().getMinLength() < WHITESPACE.matcher( structNode.getSourceText().strip() ).replaceAll( " " )
-		        .length() ) {
-			return true;
-		}
 		var	size		= structNode.getValues().size();
 		// CFFormat uses strict "more than" semantics for element_count; BoxLang native mode uses "at least"
 		var	isMultiline	= visitor.config.getStruct().getMultiline().getElementCount() > 0
 		    && ( visitor.config.getCFFormatCompatibility()
 		        ? size / 2 > visitor.config.getStruct().getMultiline().getElementCount()
 		        : size / 2 >= visitor.config.getStruct().getMultiline().getElementCount() );
-		return isMultiline;
+		if ( isMultiline || visitor.measuring ) {
+			return isMultiline;
+		}
+		// The length is the width the struct prints at on one line, not its source length: the source changes with each
+		// pass (the formatter adds spaces before separators and alignment), and measuring it made the next pass decide
+		// differently. A struct holding a value that always prints on several lines (-1) prints on several lines too.
+		int width = visitor.flatWidth( structNode );
+		return width < 0 || visitor.config.getStruct().getMultiline().getMinLength() < width;
 	}
 
 }

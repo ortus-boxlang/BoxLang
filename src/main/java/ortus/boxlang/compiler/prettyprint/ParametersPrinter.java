@@ -55,11 +55,10 @@ public class ParametersPrinter {
 
 			if ( node.getValue() != null ) {
 				length += 3; // " = "
-				// Estimate the default value length from source text
-				String valueSource = node.getValue().getSourceText();
-				if ( valueSource != null ) {
-					length += valueSource.length();
-				}
+				// The width the default value prints at, not its source length, which can change between passes. A value
+				// that always prints on several lines (a closure with a body) counts as long.
+				int valueWidth = visitor.flatWidth( node.getValue() );
+				length += valueWidth < 0 ? 1000 : valueWidth;
 			}
 
 			if ( i < params.size() - 1 ) {

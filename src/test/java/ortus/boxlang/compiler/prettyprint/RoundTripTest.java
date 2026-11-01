@@ -323,6 +323,132 @@ public class RoundTripTest extends PrettyPrintTest {
 		                                          """ );
 	}
 
+	@Test
+	@DisplayName( "continue followed by a comment stays a keyword" )
+	public void testContinueBeforeComment() throws IOException {
+		String out = roundTrip( BoxSourceType.BOXSCRIPT, false, """
+		                                                        for ( item in items ) {
+		                                                        	if ( item.skip ) {
+		                                                        		continue // not this one
+		                                                        	}
+		                                                        	total++;
+		                                                        }
+		                                                        """ );
+		assertThat( out ).contains( "continue" );
+		assertThat( out ).contains( "// not this one" );
+	}
+
+	@Test
+	@DisplayName( "a comment after the closing component tag stays after it" )
+	public void testCommentAfterClosingComponentTag() throws IOException {
+		String out = roundTrip( BoxSourceType.CFTEMPLATE, true, """
+		                                                        <cfcomponent>
+		                                                        	<cffunction name="foo">
+		                                                        	</cffunction>
+		                                                        </cfcomponent>
+		                                                        <!--- end of file --->
+		                                                        """ );
+		assertThat( out.indexOf( "<!--- end of file --->" ) ).isGreaterThan( out.indexOf( "</cfcomponent>" ) );
+	}
+
+	@Test
+	@DisplayName( "a nested struct that prints on several lines ends its alignment run" )
+	public void testNestedStructAlignment() throws IOException {
+		String out = roundTrip( BoxSourceType.BOXSCRIPT, false, """
+		                                                        x = {
+		                                                        	"type": "object",
+		                                                        	"properties": {
+		                                                        		"items": {
+		                                                        			"type": "array",
+		                                                        			"items": itemSchemaStruct
+		                                                        		}
+		                                                        	},
+		                                                        	"required": [ "items" ],
+		                                                        	"additionalProperties": false
+		                                                        };
+		                                                        """ );
+		assertThat( out ).contains( "\"type\"       : \"object\"" );
+		assertThat( out ).contains( "\"required\"             : [ \"items\" ]" );
+	}
+
+	@Test
+	@DisplayName( "numbers print as written" )
+	public void testNumbersAsWritten() throws IOException {
+		String out = roundTrip( BoxSourceType.BOXSCRIPT, false, """
+		                                                        function crop( required img, numeric threshold = 0.95 ){
+		                                                        	big = 1e5;
+		                                                        	padded = 007;
+		                                                        	first = args.1;
+		                                                        	return threshold <= 0.0;
+		                                                        }
+		                                                        """ );
+		assertThat( out ).contains( "threshold = 0.95" );
+		assertThat( out ).contains( "0.0" );
+		assertThat( out ).contains( "1e5" );
+		assertThat( out ).contains( "007" );
+		assertThat( out ).contains( "first = args.1;" );
+	}
+
+	@Test
+	@DisplayName( "a comment before a chained expression stays before it" )
+	public void testCommentBeforeChain() throws IOException {
+		String out = roundTrip( BoxSourceType.CFSCRIPT, false, """
+		                                                       if (
+		                                                       	isReady
+		                                                       	&&
+		                                                       	// Does the setting have value?
+		                                                       	variables.properties.securityModules[ currentModule ].firewall[ "validator" ].len()
+		                                                       ) {
+		                                                       	x = 1;
+		                                                       }
+		                                                       """ );
+		assertThat( out.indexOf( "// Does the setting have value?" ) ).isLessThan( out.indexOf( "variables.properties" ) );
+	}
+
+	@Test
+	@DisplayName( "cfformat settings: layout decisions do not change on the next pass" )
+	public void testCFFormatStableLayout() throws IOException {
+		Config config = new Config().setCFFormatCompatibility( true );
+		config.getStruct().getMultiline().setElementCount( 2 );
+		config.getStruct().getMultiline().setMinLength( 60 );
+		config.getChain().setBreakCount( 3 );
+
+		// a struct with one key prints on one line, so it does not end the alignment run
+		String out = roundTrip( BoxSourceType.CFSCRIPT, false, """
+		                                                       x = {
+		                                                       	appenders : {
+		                                                       		console : { class : "ConsoleAppender" }
+		                                                       	},
+		                                                       	root : { levelmax : "WARN", appenders : "*" }
+		                                                       };
+		                                                       """, config );
+		assertThat( out ).contains( "root      : {" );
+
+		// property and parameter lengths are measured from how they print, not from their source
+		roundTrip( BoxSourceType.CFSCRIPT, true, """
+		                                         component {
+		                                         	property
+		                                                 name="name"
+		                                                 type="string";
+		                                         	private any function crop( required Img, numeric threshold = 0.95 ){
+		                                         		return 1;
+		                                         	}
+		                                         }
+		                                         """, config );
+
+		// a comment between two chained calls breaks the chain, even under the break count
+		out = roundTrip( BoxSourceType.CFSCRIPT, false, """
+		                                                var targetAppenders = target
+		                                                	.getAppenders()
+		                                                	// Only go through appenders that can log
+		                                                	.filter( function( key, thisAppender ){
+		                                                		return thisAppender.canLog( severity );
+		                                                	} );
+		                                                """, config );
+		assertThat( out ).doesNotContain( ")// Only" );
+		assertThat( out.indexOf( "// Only go through" ) ).isLessThan( out.indexOf( ".filter(" ) );
+	}
+
 	/**
 	 * Formats the source, checks that the result means the same and formats to itself, and returns it.
 	 *
@@ -333,8 +459,21 @@ public class RoundTripTest extends PrettyPrintTest {
 	 * @return the formatted source
 	 */
 	private String roundTrip( BoxSourceType type, boolean classOrInterface, String source ) throws IOException {
-		Config			config		= new Config();
-		ParsingResult	original	= parser.parse( source, type, classOrInterface, false );
+		return roundTrip( type, classOrInterface, source, new Config() );
+	}
+
+	/**
+	 * Formats the source with a config, checks that the result means the same and formats to itself, and returns it.
+	 *
+	 * @param type             the source type
+	 * @param classOrInterface whether the source is a class or interface
+	 * @param source           the source
+	 * @param config           the formatter config
+	 *
+	 * @return the formatted source
+	 */
+	private String roundTrip( BoxSourceType type, boolean classOrInterface, String source, Config config ) throws IOException {
+		ParsingResult original = parser.parse( source, type, classOrInterface, false );
 		assertWithMessage( "input parses: " + original.getIssues() ).that( original.isCorrect() ).isTrue();
 		Object			before		= normalize( original.getRoot().toMap() );
 
