@@ -345,6 +345,9 @@ public class HelperPrinter {
 		var currentDoc = visitor.getCurrentDoc();
 		if ( visitor.isTemplate() ) {
 			printTemplateBody( statements );
+			// a comment after the last statement of a template block (</cfloop><!--- note ---></cfif>) is attached to the
+			// block itself
+			visitor.printInsideComments( node, false );
 		} else {
 			// Determine if opening brace should be on a new line based on braces.style config
 			String	braceStyle		= visitor.config.getBraces().getStyle();

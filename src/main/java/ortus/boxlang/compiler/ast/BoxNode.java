@@ -200,6 +200,22 @@ public abstract class BoxNode implements BoxVisitable {
 	}
 
 	/**
+	 * Whether a comment lies within the source range of one of this node's (non-comment) children.
+	 *
+	 * @param comment the comment
+	 *
+	 * @return true when a child contains it
+	 */
+	private boolean isInsideChild( BoxComment comment ) {
+		for ( BoxNode child : this.children ) {
+			if ( ! ( child instanceof BoxComment ) && child.getPosition() != null && comment.isInside( child ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * The same as _associateComments(), but will LEAVE any comments left in the list after this
 	 * node for the next node to claim.
 	 *
@@ -230,15 +246,21 @@ public abstract class BoxNode implements BoxVisitable {
 				}
 			}
 
-			// Grab any comments starting before me
-			while ( !incomingComments.isEmpty() ) {
-				BoxComment doc = incomingComments.get( 0 );
-				if ( doc.isBefore( this ) ) {
-					this.addComment( doc );
-					incomingComments.remove( doc );
-				} else {
+			// Grab any comments starting before me. A comment that lies inside one of my children is left for that
+			// child: a node whose own position starts after a child's (an expression invocation is positioned at its
+			// argument list, after the expression it invokes) would otherwise claim the comments inside that child.
+			int index = 0;
+			while ( index < incomingComments.size() ) {
+				BoxComment doc = incomingComments.get( index );
+				if ( !doc.isBefore( this ) ) {
 					break;
 				}
+				if ( isInsideChild( doc ) ) {
+					index++;
+					continue;
+				}
+				this.addComment( doc );
+				incomingComments.remove( index );
 			}
 
 			if ( incomingComments.isEmpty() ) {

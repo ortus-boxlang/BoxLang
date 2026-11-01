@@ -294,18 +294,13 @@ public class RoundTripTest extends PrettyPrintTest {
 	@Test
 	@DisplayName( "a comment after a multi-line call is kept" )
 	public void testCommentAfterMultiLineCall() throws IOException {
-		// The parser gives the method name a position that ends on the call's last line, so the comment lands "inside"
-		// the name; it may move into the call, but it must never be dropped
-		String	source	= """
-		                  logLines
-		                  	.append(
-		                  		jsonSerialize( data = arguments.dataPacket, pretty = true )
-		                  	); // Pretty print JSON
-		                  """;
-		String	once	= PrettyPrint.prettyPrint( parser.parse( source, BoxSourceType.BOXSCRIPT, false, false ).getRoot(), new Config() );
-		String	twice	= PrettyPrint.prettyPrint( parser.parse( once, BoxSourceType.BOXSCRIPT, false, false ).getRoot(), new Config() );
-		assertThat( once ).contains( "// Pretty print JSON" );
-		assertThat( twice ).contains( "// Pretty print JSON" );
+		String out = roundTrip( BoxSourceType.BOXSCRIPT, false, """
+		    logLines
+		    	.append(
+		    		jsonSerialize( data = arguments.dataPacket, pretty = true )
+		    	); // Pretty print JSON
+		    """ );
+		assertThat( out ).contains( "); // Pretty print JSON" );
 	}
 
 	@Test

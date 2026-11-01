@@ -368,7 +368,8 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 					var	is		= funcInvoc.getPosition().getStart();
 					var	ids		= new Point( is.getLine(), is.getColumn() );
 					var	ide		= funcInvoc.getPosition().getEnd();
-					ide = new Point( ide.getLine(), ids.getColumn() + iName.length() );
+					// the name ends on the line it starts on, not on the last line of a multi-line call
+					ide = new Point( ids.getLine(), ids.getColumn() + iName.length() );
 
 					// Account for the dot in the invocation
 					is.setColumn( is.getColumn() + -1 );
@@ -405,7 +406,8 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 				var	is		= invocation.getPosition().getStart();
 				var	ids		= new Point( is.getLine(), is.getColumn() );
 				var	ide		= invocation.getPosition().getEnd();
-				ide = new Point( ide.getLine(), ids.getColumn() + iName.length() );
+				// the name ends on the line it starts on, not on the last line of a multi-line call
+					ide = new Point( ids.getLine(), ids.getColumn() + iName.length() );
 
 				// Account for the dot in the invocation
 				is.setColumn( is.getColumn() + -1 );
@@ -450,7 +452,8 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 					var	is		= funcInvoc.getPosition().getStart();
 					var	ids		= new Point( is.getLine(), is.getColumn() );
 					var	ide		= funcInvoc.getPosition().getEnd();
-					ide = new Point( ide.getLine(), ids.getColumn() + iName.length() );
+					// the name ends on the line it starts on, not on the last line of a multi-line call
+					ide = new Point( ids.getLine(), ids.getColumn() + iName.length() );
 
 					// Account for the dot in the invocation
 					is.setColumn( is.getColumn() + -1 );

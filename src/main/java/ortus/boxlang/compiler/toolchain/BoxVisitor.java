@@ -649,8 +649,10 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitComponentIsland( ComponentIslandContext ctx ) {
+		// Positioned over the whole island, delimiters included: ending at its content put a comment that follows the
+		// closing delimiter one line further away than it is
 		return new BoxTemplateIsland( tools.toAst( null, ctx.template().template_statements() ),
-		    tools.getPosition( ctx.template() ), tools.getSourceText( ctx.template() ) );
+		    tools.getPosition( ctx ), tools.getSourceText( ctx.template() ) );
 	}
 
 	@Override

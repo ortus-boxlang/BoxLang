@@ -24,7 +24,9 @@ import java.util.List;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.comment.BoxComment;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
@@ -345,13 +347,65 @@ public class ClassPrinter {
 		for ( var statement : sortedBody ) {
 			statement.accept( visitor );
 		}
-		visitor.printInsideComments( classNode, false );
+		// The class's source runs to the end of the file, so a comment after </cfcomponent> also counts as inside it:
+		// those print after the closing tag, where they were written
+		List<BoxComment> afterClose = commentsAfterClosingTag( classNode, "</cfcomponent>" );
+		classNode.getComments().removeAll( afterClose );
+		try {
+			visitor.printInsideComments( classNode, false );
+		} finally {
+			classNode.getComments().addAll( afterClose );
+		}
 
 		currentDoc
 		    .append( visitor.popDoc() )
 		    .append( "</cfcomponent>" );
+		for ( var comment : afterClose ) {
+			currentDoc.append( Line.HARD );
+			comment.accept( visitor );
+		}
 
 		visitor.printPostComments( classNode );
+	}
+
+	/**
+	 * The comments inside a tag class or interface that come after its closing tag in the source.
+	 *
+	 * @param node       the class or interface
+	 * @param closingTag the closing tag, such as {@code </cfcomponent>}
+	 *
+	 * @return the comments after the closing tag, in source order
+	 */
+	private List<BoxComment> commentsAfterClosingTag( BoxNode node, String closingTag ) {
+		String source = node.getSourceText();
+		if ( source == null || node.getPosition() == null ) {
+			return List.of();
+		}
+		int index = source.toLowerCase().lastIndexOf( closingTag );
+		if ( index < 0 ) {
+			return List.of();
+		}
+		// Where the closing tag ends, as a line and column
+		int	end		= index + closingTag.length();
+		int	line	= node.getPosition().getStart().getLine();
+		int	column	= node.getPosition().getStart().getColumn();
+		for ( int i = 0; i < end; i++ ) {
+			if ( source.charAt( i ) == '\n' ) {
+				line++;
+				column = 0;
+			} else {
+				column++;
+			}
+		}
+		final int	endLine		= line;
+		final int	endColumn	= column;
+		return node.getComments().stream()
+		    .filter( comment -> comment.isInside( node ) && comment.getPosition() != null )
+		    .filter( comment -> {
+			    var start = comment.getPosition().getStart();
+			    return start.getLine() > endLine || ( start.getLine() == endLine && start.getColumn() >= endColumn );
+		    } )
+		    .toList();
 	}
 
 	/**
@@ -377,12 +431,22 @@ public class ClassPrinter {
 			statement.accept( visitor );
 		}
 
-		visitor.printInsideComments( interfaceNode, false );
+		List<BoxComment> afterClose = commentsAfterClosingTag( interfaceNode, "</cfinterface>" );
+		interfaceNode.getComments().removeAll( afterClose );
+		try {
+			visitor.printInsideComments( interfaceNode, false );
+		} finally {
+			interfaceNode.getComments().addAll( afterClose );
+		}
 		currentDoc.append( visitor.popDoc() );
 		if ( !sortedBody.isEmpty() ) {
 			currentDoc.append( Line.HARD );
 		}
 		currentDoc.append( "</cfinterface>" );
+		for ( var comment : afterClose ) {
+			currentDoc.append( Line.HARD );
+			comment.accept( visitor );
+		}
 
 		visitor.printPostComments( interfaceNode );
 	}

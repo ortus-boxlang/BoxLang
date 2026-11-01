@@ -3023,13 +3023,14 @@ class CodeProfilerTest {
 		}
 
 		// The SHELL segments: the callee head, each `name =` interstitial, and the
-		// closing `);`. EVERY `name =` fragment is a shell segment (consistent — the
-		// first landed in the head, the rest are interstitials).
+		// closing `)` (exactly `)`, as on a single-line call; the statement's `;` is
+		// not part of the call). EVERY `name =` fragment is a shell segment
+		// (consistent — the first landed in the head, the rest are interstitials).
 		assertThat( texts ).contains( ".fn( spec =" );
 		assertThat( texts ).contains( ", testResults =" );
 		assertThat( texts ).contains( ", suiteStats =" );
 		assertThat( texts ).contains( ", runner =" );
-		assertThat( texts ).contains( ");" );
+		assertThat( texts ).contains( ")" );
 
 		// Each VALUE is its own separate span (an ARG span, NOT a shell segment).
 		assertThat( texts ).contains( "thisSpec" );

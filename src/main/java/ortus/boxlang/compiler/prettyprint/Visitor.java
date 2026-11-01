@@ -1946,7 +1946,10 @@ public class Visitor extends VoidBoxVisitor {
 
 				// A comment trailing the then block ("} // end if") stays on that line, so "else" starts the next one;
 				// on the same line it would end up after "else {", attached to the else body on the next pass
-				boolean	trailingThenComment	= node.getThenBody().getComments().stream().anyMatch( comment -> comment.isAfter( node.getThenBody() ) );
+				// (only for a braced then block: a single statement's trailing comment prints inside the braces added
+				// around it, so it does not reach the else line)
+				boolean	trailingThenComment	= node.getThenBody() instanceof BoxStatementBlock
+				    && node.getThenBody().getComments().stream().anyMatch( comment -> comment.isAfter( node.getThenBody() ) );
 
 				if ( commentedElse || trailingThenComment ) {
 					newLine();
