@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.types;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -27,6 +28,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -35,6 +38,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 class XMLTest {
 
@@ -271,7 +275,7 @@ class XMLTest {
 
 	@DisplayName( "Can check for XMLChildren with StructKeyExists" )
 	@Test
-	void textStructKeyExistsXmlChildren() {
+	void testStructKeyExistsXmlChildren() {
 		instance.executeSource(
 		    """
 		       myXML = XMLParse(
@@ -285,6 +289,251 @@ class XMLTest {
 		    context );
 		Object r = variables.get( result );
 		assertTrue( variables.getAsBoolean( result ) );
+	}
+
+	@DisplayName( "Can set XMLChildren to empty array" )
+	@Test
+	void testSetXMLChildrenToEmptyArray() {
+		instance.executeSource(
+		    """
+		          myXML = XMLParse(
+		       	'<company name="Ortus Solutions">
+		               	<employee fname="Luis" lname="Majano"  />
+		               	<employee fname="Brad" lname="Wood" />
+		               </company>'
+		       );
+		    myXML.xmlRoot.XmlChildren = [];
+		    result = myXML.xmlRoot.XmlChildren;
+		          """,
+		    context );
+		Object r = variables.get( result );
+		assertThat( r ).isInstanceOf( Array.class );
+		assertThat( variables.getAsArray( result ).size() ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "Assigning XMLChildren replaces the element children, in order" )
+	@Test
+	void testSetXMLChildrenToArray() {
+		instance.executeSource(
+		    """
+		          myXML = XMLParse( '<company><old1 /><old2 /></company>' );
+		    myXML.xmlRoot.XmlChildren = [];
+		    myXML.xmlRoot.XmlChildren = [
+		        xmlElemNew( myXML, "first" ),
+		        xmlElemNew( myXML, "second" ),
+		        xmlElemNew( myXML, "third" )
+		    ];
+		    result  = myXML.xmlRoot.XmlChildren;
+		    names   = myXML.xmlRoot.XmlChildren.map( ( child ) => child.xmlName );
+		    xml     = toString( myXML );
+		          """,
+		    context );
+		assertThat( variables.getAsArray( result ).size() ).isEqualTo( 3 );
+		assertThat( variables.getAsArray( Key.of( "names" ) ) ).containsExactly( "first", "second", "third" ).inOrder();
+		// The previous children are gone (overwrite, not append)
+		assertThat( variables.getAsString( Key.of( "xml" ) ) ).doesNotContain( "old1" );
+		assertThat( variables.getAsString( Key.of( "xml" ) ) ).doesNotContain( "old2" );
+	}
+
+	@DisplayName( "Assigning an empty XMLChildren array keeps xmlText and attributes" )
+	@Test
+	void testSetXMLChildrenToEmptyArrayKeepsText() {
+		instance.executeSource(
+		    """
+		          myXML  = XMLParse( '<company><employee /></company>' );
+		    myXML.xmlRoot.xmlText = "keep me";
+		    myXML.xmlRoot.XmlChildren = [];
+		    result = {
+		        childrenCount : myXML.xmlRoot.XmlChildren.len(),
+		        text          : myXML.xmlRoot.xmlText,
+		        name          : myXML.xmlRoot.xmlName
+		    };
+		          """,
+		    context );
+		IStruct result = variables.getAsStruct( Key.of( "result" ) );
+		assertThat( result.getAsInteger( Key.of( "childrenCount" ) ) ).isEqualTo( 0 );
+		assertThat( result.getAsString( Key.of( "text" ) ) ).contains( "keep me" );
+		assertThat( result.getAsString( Key.of( "name" ) ) ).isEqualTo( "company" );
+	}
+
+	@DisplayName( "Assigning a non-array to XMLChildren throws" )
+	@Test
+	void testSetXMLChildrenRequiresArray() {
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		          myXML = XMLParse( '<company><employee /></company>' );
+		    myXML.xmlRoot.XmlChildren = "not an array";
+		          """,
+		    context ) );
+
+		// A non-element child is rejected rather than corrupting the document
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		          myXML = XMLParse( '<company><employee /></company>' );
+		    myXML.xmlRoot.XmlChildren = [ "nope" ];
+		          """,
+		    context ) );
+
+		// A bare XML node is rejected: an XML casts to an Array of its same-name siblings,
+		// which would silently expand into more children than the caller asked for
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		          myXML = XMLParse( '<company><employee /><employee /></company>' );
+		    myXML.xmlRoot.XmlChildren = myXML.xmlRoot.employee;
+		          """,
+		    context ) );
+	}
+
+	@DisplayName( "Can assign a Java List to XMLChildren" )
+	@Test
+	void testSetXMLChildrenFromJavaList() {
+		instance.executeSource(
+		    """
+		          myXML = XMLParse( '<company><old /></company>' );
+		          jl    = new java.util.ArrayList();
+		          jl.add( xmlElemNew( myXML, "fromList" ) );
+		    myXML.xmlRoot.XmlChildren = jl;
+		    result = toString( myXML );
+		          """,
+		    context );
+		assertThat( variables.getAsString( result ) ).contains( "<fromList/>" );
+		assertThat( variables.getAsString( result ) ).doesNotContain( "old" );
+	}
+
+	@DisplayName( "Can assign a Java array to XMLChildren" )
+	@Test
+	void testSetXMLChildrenFromJavaArray() {
+		instance.executeSource(
+		    """
+		          myXML = XMLParse( '<company><old /></company>' );
+		          ja    = [ xmlElemNew( myXML, "fromArray" ) ].toArray();
+		    myXML.xmlRoot.XmlChildren = ja;
+		    result = toString( myXML );
+		          """,
+		    context );
+		assertThat( variables.getAsString( result ) ).contains( "<fromArray/>" );
+		assertThat( variables.getAsString( result ) ).doesNotContain( "old" );
+	}
+
+	@DisplayName( "Assigning cross-document XMLChildren works and the source document is untouched" )
+	@Test
+	void testSetXMLChildrenCrossDocument() {
+		instance.executeSource(
+		    """
+		          target = XMLParse( '<company><old /></company>' );
+		          other  = XMLParse( '<employee fname="Dave" />' );
+		    target.xmlRoot.XmlChildren = [ other.xmlRoot ];
+		    result        = toString( target );
+		    sourceStillOk = toString( other );
+		          """,
+		    context );
+		assertThat( variables.getAsString( result ) ).contains( "<employee fname=\"Dave\"/>" );
+		assertThat( variables.getAsString( result ) ).doesNotContain( "old" );
+		// The source document is not stolen from
+		assertThat( variables.getAsString( Key.of( "sourceStillOk" ) ) ).contains( "employee" );
+	}
+
+	@DisplayName( "It can assign a cross-document node to a property" )
+	@Test
+	void testAssignCrossDocumentProperty() {
+		instance.executeSource(
+		    """
+		          target = XMLParse( '<company><old /></company>' );
+		          other  = XMLParse( '<employee fname="Dave" />' );
+		    target.xmlRoot.employee = other.xmlRoot;
+		    result = toString( target );
+		          """,
+		    context );
+		assertThat( variables.getAsString( result ) ).contains( "<employee fname=\"Dave\"/>" );
+	}
+
+	@DisplayName( "It can append a cross-document node to the XMLChildren array" )
+	@Test
+	void testAppendCrossDocumentChild() {
+		instance.executeSource(
+		    """
+		          target = XMLParse( '<company><old /></company>' );
+		          other  = XMLParse( '<employee fname="Dave" />' );
+		    target.xmlRoot.xmlChildren.append( other.xmlRoot );
+		    result     = toString( target );
+		    childCount = target.xmlRoot.xmlChildren.len();
+		          """,
+		    context );
+		assertThat( variables.getAsString( result ) ).contains( "<employee fname=\"Dave\"/>" );
+		assertThat( variables.getAsInteger( Key.of( "childCount" ) ) ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "Setting an XMLChildren index populates the array slot, not null" )
+	@Test
+	void testSetXMLChildrenIndexDoesNotNullTheSlot() {
+		instance.executeSource(
+		    """
+		          target   = XMLParse( '<company><old /></company>' );
+		          children = target.xmlRoot.xmlChildren;
+		    children[ 1 ] = xmlElemNew( target, "newOne" );
+		    result = {
+		        slotIsNull  : isNull( children[ 1 ] ),
+		        arrayLen    : arrayLen( children ),
+		        freshCount  : target.xmlRoot.xmlChildren.len(),
+		        xml         : toString( target )
+		    };
+		          """,
+		    context );
+		IStruct result = variables.getAsStruct( Key.of( "result" ) );
+		assertThat( result.getAsBoolean( Key.of( "slotIsNull" ) ) ).isFalse();
+		assertThat( result.getAsInteger( Key.of( "arrayLen" ) ) ).isEqualTo( 1 );
+		assertThat( result.getAsInteger( Key.of( "freshCount" ) ) ).isEqualTo( 1 );
+		assertThat( result.getAsString( Key.of( "xml" ) ) ).contains( "<newOne/>" );
+		assertThat( result.getAsString( Key.of( "xml" ) ) ).doesNotContain( "old" );
+	}
+
+	@DisplayName( "It can use XML.appendChild and XML.replaceChild with cross-document nodes" )
+	@Test
+	void testAppendAndReplaceChildCrossDocument() {
+		XML		target		= new XML( "<company><old /></company>", false, null, null, context );
+		XML		other		= new XML( "<employee fname=\"Dave\" />", false, null, null, context );
+		XML		targetRoot	= new XML( ( ( Document ) target.getNode() ).getDocumentElement() );
+		XML		otherRoot	= new XML( ( ( Document ) other.getNode() ).getDocumentElement() );
+		Node	oldNode		= ( ( Document ) target.getNode() ).getElementsByTagName( "old" ).item( 0 );
+
+		targetRoot.appendChild( otherRoot.getNode() );
+		assertThat( targetRoot.getNode().getChildNodes().getLength() ).isEqualTo( 2 );
+		assertThat( targetRoot.getNode().getLastChild().getNodeName() ).isEqualTo( "employee" );
+
+		targetRoot.replaceChild( otherRoot.getNode(), oldNode );
+		assertThat( targetRoot.getNode().getChildNodes().getLength() ).isEqualTo( 2 );
+		assertThat( targetRoot.getNode().getFirstChild().getNodeName() ).isEqualTo( "employee" );
+		// The source document must not be emptied by the append/replace
+		assertThat( ( ( Document ) other.getNode() ).getDocumentElement().getNodeName() ).isEqualTo( "employee" );
+	}
+
+	@DisplayName( "It can root a brand new XML document with a node from another document" )
+	@Test
+	void testRootNewDocumentCrossDocument() {
+		instance.executeSource(
+		    """
+		          target = xmlNew();
+		          other  = XMLParse( '<otherRoot><x /></otherRoot>' );
+		    target.xmlRoot = other.xmlRoot;
+		    result = toString( target );
+		          """,
+		    context );
+		assertThat( variables.getAsString( result ) ).contains( "otherRoot" );
+	}
+
+	@DisplayName( "Assigning XMLRoot to a node from another document replaces the document" )
+	@Test
+	void testAssignXMLRootCrossDocument() {
+		instance.executeSource(
+		    """
+		          target = XMLParse( '<company><old /></company>' );
+		          other  = XMLParse( '<otherRoot><x /></otherRoot>' );
+		    target.xmlRoot = other.xmlRoot;
+		    result = toString( target );
+		          """,
+		    context );
+		assertThat( variables.getAsString( result ) ).contains( "<otherRoot>" );
+		assertThat( variables.getAsString( result ) ).doesNotContain( "company" );
 	}
 
 	@DisplayName( "It can assign XMLText" )

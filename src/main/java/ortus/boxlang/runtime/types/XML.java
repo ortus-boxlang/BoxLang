@@ -67,6 +67,7 @@ import ortus.boxlang.runtime.bifs.global.string.UCFirst;
 import ortus.boxlang.runtime.config.segments.XMLConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
@@ -775,11 +776,67 @@ public class XML implements Serializable, IStruct {
 			getNode().setTextContent( StringCaster.cast( value ) );
 		} else if ( name.equals( Key.XMLCdata ) ) {
 			node.setTextContent( cdataStart + StringCaster.cast( value ) + cdataEnd );
+		} else if ( name.equals( Key.XMLChildren ) ) {
+			setXMLChildren( value );
 		} else {
 			put( name, value );
 		}
 
 		return this;
+	}
+
+	private void setXMLChildren( Object value ) {
+		// An XML node casts to an Array of its same-name siblings, which is not a meaningful
+		// value for an overwrite, so require an actual collection here
+		if ( value instanceof XML || value instanceof Node ) {
+			throw new BoxRuntimeException( "The value assigned to XMLChildren must be an Array of XML nodes" );
+		}
+
+		CastAttempt<Array> childrenAttempt = ArrayCaster.attempt( value );
+		if ( !childrenAttempt.wasSuccessful() ) {
+			throw new BoxRuntimeException( "The value assigned to XMLChildren must be an Array" );
+		}
+		Array	children	= childrenAttempt.get();
+
+		Node	parentNode	= getNode();
+		if ( parentNode.getNodeType() != Node.ELEMENT_NODE ) {
+			throw new BoxRuntimeException( "XMLChildren can only be assigned on an Element node" );
+		}
+
+		// Resolve every replacement up front so a bad value cannot leave the node half-modified
+		List<Node> replacementNodes = new ArrayList<>( children.size() );
+		for ( Object child : children ) {
+			Node childNode = toAttachableNode( parentNode, child );
+			if ( childNode.getNodeType() != Node.ELEMENT_NODE ) {
+				throw new BoxRuntimeException( "Each value assigned to XMLChildren must be an Element node" );
+			}
+			replacementNodes.add( childNode );
+		}
+
+		// XmlChildren is a straight overwrite: drop the existing element children, then append the new ones
+		for ( Node existingNode : collectElementChildren( parentNode ) ) {
+			parentNode.removeChild( existingNode );
+		}
+		replacementNodes.forEach( parentNode::appendChild );
+	}
+
+	/**
+	 * Collect the element children of a node.
+	 *
+	 * @param parentNode The node to inspect
+	 *
+	 * @return The current element children of the node
+	 */
+	private static List<Node> collectElementChildren( Node parentNode ) {
+		List<Node>	elementNodes	= new ArrayList<>();
+		NodeList	childNodes		= parentNode.getChildNodes();
+		for ( int i = 0; i < childNodes.getLength(); i++ ) {
+			Node childNode = childNodes.item( i );
+			if ( childNode.getNodeType() == Node.ELEMENT_NODE ) {
+				elementNodes.add( childNode );
+			}
+		}
+		return elementNodes;
 	}
 
 	public String asString( IStruct transformerOptions ) {
@@ -839,6 +896,54 @@ public class XML implements Serializable, IStruct {
 
 	public Node getNode() {
 		return node;
+	}
+
+	/**
+	 * Resolve a value into a DOM node.
+	 *
+	 * @param value The value to resolve, either an {@link XML} instance or a DOM {@link Node}
+	 *
+	 * @return The resolved DOM node
+	 */
+	public static Node resolveNode( Object value ) {
+		if ( value instanceof XML xml ) {
+			return xml.getNode();
+		}
+		if ( value instanceof Node node ) {
+			return node;
+		}
+		throw new BoxRuntimeException( String.format( "The value passed [%s] is not a Node or XML instance", value ) );
+	}
+
+	/**
+	 * Resolve a value into a node which can be attached as a child of the given parent node.
+	 * <p>
+	 * The node is always imported into the parent node's document, because attaching a node which
+	 * belongs to a different document raises a {@code WRONG_DOCUMENT_ERR} DOMException. The returned
+	 * node is a detached copy, so the original node is never modified and a node which is already
+	 * attached elsewhere is left in place.
+	 *
+	 * @param parentNode The parent node which will receive the child node. May be null for an XML
+	 *                   object which has not been initialized yet, in which case the node is copied
+	 *                   but not imported into any document.
+	 * @param value      The value to resolve, either an {@link XML} instance or a DOM {@link Node}
+	 *
+	 * @return A detached copy of the node, owned by the parent node's document
+	 */
+	public static Node toAttachableNode( Node parentNode, Object value ) {
+		Node childNode = resolveNode( value );
+		// A whole document cannot be attached as a child, so attach its root element instead
+		if ( childNode instanceof Document document ) {
+			childNode = document.getDocumentElement();
+		}
+		// An XML object which has not been initialized yet (eg: the result of xmlNew()) has no
+		// document to import into
+		if ( parentNode == null ) {
+			return childNode.cloneNode( true );
+		}
+		// Attaching a node which belongs to a different document raises WRONG_DOCUMENT_ERR, so import a copy
+		Document parentDocument = parentNode.getOwnerDocument() == null ? ( Document ) parentNode : parentNode.getOwnerDocument();
+		return parentDocument.importNode( childNode, true );
 	}
 
 	public static int getIntFromKey( Key key ) {
@@ -916,30 +1021,25 @@ public class XML implements Serializable, IStruct {
 
 	@Override
 	public Object put( Key key, Object value ) {
-		if ( ! ( value instanceof Node ) && ! ( value instanceof XML ) ) {
-			throw new BoxRuntimeException(
-			    String.format(
-			        "The value passed [%s] is not a Node or XML instance", value.toString() )
-			);
-		}
-		value = value instanceof Node ? ( ( Node ) value ).cloneNode( true ) : ( ( XML ) value ).getNode().cloneNode( true );
 		if ( documentOnlyKeys.contains( key ) ) {
+			// Document-level keys replace the document node itself, so a whole document is a valid value here
 			if ( key.equals( Key.XMLRoot ) ) {
-				this.node = ( Node ) value;
+				this.node = resolveNode( value ).cloneNode( true );
 			} else {
 				throw new BoxRuntimeException( String.format( "XML documents do not yet implement a setter for the key [%s]", key.getName() ) );
 			}
 		} else {
-			Array keyArray = ListUtil.asList( key.getName(), "." );
+			Node	childNode	= toAttachableNode( this.node, value );
+			Array	keyArray	= ListUtil.asList( key.getName(), "." );
 			keyArray.remove( keyArray.size() - 1 );
 			if ( keyArray.size() == 0 ) {
-				this.node.appendChild( ( Node ) value );
+				this.node.appendChild( childNode );
 			} else {
 				String parent = ListUtil.asString( keyArray, "." );
 				if ( Key.of( parent ).equals( Key.XMLRoot ) ) {
-					this.node.appendChild( ( Node ) value );
+					this.node.appendChild( childNode );
 				} else {
-					( ( Node ) getFirstChildOfName( parent ) ).appendChild( ( Node ) value );
+					( ( Node ) getFirstChildOfName( parent ) ).appendChild( childNode );
 				}
 			}
 		}
@@ -1090,16 +1190,18 @@ public class XML implements Serializable, IStruct {
 
 	/**
 	 * Appends a node to the end of the list of children of this node.
+	 * The node is imported into this node's document if it belongs to another document.
 	 */
 	public void appendChild( Node newChild ) {
-		node.appendChild( newChild );
+		node.appendChild( toAttachableNode( node, newChild ) );
 	}
 
 	/**
 	 * Replaces a child node within this node.
+	 * The node is imported into this node's document if it belongs to another document.
 	 */
 	public void replaceChild( Node newChild, Node oldChild ) {
-		node.replaceChild( newChild, oldChild );
+		node.replaceChild( toAttachableNode( node, newChild ), oldChild );
 	}
 
 }
