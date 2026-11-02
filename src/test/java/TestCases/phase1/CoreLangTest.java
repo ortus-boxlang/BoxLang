@@ -7186,6 +7186,17 @@ public class CoreLangTest {
 		// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( Struct.of( "key", "not string!" ) );
 
-	}
+		// @formatter:off
+		instance.executeSource(
+			"""
+			t = true
+				result = {
+					a: not t
+				};
+			""",
+		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( Struct.of( "a", false ) );
 
+	}
 }
