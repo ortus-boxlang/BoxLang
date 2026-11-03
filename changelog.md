@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Cron scheduled tasks no longer silently skip a day when a tick runs late, e.g. when it is queued behind other tasks on a saturated scheduler executor. A tick now fires if a cron time was due since the previous check, runs late rather than never, and logs a warning (with a thread-count hint when the executor is saturated). Also fixes `exclude` replacing the cron gate on `bx:schedule` tasks that set both `cronTime` and `exclude`
+- Cron scheduled tasks no longer silently skip a day when a tick runs late, e.g. when it is queued behind other tasks on a saturated scheduler executor. A tick now fires if a cron time was due since the previous check, runs late rather than never, and logs a warning (with a thread-count hint when the executor is saturated). Scheduled task constraints (weekdays, day of the week or month, first/last business day, time windows, start/end dates) are now judged against the time a tick was due, so a late tick is not skipped by crossing midnight. Also fixes `exclude` replacing the cron gate on `bx:schedule` tasks that set both `cronTime` and `exclude`
 ## [1.19.0] - 2026-11-03
 
 - Release builds now generate a CycloneDX 1.6 SBOM (`boxlang-{version}.cdx.json` plus checksums) from the runtime classpath. It is published next to the binaries on downloads.ortussolutions.com, attached to the GitHub release, and published to Maven with the `cyclonedx` classifier
