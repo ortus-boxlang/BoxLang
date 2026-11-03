@@ -637,4 +637,24 @@ class ScheduledTaskTest {
 			return "ran";
 		}
 	}
+
+	@DisplayName( "a cron tick that runs late still fires for the cron time it passed" )
+	@Test
+	void testCronLateTickStillFires() throws InterruptedException {
+		// Fires on every even second
+		task.cron( "*/2 * * * * *" );
+		var predicate = task.getWhenPredicate();
+		predicate.test( task );
+		// Simulate a tick queued behind other tasks on a saturated executor
+		Thread.sleep( 2500 );
+		assertThat( predicate.test( task ) ).isTrue();
+	}
+
+	@DisplayName( "a cron tick does not fire when no cron time is due" )
+	@Test
+	void testCronNotDueDoesNotFire() {
+		// Only fires on the 1st of January at midnight
+		task.cron( "0 0 0 1 1 *" );
+		assertThat( task.getWhenPredicate().test( task ) ).isFalse();
+	}
 }

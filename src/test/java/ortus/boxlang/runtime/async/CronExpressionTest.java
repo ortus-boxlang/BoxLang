@@ -274,4 +274,58 @@ class CronExpressionTest {
 		CronExpression expr = CronExpression.parse( "* * * * *" );
 		assertThat( expr.toString() ).contains( "* * * * *" );
 	}
+
+	@DisplayName( "fireTimesBetween finds a fire time that a late evaluation has already passed" )
+	@Test
+	public void testFireTimesBetweenLateEvaluation() {
+		CronExpression	expr	= CronExpression.parse( "0 0 18 * * *" );
+		// Previous check just before 18:00:00, this one 30 seconds late
+		var				window	= expr.fireTimesBetween(
+		    java.time.LocalDateTime.of( 2026, 10, 5, 17, 59, 59, 500_000_000 ),
+		    java.time.LocalDateTime.of( 2026, 10, 5, 18, 0, 30 ) );
+		assertThat( window.isPresent() ).isTrue();
+		assertThat( window.get().first() ).isEqualTo( java.time.LocalDateTime.of( 2026, 10, 5, 18, 0, 0 ) );
+		assertThat( window.get().count() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "fireTimesBetween is empty when no fire time is in the window" )
+	@Test
+	public void testFireTimesBetweenNoFire() {
+		CronExpression expr = CronExpression.parse( "0 0 18 * * *" );
+		assertThat( expr.fireTimesBetween(
+		    java.time.LocalDateTime.of( 2026, 10, 5, 18, 0, 0 ),
+		    java.time.LocalDateTime.of( 2026, 10, 5, 18, 0, 30 ) ).isPresent() ).isFalse();
+	}
+
+	@DisplayName( "fireTimesBetween excludes the start of the window and includes the end" )
+	@Test
+	public void testFireTimesBetweenBoundaries() {
+		CronExpression	expr	= CronExpression.parse( "0 0 18 * * *" );
+		var				fire	= java.time.LocalDateTime.of( 2026, 10, 5, 18, 0, 0 );
+		assertThat( expr.fireTimesBetween( fire.minusSeconds( 5 ), fire ).isPresent() ).isTrue();
+		assertThat( expr.fireTimesBetween( fire, fire.plusSeconds( 5 ) ).isPresent() ).isFalse();
+	}
+
+	@DisplayName( "fireTimesBetween counts several fire times missed in one window" )
+	@Test
+	public void testFireTimesBetweenCollapsesMissed() {
+		CronExpression	expr	= CronExpression.parse( "*/10 * * * * *" );
+		var				window	= expr.fireTimesBetween(
+		    java.time.LocalDateTime.of( 2026, 10, 5, 18, 0, 0 ),
+		    java.time.LocalDateTime.of( 2026, 10, 5, 18, 0, 35 ) );
+		assertThat( window.get().count() ).isEqualTo( 3 );
+		assertThat( window.get().first() ).isEqualTo( java.time.LocalDateTime.of( 2026, 10, 5, 18, 0, 10 ) );
+		assertThat( window.get().last() ).isEqualTo( java.time.LocalDateTime.of( 2026, 10, 5, 18, 0, 30 ) );
+	}
+
+	@DisplayName( "fireTimesBetween works for 5-field expressions" )
+	@Test
+	public void testFireTimesBetweenFiveField() {
+		CronExpression	expr	= CronExpression.parse( "0 18 * * *" );
+		var				window	= expr.fireTimesBetween(
+		    java.time.LocalDateTime.of( 2026, 10, 5, 17, 59, 30 ),
+		    java.time.LocalDateTime.of( 2026, 10, 5, 18, 0, 45 ) );
+		assertThat( window.isPresent() ).isTrue();
+		assertThat( window.get().first() ).isEqualTo( java.time.LocalDateTime.of( 2026, 10, 5, 18, 0, 0 ) );
+	}
 }

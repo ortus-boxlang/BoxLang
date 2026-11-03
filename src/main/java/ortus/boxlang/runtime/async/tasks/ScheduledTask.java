@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.async.tasks;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoField;
@@ -28,6 +29,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -301,6 +303,21 @@ public class ScheduledTask implements Runnable {
 	 * Logger
 	 */
 	private final Logger							logger;
+
+	/**
+	 * A cron fire running at least this many seconds after it was due is logged as a warning
+	 */
+	private static final long						CRON_LATE_WARNING_SECONDS			= 2;
+
+	/**
+	 * Minimum time between late-fire warnings for the same task
+	 */
+	private static final long						CRON_LATE_WARNING_THROTTLE_MILLIS	= 60_000;
+
+	/**
+	 * When we last logged a late cron fire warning for this task
+	 */
+	private final AtomicLong						lastLateWarningMillis				= new AtomicLong( 0 );
 
 	/**
 	 * BoxLang Timer utility
@@ -1718,12 +1735,87 @@ public class ScheduledTask implements Runnable {
 		TimeUnit									pollUnit		= TimeUnit.SECONDS;
 		long										initialDelayMs	= cronExpr.nextFireDelayMillis( this.getTimezone() );
 
+		// Track when the cron gate was last evaluated, so a tick that runs late (e.g. queued behind other tasks on a
+		// saturated executor) still fires for the cron time it has already passed, instead of being silently skipped.
+		final AtomicReference<Instant>				lastEvaluated	= new AtomicReference<>( Instant.now() );
+
 		this.setMetaKey( "cronExpression", expression );
 		this.delay( initialDelayMs, TimeUnit.MILLISECONDS )
 		    .every( pollPeriod, pollUnit )
-		    .when( task -> cronExpr.matches( task.getNow() ) );
+		    .when( task -> task.isCronDue( cronExpr, lastEvaluated, pollPeriod ) );
 
 		return this;
+	}
+
+	/**
+	 * Decides if a cron-scheduled tick should run. It fires if any cron fire time falls between the previous evaluation
+	 * and now, so late ticks still run. Several fire times missed in one window collapse into a single run.
+	 *
+	 * @param cron          The cron expression
+	 * @param lastEvaluated The instant of the previous evaluation, updated here
+	 * @param pollSeconds   The polling period in seconds
+	 *
+	 * @return true if the task is due
+	 */
+	private boolean isCronDue( ortus.boxlang.runtime.async.CronExpression cron, AtomicReference<Instant> lastEvaluated, long pollSeconds ) {
+		Instant			previous	= lastEvaluated.getAndSet( Instant.now() );
+		LocalDateTime	now			= getNow();
+		LocalDateTime	start		= LocalDateTime.ofInstant( previous, getTimezone() );
+
+		// The wall clock moved backwards (e.g. a DST change): evaluate just the last poll period, like a plain wall-clock match
+		if ( !start.isBefore( now ) ) {
+			start = now.minusSeconds( pollSeconds );
+		}
+
+		var window = cron.fireTimesBetween( start, now );
+		if ( window.isEmpty() ) {
+			return false;
+		}
+
+		warnIfLate( cron, window.get(), now );
+		return true;
+	}
+
+	/**
+	 * Logs a warning when a cron fire ran noticeably late or fire times were collapsed, with a hint to
+	 * increase the executor's threads when it is saturated. Throttled per task so a busy pool does not flood the log.
+	 */
+	private void warnIfLate( ortus.boxlang.runtime.async.CronExpression cron, ortus.boxlang.runtime.async.CronExpression.FireWindow window,
+	    LocalDateTime now ) {
+		long	lateSeconds	= Duration.between( window.last(), now ).getSeconds();
+		long	nowMillis	= System.currentTimeMillis();
+		long	lastWarned	= this.lastLateWarningMillis.get();
+
+		if ( ( lateSeconds < CRON_LATE_WARNING_SECONDS && window.count() == 1 )
+		    || nowMillis - lastWarned < CRON_LATE_WARNING_THROTTLE_MILLIS
+		    || !this.lastLateWarningMillis.compareAndSet( lastWarned, nowMillis ) ) {
+			return;
+		}
+
+		StringBuilder message = new StringBuilder()
+		    .append( "Scheduled task [" ).append( this.name ).append( "] with cron [" ).append( cron.getExpression() )
+		    .append( "] ran " ).append( lateSeconds ).append( "s late (due " ).append( window.last() )
+		    .append( ", ran " ).append( now ).append( ")." );
+		if ( window.count() > 1 ) {
+			message.append( " " ).append( window.count() ).append( " due times were collapsed into a single run." );
+		}
+
+		try {
+			BoxExecutor	exec		= getExecutor();
+			int			poolSize	= exec.getPoolSize();
+			int			active		= exec.getActiveCount();
+			int			queued		= exec.getQueue() == null ? 0 : exec.getQueue().size();
+			if ( queued > 0 || ( poolSize > 0 && active >= poolSize ) ) {
+				message.append( " Executor [" ).append( exec.name() ).append( "] is saturated (" )
+				    .append( active ).append( " of " ).append( poolSize ).append( " threads busy, " )
+				    .append( queued ).append( " queued). Consider increasing its thread count to at least " )
+				    .append( poolSize + queued ).append( "." );
+			}
+		} catch ( Exception e ) {
+			// The executor details are only a diagnostic hint, never fail the run because of them
+		}
+
+		this.logger.warn( message.toString() );
 	}
 
 	/**

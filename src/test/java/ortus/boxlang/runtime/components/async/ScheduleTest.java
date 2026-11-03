@@ -988,6 +988,19 @@ public class ScheduleTest {
 		assertThat( task.isDisabled() ).isTrue();
 	}
 
+	@DisplayName( "exclude composes with the cron gate instead of replacing it" )
+	@Test
+	public void testExcludeComposesWithCron() {
+		BaseScheduler	scheduler	= Schedule.getOrCreateScheduler( context, Schedule.DEFAULT_SCHEDULER_NAME );
+		// A cron that is never due now, plus an exclude date that is not today
+		IStruct			taskDef		= Struct.of( Key._CLASS, CLASS_FIXTURE, Key.method, "run", Key.cronTime, "0 0 0 1 1 *", Key.exclude, "2000-01-01" );
+		ScheduledTask	task		= Schedule.registerClassTask( scheduler, "excludeCronTask", "", context, taskDef );
+		Schedule.applyTaskConfiguration( task, null, taskDef, instance.getRuntimeContext() );
+
+		// The cron gate must still apply, so the task is not due
+		assertThat( task.getWhenPredicate().test( task ) ).isFalse();
+	}
+
 	@DisplayName( "a class-based task survives a persistence reload" )
 	@Test
 	public void testClassTaskSurvivesReload() {
