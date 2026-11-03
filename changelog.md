@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.0] - 2026-11-03
+
 - Release builds now generate a CycloneDX 1.6 SBOM (`boxlang-{version}.cdx.json` plus checksums) from the runtime classpath. It is published next to the binaries on downloads.ortussolutions.com, attached to the GitHub release, and published to Maven with the `cyclonedx` classifier
 - [BL-2753](https://ortussolutions.atlassian.net/browse/BL-2753) New `generateKeyPair()` BIF for Ed25519, Ed448, X25519, X448, RSA and EC key pairs
 - [BL-2758](https://ortussolutions.atlassian.net/browse/BL-2758) Comparisons now pass the caller's context down to the date caster, so date compares no longer rebuild the whole runtime config struct, and a date string compared inside a request is read in the request timezone. `Compare` and the comparison operators gain context-taking overloads; the old ones are deprecated
@@ -122,7 +124,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - <https://boxlang.ortusbooks.com/readme/release-history/1.0.0>
 
-[unreleased]: https://github.com/ortus-boxlang/BoxLang/compare/v1.18.0...HEAD
+[unreleased]: https://github.com/ortus-boxlang/BoxLang/compare/v1.19.0...HEAD
+[1.19.0]: https://github.com/ortus-boxlang/BoxLang/compare/v1.18.0...v1.19.0
 [1.18.0]: https://github.com/ortus-boxlang/BoxLang/compare/v1.17.6...v1.18.0
 [1.17.6]: https://github.com/ortus-boxlang/BoxLang/compare/v1.17.5...v1.17.6
 [1.17.5]: https://github.com/ortus-boxlang/BoxLang/compare/v1.17.4...v1.17.5
