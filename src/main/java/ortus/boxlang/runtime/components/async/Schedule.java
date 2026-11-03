@@ -751,9 +751,9 @@ public class Schedule extends Component {
 
 		// Apply exclude dates predicate
 		if ( exclude != null && !exclude.isBlank() ) {
-			final List<String> excludeList = Arrays.asList( exclude.split( "," ) );
+			final List<String>				excludeList	= Arrays.asList( exclude.split( "," ) );
 			// Compose with any existing predicate (e.g. the cron gate), do not replace it
-			final Predicate<ScheduledTask> existing = task.getWhenPredicate();
+			final Predicate<ScheduledTask>	existing	= task.getWhenPredicate();
 			task.when( t -> ( existing == null || existing.test( t ) ) && !isExcludedDate( t.getNow(), excludeList ) );
 		}
 
