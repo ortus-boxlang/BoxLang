@@ -1,0 +1,118 @@
+BL-2363 - Add missing cache component features
+CIS3590 Team 7 - Documentation
+
+Prototype of the core changes:
+https://github.com/LivinKevin/BoxLang/tree/BL-2363-add-missing-cache-component-features
+
+
+1. PROBLEM STATEMENT
+--------------------
+
+What issue are we solving?
+
+The cache component (bx:cache / cfcache, Cache.java) declares seven Adobe
+ColdFusion attributes but never reads them:
+
+    region, useQueryString, expireURL, username, password, port, protocol
+
+Commit BL-2324 (Apr 2026) removed their NOT_IMPLEMENTED validators, so these
+attributes are now silently ignored. CFML code migrated to BoxLang runs
+without errors but caches differently than it did in ColdFusion.
+
+Two of them, useQueryString and expireURL, depend on caching by page URL.
+BoxLang cannot do that yet: full-page caching is an open TODO in Cache.java,
+and the request URL only exists in the web runtime (boxlang-web-support).
+
+
+2. PROPOSED SOLUTION
+--------------------
+
+What changes will be made and why?
+
+Split the work by what each attribute depends on.
+
+Core only (no web dependency, ready now):
+  - region: alias for cacheName; cacheName wins if both are passed.
+    ACF uses "region" for the same thing, and Cache.java already handles
+    aliases this way (id -> key).
+  - username, password, port, protocol: accepted and ignored as legacy CFML
+    compatibility attributes. In ACF they configured an HTTP request the
+    server made to its own page; BoxLang does not cache pages that way.
+
+Core + web-support (after page caching is designed):
+  - useQueryString: put the request path, plus the query string when true,
+    into generated page cache keys so each URL variation is cached
+    separately.
+  - expireURL: with action="flush", clear only generated entries whose path
+    matches a wildcard pattern, using the existing WildcardFilter.
+  - web-support supplies the request path (cgi scope or an event).
+
+Related fix found during the investigation:
+  - web-support's clientcache/servercache handler listens on the event
+    onComponentInvocation, but core announces onCacheComponentAction, so the
+    handler likely never runs. This should be wired correctly before page
+    caching is built on top of it.
+
+
+3. IMPLEMENTATION STEPS
+-----------------------
+
+Step 1 - region and legacy attributes (core, Cache.java)
+  - In _invoke(): if cacheName is null, use the region attribute.
+  - Group username, password, port, protocol under a "Legacy CFML
+    compatibility attributes - accepted but not used" comment.
+  - Document all five in the Javadoc above _invoke().
+
+Step 2 - Fix the event wiring (core or web-support, maintainers to choose)
+  - Rename WebRequest.onComponentInvocation to onCacheComponentAction, or
+    have core announce onComponentInvocation.
+
+Step 3 - Design page caching (core + web-support)
+  - Decide how a cached page is identified, whether its URL is stored in the
+    key or in entry metadata, and how a full response is captured and
+    replayed.
+
+Step 4 - useQueryString (core + web-support)
+  - Generated keys become BL_TEMPLATE_<path>[?query]|<hash>.
+  - Path comes from cgi.script_name and cgi.query_string.
+  - Outside a web request, keys stay exactly as they are today.
+
+Step 5 - expireURL (core, Cache.java, case FLUSH)
+  - clearAll( new WildcardFilter( "BL_TEMPLATE_" + expireURL + "*" ) )
+
+Step 6 - Documentation
+  - Update the @attribute Javadoc lines and remove the
+    "TODO: These are specfic to web connectivity..." comment.
+
+Steps 1, 4 (core side) and 5 are prototyped on the team branch above.
+
+
+4. VALIDATION PLAN
+------------------
+
+Tests to add/update
+  Core - src/test/java/ortus/boxlang/runtime/components/cache/CacheTest.java
+  (prototyped on the team branch):
+    - testRegionAttribute: put/get with region stores in the named cache
+    - testCacheNameBeatsRegion: cacheName wins when both are passed
+    - testLegacyAttributesIgnored: legacy attributes do not break put/get
+    - testUseQueryStringOutsideWebRequest: content caching unchanged
+      outside a web request
+    - testExpireURL: flush removes only entries matching the pattern
+  web-support (to add, using MockHTTPExchange / BaseWebTest):
+    - useQueryString true vs false with ?id=1 and ?id=2
+    - clientcache / servercache set the Cache-Control header
+
+Verification steps
+  1. ./gradlew spotlessApply
+  2. ./gradlew test --tests "*CacheTest*", then the full ./gradlew test
+  3. Build the core jar locally and run web-support's tests against it
+  4. Manual check in a web app: load page.cfm?id=1 and ?id=2 with
+     useQueryString on and off, then flush with expireURL
+
+Success criteria
+  - All seven attributes have defined, documented and tested behavior
+  - All existing cache tests still pass
+  - Generated keys are unchanged outside a web request
+  - Behavior matches the Adobe ColdFusion cfcache reference
+  - Maintainers approve the core / web-support split

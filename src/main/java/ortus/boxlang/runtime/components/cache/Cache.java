@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.cache.filters.WildcardFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
@@ -37,12 +38,14 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( description = "Manage cached data with get, put, and delete operations", allowsBody = true )
@@ -124,6 +127,7 @@ public class Cache extends Component {
 		    new Attribute( Key.value, "any" ), // "value"
 		    new Attribute( Key._NAME, "any" ), // "variable or variable name"
 		    new Attribute( Key.cacheName, "string" ), // "true|false"
+		    new Attribute( Key.region, "string" ), // "alias for cacheName"
 		    new Attribute( Key.metadata, "struct" ), // "true|false"
 		    new Attribute( Key.directory, "string" ), // "directory path"
 		    new Attribute( Key.timespan, "double" ), // "decimal number of days">
@@ -132,55 +136,80 @@ public class Cache extends Component {
 		    new Attribute( Key.stripWhitespace, "boolean", false ), // "false|true"
 		    new Attribute( Key.throwOnError, "boolean", false ), // "false|true"
 		    new Attribute( Key.useCache, "boolean", true ), // "true|false"
-		    // TODO: These are specfic to web connectivity and will need to be implemented with the web runtime
-		    new Attribute( Key.expireURL, "string" ), // "wildcarded URL reference"
+		    // Legacy CFML compatibility attributes - accepted but not used
 		    new Attribute( Key.password, "string" ), // "password"
 		    new Attribute( Key.port, "integer" ), // "port number"
 		    new Attribute( Key.protocol, "string" ), // "http://|https://"
-		    new Attribute( Key.region, "string" ), // "region_name"
-		    new Attribute( Key.useQueryString, "boolean", false ), // "false|true"
 		    new Attribute( Key.username, "string" ), // "username"
-		    // TODO: Circle back and immplement find nearby checks for these variables - then make them part of the key
+		    // Page caching by URL - the request path is read from the CGI scope when
+		    // running in a web runtime
+		    new Attribute( Key.expireURL, "string" ), // "wildcarded URL reference"
+		    new Attribute( Key.useQueryString, "boolean", false ), // "false|true"
+		    // TODO: Circle back and implement find nearby checks for these variables - then
+		    // make them part of the key
 		    new Attribute( Key.dependsOn, "string" ),// "variable name list"
 		};
 	}
 
 	/**
-	 * Component which provides caching functionality, including content, individual entries, and HTTP headers
+	 * Component which provides caching functionality, including content, individual
+	 * entries, and HTTP headers
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
 	 *
-	 * @attribute.action The cache action - "flush", "clientcache", "servercache", "optimal", "content", "put", "get"
+	 * @attribute.action The cache action - "flush", "clientcache", "servercache",
+	 *                   "optimal", "content", "put", "get"
 	 *
-	 * @attribute.key Cache key - optional for GET, DELETE functions and when body content is present. If not provided, a unique identifier of the body
+	 * @attribute.key Cache key - optional for GET, DELETE functions and when body
+	 *                content is present. If not provided, a unique identifier of
+	 *                the body
 	 *                will provide the key
 	 *
 	 * @attribute.id Alias for key attribute
 	 *
-	 * @attribute.throw on error - when set to true will throw errors when CRUD actions on the cache fail
+	 * @attribute.throw on error - when set to true will throw errors when CRUD
+	 *                  actions on the cache fail
 	 *
-	 * @attribute.name - a variable name for the result of the cache action. Required for GET action
+	 * @attribute.name - a variable name for the result of the cache action.
+	 *                 Required for GET action
 	 *
 	 * @attribute.metadata - any additional metadata to store with the cache object
 	 *
 	 * @attribute.value - mandatory value for put action
 	 *
-	 * @attribute.cachename - optional cache name. If not provided the default cache will be used
+	 * @attribute.cachename - optional cache name. If not provided the default cache
+	 *                      will be used
 	 *
-	 * @attribute.timespan - The duration to cache the object, defaults to either the cache default or unlimited until a server restart
+	 * @attribute.region - Alias for cachename attribute (Adobe ColdFusion
+	 *                   compatibility)
 	 *
-	 * @attribute.idletime - The maximum idle time for an object to remain in the cache, defaults to the timeout
+	 * @attribute.timespan - The duration to cache the object, defaults to either
+	 *                     the cache default or unlimited until a server restart
 	 *
-	 * @attribute.directory - Optional directory attribute which implements a file storage cache
+	 * @attribute.idletime - The maximum idle time for an object to remain in the
+	 *                     cache, defaults to the timeout
 	 *
-	 * @attribute.expireUrl - GLOB pattern or regex this string is found in the URL, the cache object will be invalidated.
+	 * @attribute.directory - Optional directory attribute which implements a file
+	 *                      storage cache
+	 *
+	 * @attribute.expireUrl - Wildcard pattern (e.g. /products/*). With
+	 *                      action="flush", removes cached page content whose
+	 *                      request path matches
+	 *
+	 * @attribute.useQueryString - When true, the query string is included in
+	 *                           generated cache keys so each URL variation is
+	 *                           cached separately. Only applies in a web runtime
 	 *
 	 * @attribute.protocol - Legacy CFML attribute. Not implemented
 	 *
 	 * @attribute.port - Legacy CFML attributes. Not implemented
+	 * 
+	 * @attribute.username - Legacy CFML attributes. Not implemented
+	 * 
+	 * @attribute.password - Legacy CFML attributes. Not implemented
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
@@ -202,12 +231,16 @@ public class Cache extends Component {
 		    CacheAction.OPTIMAL,
 		    CacheAction.CONTENT,
 		    CacheAction.FLUSH,
-		    CacheAction.DELETE
-		);
+		    CacheAction.DELETE );
 		List<CacheAction>	keyRequiredActions	= List.of(
 		    CacheAction.GET,
-		    CacheAction.PUT
-		);
+		    CacheAction.PUT );
+
+		// "region" is Adobe ColdFusion's name for cacheName; cacheName takes precedence
+		// if both are passed
+		if ( cacheName == null && attributes.containsKey( Key.region ) ) {
+			cacheName = attributes.getAsString( Key.region );
+		}
 
 		if ( key == null && attributes.containsKey( Key.id ) ) {
 			key = attributes.getAsString( Key.id );
@@ -215,25 +248,28 @@ public class Cache extends Component {
 
 		if ( key == null && keyRequiredActions.contains( cacheAction ) ) {
 			throw new BoxRuntimeException(
-			    String.format( "An explict key attribute is required for the cache action [%s]", cacheAction.toString().toLowerCase() )
-			);
+			    String.format( "An explict key attribute is required for the cache action [%s]",
+			        cacheAction.toString().toLowerCase() ) );
 		}
 
-		String cacheKeyName = key != null
-		    ? key
-		    : CACHE_PREFIX + StringCaster.cast(
-		        runtime.getFunctionService().getGlobalFunction( Key.hash40 ).invoke(
-		            context,
-		            ArgumentsScope.of(
-		                Key.input, Struct.of(
-		                    Key.attributes, attributes,
-		                    Key.body, body
-		                )
-		            ),
-		            false,
-		            Key.hash40
-		        )
-		    );
+		String cacheKeyName;
+		if ( key != null ) {
+			cacheKeyName = key;
+		} else {
+			boolean	useQueryString	= BooleanCaster.cast( attributes.get( Key.useQueryString ) );
+			String	requestPath		= getRequestPath( context, useQueryString );
+			String	bodyHash		= StringCaster.cast(
+			    runtime.getFunctionService().getGlobalFunction( Key.hash40 ).invoke(
+			        context,
+			        ArgumentsScope.of(
+			            Key.input, Struct.of(
+			                Key.attributes, attributes,
+			                Key.body, body ) ),
+			        false,
+			        Key.hash40 ) );
+			// Format: BL_TEMPLATE_<path>|<hash> (path omitted outside of web requests)
+			cacheKeyName = CACHE_PREFIX + ( requestPath != null ? requestPath + "|" : "" ) + bodyHash;
+		}
 
 		if ( timespan == null && idleTime != null ) {
 			timespan = idleTime;
@@ -257,13 +293,12 @@ public class Cache extends Component {
 			    Key.attributes, attributes,
 			    Key.body, body,
 			    Key.executionState, executionState,
-			    Key.result, null
-			);
+			    Key.result, null );
 			interceptorService.announce( BoxEvent.ON_CACHE_COMPONENT_ACTION, interceptorArgs );
 			if ( interceptorArgs.get( Key.result ) == null ) {
 				throw new BoxRuntimeException(
-				    String.format( "The specified cache action [%s] is is not valid in the current runtime", cacheAction.toString().toLowerCase() )
-				);
+				    String.format( "The specified cache action [%s] is is not valid in the current runtime",
+				        cacheAction.toString().toLowerCase() ) );
 			}
 		} else {
 			if ( cacheName != null ) {
@@ -277,9 +312,7 @@ public class Cache extends Component {
 					    Struct.of(
 					        Key.objectStore, DEFAULT_FILE_STORE,
 					        Key.directory, cacheDirectory,
-					        Key.useLastAccessTimeouts, true
-					    )
-					);
+					        Key.useLastAccessTimeouts, true ) );
 				}
 				cacheProvider = context.getApplicationCache( directoryCacheKey );
 			} else {
@@ -294,7 +327,8 @@ public class Cache extends Component {
 			} else {
 
 				timeout = timespan != null
-				    ? Duration.ofSeconds( DoubleCaster.cast( DoubleCaster.cast( timespan ) * SECONDS_IN_DAY ).longValue() )
+				    ? Duration
+				        .ofSeconds( DoubleCaster.cast( DoubleCaster.cast( timespan ) * SECONDS_IN_DAY ).longValue() )
 				    : Duration.ofSeconds( 0l );
 			}
 
@@ -302,14 +336,16 @@ public class Cache extends Component {
 				lastAccessTimeout = castDuration;
 			} else {
 				lastAccessTimeout = idleTime != null
-				    ? Duration.ofSeconds( DoubleCaster.cast( DoubleCaster.cast( idleTime ) * SECONDS_IN_DAY ).longValue() )
+				    ? Duration
+				        .ofSeconds( DoubleCaster.cast( DoubleCaster.cast( idleTime ) * SECONDS_IN_DAY ).longValue() )
 				    : Duration.ofSeconds( 0l );
 			}
 
 			switch ( cacheAction ) {
 				case GET : {
 					if ( variable == null ) {
-						throw new BoxRuntimeException( "A variable name is required when specifying the cache action [get]" );
+						throw new BoxRuntimeException(
+						    "A variable name is required when specifying the cache action [get]" );
 					}
 					result = !throwOnError ? cacheProvider.getQuiet( cacheKeyName ) : cacheProvider.get( cacheKeyName );
 					break;
@@ -320,14 +356,14 @@ public class Cache extends Component {
 						    cacheKeyName,
 						    value == null ? processCacheBody( context, body ) : value,
 						    timeout,
-						    lastAccessTimeout
-						);
+						    lastAccessTimeout );
 					} catch ( AbortException e ) {
 						// Ignore aborts
 						throw e;
 					} catch ( Throwable e ) {
 						if ( throwOnError ) {
-							throw new BoxRuntimeException( "An error occurred while attempting to set the cache value", e );
+							throw new BoxRuntimeException( "An error occurred while attempting to set the cache value",
+							    e );
 						} else {
 							logger.warn( "An error occurred while attempting to flush the cache", e );
 						}
@@ -342,17 +378,20 @@ public class Cache extends Component {
 					    cacheKeyName,
 					    () -> value == null ? processCacheBody( context, body ) : value,
 					    timeout,
-					    lastAccessTimeout
-					);
+					    lastAccessTimeout );
 					break;
 				}
 				case FLUSH : {
+					String expireURL = attributes.getAsString( Key.expireURL );
 					if ( key != null ) {
 						if ( throwOnError ) {
 							cacheProvider.clear( key );
 						} else {
 							cacheProvider.clearQuiet( key );
 						}
+					} else if ( expireURL != null ) {
+						// Clear every auto-generated page cache entry whose URL matches the wildcard
+						cacheProvider.clearAll( new WildcardFilter( CACHE_PREFIX + expireURL + "*" ) );
 					} else {
 						try {
 							cacheProvider.clearAll();
@@ -361,7 +400,8 @@ public class Cache extends Component {
 							throw e;
 						} catch ( Throwable e ) {
 							if ( throwOnError ) {
-								throw new BoxRuntimeException( "An error occurred while attempting to flush the cache", e );
+								throw new BoxRuntimeException( "An error occurred while attempting to flush the cache",
+								    e );
 							} else {
 								logger.warn( "An error occurred while attempting to flush the cache", e );
 							}
@@ -371,7 +411,8 @@ public class Cache extends Component {
 				}
 				case DELETE : {
 					if ( key == null ) {
-						throw new BoxRuntimeException( "The cache method [delete] was specified but no key was provided for deletion" );
+						throw new BoxRuntimeException(
+						    "The cache method [delete] was specified but no key was provided for deletion" );
 					}
 					if ( throwOnError ) {
 						cacheProvider.clear( key );
@@ -382,7 +423,8 @@ public class Cache extends Component {
 				}
 				default : {
 					throw new BoxRuntimeException(
-					    String.format( "The cache action [%s] is unknown or is not implemented in this runtime", cacheAction.toString().toLowerCase() ) );
+					    String.format( "The cache action [%s] is unknown or is not implemented in this runtime",
+					        cacheAction.toString().toLowerCase() ) );
 				}
 			}
 
@@ -404,11 +446,42 @@ public class Cache extends Component {
 			ExpressionInterpreter.setVariable(
 			    context,
 			    variable,
-			    result
-			);
+			    result );
 		}
 
 		return DEFAULT_RETURN;
+	}
+
+	/**
+	 * Returns the current request path (optionally including the query string),
+	 * or null when not running inside a web request.
+	 *
+	 * @param context            The current context
+	 * @param includeQueryString Whether to append the query string
+	 *
+	 * @return The request path or null
+	 */
+	private String getRequestPath( IBoxContext context, boolean includeQueryString ) {
+		IScope cgi;
+		try {
+			cgi = context.getScope( Key.of( "cgi" ) );
+		} catch ( ScopeNotFoundException e ) {
+			return null; // Not a web request
+		}
+
+		Object scriptName = cgi.get( Key.script_name );
+		if ( scriptName == null || StringCaster.cast( scriptName ).isEmpty() ) {
+			return null;
+		}
+		String path = StringCaster.cast( scriptName );
+
+		if ( includeQueryString ) {
+			Object queryString = cgi.get( Key.query_string );
+			if ( queryString != null && !StringCaster.cast( queryString ).isEmpty() ) {
+				path += "?" + StringCaster.cast( queryString );
+			}
+		}
+		return path;
 	}
 
 	/**
