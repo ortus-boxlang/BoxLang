@@ -68,11 +68,11 @@ class SchedulerTest {
 	@DisplayName( "It sizes its executor from the executor named by scheduler.executor" )
 	@Test
 	void testExecutorIsSizedFromConfig() {
-		var config = instance.getConfiguration();
+		var		config		= instance.getConfiguration();
 
-		Key executorKey = Key.of( config.scheduler.executor );
+		Key		executorKey	= Key.of( config.scheduler.executor );
 
-		Object previous = config.executors.get( executorKey );
+		Object	previous	= config.executors.get( executorKey );
 
 		// "threads" is the property name used in boxlang.json
 		config.executors.put( executorKey, new ExecutorConfig( config.scheduler.executor ).process( Struct.of( "type", "scheduled", "threads", 7 ) ) );
