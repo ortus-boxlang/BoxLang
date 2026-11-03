@@ -74,46 +74,56 @@ public class Replace extends BIF {
 		if ( obj == null ) {
 			obj = "";
 		}
-		String				scope		= arguments.getAsString( Key.scope ).toLowerCase();
-		CastAttempt<String>	castAttempt	= StringCaster.attempt( obj );
-		if ( scope.equals( "one" ) ) {
-			int idx = string.indexOf( substring1 );
-			if ( idx != -1 ) {
-				return castAttempt.wasSuccessful()
-				    ? string.substring( 0, idx ) + castAttempt.get() + string.substring( idx + substring1.length() )
+		String									scope				= arguments.getAsString( Key.scope ).toLowerCase();
+
+		// The replacement is either a plain string or a callable; work that out once up front
+		// instead of re-casting the same value on every match inside the loop.
+		CastAttempt<String>						replacementString	= StringCaster.attempt( obj );
+		ortus.boxlang.runtime.types.Function	replacementFunction	= replacementString.wasSuccessful() ? null : FunctionCaster.cast( obj );
+
+		switch ( scope ) {
+			case "one" -> {
+				int idx = string.indexOf( substring1 );
+				if ( idx == -1 ) {
+					return string;
+				}
+				return replacementString.wasSuccessful()
+				    ? string.substring( 0, idx ) + replacementString.get() + string.substring( idx + substring1.length() )
 				    : string.substring( 0, idx )
-				        + context.invokeFunction( FunctionCaster.cast( obj ),
+				        + context.invokeFunction( replacementFunction,
 				            new Object[] { string.substring( idx, idx + substring1.length() ), idx + 1, string } )
 				        + string.substring( idx + substring1.length() );
-			} else {
-				return string;
 			}
-		} else if ( scope.equals( "all" ) ) {
-			int	strLen	= string.length();
-			int	subLen	= substring1.length();
-			// Fast early-out: if the needle never appears, return the original string unchanged
-			if ( string.indexOf( substring1 ) == -1 ) {
-				return string;
-			}
-			StringBuilder	result	= new StringBuilder( strLen );
-			int				i		= 0;
-			while ( i < strLen ) {
-				if ( string.startsWith( substring1, i ) ) {
-					if ( castAttempt.wasSuccessful() ) {
-						result.append( castAttempt.get() );
-					} else {
-						result.append( context.invokeFunction( FunctionCaster.cast( obj ),
-						    new Object[] { string.substring( i, i + subLen ), i + 1, string } ) );
-					}
-					i += subLen;
-				} else {
-					result.append( string.charAt( i ) );
-					i++;
+			case "all" -> {
+				int	strLen	= string.length();
+				int	subLen	= substring1.length();
+				// Fast early-out: if the needle never appears, return the original string unchanged
+				if ( string.indexOf( substring1 ) == -1 ) {
+					return string;
 				}
+				String			replacement	= replacementString.wasSuccessful() ? replacementString.get() : null;
+				StringBuilder	result		= new StringBuilder( strLen );
+				int				i			= 0;
+				while ( i < strLen ) {
+					// If what's left of the target can't hold a full match, copy the tail in one shot and stop
+					if ( i + subLen > strLen ) {
+						result.append( string, i, strLen );
+						break;
+					}
+					if ( string.startsWith( substring1, i ) ) {
+						result.append( replacement != null
+						    ? replacement
+						    : context.invokeFunction( replacementFunction,
+						        new Object[] { string.substring( i, i + subLen ), i + 1, string } ) );
+						i += subLen;
+					} else {
+						result.append( string.charAt( i ) );
+						i++;
+					}
+				}
+				return result.toString();
 			}
-			return result.toString();
-		} else {
-			throw new BoxRuntimeException( "Invalid replacement scope: [" + scope + "]. Valid options are 'one' or 'all'." );
+			default -> throw new BoxRuntimeException( "Invalid replacement scope: [" + scope + "]. Valid options are 'one' or 'all'." );
 		}
 	}
 

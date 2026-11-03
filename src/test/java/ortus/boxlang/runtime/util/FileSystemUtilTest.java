@@ -18,16 +18,20 @@
 package ortus.boxlang.runtime.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import ortus.boxlang.runtime.BoxRuntime;
 
@@ -97,6 +101,39 @@ public class FileSystemUtilTest {
 		} finally {
 			Files.deleteIfExists( file );
 		}
+	}
+
+	@DisplayName( "pathExistsCaseInsensitive resolves the real case of every segment" )
+	@Test
+	void testPathExistsCaseInsensitive( @TempDir Path tempDir ) throws IOException {
+		Path file = Files.createDirectories( tempDir.resolve( "Models/Security" ) ).resolve( "Role.bx" );
+		Files.createFile( file );
+
+		assertThat( FileSystemUtil.pathExistsCaseInsensitive( file ) ).isEqualTo( file );
+		assertThat( FileSystemUtil.pathExistsCaseInsensitive( tempDir.resolve( "Models/Security/Nope.bx" ) ) ).isNull();
+		assertThat( FileSystemUtil.pathExistsCaseInsensitive( tempDir.resolve( "Models/Security/Role.bx/child" ) ) ).isNull();
+
+		assumeTrue( !Files.exists( tempDir.resolve( "models/security/role.bx" ) ), "Requires a case-sensitive file system" );
+		assertThat( FileSystemUtil.pathExistsCaseInsensitive( tempDir.resolve( "models/SECURITY/role.BX" ) ) ).isEqualTo( file );
+	}
+
+	@DisplayName( "pathExistsCaseInsensitive does not return a stale cached listing after a directory changes" )
+	@Test
+	void testPathExistsCaseInsensitiveSeesDirectoryChanges( @TempDir Path tempDir ) throws IOException {
+		Path	original	= Files.createFile( tempDir.resolve( "user.bx" ) );
+		Path	lookup		= tempDir.resolve( "USER.bx" );
+		assumeTrue( !Files.exists( lookup ), "Requires a case-sensitive file system" );
+
+		// Age the directory so its listing is cached
+		Files.setLastModifiedTime( tempDir, FileTime.fromMillis( System.currentTimeMillis() - 3_600_000 ) );
+		assertThat( FileSystemUtil.pathExistsCaseInsensitive( lookup ) ).isEqualTo( original );
+		assertThat( FileSystemUtil.pathExistsCaseInsensitive( tempDir.resolve( "OTHER.bx" ) ) ).isNull();
+
+		// Renaming and adding files changes the directory's last-modified time, which invalidates the listing
+		Path	renamed	= Files.move( original, tempDir.resolve( "User.bx" ) );
+		Path	other	= Files.createFile( tempDir.resolve( "Other.bx" ) );
+		assertThat( FileSystemUtil.pathExistsCaseInsensitive( lookup ) ).isEqualTo( renamed );
+		assertThat( FileSystemUtil.pathExistsCaseInsensitive( tempDir.resolve( "OTHER.bx" ) ) ).isEqualTo( other );
 	}
 
 }

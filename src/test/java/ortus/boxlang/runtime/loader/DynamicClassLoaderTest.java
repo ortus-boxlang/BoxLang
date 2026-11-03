@@ -31,6 +31,8 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -80,6 +82,27 @@ public class DynamicClassLoaderTest {
 			assertThat( dynamicClassLoader.getCacheKeys() ).contains( targetClass );
 		} finally {
 			dynamicClassLoader.close();
+		}
+	}
+
+	@ParameterizedTest
+	@ValueSource( strings = { "HelloWorld", "org.junit.jupiter.api.Test" } )
+	@DisplayName( "Load local and parent classes with a null thread context class loader" )
+	void testLoadClassWithNullThreadContextClassLoader( String className ) throws Exception {
+		URL[]		urls				= { Paths.get( "src/test/resources/libs/helloworld.jar" ).toAbsolutePath().toUri().toURL() };
+		Thread		thread				= Thread.currentThread();
+		ClassLoader	originalClassLoader	= thread.getContextClassLoader();
+
+		try ( DynamicClassLoader loader = new DynamicClassLoader( Key.of( "NullContextClassLoader" ), urls, getClass().getClassLoader(), false ) ) {
+			// PostgreSQL's SharedTimer temporarily clears the context class loader while
+			// initializing its query-timeout timer. Class loading must still work in that state.
+			thread.setContextClassLoader( null );
+			try {
+				Class<?> loadedClass = loader.loadClass( className );
+				assertThat( loadedClass.getName() ).isEqualTo( className );
+			} finally {
+				thread.setContextClassLoader( originalClassLoader );
+			}
 		}
 	}
 

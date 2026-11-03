@@ -96,6 +96,34 @@ public class CFTemplateTest {
 	}
 
 	@Test
+	public void testCustomTagWithNameAttribute() {
+		instance.getConfiguration().customComponentsDirectory.add( "src/test/java/TestCases/components" );
+		instance.executeSource(
+		    """
+		    <cfsavecontent variable="result">
+		          <cf_greet name="Brad" foo="bar">
+		       </cfsavecontent>
+		       """, context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "Hello, Brad!" );
+
+		instance.executeSource(
+		    """
+		    <cfsavecontent variable="result">
+		          <cf_greet name="Brad" foo="bar" attributeCollection="#{}#">
+		       </cfsavecontent>
+		       """, context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "Hello, Brad!" );
+
+		instance.executeSource(
+		    """
+		    <cfsavecontent variable="result">
+		          <cf_greet name="Brad" foo="bar" attributeCollection="#{ name : "Luis" }#">
+		       </cfsavecontent>
+		       """, context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "Hello, Luis!" );
+	}
+
+	@Test
 	public void testIfStatementElse() {
 		instance.executeSource(
 		    """

@@ -91,6 +91,7 @@ import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
@@ -191,6 +192,12 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static Set<String>						BIFReturnTypeFixSet			= new HashSet<>();
 
 	/**
+	 * BIF/member functions whose CFML "scope" argument accepts {@code once}, which BoxLang only
+	 * understands as {@code one}. All keys must be lowercase for consistent matching.
+	 */
+	private static final Set<String>				REPLACE_ONCE_SCOPE_METHODS	= Set.of( "replace", "replacenocase", "rereplace", "rereplacenocase" );
+
+	/**
 	 * Maps CF BIF names to BoxLang BIF names.
 	 * Used to rename function calls during transpilation.
 	 */
@@ -229,6 +236,15 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static final String						DUMP_TOP_ATTRIBUTE_NAME		= "top";
 	private static final String						DUMP_DEPTH_ATTRIBUTE_NAME	= "depth";
 
+	/**
+	 * Matches a delimited comment ({@code /* ... *&#47;}) so it can be stripped from a widened source-text slice.
+	 */
+	private static final Pattern					BLOCK_COMMENT_PATTERN		= Pattern.compile( "/\\*.*?\\*/", Pattern.DOTALL );
+
+	/**
+	 * Matches a line comment ({@code // ...}) so it can be stripped from a widened source-text slice.
+	 */
+	private static final Pattern					LINE_COMMENT_PATTERN		= Pattern.compile( "//[^\\r\\n]*" );
 	/**
 	 * Configuration keys for transpiler settings
 	 */
@@ -330,6 +346,28 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		BIFArgMap.put( "extract", Map.of( "target", "destination" ) );
 		BIFArgMap.put( "getsafehtml", Map.of( "inputstring", "string", "policyfile", "policy" ) );
 		BIFArgMap.put( "xmlparse", Map.of( "xmltext", "xml", "xmlstring", "xml", "parseroptions", "validator" ) );
+		/*
+		 * Lucee's invoke() accepts many aliases for its three arguments. BoxLang's invoke() BIF only knows
+		 * object / method / arguments, so rename any alias to the canonical name (keys are lowercase).
+		 * "object", "method" and "arguments" themselves already match, so they need no entry.
+		 * Map.ofEntries() is used because Map.of() is capped at 10 pairs.
+		 */
+		BIFArgMap.put( "invoke", Map.ofEntries(
+		    // object
+		    Map.entry( "cfcinstance", "object" ),
+		    Map.entry( "obj", "object" ),
+		    Map.entry( "value", "object" ),
+		    Map.entry( "variable", "object" ),
+		    // method
+		    Map.entry( "name", "method" ),
+		    Map.entry( "methodname", "method" ),
+		    Map.entry( "functionname", "method" ),
+		    Map.entry( "function", "method" ),
+		    // arguments
+		    Map.entry( "params", "arguments" ),
+		    Map.entry( "args", "arguments" ),
+		    Map.entry( "argumentcollection", "arguments" )
+		) );
 
 		/*
 		 * These are BIFs that return something useless like true, but would be much more useful to return the actual data structure.
@@ -754,15 +792,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 		// swap "once" for "one"
 		// Only handling position args for now. We can add named arg support later if needed.
-		if ( ( name.equals( "replacenocase" ) || name.equals( "replace" ) || name.equals( "rereplace" ) || name.equals( "rereplacenocase" ) )
-		    && node.getArguments().size() > 3
-		    && node.getArguments().get( 0 ).getName() == null ) {
-			if ( node.getArguments().get( 3 ).getValue() instanceof BoxStringLiteral bsl ) {
-				String val = bsl.getValue().toLowerCase();
-				if ( val.equals( "once" ) ) {
-					bsl.setValue( "one" );
-				}
-			}
+		// The string is argument 0, so the scope is argument 3 in the BIF form
+		if ( REPLACE_ONCE_SCOPE_METHODS.contains( name ) ) {
+			transpileReplaceOnceScope( node.getArguments(), 3 );
 		}
 
 		// If second arg (positional) or "mask" arg (named) is a BoxIntegerLiteral or BoxDecimalLiteral, force it to a string literal with the original text
@@ -778,15 +810,12 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				arg = node.getArguments().get( 1 );
 			}
 			if ( arg != null && ( arg.getValue() instanceof BoxIntegerLiteral || arg.getValue() instanceof BoxDecimalLiteral ) ) {
-				// Favor original text, as our parser strips leading zeros in the AST
-				String originalText = arg.getValue() instanceof BoxIntegerLiteral ? ( ( BoxIntegerLiteral ) arg.getValue() ).getSourceText()
-				    : ( ( BoxDecimalLiteral ) arg.getValue() ).getSourceText();
-				// If this AST has no source text, fall back on the value
-				if ( originalText == null ) {
-					originalText = arg.getValue() instanceof BoxIntegerLiteral ? ( ( BoxIntegerLiteral ) arg.getValue() ).getValue()
-					    : ( ( BoxDecimalLiteral ) arg.getValue() ).getValue();
-				}
-				arg.setValue( new BoxStringLiteral( originalText, arg.getValue().getPosition(), "\"" + originalText + "\"" ) );
+				BoxExpression	literal			= arg.getValue();
+				// Favor the literal's ORIGINAL source text, as the parser strips leading zeros
+				// from the value (e.g. the mask `000.000` must stay `000.000`). See
+				// `getOriginalLiteralText` for why the widened `#...#` source text is post-processed.
+				String			originalText	= getOriginalLiteralText( literal );
+				arg.setValue( new BoxStringLiteral( originalText, literal.getPosition(), "\"" + originalText + "\"" ) );
 			}
 		}
 
@@ -816,6 +845,8 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 *
 	 * Currently handles:
 	 * - listAppend() member function: defaults includeEmptyFields to true (CF-compat)
+	 * - replace()/replaceNoCase()/reReplace()/reReplaceNoCase() member functions: swaps the CFML
+	 * "once" scope for BoxLang's "one"
 	 *
 	 * @param node The BoxMethodInvocation node to transform
 	 *
@@ -829,8 +860,33 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			if ( name.equals( "listappend" ) ) {
 				return transpileListAppend( node );
 			}
+			// swap "once" for "one"
+			// Only handling position args for now. We can add named arg support later if needed.
+			// The receiver IS the string, so the scope shifts down to argument 2
+			if ( REPLACE_ONCE_SCOPE_METHODS.contains( name ) ) {
+				transpileReplaceOnceScope( node.getArguments(), 2 );
+			}
 		}
 		return super.visit( node );
+	}
+
+	/**
+	 * Swaps the CFML {@code once} scope for BoxLang's {@code one} on a replace family call.
+	 * <p>
+	 * {@code replace()}, {@code replaceNoCase()}, {@code reReplace()} and {@code reReplaceNoCase()}
+	 * take the scope as the 4th argument in BIF form, but the 3rd in member form since the receiver
+	 * supplies the string. Only positional args are handled.
+	 *
+	 * @param args       The mutable argument list of the call
+	 * @param scopeIndex The index of the scope argument, or beyond the list size when it was omitted
+	 */
+	private void transpileReplaceOnceScope( List<BoxArgument> args, int scopeIndex ) {
+		if ( args.size() <= scopeIndex || args.get( 0 ).getName() != null ) {
+			return;
+		}
+		if ( args.get( scopeIndex ).getValue() instanceof BoxStringLiteral bsl && bsl.getValue().equalsIgnoreCase( "once" ) ) {
+			bsl.setValue( "one" );
+		}
 	}
 
 	/**
@@ -843,6 +899,89 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 */
 	private BoxExpression transpileDumpTopToDepth( BoxExpression value ) {
 		return new BoxBinaryOperation( value, BoxBinaryOperator.Minus, new BoxIntegerLiteral( "1", null, "1" ), null, null );
+	}
+
+	/**
+	 * Recover the original MASK text of a numeric literal used as a {@code numberFormat()} mask.
+	 * <p>
+	 * Works purely off the literal node's OWN {@link BoxNode#getSourceText()} — never the whole file.
+	 * {@code visitExprOutString} WIDENS that field to a RAW character-stream slice covering a whole
+	 * {@code #...#} wrapper, and that slice also swallows hidden-channel trivia sitting inside it. So a
+	 * boxed mask such as {@code #/*note*&#47;000.000#} would otherwise become the mask
+	 * {@code /*note*&#47;000.000}, and {@code #} is itself a digit placeholder in a mask. Stripping the
+	 * comments, then the pounds, then trimming leaves exactly the numeric token — which is what a mask
+	 * needs (leading zeros preserved, no wrapper, no comment).
+	 * </p>
+	 * <p>
+	 * ALL comment forms the lexers accept are stripped: Java-style {@code /* *&#47;} and {@code //}, plus
+	 * the CFML template comment {@code <!--- --->} (which NESTS, so it is scanned rather than regexed).
+	 * </p>
+	 *
+	 * @param literal the numeric literal whose original mask text is required
+	 *
+	 * @return the literal's original mask text, or its typed value when it has no source text
+	 */
+	private String getOriginalLiteralText( BoxExpression literal ) {
+		String sourceText = literal.getSourceText();
+
+		if ( sourceText != null ) {
+			// Strip comments FIRST (a comment may itself contain a `#`), then the `#...#` wrapper.
+			sourceText	= stripCfmlComments( sourceText );
+			sourceText	= BLOCK_COMMENT_PATTERN.matcher( sourceText ).replaceAll( "" );
+			sourceText	= LINE_COMMENT_PATTERN.matcher( sourceText ).replaceAll( "" );
+			if ( sourceText.length() >= 2 && sourceText.startsWith( "#" ) && sourceText.endsWith( "#" ) ) {
+				sourceText = sourceText.substring( 1, sourceText.length() - 1 );
+			}
+			return sourceText.trim();
+		}
+
+		// No source text at all (a programmatically built node) — fall back on the typed value.
+		if ( literal instanceof BoxIntegerLiteral integerLiteral ) {
+			return integerLiteral.getValue();
+		}
+		return ( ( BoxDecimalLiteral ) literal ).getValue();
+	}
+
+	/**
+	 * Remove CFML template comments ({@code <!--- ... --->}) from the given text.
+	 * <p>
+	 * CFML comments NEST (matching the lexer's {@code countModes} rules), which a regular expression
+	 * cannot balance, so this scans with a depth counter. Anything from an opener to its matching closer
+	 * is dropped; an unterminated opener drops the remainder (matching the parser's own behaviour).
+	 * </p>
+	 *
+	 * @param text the text to strip
+	 *
+	 * @return the text with all CFML comments removed
+	 */
+	private String stripCfmlComments( String text ) {
+		StringBuilder	out		= new StringBuilder( text.length() );
+		int				i		= 0;
+		int				length	= text.length();
+
+		while ( i < length ) {
+			if ( text.startsWith( "<!---", i ) ) {
+				// Consume to the matching closer, honouring nesting.
+				int depth = 1;
+				i += 5;
+				while ( i < length && depth > 0 ) {
+					if ( text.startsWith( "<!---", i ) ) {
+						depth++;
+						i += 5;
+					} else if ( text.startsWith( "--->", i ) ) {
+						depth--;
+						i += 4;
+					} else {
+						i++;
+					}
+				}
+				continue;
+			}
+			out.append( text.charAt( i ) );
+			i++;
+		}
+
+		return out.toString();
 	}
 
 	private BoxNode transpileListAppend( BoxFunctionInvocation node ) {
@@ -936,7 +1075,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 */
 	private String replaceIdentifiersInString( String input, String oldValue, String newValue ) {
 		// Quick smoke test to avoid regex
-		if ( !input.toLowerCase().contains( oldValue.toLowerCase() ) ) {
+		if ( !StringUtil.containsIgnoreCase( input, oldValue ) ) {
 			return input;
 		}
 		String pattern = "(?i)\\b" + Pattern.quote( oldValue ) + "\\b";
@@ -1713,12 +1852,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 *      Key behaviors:
 	 *      - Only merges if mergeDocsIntoAnnotations configuration is enabled
 	 *      - Skips "hint" annotations (handled separately)
+	 *      - Skips "return" because it is a keyword the parser rejects as an annotation; it stays in the docblock
 	 *      - Avoids overriding existing formal annotations
 	 *      - Trims whitespace from string values and converts empty strings to null
 	 *
 	 *      Examples:
 	 *      - @param name "User name" becomes a formal annotation
-	 *      - @return "Generated user ID" becomes a return annotation
+	 *      - @return "Generated user ID" stays in the docblock only
 	 *      - @Deprecated "Use newMethod instead" becomes a deprecated annotation
 	 *
 	 * @param annotations   The existing formal annotations list to merge into
@@ -1731,8 +1871,10 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		Set<String> existingAnnotations = annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue ).map( k -> k.toLowerCase() )
 		    .collect( Collectors.toSet() );
 		for ( BoxDocumentationAnnotation doc : documentation ) {
-			// Don't override existing annotations, and don't copy hint
-			if ( !doc.getKey().getValue().equalsIgnoreCase( "hint" ) && !existingAnnotations.contains( doc.getKey().getValue().toLowerCase() ) ) {
+			// Don't override existing annotations, and don't copy hint or return (a keyword, so not a valid annotation name)
+			String docKey = doc.getKey().getValue();
+			if ( !docKey.equalsIgnoreCase( "hint" ) && !docKey.equalsIgnoreCase( "return" )
+			    && !existingAnnotations.contains( doc.getKey().getValue().toLowerCase() ) ) {
 				BoxExpression value = doc.getValue();
 				if ( value instanceof BoxStringLiteral bsl ) {
 					bsl.setValue( bsl.getValue().trim() );

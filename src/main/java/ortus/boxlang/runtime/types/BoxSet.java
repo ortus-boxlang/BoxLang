@@ -29,6 +29,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.dynamic.casters.SetCaster;
@@ -153,7 +154,8 @@ public class BoxSet implements Set<Object>, IType, IListenable<BoxSet>, Serializ
 		this.caseSensitive		= caseSensitive;
 		Set<Object> raw = switch ( this.type ) {
 			case LINKED -> new LinkedHashSet<>();
-			case SORTED -> new TreeSet<>( ( a, b ) -> Compare.invoke( unwrap( a ), unwrap( b ) ) );
+			case SORTED -> new TreeSet<>(
+			    ( a, b ) -> Compare.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), unwrap( a ), unwrap( b ) ) );
 			default -> new HashSet<>();
 		};
 		this.wrapped = isSynchronized ? Collections.synchronizedSet( raw ) : raw;

@@ -43,6 +43,8 @@ import org.objectweb.asm.tree.MethodNode;
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.interop.MethodRecord;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -334,6 +336,19 @@ public class DiskClassLoader extends URLClassLoader {
 	 */
 	@Override
 	protected synchronized Class<?> findClass( String name ) throws ClassNotFoundException {
+		// This loader only JIT-compiles BoxLang classes. Anything else reaching this point was not found
+		// by our parent chain, e.g. a Java super class of a generated class supplied by a module JAR or by
+		// the runtime `lib` folder. Ask the runtime's Java resolver (every module class loader, then the
+		// request/runtime class loader) rather than compiling a Java class name as BoxLang.
+		if ( !name.startsWith( "boxgenerated." ) ) {
+			Class<?> resolved = resolveNonBoxLangClass( name );
+			if ( resolved != null ) {
+				return resolved;
+			}
+			throw new ClassNotFoundException(
+			    "The class [" + name + "] was not found in this loader, its parent chain, or the runtime/module class loaders." );
+		}
+
 		Path			diskPath		= generateDiskPath( name );
 		// JIT compile
 		String			baseName		= IBoxpiler.getBaseFQN( name );
@@ -373,6 +388,33 @@ public class DiskClassLoader extends URLClassLoader {
 			throw new ClassNotFoundException( "Unable to read class file from disk", e );
 		}
 		return defineClass( name, bytes );
+	}
+
+	/**
+	 * Resolve a plain Java class through the runtime's Java resolver, which searches every registered
+	 * module class loader and then the request/runtime class loader.
+	 * <p>
+	 * Generated BoxLang classes must be able to extend Java classes which are only visible to those
+	 * loaders (a JAR in a module's {@code libs} folder, or in the runtime {@code lib} folder). The JVM
+	 * resolves such a super class through <em>this</em> class loader, which is parented to the boxpiler's
+	 * class loader and therefore blind to them, so we delegate to the same resolution chain used by
+	 * {@code createObject( "java", ... )}.
+	 *
+	 * @param name The fully qualified Java class name
+	 *
+	 * @return The resolved class, or null if no resolver could find it
+	 */
+	private Class<?> resolveNonBoxLangClass( String name ) {
+		IBoxContext context = RequestBoxContext.getCurrent();
+		if ( context == null ) {
+			context = BoxRuntime.getInstance().getRuntimeContext();
+		}
+		return BoxRuntime.getInstance()
+		    .getClassLocator()
+		    .getJavaResolver()
+		    .resolve( context, name, List.of() )
+		    .map( ClassLocation::clazz )
+		    .orElse( null );
 	}
 
 	/**

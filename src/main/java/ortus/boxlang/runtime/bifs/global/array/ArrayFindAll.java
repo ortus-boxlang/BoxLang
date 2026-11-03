@@ -75,7 +75,7 @@ public class ArrayFindAll extends BIF {
 			return i -> BooleanCaster.cast( context.invokeFunction( functionValue, new Object[] { actualArray.get( i ) } ) );
 		}
 
-		return i -> EqualsEquals.invoke( actualArray.get( i ), value, caseSensitive ) || actualArray.get( i ).equals( value );
+		return i -> EqualsEquals.invoke( context, actualArray.get( i ), value, caseSensitive ) || actualArray.get( i ).equals( value );
 	}
 
 	private boolean isCaseSensitive( Key functionName ) {

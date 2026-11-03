@@ -146,7 +146,7 @@ public class HTTPSSETest {
 		// @formatter:off
 		instance.executeSource(
 		    String.format( """
-				bx:http url="%s/sse-stream"
+				bx:http url="%s/fake-sse"
 					method="GET"
 					result="result"
 					onChunk=( event, lastEventId, httpResult, httpClient, rawResponse ) => {

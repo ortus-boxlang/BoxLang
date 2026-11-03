@@ -1,0 +1,144 @@
+// =============================================================================
+// HeatmapShowcase.bxs — a PURPOSE-BUILT profiler sample designed to light up the
+// heat maps: MANY spans spread across the colour range, so the three exports
+// (total time, per-run, count) each show a clear gradient and tell a different
+// story. Run it, then open the -heat-* HTML views.
+//
+// Scenarios exercised (see the [TAG] comments on each section):
+//   [TIME]    a ladder of one-shot spans, each slower -> different shades
+//   [COUNT]   cheap spans that run MANY times -> gradient on COUNT, bare on TIME
+//   [BOTH]    expensive AND repeated -> dark on TIME and COUNT
+//   [PERRUN]  rarely called but costly per call -> stands out on PER-RUN only
+//   [FLOOR]   under 50ms / <= 5 runs -> stays barely tinted ("basically nothing")
+//   [DEEP]    a 4-deep call chain -> inclusive ladder
+//   [MISSED]  never runs -> uncolored in the code view
+// =============================================================================
+
+// --- [TIME] one-shot ladder: each line is slower than the last, so each gets a
+// progressively darker shade on the TOTAL TIME map (all count == 1).
+sleep( 60 );
+sleep( 150 );
+sleep( 300 );
+sleep( 600 );
+
+// --- [COUNT] a cheap function called in loops of growing size. Its call spans are
+// near-zero TIME (barely tinted on total time) but light up the COUNT map.
+function tick() {}
+for( i = 1; i <= 8; i++ ) {
+    tick();
+}
+for( i = 1; i <= 40; i++ ) {
+    tick();
+}
+for( i = 1; i <= 300; i++ ) {
+    tick();
+}
+
+// --- [BOTH] expensive AND repeated (10 x ~90ms): dark on TOTAL TIME and COUNT.
+function napper() {
+    sleep( 90 );
+}
+for( i = 1; i <= 10; i++ ) {
+    napper();
+}
+
+// --- [PERRUN] called only 4 times but each call is costly (4 x 120ms): stands out
+// on the PER-RUN map while its low count keeps it modest on the COUNT map.
+function costly() {
+    sleep( 120 );
+}
+for( i = 1; i <= 4; i++ ) {
+    costly();
+}
+
+// --- [FLOOR] a one-shot span under 50ms: stays barely tinted on every map.
+sleep( 12 );
+
+// --- [DEEP] a 4-deep call chain: inclusive time forms a monotonic ladder.
+function f4() {
+    sleep( 100 );
+}
+function f3() {
+    sleep( 100 );
+    f4();
+}
+function f2() {
+    sleep( 100 );
+    f3();
+}
+function f1() {
+    sleep( 100 );
+    f2();
+}
+f1();
+
+// --- Recursion: fixed depth, small sleep each level.
+function recurse( n ) {
+    sleep( 55 );
+    if( n > 0 ) {
+        recurse( n - 1 );
+    }
+}
+recurse( 3 );
+
+// --- Cross-class call graph: inclusive time crosses class boundaries.
+class Worker {
+    function run( helper ) {
+        sleep( 65 );
+        helper.assist();
+    }
+    function assist() {
+        sleep( 95 );
+    }
+}
+w = new Worker();
+w.run( w );
+
+// --- A conditional where only one side runs (the other side stays missed).
+if( w != null ) {
+    ranBranch = true;
+} else {
+    skippedBranch = true;
+}
+
+// --- [MISSED] never called -> its spans stay uncolored in the code view.
+function ghost() {
+    sleep( 800 );
+    z = 1;
+}
+
+for( i in 1..5000 ) {
+    // This line will count for 5 seconds, but runs 5,000 times, so the per-run time is still tiny.
+    sleep( 1 );
+}
+
+getData1 = ()->sleep(100);
+getData2 = ()->sleep(200);
+getData3 = ()->sleep(300);
+processData = (data1, data2, data3)->sleep(100)
+
+processData( getData1(), getData2(), getData3() );
+
+processData(
+    getData1(),
+    getData2(),
+    getData3()
+);
+
+```
+    <bx:component name="customTag" attr="value" attr2="#sleep( 100 )#" attr3="#getData2()#">
+
+    <bx:component
+        name="customTag"
+        attr="value"
+        attr2="#sleep( 100 )#"
+        attr3="#getData2()#">
+
+        
+    <bx:_customTag attr="value" attr2="#sleep( 100 )#" attr3="#getData2()#">
+
+    <bx:_customTag
+        attr="value"
+        attr2="#sleep( 100 )#"
+        attr3="#getData2()#">
+```

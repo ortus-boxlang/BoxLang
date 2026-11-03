@@ -13,8 +13,10 @@ on:
       - "releases/**"
 
 #Cancel running builds if another push to branch is made while this build is running
+#The group is keyed on the branch name for both `push` and `pull_request` events, so a push to a PR branch
+#does not run twice: the pull_request run cancels the push run.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:

@@ -22,14 +22,18 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.UUID;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -193,6 +197,83 @@ public class ConnectionManagerTest {
 		assertThat( datasource.getConfiguration().isOnTheFly() ).isTrue();
 	}
 
+	@DisplayName( "It can get a datasource on the fly with a custom name prefix" )
+	@Test
+	public void testGetDatasourceOnTheFlyWithCustomPrefix() {
+
+		DataSource datasource = manager.getOnTheFlyDataSource(
+		    Struct.of(
+		        "driver", "derby",
+		        "database", "myDB",
+		        "connectionString", "jdbc:derby:memory:myDB;create=true"
+		    ),
+		    DatasourceConfig.getOnTheFlyUserPrefix( "myDB", "jdoe" )
+		);
+
+		assertThat( datasource ).isNotNull();
+		assertThat( datasource.getConfiguration().isOnTheFly() ).isTrue();
+
+		// The name should identify the source datasource and the credential override at a glance
+		String name = datasource.getUniqueName().getName();
+		assertThat( name ).startsWith( "myDB_user_jdoe_" );
+		assertThat( name.substring( "myDB_user_jdoe_".length() ) ).matches( "\\d+" );
+		assertThat( instance.getDataSourceService().getNames() ).asList().contains( name );
+	}
+
+	@DisplayName( "It names an on the fly datasource when username/password overrides a named datasource" )
+	@Test
+	public void testGetDatasourceByNameWithUsernamePasswordOverride() {
+
+		// Set up a named datasource
+		instance.getConfiguration().datasources.put(
+		    Key.of( "overrideTarget" ),
+		    JDBCTestUtils.buildDatasourceConfig( "overrideTarget" )
+		);
+
+		// Request it with a username/password override, which produces an ad-hoc datasource
+		DataSource datasource = manager.getDataSource(
+		    new QueryOptions( Struct.of(
+		        "datasource", "overrideTarget",
+		        "username", "jdoe",
+		        "password", "secret"
+		    ) )
+		);
+
+		assertThat( datasource ).isNotNull();
+		assertThat( datasource.getConfiguration().isOnTheFly() ).isTrue();
+
+		String	name		= datasource.getUniqueName().getName();
+		String	expected	= DatasourceConfig.getOnTheFlyUserPrefix( "overrideTarget", "jdoe" );
+
+		assertThat( name ).startsWith( expected );
+		assertThat( name.substring( expected.length() ) ).matches( "\\d+" );
+		// The original named datasource must be left untouched
+		assertThat( manager.getDatasource( Key.of( "overrideTarget" ) ).getConfiguration().isOnTheFly() ).isFalse();
+		// The ad-hoc name must not use the generic on the fly prefix
+		assertThat( name ).doesNotContain( DatasourceConfig.ON_THE_FLY_PREFIX );
+	}
+
+	@DisplayName( "It reuses the same ad-hoc datasource for the same named datasource and credentials" )
+	@Test
+	public void testGetDatasourceByNameWithUsernamePasswordOverrideIsCached() {
+		instance.getConfiguration().datasources.put(
+		    Key.of( "overrideCached" ),
+		    JDBCTestUtils.buildDatasourceConfig( "overrideCached" )
+		);
+
+		IStruct		options	= Struct.of(
+		    "datasource", "overrideCached",
+		    "username", "jdoe",
+		    "password", "secret"
+		);
+
+		DataSource	first	= manager.getDataSource( new QueryOptions( options ) );
+		DataSource	second	= manager.getDataSource( new QueryOptions( options ) );
+
+		assertThat( first.getUniqueName() ).isEqualTo( second.getUniqueName() );
+		assertThat( first ).isSameInstanceAs( second );
+	}
+
 	@DisplayName( "It can register a datasource of key name and properties struct" )
 	@Test
 	public void testRegisterKeyName() {
@@ -207,6 +288,57 @@ public class ConnectionManagerTest {
 		String dsName = datasource.getUniqueName().toString();
 		assertTrue( dsName.contains( "_KeyNameTest" ) );
 		assertFalse( dsName.contains( "unnamed_" ) );
+	}
+
+	@DisplayName( "Connection Handling: a connection acquired for a datasource outside the transaction is released back to the pool" )
+	@Test
+	public void testNonTransactionalConnectionReleasedInsideTransaction() {
+		DataSource	dsA	= JDBCTestUtils.buildDatasource( "txnDsA_" + UUID.randomUUID() );
+		DataSource	dsB	= JDBCTestUtils.buildDatasource( "txnDsB_" + UUID.randomUUID() );
+
+		try {
+			manager.beginTransaction( dsA );
+
+			// A query against a different datasource gets its own pooled connection...
+			BoxConnection connection = manager.getBoxConnection( dsB );
+			assertThat( dsB.getPoolStats().getAsInteger( Key.activeConnections ) ).isEqualTo( 1 );
+
+			// ... and that connection must go back to the pool even though a transaction is in flight
+			assertThat( manager.releaseConnection( connection ) ).isTrue();
+			assertThat( dsB.getPoolStats().getAsInteger( Key.activeConnections ) ).isEqualTo( 0 );
+
+			// The transaction's own connection must still be left alone for the transaction to manage
+			BoxConnection transactionConnection = manager.getBoxConnection( dsA );
+			assertThat( dsA.getPoolStats().getAsInteger( Key.activeConnections ) ).isEqualTo( 1 );
+			assertThat( manager.releaseConnection( transactionConnection ) ).isFalse();
+			assertThat( dsA.getPoolStats().getAsInteger( Key.activeConnections ) ).isEqualTo( 1 );
+
+			// ... and released once the transaction ends
+			manager.endTransaction();
+			assertThat( dsA.getPoolStats().getAsInteger( Key.activeConnections ) ).isEqualTo( 0 );
+		} finally {
+			dsA.shutdown();
+			dsB.shutdown();
+		}
+	}
+
+	@DisplayName( "Connection Handling: a failure ending a child transaction does not abandon the parent transaction" )
+	@Test
+	public void testShutdownContinuesAfterChildTransactionFailure() throws Exception {
+		// A parent transaction whose savepoint creation - and thus the child's end() - always fails
+		ITransaction parent = Mockito.mock( ITransaction.class );
+		Mockito.when( parent.setSavepoint( Mockito.any() ) ).thenThrow( new DatabaseException( "Simulated child transaction failure" ) );
+		ChildTransaction		child				= new ChildTransaction( parent );
+
+		// beginTransaction() cannot produce a failing child, so inject one directly
+		java.lang.reflect.Field	transactionField	= ConnectionManager.class.getDeclaredField( "transaction" );
+		transactionField.setAccessible( true );
+		transactionField.set( manager, child );
+
+		// Shutting down must not throw, and must unwind the child AND the remaining parent transaction
+		manager.shutdown();
+
+		assertThat( manager.isInTransaction() ).isFalse();
 	}
 
 }

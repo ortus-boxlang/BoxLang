@@ -1,0 +1,34 @@
+interface displayName="ProfilerInterface" {
+
+	static {
+		static.initializedAt = createDateTime( 2020, 1, 1 );
+		static.counter = 0;
+	}
+
+	static function bump() {
+		static.counter++;
+		return static.counter;
+	}
+
+	static function display() {
+		var x = 1 + 2;
+		return displayName;
+	}
+
+	// A DEFAULT method (non-static, with a body) — run on an implementing
+	// class's instance.
+	default function greet() {
+		var msg = "hello from interface";
+		return msg;
+	}
+
+	// A DEFAULT method we NEVER call — its body must stay RED (missed).
+	default function greetUnused() {
+		var unusedPrefix = "unused";
+		return unusedPrefix & "!";
+	}
+
+	// An ABSTRACT method — no body, so it has NO spans at all.
+	function abstractOnly();
+
+}

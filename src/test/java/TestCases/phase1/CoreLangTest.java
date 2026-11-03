@@ -1933,6 +1933,30 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testReturnPlus() {
+		instance.executeSource(
+		    """
+		       function foo() {
+		    	return +"4";
+		    }
+		    foo()
+		        """,
+		    context, BoxSourceType.BOXSCRIPT );
+	}
+
+	@Test
+	public void testReturnPlusCF() {
+		instance.executeSource(
+		    """
+		       function foo() {
+		    	return +"4";
+		    }
+		    foo()
+		        """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
 	public void testPrefixedIdentifierAsType() {
 		instance.executeSource(
 		    """
@@ -7026,4 +7050,153 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( 18 );
 	}
 
+	@Test
+	public void testNotInStructLiteral() {
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = {
+					// treated as not token
+					key : not false
+				};
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( Struct.of( "key", true ) );
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = {
+					// treated as not token
+					key : not isBoolean( false )
+				};
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( Struct.of( "key", false ) );
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+			not = "not string"
+				result = {
+					// treated as identifier
+					key : not
+				};
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( Struct.of( "key", "not string" ) );
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+			not = "not string"
+				result = {
+					// treated as identifier
+					key : not,
+					key2 : "value"
+				};
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( Struct.of( "key", "not string", "key2", "value" ) );
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+			not = "not string"
+				result = {
+					// treated as identifier
+					key : not & "!",
+				};
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( Struct.of( "key", "not string!" ) );
+
+	}
+
+	@Test
+	public void testNotInStructLiteralCF() {
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = {
+					// treated as not token
+					key : not false
+				};
+			""",
+		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( Struct.of( "key", true ) );
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = {
+					// treated as not token
+					key : not isBoolean( false )
+				};
+			""",
+		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( Struct.of( "key", false ) );
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+			not = "not string"
+				result = {
+					// treated as identifier
+					key : not
+				};
+			""",
+		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( Struct.of( "key", "not string" ) );
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+			not = "not string"
+				result = {
+					// treated as identifier
+					key : not,
+					key2 : "value"
+				};
+			""",
+		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( Struct.of( "key", "not string", "key2", "value" ) );
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+			not = "not string"
+				result = {
+					// treated as identifier
+					key : not & "!",
+				};
+			""",
+		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( Struct.of( "key", "not string!" ) );
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+			t = true
+				result = {
+					a: not t
+				};
+			""",
+		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( Struct.of( "a", false ) );
+
+	}
 }

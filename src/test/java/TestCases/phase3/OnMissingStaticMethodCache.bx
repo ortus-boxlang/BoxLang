@@ -1,0 +1,14 @@
+class {
+
+	static {
+		handlerCalls = 0
+	}
+
+	static function onMissingStaticMethod( string missingMethodName, struct missingMethodArguments ) {
+		static.handlerCalls++;
+		// Cache the method so later calls are normal static calls
+		structInsert( static, missingMethodName, ( value ) => "cached:" & value );
+		return "handler:" & missingMethodArguments[ 1 ];
+	}
+
+}

@@ -30,18 +30,23 @@ import java.nio.file.Path;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.NamedParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Random;
 import java.util.regex.Pattern;
 
@@ -79,66 +84,66 @@ public final class EncryptionUtil {
 	/**
 	 * The default secure random number instance
 	 */
-	private final static SecureRandom				secureRandom					= new SecureRandom();
+	private final static SecureRandom									secureRandom					= new SecureRandom();
 
 	/**
 	 * The default algorithm to use
 	 */
-	public static final String						DEFAULT_HASH_ALGORITHM			= "MD5";
+	public static final String											DEFAULT_HASH_ALGORITHM			= "MD5";
 
 	/**
 	 * Default encryption algorithm
 	 */
-	public static final String						DEFAULT_ENCRYPTION_ALGORITHM	= "AES";
+	public static final String											DEFAULT_ENCRYPTION_ALGORITHM	= "AES";
 
 	/**
 	 * Default encryption algorithm
 	 */
-	public static final String						DEFAULT_ENCRYPTION_ENCODING		= "UU";
+	public static final String											DEFAULT_ENCRYPTION_ENCODING		= "UU";
 
 	/**
 	 * Default key size
 	 */
-	public static final int							DEFAULT_ENCRYPTION_KEY_SIZE		= 256;
+	public static final int												DEFAULT_ENCRYPTION_KEY_SIZE		= 256;
 
 	/**
 	 * The default encoding to use
 	 */
-	public static final String						DEFAULT_CHARSET					= StandardCharsets.UTF_8.name();
+	public static final String											DEFAULT_CHARSET					= StandardCharsets.UTF_8.name();
 
 	/**
 	 * Default iterations to perform during encryption - the minimum recomended by NIST
 	 */
-	public final static int							DEFAULT_ENCRYPTION_ITERATIONS	= 1000;
+	public final static int												DEFAULT_ENCRYPTION_ITERATIONS	= 1000;
 
 	/**
 	 * The IV size required by FBMA algorithms
 	 */
-	public static final int							FBMA_IV_SIZE					= 16;
+	public static final int												FBMA_IV_SIZE					= 16;
 
 	/**
 	 * Base64 validation methods
 	 */
-	private static final String						BASE_64_REGEX_PATTERN			= "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$";
-	private static final Pattern					BASE_64_PATTERN					= Pattern.compile( BASE_64_REGEX_PATTERN );
+	private static final String											BASE_64_REGEX_PATTERN			= "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$";
+	private static final Pattern										BASE_64_PATTERN					= Pattern.compile( BASE_64_REGEX_PATTERN );
 
 	/**
 	 * Threadsafe instances of Random and Secure random instances which are used by the getRandom method
 	 */
-	private static ConcurrentHashMap<Key, Random>	randomStore						= new ConcurrentHashMap<Key, Random>();
+	private static ConcurrentHashMap<Key, Random>						randomStore						= new ConcurrentHashMap<Key, Random>();
 
 	/**
 	 * Quick 64 bit hash properties
 	 */
-	private static final long[]						byteTable						= generateHashLookupTable();
-	private static final long						HSTART							= 0xBB40E64DA205B064L;
-	private static final long						HMULT							= 7664345821815920749L;
+	private static final long[]											byteTable						= generateHashLookupTable();
+	private static final long											HSTART							= 0xBB40E64DA205B064L;
+	private static final long											HMULT							= 7664345821815920749L;
 
 	/**
 	 * Supported key algorithms
 	 * <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#keyfactory-algorithms">key factory algorithms</a>
 	 */
-	public static final IStruct						KEY_ALGORITHMS					= Struct.of(
+	public static final IStruct											KEY_ALGORITHMS					= Struct.of(
 	    Key.of( "AES" ), "AES",
 	    Key.of( "ARCFOUR" ), "ARCFOUR",
 	    Key.of( "Blowfish" ), "Blowfish",
@@ -158,10 +163,52 @@ public final class EncryptionUtil {
 	);
 
 	/**
+	 * Allowed key pair algorithms, mapped to the canonical JDK name. A Struct, so lookups are case-insensitive.
+	 */
+	public static final IStruct											KEY_PAIR_ALGORITHMS				= Struct.of(
+	    Key.of( "Ed25519" ), "Ed25519",
+	    Key.of( "Ed448" ), "Ed448",
+	    Key.of( "X25519" ), "X25519",
+	    Key.of( "X448" ), "X448",
+	    Key.of( "RSA" ), "RSA",
+	    Key.of( "EC" ), "EC"
+	);
+
+	/**
+	 * Allowed EC curves, mapped to the canonical JDK name. A Struct, so lookups are case-insensitive.
+	 */
+	public static final IStruct											EC_CURVES						= Struct.of(
+	    Key.of( "secp256r1" ), "secp256r1",
+	    Key.of( "secp384r1" ), "secp384r1",
+	    Key.of( "secp521r1" ), "secp521r1"
+	);
+	public static final List<Integer>									RSA_KEY_SIZES					= List.of( 2048, 3072, 4096 );
+	public static final int												DEFAULT_RSA_KEY_SIZE			= 2048;
+	public static final String											DEFAULT_EC_CURVE				= "secp256r1";
+
+	private static final String											PEM_PRIVATE_HEADER				= "-----BEGIN PRIVATE KEY-----\n";
+	private static final String											PEM_PRIVATE_FOOTER				= "\n-----END PRIVATE KEY-----\n";
+	private static final String											PEM_PUBLIC_HEADER				= "-----BEGIN PUBLIC KEY-----\n";
+	private static final String											PEM_PUBLIC_FOOTER				= "\n-----END PUBLIC KEY-----\n";
+	private static final int											PEM_LINE_LENGTH					= 64;
+	private static final byte[]											PEM_LINE_SEPARATOR				= { '\n' };
+	private static final String											ERR_KEY_PAIR_ALGORITHM			= "The key pair algorithm [%s] is not supported. Valid algorithms are: %s.";
+	private static final String											ERR_KEY_PAIR_KEYSIZE_ARG		= "The keySize argument only applies to RSA, not [%s].";
+	private static final String											ERR_KEY_PAIR_CURVE_ARG			= "The curve argument only applies to EC, not [%s].";
+	private static final String											ERR_KEY_PAIR_KEYSIZE			= "The RSA keySize [%d] is not supported. Valid sizes are: %s.";
+	private static final String											ERR_KEY_PAIR_CURVE				= "The EC curve [%s] is not supported. Valid curves are: %s.";
+	private static final String											ERR_KEY_PAIR_GENERATE			= "Could not generate a [%s] key pair.";
+
+	/**
+	 * Cache of initialized key pair generators, keyed by algorithm plus size or curve
+	 */
+	private static final ConcurrentHashMap<String, KeyPairGenerator>	keyPairGenerators				= new ConcurrentHashMap<>();
+
+	/**
 	 * URL Encoding properties
 	 */
-	public static final String						URL_SPACE						= "%20";
-	public static final String						URL_PLUS_REGEX					= "\\+";
+	public static final String											URL_SPACE						= "%20";
+	public static final String											URL_PLUS_REGEX					= "\\+";
 
 	/**
 	 * Performs a hash of an object using the default algorithm
@@ -539,6 +586,80 @@ public final class EncryptionUtil {
 	 */
 	public static SecretKey generateKey( String algorithm ) {
 		return generateKey( algorithm, null );
+	}
+
+	/**
+	 * Generates an asymmetric key pair. The JDK SecureRandom is supplemented with the runtime secret seed.
+	 * The private key is never logged.
+	 *
+	 * @param algorithm Ed25519, Ed448, X25519, X448, RSA or EC (case insensitive)
+	 * @param keySize   RSA only: 2048, 3072 or 4096. Null for the default.
+	 * @param curve     EC only: secp256r1, secp384r1 or secp521r1. Null for the default.
+	 *
+	 * @return A struct with algorithm, privateKey (base64 PKCS8 DER), publicKey (base64 X.509 SPKI DER), privatePem and publicPem
+	 */
+	public static IStruct generateKeyPair( String algorithm, Integer keySize, String curve ) {
+		Key		algorithmKey	= Key.of( algorithm == null ? "" : algorithm.trim() );
+		String	canonical		= ( String ) KEY_PAIR_ALGORITHMS.get( algorithmKey );
+		if ( canonical == null ) {
+			throw new BoxRuntimeException( String.format( ERR_KEY_PAIR_ALGORITHM, algorithm, String.join( ", ", KEY_PAIR_ALGORITHMS.getKeysAsStrings() ) ) );
+		}
+		if ( keySize != null && !canonical.equals( "RSA" ) ) {
+			throw new BoxRuntimeException( String.format( ERR_KEY_PAIR_KEYSIZE_ARG, canonical ) );
+		}
+		if ( curve != null && !canonical.equals( "EC" ) ) {
+			throw new BoxRuntimeException( String.format( ERR_KEY_PAIR_CURVE_ARG, canonical ) );
+		}
+		if ( keySize != null && !RSA_KEY_SIZES.contains( keySize ) ) {
+			throw new BoxRuntimeException( String.format( ERR_KEY_PAIR_KEYSIZE, keySize, RSA_KEY_SIZES ) );
+		}
+		String ecCurve = null;
+		if ( canonical.equals( "EC" ) ) {
+			ecCurve = ( String ) EC_CURVES.get( Key.of( curve == null ? DEFAULT_EC_CURVE : curve.trim() ) );
+			if ( ecCurve == null ) {
+				throw new BoxRuntimeException( String.format( ERR_KEY_PAIR_CURVE, curve, String.join( ", ", EC_CURVES.getKeysAsStrings() ) ) );
+			}
+		}
+
+		// Mix the runtime secret seed into the shared SecureRandom. setSeed only supplements the JDK's own entropy.
+		secureRandom.setSeed( BoxRuntime.getInstance().getConfiguration().security.getSecretSeed().getBytes( StandardCharsets.UTF_8 ) );
+
+		int					rsaSize		= keySize == null ? DEFAULT_RSA_KEY_SIZE : keySize;
+		String				cacheKey	= canonical + ( canonical.equals( "RSA" ) ? ":" + rsaSize : canonical.equals( "EC" ) ? ":" + ecCurve : "" );
+		String				finalCurve	= ecCurve;
+		KeyPairGenerator	generator	= keyPairGenerators.computeIfAbsent( cacheKey, k -> {
+											try {
+												KeyPairGenerator g = KeyPairGenerator.getInstance( canonical );
+												switch ( canonical ) {
+													case "RSA" :
+														g.initialize( rsaSize, secureRandom );
+														break;
+													case "EC" :
+														g.initialize( new ECGenParameterSpec( finalCurve ), secureRandom );
+														break;
+													default :
+														g.initialize( new NamedParameterSpec( canonical ), secureRandom );
+												}
+												return g;
+											} catch ( NoSuchAlgorithmException | InvalidAlgorithmParameterException e ) {
+												throw new BoxRuntimeException( String.format( ERR_KEY_PAIR_GENERATE, canonical ), e );
+											}
+										} );
+		KeyPair				pair;
+		// KeyPairGenerator is not documented as thread-safe
+		synchronized ( generator ) {
+			pair = generator.generateKeyPair();
+		}
+		byte[]			privateDer	= pair.getPrivate().getEncoded();
+		byte[]			publicDer	= pair.getPublic().getEncoded();
+		Base64.Encoder	pemEncoder	= Base64.getMimeEncoder( PEM_LINE_LENGTH, PEM_LINE_SEPARATOR );
+		return Struct.linkedOf(
+		    Key.algorithm, canonical,
+		    Key.privateKey, Base64.getEncoder().encodeToString( privateDer ),
+		    Key.publicKey, Base64.getEncoder().encodeToString( publicDer ),
+		    Key.privatePem, PEM_PRIVATE_HEADER + pemEncoder.encodeToString( privateDer ) + PEM_PRIVATE_FOOTER,
+		    Key.publicPem, PEM_PUBLIC_HEADER + pemEncoder.encodeToString( publicDer ) + PEM_PUBLIC_FOOTER
+		);
 	}
 
 	/**

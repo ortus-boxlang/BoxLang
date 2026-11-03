@@ -79,6 +79,7 @@ public class StructSort extends BIF {
 
 		if ( arguments.get( Key.callback ) == null ) {
 			return StructUtil.sort(
+			    context,
 			    target,
 			    StringCaster.cast( arguments.get( Key.sortType ) ),
 			    arguments.getAsString( Key.sortOrder ),

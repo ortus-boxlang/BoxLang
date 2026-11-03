@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.bifs.global.system;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.PrintStream;
 
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -126,6 +128,65 @@ public class PrintTest {
 		    """,
 		    context );
 		assertThat( new String( outContent.toByteArray() ) ).contains( "15852073" );
+	}
+
+	@Test
+	public void testMultipleArguments() {
+		context.getRequestContext().setOut( new PrintStream( outContent ) );
+		instance.executeSource( """
+		                        print("Name:", "Peter", 21, "Peter");
+		                        """, context );
+		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( String.join( " ", "Name:", "Peter", "21", "Peter" ) + "" );
+	}
+
+	@Test
+	public void testEmptyArguments() {
+		context.getRequestContext().setOut( new PrintStream( outContent ) );
+		instance.executeSource( """
+		                        print("", "A", "");
+		                        """, context );
+		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( " " + "A" + " " + "" );
+	}
+
+	@Test
+	public void testNamedMessage() {
+		context.getRequestContext().setOut( new PrintStream( outContent ) );
+		instance.executeSource( """
+		                        print(message="Hello");
+		                        """, context );
+		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( "Hello" + "" );
+	}
+
+	@Test
+	public void testJavaArrayAmongArguments() {
+		context.getRequestContext().setOut( new PrintStream( outContent ) );
+		instance.executeSource( """
+		                        print("bytes:", "abc".getBytes(), "end");
+		                        """, context );
+		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( String.join( " ", "bytes:", "[97, 98, 99]", "end" ) + "" );
+	}
+
+	@Test
+	public void testArgumentCollection() {
+		context.getRequestContext().setOut( new PrintStream( outContent ) );
+		instance.executeSource( """
+		                        print(argumentCollection=["A", "B", 3]);
+		                        """, context );
+		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( String.join( " ", "A", "B", "3" ) + "" );
+	}
+
+	@Test
+	public void testConsecutiveCalls() {
+		context.getRequestContext().setOut( new PrintStream( outContent ) );
+		instance.executeSource( """
+		                        print("A", "B"); print("C");
+		                        """, context );
+		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( "A BC" );
+	}
+
+	@Test
+	public void testMessageStillRequired() {
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource( "print();", context ) );
 	}
 
 }

@@ -1,0 +1,7 @@
+class extends="java:TestCases.phase3.JavaObjectParamTarget" {
+
+	function whoAmI() {
+		return "JavaExtendsObjectParam";
+	}
+
+}

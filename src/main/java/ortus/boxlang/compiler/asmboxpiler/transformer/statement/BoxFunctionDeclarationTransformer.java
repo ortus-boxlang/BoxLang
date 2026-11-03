@@ -28,12 +28,11 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
-
-import ortus.boxlang.compiler.IBoxpiler;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
+import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -43,6 +42,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxTemplate;
+import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
@@ -130,10 +130,26 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 				    return new ArrayList<AbstractInsnNode>();
 			    }
 
-			    return function.getBody()
+			    List<AbstractInsnNode> bodyNodes = new ArrayList<>();
+
+			    // The body's "{" + "}" braces are batch-marked when the body executes
+			    // (Pass A registered them as a span group keyed by the "{"). Emit the
+			    // group mark at body entry — only when the function is actually invoked.
+			    emitBodyBraceMark( bodyNodes, function );
+
+			    bodyNodes.addAll( function.getBody()
 			        .stream()
 			        .flatMap( statement -> transpiler.transform( statement, safe, ReturnValueContext.EMPTY ).stream() )
-			        .collect( Collectors.toList() );
+			        .collect( Collectors.toList() ) );
+
+			    // Close the probe-charging interval after the UDF body's last
+			    // statement so the final body span's self-time is charged (mirrors
+			    // the script-body markEnd in the AsmTranspiler).
+			    if ( transpiler.hasProfilerId() ) {
+				    bodyNodes.addAll( transpiler.emitMarkEnd() );
+			    }
+
+			    return bodyNodes;
 		    } );
 		transpiler.decrementfunctionBodyCounter();
 
@@ -324,6 +340,179 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		}
 
 		return blankResult;
+	}
+
+	/**
+	 * Emit the {@code mark(fileId, ...bodyBraces)} for a function's body braces
+	 * ("{" + "}") at body entry — Pass A registered them as a span group keyed by
+	 * the opening brace. This fires only when the function body actually executes
+	 * (the braces are NOT marked at declaration).
+	 *
+	 * @param bodyNodes the instruction list to append to
+	 * @param function  the function declaration
+	 */
+	private void emitBodyBraceMark( List<AbstractInsnNode> bodyNodes, BoxFunctionDeclaration function ) {
+		// No-op when profiling is disabled — never emit mark instructions otherwise.
+		if ( !transpiler.hasProfilerId() ) {
+			return;
+		}
+		// The opening "{" is anchored after the FIRST body statement when there is
+		// one; for an EMPTY body (`function foo() {}`) there is no statement, so
+		// anchor from the function's own end. Either way, the body braces must be
+		// marked when the function is INVOKED — empty or not, if the function runs
+		// the braces run, so they must be covered (GREEN), never left missed.
+		Point openBrace = function.getBody() != null && !function.getBody().isEmpty()
+		    ? findOpenBrace( function, function.getBody().get( 0 ).getStart() )
+		    : findOpenBraceBeforeEnd( function );
+		if ( openBrace == null ) {
+			return;
+		}
+		long	packed	= ( ( long ) openBrace.getLine() << 32 ) | ( openBrace.getColumn() & 0xFFFFFFFFL );
+		int		spanId	= transpiler.getSpanId( packed );
+		int[]	group	= spanId < 0 ? null : transpiler.takeSpanGroup( spanId );
+		if ( group != null ) {
+			for ( int member : group ) {
+				transpiler.claimSpanMark( member );
+			}
+			bodyNodes.addAll( transpiler.emitMarkVarargs( group ) );
+		}
+	}
+
+	/**
+	 * Locate the opening {@code {} of an EMPTY-BODY function ({@code function
+	 * foo(){} }), whose node end points at/past the CLOSING {@code }}. Scans
+	 * backward past the single closing {@code }} to the matching {@code {
+	 * (mirroring the Pass-A helper of the same purpose in SpanCollectorVisitor).
+	 *
+	 * @param function the empty-body function
+	 *
+	 * @return the opening brace point, or null
+	 */
+	private Point findOpenBraceBeforeEnd( BoxFunctionDeclaration function ) {
+		Point	before	= function.getEnd();
+		// Use the node's OWN source text (no whole-file read / disk I/O).
+		String	source	= function.getSourceText();
+		if ( before == null || source == null ) {
+			return null;
+		}
+		int offset = offsetOf( function, before );
+		if ( offset < 0 ) {
+			return null;
+		}
+		boolean seenClose = false;
+		for ( int i = offset - 1; i >= 0; i-- ) {
+			char c = source.charAt( i );
+			if ( c == '}' ) {
+				seenClose = true;
+				continue;
+			}
+			if ( seenClose ) {
+				if ( c == '{' ) {
+					return pointAt( function, i );
+				}
+				if ( c == ';' ) {
+					return null;
+				}
+				if ( !Character.isWhitespace( c ) ) {
+					return null;
+				}
+			} else if ( c == '{' || c == ';' ) {
+				return null;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Locate the function body's opening {@code {} by scanning the source back from
+	 * the first body statement.
+	 *
+	 * @param function the function declaration
+	 * 
+	 * @param after the first body statement start
+	 *
+	 * @return the opening brace point, or null
+	 */
+	private Point findOpenBrace( BoxFunctionDeclaration function, Point after ) {
+		// Use the node's OWN source text (no whole-file read / disk I/O).
+		String source = function.getSourceText();
+		if ( after == null || source == null ) {
+			return null;
+		}
+		int offset = offsetOf( function, after );
+		if ( offset < 0 ) {
+			return null;
+		}
+		for ( int i = offset - 1; i >= 0; i-- ) {
+			char c = source.charAt( i );
+			if ( c == '{' ) {
+				return pointAt( function, i );
+			}
+			if ( c == ';' || c == '}' ) {
+				return null;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Convert a Point to a character offset within the given node's OWN source text
+	 * ({@link BoxNode#getSourceText()}) — no whole-file read. Returns -1 when the
+	 * node has no source text/position or the point precedes the node start.
+	 *
+	 * @param node the node whose own source text defines the coordinate space
+	 * @param p    the point to convert
+	 *
+	 * @return the offset within the node's text, or -1
+	 */
+	private int offsetOf( BoxNode node, Point p ) {
+		String	source	= node.getSourceText();
+		Point	origin	= node.getStart();
+		if ( p == null || source == null || origin == null ) {
+			return -1;
+		}
+		int	line	= origin.getLine();
+		int	offset	= 0;
+		while ( line < p.getLine() && offset < source.length() ) {
+			if ( source.charAt( offset ) == '\n' ) {
+				line++;
+			}
+			offset++;
+		}
+		if ( line != p.getLine() ) {
+			return -1;
+		}
+		// On the node's own start line the column is relative to the node's start
+		// column; on any later line the text's line starts at column 0.
+		return line == origin.getLine() ? offset + ( p.getColumn() - origin.getColumn() ) : offset + p.getColumn();
+	}
+
+	/**
+	 * Convert a character offset within the given node's OWN source text
+	 * ({@link BoxNode#getSourceText()}) back to an absolute Point.
+	 *
+	 * @param node   the node whose own source text defines the coordinate space
+	 * @param offset the offset within the node's text
+	 *
+	 * @return the absolute point
+	 */
+	private Point pointAt( BoxNode node, int offset ) {
+		Point	origin	= node.getStart();
+		String	source	= node.getSourceText();
+		if ( origin == null || source == null ) {
+			return null;
+		}
+		int	line	= origin.getLine();
+		int	col		= origin.getColumn();
+		for ( int i = 0; i < offset && i < source.length(); i++ ) {
+			if ( source.charAt( i ) == '\n' ) {
+				line++;
+				col = 0;
+			} else {
+				col++;
+			}
+		}
+		return new Point( line, col );
 	}
 
 	private boolean shouldDefaultOutput( BoxFunctionDeclaration function ) {

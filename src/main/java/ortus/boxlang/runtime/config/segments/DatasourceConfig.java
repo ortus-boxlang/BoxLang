@@ -74,6 +74,13 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	public static final String		ON_THE_FLY_PREFIX				= "onthefly_";
 
 	/**
+	 * The delimiter used in the name of an on the fly datasource which overrides the credentials
+	 * of an existing named datasource, producing names of the form:
+	 * <code>{original_name}_user_{username}_{properties_hash}</code>
+	 */
+	public static final String		ON_THE_FLY_USER_DELIMITER		= "_user_";
+
+	/**
 	 * The prefix for all application-specific datasource names
 	 */
 	public static final String		APPLICATION_PREFIX				= "application_";
@@ -92,6 +99,14 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * Is this a onTheFly datasource
 	 */
 	public boolean					onTheFly						= false;
+
+	/**
+	 * The prefix used when generating the unique name of an on the fly datasource.
+	 * Defaults to {@link #ON_THE_FLY_PREFIX}, but a more descriptive prefix can be provided so the
+	 * datasource is identifiable at a glance when listing registered datasources, for example
+	 * <code>myDB_user_jdoe_</code>. This has no effect on non on the fly datasources.
+	 */
+	public String					onTheFlyPrefix					= ON_THE_FLY_PREFIX;
 
 	/**
 	 * The properties for the datasource
@@ -316,6 +331,37 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
+	 * Seeds the prefix used when generating the unique name of an on the fly datasource.
+	 * <p>
+	 * The final name follows the pattern <code>{prefix}{properties_hash}</code>, so a prefix such as
+	 * <code>myDB_user_jdoe_</code> will produce <code>myDB_user_jdoe_1234567</code>.
+	 * <p>
+	 * A null or empty prefix falls back to {@link #ON_THE_FLY_PREFIX}.
+	 *
+	 * @param prefix The prefix to use when naming an on the fly datasource
+	 *
+	 * @return the datasource configuration
+	 */
+	public DatasourceConfig withOnTheFlyPrefix( String prefix ) {
+		this.onTheFlyPrefix = ( prefix == null || prefix.isEmpty() ) ? ON_THE_FLY_PREFIX : prefix;
+		return this;
+	}
+
+	/**
+	 * Builds the name prefix for an on the fly datasource which overrides the credentials of an
+	 * existing named datasource, so it can be identified at a glance as:
+	 * <code>{original_name}_user_{username}_{properties_hash}</code>
+	 *
+	 * @param originalName The name of the datasource whose credentials are being overridden
+	 * @param username     The username of the credential override
+	 *
+	 * @return The name prefix, to be followed by the properties hash
+	 */
+	public static String getOnTheFlyUserPrefix( String originalName, String username ) {
+		return originalName + ON_THE_FLY_USER_DELIMITER + username + "_";
+	}
+
+	/**
 	 * Seeds the application name
 	 *
 	 * @param appName The application name
@@ -353,9 +399,11 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * - server_{name}_{properties_hash}
 	 * - onthefly_{properties_hash}
 	 * - application_{applicationName}_{name}_{properties_hash}
+	 * 
+	 * On the fly datasources may provide their own prefix via {@link #withOnTheFlyPrefix(String)}.
 	 */
 	public Key getUniqueName() {
-		return getUniqueName( this.applicationName.getName(), this.onTheFly, this.name.getName(), this.properties );
+		return getUniqueName( this.applicationName.getName(), this.onTheFly, this.name.getName(), this.properties, this.onTheFlyPrefix );
 	}
 
 	/**
@@ -369,6 +417,23 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * This static version of the method is so we can get a unique name without needing to create a DatasourceConfig instance
 	 */
 	public static Key getUniqueName( String applicationName, boolean onTheFly, String name, IStruct properties ) {
+		return getUniqueName( applicationName, onTheFly, name, properties, ON_THE_FLY_PREFIX );
+	}
+
+	/**
+	 * Get a unique datasource name which includes a hash of the properties
+	 * 
+	 * Following one of the patterns:
+	 * - server_{name}_{properties_hash}
+	 * - {onTheFlyPrefix}{properties_hash}
+	 * - application_{applicationName}_{name}_{properties_hash}
+	 * 
+	 * This static version of the method is so we can get a unique name without needing to create a DatasourceConfig instance
+	 *
+	 * @param onTheFlyPrefix The prefix to use for an on the fly datasource name, defaults to
+	 *                       {@link #ON_THE_FLY_PREFIX} when null or empty
+	 */
+	public static Key getUniqueName( String applicationName, boolean onTheFly, String name, IStruct properties, String onTheFlyPrefix ) {
 		StringBuilder uniqueName = new StringBuilder();
 
 		// If we have an app name use it and use the app prefix
@@ -378,7 +443,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 			uniqueName.append( "_" );
 		} else if ( onTheFly ) {
 			// If this is an on the fly datasource
-			uniqueName.append( ON_THE_FLY_PREFIX );
+			uniqueName.append( onTheFlyPrefix == null || onTheFlyPrefix.isEmpty() ? ON_THE_FLY_PREFIX : onTheFlyPrefix );
 		} else {
 			// Server wide
 			uniqueName.append( SERVER_PREFIX );

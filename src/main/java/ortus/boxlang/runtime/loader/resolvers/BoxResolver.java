@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.loader.resolvers;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -453,38 +454,38 @@ public class BoxResolver extends BaseResolver {
 		        && Strings.CI.startsWith( slashName, entry.getKey().getName() ) )
 		    // Map it to a Stream<Path> object representing the paths to the classes
 		    .flatMap( entry -> {
-			    // Generate multiple paths here
-			    List<ResolvedFilePath> paths = new ArrayList<>();
+			    // Generate one candidate path per valid extension, in extension precedence order
+			    List<ResolvedFilePath> paths	= new ArrayList<>();
+			    String				basePath	= Strings.CI.replaceOnce( slashName, entry.getKey().getName(), entry.getValue() + "/" );
+			    List<Path>			candidates	= new ArrayList<>();
 			    for ( String extension : getValidExtensions() ) {
-				    Path absolutePath = Path
-				        .of( Strings.CI.replaceOnce( slashName, entry.getKey().getName(), entry.getValue() + "/" ) + "." + extension )
-				        .normalize();
+				    candidates.add( Path.of( basePath + "." + extension ).normalize() );
+			    }
 
-				    // Verify that the file exists
-				    absolutePath = FileSystemUtil.pathExistsCaseInsensitive( absolutePath );
-				    if ( absolutePath != null ) {
-					    String mappingName		= entry.getKey().getName();
-					    String mappingDirectory	= entry.getValue().toString();
-					    String relativePath;
+			    // Verify that a file exists for one of them
+			    Path absolutePath = findFirstExistingPath( candidates );
+			    if ( absolutePath != null ) {
+				    String mappingName		= entry.getKey().getName();
+				    String mappingDirectory	= entry.getValue().toString();
+				    String relativePath;
 
-					    // Java not smart enough to ignore a path part of just / and it will wind up with \\ in windows
-					    if ( mappingName.equals( "/" ) || mappingName.equals( "\\" ) ) {
-						    relativePath = Paths.get( mappingDirectory ).normalize().relativize( absolutePath ).toString();
-					    } else {
-						    relativePath = Paths
-						        .get( mappingName, Paths.get( mappingDirectory ).normalize().relativize( absolutePath ).toString() )
-						        .toString();
-					    }
-
-					    paths.add(
-					        ResolvedFilePath.of(
-					            mappingName,
-					            mappingDirectory,
-					            relativePath,
-					            absolutePath
-					        )
-					    );
+				    // Java not smart enough to ignore a path part of just / and it will wind up with \\ in windows
+				    if ( mappingName.equals( "/" ) || mappingName.equals( "\\" ) ) {
+					    relativePath = Paths.get( mappingDirectory ).normalize().relativize( absolutePath ).toString();
+				    } else {
+					    relativePath = Paths
+					        .get( mappingName, Paths.get( mappingDirectory ).normalize().relativize( absolutePath ).toString() )
+					        .toString();
 				    }
+
+				    paths.add(
+				        ResolvedFilePath.of(
+				            mappingName,
+				            mappingDirectory,
+				            relativePath,
+				            absolutePath
+				        )
+				    );
 			    }
 
 			    return paths.stream();
@@ -652,15 +653,46 @@ public class BoxResolver extends BaseResolver {
 	private Path findExistingPathWithValidExtension( Path parentPath, String slashName ) {
 		String		baseName	= slashName.substring( 1 );
 		Set<String>	extensions	= getValidExtensions(); // avoid calling repeatedly
+		List<Path>	candidates	= new ArrayList<>( extensions.size() );
 
 		for ( String extension : extensions ) {
-			Path	targetPath	= parentPath.resolve( baseName + "." + extension ).normalize();
-			Path	result		= FileSystemUtil.pathExistsCaseInsensitive( targetPath );
-			if ( result != null ) {
-				return result;
+			candidates.add( parentPath.resolve( baseName + "." + extension ).normalize() );
+		}
+		return findFirstExistingPath( candidates );
+	}
+
+	/**
+	 * Returns the first candidate that exists, matching case insensitively, in candidate order.
+	 * <p>
+	 * The result is the same as calling {@link FileSystemUtil#pathExistsCaseInsensitive(Path)} on each candidate in
+	 * order and returning the first non-null result, but it is cheaper: every candidate is first checked with an
+	 * exact {@link Files#exists(Path, java.nio.file.LinkOption...)}, and the case-insensitive lookup only runs for the
+	 * candidates that come before the first exact hit (or for all of them when there is no exact hit). When the first
+	 * candidate exists as spelled, no case-insensitive lookup runs at all; otherwise that lookup reuses the cached
+	 * directory listings of {@link FileSystemUtil#findCaseInsensitiveMatch(Path)}.
+	 *
+	 * @param candidates The candidate paths, in precedence order (usually one per valid class extension)
+	 *
+	 * @return The first existing path, possibly differing in case from its candidate, or null if none exists
+	 */
+	public static Path findFirstExistingPath( List<Path> candidates ) {
+		int exactIndex = -1;
+		for ( int i = 0; i < candidates.size(); i++ ) {
+			if ( Files.exists( candidates.get( i ) ) ) {
+				exactIndex = i;
+				break;
 			}
 		}
-		return null;
+
+		// A candidate earlier than the exact hit could still exist with a different case, and it takes precedence
+		int limit = exactIndex < 0 ? candidates.size() : exactIndex;
+		for ( int i = 0; i < limit; i++ ) {
+			Path match = FileSystemUtil.findCaseInsensitiveMatch( candidates.get( i ) );
+			if ( match != null ) {
+				return match;
+			}
+		}
+		return exactIndex < 0 ? null : candidates.get( exactIndex );
 	}
 
 	/**

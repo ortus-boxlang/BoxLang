@@ -44,14 +44,17 @@ import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -115,7 +118,33 @@ public final class FileSystemUtil {
 	/**
 	 * Flag for whether FS is case sensitive or not to short circuit case insensitive path resolution
 	 */
-	private static boolean					isCaseSensitiveFS		= caseSensitivityCheck();
+	private static boolean												isCaseSensitiveFS					= caseSensitivityCheck();
+
+	/**
+	 * Cache of directory listings used by case-insensitive path resolution, keyed by directory path.
+	 * Entries are revalidated against the directory's last-modified time on every use.
+	 */
+	private static final ConcurrentHashMap<String, DirectoryListing>	DIRECTORY_LISTING_CACHE				= new ConcurrentHashMap<>();
+
+	/**
+	 * Max number of directories kept in {@link #DIRECTORY_LISTING_CACHE} before it is reset
+	 */
+	private static final int											DIRECTORY_LISTING_CACHE_MAX_SIZE	= 10_000;
+
+	/**
+	 * A directory listing is only cached when the directory was last modified longer ago than this many milliseconds.
+	 * This guards against file systems whose timestamps are too coarse to tell two changes apart.
+	 */
+	private static final long											DIRECTORY_LISTING_MIN_AGE_MS		= 2_000;
+
+	/**
+	 * A cached directory listing
+	 *
+	 * @param lastModified The directory's last-modified time when it was listed
+	 * @param children     The directory's children grouped by case-folded name, in listing order
+	 */
+	private record DirectoryListing( FileTime lastModified, Map<String, List<String>> children ) {
+	}
 
 	/**
 	 * The default charset for file operations in BoxLang
@@ -1690,6 +1719,24 @@ public final class FileSystemUtil {
 		if ( Files.exists( path ) ) {
 			return path;
 		}
+		return findCaseInsensitiveMatch( path );
+	}
+
+	/**
+	 * Resolves a path by matching every segment case insensitively against the real directory contents.
+	 * Unlike {@link #pathExistsCaseInsensitive(Path)}, this does not check first whether the path exists as given,
+	 * so callers that already know the exact path is missing can skip that extra file system check.
+	 * <p>
+	 * Directory listings are cached (see {@link #DIRECTORY_LISTING_CACHE}) and revalidated against the directory's
+	 * last-modified time, so repeated lookups in the same directories do not list them again.
+	 * <p>
+	 * On a case-insensitive file system this always returns null, since an exact check is all that is needed there.
+	 *
+	 * @param path The path to resolve
+	 *
+	 * @return The resolved path, which may differ in case from the incoming path, or null if not found
+	 */
+	public static Path findCaseInsensitiveMatch( Path path ) {
 		if ( isCaseSensitiveFS ) {
 			String		realPath		= "";
 			String[]	pathSegments	= path.toString().replace( '\\', '/' ).split( "/" );
@@ -1708,30 +1755,119 @@ public final class FileSystemUtil {
 					continue;
 				}
 
-				Boolean		found		= false;
-				String[]	children	= new File( realPath + "/" ).list();
+				Map<String, List<String>> children = getDirectoryListing( realPath + "/" );
 				// This will happen if we have a matched file in the middle of a path like /foo/index.cfm/bar
 				if ( children == null ) {
 					return null;
 				}
-				for ( String thisChild : children ) {
-					// We're taking the FIRST MATCH. Buyer beware
-					if ( thisSegment.equalsIgnoreCase( thisChild ) ) {
-						realPath	+= "/" + thisChild;
-						found		= true;
-						break;
-					}
-				}
-				// If we made it through the inner loop without a match, we've hit a dead end
-				if ( !found ) {
+				// We're taking the FIRST MATCH in listing order. Buyer beware
+				String match = findFirstIgnoreCase( children, thisSegment );
+				// If we found no match, we've hit a dead end
+				if ( match == null ) {
 					return null;
 				}
+				realPath += "/" + match;
 			}
-			// If we made it through the outer loop, we've found a match
-			Path realPathFinal = Paths.get( realPath );
-			return realPathFinal;
+			// If we made it through the loop, we've found a match
+			return Paths.get( realPath );
 		}
 		return null;
+	}
+
+	/**
+	 * Clears the cache of directory listings used by {@link #findCaseInsensitiveMatch(Path)}.
+	 * The cache revalidates itself against directory modification times, so this is only needed
+	 * to release memory or in tests.
+	 */
+	public static void clearDirectoryListingCache() {
+		DIRECTORY_LISTING_CACHE.clear();
+	}
+
+	/**
+	 * Returns the children of a directory, grouped by their case-folded name (see {@link #foldCase(String)}).
+	 * Each group keeps the names in the order {@link File#list()} returned them, so the first entry of a group
+	 * is the same first match the previous linear scan found.
+	 * <p>
+	 * A cached listing is reused while the directory's last-modified time is unchanged. A listing is only
+	 * cached when the directory was last modified more than {@link #DIRECTORY_LISTING_MIN_AGE_MS} ago, so a
+	 * change made within the same timestamp tick (on file systems with coarse timestamps) cannot be missed.
+	 *
+	 * @param directory The directory path, as built by {@link #findCaseInsensitiveMatch(Path)}
+	 *
+	 * @return The grouped children, or null if the path is not a readable directory
+	 */
+	private static Map<String, List<String>> getDirectoryListing( String directory ) {
+		FileTime lastModified;
+		try {
+			lastModified = Files.getLastModifiedTime( Paths.get( directory ) );
+		} catch ( IOException | InvalidPathException | SecurityException e ) {
+			DIRECTORY_LISTING_CACHE.remove( directory );
+			return null;
+		}
+
+		DirectoryListing cached = DIRECTORY_LISTING_CACHE.get( directory );
+		if ( cached != null && cached.lastModified().equals( lastModified ) ) {
+			return cached.children();
+		}
+
+		String[] names = new File( directory ).list();
+		if ( names == null ) {
+			DIRECTORY_LISTING_CACHE.remove( directory );
+			return null;
+		}
+
+		Map<String, List<String>> children = new HashMap<>( names.length * 2 );
+		for ( String name : names ) {
+			children.computeIfAbsent( foldCase( name ), k -> new ArrayList<>( 1 ) ).add( name );
+		}
+
+		if ( System.currentTimeMillis() - lastModified.toMillis() > DIRECTORY_LISTING_MIN_AGE_MS ) {
+			// Keep memory bounded. Entries are cheap to rebuild, so a full reset is good enough.
+			if ( DIRECTORY_LISTING_CACHE.size() >= DIRECTORY_LISTING_CACHE_MAX_SIZE ) {
+				DIRECTORY_LISTING_CACHE.clear();
+			}
+			DIRECTORY_LISTING_CACHE.put( directory, new DirectoryListing( lastModified, children ) );
+		} else {
+			DIRECTORY_LISTING_CACHE.remove( directory );
+		}
+		return children;
+	}
+
+	/**
+	 * Finds the first child whose name equals the segment ignoring case.
+	 * Every name that {@link String#equalsIgnoreCase(String)} matches has the same case-folded key,
+	 * so only that group needs to be scanned.
+	 *
+	 * @param children The grouped children from {@link #getDirectoryListing(String)}
+	 * @param segment  The path segment to look for
+	 *
+	 * @return The real name of the first matching child, or null if none matches
+	 */
+	private static String findFirstIgnoreCase( Map<String, List<String>> children, String segment ) {
+		List<String> candidates = children.get( foldCase( segment ) );
+		if ( candidates == null ) {
+			return null;
+		}
+		for ( String candidate : candidates ) {
+			if ( segment.equalsIgnoreCase( candidate ) ) {
+				return candidate;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Folds a name to a key such that two names matched by {@link String#equalsIgnoreCase(String)} always get the
+	 * same key. It applies the same per code point comparison that method uses: upper case, then lower case.
+	 *
+	 * @param name The name to fold
+	 *
+	 * @return The case-folded key
+	 */
+	private static String foldCase( String name ) {
+		StringBuilder folded = new StringBuilder( name.length() );
+		name.codePoints().forEach( cp -> folded.appendCodePoint( Character.toLowerCase( Character.toUpperCase( cp ) ) ) );
+		return folded.toString();
 	}
 
 	/**

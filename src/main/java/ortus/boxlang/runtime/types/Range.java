@@ -29,6 +29,8 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
@@ -1335,9 +1337,12 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 	 * @return a numeric Range
 	 */
 	private static Range<Number> buildNumberRange( Number from, Number to, boolean fromExclusive, boolean toExclusive ) {
-		Comparator<Number>					comparator	= ( a, b ) -> Compare.invoke( a, b );
+		Comparator<Number>					comparator	= ( a, b ) -> Compare
+		    .invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), a, b );
 		BiFunction<Number, Number, Number>	stepper		= RangeSteppers.NUMBER_STEPPER;
-		Number								step		= ( from != null && to != null ) ? ( Compare.invoke( from, to ) <= 0 ? 1 : -1 ) : 1;
+		Number								step		= ( from != null && to != null )
+		    ? ( Compare.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), from, to ) <= 0 ? 1 : -1 )
+		    : 1;
 		return new Range<>( from, to, step, null, fromExclusive, toExclusive, comparator, stepper );
 	}
 

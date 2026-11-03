@@ -182,16 +182,32 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	 * @throws BoxRuntimeException If an invalid type is specified: DEFAULT, CASE_SENSITIVE, LINKED, LINKED_CASE_SENSITIVE, SORTED, WEAK, SOFT
 	 */
 	public Struct( TYPES type, boolean concurrent ) {
+		this( type, concurrent, INITIAL_CAPACITY );
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param type       The type of struct to create: DEFAULT, CASE_SENSITIVE, LINKED, LINKED_CASE_SENSITIVE, SORTED, WEAK, SOFT
+	 * @param concurrent Whether to use a concurrent map implementation
+	 * @param capacity   The initial capacity to pre-size the backing map with. A
+	 *                   larger value avoids rehashing when the number of entries is
+	 *                   known ahead of time.
+	 *
+	 * @throws BoxRuntimeException If an invalid type is specified: DEFAULT, CASE_SENSITIVE, LINKED, LINKED_CASE_SENSITIVE, SORTED, WEAK, SOFT
+	 */
+	public Struct( TYPES type, boolean concurrent, int capacity ) {
 		this.type		= type;
 
-		// Initialize the wrapped map
+		// Initialize the wrapped map, pre-sized to the caller's expected entry count
+		// so large structs (coverage reports, bulk conversions) don't repeatedly rehash.
 		this.wrapped	= switch ( type ) {
-							case DEFAULT, CASE_SENSITIVE, SOFT -> concurrent ? new ConcurrentHashMap<>( INITIAL_CAPACITY ) : new HashMap<>( INITIAL_CAPACITY );
-							case LINKED, LINKED_CASE_SENSITIVE -> concurrent ? Collections.synchronizedMap( LinkedHashMap.newLinkedHashMap( INITIAL_CAPACITY ) )
-							    : LinkedHashMap.newLinkedHashMap( INITIAL_CAPACITY );
+							case DEFAULT, CASE_SENSITIVE, SOFT -> concurrent ? new ConcurrentHashMap<>( capacity ) : new HashMap<>( capacity );
+							case LINKED, LINKED_CASE_SENSITIVE -> concurrent ? Collections.synchronizedMap( LinkedHashMap.newLinkedHashMap( capacity ) )
+							    : LinkedHashMap.newLinkedHashMap( capacity );
 							case SORTED -> concurrent ? new ConcurrentSkipListMap<>() : new TreeMap<>();
-							case WEAK -> concurrent ? Collections.synchronizedMap( WeakHashMap.newWeakHashMap( INITIAL_CAPACITY ) )
-							    : WeakHashMap.newWeakHashMap( INITIAL_CAPACITY );
+							case WEAK -> concurrent ? Collections.synchronizedMap( WeakHashMap.newWeakHashMap( capacity ) )
+							    : WeakHashMap.newWeakHashMap( capacity );
 							default -> throw new BoxRuntimeException( "Invalid struct type [" + type.name() + "]" );
 						};
 	}

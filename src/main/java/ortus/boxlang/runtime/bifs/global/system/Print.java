@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
+import java.util.StringJoiner;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -40,21 +42,28 @@ public class Print extends BIF {
 	}
 
 	/**
-	 * Print a message with line break to the console
+	 * Print arguments separated by spaces without a trailing line break
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.message The message to print
+	 * @argument.message The first message to print; additional arguments are printed in order
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object obj = DynamicObject.unWrap( arguments.get( Key.message ) );
-
-		// Force to string representation
-		obj = Println.forceToString( obj );
+		StringJoiner output = new StringJoiner( " " ); // creates container for new output with space separator
+		// visits every entry and runs the code block for each entry
+		for ( var entry : arguments.entrySet() ) {
+			Key key = entry.getKey(); // key is used in boxlang to identify the argument
+			if ( key.equals( BIF.__functionName ) || key.equals( BIF.__isMemberExecution ) || key.equals( Key.argumentCollection ) ) {
+				continue;
+			}
+			Object value = DynamicObject.unWrap( entry.getValue() ); // unwraps
+			output.add( Println.forceToString( value ) ); // adds the value to the output container
+		}
+		String				obj		= output.toString(); // converts the output container to a string
 
 		// If we have a request context, let's use that context's out
-		RequestBoxContext rCon = context.getRequestContext();
+		RequestBoxContext	rCon	= context.getRequestContext();
 		if ( rCon != null ) {
 			rCon.getOut().print( obj );
 			return null;

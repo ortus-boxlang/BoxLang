@@ -31,18 +31,187 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class Key implements Comparable<Key>, Serializable {
 
 	// Static instances of common keys
-	public static final Key		_0									= Key.of( 0 );
-	public static final Key		_1									= Key.of( 1 );
-	public static final Key		_2									= Key.of( 2 );
-	public static final Key		_3									= Key.of( 3 );
-	public static final Key		_4									= Key.of( 4 );
-	public static final Key		_5									= Key.of( 5 );
-	public static final Key		_6									= Key.of( 6 );
-	public static final Key		_7									= Key.of( 7 );
-	public static final Key		_8									= Key.of( 8 );
-	public static final Key		_9									= Key.of( 9 );
-	public static final Key		_10									= Key.of( 10 );
-	public static final Key		_slash								= Key.of( "/" );
+	public static final IntKey	_0			= Key.of( 0 );
+	public static final IntKey	_1			= Key.of( 1 );
+	public static final IntKey	_2			= Key.of( 2 );
+	public static final IntKey	_3			= Key.of( 3 );
+	public static final IntKey	_4			= Key.of( 4 );
+	public static final IntKey	_5			= Key.of( 5 );
+	public static final IntKey	_6			= Key.of( 6 );
+	public static final IntKey	_7			= Key.of( 7 );
+	public static final IntKey	_8			= Key.of( 8 );
+	public static final IntKey	_9			= Key.of( 9 );
+	public static final IntKey	_10			= Key.of( 10 );
+	public static final IntKey	_11			= Key.of( 11 );
+	public static final IntKey	_12			= Key.of( 12 );
+	public static final IntKey	_13			= Key.of( 13 );
+	public static final IntKey	_14			= Key.of( 14 );
+	public static final IntKey	_15			= Key.of( 15 );
+	public static final IntKey	_16			= Key.of( 16 );
+	public static final IntKey	_17			= Key.of( 17 );
+	public static final IntKey	_18			= Key.of( 18 );
+	public static final IntKey	_19			= Key.of( 19 );
+	public static final IntKey	_20			= Key.of( 20 );
+	public static final IntKey	_21			= Key.of( 21 );
+	public static final IntKey	_22			= Key.of( 22 );
+	public static final IntKey	_23			= Key.of( 23 );
+	public static final IntKey	_24			= Key.of( 24 );
+	public static final IntKey	_25			= Key.of( 25 );
+	public static final IntKey	_26			= Key.of( 26 );
+	public static final IntKey	_27			= Key.of( 27 );
+	public static final IntKey	_28			= Key.of( 28 );
+	public static final IntKey	_29			= Key.of( 29 );
+	public static final IntKey	_30			= Key.of( 30 );
+	public static final IntKey	_31			= Key.of( 31 );
+	public static final IntKey	_32			= Key.of( 32 );
+	public static final IntKey	_33			= Key.of( 33 );
+	public static final IntKey	_34			= Key.of( 34 );
+	public static final IntKey	_35			= Key.of( 35 );
+	public static final IntKey	_36			= Key.of( 36 );
+	public static final IntKey	_37			= Key.of( 37 );
+	public static final IntKey	_38			= Key.of( 38 );
+	public static final IntKey	_39			= Key.of( 39 );
+	public static final IntKey	_40			= Key.of( 40 );
+	public static final IntKey	_41			= Key.of( 41 );
+	public static final IntKey	_42			= Key.of( 42 );
+	public static final IntKey	_43			= Key.of( 43 );
+	public static final IntKey	_44			= Key.of( 44 );
+	public static final IntKey	_45			= Key.of( 45 );
+	public static final IntKey	_46			= Key.of( 46 );
+	public static final IntKey	_47			= Key.of( 47 );
+	public static final IntKey	_48			= Key.of( 48 );
+	public static final IntKey	_49			= Key.of( 49 );
+	public static final IntKey	_50			= Key.of( 50 );
+	public static final IntKey	_51			= Key.of( 51 );
+	public static final IntKey	_52			= Key.of( 52 );
+	public static final IntKey	_53			= Key.of( 53 );
+	public static final IntKey	_54			= Key.of( 54 );
+	public static final IntKey	_55			= Key.of( 55 );
+	public static final IntKey	_56			= Key.of( 56 );
+	public static final IntKey	_57			= Key.of( 57 );
+	public static final IntKey	_58			= Key.of( 58 );
+	public static final IntKey	_59			= Key.of( 59 );
+	public static final IntKey	_60			= Key.of( 60 );
+	public static final IntKey	_61			= Key.of( 61 );
+	public static final IntKey	_62			= Key.of( 62 );
+	public static final IntKey	_63			= Key.of( 63 );
+	public static final IntKey	_64			= Key.of( 64 );
+	public static final IntKey	_65			= Key.of( 65 );
+	public static final IntKey	_66			= Key.of( 66 );
+	public static final IntKey	_67			= Key.of( 67 );
+	public static final IntKey	_68			= Key.of( 68 );
+	public static final IntKey	_69			= Key.of( 69 );
+	public static final IntKey	_70			= Key.of( 70 );
+	public static final IntKey	_71			= Key.of( 71 );
+	public static final IntKey	_72			= Key.of( 72 );
+	public static final IntKey	_73			= Key.of( 73 );
+	public static final IntKey	_74			= Key.of( 74 );
+	public static final IntKey	_75			= Key.of( 75 );
+	public static final IntKey	_76			= Key.of( 76 );
+	public static final IntKey	_77			= Key.of( 77 );
+	public static final IntKey	_78			= Key.of( 78 );
+	public static final IntKey	_79			= Key.of( 79 );
+	public static final IntKey	_80			= Key.of( 80 );
+	public static final IntKey	_81			= Key.of( 81 );
+	public static final IntKey	_82			= Key.of( 82 );
+	public static final IntKey	_83			= Key.of( 83 );
+	public static final IntKey	_84			= Key.of( 84 );
+	public static final IntKey	_85			= Key.of( 85 );
+	public static final IntKey	_86			= Key.of( 86 );
+	public static final IntKey	_87			= Key.of( 87 );
+	public static final IntKey	_88			= Key.of( 88 );
+	public static final IntKey	_89			= Key.of( 89 );
+	public static final IntKey	_90			= Key.of( 90 );
+	public static final IntKey	_91			= Key.of( 91 );
+	public static final IntKey	_92			= Key.of( 92 );
+	public static final IntKey	_93			= Key.of( 93 );
+	public static final IntKey	_94			= Key.of( 94 );
+	public static final IntKey	_95			= Key.of( 95 );
+	public static final IntKey	_96			= Key.of( 96 );
+	public static final IntKey	_97			= Key.of( 97 );
+	public static final IntKey	_98			= Key.of( 98 );
+	public static final IntKey	_99			= Key.of( 99 );
+	public static final IntKey	_100		= Key.of( 100 );
+	public static final IntKey	_101		= Key.of( 101 );
+	public static final IntKey	_102		= Key.of( 102 );
+	public static final IntKey	_103		= Key.of( 103 );
+	public static final IntKey	_104		= Key.of( 104 );
+	public static final IntKey	_105		= Key.of( 105 );
+	public static final IntKey	_106		= Key.of( 106 );
+	public static final IntKey	_107		= Key.of( 107 );
+	public static final IntKey	_108		= Key.of( 108 );
+	public static final IntKey	_109		= Key.of( 109 );
+	public static final IntKey	_110		= Key.of( 110 );
+	public static final IntKey	_111		= Key.of( 111 );
+	public static final IntKey	_112		= Key.of( 112 );
+	public static final IntKey	_113		= Key.of( 113 );
+	public static final IntKey	_114		= Key.of( 114 );
+	public static final IntKey	_115		= Key.of( 115 );
+	public static final IntKey	_116		= Key.of( 116 );
+	public static final IntKey	_117		= Key.of( 117 );
+	public static final IntKey	_118		= Key.of( 118 );
+	public static final IntKey	_119		= Key.of( 119 );
+	public static final IntKey	_120		= Key.of( 120 );
+	public static final IntKey	_121		= Key.of( 121 );
+	public static final IntKey	_122		= Key.of( 122 );
+	public static final IntKey	_123		= Key.of( 123 );
+	public static final IntKey	_124		= Key.of( 124 );
+	public static final IntKey	_125		= Key.of( 125 );
+	public static final IntKey	_126		= Key.of( 126 );
+	public static final IntKey	_127		= Key.of( 127 );
+	public static final IntKey	_128		= Key.of( 128 );
+	public static final IntKey	_129		= Key.of( 129 );
+	public static final IntKey	_130		= Key.of( 130 );
+	public static final IntKey	_131		= Key.of( 131 );
+	public static final IntKey	_132		= Key.of( 132 );
+	public static final IntKey	_133		= Key.of( 133 );
+	public static final IntKey	_134		= Key.of( 134 );
+	public static final IntKey	_135		= Key.of( 135 );
+	public static final IntKey	_136		= Key.of( 136 );
+	public static final IntKey	_137		= Key.of( 137 );
+	public static final IntKey	_138		= Key.of( 138 );
+	public static final IntKey	_139		= Key.of( 139 );
+	public static final IntKey	_140		= Key.of( 140 );
+	public static final IntKey	_141		= Key.of( 141 );
+	public static final IntKey	_142		= Key.of( 142 );
+	public static final IntKey	_143		= Key.of( 143 );
+	public static final IntKey	_144		= Key.of( 144 );
+	public static final IntKey	_145		= Key.of( 145 );
+	public static final IntKey	_146		= Key.of( 146 );
+	public static final IntKey	_147		= Key.of( 147 );
+	public static final IntKey	_148		= Key.of( 148 );
+	public static final IntKey	_149		= Key.of( 149 );
+	public static final IntKey	_150		= Key.of( 150 );
+	public static final Key		_slash		= Key.of( "/" );
+
+	/**
+	 * Indexed lookup for the {@code _0 .. _150} IntKey constants, so hot loops can
+	 * reuse a pre-made key instead of allocating/lower-casing one per iteration.
+	 * Index {@code i} holds {@code _i}; {@link #cachedInt(int)} falls back to a
+	 * fresh {@link IntKey} past the array.
+	 */
+	public static final Key[]	INT_KEYS	= buildIntKeys();
+
+	private static Key[] buildIntKeys() {
+		Key[] keys = new Key[ 151 ];
+		for ( int i = 0; i < keys.length; i++ ) {
+			keys[ i ] = new IntKey( i );
+		}
+		return keys;
+	}
+
+	/**
+	 * An {@link IntKey} for the given int, reusing the pre-made {@code _0 .. _150}
+	 * constants for values in range (indexing {@link #INT_KEYS}) and allocating a
+	 * fresh {@link IntKey} beyond it.
+	 *
+	 * @param value the int to key
+	 *
+	 * @return the key for that int, pre-made when available
+	 */
+	public static Key cachedInt( int value ) {
+		return value >= 0 && value < INT_KEYS.length ? INT_KEYS[ value ] : new IntKey( value );
+	}
 
 	// Global Dictionary
 	public static final Key		__functionName						= Key.of( "__functionName" );
@@ -256,6 +425,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		copy								= Key.of( "copy" );
 	public static final Key		count								= Key.of( "count" );
 	public static final Key		country								= Key.of( "country" );
+	public static final Key		covered								= Key.of( "covered" );
 	public static final Key		create								= Key.of( "create" );
 	public static final Key		createdAt							= Key.of( "createdAt" );
 	public static final Key		createObject						= Key.of( "createObject" );
@@ -341,6 +511,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		dumpLevel							= Key.of( "dumpLevel" );
 	public static final Key		dumpOutput							= Key.of( "dumpOutput" );
 	public static final Key		duration							= Key.of( "duration" );
+	public static final Key		elapsedNanos						= Key.of( "elapsedNanos" );
 	public static final Key		elapsedTime							= Key.of( "elapsedTime" );
 	public static final Key		elem								= Key.of( "elem" );
 	public static final Key		element								= Key.of( "element" );
@@ -363,7 +534,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		enclosingClass						= Key.of( "enclosingClass" );
 	public static final Key		encryptionAlgorithm					= Key.of( "encryptionAlgorithm" );
 	public static final Key		end									= Key.of( "end" );
+	public static final Key		endCol								= Key.of( "endCol" );
 	public static final Key		endDate								= Key.of( "endDate" );
+	public static final Key		endLine								= Key.of( "endLine" );
 	public static final Key		endTime								= Key.of( "endTime" );
 	public static final Key		endRow								= Key.of( "endRow" );
 	public static final Key		endsWithNoCase						= Key.of( "endsWithNoCase" );
@@ -417,6 +590,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		file								= Key.of( "file" );
 	public static final Key		fileContent							= Key.of( "fileContent" );
 	public static final Key		filefield							= Key.of( "filefield" );
+	public static final Key		filePath							= Key.of( "filePath" );
 	public static final Key		filepath							= Key.of( "filepath" );
 	public static final Key		fileread							= Key.of( "fileread" );
 	public static final Key		filter								= Key.of( "filter" );
@@ -563,6 +737,11 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		key									= Key.of( "key" );
 	public static final Key		keyMap								= Key.of( "keyMap" );
 	public static final Key		keySize								= Key.of( "keySize" );
+	public static final Key		curve								= Key.of( "curve" );
+	public static final Key		privateKey							= Key.of( "privateKey" );
+	public static final Key		publicKey							= Key.of( "publicKey" );
+	public static final Key		privatePem							= Key.of( "privatePem" );
+	public static final Key		publicPem							= Key.of( "publicPem" );
 	public static final Key		label								= Key.of( "label" );
 	public static final Key		lambda								= Key.of( "lambda" );
 	public static final Key		language							= Key.of( "language" );
@@ -581,6 +760,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		limit								= Key.of( "limit" );
 	public static final Key		line								= Key.of( "line" );
 	public static final Key		lineNumber							= Key.of( "lineNumber" );
+	public static final Key		lines								= Key.of( "lines" );
 	public static final Key		list								= Key.of( "list" );
 	public static final Key		listener							= Key.of( "listener" );
 	public static final Key		listInfo							= Key.of( "listInfo" );
@@ -678,6 +858,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		numericAsc							= Key.of( "numericAsc" );
 	public static final Key		numericDesc							= Key.of( "numericDesc" );
 	public static final Key		numIterations						= Key.of( "numIterations" );
+	public static final Key		numCoveredLines						= Key.of( "numCoveredLines" );
+	public static final Key		numExecutableLines					= Key.of( "numExecutableLines" );
 	public static final Key		obj									= Key.of( "obj" );
 	public static final Key		object								= Key.of( "object" );
 	public static final Key		objectArgument						= Key.of( "objectArgument" );
@@ -693,6 +875,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onApplicationEnd					= Key.of( "onApplicationEnd" );
 	public static final Key		onApplicationRestart				= Key.of( "onApplicationRestart" );
 	public static final Key		onApplicationStart					= Key.of( "onApplicationStart" );
+	public static final Key		onBinaryChunk						= Key.of( "onBinaryChunk" );
 	public static final Key		onChunk								= Key.of( "onChunk" );
 	public static final Key		onClassRequest						= Key.of( "onClassRequest" );
 	public static final Key		onComplete							= Key.of( "onComplete" );
@@ -702,6 +885,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onMessage							= Key.of( "onMessage" );
 	public static final Key		onMisfire							= Key.of( "onMisfire" );
 	public static final Key		onMissingMethod						= Key.of( "onMissingMethod" );
+	public static final Key		onMissingStaticMethod				= Key.of( "onMissingStaticMethod" );
 	public static final Key		onMissingTemplate					= Key.of( "onMissingTemplate" );
 	public static final Key		onParse								= Key.of( "onParse" );
 	public static final Key		onRequest							= Key.of( "onRequest" );
@@ -735,6 +919,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		pattern								= Key.of( "pattern" );
 	public static final Key		paused								= Key.of( "paused" );
 	public static final Key		pendingQuery						= Key.of( "pendingQuery" );
+	public static final Key		percCoverage						= Key.of( "percCoverage" );
 	public static final Key		persisent							= Key.of( "persisent" );
 	public static final Key		pid									= Key.of( "pid" );
 	public static final Key		placeholders						= Key.of( "placeholders" );
@@ -830,6 +1015,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		run									= Key.of( "run" );
 	public static final Key		runnable							= Key.of( "runnable" );
 	public static final Key		runtime								= Key.of( "runtime" );
+	public static final Key		runtimeSettings						= Key.of( "runtimeSettings" );
 	public static final Key		runtimes							= Key.of( "runtimes" );
 	public static final Key		samesite							= Key.of( "samesite" );
 	public static final Key		scalar								= Key.of( "scalar" );
@@ -888,6 +1074,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		sortOrder							= Key.of( "sortOrder" );
 	public static final Key		sortType							= Key.of( "sortType" );
 	public static final Key		source								= Key.of( "source" );
+	public static final Key		spans								= Key.of( "spans" );
 	public static final Key		sourceType							= Key.of( "sourceType" );
 	public static final Key		sql									= Key.of( "sql" );
 	public static final Key		sqlParameters						= Key.of( "sqlParameters" );
@@ -896,7 +1083,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		sse									= Key.of( "sse" );
 	public static final Key		stackTrace							= Key.of( "stackTrace" );
 	public static final Key		start								= Key.of( "start" );
+	public static final Key		startCol							= Key.of( "startCol" );
 	public static final Key		startDate							= Key.of( "startDate" );
+	public static final Key		startLine							= Key.of( "startLine" );
 	public static final Key		startRow							= Key.of( "startRow" );
 	public static final Key		startTicks							= Key.of( "startTicks" );
 	public static final Key		startTime							= Key.of( "startTime" );
@@ -911,6 +1100,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		statusText							= Key.of( "statusText" );
 	public static final Key		step								= Key.of( "step" );
 	public static final Key		storeClassFilesOnDisk				= Key.of( "storeClassFilesOnDisk" );
+	public static final Key		codeProfilerEnabled					= Key.of( "codeProfilerEnabled" );
 	public static final Key		storedproc							= Key.of( "storedproc" );
 	public static final Key		stream								= Key.of( "stream" );
 	public static final Key		strict								= Key.of( "strict" );
@@ -1173,6 +1363,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		watchRoot							= Key.of( "watchRoot" );
 	public static final Key		relativePath						= Key.of( "relativePath" );
 	public static final Key		kind								= Key.of( "kind" );
+	public static final Key		codeProfilerService					= Key.of( "codeProfilerService" );
 	public static final Key		paths								= Key.of( "paths" );
 	public static final Key		debounce							= Key.of( "debounce" );
 	public static final Key		throttle							= Key.of( "throttle" );

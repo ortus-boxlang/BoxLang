@@ -1,0 +1,18 @@
+/**
+ * Listener used by run.bxs: reads request settings the way a logging or debugging interceptor would
+ */
+class {
+
+	function postBIFInvocation( data ){
+		if ( data.name == "len" ) {
+			var stamp = now();
+			var json  = jsonSerialize( { at : stamp } );
+		}
+	}
+
+	function onBL2759Bench( data ){
+		var stamp = dateFormat( now(), "yyyy-mm-dd" );
+		var price = lsNumberFormat( 1234.5 );
+	}
+
+}

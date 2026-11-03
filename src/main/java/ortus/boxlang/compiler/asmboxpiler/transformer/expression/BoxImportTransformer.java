@@ -42,7 +42,10 @@ public class BoxImportTransformer extends AbstractTransformer {
 		BoxImport					boxImport	= ( BoxImport ) node;
 		ArrayList<AbstractInsnNode>	nodes		= new ArrayList<>();
 
-		if ( returnContext.nullable ) {
+		// An import produces no value. Only push null when the caller expects a value on the stack.
+		// EMPTY_UNLESS_JUMPING is nullable but empty, so pushing there leaves a dangling null that
+		// breaks stackmap frames at try/catch branch targets (BL-2745).
+		if ( !returnContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 		// Work around for now so tag lib imports don't blow up

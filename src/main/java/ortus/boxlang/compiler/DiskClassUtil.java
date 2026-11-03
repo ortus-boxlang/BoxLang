@@ -14,10 +14,10 @@
  */
 package ortus.boxlang.compiler;
 
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -213,17 +213,25 @@ public class DiskClassUtil {
 		if ( sourceFile == null || !sourceFile.isFile() || !sourceFile.canRead() ) {
 			return false;
 		}
-		try ( FileInputStream fis = new FileInputStream( sourceFile );
-		    DataInputStream dis = new DataInputStream( fis ) ) {
+		try ( FileInputStream fis = new FileInputStream( sourceFile ) ) {
 			// File may be empty! At least 4 bytes are needed to read an int
-			if ( dis.available() < 4 ) {
-				return false;
-			}
-			// Are we the Java Magic number?
-			return dis.readInt() == 0xCAFEBABE;
+			return isJavaByteCode( fis.readNBytes( 4 ) );
 		} catch ( IOException e ) {
 			return false;
 		}
+	}
+
+	/**
+	 * Check if the given bytes are the header of a Java bytecode file. Use this overload when the header
+	 * has already been read, so a file is not opened twice just to make this check.
+	 *
+	 * @param header The first bytes of a file
+	 *
+	 * @return true if the bytes start with the Java bytecode magic number
+	 */
+	public static boolean isJavaByteCode( byte[] header ) {
+		// File may be empty! At least 4 bytes are needed to read an int
+		return header != null && header.length >= 4 && ByteBuffer.wrap( header ).getInt() == 0xCAFEBABE;
 	}
 
 }

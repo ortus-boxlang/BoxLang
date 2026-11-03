@@ -1,0 +1,11 @@
+/**
+ * BL-2759: records which context a context-less announcement runs on
+ */
+class {
+
+	function onBL2759( data ){
+		data.zone       = now().getZone().getId();
+		data.hasRequest = !isNull( getBoxContext().getRequestContext() );
+	}
+
+}

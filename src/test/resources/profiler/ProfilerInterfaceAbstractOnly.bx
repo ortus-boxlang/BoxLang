@@ -1,0 +1,18 @@
+// An interface with ONLY abstract method declarations — no static block, no
+// static functions, no default-method bodies. Its pseudo-constructor body is
+// EMPTY, which (before the fix) made the profiler's catch-all wrapper emit a
+// zero-length try range -> "Illegal exception table range" at class define time.
+// Mirrors TestBox's IRunner.cfc (interface with only abstract methods).
+interface displayName="ProfilerInterfaceAbstractOnly" {
+
+	/**
+	 * Constructor
+	 */
+	function init( required struct options );
+
+	/**
+	 * Execute a run
+	 */
+	any function run( required any target, required any testResults, required any callbacks );
+
+}

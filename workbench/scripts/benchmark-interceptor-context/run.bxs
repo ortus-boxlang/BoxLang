@@ -1,0 +1,63 @@
+/**
+ * BoxLang interceptor context benchmark (BL-2759)
+ *
+ * Interceptors announced without a context used to run on the runtime context, even inside a request,
+ * so every setting they read rebuilt the whole runtime config struct.
+ * Run from the project root after building the jar:
+ *
+ *   ./gradlew shadowJar
+ *   java -jar build/libs/boxlang-<version>-snapshot.jar workbench/scripts/benchmark-interceptor-context/run.bxs
+ *
+ * Optional options: --calls=100000 --rounds=5
+ * Each case runs 2 warmup rounds, then reports the median of the measured rounds
+ */
+opts    = server.cli.parsed.options ?: {};
+calls   = val( opts.calls ?: 100000 );
+rounds  = val( opts.rounds ?: 5 );
+warmups = 2;
+
+Key     = createObject( "java", "ortus.boxlang.runtime.scopes.Key" );
+service = createObject( "java", "ortus.boxlang.runtime.BoxRuntime" ).getInstance().getInterceptorService();
+custom  = Key.of( "onBL2759Bench" );
+service.registerInterceptionPoint( [ custom ] );
+boxRegisterInterceptor( new BenchListener(), "postBIFInvocation,onBL2759Bench" );
+
+cases = [
+	{
+		name : "len() with a postBIFInvocation listener using now() + jsonSerialize() (#numberFormat( calls )# ops)",
+		run  : () => {
+			for ( var i = 1; i <= calls; i++ ) {
+				len( "x" );
+			}
+		}
+	},
+	{
+		name : "context-less announce, listener using dateFormat() + lsNumberFormat() (#numberFormat( calls )# ops)",
+		run  : () => {
+			for ( var i = 1; i <= calls; i++ ) {
+				service.announce( custom, {} );
+			}
+		}
+	}
+];
+
+println( "BoxLang #server.boxlang.version# | Java #server.java.version# | #rounds# rounds, #warmups# warmups" );
+println( "" );
+println( "| Case | ops/s | ms per round |" );
+println( "|---|---:|---:|" );
+
+for ( c in cases ) {
+	for ( w = 1; w <= warmups; w++ ) {
+		c.run();
+	}
+	times = [];
+	for ( r = 1; r <= rounds; r++ ) {
+		start = getTickCount( "nano" );
+		c.run();
+		times.append( ( getTickCount( "nano" ) - start ) / 1000000 );
+	}
+	times.sort( "numeric" );
+	ms    = times[ ceiling( times.len() / 2 ) ];
+	opsPs = ms > 0 ? calls / ( ms / 1000 ) : 0;
+	println( "| #c.name# | #numberFormat( opsPs, ",.0" )# | #numberFormat( ms, ",.0" )# |" );
+}

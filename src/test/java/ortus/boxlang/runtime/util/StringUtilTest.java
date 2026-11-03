@@ -274,4 +274,58 @@ public class StringUtilTest {
 		assertThat( StringUtil.pluralize( "dish" ) ).isEqualTo( "dishes" );
 	}
 
+	@DisplayName( "indexOfIgnoreCase finds a substring without lower-casing the haystack" )
+	@Test
+	public void testIndexOfIgnoreCase() {
+		assertThat( StringUtil.indexOfIgnoreCase( "BoxLang is Great", "lang" ) ).isEqualTo( 3 );
+		assertThat( StringUtil.indexOfIgnoreCase( "BoxLang is Great", "great" ) ).isEqualTo( 11 );
+		assertThat( StringUtil.indexOfIgnoreCase( "BoxLang is Great", "coldfusion" ) ).isEqualTo( -1 );
+		assertThat( StringUtil.indexOfIgnoreCase( "BoxLang is Great", "box", 1 ) ).isEqualTo( -1 );
+		// A negative start is clamped, matching String.indexOf( String, int )
+		assertThat( StringUtil.indexOfIgnoreCase( "BoxLang is Great", "box", -5 ) ).isEqualTo( 0 );
+		// Empty search matches the clamped start position, again matching String.indexOf behaviour
+		assertThat( StringUtil.indexOfIgnoreCase( "abc", "", 2 ) ).isEqualTo( 2 );
+		assertThat( StringUtil.indexOfIgnoreCase( "abc", "", 10 ) ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "indexOfIgnoreCase is Unicode aware, unlike the ASCII only bit twiddling helpers" )
+	@Test
+	public void testIndexOfIgnoreCaseUnicode() {
+		assertThat( StringUtil.indexOfIgnoreCase( "Дом Фонарь", "фонарь" ) ).isEqualTo( 4 );
+		// Character.toLowerCase( U+0130 ) == 'i', so this matches even though '| 0x20' folding can not see it
+		assertThat( StringUtil.indexOfIgnoreCase( "İstanbul", "ist" ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "indexOfIgnoreCase works on any CharSequence" )
+	@Test
+	public void testIndexOfIgnoreCaseCharSequence() {
+		assertThat( StringUtil.indexOfIgnoreCase( new StringBuilder( "BoxLang is Great" ), "great" ) ).isEqualTo( 11 );
+		assertThat( StringUtil.indexOfIgnoreCase( new StringBuilder( "BoxLang is Great" ), "JAVA" ) ).isEqualTo( -1 );
+	}
+
+	@DisplayName( "lastIndexOfIgnoreCase returns the final match" )
+	@Test
+	public void testLastIndexOfIgnoreCase() {
+		assertThat( StringUtil.lastIndexOfIgnoreCase( "redGreenblueRed", "red" ) ).isEqualTo( 12 );
+		assertThat( StringUtil.lastIndexOfIgnoreCase( "redGreenblueRed", "nope" ) ).isEqualTo( -1 );
+		assertThat( StringUtil.lastIndexOfIgnoreCase( "BoxLang", "" ) ).isEqualTo( 7 );
+	}
+
+	@DisplayName( "containsIgnoreCase is a case-insensitive containment check" )
+	@Test
+	public void testContainsIgnoreCase() {
+		assertThat( StringUtil.containsIgnoreCase( "BoxLang is great", "BOXLANG" ) ).isTrue();
+		assertThat( StringUtil.containsIgnoreCase( "BoxLang is great", "java" ) ).isFalse();
+		assertThat( StringUtil.containsIgnoreCase( new StringBuilder( "BoxLang" ), "lang" ) ).isTrue();
+	}
+
+	@DisplayName( "regionMatchesIgnoreCase treats out of range offsets as a non match" )
+	@Test
+	public void testRegionMatchesIgnoreCase() {
+		assertThat( StringUtil.regionMatchesIgnoreCase( "abc", 1, "BC", 0, 2 ) ).isTrue();
+		assertThat( StringUtil.regionMatchesIgnoreCase( "abc", 1, "bd", 0, 2 ) ).isFalse();
+		assertThat( StringUtil.regionMatchesIgnoreCase( "abc", 1, "bc", 0, 5 ) ).isFalse();
+		assertThat( StringUtil.regionMatchesIgnoreCase( "abc", -1, "abc", 0, 3 ) ).isFalse();
+	}
+
 }

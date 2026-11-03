@@ -1,0 +1,10 @@
+class extends="java:TestCases.phase3.JavaOverloadTarget" {
+
+	static function onMissingStaticMethod( string missingMethodName, struct missingMethodArguments ) {
+		return {
+			"name" : missingMethodName,
+			"args" : missingMethodArguments
+		};
+	}
+
+}

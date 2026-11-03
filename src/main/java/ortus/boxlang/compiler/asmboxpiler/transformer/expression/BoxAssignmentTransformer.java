@@ -52,6 +52,7 @@ import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.transformer.util.AssignmentRewriteOptimizer;
@@ -168,6 +169,12 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		BoxExpression					furthestLeft	= left;
 
 		while ( furthestLeft instanceof BoxAccess currentObjectAccess ) {
+			// Foo::bar = 1 assigns into the static scope of the class, which becomes the base object
+			if ( currentObjectAccess instanceof BoxStaticAccess staticAccess ) {
+				accessKeys.add( 0, new BoxStaticAccessTransformer( transpiler ).transformAccessKey( staticAccess ) );
+				furthestLeft = staticAccess;
+				break;
+			}
 			// DotAccess just uses the string directly, array access allows any expression
 			if ( currentObjectAccess instanceof BoxDotAccess dotAccess ) {
 				if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
@@ -348,7 +355,11 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			}
 
-			nodes.addAll( transpiler.transform( furthestLeft, TransformerContext.NONE, ReturnValueContext.VALUE ) );
+			if ( furthestLeft instanceof BoxStaticAccess staticAccess ) {
+				nodes.addAll( new BoxStaticAccessTransformer( transpiler ).transformClassReference( staticAccess, TransformerContext.NONE ) );
+			} else {
+				nodes.addAll( transpiler.transform( furthestLeft, TransformerContext.NONE, ReturnValueContext.VALUE ) );
+			}
 
 			nodes.addAll( jRight );
 
@@ -784,6 +795,11 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    false ) );
 
 			nodes.addAll( accessKey );
+		} else if ( assigment.getLeft() instanceof BoxStaticAccess staticAccess ) {
+			// Foo::bar += 1
+			BoxStaticAccessTransformer staticTransformer = new BoxStaticAccessTransformer( transpiler );
+			nodes.addAll( staticTransformer.transformClassReference( staticAccess, TransformerContext.NONE ) );
+			nodes.addAll( staticTransformer.transformAccessKey( staticAccess ) );
 		} else if ( assigment.getLeft() instanceof BoxAccess objectAccess ) {
 			nodes.addAll( transpiler.transform( objectAccess.getContext(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
 

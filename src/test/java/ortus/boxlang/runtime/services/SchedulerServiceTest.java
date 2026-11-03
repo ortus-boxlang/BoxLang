@@ -20,6 +20,9 @@ package ortus.boxlang.runtime.services;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.ZoneId;
 
 import org.junit.jupiter.api.AfterAll;
@@ -55,6 +58,8 @@ public class SchedulerServiceTest {
 
 	@AfterEach
 	public void tearDownEach() {
+		schedulerService.removeScheduler( Key.of( "bxschedule-corrupt-test" ), true, 0L );
+		schedulerService.removeScheduler( Key.of( "bxschedule-partial-test" ), true, 0L );
 		schedulerService.removeScheduler( Key.of( "bxschedule-watcher-test" ), true, 0L );
 		schedulerService.removeScheduler( Key.of( "bxschedule-grace-test" ), true, 0L );
 	}
@@ -256,5 +261,113 @@ public class SchedulerServiceTest {
 		// Cleanup: remove test tasks from disk
 		schedulerService.lastSelfWriteMs = 0;
 		schedulerService.saveTasksToDisk( new Array() );
+	}
+
+	// --------------------------------------------------------------------------
+	// Corrupted tasks.json handling
+	// --------------------------------------------------------------------------
+
+	private Path tasksFile() {
+		return Paths.get( runtime.getConfiguration().scheduler.tasksFile );
+	}
+
+	/**
+	 * Run a test body against a tasks file with the given raw content (null = no file),
+	 * then restore a clean, empty tasks file.
+	 */
+	private void withTasksFile( String content, java.util.function.Consumer<Path> body ) {
+		Path file = tasksFile();
+		try {
+			Files.createDirectories( file.getParent() );
+			if ( content == null ) {
+				Files.deleteIfExists( file );
+			} else {
+				Files.writeString( file, content );
+			}
+			body.accept( file );
+		} catch ( java.io.IOException e ) {
+			throw new RuntimeException( e );
+		} finally {
+			schedulerService.lastSelfWriteMs = 0;
+			schedulerService.saveTasksToDisk( new Array() );
+		}
+	}
+
+	@Test
+	@DisplayName( "Startup with invalid JSON in tasks.json is a hard stop and leaves the file untouched" )
+	void testStartupWithCorruptJsonThrows() {
+		String corrupt = "[ { \"task\": \"broken\", ";
+		withTasksFile( corrupt, file -> {
+			BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> schedulerService.registerPersistedScheduleTasks() );
+			assertThat( e.getMessage() ).contains( file.toString() );
+			assertThat( e.getMessage() ).contains( "corrupted" );
+			try {
+				assertThat( Files.readString( file ) ).isEqualTo( corrupt );
+			} catch ( java.io.IOException io ) {
+				throw new RuntimeException( io );
+			}
+		} );
+	}
+
+	@Test
+	@DisplayName( "Startup with valid JSON that is not an array is a hard stop" )
+	void testStartupWithNonArrayJsonThrows() {
+		withTasksFile( "{ \"task\": \"notAnArray\" }", file -> {
+			assertThrows( BoxRuntimeException.class, () -> schedulerService.registerPersistedScheduleTasks() );
+		} );
+	}
+
+	@Test
+	@DisplayName( "Startup with a missing tasks.json still works" )
+	void testStartupWithMissingFileWorks() {
+		withTasksFile( null, file -> schedulerService.registerPersistedScheduleTasks() );
+	}
+
+	@Test
+	@DisplayName( "Startup with a valid empty tasks.json is unchanged" )
+	void testStartupWithValidFileWorks() {
+		withTasksFile( "[]", file -> schedulerService.registerPersistedScheduleTasks() );
+	}
+
+	@Test
+	@DisplayName( "Startup with bad entries inside a valid array does not stop; good entries still load" )
+	void testStartupWithBadEntriesWarnsAndContinues() {
+		String json = "[ \"not-a-struct\", { \"scheduler\": \"bxschedule-partial-test\" }, "
+		    + "{ \"task\": \"goodTask\", \"scheduler\": \"bxschedule-partial-test\", \"url\": \"http://localhost/good\", \"interval\": \"3600\" } ]";
+		withTasksFile( json, file -> {
+			schedulerService.registerPersistedScheduleTasks();
+			Key key = Key.of( "bxschedule-partial-test" );
+			assertThat( schedulerService.hasScheduler( key ) ).isTrue();
+			assertThat( ( ( BaseScheduler ) schedulerService.getScheduler( key ) ).hasTask( "goodTask" ) ).isTrue();
+		} );
+	}
+
+	@Test
+	@DisplayName( "reloadSchedulerFromDisk with a corrupted tasks.json throws and keeps the running scheduler" )
+	void testReloadWithCorruptJsonThrowsAndKeepsScheduler() {
+		Key key = Key.of( "bxschedule-corrupt-test" );
+		schedulerService.removeScheduler( key, true, 0L );
+		IScheduler scheduler = new BaseScheduler( key.getName() );
+		schedulerService.registerScheduler( scheduler );
+
+		withTasksFile( "[ not json", file -> {
+			assertThrows( BoxRuntimeException.class, () -> schedulerService.reloadSchedulerFromDisk( key, true, 0L ) );
+			assertThat( schedulerService.getScheduler( key ) ).isSameInstanceAs( scheduler );
+		} );
+	}
+
+	@Test
+	@DisplayName( "onTasksFileChanged with a corrupted tasks.json does not throw and keeps running schedulers" )
+	void testWatcherWithCorruptJsonKeepsScheduler() {
+		Key key = Key.of( "bxschedule-corrupt-test" );
+		schedulerService.removeScheduler( key, true, 0L );
+		IScheduler scheduler = new BaseScheduler( key.getName() );
+		schedulerService.registerScheduler( scheduler );
+
+		withTasksFile( "[ not json", file -> {
+			schedulerService.lastSelfWriteMs = 0;
+			schedulerService.onTasksFileChanged();
+			assertThat( schedulerService.getScheduler( key ) ).isSameInstanceAs( scheduler );
+		} );
 	}
 }

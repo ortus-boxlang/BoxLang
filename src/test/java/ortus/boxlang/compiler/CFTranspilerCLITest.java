@@ -18,6 +18,7 @@
 package ortus.boxlang.compiler;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -32,6 +33,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import ortus.boxlang.compiler.parser.Parser;
+import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -386,5 +389,95 @@ public class CFTranspilerCLITest {
 		} );
 		assertThat( exitCode ).isEqualTo( 0 );
 		assertThat( Files.exists( targetDir.resolve( "page.bxm" ) ) ).isTrue();
+	}
+
+	// ---------- BL-2735: docblock @return and script component prefixes ----------
+
+	private String transpileCfc( String name, String source ) throws IOException {
+		Path	src		= createSourceFile( name, source );
+		Path	target	= this.tempDir.resolve( "out-" + name );
+		Files.createDirectories( target );
+		int exitCode = CFTranspiler.run( new String[] { "--source", src.toString(), "--target", target.toString() } );
+		assertThat( exitCode ).isEqualTo( 0 );
+		Path			out		= target.resolve( name.replace( ".cfc", ".bx" ) );
+		String			result	= Files.readString( out );
+		ParsingResult	parsed	= new Parser().parse( out.toFile() );
+		assertWithMessage( "Transpiled output must parse: " + result ).that( parsed.isCorrect() ).isTrue();
+		return result;
+	}
+
+	@Test
+	@DisplayName( "BL-2735: docblock @return stays in the docblock and is not an annotation" )
+	void testDocblockReturnNotAnnotation() throws IOException {
+		String result = transpileCfc( "ReturnDoc.cfc", """
+		                                               component {
+		                                               	/**
+		                                               	 * Apply styles.
+		                                               	 *
+		                                               	 * @style The style
+		                                               	 * @return The styled text
+		                                               	 */
+		                                               	function color( required string style ){ return arguments.style; }
+		                                               }
+		                                               """ );
+		assertThat( result ).doesNotContain( "@return(" );
+		assertThat( result ).contains( "@return The styled text" );
+		assertThat( result ).contains( "@style" );
+	}
+
+	@Test
+	@DisplayName( "BL-2735: docblock @returns and @output handling is unchanged" )
+	void testDocblockReturnsAndOutputUnchanged() throws IOException {
+		String result = transpileCfc( "ReturnsDoc.cfc", """
+		                                                component {
+		                                                	/**
+		                                                	 * Apply styles.
+		                                                	 *
+		                                                	 * @returns The styled text
+		                                                	 * @output false
+		                                                	 */
+		                                                	function color(){ return "x"; }
+		                                                }
+		                                                """ );
+		assertThat( result ).contains( "@returns(" );
+		assertThat( result ).contains( "@output(" );
+	}
+
+	@Test
+	@DisplayName( "BL-2735: script components without a prefix get bx:" )
+	void testScriptComponentsGetPrefix() throws IOException {
+		String result = transpileCfc( "Prefix.cfc", """
+		                                            component {
+		                                            	function f(){
+		                                            		savecontent variable="local.out" { writeOutput( "hi" ); }
+		                                            		return local.out;
+		                                            	}
+		                                            	function g(){
+		                                            		application action="update" name="x";
+		                                            	}
+		                                            }
+		                                            """ );
+		assertThat( result ).contains( "bx:savecontent variable=" );
+		assertThat( result ).contains( "bx:application action=" );
+	}
+
+	@Test
+	@DisplayName( "BL-2735: bare keyword script components stay unprefixed" )
+	void testBareKeywordComponentsStayUnprefixed() throws IOException {
+		String result = transpileCfc( "Bare.cfc", """
+		                                          component {
+		                                          	function f(){
+		                                          		lock name="x" timeout="1" { y = 1; }
+		                                          		param name="url.a" default="1";
+		                                          		thread name="t1" { z = 1; }
+		                                          	}
+		                                          }
+		                                          """ );
+		assertThat( result ).doesNotContain( "bx:lock" );
+		assertThat( result ).doesNotContain( "bx:param" );
+		assertThat( result ).doesNotContain( "bx:thread" );
+		assertThat( result ).contains( "lock name" );
+		assertThat( result ).contains( "param name" );
+		assertThat( result ).contains( "thread name" );
 	}
 }

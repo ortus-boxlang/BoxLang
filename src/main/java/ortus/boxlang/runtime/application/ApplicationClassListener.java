@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.application;
 
+import ortus.boxlang.runtime.config.util.RuntimeSettingsUtil;
 import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
@@ -63,6 +64,8 @@ public class ApplicationClassListener extends BaseApplicationListener {
 		this.settings.put( Key.source, listener.getRunnablePath().absolutePath().toString() );
 		this.settings.put( Key._CLASS, listener.getRunnablePath().absolutePath().toString() );
 		ConfigSecretUtil.decryptValues( this.settings );
+		// Resolve ${env.X} placeholders and secrets in runtimeSettings. This runs every request as the descriptor is re-read.
+		RuntimeSettingsUtil.resolveInPlace( this.settings );
 
 		// Expand classPaths in Application.bx. They will be relative to the Application.bx file if not starting with /
 		Array classPaths = this.settings.getAsArray( Key.classPaths );

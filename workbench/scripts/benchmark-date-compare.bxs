@@ -1,0 +1,90 @@
+/**
+ * BoxLang date compare benchmark (BL-2758)
+ *
+ * Measures date compares and casts, which used to rebuild the whole runtime config struct on every call.
+ * Run from the project root after building the jar:
+ *
+ *   ./gradlew shadowJar
+ *   java -jar build/libs/boxlang-<version>-snapshot.jar workbench/scripts/benchmark-date-compare.bxs
+ *
+ * Optional options: --compares=1000000 --sortSize=10000 --rounds=5
+ * Each case runs 2 warmup rounds, then reports the median of the measured rounds
+ */
+opts     = server.cli.parsed.options ?: {};
+compares = val( opts.compares ?: 1000000 );
+sortSize = val( opts.sortSize ?: 10000 );
+rounds   = val( opts.rounds ?: 5 );
+warmups  = 2;
+
+d1 = createDateTime( 2024, 1, 15, 10, 30, 0 );
+d2 = createDateTime( 2024, 1, 15, 10, 31, 0 );
+
+// Struct shaped like CacheBox pool metadata: key -> { lastAccessed : date }
+pool = {};
+base = now();
+for ( i = 1; i <= sortSize; i++ ) {
+	pool[ "key#i#" ] = { lastAccessed : dateAdd( "s", randRange( 1, 1000000 ), base ) };
+}
+
+cases = [
+	{
+		name : "Compare.invoke via a < b (#numberFormat( compares )# ops)",
+		ops  : compares,
+		run  : () => {
+			var hits = 0;
+			for ( var i = 1; i <= compares; i++ ) {
+				if ( d1 < d2 ) hits++;
+			}
+			return hits;
+		}
+	},
+	{
+		name : "a > b on dates (#numberFormat( compares )# ops)",
+		ops  : compares,
+		run  : () => {
+			var hits = 0;
+			for ( var i = 1; i <= compares; i++ ) {
+				if ( d2 > d1 ) hits++;
+			}
+			return hits;
+		}
+	},
+	{
+		name : "dateCompare() (#numberFormat( compares )# ops)",
+		ops  : compares,
+		run  : () => {
+			var hits = 0;
+			for ( var i = 1; i <= compares; i++ ) {
+				hits += dateCompare( d1, d2 );
+			}
+			return hits;
+		}
+	},
+	{
+		name : "structSort numeric on #numberFormat( sortSize )# dates (1 op = 1 sort)",
+		ops  : 1,
+		run  : () => structSort( pool, "numeric", "asc", "lastAccessed" ).len()
+	}
+];
+
+println( "BoxLang #server.boxlang.version# | Java #server.java.version# | #rounds# rounds, #warmups# warmups" );
+println( "" );
+println( "| Case | ops/s | ms per round |" );
+println( "|---|---:|---:|" );
+
+for ( c in cases ) {
+	for ( w = 1; w <= warmups; w++ ) {
+		c.run();
+	}
+	times = [];
+	for ( r = 1; r <= rounds; r++ ) {
+		start = getTickCount( "nano" );
+		c.run();
+		times.append( ( getTickCount( "nano" ) - start ) / 1000000 );
+	}
+	// Median round time
+	times.sort( "numeric" );
+	ms    = times[ ceiling( times.len() / 2 ) ];
+	opsPs = ms > 0 ? c.ops / ( ms / 1000 ) : 0;
+	println( "| #c.name# | #numberFormat( opsPs, ",.0" )# | #numberFormat( ms, ",.0" )# |" );
+}

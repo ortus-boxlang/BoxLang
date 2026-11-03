@@ -31,4 +31,10 @@ public class ComponentFormattingTest extends PrettyPrintTest {
 		printTestWithDefaultConfig( "component", "cfscript_component_call" );
 	}
 
+	@Test
+	@DisplayName( "A tag-based CFC with a static block in a cfscript island round-trips" )
+	public void testStaticBlockInScriptIsland() throws IOException {
+		printTestWithDefaultConfig( "component", "static_island" );
+	}
+
 }

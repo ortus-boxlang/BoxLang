@@ -34,9 +34,14 @@ import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.UnknownType;
 
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxStructType;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
@@ -61,6 +66,57 @@ public class BoxComponentTransformer extends AbstractTransformer {
 
 		// Check for custom tag shortcut like <cf_brad>
 		if ( componentName.startsWith( "_" ) ) {
+			// if there is already a name attribute, move it to attribute collection.
+			// if there is alrady an attribute collection, don't override a name key already in it
+			BoxAnnotation	nameAttribute		= null;
+			BoxAnnotation	attributeCollection	= null;
+			for ( BoxAnnotation attr : attributes ) {
+				String key = attr.getKey().getValue();
+				if ( key.equalsIgnoreCase( "name" ) ) {
+					nameAttribute = attr;
+				} else if ( key.equalsIgnoreCase( "attributeCollection" ) ) {
+					attributeCollection = attr;
+				}
+			}
+			// If there is already a name attribute, move it to attribute collection.
+			if ( nameAttribute != null ) {
+				BoxStructLiteral attrCol = getStructLiteral( attributeCollection );
+				// If there is already an attribute collection, don't override a name key already in it
+				if ( attrCol != null ) {
+					List<BoxExpression>	attrColValues	= attrCol.getValues();
+					boolean				hasName			= false;
+					for ( int i = 0; i < attrColValues.size(); i += 2 ) {
+						BoxExpression keyExpr = attrColValues.get( i );
+						if ( ( keyExpr instanceof BoxIdentifier id && id.getName().equalsIgnoreCase( "name" ) )
+						    || ( keyExpr instanceof BoxFQN fqn && fqn.getValue().equalsIgnoreCase( "name" ) ) ) {
+							hasName = true;
+							break;
+						}
+					}
+					if ( !hasName ) {
+						attrColValues.add( new BoxIdentifier( "name", null, null ) );
+						attrColValues.add( nameAttribute.getValue() );
+						attrCol.setValues( attrColValues );
+					}
+					attributes.remove( nameAttribute );
+				} else {
+					attributes.remove( nameAttribute );
+					attributes.add(
+					    new BoxAnnotation(
+					        new BoxFQN( "attributeCollection", null, null ),
+					        new BoxStructLiteral(
+					            BoxStructType.Unordered,
+					            List.of(
+					                new BoxIdentifier( "name", null, null ),
+					                nameAttribute.getValue()
+					            ),
+					            null,
+					            null ),
+					        null,
+					        null )
+					);
+				}
+			}
 			attributes.add(
 			    new BoxAnnotation(
 			        new BoxFQN( "name", null, componentName ),
@@ -184,5 +240,29 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		// logger.trace( node.getSourceText() + " -> " + jBlock );
 		addIndex( jStatement, node );
 		return jBlock;
+	}
+
+	/**
+	 * Extract a {@link BoxStructLiteral} from the attribute collection value.
+	 * The value may be a direct struct literal, or wrapped in a single-value
+	 * {@link BoxStringInterpolation} (e.g. {@code attributeCollection="#{}#"}).
+	 *
+	 * @param attributeCollection The attributeCollection annotation, may be null.
+	 *
+	 * @return The struct literal, or null if it cannot be resolved.
+	 */
+	private BoxStructLiteral getStructLiteral( BoxAnnotation attributeCollection ) {
+		if ( attributeCollection == null ) {
+			return null;
+		}
+		BoxExpression value = attributeCollection.getValue();
+		if ( value instanceof BoxStructLiteral structLiteral ) {
+			return structLiteral;
+		}
+		if ( value instanceof BoxStringInterpolation interpolation && interpolation.getValues().size() == 1
+		    && interpolation.getValues().get( 0 ) instanceof BoxStructLiteral structLiteral ) {
+			return structLiteral;
+		}
+		return null;
 	}
 }

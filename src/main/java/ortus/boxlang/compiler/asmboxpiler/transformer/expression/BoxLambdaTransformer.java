@@ -35,8 +35,10 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
+import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
@@ -84,12 +86,41 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		    true,
 		    transpiler, false,
 		    () -> {
-			    if ( boxLambda.getBody().getChildren().size() == 0 ) {
-				    return List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+			    List<AbstractInsnNode> bodyNodes = new ArrayList<>();
+
+			    // A BLOCK lambda body (`() -> { ... }`) is a BoxStatementBlock whose braces
+			    // Pass A registered as ONE atomic span group keyed at the "{" (the block
+			    // node's own start). Unlike a closure, this invoker transforms the body's
+			    // CHILDREN directly (never the block node itself), so nothing would emit
+			    // that group — the executed braces stayed missed. Emit it at body ENTRY,
+			    // BEFORE the empty-body check, so an empty block lambda covers its braces
+			    // too (both braces run whenever the lambda is invoked).
+			    BoxStatement		blockBody	= boxLambda.getBody();
+			    if ( blockBody instanceof BoxStatementBlock && blockBody.getStart() != null ) {
+				    transpiler.emitBraceGroupMark( bodyNodes, blockBody.getStart(), true );
 			    }
-			    return boxLambda.getBody().getChildren().stream()
+
+			    if ( blockBody.getChildren().size() == 0 ) {
+				    // Empty body: still close the probe-charging interval so the braces'
+				    // self-time is charged rather than lost.
+				    if ( transpiler.hasProfilerId() ) {
+					    bodyNodes.addAll( transpiler.emitMarkEnd() );
+				    }
+				    bodyNodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+				    return bodyNodes;
+			    }
+			    bodyNodes.addAll( blockBody.getChildren().stream()
 			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ).stream() )
-			        .toList();
+			        .collect( java.util.stream.Collectors.toList() ) );
+
+			    // Close the probe-charging interval after the lambda body's last
+			    // statement so the final body span's self-time is charged (mirrors
+			    // the script-body and UDF-body markEnd).
+			    if ( transpiler.hasProfilerId() ) {
+				    bodyNodes.addAll( transpiler.emitMarkEnd() );
+			    }
+
+			    return bodyNodes;
 		    } );
 		transpiler.decrementfunctionBodyCounter();
 		transpiler.setComponentCounter( componentCounter );

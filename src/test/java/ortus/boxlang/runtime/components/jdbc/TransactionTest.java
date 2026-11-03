@@ -130,6 +130,24 @@ public class TransactionTest extends BaseJDBCTest {
 		assertThat( ( ( IJDBCCapableContext ) getContext() ).getConnectionManager().isInTransaction() ).isFalse();
 	}
 
+	@DisplayName( "Rolls back the transaction when an abort occurs inside the transaction body" )
+	@Test
+	public void testTransactionRollsBackOnAbort() {
+		getInstance().executeSource(
+		    """
+		    transaction{
+		    	queryExecute( 'INSERT INTO developers (id) VALUES (333)' );
+		    	abort;
+		    }
+		    """,
+		    getContext() );
+
+		Query theResult = ( Query ) getInstance()
+		    .executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (333)' );", getContext() );
+		assertThat( theResult.size() ).isEqualTo( 0 );
+		assertThat( ( ( IJDBCCapableContext ) getContext() ).getConnectionManager().isInTransaction() ).isFalse();
+	}
+
 	@DisplayName( "Emits transactional events" )
 	@Test
 	public void testTransactionEvents() {

@@ -56,7 +56,8 @@ public class Transaction extends Component {
 		            "begin",
 		            "commit",
 		            "rollback",
-		            "setsavepoint"
+		            "setsavepoint",
+		            "releasesavepoint"
 		        )
 		    ) ),
 		    new Attribute( Key.isolation, "string", Set.of(
@@ -83,11 +84,11 @@ public class Transaction extends Component {
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
 	 *
-	 * @attribute.action When used inside a transaction block, perform some action upon an existing transaction. One of: `begin`, `commit`, `rollback`, or `setsavepoint`.
+	 * @attribute.action When used inside a transaction block, perform some action upon an existing transaction. One of: `begin`, `commit`, `rollback`, `setsavepoint`, or `releasesavepoint`.
 	 *
 	 * @attribute.isolation The isolation level to use for the transaction. Can only be set upon transaction begin. One of: `read_uncommitted`, `read_committed`, `repeatable_read`, or `serializable`.
 	 *
-	 * @attribute.savepoint The name of the savepoint to set or rollback to. Used with `savepoint` or `rollback` actions.
+	 * @attribute.savepoint The name of the savepoint to set, roll back to, or release. Required for `setsavepoint` and `releasesavepoint`.
 	 *
 	 * @attribute.datasource The name of the datasource to use for the transaction. If not provided, the first query execution inside the transaction will set the datasource.
 	 */
@@ -139,7 +140,9 @@ public class Transaction extends Component {
 				bodyResult = processBody( context, body );
 				transaction.commit();
 			} catch ( AbortException e ) {
-				// Ignore aborts
+				// The transaction never reached its end, so its writes must not be committed.
+				logger.debug( "Encountered abort while processing transaction; rolling back" );
+				transaction.rollback();
 				throw e;
 			} catch ( Throwable e ) {
 				logger.error( "Encountered database exception while processing transaction; rolling back", e );
@@ -175,6 +178,9 @@ public class Transaction extends Component {
 					break;
 				case "setsavepoint" :
 					transaction.setSavepoint( Key.of( attributes.getAsString( Key.savepoint ) ) );
+					break;
+				case "releasesavepoint" :
+					transaction.releaseSavepoint( attributes.getAsString( Key.savepoint ) == null ? null : Key.of( attributes.getAsString( Key.savepoint ) ) );
 					break;
 				default :
 					throw new BoxRuntimeException( "Unknown action: " + attributes.getAsString( Key.action ) );

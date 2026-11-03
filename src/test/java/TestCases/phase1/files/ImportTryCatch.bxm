@@ -1,0 +1,5 @@
+<bx:script>
+import java.lang.Math;
+try { a = Math::max( 2, 3 ); } catch ( any e ) { a = -1; }
+request.bl2745 = a;
+</bx:script>

@@ -401,13 +401,19 @@ public class ConnectionManager {
 	 * @return True if the connection was successfully released, otherwise false.
 	 */
 	public boolean releaseConnection( BoxConnection connection ) {
-		if ( isInTransaction() ) {
-			logger.debug( "Am inside transaction context; skipping connection release." );
+		if ( connection == null ) {
+			return false;
+		}
+		// Only the active transaction's OWN connection is left open for the transaction to manage. Any other
+		// connection - for example one acquired for a different datasource, or with credential overrides - is ours
+		// to release, even while a transaction is in flight. Skipping those returns leaks them out of the pool.
+		if ( isActiveTransactionConnection( connection ) ) {
+			logger.debug( "Connection belongs to the active transaction; skipping connection release." );
 			return false;
 		}
 		try {
-			if ( connection == null || connection.isClosed() ) {
-				logger.debug( "Connection is null or already closed; skipping connection release." );
+			if ( connection.isClosed() ) {
+				logger.debug( "Connection is already closed; skipping connection release." );
 				return false;
 			}
 			logger.debug( "Releasing connection {}", connection );
@@ -416,6 +422,30 @@ public class ConnectionManager {
 			throw new DatabaseException( "Error releasing connection: " + e.getMessage(), e );
 		}
 		return true;
+	}
+
+	/**
+	 * Is the provided connection the connection currently held by our active transaction?
+	 * <p>
+	 * Note comparisons are performed against the transaction's already-acquired connection, so this method never
+	 * triggers a lazy connection acquisition. The underlying JDBC connection is compared as well, so re-wrapped
+	 * BoxConnection instances - such as those passed to the deprecated {@link #releaseConnection(Connection)}
+	 * overload - are still recognized.
+	 *
+	 * @param connection The connection to check
+	 *
+	 * @return True if the connection belongs to the active transaction.
+	 */
+	private boolean isActiveTransactionConnection( BoxConnection connection ) {
+		if ( !isInTransaction() ) {
+			return false;
+		}
+		BoxConnection transactionConnection = getTransaction().getBoxConnectionIfPresent();
+		if ( transactionConnection == null ) {
+			return false;
+		}
+		return transactionConnection == connection
+		    || transactionConnection.getConnection() == connection.getConnection();
 	}
 
 	/**
@@ -557,7 +587,13 @@ public class ConnectionManager {
 					    .toConfigStruct();
 					adHocUserPassOptions.put( Key.username, options.username );
 					adHocUserPassOptions.put( Key.password, options.password );
-					return getOnTheFlyDataSource( adHocUserPassOptions );
+
+					// Name it so it can be identified at a glance as an override of the named datasource:
+					// {original_name}_user_{username}_{properties_hash}
+					return getOnTheFlyDataSource(
+					    adHocUserPassOptions,
+					    DatasourceConfig.getOnTheFlyUserPrefix( datasourceName, options.username )
+					);
 				}
 
 				return getDatasourceOrThrow( Key.of( datasourceName ) );
@@ -738,11 +774,32 @@ public class ConnectionManager {
 	 * @return A new or already registered datasource
 	 */
 	public DataSource getOnTheFlyDataSource( IStruct properties ) {
-		Key datasourceName = Key.of( "onthefly_" + properties.hashCode() );
+		return getOnTheFlyDataSource( properties, DatasourceConfig.ON_THE_FLY_PREFIX );
+	}
+
+	/**
+	 * Get an on-the-fly datasource from a struct configuration, using a custom name
+	 * prefix so the datasource is identifiable at a glance in the registered datasource
+	 * listing.
+	 * <p>
+	 * The final name follows the pattern <code>{namePrefix}{properties_hash}</code>, so a prefix
+	 * of <code>myDB_user_jdoe_</code> produces <code>myDB_user_jdoe_1234567</code>.
+	 *
+	 * @param properties The datasource properties to declared for the on the fly
+	 *                   datasource
+	 * @param namePrefix The prefix to name the on the fly datasource with. A null or empty prefix
+	 *                   falls back to {@link DatasourceConfig#ON_THE_FLY_PREFIX}
+	 *
+	 * @return A new or already registered datasource
+	 */
+	public DataSource getOnTheFlyDataSource( IStruct properties, String namePrefix ) {
+		String	namePrefixFinal	= ( namePrefix == null || namePrefix.isEmpty() ) ? DatasourceConfig.ON_THE_FLY_PREFIX : namePrefix;
+		Key		datasourceName	= Key.of( namePrefixFinal + Math.abs( properties.hashCode() ) );
+
 		return this.datasources.computeIfAbsent( datasourceName, ( theName ) -> {
 
 			// What is the "unique" name of this datasource definition
-			Key uniqueName = DatasourceConfig.getUniqueName( "", true, theName.getName(), properties );
+			Key uniqueName = DatasourceConfig.getUniqueName( "", true, theName.getName(), properties, namePrefixFinal );
 
 			// See if the datasource service already has this definition
 			if ( this.datasourceService.has( uniqueName ) ) {
@@ -756,7 +813,8 @@ public class ConnectionManager {
 			DatasourceConfig config = new DatasourceConfig(
 			    Key.of( datasourceName.getName() ),
 			    properties )
-			    .setOnTheFly();
+			    .setOnTheFly()
+			    .withOnTheFlyPrefix( namePrefixFinal );
 
 			// Register it
 			return this.datasourceService.register( config ).beginPooling();
@@ -874,9 +932,17 @@ public class ConnectionManager {
 		this.datasources.clear();
 		this.defaultDatasource = null;
 
-		// End any active transaction or child transactions
+		// End any active transaction or child transactions.
+		// Each transaction end is isolated so that a failure closing one transaction cannot prevent the
+		// remaining (parent) transactions from being closed and their connections returned to the pool.
+		// `endTransaction()` always re-points or nullifies our transaction reference, even when it throws,
+		// so this loop is guaranteed to terminate.
 		while ( this.transaction != null ) {
-			endTransaction();
+			try {
+				endTransaction();
+			} catch ( Throwable e ) {
+				logger.error( "Error encountered while ending a transaction during connection manager shutdown: " + e.getMessage(), e );
+			}
 		}
 	}
 

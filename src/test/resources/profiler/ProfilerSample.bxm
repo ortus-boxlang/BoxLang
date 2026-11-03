@@ -1,0 +1,165 @@
+<!--- Plain statements, one per line --->
+<bx:set i = 0>
+<bx:set j = 0>
+
+<!--- A while loop that runs --->
+<bx:while condition="i < 3">
+    <bx:set i++>
+</bx:while>
+
+<!--- A while loop with a sleep body (timing) --->
+<bx:set i = 0>
+<bx:while condition="i < 3">
+    <bx:set sleep( 100 )>
+    <bx:set i++>
+</bx:while>
+
+<!--- A function declared and invoked --->
+<bx:function name="foo">
+    <bx:argument name="n">
+    <bx:set x = 1>
+    <bx:return x>
+</bx:function>
+<bx:set result = foo()>
+
+<!--- A function declared but NEVER invoked (body stays missed) --->
+<bx:function name="neverCalled">
+    <bx:set z = 1>
+    <bx:return z>
+</bx:function>
+
+<!--- A conditional branch — only one side runs --->
+<bx:set doubled = 100>
+<bx:if doubled GT 40>
+    <bx:set j = 1>
+<bx:else>
+    <bx:set j = 2>
+</bx:if>
+
+<!--- An if/else-on-one-line — only one side runs --->
+<bx:if true><bx:set now()><bx:else><bx:set now()></bx:if>
+
+<!--- An if/else-if chain — only the matching branch runs --->
+<bx:set x = 2>
+<bx:if x EQ 1>
+    <bx:set a = 10>
+<bx:elseif x EQ 2>
+    <bx:set a = 20>
+<bx:elseif x EQ 3>
+    <bx:set a = 30>
+<bx:else>
+    <bx:set a = 99>
+</bx:if>
+
+<!--- An if/else-if chain where the final else runs --->
+<bx:set x = 99>
+<bx:if x EQ 1>
+    <bx:set a = 10>
+<bx:elseif x EQ 2>
+    <bx:set a = 20>
+<bx:else>
+    <bx:set a = 99>
+</bx:if>
+
+<!--- A switch — only the matching case runs --->
+<bx:set x = 2>
+<bx:switch expression="#x#">
+    <bx:case value="1">
+    	<bx:set a = 10>
+    </bx:case>
+    <bx:case value="2">
+    	<bx:set a = 20>
+    </bx:case>
+    <bx:defaultcase>
+    	<bx:set a = 30>
+    </bx:defaultcase>
+</bx:switch>
+
+<!--- A try/catch/finally — only try and finally run --->
+<bx:try>
+    <bx:set a = 1>
+	<bx:catch>
+		<bx:set c = 3>
+	</bx:catch>
+	<bx:finally>
+		<bx:set d = 4>
+	</bx:finally>
+</bx:try>
+
+<!--- A try/catch that THROWS — so the catch body actually runs --->
+<bx:try>
+    <bx:set a = 1>
+    <bx:throw message="boom">
+    <bx:set b = 2>
+	<bx:catch>
+		<bx:set c = 3>
+	</bx:catch>
+	<bx:finally>
+		<bx:set d = 4>
+	</bx:finally>
+</bx:try>
+
+<!--- A for-in loop --->
+<bx:set arr = [ 10, 20, 30 ]>
+<bx:loop array="#arr#" item="item">
+    <bx:set y = item>
+</bx:loop>
+
+<!--- A numeric for loop --->
+<bx:set j = 0>
+<bx:loop from="0" to="2" index="i">
+    <bx:set j = j + i>
+</bx:loop>
+
+<!--- Short-circuit: right side never runs --->
+<bx:set a = false>
+<bx:set b = 1>
+<bx:set x = a && b>
+
+<!--- String interpolation --->
+<bx:set a = 1>
+<bx:set x = "val #a# now">
+
+<!--- Unary not, negation, parens --->
+<bx:set a = false>
+<bx:set b = 5>
+<bx:set c = 1>
+<bx:set d = 2>
+<bx:set x = !a>
+<bx:set y = -b>
+<bx:set z = ( c + d )>
+
+<!--- Ternary --->
+<bx:set bar = true>
+<bx:set baz = 1>
+<bx:set bum = 2>
+<bx:set x = bar ? baz : bum>
+
+<!--- Text output + variable interpolation: the static "foo"/"bar" buffers and
+      the #x# interpolation expression are each tracked (rendered output) --->
+<bx:output>
+foo
+#x#
+bar
+</bx:output>
+
+<!--- param: default is set when the variable is missing ... (complex default,
+      compiled to a deferred closure — GREEN when run, RED when skipped) --->
+<bx:param name="paramMissing" default=#now()#>
+<!--- ... and is a no-op (default skipped — RED) when the variable already exists. --->
+<bx:set paramMissing = 1>
+<bx:param name="paramMissing" default=#now()#>
+
+<!--- param with a LITERAL default stays fused inline (always covered) --->
+<bx:param name="paramLiteral" default="bar">
+
+<bx:script>
+	foo = "bar"
+	now();
+</bx:script>
+
+<bx:set i = 0>
+<!--- A loop with condition --->
+<bx:loop condition="i < 3">    
+	<bx:set i++>
+</bx:loop>

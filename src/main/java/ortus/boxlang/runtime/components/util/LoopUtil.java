@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.components.util;
 
+import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
@@ -648,12 +650,14 @@ public class LoopUtil {
 				int			currentRow		= getCurrentRow();
 				Object[]	thisGroupValues	= new Object[ groupKeys.length ];
 				isSameGroup = true;
+				IBoxContext context = RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() );
 				// System.out.println( "calc group data for Row: " + currentRow + " with group keys: ["
 				// + Arrays.toString( groupKeys ) + "]" );
 				for ( int j = 0; j < groupKeys.length; j++ ) {
 					thisGroupValues[ j ] = query.getCell( groupKeys[ j ], currentRow );
 					if ( lastGroupValues != null
-					    && Compare.invoke( thisGroupValues[ j ], lastGroupValues[ j ], groupCaseSensitive ) != 0 ) {
+					    && Compare.invoke( context, thisGroupValues[ j ],
+					        lastGroupValues[ j ], groupCaseSensitive ) != 0 ) {
 						/*
 						 * System.out
 						 * .println(

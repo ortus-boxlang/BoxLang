@@ -1,0 +1,7 @@
+class extends="java:com.example.bx.RuntimeOnlyParent" {
+
+	function whoAmI() {
+		return "boxlang-runtime-lib";
+	}
+
+}

@@ -127,7 +127,7 @@ public abstract class VoidBoxVisitor {
 	protected VoidBoxVisitor() {
 	}
 
-	private void visitChildren( BoxNode node ) {
+	protected void visitChildren( BoxNode node ) {
 		for ( BoxNode child : node.getChildren() ) {
 			child.accept( this );
 		}

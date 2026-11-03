@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocation;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
@@ -659,7 +660,7 @@ public class InterceptorPool {
 	 * @param data  The data to announce
 	 */
 	public void announce( Key state, IStruct data ) {
-		announce( state, () -> data, this.runtime.getRuntimeContext() );
+		announce( state, () -> data, getDefaultAnnounceContext() );
 	}
 
 	/**
@@ -669,7 +670,18 @@ public class InterceptorPool {
 	 * @param dataProducer A supplier that produces the data to announce
 	 */
 	public void announce( Key state, Supplier<IStruct> dataProducer ) {
-		announce( state, dataProducer, this.runtime.getRuntimeContext() );
+		announce( state, dataProducer, getDefaultAnnounceContext() );
+	}
+
+	/**
+	 * The context used by announcements that don't pass one: the current request when there is one,
+	 * so listeners see its settings and cached config, otherwise the runtime context.
+	 * Some interceptors run without a request (startup, modules, schedulers, watchers).
+	 *
+	 * @return The current request context or the runtime context
+	 */
+	private IBoxContext getDefaultAnnounceContext() {
+		return RequestBoxContext.getCurrent( this.runtime.getRuntimeContext() );
 	}
 
 	/**

@@ -1,0 +1,11 @@
+class {
+
+	function onMissingMethod( string missingMethodName, struct missingMethodArguments ) {
+		return "instance:" & missingMethodName;
+	}
+
+	static function onMissingStaticMethod( string missingMethodName, struct missingMethodArguments ) {
+		return "static:" & missingMethodName;
+	}
+
+}

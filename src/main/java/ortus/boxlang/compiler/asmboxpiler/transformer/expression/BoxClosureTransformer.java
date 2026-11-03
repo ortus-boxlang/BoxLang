@@ -107,6 +107,13 @@ public class BoxClosureTransformer extends AbstractTransformer {
 				    bodyNodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			    }
 
+			    // Close the probe-charging interval after the closure body's last
+			    // statement so the final body span's self-time is charged (mirrors
+			    // the script-body and UDF-body markEnd).
+			    if ( transpiler.hasProfilerId() ) {
+				    bodyNodes.addAll( transpiler.emitMarkEnd() );
+			    }
+
 			    return bodyNodes;
 		    } );
 		transpiler.decrementfunctionBodyCounter();

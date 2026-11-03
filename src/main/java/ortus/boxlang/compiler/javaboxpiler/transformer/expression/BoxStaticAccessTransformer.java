@@ -41,24 +41,42 @@ public class BoxStaticAccessTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxStaticAccess	objectAccess	= ( BoxStaticAccess ) node;
-		Boolean			safe			= objectAccess.isSafe() || context == TransformerContext.SAFE;
+		BoxStaticAccess		objectAccess	= ( BoxStaticAccess ) node;
+		Boolean				safe			= objectAccess.isSafe() || context == TransformerContext.SAFE;
 
-		Node			accessKey;
-		// objectAccess just uses the string directly, array access allows any expression
-		if ( objectAccess.getAccess() instanceof BoxIdentifier id ) {
-			accessKey = createKey( ( id ).getName() );
-		} else if ( objectAccess.getAccess() instanceof BoxIntegerLiteral il ) {
-			accessKey = createKey( il );
-		} else {
-			throw new ExpressionException( "Unsupported access type: " + objectAccess.getAccess().getClass().getName(), objectAccess.getAccess() );
-		}
-
-		Map<String, String> values = new HashMap<>();
+		Map<String, String>	values			= new HashMap<>();
 		values.put( "contextName", transpiler.peekContextName() );
 		values.put( "safe", safe.toString() );
-		values.put( "accessKey", accessKey.toString() );
+		values.put( "accessKey", transformAccessKey( objectAccess ).toString() );
+		values.put( "classReference", transformClassReference( objectAccess, context ).toString() );
 
+		// TODO: I think this should use an explicit getStatic() method because the method we're using would also allow intance access, but if the dev used
+		// :: then we REALLY should only be allowing static access here.
+		String	template	= """
+		                      Referencer.get(
+		                      	${contextName},
+		                      	${classReference},
+		                      	${accessKey},
+		                      	${safe}
+		                      			)
+		                      	""";
+
+		Node	javaExpr	= parseExpression( template, values );
+		// logger.trace( node.getSourceText() + " -> " + javaExpr );
+		addIndex( javaExpr, node );
+		return javaExpr;
+	}
+
+	/**
+	 * Generate the Java expression for the class reference (a DynamicObject) on the left side of the <code>::</code> operator.
+	 * Used for reading static members and for assigning them (<code>Foo::bar = 1</code>).
+	 *
+	 * @param objectAccess The static access node
+	 * @param context      The transformer context
+	 *
+	 * @return The Java expression that resolves the DynamicObject
+	 */
+	public Expression transformClassReference( BoxStaticAccess objectAccess, TransformerContext context ) {
 		Expression jContext;
 
 		if ( objectAccess.getContext() instanceof BoxFQN fqn ) {
@@ -75,27 +93,30 @@ public class BoxStaticAccessTransformer extends AbstractTransformer {
 			// This is not valid in Java, but CF/BL perform all static access at runtime and use :: for field as well so it seems reasonable
 			// that if foo.bar() returns a static class reference, then we should be able to statically dereference it
 			jContext = ( Expression ) transpiler.transform( objectAccess.getContext(), context );
-			// throw new ExpressionException( "Unexpected base token in static access.", objectAccess.getContext() );
 		}
 
 		// "scope" here isn't a BoxLang proper scope, it's just whatever Java source represents the context of the access expression
+		Map<String, String> values = new HashMap<>();
+		values.put( "contextName", transpiler.peekContextName() );
 		values.put( "scopeReference", jContext.toString() );
+		return parseExpression( "BoxClassSupport.ensureClass(${contextName},${scopeReference},imports)", values );
+	}
 
-		// TODO: I think this should use an explicit getStatic() method because the method we're using would also allow intance access, but if the dev used
-		// :: then we REALLY should only be allowing static access here.
-		String	template	= """
-		                      Referencer.get(
-		                      	${contextName},
-		                      	BoxClassSupport.ensureClass(${contextName},${scopeReference},imports),
-		                      	${accessKey},
-		                      	${safe}
-		                      			)
-		                      	""";
-
-		Node	javaExpr	= parseExpression( template, values );
-		// logger.trace( node.getSourceText() + " -> " + javaExpr );
-		addIndex( javaExpr, node );
-		return javaExpr;
+	/**
+	 * Generate the Key expression for the right side of the <code>::</code> operator.
+	 *
+	 * @param objectAccess The static access node
+	 *
+	 * @return The Key expression
+	 */
+	public Expression transformAccessKey( BoxStaticAccess objectAccess ) {
+		// objectAccess just uses the string directly, array access allows any expression
+		if ( objectAccess.getAccess() instanceof BoxIdentifier id ) {
+			return createKey( id.getName() );
+		} else if ( objectAccess.getAccess() instanceof BoxIntegerLiteral il ) {
+			return createKey( il );
+		}
+		throw new ExpressionException( "Unsupported access type: " + objectAccess.getAccess().getClass().getName(), objectAccess.getAccess() );
 	}
 
 }

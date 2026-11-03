@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.util.RuntimeSettingsUtil;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.config.segments.ExecutorConfig;
@@ -164,6 +165,14 @@ public class Configuration implements IConfigSegment {
 	 * Store the compiled class files on disk for reuse between restarts
 	 */
 	public Boolean																storeClassFilesOnDisk				= true;
+
+	/**
+	 * Enable compile-time code instrumentation (span/blueprint emission) in the ASM boxpiler.
+	 * When {@code true}, the boxpiler detects executable spans, builds a blueprint, and emits
+	 * {@code CodeProfilerService.mark(fileId, spanId)} calls so the runtime can record per-span
+	 * execution counts + time. When {@code false} (default), no instrumentation is emitted.
+	 */
+	public Boolean																codeProfilerEnabled					= false;
 
 	/**
 	 * Copy JAR files to a writable temp cache before loading them, which prevents file locking
@@ -376,6 +385,12 @@ public class Configuration implements IConfigSegment {
 	public IStruct																experimental						= new Struct();
 
 	/**
+	 * User-defined runtime settings. Named values of any type, with placeholders and secrets resolved. Unmodifiable.
+	 * Applications can override them via {@code this.runtimeSettings} in the Application descriptor.
+	 */
+	public IStruct																runtimeSettings						= Struct.EMPTY;
+
+	/**
 	 * The scheduler configuration
 	 */
 	public SchedulerConfig														scheduler							= new SchedulerConfig();
@@ -480,6 +495,11 @@ public class Configuration implements IConfigSegment {
 		// Store Class Files on Disk
 		if ( config.containsKey( Key.storeClassFilesOnDisk ) ) {
 			this.storeClassFilesOnDisk = BooleanCaster.cast( config.get( Key.storeClassFilesOnDisk ) );
+		}
+
+		// Code Profiler Enabled
+		if ( config.containsKey( Key.codeProfilerEnabled ) ) {
+			this.codeProfilerEnabled = BooleanCaster.cast( config.get( Key.codeProfilerEnabled ) );
 		}
 
 		// JAR Temp File Caching
@@ -771,6 +791,15 @@ public class Configuration implements IConfigSegment {
 				castedStruct.entrySet().forEach( entry -> this.experimental.put( entry.getKey(), entry.getValue() ) );
 			} else {
 				logger.warn( "The [experimental] configuration is not a JSON Object, ignoring it." );
+			}
+		}
+
+		// Process user-defined runtime settings (placeholders and secrets are already resolved by the ConfigLoader)
+		if ( config.containsKey( Key.runtimeSettings ) ) {
+			if ( config.get( Key.runtimeSettings ) instanceof IStruct castedStruct ) {
+				this.runtimeSettings = RuntimeSettingsUtil.merge( this.runtimeSettings, castedStruct );
+			} else {
+				logger.warn( "The [runtimeSettings] configuration is not a JSON Object, ignoring it." );
 			}
 		}
 
@@ -1223,6 +1252,7 @@ public class Configuration implements IConfigSegment {
 		    Key.defaultJSONQuerySerializationFormat, this.defaultJSONQuerySerializationFormat,
 		    Key.executors, executorsCopy,
 		    Key.experimental, Struct.fromMap( this.experimental ),
+		    Key.runtimeSettings, this.runtimeSettings,
 		    Key.invokeImplicitAccessor, this.invokeImplicitAccessor,
 		    Key.whitespaceCompressionEnabled, this.whitespaceCompressionEnabled,
 		    Key.javaLibraryPaths, Array.copyFromList( this.javaLibraryPaths ),
@@ -1249,6 +1279,7 @@ public class Configuration implements IConfigSegment {
 		    Key.enableNestedTransactions, this.enableNestedTransactions,
 		    Key.enforceUDFTypeChecks, this.enforceUDFTypeChecks,
 		    Key.storeClassFilesOnDisk, this.storeClassFilesOnDisk,
+		    Key.codeProfilerEnabled, this.codeProfilerEnabled,
 		    Key.jarTempFileCaching, this.jarTempFileCaching,
 		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
 		    Key.maxTrackedCompletedThreads, this.maxTrackedCompletedThreads,

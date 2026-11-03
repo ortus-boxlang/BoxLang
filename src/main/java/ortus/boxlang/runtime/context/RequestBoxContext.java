@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.application.ApplicationDefaultListener;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.async.RequestThreadManager;
 import ortus.boxlang.runtime.config.segments.XMLConfig;
+import ortus.boxlang.runtime.config.util.RuntimeSettingsUtil;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -389,6 +390,20 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		// This doesn't mean we won't strategically place specific settings like mappings into specific parts
 		// of the config struct, but this at least ensure everything is available for whomever wants to use it
 		config.put( Key.applicationSettings, appSettings );
+
+		/**
+		 * --------------------------------------------------------------------------
+		 * Runtime Settings Override
+		 * --------------------------------------------------------------------------
+		 * this.runtimeSettings in the Application descriptor deep merges over the global runtimeSettings.
+		 * Placeholders and secrets were already resolved when the listener loaded.
+		 */
+		if ( appSettings.get( Key.runtimeSettings ) instanceof IStruct appRuntimeSettings ) {
+			config.put(
+			    Key.runtimeSettings,
+			    RuntimeSettingsUtil.merge( config.get( Key.runtimeSettings ) instanceof IStruct globalSettings ? globalSettings : null, appRuntimeSettings )
+			);
+		}
 
 		/**
 		 * --------------------------------------------------------------------------

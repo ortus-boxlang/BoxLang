@@ -26,6 +26,7 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
@@ -83,6 +84,13 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			    "${contextName}.scopeFindNearby( ${accessKey}, null, true ).scope()",
 			    values );
 			values.put( "obj", obj );
+		} else if ( expr instanceof BoxStaticAccess staticAccess && operator != BoxUnaryOperator.Not && operator != BoxUnaryOperator.Minus
+		    && operator != BoxUnaryOperator.Plus && operator != BoxUnaryOperator.BitwiseComplement ) {
+			// Foo::bar++
+			BoxStaticAccessTransformer staticTransformer = new BoxStaticAccessTransformer( ( JavaTranspiler ) transpiler );
+			template = getMethodCallTemplateCompound( operation );
+			values.put( "obj", staticTransformer.transformClassReference( staticAccess, TransformerContext.NONE ).toString() );
+			values.put( "accessKey", staticTransformer.transformAccessKey( staticAccess ).toString() );
 		} else if ( expr instanceof BoxAccess objectAccess && operator != BoxUnaryOperator.Not && operator != BoxUnaryOperator.Minus
 		    && operator != BoxUnaryOperator.Plus && operator != BoxUnaryOperator.BitwiseComplement ) {
 			Node accessKey;

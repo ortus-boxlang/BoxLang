@@ -1600,6 +1600,10 @@ public class BaseBoxContext implements IBoxContext {
 	 * Don't override this method with any logic since this call may be a no-op!
 	 * Instead, if your context has shutdown tasks, register them in the constructor
 	 * as a shutdown listener. That way, they will be called at the proper time.
+	 * <p>
+	 * Shutdown listeners are isolated from each other: an exception thrown by one listener is logged and the
+	 * remaining listeners are still invoked. This ensures a single misbehaving listener cannot prevent critical
+	 * resource cleanup - such as closing JDBC connections and transactions - from running.
 	 */
 	@Override
 	public void shutdown() {
@@ -1611,7 +1615,14 @@ public class BaseBoxContext implements IBoxContext {
 			var listenerList = new java.util.ArrayList<>( this.shutdownListeners );
 			java.util.Collections.reverse( listenerList );
 			for ( var listener : listenerList ) {
-				listener.accept( this );
+				// Each listener must be isolated so a failure in one cannot prevent the remaining listeners
+				// from running. Shutdown listeners release critical resources - such as JDBC connections and
+				// transactions - so they must always all get a chance to run.
+				try {
+					listener.accept( this );
+				} catch ( Throwable e ) {
+					getLogger().error( "Error encountered while processing a context shutdown listener: " + e.getMessage(), e );
+				}
 			}
 			this.shutdownListeners.clear();
 			this.shutdownListeners = null;

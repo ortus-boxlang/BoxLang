@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.GreaterThan;
 import ortus.boxlang.runtime.operators.LessThan;
@@ -182,7 +184,8 @@ public class BooleanCaster implements IBoxCaster {
 				CastAttempt<Number> numberAttempt = NumberCaster.attempt( str );
 				if ( numberAttempt.wasSuccessful() ) {
 					// Positive and negative numbers are true, zero is false
-					return GreaterThan.invoke( numberAttempt.get(), 0 ) || LessThan.invoke( numberAttempt.get(), 0 );
+					return GreaterThan.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), numberAttempt.get(), 0 )
+					    || LessThan.invoke( RequestBoxContext.getCurrent( BoxRuntime.getInstance().getRuntimeContext() ), numberAttempt.get(), 0 );
 				}
 			}
 			if ( fail ) {

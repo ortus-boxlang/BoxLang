@@ -66,6 +66,7 @@ public class StructFindValue extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key				scopeKey		= Key.of( arguments.getAsString( Key.scope ) );
 		Stream<IStruct>	searchStream	= StructUtil.findValue(
+		    context,
 		    arguments.getAsStruct( Key.struct ),
 		    arguments.getAsString( Key.value )
 		);

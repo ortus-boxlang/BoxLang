@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.operators;
 
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.types.util.StringUtil;
 
 /**
  * Performs String Contains check
@@ -37,7 +38,7 @@ public class Contains implements IOperator {
 			return false;
 		}
 
-		return ( StringCaster.cast( left ) ).toLowerCase().indexOf( StringCaster.cast( right ).toLowerCase() ) != -1;
+		return StringUtil.containsIgnoreCase( StringCaster.cast( left ), StringCaster.cast( right ) );
 	}
 
 }

@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.types.listeners;
 
-import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -47,7 +46,8 @@ public class XMLChildrenListener implements IIndexedChangeListener<Array> {
 	 * @param object   The array being listened to
 	 * @param isInsert Whether this is an insert (true) or a set/replace (false)
 	 *
-	 * @return The new value to be set (you can override)
+	 * @return The incoming value so the caller can store it back into the array slot which triggered
+	 *         the notification — never null unless the change is a removal.
 	 */
 	@Override
 	public Object notify( Key key, Object newValue, Object oldValue, Array object, boolean isInsert ) {
@@ -63,7 +63,7 @@ public class XMLChildrenListener implements IIndexedChangeListener<Array> {
 			}
 		} else if ( newValue != null && oldValue == null ) {
 			// Insert: no existing element at this index
-			Node importNode = resolveImportNode( parentNode, newValue );
+			Node importNode = XML.toAttachableNode( parentNode, newValue );
 			if ( domNode == null ) {
 				parentNode.appendChild( importNode );
 			} else {
@@ -75,7 +75,7 @@ public class XMLChildrenListener implements IIndexedChangeListener<Array> {
 			parentNode.removeChild( oldNode );
 		} else if ( isInsert ) {
 			// Insert before existing element at this index
-			Node importNode = resolveImportNode( parentNode, newValue );
+			Node importNode = XML.toAttachableNode( parentNode, newValue );
 			if ( domNode == null ) {
 				parentNode.appendChild( importNode );
 			} else {
@@ -83,14 +83,16 @@ public class XMLChildrenListener implements IIndexedChangeListener<Array> {
 			}
 		} else {
 			// Replace: both non-null, not an insert — replace the existing DOM node
-			Node importNode = resolveImportNode( parentNode, newValue );
+			Node importNode = XML.toAttachableNode( parentNode, newValue );
 			if ( domNode != null ) {
 				parentNode.replaceChild( importNode, domNode );
 			} else {
 				parentNode.appendChild( importNode );
 			}
 		}
-		return null;
+		// The caller stores this return value into the array slot it just wrote to, so a null here
+		// would silently blank out that slot
+		return newValue;
 	}
 
 	/**
@@ -115,22 +117,6 @@ public class XMLChildrenListener implements IIndexedChangeListener<Array> {
 			}
 		}
 		return null;
-	}
-
-	/**
-	 * Resolve a new value to a DOM Node, importing across documents if needed.
-	 *
-	 * @param parentNode The parent DOM node that will receive the import
-	 * @param newValue   The new value (Node or XML)
-	 *
-	 * @return The resolved DOM node ready for insertion
-	 */
-	private Node resolveImportNode( Node parentNode, Object newValue ) {
-		Node importNode = newValue instanceof Node ? ( Node ) newValue : ( ( XML ) newValue ).getNode();
-		if ( parentNode instanceof Document docParent && importNode instanceof Document docImport ) {
-			importNode = docParent.importNode( docImport.getDocumentElement(), true );
-		}
-		return importNode;
 	}
 
 }

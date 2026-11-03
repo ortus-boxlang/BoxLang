@@ -21,6 +21,8 @@ import java.math.BigDecimal;
 import java.util.Locale;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
@@ -55,69 +57,165 @@ public class Compare implements IOperator {
 	/**
 	 * Invokes the comparison
 	 *
-	 * @param left  The left operand
-	 * @param right The right operand
-	 *
-	 * @return 1 if greater than, -1 if less than, = if equal
-	 */
-	public static int invoke( Object left, Object right ) {
-		return invoke( left, right, false, true, Locale.US );
-	}
-
-	/**
-	 * Invokes the comparison
-	 *
-	 * @param left          The left operand
-	 * @param right         The right operand
-	 * @param caseSensitive Whether to compare strings case sensitive
-	 *
-	 * @return 1 if greater than, -1 if less than, = if equal
-	 */
-	public static int invoke( Object left, Object right, boolean caseSensitive ) {
-		return invoke( left, right, caseSensitive, true, Locale.US );
-	}
-
-	/**
-	 * Invokes the comparison
-	 *
-	 * @param left          The left operand
-	 * @param right         The right operand
-	 * @param caseSensitive Whether to compare strings case sensitive
-	 * @param fail          True to throw an exception if the left and right arguments cannot be compared
+	 * @param context The context of the caller, used to resolve settings such as the timezone for dates
+	 * @param left    The left operand
+	 * @param right   The right operand
 	 *
 	 * @return 1 if greater than, -1 if less than, 0 if equal
 	 */
-	public static Integer attempt( Object left, Object right, boolean caseSensitive ) {
-		return attempt( left, right, caseSensitive, Locale.US );
+	public static int invoke( IBoxContext context, Object left, Object right ) {
+		return invoke( context, left, right, false, true, Locale.US );
 	}
 
 	/**
 	 * Invokes the comparison
+	 *
+	 * @param context       The context of the caller, used to resolve settings such as the timezone for dates
+	 * @param left          The left operand
+	 * @param right         The right operand
+	 * @param caseSensitive Whether to compare strings case sensitive
+	 *
+	 * @return 1 if greater than, -1 if less than, 0 if equal
+	 */
+	public static int invoke( IBoxContext context, Object left, Object right, boolean caseSensitive ) {
+		return invoke( context, left, right, caseSensitive, true, Locale.US );
+	}
+
+	/**
+	 * Attempts the comparison
+	 *
+	 * @param context       The context of the caller, used to resolve settings such as the timezone for dates
+	 * @param left          The left operand
+	 * @param right         The right operand
+	 * @param caseSensitive Whether to compare strings case sensitive
+	 *
+	 * @return 1 if greater than, -1 if less than, 0 if equal. Null if the arguments cannot be compared
+	 */
+	public static Integer attempt( IBoxContext context, Object left, Object right, boolean caseSensitive ) {
+		return attempt( context, left, right, caseSensitive, Locale.US );
+	}
+
+	/**
+	 * Attempts the comparison
+	 *
+	 * @param context       The context of the caller, used to resolve settings such as the timezone for dates
+	 * @param left          The left operand
+	 * @param right         The right operand
+	 * @param caseSensitive Whether to compare strings case sensitive
+	 * @param locale        The locale to use for comparison
+	 *
+	 * @return 1 if greater than, -1 if less than, 0 if equal. Null if the arguments cannot be compared
+	 */
+	public static Integer attempt( IBoxContext context, Object left, Object right, boolean caseSensitive, Locale locale ) {
+		return invoke( context, left, right, caseSensitive, false, locale );
+	}
+
+	/**
+	 * Invokes the comparison
+	 *
+	 * @deprecated Use {@link #invoke(IBoxContext, Object, Object)} so the caller's context is used
+	 *
+	 * @param left  The left operand
+	 * @param right The right operand
+	 *
+	 * @return 1 if greater than, -1 if less than, 0 if equal
+	 */
+	@Deprecated
+	public static int invoke( Object left, Object right ) {
+		return invoke( defaultContext(), left, right, false, true, Locale.US );
+	}
+
+	/**
+	 * Invokes the comparison
+	 *
+	 * @deprecated Use {@link #invoke(IBoxContext, Object, Object, boolean)} so the caller's context is used
+	 *
+	 * @param left          The left operand
+	 * @param right         The right operand
+	 * @param caseSensitive Whether to compare strings case sensitive
+	 *
+	 * @return 1 if greater than, -1 if less than, 0 if equal
+	 */
+	@Deprecated
+	public static int invoke( Object left, Object right, boolean caseSensitive ) {
+		return invoke( defaultContext(), left, right, caseSensitive, true, Locale.US );
+	}
+
+	/**
+	 * Attempts the comparison
+	 *
+	 * @deprecated Use {@link #attempt(IBoxContext, Object, Object, boolean)} so the caller's context is used
+	 *
+	 * @param left          The left operand
+	 * @param right         The right operand
+	 * @param caseSensitive Whether to compare strings case sensitive
+	 *
+	 * @return 1 if greater than, -1 if less than, 0 if equal. Null if the arguments cannot be compared
+	 */
+	@Deprecated
+	public static Integer attempt( Object left, Object right, boolean caseSensitive ) {
+		return invoke( defaultContext(), left, right, caseSensitive, false, Locale.US );
+	}
+
+	/**
+	 * Attempts the comparison
+	 *
+	 * @deprecated Use {@link #attempt(IBoxContext, Object, Object, boolean, Locale)} so the caller's context is used
 	 *
 	 * @param left          The left operand
 	 * @param right         The right operand
 	 * @param caseSensitive Whether to compare strings case sensitive
 	 * @param locale        The locale to use for comparison
 	 *
-	 * @return 1 if greater than, -1 if less than, 0 if equal
+	 * @return 1 if greater than, -1 if less than, 0 if equal. Null if the arguments cannot be compared
 	 */
+	@Deprecated
 	public static Integer attempt( Object left, Object right, boolean caseSensitive, Locale locale ) {
-		return invoke( left, right, caseSensitive, false, locale );
+		return invoke( defaultContext(), left, right, caseSensitive, false, locale );
 	}
 
 	/**
 	 * Invokes the comparison
 	 *
+	 * @deprecated Use {@link #invoke(IBoxContext, Object, Object, boolean, boolean, Locale)} so the caller's context is used
+	 *
 	 * @param left          The left operand
 	 * @param right         The right operand
-	 * @param caseSensitive Whether to compare strings case sensitive *
+	 * @param caseSensitive Whether to compare strings case sensitive
+	 * @param fail          True to throw an exception if the left and right arguments cannot be compared
+	 * @param locale        The locale to use for comparison
+	 *
+	 * @return 1 if greater than, -1 if less than, 0 if equal. Null if fail=false and the left and right arguments cannot be compared
+	 */
+	@Deprecated
+	public static Integer invoke( Object left, Object right, boolean caseSensitive, boolean fail, Locale locale ) {
+		return invoke( defaultContext(), left, right, caseSensitive, fail, locale );
+	}
+
+	/**
+	 * The context used by the deprecated context-less methods: the current request when there is one,
+	 * otherwise the runtime context. This matches {@link DateTimeCaster#attempt(Object)}.
+	 *
+	 * @return The current request context or the runtime context
+	 */
+	static IBoxContext defaultContext() {
+		return RequestBoxContext.getCurrent( runtime.getRuntimeContext() );
+	}
+
+	/**
+	 * Invokes the comparison
+	 *
+	 * @param context       The context of the caller, used to resolve settings such as the timezone for dates
+	 * @param left          The left operand
+	 * @param right         The right operand
+	 * @param caseSensitive Whether to compare strings case sensitive
 	 * @param fail          True to throw an exception if the left and right arguments cannot be compared
 	 * @param locale        The locale to use for comparison
 	 *
 	 * @return 1 if greater than, -1 if less than, 0 if equal. Null if fail=false and the left and right arguments cannot be compared
 	 */
 	@SuppressWarnings( "unchecked" )
-	public static Integer invoke( Object left, Object right, boolean caseSensitive, boolean fail, Locale locale ) {
+	public static Integer invoke( IBoxContext context, Object left, Object right, boolean caseSensitive, boolean fail, Locale locale ) {
 		// Two nulls are equal
 		if ( left == null && right == null ) {
 			return 0;
@@ -147,8 +245,8 @@ public class Compare implements IOperator {
 
 		// Date comparison - when at least one operand is a known date class
 		if ( DateTimeCaster.isKnownDateClass( left ) || DateTimeCaster.isKnownDateClass( right ) ) {
-			CastAttempt<DateTime>	ref		= DateTimeCaster.attempt( left );
-			CastAttempt<DateTime>	target	= DateTimeCaster.attempt( right );
+			CastAttempt<DateTime>	ref		= DateTimeCaster.attempt( left, context );
+			CastAttempt<DateTime>	target	= DateTimeCaster.attempt( right, context );
 
 			// If both can be cast to DateTime, do a proper date comparison
 			if ( ref.wasSuccessful() && target.wasSuccessful() ) {

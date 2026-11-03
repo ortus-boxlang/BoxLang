@@ -1,0 +1,14 @@
+class {
+
+	this.name = "runtimeSettingsApp"
+
+	this.runtimeSettings = {
+		apiUrl   : "${user-dir}/api",
+		fallback : "${RS_TEST_NOT_DEFINED:default-value}",
+		secret   : server.rsSecret,
+		counter  : server.rsCounter,
+		features : { beta : false, level : 5 },
+		limits   : [ 1, 2, 3 ]
+	}
+
+}

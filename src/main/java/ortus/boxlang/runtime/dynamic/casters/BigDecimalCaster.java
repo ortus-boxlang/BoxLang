@@ -103,10 +103,12 @@ public class BigDecimalCaster implements IBoxCaster {
 		}
 
 		// Try to parse the string as a double
-		String		stringValue	= StringCaster.cast( object, false );
-		BigDecimal	result		= parseBigDecimal( stringValue );
-		if ( result != null ) {
-			return result;
+		String stringValue = StringCaster.cast( object, false );
+		if ( stringValue != null ) {
+			BigDecimal result = parseBigDecimal( stringValue );
+			if ( result != null ) {
+				return result;
+			}
 		}
 
 		// Verify if we can throw an exception
@@ -123,9 +125,11 @@ public class BigDecimalCaster implements IBoxCaster {
 	 *
 	 * @param value A probably-hopefully BigDecimal string value, with an optional plus/minus sign.
 	 *
-	 * @return Optional - parsed BigDecimal if all string characters are digits, with an optional sign and decimal point.
+	 * @return Optional - parsed BigDecimal if all string characters are digits, with an optional sign and decimal point. Empty optional for
+	 *         empty string, null, floats, alpha characters, etc.
 	 */
 	private static BigDecimal parseBigDecimal( String value ) {
+		value = value.trim();
 		if ( CasterNumberUtil.isCreatableIgnoringLeadingZeros( value ) ) {
 			try {
 				return new BigDecimal( value, MathUtil.getMathContext() );

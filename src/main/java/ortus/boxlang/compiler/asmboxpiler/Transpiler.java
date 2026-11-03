@@ -29,6 +29,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
+import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
@@ -39,6 +40,8 @@ import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.Blueprint;
+import ortus.boxlang.runtime.services.CodeProfilerService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -100,6 +103,63 @@ public abstract class Transpiler implements ITranspiler {
 	private Map<String, LabelNode>							continues				= new LinkedHashMap<>();
 
 	/**
+	 * Whether code-profiling instrumentation is enabled for this compilation.
+	 * Set by the boxpiler from {@code Configuration.codeProfilerEnabled}. When false,
+	 * no span registry is built and no {@code mark} instructions are emitted.
+	 */
+	private boolean											profilingEnabled		= false;
+
+	/**
+	 * Whether INCLUSIVE call-site timing (the additive {@code markEnter}/{@code markExit}
+	 * brackets around BoxLang invocations) is emitted. Purely additive to the base
+	 * span marks; toggling it lets benchmarks compare the base instrumentation against
+	 * the inclusive-timing instrumentation. Static so a harness can flip it before a
+	 * fresh compile. Only meaningful when {@link #profilingEnabled} is true.
+	 */
+	private static volatile boolean							inclusiveTimingEnabled	= true;
+
+	/**
+	 * Enable/disable emission of the inclusive call-timing brackets. Static: set
+	 * before compiling so a benchmark can A/B the base vs inclusive instrumentation.
+	 *
+	 * @param enabled whether to emit the inclusive call-site brackets
+	 */
+	public static void setInclusiveTimingEnabled( boolean enabled ) {
+		inclusiveTimingEnabled = enabled;
+	}
+
+	/**
+	 * Whether inclusive call-timing brackets are currently enabled for compilation.
+	 *
+	 * @return true when inclusive call timing is emitted
+	 */
+	public static boolean isInclusiveTimingEnabled() {
+		return inclusiveTimingEnabled;
+	}
+
+	/**
+	 * The code profiler blueprint KEY for this compilation — the normalized file
+	 * path (or source hash for adhoc source). This String IS the blueprint's id;
+	 * it is stored as a static field on the instrumented class and passed as the
+	 * first arg of every {@code mark(id, spanId)} instruction.
+	 */
+	private String				fileId			= null;
+
+	/**
+	 * Source-position -> span id map, built during Pass A (span detection).
+	 * Keyed by packed start position (line/col). Pass B looks up a node's span id
+	 * from its start position to emit the matching mark.
+	 */
+	private Map<Long, Integer>	spanIds			= new HashMap<>();
+
+	/**
+	 * Span ids already given a {@code mark} instruction in this compilation. Several
+	 * AST nodes can share a span's start position (e.g. a statement and the call
+	 * inside it), so we emit at most one mark per span to keep counts exact.
+	 */
+	private Set<Integer>		emittedMarks	= new HashSet<>();
+
+	/**
 	 * Set a property
 	 *
 	 * @param key   key of the Property
@@ -115,6 +175,631 @@ public abstract class Transpiler implements ITranspiler {
 
 	public ClassNode getOwningClass() {
 		return owningClassNode;
+	}
+
+	/**
+	 * Whether profiling instrumentation is enabled for this compilation.
+	 *
+	 * @return {@code true} if instrumentation is on
+	 */
+	public boolean isProfilingEnabled() {
+		return profilingEnabled;
+	}
+
+	/**
+	 * Set whether profiling instrumentation is enabled for this compilation.
+	 *
+	 * @param profilingEnabled enable/disable
+	 */
+	public void setProfilingEnabled( boolean profilingEnabled ) {
+		this.profilingEnabled = profilingEnabled;
+	}
+
+	/**
+	 * The code profiler blueprint KEY for this compilation's blueprint.
+	 *
+	 * @return the blueprint key (file path or source hash), or null if not registered
+	 */
+	public String getFileId() {
+		return fileId;
+	}
+
+	/**
+	 * Set the code profiler blueprint KEY for this compilation's blueprint.
+	 *
+	 * @param fileId the blueprint key (file path or source hash) returned by the
+	 *               code profiler service registration
+	 */
+	public void setFileId( String fileId ) {
+		this.fileId = fileId;
+	}
+
+	/**
+	 * The name of the static field that holds this class's profiler blueprint key
+	 * (id). Added to every instrumented class so the {@code mark} bytecode can
+	 * load the id WITHOUT a per-file LDC — the field is the single, canonical store.
+	 */
+	public static final String	PROFILER_ID_FIELD			= "codeProfilerId";
+
+	/**
+	 * The name of the static field holding this class's {@link Blueprint}. Added to
+	 * every instrumented class (set at {@code <clinit>} from the blueprint the
+	 * registration call returns). Each {@code mark}/{@code markEnd} passes this
+	 * reference so a blueprint cleared by {@link CodeProfilerService#reset()} is
+	 * RE-REGISTERED on demand by the class's own marks — the class does not need to
+	 * re-run {@code <clinit>}.
+	 */
+	public static final String	PROFILER_BLUEPRINT_FIELD	= "codeProfilerBlueprint";
+
+	/**
+	 * Whether this compilation currently has a registered blueprint key (profiling on).
+	 *
+	 * @return true if profiling is enabled AND a blueprint key is set
+	 */
+	public boolean hasProfilerId() {
+		return profilingEnabled && fileId != null;
+	}
+
+	/**
+	 * Emit a single-span {@code mark}: {@code CodeProfilerService.mark(id, spanId)}
+	 * where {@code id} is this class's {@link #PROFILER_ID_FIELD} static field.
+	 *
+	 * @param spanId the span id within this blueprint
+	 *
+	 * @return the instructions, or an empty list when profiling is off
+	 */
+	public List<AbstractInsnNode> emitMark( int spanId ) {
+		if ( !hasProfilerId() ) {
+			return List.of();
+		}
+		return AsmHelper.invokeStaticMark( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, PROFILER_BLUEPRINT_FIELD, spanId );
+	}
+
+	/**
+	 * Emit the markEnd close-interval instruction:
+	 * {@code CodeProfilerService.markEnd(id)}.
+	 *
+	 * @return the instructions, or an empty list when profiling is off
+	 */
+	public List<AbstractInsnNode> emitMarkEnd() {
+		if ( !hasProfilerId() ) {
+			return List.of();
+		}
+		return AsmHelper.invokeStaticMarkEnd( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, PROFILER_BLUEPRINT_FIELD );
+	}
+
+	/**
+	 * Emit a call-site bracket OPEN for INCLUSIVE timing:
+	 * {@code CodeProfilerService.markEnter(id, spanId, blueprint)}. Emitted just
+	 * before a BoxLang invocation so the call's whole elapsed time (including the
+	 * called subtree) is charged to the call-site span's {@code inclusiveNanos}.
+	 *
+	 * @param spanId the call-site span id within this blueprint
+	 *
+	 * @return the instructions, or an empty list when profiling is off
+	 */
+	public List<AbstractInsnNode> emitMarkEnter( int spanId ) {
+		return emitMarkEnter( spanId, null );
+	}
+
+	/**
+	 * Emit a call-site bracket OPEN for INCLUSIVE timing WITH its atomic shell members
+	 * (the {@code callee(} head and the {@code )} tail): {@code markEnter(id, spanId,
+	 * blueprint, shellSpans)}. On exit each shell member is charged the call-site
+	 * span's inclusive time, so the {@code )} span reports the SAME on-stack time as
+	 * the head. Trailing/duplicate members are passed straight through; a group of
+	 * one (or none) is treated as no shell.
+	 *
+	 * @param spanId     the call-site span id within this blueprint
+	 * @param shellSpans the call's atomic shell span ids, or null
+	 *
+	 * @return the instructions, or an empty list when profiling is off
+	 */
+	public List<AbstractInsnNode> emitMarkEnter( int spanId, int[] shellSpans ) {
+		if ( !hasProfilerId() || spanId < 0 || !inclusiveTimingEnabled ) {
+			return List.of();
+		}
+		// Only a real SHELL (head + at least one more member) is worth batching.
+		int[] shell = shellSpans != null && shellSpans.length > 1 ? shellSpans : null;
+		return AsmHelper.invokeStaticMarkEnter( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, PROFILER_BLUEPRINT_FIELD, spanId, shell );
+	}
+
+	/**
+	 * Resolve the span id whose start position matches the given node's start, or -1
+	 * when profiling is off, the node has no position, or no span starts there. Used
+	 * to bracket BoxLang invocations for inclusive timing.
+	 *
+	 * @param node the node whose start position identifies the span
+	 *
+	 * @return the span id, or -1
+	 */
+	public int spanIdOf( BoxNode node ) {
+		if ( !hasProfilerId() || node == null || node.getPosition() == null || node.getPosition().getStart() == null ) {
+			return -1;
+		}
+		Point	p		= node.getPosition().getStart();
+		long	packed	= ( ( long ) p.getLine() << 32 ) | ( p.getColumn() & 0xFFFFFFFFL );
+		return getSpanId( packed );
+	}
+
+	/**
+	 * Resolve the span id to bracket a CALL at the given node: the span STARTING at
+	 * the node when one exists, otherwise the INNERMOST span CONTAINING the node's
+	 * start. Invocations embedded in a larger expression — e.g. the FIRST call in
+	 * {@code a = tick() + tick() + tick() + tick()}, which sits inside the leading
+	 * span {@code a = tick() + } (starting at {@code a}, not at the call) — do not
+	 * start a span, so without this fallback they get NO inclusive bracket and the
+	 * line under-counts its calls. The enclosing span's bracket still measures just
+	 * the one call (markEnter is immediately before the invoke, markExit immediately
+	 * after), so charging it there is correct.
+	 *
+	 * @param node the node whose position identifies the call span
+	 *
+	 * @return the span id to bracket, or -1 when profiling is off / no span contains it
+	 */
+	public int callSpanIdOf( BoxNode node ) {
+		if ( !hasProfilerId() || node == null || node.getPosition() == null || node.getPosition().getStart() == null ) {
+			return -1;
+		}
+		int exact = spanIdOf( node );
+		if ( exact >= 0 ) {
+			return exact;
+		}
+		Point	p		= node.getPosition().getStart();
+		long	packed	= ( ( long ) p.getLine() << 32 ) | ( p.getColumn() & 0xFFFFFFFFL );
+		return getContainingSpanId( packed );
+	}
+
+	/**
+	 * The id of the INNERMOST registered executable span that CONTAINS the given
+	 * packed source position, or -1 when none does. "Innermost" = the containing span
+	 * with the latest start position (a nested body span beats the shell that holds
+	 * it). Used by {@link #callSpanIdOf} to bracket a call that does not itself start
+	 * a span.
+	 *
+	 * @param packedStart the packed (line, col) position to locate
+	 *
+	 * @return the containing span id, or -1
+	 */
+	public int getContainingSpanId( long packedStart ) {
+		int		line	= ( int ) ( packedStart >> 32 );
+		int		col		= ( int ) packedStart;
+		long	bestKey	= -1L;
+		for ( int i = 0; i < this.spanDefs.size(); i++ ) {
+			Blueprint.SpanDef s = this.spanDefs.get( i );
+			if ( !s.executable() ) {
+				continue;
+			}
+			boolean	afterStart	= line > s.startLine() || ( line == s.startLine() && col >= s.startCol() );
+			boolean	beforeEnd	= line < s.endLine() || ( line == s.endLine() && col <= s.endCol() );
+			if ( !afterStart || !beforeEnd ) {
+				continue;
+			}
+			long key = ( ( long ) s.startLine() << 32 ) | ( s.startCol() & 0xFFFFFFFFL );
+			if ( key > bestKey ) {
+				bestKey = key;
+			}
+		}
+		return bestKey < 0 ? -1 : getSpanId( bestKey );
+	}
+
+	/**
+	 * Emit a call-site bracket CLOSE for inclusive timing:
+	 * {@code CodeProfilerService.markExit(id, blueprint)}.
+	 *
+	 * @return the instructions, or an empty list when profiling is off
+	 */
+	public List<AbstractInsnNode> emitMarkExit() {
+		if ( !hasProfilerId() ) {
+			return List.of();
+		}
+		return AsmHelper.invokeStaticMarkExit( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, PROFILER_BLUEPRINT_FIELD );
+	}
+
+	/**
+	 * Emit {@code CodeProfilerService.markDepth()} — the current call-bracket depth,
+	 * captured at a method's entry for its catch-all unwinder.
+	 *
+	 * @return the instructions, or an empty list when profiling is off
+	 */
+	public List<AbstractInsnNode> emitMarkDepth() {
+		if ( !hasProfilerId() ) {
+			return List.of();
+		}
+		return AsmHelper.invokeStaticMarkDepth();
+	}
+
+	/**
+	 * Emit an atomic shell mark covering several spans:
+	 * {@code CodeProfilerService.mark(id, int... spanIds)}.
+	 *
+	 * @param spanIds the shell spans to batch, in source order
+	 *
+	 * @return the instructions, or an empty list when profiling is off
+	 */
+	public List<AbstractInsnNode> emitMarkVarargs( int[] spanIds ) {
+		if ( !hasProfilerId() ) {
+			return List.of();
+		}
+		return AsmHelper.invokeStaticMarkVarargs( getProperty( "classTypeInternal" ), PROFILER_ID_FIELD, PROFILER_BLUEPRINT_FIELD, spanIds );
+	}
+
+	/**
+	 * Emit a {@code mark(fileId, ...braceGroup)} for a construct's braces. Pass A
+	 * registers a construct's header + closing brace as a span GROUP keyed by the
+	 * construct keyword position.
+	 * <p>
+	 * The {@code consume} flag matters when the SAME group is compiled into
+	 * multiple bytecode copies of which only one runs at runtime:
+	 * <ul>
+	 * <li>{@code catch} braces are CONSUMED ({@code true}) — each catch handler runs
+	 * at most once, so the group is removed on first emission.</li>
+	 * <li>{@code finally} braces are PEEKED ({@code false}) — the finally body (and
+	 * thus its brace mark) is compiled into EVERY duplicated copy (return path,
+	 * try-inline, each catch-inline, no-catch-matched and exception-handler), and
+	 * only one runs at runtime, so every copy must be able to re-emit the group.</li>
+	 * </ul>
+	 * Emits nothing when profiling is disabled or no group exists at the position.
+	 *
+	 * @param nodes      the instruction list to append to
+	 * @param keywordPos the construct keyword start position (group key)
+	 * @param consume    whether to consume the group (catch) or peek (finally)
+	 */
+	public void emitBraceGroupMark( List<AbstractInsnNode> nodes, Point keywordPos, boolean consume ) {
+		// No-op when profiling is disabled — never emit mark instructions otherwise.
+		if ( !hasProfilerId() ) {
+			return;
+		}
+		if ( keywordPos == null ) {
+			return;
+		}
+		long	packed	= ( ( long ) keywordPos.getLine() << 32 ) | ( keywordPos.getColumn() & 0xFFFFFFFFL );
+		int		spanId	= getSpanId( packed );
+		int[]	group	= spanId < 0 ? null : ( consume ? takeSpanGroup( spanId ) : peekSpanGroup( spanId ) );
+		if ( group != null ) {
+			// Only emit if no member has been claimed yet (dedup across copies).
+			boolean anyClaimed = false;
+			for ( int member : group ) {
+				if ( claimSpanMark( member ) ) {
+					anyClaimed = true;
+				}
+			}
+			if ( anyClaimed ) {
+				nodes.addAll( emitMarkVarargs( group ) );
+			}
+		}
+	}
+
+	/**
+	 * The {@link Blueprint.SpanDef} list discovered in Pass A (span detection).
+	 * Embedded into the generated class's {@code <clinit>} so the class can
+	 * self-register its blueprint on first LOAD (not just at compile time),
+	 * surviving a runtime restart where in-memory blueprints are cleared.
+	 */
+	private List<Blueprint.SpanDef> spanDefs = List.of();
+
+	/**
+	 * Store the Pass A span definitions for embedding into {@code <clinit>}.
+	 *
+	 * @param spanDefs the ordered list of executable span definitions
+	 */
+	public void setSpanDefs( List<Blueprint.SpanDef> spanDefs ) {
+		this.spanDefs = spanDefs != null ? spanDefs : List.of();
+	}
+
+	/**
+	 * The Pass A span definitions to embed into the compiled class's {@code <clinit>}.
+	 *
+	 * @return the ordered executable span definitions
+	 */
+	public List<Blueprint.SpanDef> getSpanDefs() {
+		return this.spanDefs;
+	}
+
+	/**
+	 * The source file's last-modified time for this compilation, used to detect a
+	 * newer blueprint (recompiled file) and replace stale span data on load.
+	 */
+	private long lastModified = 0L;
+
+	/**
+	 * Store the source file's last-modified time for embedding into {@code <clinit>}.
+	 *
+	 * @param lastModified the file mtime (0 for adhoc/source-hash blueprints)
+	 */
+	public void setLastModified( long lastModified ) {
+		this.lastModified = lastModified;
+	}
+
+	/**
+	 * The source file's last-modified time to embed with the blueprint.
+	 *
+	 * @return the file mtime
+	 */
+	public long getLastModified() {
+		return this.lastModified;
+	}
+
+	/**
+	 * The blueprint kind for this compilation (FILE path vs SOURCE hash). Carried
+	 * onto the class's {@code <clinit>} self-registration so a SOURCE blueprint
+	 * reloaded from disk is NOT re-registered as a bogus FILE path.
+	 */
+	private Blueprint.Kind blueprintKind = Blueprint.Kind.FILE;
+
+	/**
+	 * Store the blueprint kind for embedding into {@code <clinit>}.
+	 *
+	 * @param kind the blueprint kind (FILE or SOURCE)
+	 */
+	public void setBlueprintKind( Blueprint.Kind kind ) {
+		this.blueprintKind = kind != null ? kind : Blueprint.Kind.FILE;
+	}
+
+	/**
+	 * The blueprint kind to embed with the self-registration.
+	 *
+	 * @return the blueprint kind
+	 */
+	public Blueprint.Kind getBlueprintKind() {
+		return this.blueprintKind;
+	}
+
+	/**
+	 * Register a source span (by its packed start position) for this compilation.
+	 * Assigns the next sequential span id.
+	 *
+	 * @param packedStart packed (line, col) start position
+	 *
+	 * @return the assigned span id
+	 */
+	public int registerSpan( long packedStart ) {
+		int spanId = spanIds.size();
+		spanIds.put( packedStart, spanId );
+		return spanId;
+	}
+
+	/**
+	 * Look up the span id for a node's source start position.
+	 *
+	 * @param packedStart packed (line, col) start position
+	 *
+	 * @return the span id, or -1 if the position is not a span start
+	 */
+	public int getSpanId( long packedStart ) {
+		return spanIds.getOrDefault( packedStart, -1 );
+	}
+
+	/**
+	 * Claim a span for mark emission. Returns {@code true} the first time a span's
+	 * mark is emitted for this compilation, {@code false} for every later request.
+	 * Several AST nodes can share a span's start position (e.g. a statement and the
+	 * call inside it), so only the first gets a mark instruction — keeping counts exact.
+	 *
+	 * @param spanId the span id
+	 *
+	 * @return true if this compilation has not yet emitted a mark for the span
+	 */
+	public boolean claimSpanMark( int spanId ) {
+		return emittedMarks.add( spanId );
+	}
+
+	/**
+	 * Span ids grouped into an atomic shell unit. The identified group — the head +
+	 * interstitial + tail span fragments of a declaration shell split at lazy
+	 * defaults — runs all-or-nothing at declaration, so the transformer emits a
+	 * single varargs {@code mark(fileId, ...group)} instead of N marks. Keyed by the
+	 * first (head) span id.
+	 */
+	private Map<Integer, int[]> spanGroups = new java.util.HashMap<>();
+
+	/**
+	 * Register an atomic shell span group. The group's first span id becomes the key
+	 * so the transform hook for the statement (whose start lands on the head shell
+	 * span) can look it up and batch the whole group.
+	 *
+	 * @param spanIds the shell span ids, in source order (head first)
+	 */
+	public void registerSpanGroup( int[] spanIds ) {
+		if ( spanIds != null && spanIds.length > 0 ) {
+			this.spanGroups.put( spanIds[ 0 ], spanIds );
+		}
+	}
+
+	/**
+	 * Look up and consume an atomic shell span group whose first span is the given id.
+	 * Returns the full group (or null if the id is not a group head).
+	 *
+	 * @param spanId the first span id of the group
+	 *
+	 * @return the full group, or null if not a group head
+	 */
+	public int[] takeSpanGroup( int spanId ) {
+		return this.spanGroups.remove( spanId );
+	}
+
+	/**
+	 * The CALL SHELL members keyed by the call's head span id — the atomic shell
+	 * fragments ({@code callee(} head + {@code )} tail) of a call, used to charge the
+	 * call-site bracket's INCLUSIVE time to the WHOLE shell, so the {@code )} span
+	 * reports the SAME on-stack time as the head. Unlike {@link #spanGroups}, this is
+	 * NEVER consumed (the flat mark path consumes the group for colouring), so the
+	 * transformer can always read it.
+	 */
+	private Map<Integer, int[]> callShells = new java.util.HashMap<>();
+
+	/**
+	 * Register a call's atomic shell members, keyed by the head span id. Idempotent;
+	 * see {@link #peekCallShell}.
+	 *
+	 * @param headSpanId the call head span id (the {@code callee(} span)
+	 * @param shellSpans the shell member span ids, in source order (head first)
+	 */
+	public void registerCallShell( int headSpanId, int[] shellSpans ) {
+		if ( shellSpans != null && shellSpans.length > 1 ) {
+			this.callShells.put( headSpanId, shellSpans );
+		}
+	}
+
+	/**
+	 * The call's atomic shell members for a head span id, WITHOUT consuming them (see
+	 * {@link #registerCallShell}).
+	 *
+	 * @param headSpanId the call head span id (or the call-site span id used by the bracket)
+	 *
+	 * @return the shell member span ids, or null when the call has no distinct shell
+	 */
+	public int[] peekCallShell( int headSpanId ) {
+		return this.callShells.get( headSpanId );
+	}
+
+	/**
+	 * Span ids that head a call shell whose OWN transformer emits the shell mark (a
+	 * tag/component), so the generic statement-start mark hook must SKIP them —
+	 * otherwise the tag head is marked twice. Function-call shells are NOT in this
+	 * set (the generic hook marks them normally).
+	 */
+	private final java.util.Set<Integer> selfMarkedShellHeads = new java.util.HashSet<>();
+
+	/**
+	 * Mark a call-shell head as SELF-MARKED: its construct's transformer emits the
+	 * shell mark itself, so the generic statement-start hook must not also mark it.
+	 *
+	 * @param headSpanId the shell head span id
+	 */
+	public void markShellSelfMarked( int headSpanId ) {
+		this.selfMarkedShellHeads.add( headSpanId );
+	}
+
+	/**
+	 * Whether a span heads a call shell whose transform self-marks (see
+	 * {@link #markShellSelfMarked}).
+	 *
+	 * @param headSpanId the span id to test
+	 *
+	 * @return true when the generic mark hook must skip this span
+	 */
+	public boolean isShellSelfMarked( int headSpanId ) {
+		return this.selfMarkedShellHeads.contains( headSpanId );
+	}
+
+	/**
+	 * Look up an atomic span group WITHOUT consuming it. Used when the same group
+	 * must be emitted in MULTIPLE bytecode copies (e.g. a finally block compiled
+	 * both inline and in the exception handler — only one runs at runtime, so both
+	 * copies need the mark).
+	 *
+	 * @param spanId the first span id of the group
+	 *
+	 * @return the full group, or null if not a group head
+	 */
+	public int[] peekSpanGroup( int spanId ) {
+		return this.spanGroups.get( spanId );
+	}
+
+	/**
+	 * The property-DEFAULT span ids of the current class, collected in Pass A.
+	 * Property defaults are HOISTED — {@code BoxClassSupport.defaultProperties()}
+	 * applies them in the pseudo-constructor — so the class transformer emits ONE
+	 * varargs {@code mark(fileId, ...propertyDefaults)} at that call site.
+	 */
+	private int[] propertyDefaultSpans;
+
+	/**
+	 * Register the class's property-default span ids (atomic hoisted group).
+	 *
+	 * @param spanIds the property default span ids, in source order
+	 */
+	public void registerPropertyDefaultSpans( int[] spanIds ) {
+		this.propertyDefaultSpans = spanIds;
+	}
+
+	/**
+	 * The registered property-default span ids (or null if none).
+	 *
+	 * @return the property default span ids
+	 */
+	public int[] getPropertyDefaultSpans() {
+		return this.propertyDefaultSpans;
+	}
+
+	/**
+	 * An immutable snapshot of the profiler mark-emission state, taken before
+	 * transforming a DUPLICATED AST body (e.g. a {@code finally} body compiled
+	 * into several bytecode copies). It captures BOTH the claimed-mark set AND the
+	 * span-GROUP map, because transforming one copy both CLAIMS marks
+	 * ({@link #claimSpanMark}) AND CONSUMES span groups ({@link #takeSpanGroup});
+	 * restoring only the marks leaves groups consumed, so later copies emit only
+	 * the group HEAD and leave the rest missed on the path that actually runs.
+	 *
+	 * @param emittedMarks the claimed span-mark ids at snapshot time
+	 * @param spanGroups   the registered span groups (id → member ids) at snapshot time
+	 */
+	public record SpanMarkSnapshot( Set<Integer> emittedMarks, Map<Integer, int[]> spanGroups ) {
+	}
+
+	/**
+	 * Snapshot the profiler mark-emission state claimed so far in this compilation.
+	 * Used by transformers that duplicate the same AST (e.g. a {@code finally} body,
+	 * which is compiled both inline and in the exception handler) so the duplicated
+	 * copy can reclaim the marks AND re-consume the span groups, emitting the full
+	 * set on its own execution path.
+	 *
+	 * @return a defensive snapshot of the claimed-mark ids and span groups
+	 */
+	public SpanMarkSnapshot snapshotEmittedMarks() {
+		return new SpanMarkSnapshot( new HashSet<>( this.emittedMarks ), new java.util.HashMap<>( this.spanGroups ) );
+	}
+
+	/**
+	 * Restore the profiler mark-emission state to a prior snapshot, releasing any
+	 * marks claimed AND any span groups consumed since. Call with the snapshot
+	 * taken before transforming a duplicated AST body so the duplicate copy's marks
+	 * and groups can be re-claimed/re-consumed and emitted.
+	 *
+	 * @param snapshot the snapshot previously returned by {@link #snapshotEmittedMarks()}
+	 */
+	public void restoreEmittedMarks( SpanMarkSnapshot snapshot ) {
+		this.emittedMarks.clear();
+		this.emittedMarks.addAll( snapshot.emittedMarks() );
+		// Restore the group map IN PLACE (it may be SHARED with child transpilers
+		// via adoptProfilingContext — reassigning would detach them) so consumed
+		// groups become re-consumable by the duplicate copy.
+		this.spanGroups.clear();
+		this.spanGroups.putAll( snapshot.spanGroups() );
+	}
+
+	/**
+	 * Adopt the profiling context of another transpiler (the OUTER script/class).
+	 * A local class compiles as a separate auxiliary JVM class, but from the
+	 * USER's perspective its code is part of the container script — so its marks
+	 * must land on the SAME fileId and span-id mapping as the outer source, not a
+	 * synthetic per-class blueprint.
+	 * <p>
+	 * After this call, the child's {@code mark} emission targets the outer file's
+	 * counters: {@link #getFileId()} returns the outer fileId, and
+	 * {@link #getSpanId(long)} resolves positions through the OUTER span registry
+	 * (which already includes the local class's spans from the parent's Pass A).
+	 *
+	 * @param outer the transpiler whose profiling context to share
+	 */
+	public void adoptProfilingContext( Transpiler outer ) {
+		this.fileId					= outer.fileId;
+		this.spanIds				= outer.spanIds;
+		this.profilingEnabled		= outer.profilingEnabled;
+		// Marks claimed by the outer compilation already cover the class's spans
+		// (the parent's Pass A walked the whole tree). Share the dedup set so the
+		// child doesn't emit duplicate marks for the same span positions.
+		this.emittedMarks			= outer.emittedMarks;
+		// Property defaults are hoisted into the class's pseudo-constructor; the
+		// child transforms that method, so it needs the span group the parent's
+		// Pass A collected.
+		this.propertyDefaultSpans	= outer.propertyDefaultSpans;
+		// Span GROUPS (atomic shell/brace units) are also registered by the
+		// parent's Pass A (e.g. the class shell + closing "}" group keyed by the
+		// first annotation). The child's clinit emits those marks, so share the
+		// group map too.
+		this.spanGroups				= outer.spanGroups;
 	}
 
 	public boolean canReturn() {

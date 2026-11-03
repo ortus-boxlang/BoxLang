@@ -20,6 +20,14 @@ package ortus.boxlang.runtime.jdbc;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.sql.SQLException;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +37,11 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.events.IInterceptorLambda;
+import ortus.boxlang.runtime.types.IStruct;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import tools.JDBCTestUtils;
 
@@ -110,5 +123,110 @@ public class SQLErrorHandlingTest {
 
 		// Verify it contains information about syntax error
 		assertThat( message.toLowerCase() ).containsMatch( "(syntax|invalid)" );
+	}
+
+	@Test
+	public void testQueryErrorEventPreservesFailureAndCorrelation() {
+		ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
+		logAppender.setContext( instance.getLoggingService().getLoggerContext() );
+		logAppender.start();
+		instance.getLoggingService().DATASOURCE_LOGGER.addAppender( logAppender );
+		AtomicReference<IStruct>	observed	= new AtomicReference<>();
+		AtomicInteger				count		= new AtomicInteger();
+		IInterceptorLambda			listener	= data -> {
+													observed.set( data );
+													count.incrementAndGet();
+													throw new IllegalStateException( "observer failed" );
+												};
+		instance.getInterceptorService().register( listener, BoxEvent.ON_QUERY_EXECUTE_ERROR.key() );
+		try {
+			DatabaseException failure = assertThrows( DatabaseException.class,
+			    () -> datasource.execute( "SELECT missing_column FROM missing_table", context ) );
+			assertThat( count.get() ).isEqualTo( 1 );
+			assertThat( observed.get().get( Key.exception ) ).isSameInstanceAs( failure );
+			assertThat( observed.get().get( Key.context ) ).isSameInstanceAs( context );
+			assertThat( observed.get().get( Key.pendingQuery ) ).isInstanceOf( PendingQuery.class );
+			assertThat( ( ( Number ) observed.get().get( Key.executionTime ) ).doubleValue() ).isAtLeast( 0.0 );
+			ILoggingEvent diagnostic = logAppender.list.stream()
+			    .filter( event -> event.getFormattedMessage().equals( "Failed to announce onQueryExecuteError" ) )
+			    .findFirst().orElseThrow();
+			assertThat( diagnostic.getLevel() ).isEqualTo( Level.ERROR );
+			assertThat( diagnostic.getThrowableProxy().getClassName() ).isEqualTo( IllegalStateException.class.getName() );
+			assertThat( diagnostic.getThrowableProxy().getMessage() ).isEqualTo( "observer failed" );
+		} finally {
+			instance.getInterceptorService().unregister( listener );
+			instance.getLoggingService().DATASOURCE_LOGGER.detachAppender( logAppender );
+			logAppender.stop();
+		}
+	}
+
+	@Test
+	public void testCachedQueryAnnouncementsCorrelateWithoutADatabaseRoundTrip() {
+		java.util.List<IStruct>	before	= new java.util.ArrayList<>();
+		java.util.List<IStruct>	after	= new java.util.ArrayList<>();
+		IInterceptorLambda		pre		= data -> {
+											if ( data.getAsString( Key.sql ).contains( "AS sentry_cache_probe" ) ) {
+												before.add( data );
+											}
+											return false;
+										};
+		IInterceptorLambda		post	= data -> {
+											if ( data.getAsString( Key.sql ).contains( "AS sentry_cache_probe" ) ) {
+												after.add( data );
+											}
+											return false;
+										};
+		instance.getInterceptorService().register( pre, BoxEvent.PRE_QUERY_EXECUTE.key() );
+		instance.getInterceptorService().register( post, BoxEvent.POST_QUERY_EXECUTE.key() );
+		try {
+			instance.executeSource(
+			    """
+			    queryExecute( "SELECT 1 AS sentry_cache_probe FROM SYSIBM.SYSDUMMY1 WHERE 1 = ?", [1], { datasource: "sqlErrorTest", cache: true, cacheKey: "sentry-probe-" & createUUID(), result: "probeFirst" } );
+			    probeKey = "sentry-probe-" & createUUID();
+			    queryExecute( "SELECT 1 AS sentry_cache_probe FROM SYSIBM.SYSDUMMY1 WHERE 1 = ?", [1], { datasource: "sqlErrorTest", cache: true, cacheKey: probeKey } );
+			    queryExecute( "SELECT 1 AS sentry_cache_probe FROM SYSIBM.SYSDUMMY1 WHERE 1 = ?", [1], { datasource: "sqlErrorTest", cache: true, cacheKey: probeKey, result: "probeCached" } );
+			    assert probeCached.cached;
+			    """,
+			    context );
+			assertThat( before ).hasSize( 3 );
+			assertThat( after ).hasSize( 3 );
+			assertThat( before.get( 2 ).getAsBoolean( Key.cached ) ).isTrue();
+			assertThat( before.get( 2 ).get( Key.bindings ) ).isEqualTo( java.util.List.of( 1 ) );
+			assertThat( after.get( 2 ).getAsBoolean( Key.cached ) ).isTrue();
+			assertThat( after.get( 2 ).get( Key.bindings ) ).isEqualTo( after.get( 1 ).get( Key.bindings ) );
+			assertThat( after.get( 2 ).get( Key.bindings ) ).isEqualTo( java.util.List.of( 1 ) );
+			ExecutedQuery cachedQuery = ( ExecutedQuery ) after.get( 2 ).get( Key.executedQuery );
+			assertThat( after.get( 2 ).get( Key.data ) ).isSameInstanceAs( cachedQuery.getResults() );
+			assertThat( cachedQuery.getRecordCount() ).isEqualTo( 1 );
+			assertThat( after.get( 2 ).getAsStruct( Key.result ).getAsBoolean( Key.cached ) ).isTrue();
+			assertThat( after.get( 2 ).get( Key.context ) ).isSameInstanceAs( context );
+			assertThat( before.get( 2 ).get( Key.pendingQuery ) ).isSameInstanceAs( after.get( 2 ).get( Key.pendingQuery ) );
+			assertThat( ( ( Number ) after.get( 2 ).get( Key.executionTime ) ).longValue() ).isEqualTo( 0 );
+		} finally {
+			instance.getInterceptorService().unregister( pre );
+			instance.getInterceptorService().unregister( post );
+		}
+	}
+
+	@Test
+	public void testSQLExceptionChainPreservesExistingCauseAndAddsSuppressedException() {
+		SQLException	existingCause	= new SQLException( "existing cause" );
+		SQLException	firstException	= new SQLException( "first exception" );
+		SQLException	secondException	= new SQLException( "second exception", "state", 2, existingCause );
+		SQLException	thirdException	= new SQLException( "third exception" );
+		firstException.setNextException( secondException );
+		secondException.setNextException( thirdException );
+
+		DatabaseException databaseException = new DatabaseException( firstException );
+
+		assertThat( databaseException.getCause() ).isSameInstanceAs( thirdException );
+		assertThat( thirdException.getCause() ).isSameInstanceAs( secondException );
+		assertThat( secondException.getCause() ).isSameInstanceAs( existingCause );
+		assertThat( secondException.getSuppressed() ).hasLength( 1 );
+		assertThat( secondException.getSuppressed()[ 0 ] ).isSameInstanceAs( firstException );
+
+		StringWriter stackTrace = new StringWriter();
+		databaseException.printStackTrace( new PrintWriter( stackTrace ) );
+		assertThat( stackTrace.toString() ).contains( "Suppressed:" );
 	}
 }

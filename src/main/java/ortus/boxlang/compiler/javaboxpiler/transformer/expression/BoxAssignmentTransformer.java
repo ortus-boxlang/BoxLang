@@ -42,6 +42,7 @@ import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -161,6 +162,12 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		BoxExpression	furthestLeft	= left;
 
 		while ( furthestLeft instanceof BoxAccess currentObjectAccess ) {
+			// Foo::bar = 1 assigns into the static scope of the class, which becomes the base object
+			if ( currentObjectAccess instanceof BoxStaticAccess staticAccess ) {
+				accessKeys.add( 0, new BoxStaticAccessTransformer( ( JavaTranspiler ) transpiler ).transformAccessKey( staticAccess ) );
+				furthestLeft = staticAccess;
+				break;
+			}
 			// DotAccess just uses the string directly, array access allows any expression
 			if ( currentObjectAccess instanceof BoxDotAccess dotAccess ) {
 				if ( dotAccess.getAccess() instanceof BoxIdentifier id ) {
@@ -274,7 +281,13 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			if ( accessKeys.size() == 0 && ! ( left instanceof BoxScope ) ) {
 				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName(), left.getPosition(), left.getSourceText() );
 			}
-			values.put( "furthestLeft", transpiler.transform( furthestLeft, TransformerContext.NONE ).toString() );
+			if ( furthestLeft instanceof BoxStaticAccess staticAccess ) {
+				values.put( "furthestLeft",
+				    new BoxStaticAccessTransformer( ( JavaTranspiler ) transpiler ).transformClassReference( staticAccess, TransformerContext.NONE )
+				        .toString() );
+			} else {
+				values.put( "furthestLeft", transpiler.transform( furthestLeft, TransformerContext.NONE ).toString() );
+			}
 			values.put( "accessKeys", accessKeys.stream().map( it -> it.toString() ).collect( Collectors.joining( "," ) ) );
 			values.put( "mustBeScopeName", mustBeScopeName == null ? "null" : createKey( mustBeScopeName ).toString() );
 			values.put( "hasFinal", hasFinal ? "true" : "false" );
@@ -626,6 +639,11 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    values );
 			values.put( "obj", obj );
 
+		} else if ( assignment.getLeft() instanceof BoxStaticAccess staticAccess ) {
+			// Foo::bar += 1
+			BoxStaticAccessTransformer staticTransformer = new BoxStaticAccessTransformer( ( JavaTranspiler ) transpiler );
+			values.put( "obj", staticTransformer.transformClassReference( staticAccess, TransformerContext.NONE ).toString() );
+			values.put( "accessKey", staticTransformer.transformAccessKey( staticAccess ).toString() );
 		} else if ( assignment.getLeft() instanceof BoxAccess objectAccess ) {
 			values.put( "obj", transpiler.transform( objectAccess.getContext() ).toString() );
 			// DotAccess just uses the string directly, array access allows any expression

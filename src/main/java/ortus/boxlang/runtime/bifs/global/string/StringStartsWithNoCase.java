@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.util.StringUtil;
 
 @BoxBIF( description = "Determines whether a string starts with a specified prefix, case-insensitive" )
 @BoxMember( type = BoxLangType.STRING_STRICT )
@@ -54,6 +55,6 @@ public class StringStartsWithNoCase extends BIF {
 		String	input	= arguments.getAsString( Key.string );
 		String	prefix	= arguments.getAsString( Key.substring );
 
-		return input.toLowerCase().startsWith( prefix.toLowerCase() );
+		return StringUtil.regionMatchesIgnoreCase( input, 0, prefix, 0, prefix.length() );
 	}
 }
