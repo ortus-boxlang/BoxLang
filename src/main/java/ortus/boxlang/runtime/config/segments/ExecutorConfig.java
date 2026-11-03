@@ -98,6 +98,11 @@ public class ExecutorConfig {
 			this.type = config.getAsString( Key.type ).toUpperCase();
 		}
 
+		// "threads" is the documented property in boxlang.json, "maxThreads" is also accepted and wins when both are set
+		if ( config.containsKey( "threads" ) ) {
+			this.maxThreads = IntegerCaster.cast( config.get( Key.of( "threads" ) ) );
+		}
+
 		if ( config.containsKey( "maxThreads" ) ) {
 			this.maxThreads = IntegerCaster.cast( config.get( Key.maxThreads ) );
 		}

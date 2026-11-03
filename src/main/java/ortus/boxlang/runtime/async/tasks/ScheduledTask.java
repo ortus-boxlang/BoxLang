@@ -1862,6 +1862,11 @@ public class ScheduledTask implements Runnable {
 				    .append( active ).append( " of " ).append( poolSize ).append( " threads busy, " )
 				    .append( queued ).append( " queued). Consider increasing its thread count to at least " )
 				    .append( poolSize + queued ).append( "." );
+				if ( this.scheduler != null ) {
+					message.append( " The pool size comes from the [" )
+					    .append( BoxRuntime.getInstance().getConfiguration().scheduler.executor )
+					    .append( "] executor's threads setting in boxlang.json." );
+				}
 			}
 		} catch ( Exception e ) {
 			// The executor details are only a diagnostic hint, never fail the run because of them
