@@ -42,7 +42,7 @@ public class RegexBuilder {
 	public static final Pattern	COLON						= Pattern.compile( ":" );
 	public static final Pattern	COMPILED_CLASSNAME_PATTERN	= Pattern.compile( ".*\\$Func_(.*)$" );
 	public static final Pattern	CREDIT_CARD_NUMBERS			= Pattern.compile( "[0-9 ,_-]+" );
-	public static final Pattern	EMAIL						= Pattern.compile( "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" );
+	public static final Pattern	EMAIL						= Pattern.compile( "^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" );
 	public static final Pattern	END_OF_LINE_COLONS			= Pattern.compile( ":+$" );
 	public static final Pattern	HEX_STRING					= Pattern.compile( "^[0-9A-Fa-f]+$" );
 	public static final Pattern	JAVA_PACKAGE				= Pattern.compile( "(?i)(java|javax)\\..*" );

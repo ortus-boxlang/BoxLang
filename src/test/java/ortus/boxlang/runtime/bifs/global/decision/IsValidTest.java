@@ -471,6 +471,32 @@ public class IsValidTest {
 
 	}
 
+	@DisplayName( "It accepts RFC 5322 special characters in the email local part" )
+	@Test
+	public void testEmailSpecialLocalPartChars() {
+		instance.executeSource(
+		    """
+		    apostrophe = isValid( 'email', "o'brien@example.com" );
+		    plain      = isValid( 'email', 'obrien@example.com' );
+		    plus       = isValid( 'email', 'o+brien@example.com' );
+		    specials   = isValid( 'email', "a!b#c$d%e&f'g*h/i=j?k^l`m{n|o}p~q@example.com" );
+
+		    // still invalid
+		    doubleat   = isValid( 'email', "o'brien@a@example.com" );
+		    nouser     = isValid( 'email', "@example.com" );
+		    space      = isValid( 'email', "o brien@example.com" );
+		    """,
+		    context );
+		assertThat( variables.getAsBoolean( Key.of( "apostrophe" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "plain" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "plus" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "specials" ) ) ).isTrue();
+
+		assertThat( variables.getAsBoolean( Key.of( "doubleat" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "nouser" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "space" ) ) ).isFalse();
+	}
+
 	@DisplayName( "It works on floats" )
 	@Test
 	public void testFloat() {

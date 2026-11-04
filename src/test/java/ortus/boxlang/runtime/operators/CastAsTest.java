@@ -220,6 +220,7 @@ public class CastAsTest {
 	@Test
 	void testItCanCastToEmail() {
 		assertThat( CastAs.invoke( context, "brad@bradwood.com", "Email" ) ).isEqualTo( "brad@bradwood.com" );
+		assertThat( CastAs.invoke( context, "o'brien@example.com", "Email" ) ).isEqualTo( "o'brien@example.com" );
 	}
 
 	@DisplayName( "It can cast to Binary" )
