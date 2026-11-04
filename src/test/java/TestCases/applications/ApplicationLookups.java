@@ -19,11 +19,16 @@ package TestCases.applications;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.net.URI;
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.application.ApplicationTemplateListener;
 import ortus.boxlang.runtime.context.ConfigOverrideBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -110,6 +115,28 @@ public class ApplicationLookups {
 		assertThat( request.get( "indexbxmsub2ran" ) ).isEqualTo( true );
 	}
 
+	@DisplayName( "App template lookup in a web root folder named like a *nix file system root folder" )
+	@Test
+	public void testAppTemplateInSubNamedLikeUnixRootFolder() {
+		// /usr exists at the root of *nix file systems. A web root relative URI of /usr/index.bxm must not be mistaken
+		// for the real absolute path /usr/index.bxm, which hides the Application.bxm living in the web root.
+		// NOTE: This only exercises the bug on *nix. On Windows, "/usr/index.bxm" is never an absolute path so it
+		// passes with or without the fix.
+		context = getContext( "src/test/java/TestCases/applications/appTemplate/", URI.create( "/usr/index.bxm" ) );
+
+		assertThat( context.getRequestContext().getApplicationListener() ).isInstanceOf( ApplicationTemplateListener.class );
+		assertThat( context.getRequestContext().getApplicationListener().getBaseTemplatePath().absolutePath() )
+		    .isEqualTo( Path.of( "src/test/java/TestCases/applications/appTemplate/usr/index.bxm" ).toAbsolutePath().normalize() );
+
+		instance.executeTemplate(
+		    "usr/index.bxm",
+		    context );
+
+		IScope request = context.getScopeNearby( RequestScope.name );
+		assertThat( request.get( "applicationbxmran" ) ).isEqualTo( true );
+		assertThat( request.get( "indexbxmusrran" ) ).isEqualTo( true );
+	}
+
 	@Test
 	public void testAppTemplateInAppSub() {
 		context = getContext( "src/test/java/TestCases/applications/appTemplate/", "sub2/index.bxm" );
@@ -164,10 +191,14 @@ public class ApplicationLookups {
 	}
 
 	private IBoxContext getContext( String rootPath, String template ) {
+		return getContext( rootPath, FileSystemUtil.createFileUri( template ) );
+	}
+
+	private IBoxContext getContext( String rootPath, URI template ) {
 		return new ScriptingRequestBoxContext( new ConfigOverrideBoxContext( instance.getRuntimeContext(), config -> {
 			config.getAsStruct( Key.mappings ).put( "/", Mapping.ofExternal( "/", new java.io.File( rootPath ).getAbsolutePath() ) );
 			return config;
-		} ), false ).loadApplicationDescriptor( FileSystemUtil.createFileUri( template ) );
+		} ), false ).loadApplicationDescriptor( template );
 	}
 
 }
