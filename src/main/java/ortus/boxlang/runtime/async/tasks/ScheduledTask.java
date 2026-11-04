@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.async.tasks;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoField;
@@ -303,6 +304,39 @@ public class ScheduledTask implements Runnable {
 	private final Logger							logger;
 
 	/**
+	 * A cron fire or periodic tick running at least this many seconds after it was due is logged as a warning
+	 */
+	private static final long						CRON_LATE_WARNING_SECONDS			= 2;
+
+	/**
+	 * Minimum time between late-fire warnings for the same task
+	 */
+	private static final long						CRON_LATE_WARNING_THROTTLE_MILLIS	= 60_000;
+
+	/**
+	 * When we last logged a late cron fire warning for this task
+	 */
+	private final AtomicLong						lastLateWarningMillis				= new AtomicLong( 0 );
+
+	/**
+	 * The instant the next periodic tick is due. Constraints (day of week, month, time windows, etc.) are judged against
+	 * when a tick was due, not when it ran, so a tick that runs late (e.g. queued on a saturated executor) is never
+	 * pushed across midnight or past a window edge and skipped. Null when the task was not started by an executor.
+	 */
+	private Instant									nextDueInstant						= null;
+
+	/**
+	 * The last time the cron gate was evaluated. Cron fire times after it are due. Reset when the task starts or
+	 * while it is disabled, so a pause is never replayed as a missed fire. Null for tasks that are not cron based.
+	 */
+	private volatile Instant						cronCheckpoint						= null;
+
+	/**
+	 * The date/time the constraints are being judged against. Only set while a constraint check runs.
+	 */
+	private volatile LocalDateTime					constraintTime						= null;
+
+	/**
 	 * BoxLang Timer utility
 	 */
 	private final Timer								timer								= new Timer();
@@ -472,14 +506,24 @@ public class ScheduledTask implements Runnable {
 		String timerLabel = "task-" + System.currentTimeMillis();
 		timer.start( timerLabel );
 
+		// When this tick was due, null if forced or not started by an executor. Consumed first so every tick advances it.
+		Instant dueInstant = force ? null : consumeDueInstant();
+		if ( dueInstant != null ) {
+			warnIfRanLate( dueInstant );
+		}
+
 		// If disabled or paused
 		if ( !force && isDisabled() ) {
+			// A disabled task is paused, not delayed: do not replay its cron fires when it is enabled again
+			if ( this.cronCheckpoint != null ) {
+				this.cronCheckpoint = Instant.now();
+			}
 			setNextRunTime();
 			return;
 		}
 
 		// Check for constraints of execution
-		if ( !force && isConstrained() ) {
+		if ( !force && ( dueInstant == null ? isConstrained() : isConstrained( dueLocalDateTime( dueInstant ) ) ) ) {
 			setNextRunTime();
 			return;
 		}
@@ -708,6 +752,16 @@ public class ScheduledTask implements Runnable {
 			calculateStartTimeAlignedDelay();
 		}
 
+		// Remember when the first tick is due. Fixed-delay tasks have no backlog, so they are judged by the time they run.
+		this.nextDueInstant = this.spacedDelay > 0
+		    ? null
+		    : Instant.now().plus( Duration.of( this.initialDelay, this.timeUnit.toChronoUnit() ) );
+
+		// Starting (or restarting) a cron task begins a fresh window, downtime is not replayed as missed fires
+		if ( this.cronCheckpoint != null ) {
+			this.cronCheckpoint = Instant.now();
+		}
+
 		// Log it
 		debugLog(
 		    "start",
@@ -933,15 +987,55 @@ public class ScheduledTask implements Runnable {
 	 * task can be ran at that point in time
 	 */
 	public boolean isConstrained() {
-		debugLog( "isConstrained" );
+		return isConstrained( getNow() );
+	}
 
-		var now = getNow();
+	/**
+	 * Same as {@link #isConstrained()}, but judges the constraints against the given date/time instead of now.
+	 * The runtime passes the time a tick was due, so a tick that runs late is not skipped by crossing midnight
+	 * or a time window.
+	 *
+	 * @param at The date/time to evaluate the constraints against
+	 */
+	public boolean isConstrained( LocalDateTime at ) {
+		this.constraintTime = at;
+		try {
+			return checkConstraints();
+		} finally {
+			this.constraintTime = null;
+		}
+	}
+
+	/**
+	 * The date/time the constraints are being judged against: the tick's due time, or the matched cron fire time.
+	 * Outside of a constraint check this is now.
+	 *
+	 * @return The constraint date/time
+	 */
+	public LocalDateTime getConstraintTime() {
+		LocalDateTime time = this.constraintTime;
+		return time != null ? time : getNow();
+	}
+
+	/**
+	 * Sets the cron checkpoint. Used by tests.
+	 */
+	ScheduledTask setCronCheckpoint( Instant cronCheckpoint ) {
+		this.cronCheckpoint = cronCheckpoint;
+		return this;
+	}
+
+	private boolean checkConstraints() {
+		debugLog( "isConstrained" );
 
 		// When lambda that dictates if the task can be scheduled/ran: true => yes,
 		// false => no
 		if ( whenPredicate != null && whenPredicate.test( this ) == false ) {
 			return true;
 		}
+
+		// The when predicate (e.g. the cron gate) can move the constraint time to the matched fire time
+		LocalDateTime now = getConstraintTime();
 
 		// Do we have a day of the month constraint? and the same as the running
 		// date/time? Else skip it
@@ -961,13 +1055,13 @@ public class ScheduledTask implements Runnable {
 
 		// Do we have a first business day constraint
 		if ( firstBusinessDay &&
-		    now.getDayOfMonth() != DateTimeHelper.getFirstBusinessDayOfTheMonth( getTimezone() ).getDayOfMonth() ) {
+		    now.getDayOfMonth() != DateTimeHelper.getFirstBusinessDayOfTheMonth( "00:00", false, now ).getDayOfMonth() ) {
 			return true;
 		}
 
 		// Do we have a last business day constraint
 		if ( lastBusinessDay &&
-		    now.getDayOfMonth() != DateTimeHelper.getLastBusinessDayOfTheMonth( getTimezone() ).getDayOfMonth() ) {
+		    now.getDayOfMonth() != DateTimeHelper.getLastBusinessDayOfTheMonth( "00:00", false, now ).getDayOfMonth() ) {
 			return true;
 		}
 
@@ -1718,12 +1812,155 @@ public class ScheduledTask implements Runnable {
 		TimeUnit									pollUnit		= TimeUnit.SECONDS;
 		long										initialDelayMs	= cronExpr.nextFireDelayMillis( this.getTimezone() );
 
+		// Track when the cron gate was last evaluated, so a tick that runs late (e.g. queued behind other tasks on a
+		// saturated executor) still fires for the cron time it has already passed, instead of being silently skipped.
+		this.cronCheckpoint = Instant.now();
+
 		this.setMetaKey( "cronExpression", expression );
 		this.delay( initialDelayMs, TimeUnit.MILLISECONDS )
 		    .every( pollPeriod, pollUnit )
-		    .when( task -> cronExpr.matches( task.getNow() ) );
+		    .when( task -> task.isCronDue( cronExpr, pollPeriod ) );
 
 		return this;
+	}
+
+	/**
+	 * Decides if a cron-scheduled tick should run. It fires if any cron fire time falls between the previous evaluation
+	 * and now, so late ticks still run. Several fire times missed in one window collapse into a single run.
+	 *
+	 * @param cron        The cron expression
+	 * @param pollSeconds The polling period in seconds
+	 *
+	 * @return true if the task is due
+	 */
+	private boolean isCronDue( ortus.boxlang.runtime.async.CronExpression cron, long pollSeconds ) {
+		Instant			nowInstant	= Instant.now();
+		LocalDateTime	now			= LocalDateTime.ofInstant( nowInstant, getTimezone() );
+		LocalDateTime	start		= LocalDateTime.ofInstant( this.cronCheckpoint == null ? nowInstant : this.cronCheckpoint, getTimezone() );
+
+		// One clock read for both the checkpoint and the window end, so a fire on the boundary is never counted twice
+		this.cronCheckpoint = nowInstant;
+
+		// The wall clock moved backwards (e.g. a DST change): evaluate just the last poll period, like a plain wall-clock match
+		if ( !start.isBefore( now ) ) {
+			start = now.minusSeconds( pollSeconds );
+		}
+
+		var window = cron.fireTimesBetween( start, now );
+		if ( window.isEmpty() ) {
+			return false;
+		}
+
+		// Judge the calendar constraints and exclusions against the matched fire time, not the polling slot that found it
+		this.constraintTime = window.get().last();
+		warnIfLate( cron, window.get(), now );
+		return true;
+	}
+
+	/**
+	 * Logs a warning when a cron fire ran noticeably late or fire times were collapsed, with a hint to
+	 * increase the executor's threads when it is saturated. Throttled per task so a busy pool does not flood the log.
+	 */
+	private void warnIfLate( ortus.boxlang.runtime.async.CronExpression cron, ortus.boxlang.runtime.async.CronExpression.FireWindow window,
+	    LocalDateTime now ) {
+		long lateSeconds = Duration.between( window.last(), now ).getSeconds();
+		if ( lateSeconds < CRON_LATE_WARNING_SECONDS && window.count() == 1 ) {
+			return;
+		}
+
+		StringBuilder message = new StringBuilder()
+		    .append( "Scheduled task [" ).append( this.name ).append( "] with cron [" ).append( cron.getExpression() )
+		    .append( "] ran " ).append( lateSeconds ).append( "s late (due " ).append( window.last() )
+		    .append( ", ran " ).append( now ).append( ")." );
+		if ( window.count() > 1 ) {
+			message.append( " " ).append( window.count() ).append( " due times were collapsed into a single run." );
+		}
+		logLateWarning( message );
+	}
+
+	/**
+	 * Logs a warning when a periodic tick ran noticeably after the time it was due.
+	 *
+	 * @param dueInstant The instant the tick was due
+	 */
+	private void warnIfRanLate( Instant dueInstant ) {
+		long lateSeconds = Duration.between( dueInstant, Instant.now() ).getSeconds();
+		if ( lateSeconds >= CRON_LATE_WARNING_SECONDS ) {
+			logLateWarning( new StringBuilder()
+			    .append( "Scheduled task [" ).append( this.name ).append( "] ran " ).append( lateSeconds )
+			    .append( "s late (due " ).append( dueLocalDateTime( dueInstant ) ).append( ")." ) );
+		}
+	}
+
+	/**
+	 * Logs a late-run warning, with a hint to increase the executor's threads when it is saturated.
+	 * Throttled per task so a busy pool does not flood the log.
+	 *
+	 * @param message The warning message
+	 */
+	private void logLateWarning( StringBuilder message ) {
+		long	nowMillis	= System.currentTimeMillis();
+		long	lastWarned	= this.lastLateWarningMillis.get();
+		if ( nowMillis - lastWarned < CRON_LATE_WARNING_THROTTLE_MILLIS
+		    || !this.lastLateWarningMillis.compareAndSet( lastWarned, nowMillis ) ) {
+			return;
+		}
+
+		try {
+			BoxExecutor	exec		= getExecutor();
+			int			poolSize	= exec.getPoolSize();
+			int			active		= exec.getActiveCount();
+			int			queued		= exec.getQueue() == null ? 0 : exec.getQueue().size();
+			if ( queued > 0 || ( poolSize > 0 && active >= poolSize ) ) {
+				message.append( " Executor [" ).append( exec.name() ).append( "] is saturated (" )
+				    .append( active ).append( " of " ).append( poolSize ).append( " threads busy, " )
+				    .append( queued ).append( " queued). Consider increasing its thread count to at least " )
+				    .append( poolSize + queued ).append( "." );
+				if ( this.scheduler != null ) {
+					message.append( " The pool size comes from the [" )
+					    .append( BoxRuntime.getInstance().getConfiguration().scheduler.executor )
+					    .append( "] executor's threads setting in boxlang.json." );
+				}
+			}
+		} catch ( Exception e ) {
+			// The executor details are only a diagnostic hint, never fail the run because of them
+		}
+
+		this.logger.warn( message.toString() );
+	}
+
+	/**
+	 * Returns the instant the current periodic tick was due and advances to the next one.
+	 * Executors run a fixed-rate task's ticks in order, so each run consumes exactly one due slot.
+	 *
+	 * @return The due instant, or null if this task was not started by an executor or has no schedule slots
+	 */
+	synchronized Instant consumeDueInstant() {
+		Instant due = this.nextDueInstant;
+		if ( due == null ) {
+			return null;
+		}
+		this.nextDueInstant = this.period > 0 && this.spacedDelay <= 0
+		    ? due.plus( Duration.of( this.period, this.timeUnit.toChronoUnit() ) )
+		    : null;
+		return due;
+	}
+
+	/**
+	 * Sets when the next tick is due. Used by tests.
+	 */
+	synchronized ScheduledTask setNextDueInstant( Instant nextDueInstant ) {
+		this.nextDueInstant = nextDueInstant;
+		return this;
+	}
+
+	/**
+	 * Converts a tick's due instant to a local date/time in the task's timezone. A due time can never be
+	 * in the future, so one that is (e.g. the executor ran a tick early) is clamped to now.
+	 */
+	private LocalDateTime dueLocalDateTime( Instant dueInstant ) {
+		Instant now = Instant.now();
+		return LocalDateTime.ofInstant( dueInstant.isAfter( now ) ? now : dueInstant, getTimezone() );
 	}
 
 	/**

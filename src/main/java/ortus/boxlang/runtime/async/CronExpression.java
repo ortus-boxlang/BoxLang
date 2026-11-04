@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.async;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -254,6 +255,59 @@ public class CronExpression {
 		}
 
 		return Optional.empty();
+	}
+
+	/**
+	 * The maximum span searched by {@link #fireTimesBetween(LocalDateTime, LocalDateTime)}. A bigger span (e.g. the runtime was suspended)
+	 * is clamped to the most recent day so the search stays cheap.
+	 */
+	private static final Duration MAX_FIRE_WINDOW = Duration.ofDays( 1 );
+
+	/**
+	 * The fire times of a cron expression found inside a time window.
+	 *
+	 * @param first The earliest fire time in the window
+	 * @param last  The latest fire time in the window
+	 * @param count The number of fire times in the window
+	 */
+	public record FireWindow( LocalDateTime first, LocalDateTime last, int count ) {
+	}
+
+	/**
+	 * Finds the fire times that fall in the window {@code (afterExclusive, untilInclusive]}.
+	 * This lets a late evaluation still detect a fire time it has already passed, instead of only
+	 * matching when it runs at exactly the right second.
+	 *
+	 * @param afterExclusive The start of the window (exclusive)
+	 * @param untilInclusive The end of the window (inclusive)
+	 *
+	 * @return The fire times found, or empty if none fall in the window
+	 */
+	public Optional<FireWindow> fireTimesBetween( LocalDateTime afterExclusive, LocalDateTime untilInclusive ) {
+		LocalDateTime start = afterExclusive;
+		if ( Duration.between( start, untilInclusive ).compareTo( MAX_FIRE_WINDOW ) > 0 ) {
+			start = untilInclusive.minus( MAX_FIRE_WINDOW );
+		}
+
+		LocalDateTime	candidate	= hasSeconds
+		    ? start.truncatedTo( ChronoUnit.SECONDS ).plusSeconds( 1 )
+		    : start.truncatedTo( ChronoUnit.MINUTES ).plusMinutes( 1 );
+		LocalDateTime	first		= null;
+		LocalDateTime	last		= null;
+		int				count		= 0;
+
+		while ( !candidate.isAfter( untilInclusive ) ) {
+			if ( matches( candidate ) ) {
+				if ( first == null ) {
+					first = candidate;
+				}
+				last = candidate;
+				count++;
+			}
+			candidate = hasSeconds ? candidate.plusSeconds( 1 ) : candidate.plusMinutes( 1 );
+		}
+
+		return count == 0 ? Optional.empty() : Optional.of( new FireWindow( first, last, count ) );
 	}
 
 	/**

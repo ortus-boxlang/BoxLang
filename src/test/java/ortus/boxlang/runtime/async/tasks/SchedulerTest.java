@@ -30,8 +30,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Spy;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 class SchedulerTest {
 
@@ -60,6 +63,32 @@ class SchedulerTest {
 		scheduler.startup();
 		assertThat( scheduler.getExecutor() ).isNotNull();
 		assertThat( scheduler.getExecutor().name() ).isEqualTo( "bdd-scheduler" );
+	}
+
+	@DisplayName( "It sizes its executor from the executor named by scheduler.executor" )
+	@Test
+	void testExecutorIsSizedFromConfig() {
+		var		config		= instance.getConfiguration();
+
+		Key		executorKey	= Key.of( config.scheduler.executor );
+
+		Object	previous	= config.executors.get( executorKey );
+
+		// "threads" is the property name used in boxlang.json
+		config.executors.put( executorKey, new ExecutorConfig( config.scheduler.executor ).process( Struct.of( "type", "scheduled", "threads", 7 ) ) );
+
+		BaseScheduler sizedScheduler = new BaseScheduler( "sizedScheduler", new ScriptingRequestBoxContext( instance.getRuntimeContext() ) );
+		try {
+			sizedScheduler.startup();
+			assertThat( sizedScheduler.getExecutor().maxThreads() ).isEqualTo( 7 );
+		} finally {
+			sizedScheduler.shutdown();
+			if ( previous == null ) {
+				config.executors.remove( executorKey );
+			} else {
+				config.executors.put( executorKey, previous );
+			}
+		}
 	}
 
 	@DisplayName( "It can set a new timezone" )

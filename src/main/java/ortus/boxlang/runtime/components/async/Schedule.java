@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.tasks.BaseScheduler;
@@ -750,8 +751,10 @@ public class Schedule extends Component {
 
 		// Apply exclude dates predicate
 		if ( exclude != null && !exclude.isBlank() ) {
-			final List<String> excludeList = Arrays.asList( exclude.split( "," ) );
-			task.when( t -> !isExcludedDate( t.getNow(), excludeList ) );
+			final List<String>				excludeList	= Arrays.asList( exclude.split( "," ) );
+			// Compose with any existing predicate (e.g. the cron gate), do not replace it
+			final Predicate<ScheduledTask>	existing	= task.getWhenPredicate();
+			task.when( t -> ( existing == null || existing.test( t ) ) && !isExcludedDate( t.getConstraintTime(), excludeList ) );
 		}
 
 		// Wire onFailure callback based on onException, composing with any class-defined onError() method

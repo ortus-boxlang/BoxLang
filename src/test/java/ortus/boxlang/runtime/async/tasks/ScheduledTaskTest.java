@@ -21,9 +21,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import javax.management.InvalidAttributeValueException;
@@ -636,5 +640,131 @@ class ScheduledTaskTest {
 		public String run() {
 			return "ran";
 		}
+	}
+
+	@DisplayName( "a cron tick that runs late still fires for the cron time it passed" )
+	@Test
+	void testCronLateTickStillFires() throws InterruptedException {
+		// Fires on every even second
+		task.cron( "*/2 * * * * *" );
+		var predicate = task.getWhenPredicate();
+		predicate.test( task );
+		// Simulate a tick queued behind other tasks on a saturated executor
+		Thread.sleep( 2500 );
+		assertThat( predicate.test( task ) ).isTrue();
+	}
+
+	@DisplayName( "a cron tick does not fire when no cron time is due" )
+	@Test
+	void testCronNotDueDoesNotFire() {
+		// Only fires on the 1st of January at midnight
+		task.cron( "0 0 0 1 1 *" );
+		assertThat( task.getWhenPredicate().test( task ) ).isFalse();
+	}
+
+	@DisplayName( "constraints can be judged against the time a tick was due instead of now" )
+	@Test
+	void testConstraintsCanBeJudgedAgainstAGivenTime() {
+		// Friday 2026-10-30 23:59:50 is a weekday, Saturday 2026-10-31 00:00:05 is not
+		task.setWeekdays( true );
+		assertThat( task.isConstrained( LocalDateTime.of( 2026, 10, 30, 23, 59, 50 ) ) ).isFalse();
+		assertThat( task.isConstrained( LocalDateTime.of( 2026, 10, 31, 0, 0, 5 ) ) ).isTrue();
+	}
+
+	@DisplayName( "a day of the month constraint is judged against the given time, not the real month" )
+	@Test
+	void testDayOfTheMonthConstraintAgainstAGivenTime() {
+		task.setDayOfTheMonth( 31 );
+		assertThat( task.isConstrained( LocalDateTime.of( 2026, 10, 31, 23, 59, 59 ) ) ).isFalse();
+		assertThat( task.isConstrained( LocalDateTime.of( 2026, 11, 1, 0, 0, 1 ) ) ).isTrue();
+	}
+
+	@DisplayName( "a last business day constraint is judged against the given time, not the real month" )
+	@Test
+	void testLastBusinessDayConstraintAgainstAGivenTime() {
+		// Oct 31 2026 is a Saturday, so the last business day of October is Friday the 30th
+		task.setLastBusinessDay( true );
+		assertThat( task.isConstrained( LocalDateTime.of( 2026, 10, 30, 23, 59, 50 ) ) ).isFalse();
+		assertThat( task.isConstrained( LocalDateTime.of( 2026, 11, 1, 0, 0, 5 ) ) ).isTrue();
+	}
+
+	@DisplayName( "a late tick that was due on an allowed day still runs after midnight" )
+	@Test
+	void testLateTickDueOnAnAllowedDayStillRuns() {
+		AtomicInteger runs = new AtomicInteger( 0 );
+		task.call( ( Callable<Object> ) () -> {
+			runs.incrementAndGet();
+			return null;
+		} );
+		task.setWeekends( true );
+
+		// The tick was due on Saturday 2026-10-31, even though it is running much later
+		task.setNextDueInstant( LocalDateTime.of( 2026, 10, 31, 0, 0, 5 ).atZone( task.getTimezone() ).toInstant() );
+		task.run();
+
+		assertThat( runs.get() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "a tick that was due on a constrained day does not run, even if it runs on an allowed day" )
+	@Test
+	void testLateTickDueOnAConstrainedDayDoesNotRun() {
+		AtomicInteger runs = new AtomicInteger( 0 );
+		task.call( ( Callable<Object> ) () -> {
+			runs.incrementAndGet();
+			return null;
+		} );
+		task.setWeekends( true );
+
+		// The tick was due on Wednesday 2026-10-28
+		task.setNextDueInstant( LocalDateTime.of( 2026, 10, 28, 12, 0, 0 ).atZone( task.getTimezone() ).toInstant() );
+		task.run();
+
+		assertThat( runs.get() ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "each periodic tick advances the due time by one period" )
+	@Test
+	void testEachTickAdvancesTheDueTime() {
+		Instant first = Instant.parse( "2026-10-30T22:00:00Z" );
+		task.every( 1, TimeUnit.HOURS );
+		task.setNextDueInstant( first );
+
+		assertThat( task.consumeDueInstant() ).isEqualTo( first );
+		assertThat( task.consumeDueInstant() ).isEqualTo( first.plusSeconds( 3600 ) );
+		assertThat( task.consumeDueInstant() ).isEqualTo( first.plusSeconds( 7200 ) );
+	}
+
+	@DisplayName( "the constraint time is the time the constraints are being judged against" )
+	@Test
+	void testConstraintTimeIsTheEvaluatedTime() {
+		AtomicReference<LocalDateTime> seen = new AtomicReference<>();
+		task.when( t -> {
+			seen.set( t.getConstraintTime() );
+			return true;
+		} );
+
+		LocalDateTime dueTime = LocalDateTime.of( 2026, 10, 30, 23, 59, 50 );
+		task.isConstrained( dueTime );
+
+		assertThat( seen.get() ).isEqualTo( dueTime );
+	}
+
+	@DisplayName( "a disabled task does not replay its cron fires when it is enabled again" )
+	@Test
+	void testDisabledCronTaskDoesNotReplayFires() {
+		// Fires at the start of every minute
+		task.cron( "0 * * * * *" );
+		var predicate = task.getWhenPredicate();
+
+		// A checkpoint over a minute old has a fire due in its window
+		task.setCronCheckpoint( Instant.now().minusSeconds( 61 ) );
+		assertThat( predicate.test( task ) ).isTrue();
+
+		// Disabled ticks move the checkpoint, so the pause is not replayed
+		task.setCronCheckpoint( Instant.now().minusSeconds( 61 ) );
+		task.disable();
+		task.run();
+		task.enable();
+		assertThat( predicate.test( task ) ).isFalse();
 	}
 }

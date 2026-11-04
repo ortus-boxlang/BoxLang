@@ -33,6 +33,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
+import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
@@ -276,12 +277,26 @@ public class BaseScheduler implements IScheduler {
 	 */
 
 	/**
+	 * The number of threads for this scheduler's executor: the thread count of the global executor named by
+	 * {@code scheduler.executor} in boxlang.json, so it can be raised there when tasks queue up.
+	 *
+	 * @return The configured thread count, or null to use the default
+	 */
+	private Integer getConfiguredThreads() {
+		var config = BoxRuntime.getInstance().getConfiguration();
+		if ( config.executors.get( Key.of( config.scheduler.executor ) ) instanceof ExecutorConfig executorConfig && executorConfig.maxThreads > 0 ) {
+			return executorConfig.maxThreads;
+		}
+		return null;
+	}
+
+	/**
 	 * Startup this scheduler and all of it's scheduled tasks
 	 */
 	public synchronized BaseScheduler startup() {
 		if ( !this.started ) {
 			// Build out an executor for this scheduler
-			this.executor = asyncService.newScheduledExecutor( name + "-scheduler" );
+			this.executor = asyncService.newScheduledExecutor( name + "-scheduler", getConfiguredThreads() );
 
 			// Iterate over tasks and send them off for scheduling
 			this.tasks.entrySet()
