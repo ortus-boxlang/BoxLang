@@ -29,7 +29,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -327,6 +326,17 @@ public class ScheduledTask implements Runnable {
 	private Instant									nextDueInstant						= null;
 
 	/**
+	 * The last time the cron gate was evaluated. Cron fire times after it are due. Reset when the task starts or
+	 * while it is disabled, so a pause is never replayed as a missed fire. Null for tasks that are not cron based.
+	 */
+	private volatile Instant						cronCheckpoint						= null;
+
+	/**
+	 * The date/time the constraints are being judged against. Only set while a constraint check runs.
+	 */
+	private volatile LocalDateTime					constraintTime						= null;
+
+	/**
 	 * BoxLang Timer utility
 	 */
 	private final Timer								timer								= new Timer();
@@ -504,6 +514,10 @@ public class ScheduledTask implements Runnable {
 
 		// If disabled or paused
 		if ( !force && isDisabled() ) {
+			// A disabled task is paused, not delayed: do not replay its cron fires when it is enabled again
+			if ( this.cronCheckpoint != null ) {
+				this.cronCheckpoint = Instant.now();
+			}
 			setNextRunTime();
 			return;
 		}
@@ -743,6 +757,11 @@ public class ScheduledTask implements Runnable {
 		    ? null
 		    : Instant.now().plus( Duration.of( this.initialDelay, this.timeUnit.toChronoUnit() ) );
 
+		// Starting (or restarting) a cron task begins a fresh window, downtime is not replayed as missed fires
+		if ( this.cronCheckpoint != null ) {
+			this.cronCheckpoint = Instant.now();
+		}
+
 		// Log it
 		debugLog(
 		    "start",
@@ -976,9 +995,37 @@ public class ScheduledTask implements Runnable {
 	 * The runtime passes the time a tick was due, so a tick that runs late is not skipped by crossing midnight
 	 * or a time window.
 	 *
-	 * @param now The date/time to evaluate the constraints against
+	 * @param at The date/time to evaluate the constraints against
 	 */
-	public boolean isConstrained( LocalDateTime now ) {
+	public boolean isConstrained( LocalDateTime at ) {
+		this.constraintTime = at;
+		try {
+			return checkConstraints();
+		} finally {
+			this.constraintTime = null;
+		}
+	}
+
+	/**
+	 * The date/time the constraints are being judged against: the tick's due time, or the matched cron fire time.
+	 * Outside of a constraint check this is now.
+	 *
+	 * @return The constraint date/time
+	 */
+	public LocalDateTime getConstraintTime() {
+		LocalDateTime time = this.constraintTime;
+		return time != null ? time : getNow();
+	}
+
+	/**
+	 * Sets the cron checkpoint. Used by tests.
+	 */
+	ScheduledTask setCronCheckpoint( Instant cronCheckpoint ) {
+		this.cronCheckpoint = cronCheckpoint;
+		return this;
+	}
+
+	private boolean checkConstraints() {
 		debugLog( "isConstrained" );
 
 		// When lambda that dictates if the task can be scheduled/ran: true => yes,
@@ -986,6 +1033,9 @@ public class ScheduledTask implements Runnable {
 		if ( whenPredicate != null && whenPredicate.test( this ) == false ) {
 			return true;
 		}
+
+		// The when predicate (e.g. the cron gate) can move the constraint time to the matched fire time
+		LocalDateTime now = getConstraintTime();
 
 		// Do we have a day of the month constraint? and the same as the running
 		// date/time? Else skip it
@@ -1764,12 +1814,12 @@ public class ScheduledTask implements Runnable {
 
 		// Track when the cron gate was last evaluated, so a tick that runs late (e.g. queued behind other tasks on a
 		// saturated executor) still fires for the cron time it has already passed, instead of being silently skipped.
-		final AtomicReference<Instant>				lastEvaluated	= new AtomicReference<>( Instant.now() );
+		this.cronCheckpoint = Instant.now();
 
 		this.setMetaKey( "cronExpression", expression );
 		this.delay( initialDelayMs, TimeUnit.MILLISECONDS )
 		    .every( pollPeriod, pollUnit )
-		    .when( task -> task.isCronDue( cronExpr, lastEvaluated, pollPeriod ) );
+		    .when( task -> task.isCronDue( cronExpr, pollPeriod ) );
 
 		return this;
 	}
@@ -1779,15 +1829,17 @@ public class ScheduledTask implements Runnable {
 	 * and now, so late ticks still run. Several fire times missed in one window collapse into a single run.
 	 *
 	 * @param cron          The cron expression
-	 * @param lastEvaluated The instant of the previous evaluation, updated here
 	 * @param pollSeconds   The polling period in seconds
 	 *
 	 * @return true if the task is due
 	 */
-	private boolean isCronDue( ortus.boxlang.runtime.async.CronExpression cron, AtomicReference<Instant> lastEvaluated, long pollSeconds ) {
-		Instant			previous	= lastEvaluated.getAndSet( Instant.now() );
-		LocalDateTime	now			= getNow();
-		LocalDateTime	start		= LocalDateTime.ofInstant( previous, getTimezone() );
+	private boolean isCronDue( ortus.boxlang.runtime.async.CronExpression cron, long pollSeconds ) {
+		Instant			nowInstant	= Instant.now();
+		LocalDateTime	now			= LocalDateTime.ofInstant( nowInstant, getTimezone() );
+		LocalDateTime	start		= LocalDateTime.ofInstant( this.cronCheckpoint == null ? nowInstant : this.cronCheckpoint, getTimezone() );
+
+		// One clock read for both the checkpoint and the window end, so a fire on the boundary is never counted twice
+		this.cronCheckpoint = nowInstant;
 
 		// The wall clock moved backwards (e.g. a DST change): evaluate just the last poll period, like a plain wall-clock match
 		if ( !start.isBefore( now ) ) {
@@ -1799,6 +1851,8 @@ public class ScheduledTask implements Runnable {
 			return false;
 		}
 
+		// Judge the calendar constraints and exclusions against the matched fire time, not the polling slot that found it
+		this.constraintTime = window.get().last();
 		warnIfLate( cron, window.get(), now );
 		return true;
 	}

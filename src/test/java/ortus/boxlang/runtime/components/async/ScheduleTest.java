@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -999,6 +1000,20 @@ public class ScheduleTest {
 
 		// The cron gate must still apply, so the task is not due
 		assertThat( task.getWhenPredicate().test( task ) ).isFalse();
+	}
+
+	@DisplayName( "exclude is judged against the time the tick was due, not when it ran" )
+	@Test
+	public void testExcludeIsJudgedAgainstTheDueTime() {
+		BaseScheduler	scheduler	= Schedule.getOrCreateScheduler( context, Schedule.DEFAULT_SCHEDULER_NAME );
+		IStruct			taskDef		= Struct.of( Key._CLASS, CLASS_FIXTURE, Key.method, "run", Key.exclude, "2026-10-30" );
+		ScheduledTask	task		= Schedule.registerClassTask( scheduler, "excludeDueTimeTask", "", context, taskDef );
+		Schedule.applyTaskConfiguration( task, null, taskDef, instance.getRuntimeContext() );
+
+		// Due on the excluded Friday: still excluded even if it runs after midnight
+		assertThat( task.isConstrained( LocalDateTime.of( 2026, 10, 30, 23, 59, 50 ) ) ).isTrue();
+		// Due on Saturday: not excluded
+		assertThat( task.isConstrained( LocalDateTime.of( 2026, 10, 31, 0, 0, 5 ) ) ).isFalse();
 	}
 
 	@DisplayName( "a class-based task survives a persistence reload" )

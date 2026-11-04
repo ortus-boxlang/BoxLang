@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import javax.management.InvalidAttributeValueException;
@@ -731,5 +732,39 @@ class ScheduledTaskTest {
 		assertThat( task.consumeDueInstant() ).isEqualTo( first );
 		assertThat( task.consumeDueInstant() ).isEqualTo( first.plusSeconds( 3600 ) );
 		assertThat( task.consumeDueInstant() ).isEqualTo( first.plusSeconds( 7200 ) );
+	}
+
+	@DisplayName( "the constraint time is the time the constraints are being judged against" )
+	@Test
+	void testConstraintTimeIsTheEvaluatedTime() {
+		AtomicReference<LocalDateTime> seen = new AtomicReference<>();
+		task.when( t -> {
+			seen.set( t.getConstraintTime() );
+			return true;
+		} );
+
+		LocalDateTime dueTime = LocalDateTime.of( 2026, 10, 30, 23, 59, 50 );
+		task.isConstrained( dueTime );
+
+		assertThat( seen.get() ).isEqualTo( dueTime );
+	}
+
+	@DisplayName( "a disabled task does not replay its cron fires when it is enabled again" )
+	@Test
+	void testDisabledCronTaskDoesNotReplayFires() {
+		// Fires at the start of every minute
+		task.cron( "0 * * * * *" );
+		var predicate = task.getWhenPredicate();
+
+		// A checkpoint over a minute old has a fire due in its window
+		task.setCronCheckpoint( Instant.now().minusSeconds( 61 ) );
+		assertThat( predicate.test( task ) ).isTrue();
+
+		// Disabled ticks move the checkpoint, so the pause is not replayed
+		task.setCronCheckpoint( Instant.now().minusSeconds( 61 ) );
+		task.disable();
+		task.run();
+		task.enable();
+		assertThat( predicate.test( task ) ).isFalse();
 	}
 }

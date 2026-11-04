@@ -754,7 +754,7 @@ public class Schedule extends Component {
 			final List<String>				excludeList	= Arrays.asList( exclude.split( "," ) );
 			// Compose with any existing predicate (e.g. the cron gate), do not replace it
 			final Predicate<ScheduledTask>	existing	= task.getWhenPredicate();
-			task.when( t -> ( existing == null || existing.test( t ) ) && !isExcludedDate( t.getNow(), excludeList ) );
+			task.when( t -> ( existing == null || existing.test( t ) ) && !isExcludedDate( t.getConstraintTime(), excludeList ) );
 		}
 
 		// Wire onFailure callback based on onException, composing with any class-defined onError() method
