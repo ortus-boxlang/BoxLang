@@ -315,7 +315,14 @@ public class ApplicationService extends BaseService {
 			// This may not be the actual absolute path of the file if we're including a file which is being
 			// resolved via a mapping declared in the Application class, which we haven't yet created
 
-			templatePath = FileSystemUtil.expandPath( context, template.getPath() );
+			// Force this to be relative since we only get here for non-absolute templates
+			templatePath = FileSystemUtil.expandPath(
+			    context.getConfig().getAsStruct( Key.mappings ),
+			    template.getPath(),
+			    context.findClosestTemplate(),
+			    false,
+			    true
+			);
 
 			Path	rootPath			= Paths.get( templatePath.mappingPath() );
 			Path	currentDirectory	= templatePath.absolutePath().getParent();
