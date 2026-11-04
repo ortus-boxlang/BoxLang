@@ -1828,8 +1828,8 @@ public class ScheduledTask implements Runnable {
 	 * Decides if a cron-scheduled tick should run. It fires if any cron fire time falls between the previous evaluation
 	 * and now, so late ticks still run. Several fire times missed in one window collapse into a single run.
 	 *
-	 * @param cron          The cron expression
-	 * @param pollSeconds   The polling period in seconds
+	 * @param cron        The cron expression
+	 * @param pollSeconds The polling period in seconds
 	 *
 	 * @return true if the task is due
 	 */
