@@ -107,6 +107,53 @@ public class SchedulerServiceTest {
 	}
 
 	@Test
+	@DisplayName( "Given a class in scheduler.schedulers, when global schedulers register, then configure() runs and its name, timezone and tasks are applied" )
+	void testGlobalSchedulersAreConfigured() {
+		Key		schedulerKey	= Key.of( "Global-Config-Scheduler" );
+		Array	original		= runtime.getConfiguration().scheduler.schedulers;
+		try {
+			schedulerService.removeScheduler( schedulerKey, true, 0L );
+			runtime.getConfiguration().scheduler.schedulers = Array.of( Paths.get( "src/test/bx/GlobalConfigScheduler.bx" ).toAbsolutePath().toString() );
+
+			schedulerService.registerGlobalSchedulers();
+
+			// The name set inside configure() is the registered name (not a random boxlang-scheduler-xxxx one)
+			assertThat( schedulerService.hasScheduler( schedulerKey ) ).isTrue();
+			BaseScheduler scheduler = ( BaseScheduler ) schedulerService.getScheduler( schedulerKey );
+			assertThat( scheduler.getSchedulerName() ).isEqualTo( "Global-Config-Scheduler" );
+			assertThat( scheduler.getTimezone().getId() ).isEqualTo( "America/New_York" );
+			// The tasks defined in configure() exist
+			assertThat( scheduler.getTasks().keySet().stream().map( Object::toString ).toList() )
+			    .containsExactly( "global-heartbeat", "global-nightly" );
+		} finally {
+			runtime.getConfiguration().scheduler.schedulers = original;
+			schedulerService.removeScheduler( schedulerKey, true, 0L );
+		}
+	}
+
+	@Test
+	@DisplayName( "Given a configured global scheduler, when the schedulers start up, then its tasks are scheduled" )
+	void testGlobalSchedulerTasksStart() {
+		Key		schedulerKey	= Key.of( "Global-Config-Scheduler" );
+		Array	original		= runtime.getConfiguration().scheduler.schedulers;
+		try {
+			schedulerService.removeScheduler( schedulerKey, true, 0L );
+			runtime.getConfiguration().scheduler.schedulers = Array.of( Paths.get( "src/test/bx/GlobalConfigScheduler.bx" ).toAbsolutePath().toString() );
+			schedulerService.registerGlobalSchedulers();
+
+			BaseScheduler scheduler = ( BaseScheduler ) schedulerService.getScheduler( schedulerKey );
+			schedulerService.startupScheduler( scheduler );
+
+			assertThat( scheduler.hasStarted() ).isTrue();
+			assertThat( scheduler.getTaskRecord( "global-heartbeat" ).scheduledAt ).isNotNull();
+			assertThat( scheduler.getTaskRecord( "global-nightly" ).scheduledAt ).isNotNull();
+		} finally {
+			runtime.getConfiguration().scheduler.schedulers = original;
+			schedulerService.removeScheduler( schedulerKey, true, 0L );
+		}
+	}
+
+	@Test
 	@DisplayName( "Given newScheduler, when called, then it should create and register a scheduler" )
 	void testNewScheduler() {
 		IScheduler scheduler = schedulerService.newScheduler( "testNew", null, null, false );

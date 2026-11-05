@@ -1,0 +1,21 @@
+/**
+ * Fixture for SchedulerServiceTest: a scheduler class registered through the scheduler.schedulers setting of boxlang.json.
+ */
+class {
+
+	property name="scheduler";
+
+	function configure(){
+		scheduler.setSchedulerName( "Global-Config-Scheduler" )
+		scheduler.setTimezone( "America/New_York" )
+
+		scheduler.task( "global-heartbeat" )
+			.call( () -> "ok" )
+			.every( 1, "hour" );
+
+		scheduler.task( "global-nightly" )
+			.call( () -> "ok" )
+			.everyDayAt( "03:00" );
+	}
+
+}
