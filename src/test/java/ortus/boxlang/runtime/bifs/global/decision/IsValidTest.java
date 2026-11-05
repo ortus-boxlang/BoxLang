@@ -479,7 +479,7 @@ public class IsValidTest {
 		    apostrophe = isValid( 'email', "o'brien@example.com" );
 		    plain      = isValid( 'email', 'obrien@example.com' );
 		    plus       = isValid( 'email', 'o+brien@example.com' );
-		    specials   = isValid( 'email', "a!b#c$d%e&f'g*h/i=j?k^l`m{n|o}p~q@example.com" );
+		    specials   = isValid( 'email', "a!b##c$d%e&f'g*h/i=j?k^l`m{n|o}p~q@example.com" );
 
 		    // still invalid
 		    doubleat   = isValid( 'email', "o'brien@a@example.com" );
