@@ -32,6 +32,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
+import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -2214,4 +2215,81 @@ public class CFTemplateTest {
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "insidetest#brad#" );
 	}
 
+	@Test
+	public void testOutputTrueWithEscapedPounds() {
+		instance.executeSource(
+		    """
+		    <!--- All double pound signs shold be escaped into a single one, even the one outside of the cfoutput --->
+		    <cffunction name="testOutput" returntype="void" output="true">
+		    	<cfset var testVar = 'fooBar'>
+		    	#testVar#
+		    	##testVar##
+		    	<cfoutput>
+		    		#testVar#
+		    		##testVar##
+		    	</cfoutput>
+		    </cffunction>
+		    <cfsavecontent variable="result">
+		    	<cfset testOutput()>
+		    </cfsavecontent>
+		               """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "fooBar#testVar#fooBar#testVar#" );
+	}
+
+	@Test
+	public void testOutputAttributeWithRuntimeExpression() {
+		Throwable e = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    <cfset outputFlag = true>
+		    <cffunction name="testOutput" returntype="void" output="#outputFlag#">
+		    	<cfset var testVar = 'fooBar'>
+		    	#testVar#
+		    </cffunction>
+		    <cfsavecontent variable="result">
+		    	<cfset testOutput()>
+		    </cfsavecontent>
+		               """,
+		    context, BoxSourceType.CFTEMPLATE ) );
+		assertThat( e.getMessage() ).contains( "Attribute [output] of the [cffunction] tag must be a literal value" );
+	}
+
+	@Test
+	public void testNonOutputFunctionAnnotationWithRuntimeExpression() {
+		Throwable e = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    <cfset myType = "string">
+		    <cffunction name="testOutput" returntype="#myType#">
+		    	<cfreturn "foo">
+		    </cffunction>
+		               """,
+		    context, BoxSourceType.CFTEMPLATE ) );
+		assertThat( e.getMessage() ).contains( "Attribute [returntype] of the [cffunction] tag must be a literal value" );
+	}
+
+	@Test
+	public void testComponentAnnotationWithRuntimeExpression() throws IOException {
+		// A component must be parsed as its own file, not as an ad-hoc statement.
+		ParsingResult result = new Parser().parse(
+		    """
+		    <cfcomponent displayname="#myName#">
+		    </cfcomponent>
+		    """, BoxSourceType.CFTEMPLATE, true );
+		assertThat( result.isCorrect() ).isFalse();
+		assertThat( result.getIssues().stream().anyMatch(
+		    issue -> issue.getMessage().contains( "Attribute [displayname] of the [cfcomponent] tag must be a literal value" ) ) ).isTrue();
+	}
+
+	@Test
+	public void testPropertyAnnotationWithRuntimeExpression() throws IOException {
+		ParsingResult result = new Parser().parse(
+		    """
+		    <cfcomponent>
+		    	<cfproperty name="firstName" type="#myType#">
+		    </cfcomponent>
+		    """, BoxSourceType.CFTEMPLATE, true );
+		assertThat( result.isCorrect() ).isFalse();
+		assertThat( result.getIssues().stream().anyMatch(
+		    issue -> issue.getMessage().contains( "Attribute [type] of the [cfproperty] tag must be a literal value" ) ) ).isTrue();
+	}
 }

@@ -1828,4 +1828,56 @@ public class BoxTemplateTest {
 		// @Formatter:on
 		// assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foo#foo#foobar" );
 	}
+
+	@Test
+	public void testOutputTrueWithEscapedPounds() {
+		instance.executeSource(
+		    """
+		    <!--- All double pound signs shold be escaped into a single one, even the one outside of the bx:output --->
+		    <bx:function name="testOutput" returntype="void" output="true">
+		    	<bx:set var testVar = 'fooBar'>
+		    	#testVar#
+		    	##testVar##
+		    	<bx:output>
+		    		#testVar#
+		    		##testVar##
+		    	</bx:output>
+		    </bx:function>
+		    <bx:savecontent variable="result">
+		    	<bx:set testOutput()>
+		    </bx:savecontent>
+		               """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "fooBar#testVar#fooBar#testVar#" );
+	}
+
+	@Test
+	public void testOutputAttributeWithRuntimeExpression() {
+		Throwable e = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    <bx:set outputFlag = true>
+		    <bx:function name="testOutput" returntype="void" output="#outputFlag#">
+		    	<bx:set var testVar = 'fooBar'>
+		    	#testVar#
+		    </bx:function>
+		    <bx:savecontent variable="result">
+		    	<bx:set testOutput()>
+		    </bx:savecontent>
+		               """,
+		    context, BoxSourceType.BOXTEMPLATE ) );
+		assertThat( e.getMessage() ).contains( "Attribute [output] of the [bx:function] tag must be a literal value" );
+	}
+
+	@Test
+	public void testNonOutputFunctionAnnotationWithRuntimeExpression() {
+		Throwable e = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    <bx:set myType = "string">
+		    <bx:function name="testOutput" returntype="#myType#">
+		    	<bx:return "foo">
+		    </bx:function>
+		               """,
+		    context, BoxSourceType.BOXTEMPLATE ) );
+		assertThat( e.getMessage() ).contains( "Attribute [returntype] of the [bx:function] tag must be a literal value" );
+	}
 }

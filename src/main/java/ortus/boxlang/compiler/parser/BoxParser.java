@@ -333,7 +333,7 @@ public class BoxParser extends AbstractParser {
 		this.classOrInterface = classOrInterface;
 		BoxLexerCustom	lexer	= new BoxLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ),
 		    isScript ? BoxLexerCustom.DEFAULT_SCRIPT_MODE : BoxLexerCustom.DEFAULT_TEMPLATE_MODE, errorListener, this )
-		    .setClassIsExpected( classOrInterface );
+		        .setClassIsExpected( classOrInterface );
 		BoxGrammar		parser	= new BoxGrammar( new CommonTokenStream( lexer ) );
 
 		// DEBUG: Will print a trace of all parser rules visited:
@@ -1075,6 +1075,9 @@ public class BoxParser extends AbstractParser {
 			annotations.add( toAst( file, attr ) );
 		}
 
+		// Function annotations are resolved at compile time, so they must all be literals.
+		validateLiteralAnnotations( annotations, "bx:function" );
+
 		name = getBoxExprAsString( findExprInAnnotations( annotations, "name", true, null, "function", getPosition( node ) ), "name", false );
 
 		String accessText = getBoxExprAsString( findExprInAnnotations( annotations, "access", false, null, null, null ), "access", true );
@@ -1140,7 +1143,18 @@ public class BoxParser extends AbstractParser {
 			args.add( toAst( file, arg ) );
 		}
 
+		// A <bx:function output="true"> body is an implicit output block, exactly like a <bx:output>
+		// body: doubled pound signs collapse to a single pound. The lexer already pushes output mode
+		// for such a body (see BoxLexerCustom.handleFunctionOutputTracking) so that #expr# interpolates;
+		// bump the same outputCounter the <bx:output> path uses so the escaping matches.
+		boolean isOutputting = annotationIsTrue( annotations, "output" );
+		if ( isOutputting ) {
+			outputCounter++;
+		}
 		body.addAll( toAst( file, node.body ) );
+		if ( isOutputting ) {
+			outputCounter--;
+		}
 
 		// An ABSTRACT function cannot have a body. Normalize an abstract tag
 		// function whose body is only whitespace/whitespace buffer output to a
@@ -1444,6 +1458,75 @@ public class BoxParser extends AbstractParser {
 		} else {
 			issues.add( new Issue( "Attribute [" + name + "] attribute must be a string literal", expr.getPosition() ) );
 			return "";
+		}
+	}
+
+	/**
+	 * Determine if a tag's annotations declare the given attribute with a literal true value.
+	 * <p>
+	 * This mirrors the output attribute tracking the Box lexer performs when deciding whether a tag
+	 * body is an implicit output block (see BoxLexerCustom.handleFunctionOutputTracking).
+	 *
+	 * @param annotations the tag's annotations
+	 * @param name        the attribute name to look for
+	 *
+	 * @return true if the attribute is present and its value is literally true
+	 */
+	private boolean annotationIsTrue( List<BoxAnnotation> annotations, String name ) {
+		for ( BoxAnnotation annotation : annotations ) {
+			if ( !annotation.getKey().getValue().equalsIgnoreCase( name ) ) {
+				continue;
+			}
+			Object value = resolvedLiteralValue( annotation.getValue() );
+			if ( value != null && BooleanCaster.attempt( value ).orElse( false ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Resolve an annotation value to the literal it represents, or null when it is not a literal.
+	 * <p>
+	 * A value written as {@code #true#} parses into a single-part string interpolation wrapping the
+	 * literal, so unwrap that form. Never throws - a runtime expression simply resolves to null.
+	 *
+	 * @param value the annotation value expression
+	 *
+	 * @return the literal value, or null if the expression is not a literal
+	 */
+	private Object resolvedLiteralValue( BoxExpression value ) {
+		if ( value instanceof BoxStringInterpolation interpolation && interpolation.getValues().size() == 1 ) {
+			return resolvedLiteralValue( interpolation.getValues().get( 0 ) );
+		}
+		if ( value != null && value.isLiteral() ) {
+			return value.getAsLiteralValue();
+		}
+		return null;
+	}
+
+	/**
+	 * Verify that every annotation on a function tag is a literal value.
+	 * <p>
+	 * Function annotations are resolved at compile time, not at runtime, so an expression such as
+	 * returntype="#someVar#" can never work. Report a semantic error for each offending annotation
+	 * instead of silently ignoring it.
+	 *
+	 * @param annotations the tag's annotations
+	 * @param tagName     the tag name, used in the error message
+	 */
+	private void validateLiteralAnnotations( List<BoxAnnotation> annotations, String tagName ) {
+		for ( BoxAnnotation annotation : annotations ) {
+			if ( annotation.getValue() == null || resolvedLiteralValue( annotation.getValue() ) != null ) {
+				continue;
+			}
+			Position position = annotation.getPosition() != null ? annotation.getPosition() : annotation.getValue().getPosition();
+			if ( position != null ) {
+				errorListener.semanticError(
+				    "Attribute [" + annotation.getKey().getValue() + "] of the [" + tagName
+				        + "] tag must be a literal value. Expressions are not allowed here.",
+				    position );
+			}
 		}
 	}
 

@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStreams;
@@ -347,7 +348,7 @@ public class CFParser extends AbstractParser {
 		this.classOrInterface = classOrInterface;
 		CFLexerCustom	lexer	= new CFLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ),
 		    isScript ? CFLexerCustom.DEFAULT_SCRIPT_MODE : CFLexerCustom.DEFAULT_TEMPLATE_MODE, errorListener, this )
-		    .setClassIsExpected( classOrInterface );
+		        .setClassIsExpected( classOrInterface );
 		CFGrammar		parser	= new CFGrammar( new CommonTokenStream( lexer ) );
 
 		// DEBUG: Will print a trace of all parser rules visited:
@@ -774,8 +775,20 @@ public class CFParser extends AbstractParser {
 			annotations.add( toAst( file, attr ) );
 		}
 
+		// Class annotations are resolved at compile time, so they must all be literals.
+		validateLiteralAnnotations( annotations, "cfcomponent" );
+
 		if ( node.template_statements() != null ) {
+			// A <cfcomponent output="true"> body is an implicit output block too - see the matching
+			// <cffunction> handling and CFLexerCustom.handleFunctionOutputTracking for the lexer mode.
+			boolean isOutputting = annotationIsTrue( annotations, "output" );
+			if ( isOutputting ) {
+				outputCounter++;
+			}
 			body.addAll( toAst( file, node.template_statements() ) );
+			if ( isOutputting ) {
+				outputCounter--;
+			}
 		}
 		// loop over body and move any BoxImport statements to the imports list
 		for ( int i = body.size() - 1; i >= 0; i-- ) {
@@ -800,6 +813,9 @@ public class CFParser extends AbstractParser {
 		for ( var attr : node.template_attribute() ) {
 			annotations.add( toAst( file, attr ) );
 		}
+
+		// Property metadata is resolved at compile time, but `default` is evaluated at runtime.
+		validateLiteralAnnotations( annotations, "cfproperty", Set.of( "default" ) );
 
 		return new BoxProperty( new ArrayList<BoxAnnotation>(), annotations, documentation, getPosition( node ), getSourceText( node ) );
 	}
@@ -1245,6 +1261,9 @@ public class CFParser extends AbstractParser {
 			annotations.add( toAst( file, attr ) );
 		}
 
+		// Function annotations are resolved at compile time, so they must all be literals.
+		validateLiteralAnnotations( annotations, "cffunction" );
+
 		name = getBoxExprAsString( findExprInAnnotations( annotations, "name", true, null, "function", getPosition( node ) ), "name", false );
 
 		String accessText = getBoxExprAsString( findExprInAnnotations( annotations, "access", false, null, null, null ), "access", true );
@@ -1310,7 +1329,18 @@ public class CFParser extends AbstractParser {
 			args.add( toAst( file, arg ) );
 		}
 
+		// A <cffunction output="true"> body is an implicit output block, exactly like a <cfoutput>
+		// body: doubled pound signs collapse to a single pound. The lexer already pushes output mode
+		// for such a body (see CFLexerCustom.handleFunctionOutputTracking) so that #expr# interpolates;
+		// bump the same outputCounter the <cfoutput> path uses so the escaping matches.
+		boolean isOutputting = annotationIsTrue( annotations, "output" );
+		if ( isOutputting ) {
+			outputCounter++;
+		}
 		body.addAll( toAst( file, node.body ) );
+		if ( isOutputting ) {
+			outputCounter--;
+		}
 
 		// An ABSTRACT function cannot have a body. Normalize an abstract tag
 		// function whose body is only whitespace/whitespace buffer output to a
@@ -1614,6 +1644,95 @@ public class CFParser extends AbstractParser {
 		} else {
 			issues.add( new Issue( "Attribute [" + name + "] attribute must be a string literal", expr.getPosition() ) );
 			return "";
+		}
+	}
+
+	/**
+	 * Determine if a tag's annotations declare the given attribute with a literal true value.
+	 * <p>
+	 * This mirrors the output attribute tracking the CF lexer performs when deciding whether a tag
+	 * body is an implicit output block (see CFLexerCustom.handleFunctionOutputTracking).
+	 *
+	 * @param annotations the tag's annotations
+	 * @param name        the attribute name to look for
+	 *
+	 * @return true if the attribute is present and its value is literally true
+	 */
+	private boolean annotationIsTrue( List<BoxAnnotation> annotations, String name ) {
+		for ( BoxAnnotation annotation : annotations ) {
+			if ( !annotation.getKey().getValue().equalsIgnoreCase( name ) ) {
+				continue;
+			}
+			Object value = resolvedLiteralValue( annotation.getValue() );
+			if ( value != null && BooleanCaster.attempt( value ).orElse( false ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Resolve an annotation value to the literal it represents, or null when it is not a literal.
+	 * <p>
+	 * A value written as {@code #true#} parses into a single-part string interpolation wrapping the
+	 * literal, so unwrap that form. Never throws - a runtime expression simply resolves to null.
+	 *
+	 * @param value the annotation value expression
+	 *
+	 * @return the literal value, or null if the expression is not a literal
+	 */
+	private Object resolvedLiteralValue( BoxExpression value ) {
+		if ( value instanceof BoxStringInterpolation interpolation && interpolation.getValues().size() == 1 ) {
+			return resolvedLiteralValue( interpolation.getValues().get( 0 ) );
+		}
+		if ( value != null && value.isLiteral() ) {
+			return value.getAsLiteralValue();
+		}
+		return null;
+	}
+
+	/**
+	 * Verify that every annotation on a function or class tag is a literal value.
+	 * <p>
+	 * Annotations on <cffunction> and <cfcomponent> are resolved at compile time, not at runtime, so
+	 * an expression such as returntype="#someVar#" can never work. ColdFusion and Lucee both reject
+	 * this, so report a semantic error for each offending annotation instead of silently ignoring it.
+	 *
+	 * @param annotations the tag's annotations
+	 * @param tagName     the tag name, used in the error message
+	 */
+	private void validateLiteralAnnotations( List<BoxAnnotation> annotations, String tagName ) {
+		validateLiteralAnnotations( annotations, tagName, Set.of() );
+	}
+
+	/**
+	 * Verify that every annotation on a tag is a literal value, except for the named attributes which
+	 * may hold runtime expressions.
+	 * <p>
+	 * <cffunction> and <cfcomponent> annotations are resolved at compile time, so an expression such as
+	 * returntype="#someVar#" can never work, and ColdFusion and Lucee both reject it. A <cfproperty>
+	 * carries the same restriction for its metadata, but its <code>default</code> attribute is
+	 * evaluated at runtime by design, so it is passed in as a dynamic-allowed attribute.
+	 *
+	 * @param annotations      the tag's annotations
+	 * @param tagName          the tag name, used in the error message
+	 * @param dynamicAttribute attribute names that are allowed to hold runtime expressions
+	 */
+	private void validateLiteralAnnotations( List<BoxAnnotation> annotations, String tagName, Set<String> dynamicAttribute ) {
+		for ( BoxAnnotation annotation : annotations ) {
+			if ( annotation.getValue() == null || resolvedLiteralValue( annotation.getValue() ) != null ) {
+				continue;
+			}
+			if ( dynamicAttribute.contains( annotation.getKey().getValue().toLowerCase() ) ) {
+				continue;
+			}
+			Position position = annotation.getPosition() != null ? annotation.getPosition() : annotation.getValue().getPosition();
+			if ( position != null ) {
+				errorListener.semanticError(
+				    "Attribute [" + annotation.getKey().getValue() + "] of the [" + tagName
+				        + "] tag must be a literal value. Expressions are not allowed here.",
+				    position );
+			}
 		}
 	}
 
