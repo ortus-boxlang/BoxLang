@@ -84,17 +84,6 @@ public class KeyCased extends Key {
 	}
 
 	/**
-	 * The string representation of the key which includes
-	 * the original case.
-	 *
-	 * @return The string representation of the key
-	 */
-	@Override
-	public String toString() {
-		return String.format( "Key [name=%s]", name );
-	}
-
-	/**
 	 * Compare keys in a case-sensitive manner.
 	 *
 	 * @param otherKey The key to compare to.

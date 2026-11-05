@@ -144,6 +144,28 @@ public class JSONSerializeTest {
 
 	}
 
+	@DisplayName( "It can serialize a case sensi1tive struct" )
+	@Test
+	public void testCanSerializeCaseSensitiveStruct() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				obj = structNew('caseSensitive');
+				obj['fOo'] = 'Bar';
+				result = JSONSerialize( obj );
+		    """,
+		    context );
+
+		String expected = """
+			{
+				"fOo" : "Bar"
+			}
+			""";
+		// @formatter:on
+
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( expected.replaceAll( "\\s", "" ) );
+	}
+
 	@DisplayName( "It can serialize a struct" )
 	@Test
 	public void testCanSerializeStruct() {
