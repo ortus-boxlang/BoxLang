@@ -19,6 +19,7 @@ import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
+import ortus.boxlang.compiler.ComponentSourceKey;
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
@@ -160,6 +161,15 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			}
 		}
 		nodes.addAll( transpiler.emitMarkEnter( callSpan, shell ) );
+
+		// Inject the hidden call-site key so components that cache their own body can derive a key
+		// that is stable across restarts. The component decides how to use it.
+		if ( ComponentSourceKey.needsSourceKey( boxComponent ) ) {
+			BoxAnnotation keyAnnotation = ComponentSourceKey.buildKeyAnnotation( boxComponent, transpiler.getProperty( "sourceKey" ) );
+			if ( keyAnnotation != null ) {
+				attributes.add( keyAnnotation );
+			}
+		}
 
 		// convert attributes to struct
 		nodes.addAll( transpiler.transformAnnotations( attributes, true, false ) );

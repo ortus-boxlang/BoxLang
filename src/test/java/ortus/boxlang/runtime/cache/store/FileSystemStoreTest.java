@@ -81,6 +81,33 @@ class FileSystemStoreTest extends BaseStoreTest {
 	}
 
 	@Test
+	@DisplayName( "FileSystemStore: a key with characters illegal in a file name round-trips" )
+	void testKeyWithIllegalFileCharacters() {
+		// Compiler-injected call site keys contain ':'. That is legal in a cache key but not in a
+		// Windows file name, so the key has to be encoded on the way to disk and decoded on the way back
+		Key entryKey = Key.of( "pageid:1f6ebd7eff51118dcbd48817a71800ed_line:1_col:5" );
+		store.set( entryKey, newTestEntry( entryKey.getName() ) );
+
+		// The key survives the trip through the file name both directly and when enumerated
+		assertThat( store.getQuiet( entryKey ) ).isNotNull();
+		assertThat( store.getKeys() ).asList().contains( entryKey );
+	}
+
+	@Test
+	@DisplayName( "FileSystemStore: two keys differing only in an illegal character do not collide" )
+	void testIllegalFileCharactersDoNotCollide() {
+		Key	colons	= Key.of( "a:b" );
+		Key	percent	= Key.of( "a%3Ab" );
+		store.set( colons, newTestEntry( "colons" ) );
+		store.set( percent, newTestEntry( "percent" ) );
+
+		// A naive escape would map both of these onto the same file name
+		assertThat( store.getQuiet( colons ) ).isNotNull();
+		assertThat( store.getQuiet( percent ) ).isNotNull();
+		assertThat( store.getKeys() ).asList().containsAtLeast( colons, percent );
+	}
+
+	@Test
 	@DisplayName( "FileSystemStore: no directory handle leak across repeated operations" )
 	void testNoDirectoryHandleLeak() {
 		OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();

@@ -54,6 +54,7 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 
 import ortus.boxlang.compiler.Boxpiler;
 import ortus.boxlang.compiler.ClassInfo;
+import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.JavaSourceString;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.visitor.QueryEscapeSingleQuoteVisitor;
@@ -129,6 +130,7 @@ public class JavaBoxpiler extends Boxpiler {
 		transpiler.setProperty( "mappingName", classInfo.resolvedFilePath() == null ? null : classInfo.resolvedFilePath().mappingName() );
 		transpiler.setProperty( "mappingPath", classInfo.resolvedFilePath() == null ? null : classInfo.resolvedFilePath().mappingPath() );
 		transpiler.setProperty( "relativePath", classInfo.resolvedFilePath() == null ? null : classInfo.resolvedFilePath().relativePath() );
+		transpiler.setProperty( "sourceKey", sourceKey( classInfo ) );
 
 		TranspiledCode	javaASTs;
 		DynamicObject	trans	= frTransService.startTransaction( "Java Transpilation", classInfo.toString() );
@@ -370,6 +372,26 @@ public class JavaBoxpiler extends Boxpiler {
 
 	private String generateProxyJavaSource( ClassInfo classInfo ) {
 		return ProxyTransformer.transform( classInfo );
+	}
+
+	/**
+	 * The identity of the source being compiled, used to build cache keys for components which cache
+	 * their own body.
+	 * <p>
+	 * The value is always hashed so that a deep or long file path cannot bloat a cache key. For a real
+	 * file that is the MD5 of the absolute path -- hashing the path rather than the source means two
+	 * identical files in different directories still get distinct keys. For ad-hoc source it is the
+	 * MD5 of the source, the same hash the boxpiler derives the class FQN from.
+	 *
+	 * @param classInfo the class being compiled
+	 *
+	 * @return the hashed source identity
+	 */
+	private static String sourceKey( ClassInfo classInfo ) {
+		if ( classInfo.resolvedFilePath() != null ) {
+			return IBoxpiler.MD5( classInfo.resolvedFilePath().absolutePath().toString() );
+		}
+		return IBoxpiler.MD5( classInfo.sourceType().toString() + classInfo.source() );
 	}
 
 }

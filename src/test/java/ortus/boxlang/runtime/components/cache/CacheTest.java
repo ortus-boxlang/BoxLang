@@ -23,7 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -35,7 +37,6 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -47,12 +48,13 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class CacheTest {
 
-	static BoxRuntime	instance;
-	IBoxContext			context;
-	IScope				variables;
-	static Key			result			= new Key( "result" );
-	static String		tmpDirectory	= "src/test/resources/tmp/CacheComponentTest";
-	static Key			testCacheKey	= Key.of( "CacheTestCache" );
+	static BoxRuntime			instance;
+	ScriptingRequestBoxContext	context;
+	IScope						variables;
+	ByteArrayOutputStream		outputBuffer;
+	static Key					result			= new Key( "result" );
+	static String				tmpDirectory	= "src/test/resources/tmp/CacheComponentTest";
+	static Key					testCacheKey	= Key.of( "CacheTestCache" );
 
 	@BeforeAll
 	public static void setUp() {
@@ -84,48 +86,64 @@ public class CacheTest {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
 		variables.clear();
+		// The body-caching actions output their content rather than assigning it to a variable, so
+		// the output stream is captured here for the tests to assert on
+		outputBuffer = new ByteArrayOutputStream();
+		context.setOut( new PrintStream( outputBuffer ) );
 	}
 
-	@DisplayName( "It tests the Component CFCache with a simple variable" )
+	/**
+	 * The output written during the current test
+	 *
+	 * @return The captured output, trimmed
+	 */
+	private String getOutput() {
+		return outputBuffer.toString().trim();
+	}
+
+	@DisplayName( "It tests the Component CFCache caching its body" )
 	@Test
 	public void testComponentCF() {
 		instance.executeSource(
 		    """
-		    <cfcache action="cache" name="result" key="foo" value="bar" />
+		    <cfcache action="cache" key="foo">
+		        <cfoutput>bar</cfoutput>
+		    </cfcache>
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
 
-		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
-		assertEquals( variables.getAsString( result ), "bar" );
+		// `cache` caches the body and outputs it, rather than assigning to the `name` variable
+		assertEquals( "bar", getOutput() );
 	}
 
-	@DisplayName( "It tests the Component BXCache with a simple variable" )
+	@DisplayName( "It tests the Component BXCache caching its body" )
 	@Test
 	public void testComponentBX() {
 		instance.executeSource(
 		    """
-		    <bx:cache action="cache" name="result" key="foo" value="bar" />
+		    <bx:cache action="cache" key="foo">
+		        <bx:output>bar</bx:output>
+		    </bx:cache>
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
-		assertEquals( variables.getAsString( result ), "bar" );
+		// `cache` caches the body and outputs it, rather than assigning to the `name` variable
+		assertEquals( "bar", getOutput() );
 	}
 
-	@DisplayName( "It tests the Component Cache with a script parsing" )
+	@DisplayName( "It tests the Component Cache caching its body from script" )
 	@Test
 	public void testComponentScript() {
 		instance.executeSource(
 		    """
-		    bx:cache action="cache" name="result" key="foo" value="bar";
+		    bx:cache action="cache" key="foo" {
+		        writeOutput( "bar" );
+		    };
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 
-		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
-		assertEquals( variables.getAsString( result ), "bar" );
+		// `cache` caches the body and outputs it, rather than assigning to the `name` variable
+		assertEquals( "bar", getOutput() );
 	}
 
 	@DisplayName( "It tests the ability to put and retrieve a cache object" )
@@ -166,7 +184,7 @@ public class CacheTest {
 	public void testComponentBXContent() {
 		instance.executeSource(
 		    """
-		         <bx:cache action="cache" name="result">
+		         <bx:cache action="cache">
 		      	<bx:script>
 		      		actual = "bar";
 		      	</bx:script>
@@ -177,9 +195,7 @@ public class CacheTest {
 		         """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
-		assertEquals( variables.getAsString( result ).trim(), "<h1>Hello bar!</h1>" );
+		assertEquals( "<h1>Hello bar!</h1>", getOutput() );
 	}
 
 	@DisplayName( "It tests the Component BXCache with content between tags and the optimal action" )
@@ -198,10 +214,7 @@ public class CacheTest {
 		         """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
-
-		assertEquals( variables.getAsString( result ).trim(), "<h1>Hello baz!</h1>" );
+		assertEquals( "<h1>Hello baz!</h1>", getOutput() );
 	}
 
 	@DisplayName( "It tests the Component BXCache with content between tags and the content action" )
@@ -220,10 +233,7 @@ public class CacheTest {
 		         """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
-
-		assertEquals( variables.getAsString( result ).trim(), "<h1>Hello blah!</h1>" );
+		assertEquals( "<h1>Hello blah!</h1>", getOutput() );
 	}
 
 	@DisplayName( "It tests the Component BXCache a directory caching" )
@@ -232,7 +242,7 @@ public class CacheTest {
 		variables.put( Key.of( "tmpDirectory" ), tmpDirectory );
 		instance.executeSource(
 		    """
-		         <bx:cache action="cache" name="result" directory="#tmpDirectory#">
+		         <bx:cache action="cache" directory="#tmpDirectory#">
 		      	<bx:script>
 		      		actual = "bar";
 		      	</bx:script>
@@ -243,10 +253,7 @@ public class CacheTest {
 		         """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
-
-		assertEquals( variables.getAsString( result ).trim(), "<h1>Hello bar!</h1>" );
+		assertEquals( "<h1>Hello bar!</h1>", getOutput() );
 	}
 
 	@DisplayName( "It can flush a single item from a named cache" )
@@ -275,7 +282,7 @@ public class CacheTest {
 		variables.put( Key.of( "tmpDirectory" ), tmpDirectory );
 		instance.executeSource(
 		    """
-		         <bx:cache action="cache" name="result" directory="#tmpDirectory#">
+		         <bx:cache action="cache" directory="#tmpDirectory#">
 		      	<bx:script>
 		      		actual = "deletion";
 		      	</bx:script>

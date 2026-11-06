@@ -46,6 +46,7 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 import ortus.boxlang.runtime.util.Mapping;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * A request-type context. I track additional things related to a request.
@@ -275,6 +276,32 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 			this.applicationListener = new ApplicationDefaultListener( this, null );
 		}
 		return this.applicationListener;
+	}
+
+	/**
+	 * Get the identity of the source being executed in this request, used to build cache keys for
+	 * components that cache their own body (the cache component's body-caching actions).
+	 * <p>
+	 * In the core runtime this is the template which initiated the request -- for a CLI or scripting
+	 * request, the file that was run. Web runtimes override this to return the requested URL so that a
+	 * page which was rewritten onto a shared template is still cached per-URL.
+	 * <p>
+	 * Returns null when the request has no template, such as ad-hoc code execution. Callers must treat
+	 * null as "no source identity available" and fall back to a weaker key.
+	 *
+	 * @return The request's cache key, or null if the request has no source identity
+	 */
+	public String getRequestCacheKey() {
+		// Read the field directly rather than via getApplicationListener(), which would lazily create a
+		// default listener that has no base template path anyway.
+		if ( this.applicationListener == null ) {
+			return null;
+		}
+		ResolvedFilePath baseTemplatePath = this.applicationListener.getBaseTemplatePath();
+		if ( baseTemplatePath == null || baseTemplatePath.absolutePath() == null ) {
+			return null;
+		}
+		return baseTemplatePath.absolutePath().toString();
 	}
 
 	/**

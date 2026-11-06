@@ -237,6 +237,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		_IMPLEMENTS							= Key.of( "implements" );
 	public static final Key		_int								= Key.of( "int" );
 	public static final Key		_INTEGER							= Key.of( "integer" );
+	public static final Key		_key								= Key.of( "_key" );
 	public static final Key		_LIST								= Key.of( "list" );
 	public static final Key		_LONG								= Key.of( "long" );
 	public static final Key		_name								= Key.of( "name" );

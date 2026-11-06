@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -36,7 +37,6 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
-import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -219,22 +219,6 @@ public class Cache extends Component {
 			);
 		}
 
-		String cacheKeyName = key != null
-		    ? key
-		    : CACHE_PREFIX + StringCaster.cast(
-		        runtime.getFunctionService().getGlobalFunction( Key.hash40 ).invoke(
-		            context,
-		            ArgumentsScope.of(
-		                Key.input, Struct.of(
-		                    Key.attributes, attributes,
-		                    Key.body, body
-		                )
-		            ),
-		            false,
-		            Key.hash40
-		        )
-		    );
-
 		if ( timespan == null && idleTime != null ) {
 			timespan = idleTime;
 		}
@@ -311,13 +295,13 @@ public class Cache extends Component {
 					if ( variable == null ) {
 						throw new BoxRuntimeException( "A variable name is required when specifying the cache action [get]" );
 					}
-					result = !throwOnError ? cacheProvider.getQuiet( cacheKeyName ) : cacheProvider.get( cacheKeyName );
+					result = !throwOnError ? cacheProvider.getQuiet( key ) : cacheProvider.get( key );
 					break;
 				}
 				case PUT : {
 					try {
 						cacheProvider.set(
-						    cacheKeyName,
+						    key,
 						    value == null ? processCacheBody( context, body ) : value,
 						    timeout,
 						    lastAccessTimeout
@@ -337,13 +321,40 @@ public class Cache extends Component {
 				case CACHE :
 				case OPTIMAL :
 				case CONTENT : {
+					// These actions may omit `key`, so the key is derived from the call site. The compiler
+					// injects `_key` holding the file the call site lives in plus where in it the component
+					// starts, and the request context supplies the identity of the request being served (a file
+					// path in the core runtime, a URL in a web runtime). Both are needed: one addressed request
+					// can include many files, and one file can be reached from many requests. Any explicit
+					// `key` is appended last, since it may be a dynamic expression resolved only now. The shape
+					// mirrors Adobe ColdFusion, e.g.:
+					// http://localhost:1443/products_pageid:29cfc3f2..._line:6_col:1
+					String	requestKey	= requestCacheKey( context );
+					String	callSiteKey	= attributes.getAsString( Key._key );
+					String	bodyCacheKey;
+					if ( callSiteKey != null ) {
+						bodyCacheKey = requestKey != null ? requestKey + "_" + callSiteKey : callSiteKey;
+					} else {
+						// The compiler couldn't identify the call site, so the request's key is the best we have.
+						// With no source identity at all -- ad-hoc code on a request with no template -- fall back
+						// to the identity of the body, which is stable per call site for the life of the JVM.
+						bodyCacheKey = requestKey != null ? requestKey : CACHE_PREFIX + buildImplicitCacheKey( body );
+					}
+					if ( key != null ) {
+						bodyCacheKey += "_" + key;
+					}
+
 					// TODO: Need to figure out how to handle the full page caching
-					result = cacheProvider.getOrSet(
-					    cacheKeyName,
-					    () -> value == null ? processCacheBody( context, body ) : value,
+					// These actions only ever cache the body, so the `value` attribute plays no part here
+					String bodyOutput = StringCaster.cast( cacheProvider.getOrSet(
+					    bodyCacheKey,
+					    () -> processCacheBody( context, body ),
 					    timeout,
 					    lastAccessTimeout
-					);
+					) );
+					if ( bodyOutput != null && !bodyOutput.isEmpty() ) {
+						context.writeToBuffer( bodyOutput );
+					}
 					break;
 				}
 				case FLUSH : {
@@ -409,6 +420,38 @@ public class Cache extends Component {
 		}
 
 		return DEFAULT_RETURN;
+	}
+
+	/**
+	 * Get the identity of the source being executed for this request, as supplied by the request
+	 * context. This is what lets a web runtime contribute its URL where the core contributes a file
+	 * path.
+	 *
+	 * @param context The context in which the component is being invoked
+	 *
+	 * @return The request's cache key, or null when there is no request context or it has no identity
+	 */
+	private String requestCacheKey( IBoxContext context ) {
+		RequestBoxContext requestContext = context.getRequestContext();
+		return requestContext != null ? requestContext.getRequestCacheKey() : null;
+	}
+
+	/**
+	 * Build the fallback cache key, used only when the compiler-injected {@code _key} and the
+	 * request's source identity are not both available, such as ad-hoc code execution.
+	 * <p>
+	 * The value is the identity hash code of the component's body. The body is a fieldless lambda, so
+	 * its content cannot be hashed -- every body hashes identically -- but the compiler emits one
+	 * lambda per call site and the JVM reuses the instance, which makes the identity hash a stable
+	 * discriminator between call sites for the life of the JVM. It is not stable across JVM restarts,
+	 * which is exactly why it is only a fallback.
+	 *
+	 * @param body The body of the component
+	 *
+	 * @return The fallback cache key, without the {@link #CACHE_PREFIX}
+	 */
+	private String buildImplicitCacheKey( ComponentBody body ) {
+		return Integer.toHexString( System.identityHashCode( body ) );
 	}
 
 	/**

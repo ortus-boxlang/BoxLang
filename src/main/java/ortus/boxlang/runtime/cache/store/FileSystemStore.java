@@ -51,12 +51,23 @@ public class FileSystemStore extends AbstractStore {
 	/**
 	 * The extension for the cache files
 	 */
-	private static final String			FILE_EXTENSION		= ".cache";
+	private static final String			FILE_EXTENSION			= ".cache";
+
+	/**
+	 * Characters which cannot appear in a file name on Windows, plus the escape character itself so
+	 * that the encoding stays reversible.
+	 */
+	private static final String			ILLEGAL_FILE_NAME_CHARS	= "<>:\"/\\|?*%";
+
+	/**
+	 * The digits used when escaping a character as two hex digits
+	 */
+	private static final String			HEX_DIGITS				= "0123456789ABCDEF";
 
 	/**
 	 * The matcher for the cache files
 	 */
-	private static final PathMatcher	cacheFileMatcher	= FileSystems.getDefault().getPathMatcher( "glob:*" + FILE_EXTENSION );
+	private static final PathMatcher	cacheFileMatcher		= FileSystems.getDefault().getPathMatcher( "glob:*" + FILE_EXTENSION );
 
 	/**
 	 * The pool that holds the objects
@@ -111,7 +122,7 @@ public class FileSystemStore extends AbstractStore {
 	 * @return The key of the cache entry
 	 */
 	public Key pathToCacheKey( Path path ) {
-		return Key.of( FilenameUtils.removeExtension( path.getFileName().toString() ) );
+		return Key.of( decodeKeyFromFile( FilenameUtils.removeExtension( path.getFileName().toString() ) ) );
 	}
 
 	/**
@@ -122,7 +133,64 @@ public class FileSystemStore extends AbstractStore {
 	 * @return The Path object of the cache entry file
 	 */
 	public Path cacheKeyToPath( Key key ) {
-		return Path.of( directory.toString(), key.getNameNoCase() + FILE_EXTENSION ).toAbsolutePath();
+		return Path.of( directory.toString(), encodeKeyForFile( key.getNameNoCase() ) + FILE_EXTENSION ).toAbsolutePath();
+	}
+
+	/**
+	 * Encode a cache key into a file name which is legal on every supported platform.
+	 * <p>
+	 * Cache keys are arbitrary strings and may contain characters such as {@code :} -- which is
+	 * perfectly legal in a key but not in a Windows file name, so using the key verbatim fails to
+	 * create the entry file. Any such character is escaped as {@code %XX} with its two digit uppercase
+	 * hex code, which keeps {@link #pathToCacheKey(Path)} able to recover the original key exactly.
+	 *
+	 * @param key the cache key to encode
+	 *
+	 * @return the file name safe form of the key
+	 */
+	private static String encodeKeyForFile( String key ) {
+		// Lazily allocate, since the common case needs no escaping at all
+		StringBuilder encoded = null;
+		for ( int i = 0; i < key.length(); i++ ) {
+			char c = key.charAt( i );
+			if ( c < 0x20 || ILLEGAL_FILE_NAME_CHARS.indexOf( c ) >= 0 ) {
+				if ( encoded == null ) {
+					encoded = new StringBuilder( key.length() + 8 ).append( key, 0, i );
+				}
+				encoded.append( '%' ).append( HEX_DIGITS.charAt( ( c >> 4 ) & 0xF ) ).append( HEX_DIGITS.charAt( c & 0xF ) );
+			} else if ( encoded != null ) {
+				encoded.append( c );
+			}
+		}
+		return encoded == null ? key : encoded.toString();
+	}
+
+	/**
+	 * Decode a file name produced by {@link #encodeKeyForFile(String)} back into the original key.
+	 *
+	 * @param fileName the encoded file name, without its extension
+	 *
+	 * @return the original cache key
+	 */
+	private static String decodeKeyFromFile( String fileName ) {
+		if ( fileName.indexOf( '%' ) < 0 ) {
+			return fileName;
+		}
+		StringBuilder decoded = new StringBuilder( fileName.length() );
+		for ( int i = 0; i < fileName.length(); i++ ) {
+			char c = fileName.charAt( i );
+			if ( c == '%' && i + 2 < fileName.length() ) {
+				int	hi	= Character.digit( fileName.charAt( i + 1 ), 16 );
+				int	lo	= Character.digit( fileName.charAt( i + 2 ), 16 );
+				if ( hi >= 0 && lo >= 0 ) {
+					decoded.append( ( char ) ( ( hi << 4 ) | lo ) );
+					i += 2;
+					continue;
+				}
+			}
+			decoded.append( c );
+		}
+		return decoded.toString();
 	}
 
 	/**

@@ -34,6 +34,7 @@ import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.UnknownType;
 
+import ortus.boxlang.compiler.ComponentSourceKey;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
@@ -147,6 +148,15 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			jComponentBody = lambda;
 		} else {
 			jComponentBody = new NullLiteralExpr();
+		}
+
+		// Inject the hidden call-site key so components that cache their own body can derive a key
+		// that is stable across restarts. The component decides how to use it.
+		if ( ComponentSourceKey.needsSourceKey( boxComponent ) ) {
+			BoxAnnotation keyAnnotation = ComponentSourceKey.buildKeyAnnotation( boxComponent, transpiler.getProperty( "sourceKey" ) );
+			if ( keyAnnotation != null ) {
+				attributes.add( keyAnnotation );
+			}
 		}
 
 		BlockStmt				jBlock						= new BlockStmt();
