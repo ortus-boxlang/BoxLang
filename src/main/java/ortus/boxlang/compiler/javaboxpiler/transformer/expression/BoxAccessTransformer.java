@@ -106,7 +106,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			        // I don't know if this will work, but I'm trying to make an exception for query columns being passed to array BIFs
 			        // The argument must be the first argument to the function
 			        || ! ( parent instanceof BoxArgument barg && barg.getParent() instanceof BoxFunctionInvocation bfun
-			            && bfun.getName().toLowerCase().startsWith( "array" )
+			            && isColumnAsArrayFunction( bfun.getName() )
 			            && bfun.getArguments().get( 0 ) == barg ) ) ) {
 				template = "${contextName}.unwrapQueryColumn( " + template + " )";
 			}
@@ -115,6 +115,20 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			addIndex( javaExpr, node );
 			return javaExpr;
 		}
+	}
+
+	/**
+	 * Array BIFs and JSON serializers receive the entire query column as an array,
+	 * rather than the value from the current query row.
+	 *
+	 * @param functionName The name of the function being invoked
+	 *
+	 * @return true if the function wants the whole column
+	 */
+	private static boolean isColumnAsArrayFunction( String functionName ) {
+		String lowerCaseName = functionName.toLowerCase();
+		return lowerCaseName.startsWith( "array" )
+		    || lowerCaseName.equals( "jsonserialize" );
 	}
 
 }

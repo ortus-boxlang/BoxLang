@@ -307,6 +307,28 @@ public class QueryTest {
 	}
 
 	@Test
+	public void testQueryColumnToJSONSerialize() {
+		instance.executeSource(
+		    """
+		    myQry = queryNew( "col,col2", "numeric,varchar", [ [ 1, "brad" ], [ 2, "luis" ], [ 3, "gavin" ] ] );
+		    myJSON = JSONSerialize( myQry["col"] );
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsString( Key.of( "myJSON" ) ) ).isEqualTo( "[1,2,3]" );
+	}
+
+	@Test
+	public void testQueryColumnToSerializeJSON() {
+		instance.executeSource(
+		    """
+		    myQry = queryNew( "col,col2", "numeric,varchar", [ [ 1, "brad" ], [ 2, "luis" ], [ 3, "gavin" ] ] );
+		    myJSON = serializeJSON( myQry["col"] );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( Key.of( "myJSON" ) ) ).isEqualTo( "[1,2,3]" );
+	}
+
+	@Test
 	public void testEvalExpressionsWithoutOutputCF() {
 
 		instance.executeSource(

@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.types.util.ListUtil;
@@ -128,6 +129,11 @@ public class JSONSerialize extends BIF {
 		// If we called "foo,bar".listToJSON(), then we need to convert the string to a list
 		if ( arguments.get( BIF.__functionName ).equals( Key.listToJSON ) ) {
 			obj = ListUtil.asList( StringCaster.cast( arguments.get( Key.data ) ), "," );
+		}
+
+		// A query column is serialized as an array of the column values, not as the value of the current row
+		if ( obj instanceof QueryColumn column ) {
+			obj = column.getColumnDataAsArray();
 		}
 
 		// Serialize the object to JSON
