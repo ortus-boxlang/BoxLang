@@ -564,7 +564,7 @@ public class Schedule extends Component {
 			}
 
 			// Register only — do NOT start. Startup happens after tasks are added (see _invoke post-switch).
-			BaseScheduler scheduler = new BaseScheduler( name, context );
+			BaseScheduler scheduler = svc.newDefaultAwareScheduler( name, context );
 			svc.registerScheduler( scheduler, false );
 			return scheduler;
 		}

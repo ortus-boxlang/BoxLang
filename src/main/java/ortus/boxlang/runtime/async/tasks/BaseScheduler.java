@@ -52,6 +52,11 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class BaseScheduler implements IScheduler {
 
 	/**
+	 * The global executor used when a bound global executor does not exist
+	 */
+	public static final String					DEFAULT_GLOBAL_EXECUTOR	= "scheduled-tasks";
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Protected Properties
 	 * --------------------------------------------------------------------------
@@ -62,7 +67,7 @@ public class BaseScheduler implements IScheduler {
 	/**
 	 * An ordered struct of all the tasks this scheduler manages
 	 */
-	protected LinkedHashMap<String, TaskRecord>	tasks		= new LinkedHashMap<>( 20 );
+	protected LinkedHashMap<String, TaskRecord>	tasks					= new LinkedHashMap<>( 20 );
 
 	/**
 	 * The Scheduled Executor we are bound to
@@ -70,9 +75,15 @@ public class BaseScheduler implements IScheduler {
 	protected BoxExecutor						executor;
 
 	/**
+	 * The name of a global (shared) executor this scheduler runs on instead of building a private pool.
+	 * Null means the scheduler builds and owns a private pool named <code>{name}-scheduler</code>.
+	 */
+	protected String							globalExecutorName		= null;
+
+	/**
 	 * The timezone for the scheduler and the tasks it creates and manages
 	 */
-	protected ZoneId							timezone	= ZoneId.systemDefault();
+	protected ZoneId							timezone				= ZoneId.systemDefault();
 
 	/**
 	 * The name of the cache to use for server fixation/clustering locks for the tasks this scheduler
@@ -88,7 +99,7 @@ public class BaseScheduler implements IScheduler {
 	/**
 	 * Is the scheduler started?
 	 */
-	protected Boolean							started		= false;
+	protected Boolean							started					= false;
 
 	/**
 	 * When the scheduler was started
@@ -291,12 +302,46 @@ public class BaseScheduler implements IScheduler {
 	}
 
 	/**
+	 * Bind this scheduler to a global (shared) executor, such as {@code scheduled-tasks}, instead of a private pool.
+	 * The shared executor is never shut down by this scheduler. Must be called before startup.
+	 *
+	 * @param executorName The name of the global executor
+	 *
+	 * @return This scheduler
+	 */
+	public BaseScheduler useGlobalExecutor( String executorName ) {
+		this.globalExecutorName = executorName;
+		return this;
+	}
+
+	/**
+	 * Resolve the global executor this scheduler is bound to. An unknown name falls back to {@code scheduled-tasks}.
+	 *
+	 * @return The shared executor, or null if this scheduler is not bound to a global executor (or none is available)
+	 */
+	private BoxExecutor resolveGlobalExecutor() {
+		if ( this.globalExecutorName == null ) {
+			return null;
+		}
+		if ( this.asyncService.hasExecutor( this.globalExecutorName ) ) {
+			return this.asyncService.getExecutor( this.globalExecutorName );
+		}
+		this.logger.warn( "Scheduler [{}] global executor [{}] does not exist, falling back to [{}]", this.name, this.globalExecutorName,
+		    DEFAULT_GLOBAL_EXECUTOR );
+		this.globalExecutorName = DEFAULT_GLOBAL_EXECUTOR;
+		return this.asyncService.hasExecutor( DEFAULT_GLOBAL_EXECUTOR ) ? this.asyncService.getExecutor( DEFAULT_GLOBAL_EXECUTOR ) : null;
+	}
+
+	/**
 	 * Startup this scheduler and all of it's scheduled tasks
 	 */
 	public synchronized BaseScheduler startup() {
 		if ( !this.started ) {
-			// Build out an executor for this scheduler
-			this.executor = asyncService.newScheduledExecutor( name + "-scheduler", getConfiguredThreads() );
+			// Run on the shared global executor if bound to one, else build out a private executor for this scheduler
+			this.executor = resolveGlobalExecutor();
+			if ( this.executor == null ) {
+				this.executor = asyncService.newScheduledExecutor( name + "-scheduler", getConfiguredThreads() );
+			}
 
 			// Iterate over tasks and send them off for scheduling
 			this.tasks.entrySet()
@@ -439,15 +484,23 @@ public class BaseScheduler implements IScheduler {
 		// callback
 		this.onShutdown();
 
-		// shutdown executor and await termination or kill it now!
-		if ( force ) {
-			this.executor.scheduledExecutor().shutdownNow();
+		if ( this.globalExecutorName != null ) {
+			// Shared executor: never shut it down, only cancel the tasks this scheduler scheduled on it
+			this.tasks.values().forEach( record -> {
+				if ( record.future != null ) {
+					record.future.cancel( force );
+				}
+			} );
 		} else {
-			this.executor.shutdownAndAwaitTermination( timeout, TimeUnit.SECONDS );
+			// Private executor: shutdown and await termination or kill it now!
+			if ( force ) {
+				this.executor.scheduledExecutor().shutdownNow();
+			} else {
+				this.executor.shutdownAndAwaitTermination( timeout, TimeUnit.SECONDS );
+			}
+			// Remove executor
+			this.asyncService.deleteExecutor( this.name + "-scheduler" );
 		}
-
-		// Remove executor
-		this.asyncService.deleteExecutor( this.name + "-scheduler" );
 		// Remove task records
 		clearTasks();
 

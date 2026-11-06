@@ -264,6 +264,23 @@ public class SchedulerService extends BaseService {
 	}
 
 	/**
+	 * Build a scheduler by name. The default {@code bxschedule} scheduler (used by tasks that name no scheduler) runs on the
+	 * global executor named by {@code scheduler.executor} ({@code scheduled-tasks} by default). Any other scheduler builds its own pool.
+	 *
+	 * @param name    The scheduler name
+	 * @param context The context
+	 *
+	 * @return The unregistered scheduler
+	 */
+	public BaseScheduler newDefaultAwareScheduler( String name, IBoxContext context ) {
+		BaseScheduler scheduler = new BaseScheduler( name, context );
+		if ( DEFAULT_SCHEDULER_NAME.equals( name ) ) {
+			scheduler.useGlobalExecutor( this.runtime.getConfiguration().scheduler.executor );
+		}
+		return scheduler;
+	}
+
+	/**
 	 * Build a persisted task definition into its scheduler. The scheduler is registered, but not started, if it does not exist yet.
 	 *
 	 * @param taskDef        The persisted task definition
@@ -283,7 +300,7 @@ public class SchedulerService extends BaseService {
 		// Get or create the named scheduler (register only — startup happens later via startupRegisteredSchedulers)
 		Key		schedulerKey	= Key.of( schedulerName );
 		if ( !hasScheduler( schedulerKey ) ) {
-			registerScheduler( new BaseScheduler( schedulerName, runtimeContext ), false );
+			registerScheduler( newDefaultAwareScheduler( schedulerName, runtimeContext ), false );
 		}
 		BaseScheduler	scheduler	= ( BaseScheduler ) getScheduler( schedulerKey );
 

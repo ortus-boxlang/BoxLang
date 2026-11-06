@@ -1919,7 +1919,9 @@ public class ScheduledTask implements Runnable {
 				if ( this.scheduler != null ) {
 					message.append( " The pool size comes from the [" )
 					    .append( BoxRuntime.getInstance().getConfiguration().scheduler.executor )
-					    .append( "] executor's threads setting in boxlang.json." );
+					    .append( "] executor's threads setting in boxlang.json (scheduler [" )
+					    .append( this.scheduler.getSchedulerName() )
+					    .append( "], executor [" ).append( exec.name() ).append( "])." );
 				}
 			}
 		} catch ( Exception e ) {
