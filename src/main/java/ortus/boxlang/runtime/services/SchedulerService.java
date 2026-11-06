@@ -210,6 +210,8 @@ public class SchedulerService extends BaseService {
 			    return new BoxScheduler( targetScheduler, runtimeContext );
 		    } )
 		    .forEach( target -> {
+			    // Configure it first so its tasks, name, timezone, etc. are defined, just like loadScheduler() does for module and CLI schedulers
+			    target.configure();
 			    // Register the scheduler
 			    registerScheduler( target, true );
 		    } );
