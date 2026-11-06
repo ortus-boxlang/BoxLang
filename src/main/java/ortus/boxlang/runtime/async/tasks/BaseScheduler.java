@@ -484,15 +484,15 @@ public class BaseScheduler implements IScheduler {
 		// callback
 		this.onShutdown();
 
-		if ( this.globalExecutorName != null ) {
-			// Shared executor: never shut it down, only cancel the tasks this scheduler scheduled on it
-			this.tasks.values().forEach( record -> {
-				if ( record.future != null ) {
-					record.future.cancel( force );
-				}
-			} );
-		} else {
-			// Private executor: shutdown and await termination or kill it now!
+		// Cancel the tasks this scheduler scheduled, they may run on a shared or per-task executor that must keep running
+		this.tasks.values().forEach( record -> {
+			if ( record.future != null ) {
+				record.future.cancel( force );
+			}
+		} );
+
+		if ( this.globalExecutorName == null ) {
+			// Private executor: shutdown and await termination or kill it now! A shared global executor is never shut down.
 			if ( force ) {
 				this.executor.scheduledExecutor().shutdownNow();
 			} else {

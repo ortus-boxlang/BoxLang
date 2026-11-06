@@ -436,15 +436,61 @@ public class SchedulerServiceTest {
 	}
 
 	@Test
-	@DisplayName( "tasks.json tasks with a custom scheduler keep their own executor" )
-	void testPersistedTaskWithCustomSchedulerKeepsOwnExecutor() {
+	@DisplayName( "tasks.json tasks use the global executor whatever their scheduler name is (it is only a grouping)" )
+	void testPersistedTaskWithAnySchedulerNameUsesGlobalExecutor() {
 		String json = "[ { \"task\": \"customExecTask\", \"scheduler\": \"bxschedule-custom-test\", \"url\": \"http://localhost/x\", \"interval\": \"3600\" } ]";
 		withTasksFile( json, file -> {
 			schedulerService.registerPersistedScheduleTasks();
 			BaseScheduler scheduler = ( BaseScheduler ) schedulerService.getScheduler( Key.of( "bxschedule-custom-test" ) );
 			schedulerService.startupScheduler( scheduler );
-			assertThat( scheduler.getExecutor().name() ).isEqualTo( "bxschedule-custom-test-scheduler" );
-			assertThat( scheduler.getExecutor() ).isNotSameInstanceAs( runtime.getAsyncService().getExecutor( "scheduled-tasks" ) );
+			assertThat( scheduler.getExecutor() ).isSameInstanceAs( runtime.getAsyncService().getExecutor( "scheduled-tasks" ) );
+		} );
+	}
+
+	@Test
+	@DisplayName( "A tasks.json task that names an executor runs on it" )
+	void testPersistedTaskWithExecutorNameUsesIt() {
+		String json = "[ { \"task\": \"namedExecTask\", \"scheduler\": \"bxschedule-custom-test\", \"executor\": \"cpu-tasks\", \"url\": \"http://localhost/x\", \"interval\": \"3600\" } ]";
+		withTasksFile( json, file -> {
+			schedulerService.registerPersistedScheduleTasks();
+			BaseScheduler	scheduler	= ( BaseScheduler ) schedulerService.getScheduler( Key.of( "bxschedule-custom-test" ) );
+			var				task		= scheduler.getTaskRecord( "namedExecTask" ).task;
+			schedulerService.startupScheduler( scheduler );
+			assertThat( task.getExecutorForTest() ).isSameInstanceAs( runtime.getAsyncService().getExecutor( "cpu-tasks" ) );
+			// The scheduler itself stays on the global executor
+			assertThat( scheduler.getExecutor() ).isSameInstanceAs( runtime.getAsyncService().getExecutor( "scheduled-tasks" ) );
+		} );
+	}
+
+	@Test
+	@DisplayName( "A tasks.json task naming an unknown or non-scheduled executor falls back to the scheduler's executor" )
+	void testPersistedTaskWithBadExecutorNameFallsBack() {
+		String json = "[ { \"task\": \"unknownExecTask\", \"scheduler\": \"bxschedule-custom-test\", \"executor\": \"nope\", \"url\": \"http://localhost/x\", \"interval\": \"3600\" },"
+		    + " { \"task\": \"nonScheduledExecTask\", \"scheduler\": \"bxschedule-custom-test\", \"executor\": \"io-tasks\", \"url\": \"http://localhost/x\", \"interval\": \"3600\" } ]";
+		withTasksFile( json, file -> {
+			schedulerService.registerPersistedScheduleTasks();
+			BaseScheduler scheduler = ( BaseScheduler ) schedulerService.getScheduler( Key.of( "bxschedule-custom-test" ) );
+			schedulerService.startupScheduler( scheduler );
+			var global = runtime.getAsyncService().getExecutor( "scheduled-tasks" );
+			assertThat( scheduler.getTaskRecord( "unknownExecTask" ).task.getExecutorForTest() ).isSameInstanceAs( global );
+			assertThat( scheduler.getTaskRecord( "nonScheduledExecTask" ).task.getExecutorForTest() ).isSameInstanceAs( global );
+		} );
+	}
+
+	@Test
+	@DisplayName( "persistTask writes the executor name to tasks.json" )
+	void testPersistTaskStoresExecutor() {
+		withTasksFile( "[]", file -> {
+			schedulerService.persistTask( Struct.of(
+			    Key.task, "persistExecTask",
+			    Key.scheduler, "bxschedule-custom-test",
+			    Key.executor, "cpu-tasks",
+			    Key.URL, "http://localhost/x",
+			    Key.interval, "3600"
+			) );
+			Array saved = schedulerService.loadTasksFromDisk();
+			assertThat( saved ).hasSize( 1 );
+			assertThat( ( ( ortus.boxlang.runtime.types.IStruct ) saved.get( 0 ) ).getAsString( Key.executor ) ).isEqualTo( "cpu-tasks" );
 		} );
 	}
 

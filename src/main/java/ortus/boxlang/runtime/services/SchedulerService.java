@@ -264,20 +264,17 @@ public class SchedulerService extends BaseService {
 	}
 
 	/**
-	 * Build a scheduler by name. The default {@code bxschedule} scheduler (used by tasks that name no scheduler) runs on the
-	 * global executor named by {@code scheduler.executor} ({@code scheduled-tasks} by default). Any other scheduler builds its own pool.
+	 * Build a scheduler for tasks managed by {@code bx:schedule} and persisted in {@code tasks.json}. For these tasks the scheduler name is
+	 * only a grouping label, so every such scheduler runs on the global executor named by {@code scheduler.executor}
+	 * ({@code scheduled-tasks} by default). A task can still pick its own executor with an {@code executor} setting.
 	 *
 	 * @param name    The scheduler name
 	 * @param context The context
 	 *
 	 * @return The unregistered scheduler
 	 */
-	public BaseScheduler newDefaultAwareScheduler( String name, IBoxContext context ) {
-		BaseScheduler scheduler = new BaseScheduler( name, context );
-		if ( DEFAULT_SCHEDULER_NAME.equals( name ) ) {
-			scheduler.useGlobalExecutor( this.runtime.getConfiguration().scheduler.executor );
-		}
-		return scheduler;
+	public BaseScheduler newTaskScheduler( String name, IBoxContext context ) {
+		return new BaseScheduler( name, context ).useGlobalExecutor( this.runtime.getConfiguration().scheduler.executor );
 	}
 
 	/**
@@ -300,7 +297,7 @@ public class SchedulerService extends BaseService {
 		// Get or create the named scheduler (register only — startup happens later via startupRegisteredSchedulers)
 		Key		schedulerKey	= Key.of( schedulerName );
 		if ( !hasScheduler( schedulerKey ) ) {
-			registerScheduler( newDefaultAwareScheduler( schedulerName, runtimeContext ), false );
+			registerScheduler( newTaskScheduler( schedulerName, runtimeContext ), false );
 		}
 		BaseScheduler	scheduler	= ( BaseScheduler ) getScheduler( schedulerKey );
 
@@ -901,6 +898,7 @@ public class SchedulerService extends BaseService {
 			    "task", taskName,
 			    "scheduler", scheduler,
 			    "group", attributes.getAsString( Key.group ),
+			    "executor", attributes.getAsString( Key.executor ),
 			    "url", attributes.getAsString( Key.URL ),
 			    "class", attributes.getAsString( Key._CLASS ),
 			    "method", attributes.getAsString( Key.method ),

@@ -3338,6 +3338,35 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
+	 * Run this task on a specific named executor instead of its scheduler's. The executor must exist and be a scheduled executor,
+	 * otherwise a warning is logged and the scheduler's executor is used.
+	 *
+	 * @param executorName The name of the executor
+	 *
+	 * @return This task
+	 */
+	public ScheduledTask useExecutor( String executorName ) {
+		var asyncService = BoxRuntime.getInstance().getAsyncService();
+		if ( !asyncService.hasExecutor( executorName ) ) {
+			this.logger.warn( "Task [{}] executor [{}] does not exist, using the scheduler's executor", this.name, executorName );
+		} else if ( ! ( asyncService.getExecutor( executorName ).executor() instanceof ortus.boxlang.runtime.async.executors.BoxScheduledExecutor ) ) {
+			this.logger.warn( "Task [{}] executor [{}] is not a scheduled executor, using the scheduler's executor", this.name, executorName );
+		} else {
+			this.executor = asyncService.getExecutor( executorName );
+		}
+		return this;
+	}
+
+	/**
+	 * The executor this task will run on, resolving to its scheduler's executor when it has none of its own. Visible for testing.
+	 *
+	 * @return The executor
+	 */
+	public BoxExecutor getExecutorForTest() {
+		return getExecutor();
+	}
+
+	/**
 	 * Lazy getter for the executor
 	 *
 	 * @return The executor
