@@ -1019,7 +1019,13 @@ public class AsmTranspiler extends Transpiler {
 					}
 				}
 
-				if ( returnValueContext == ReturnValueContext.EMPTY && nodes.size() > 0 ) {
+				// A DividerNode marks a statement boundary the method splitter may cut at.
+				// Any statement compiled with an EMPTY context qualifies (it leaves nothing
+				// on the operand stack): both EMPTY and EMPTY_UNLESS_JUMPING are empty, and
+				// testing `empty` rather than identity with EMPTY is what lets a large SCRIPT
+				// body — whose top-level statements are compiled with EMPTY_UNLESS_JUMPING —
+				// be split at all instead of blowing the 64KB method limit.
+				if ( returnValueContext.empty && nodes.size() > 0 ) {
 					nodes.add( 0, new DividerNode() );
 				}
 

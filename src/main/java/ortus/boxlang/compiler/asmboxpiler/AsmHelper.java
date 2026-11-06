@@ -78,6 +78,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.MapHelper;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmHelper {
@@ -1981,6 +1982,7 @@ public class AsmHelper {
 		    implicityReturnNull,
 		    Type.getObjectType( classNode.name ),
 		    null,
+		    0,
 		    supplier
 		);
 	}
@@ -1989,15 +1991,18 @@ public class AsmHelper {
 	 * Create a method with context and ClassLocator setup, applying method splitting if needed.
 	 * This overload allows specifying external try-catch blocks to be added to the method.
 	 *
-	 * @param classNode              The class node to add the method to
-	 * @param name                   The method name
-	 * @param parameterType          The parameter type (typically IBoxContext)
-	 * @param returnType             The return type
-	 * @param isStatic               Whether the method is static
-	 * @param transpiler             The transpiler instance
-	 * @param implicityReturnNull    Whether to implicitly return null if no explicit return
-	 * @param externalTryCatchBlocks Try-catch blocks from parent method (for method splitting)
-	 * @param supplier               Supplier for the method body instructions
+	 * @param classNode               The class node to add the method to
+	 * @param name                    The method name
+	 * @param parameterType           The parameter type (typically IBoxContext)
+	 * @param returnType              The return type
+	 * @param isStatic                Whether the method is static
+	 * @param transpiler              The transpiler instance
+	 * @param implicityReturnNull     Whether to implicitly return null if no explicit return
+	 * @param externalTryCatchBlocks  Try-catch blocks from parent method (for method splitting)
+	 * @param inheritedLocalSlotFloor Highest local slot already used by an inherited
+	 *                                (cloned) body; new locals are allocated above it. 0
+	 *                                when the body is generated fresh for this method.
+	 * @param supplier                Supplier for the method body instructions
 	 */
 	public static void methodWithContextAndClassLocator( ClassNode classNode,
 	    String name,
@@ -2007,6 +2012,7 @@ public class AsmHelper {
 	    Transpiler transpiler,
 	    boolean implicityReturnNull,
 	    List<TryCatchBlockNode> externalTryCatchBlocks,
+	    int inheritedLocalSlotFloor,
 	    Supplier<List<AbstractInsnNode>> supplier ) {
 		// Call the full overload with the main type derived from classNode
 		methodWithContextAndClassLocator(
@@ -2019,6 +2025,7 @@ public class AsmHelper {
 		    implicityReturnNull,
 		    Type.getObjectType( classNode.name ),
 		    externalTryCatchBlocks,
+		    inheritedLocalSlotFloor,
 		    supplier
 		);
 	}
@@ -2027,16 +2034,18 @@ public class AsmHelper {
 	 * Create a method with context and ClassLocator setup, applying method splitting if needed.
 	 * This overload allows specifying the main type for method invocations in split methods.
 	 *
-	 * @param classNode              The class node to add the method to
-	 * @param name                   The method name
-	 * @param parameterType          The parameter type (typically IBoxContext)
-	 * @param returnType             The return type
-	 * @param isStatic               Whether the method is static
-	 * @param transpiler             The transpiler instance
-	 * @param implicityReturnNull    Whether to implicitly return null if no explicit return
-	 * @param mainType               The main type for method invocations in split methods
-	 * @param externalTryCatchBlocks External try-catch blocks to add to the method (for split sub-methods)
-	 * @param supplier               Supplier for the method body instructions
+	 * @param classNode               The class node to add the method to
+	 * @param name                    The method name
+	 * @param parameterType           The parameter type (typically IBoxContext)
+	 * @param returnType              The return type
+	 * @param isStatic                Whether the method is static
+	 * @param transpiler              The transpiler instance
+	 * @param implicityReturnNull     Whether to implicitly return null if no explicit return
+	 * @param mainType                The main type for method invocations in split methods
+	 * @param externalTryCatchBlocks  External try-catch blocks to add to the method (for split sub-methods)
+	 * @param inheritedLocalSlotFloor Highest local slot already used by an inherited
+	 *                                (cloned) body; new locals are allocated above it
+	 * @param supplier                Supplier for the method body instructions
 	 */
 	public static void methodWithContextAndClassLocator( ClassNode classNode,
 	    String name,
@@ -2047,6 +2056,7 @@ public class AsmHelper {
 	    boolean implicityReturnNull,
 	    Type mainType,
 	    List<TryCatchBlockNode> externalTryCatchBlocks,
+	    int inheritedLocalSlotFloor,
 	    Supplier<List<AbstractInsnNode>> supplier ) {
 		MethodContextTracker tracker = new MethodContextTracker( isStatic );
 		transpiler.addMethodContextTracker( tracker );
@@ -2086,22 +2096,16 @@ public class AsmHelper {
 		tracker.setClassLocatorSlot( classLocatorStore.index() );
 		classLocatorStore.nodes().forEach( ( node ) -> node.accept( methodVisitor ) );
 
-		var nodes = supplier.get();
+		// A split sub-method inherits the parent's body instructions verbatim, so they
+		// still reference the local slots the PARENT tracker allocated. Keep this
+		// method's own allocations (e.g. the profiling catch-all's mark-depth temp)
+		// above those slots so they can never clobber each other.
+		tracker.reserveLocalSlotsUpTo( inheritedLocalSlotFloor );
 
-		// When profiling is active, wrap the whole body in a catch-all try that
-		// CLOSES the probe-charging interval before an UNCAUGHT exception escapes
-		// this method, then rethrows. Without this, an exception bypasses both the
-		// return-path markEnd and the fall-through markEnd, leaving the thread's
-		// interval open so the NEXT profiled probe charges unwinding/caller/idle
-		// time to the throwing span. Locally-caught exceptions (the try/catch
-		// machinery) do NOT reach this handler — they are caught inside the body
-		// and stay in the same interval, exactly as they should.
-		if ( transpiler.hasProfilerId() ) {
-			nodes = wrapBodyWithCatchAllMarkEnd( transpiler, tracker, nodes );
-		}
+		var				nodes		= supplier.get();
 
 		// Collect all labels that are in the original node list
-		Set<LabelNode> allLabels = new HashSet<>();
+		Set<LabelNode>	allLabels	= new HashSet<>();
 		for ( AbstractInsnNode node : nodes ) {
 			if ( node instanceof LabelNode labelNode ) {
 				allLabels.add( labelNode );
@@ -2110,10 +2114,29 @@ public class AsmHelper {
 
 		// Apply method length guard to split large methods if needed
 		// Pass the tracker so we can check for try-catch blocks (which can't be split across methods)
-		var				processedNodes	= methodLengthGuard( mainType, nodes, classNode, name, parameterType, returnType, transpiler, tracker, isStatic );
+		var processedNodes = methodLengthGuard( mainType, nodes, classNode, name, parameterType, returnType, transpiler, tracker, isStatic );
+
+		// When profiling is active, wrap the body in a catch-all try that CLOSES the
+		// probe-charging interval before an UNCAUGHT exception escapes this method,
+		// then rethrows. Without this, an exception bypasses both the return-path
+		// markEnd and the fall-through markEnd, leaving the thread's interval open so
+		// the NEXT profiled probe charges unwinding/caller/idle time to the throwing
+		// span. Locally-caught exceptions (the try/catch machinery) do NOT reach this
+		// handler — they are caught inside the body and stay in the same interval,
+		// exactly as they should.
+		//
+		// This runs AFTER splitting on purpose: the guard's try range spans the whole
+		// body, so wrapping before the split would leave the range straddling segments
+		// (the labels are then filtered out, and the depth local captured by one
+		// segment is read by another). Each split sub-method is wrapped by its OWN
+		// invocation of this helper, so wrapping only the surviving (post-split) body
+		// keeps the guard and its local entirely inside one method.
+		if ( transpiler.hasProfilerId() ) {
+			processedNodes = wrapBodyWithCatchAllMarkEnd( transpiler, tracker, processedNodes );
+		}
 
 		// Collect labels that remain in the processed nodes (after potential splitting)
-		Set<LabelNode>	remainingLabels	= new HashSet<>();
+		Set<LabelNode> remainingLabels = new HashSet<>();
 		for ( AbstractInsnNode node : processedNodes ) {
 			if ( node instanceof LabelNode labelNode ) {
 				remainingLabels.add( labelNode );
@@ -2610,22 +2633,60 @@ public class AsmHelper {
 			return nodes;
 		}
 
-		// Note: Methods with try-catch blocks CAN be split now, because we filter
-		// TryCatchBlockNodes when writing - only those with all labels in the current
-		// method's instruction list will be written. Try-catch blocks that span
-		// split boundaries will be written to the sub-methods that contain them.
+		// Note: methods with try-catch blocks CAN be split - try-catch blocks are filtered
+		// when writing, so each one lands in whichever sub-method holds its labels. The
+		// splitter keeps the labels of every block together (a block's exception table
+		// entry needs them in one method), and falls back to cutting through them only if
+		// that is what it takes to fit the JVM's per-method limit.
 
 		// Get try-catch blocks from tracker to pass to sub-methods
-		List<TryCatchBlockNode>	tryCatchBlocks	= tracker != null ? tracker.getTryCatchStack() : null;
+		List<TryCatchBlockNode>			tryCatchBlocks		= tracker != null ? tracker.getTryCatchStack() : null;
+
+		// The highest local slot this method uses. Sub-methods inherit the body's
+		// instructions (which reference these slots) but get a fresh tracker, so they
+		// must reserve past this slot to avoid clobbering an inherited local.
+		int								localSlotFloor		= tracker != null ? tracker.getVarCount() : 0;
 
 		// Use the new MethodSplitter for splitting, passing try-catch blocks for sub-method inheritance
-		MethodSplitter			splitter		= new MethodSplitter( transpiler, classNode, mainType, tryCatchBlocks, isStatic );
-		Type					splitResultType	= returnType.equals( Type.getType( Component.BodyResult.class ) )
+		MethodSplitter					splitter			= new MethodSplitter( transpiler, classNode, mainType, tryCatchBlocks, isStatic, localSlotFloor );
+		Type							splitResultType		= returnType.equals( Type.getType( Component.BodyResult.class ) )
 		    ? returnType
 		    : Type.getType( FlowControlResult.class );
 
-		// Split the method using the correct helper return contract for the enclosing method.
-		List<AbstractInsnNode>	splitNodes		= splitter.processMethod( nodes, name, parameterType, splitResultType );
+		// Decide how to split BEFORE splitting, because splitting registers the generated
+		// sub-methods on the class - it must only ever be run once per body.
+
+		// Nothing can get this body under the JVM's per-method limit: even cutting through
+		// try-catch protected ranges (the last resort below) leaves a method the verifier
+		// will reject. Report it against the SOURCE instead of letting the class writer
+		// throw "Method too large".
+		MethodSplitter.LargestSegment	whenIgnoringRanges	= splitter.largestSegment( nodes, false );
+		if ( whenIgnoringRanges.size() > MethodSplitter.JVM_METHOD_SIZE_LIMIT ) {
+			String									filePath	= transpiler.getProperty( "filePath" );
+			MethodSplitter.OversizedProtectedRange	oversized	= splitter.firstOversizedProtectedRange( nodes );
+			if ( oversized != null ) {
+				throw AsmHelper.oversizedMethodException( filePath, String.format(
+				    "The try/catch block starting on line %d wraps too much code: a try/catch has to stay inside a single "
+				        + "method to keep catching its exceptions, so the compiler cannot break it up.",
+				    oversized.line() ) );
+			}
+			throw AsmHelper.oversizedMethodException( filePath, whenIgnoringRanges.line() > 0
+			    ? String.format(
+			        "The code starting on line %d cannot be split because it is one huge if/loop/switch body with no "
+			            + "statement boundary inside it.",
+			        whenIgnoringRanges.line() )
+			    : "The largest part of it cannot be split any further." );
+		}
+
+		// Keeping every try-catch protected range intact is preferred, but an oversized
+		// range can block every legal split. Only then fall back to cutting through it
+		// (the pre-existing behaviour) so the file still compiles.
+		List<AbstractInsnNode> splitNodes;
+		if ( splitter.largestSegment( nodes, true ).size() > MethodSplitter.JVM_METHOD_SIZE_LIMIT ) {
+			splitNodes = splitter.processMethodAllowingProtectedRangeSplits( nodes, name, parameterType, splitResultType );
+		} else {
+			splitNodes = splitter.processMethod( nodes, name, parameterType, splitResultType );
+		}
 
 		// If the return type is Object (typical for BoxLang methods), we need to
 		// unwrap the final FlowControlResult to get the actual value
@@ -2647,6 +2708,30 @@ public class AsmHelper {
 		}
 
 		return splitNodes;
+	}
+
+	/**
+	 * The error reported when a source file compiles to a method the JVM cannot accept:
+	 * its bytecode exceeds the 64KB per-method limit and the code can no longer be
+	 * split. Reported in terms of the SOURCE (file, + what to change) instead of letting
+	 * the class writer's {@code MethodTooLargeException} escape to the user.
+	 *
+	 * @param filePath the source file being compiled (null/unknown for ad-hoc source)
+	 * @param detail   a sentence describing which construct is too big and why
+	 *
+	 * @return the exception to throw
+	 */
+	public static BoxRuntimeException oversizedMethodException( String filePath, String detail ) {
+		String location = ( filePath == null || filePath.isEmpty() || "unknown".equals( filePath ) )
+		    ? "this source"
+		    : "[" + filePath + "]";
+
+		return new BoxRuntimeException(
+		    "Cannot compile " + location + ": part of it compiles to a single method that is larger than the JVM's "
+		        + "64KB (65535 byte) per-method bytecode limit, and it cannot be split up any further automatically. "
+		        + detail + " "
+		        + "To fix this, split that code up: move part of it into a function and call it, or move it into an include."
+		);
 	}
 
 	/**

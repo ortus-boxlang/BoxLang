@@ -31,6 +31,7 @@ import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.TableSwitchInsnNode;
@@ -51,12 +52,18 @@ public class MethodSplitter {
 	 * JVM method bytecode size limit is 64KB (65535 bytes).
 	 * We use a conservative threshold of 55KB to allow for overhead.
 	 */
-	public static final int					BYTECODE_SIZE_LIMIT	= 55000;
+	public static final int					BYTECODE_SIZE_LIMIT		= 55000;
+
+	/**
+	 * The JVM's real per-method bytecode ceiling. A method whose code exceeds this is
+	 * rejected by the class writer/verifier, so it must be split (or reported).
+	 */
+	public static final int					JVM_METHOD_SIZE_LIMIT	= 65535;
 
 	/**
 	 * Counter for generating unique sub-method names
 	 */
-	private final AtomicInteger				subMethodCounter	= new AtomicInteger( 0 );
+	private final AtomicInteger				subMethodCounter		= new AtomicInteger( 0 );
 
 	/**
 	 * The transpiler instance for creating auxiliary methods
@@ -82,6 +89,13 @@ public class MethodSplitter {
 	 * Whether the method being split is static
 	 */
 	private final boolean					isStatic;
+
+	/**
+	 * The highest local variable slot used by the parent method. Sub-methods inherit
+	 * the parent's instructions (which reference those slots), so their own locals
+	 * must be allocated above this to avoid clobbering an inherited one.
+	 */
+	private final int						localSlotFloor;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -122,11 +136,30 @@ public class MethodSplitter {
 	 * @param isStatic       Whether the method being split is static
 	 */
 	public MethodSplitter( Transpiler transpiler, ClassNode classNode, Type mainType, List<TryCatchBlockNode> tryCatchBlocks, boolean isStatic ) {
+		this( transpiler, classNode, mainType, tryCatchBlocks, isStatic, 0 );
+	}
+
+	/**
+	 * Create a new MethodSplitter with try-catch blocks, static method support and the
+	 * parent method's highest used local slot.
+	 *
+	 * @param transpiler     The transpiler instance
+	 * @param classNode      The class node to add sub-methods to
+	 * @param mainType       The type of the main class
+	 * @param tryCatchBlocks Try-catch blocks from the parent method tracker
+	 * @param isStatic       Whether the method being split is static
+	 * @param localSlotFloor The highest local slot used by the parent method; sub-method
+	 *                       locals are allocated above it so they cannot collide with
+	 *                       slots the inherited body still reads and writes
+	 */
+	public MethodSplitter( Transpiler transpiler, ClassNode classNode, Type mainType, List<TryCatchBlockNode> tryCatchBlocks, boolean isStatic,
+	    int localSlotFloor ) {
 		this.transpiler		= transpiler;
 		this.classNode		= classNode;
 		this.mainType		= mainType;
 		this.tryCatchBlocks	= tryCatchBlocks != null ? tryCatchBlocks : new ArrayList<>();
 		this.isStatic		= isStatic;
+		this.localSlotFloor	= localSlotFloor;
 	}
 
 	/**
@@ -265,6 +298,11 @@ public class MethodSplitter {
 	/**
 	 * Process a method's instructions and split if necessary.
 	 * Returns modified instruction list with sub-method calls if splitting occurred.
+	 * <p>
+	 * Splitting is bounded by the JVM's 64KB per-method bytecode limit. When no legal
+	 * split exists, the method is returned unchanged and the caller
+	 * ({@link AsmHelper}) reports it as a compilation error - see
+	 * {@link #largestSegmentSize(List)}.
 	 *
 	 * @param nodes         The original instruction list
 	 * @param methodName    The base name for generating sub-method names
@@ -279,15 +317,45 @@ public class MethodSplitter {
 	    Type parameterType,
 	    Type returnType ) {
 
-		int estimatedSize = estimateBytecodeSize( nodes );
-
 		// If under the limit, return unchanged
-		if ( estimatedSize < BYTECODE_SIZE_LIMIT ) {
+		if ( estimateBytecodeSize( nodes ) < BYTECODE_SIZE_LIMIT ) {
 			return nodes;
 		}
 
-		// Split the method into segments
-		List<MethodSegment> segments = splitIntoSegments( nodes, methodName );
+		return splitOnce( nodes, methodName, parameterType, returnType, true );
+	}
+
+	/**
+	 * Split the given instructions into sub-methods, at most once.
+	 * <p>
+	 * When {@code respectProtectedRanges} is true, a split is never placed inside a
+	 * try-catch block's protected range, because the exception table entry is only
+	 * written when the block's start/end/handler labels all survive in the same
+	 * method - cutting the range would silently drop the handler and let the
+	 * exception escape uncaught.
+	 * <p>
+	 * The caller retries with {@code respectProtectedRanges} false when the safe
+	 * configuration cannot bring the method under the limit, so that a method which is
+	 * too large ONLY because of an oversized try range still compiles (as it always
+	 * has) rather than failing.
+	 *
+	 * @param nodes                  The instruction list to split
+	 * @param methodName             Base name for the generated sub-methods
+	 * @param parameterType          The parameter type (typically IBoxContext)
+	 * @param returnType             The return type
+	 * @param respectProtectedRanges Whether try-catch ranges must stay unsplit
+	 *
+	 * @return The rewritten instruction list (sub-method calls), or the original
+	 *         instructions (dividers stripped) when splitting made no progress
+	 */
+	private List<AbstractInsnNode> splitOnce(
+	    List<AbstractInsnNode> nodes,
+	    String methodName,
+	    Type parameterType,
+	    Type returnType,
+	    boolean respectProtectedRanges ) {
+
+		List<MethodSegment> segments = splitIntoSegments( nodes, methodName, respectProtectedRanges );
 
 		// If splitting made no progress, return the original nodes unchanged.
 		// This prevents recursive re-wrapping of oversized but unsplittable regions,
@@ -298,6 +366,147 @@ public class MethodSplitter {
 
 		// Generate sub-methods and call sites
 		return generateSplitMethod( segments, methodName, parameterType, returnType );
+	}
+
+	/**
+	 * The largest single method body the given instructions can be split into, after
+	 * splitting them as far as {@link #BYTECODE_SIZE_LIMIT} allows.
+	 *
+	 * @param nodes                  The instruction list to measure
+	 * @param respectProtectedRanges Whether try-catch ranges must stay unsplit
+	 *
+	 * @return the largest resulting method body. A {@link LargestSegment#size()} above
+	 *         {@link #JVM_METHOD_SIZE_LIMIT} means a method the JVM will reject.
+	 */
+	public LargestSegment largestSegment( List<AbstractInsnNode> nodes, boolean respectProtectedRanges ) {
+		List<MethodSegment> segments = splitIntoSegments( nodes, "sizeProbe", respectProtectedRanges );
+
+		if ( segments.size() == 1 && isSameAsOriginalSegment( nodes, segments.getFirst() ) ) {
+			// No split possible: the whole method stays one method.
+			List<AbstractInsnNode> all = stripDividerNodes( nodes );
+			return new LargestSegment( estimateBytecodeSize( all ), sourceLineOf( all, 0 ) );
+		}
+
+		LargestSegment largest = new LargestSegment( 0, -1 );
+		for ( MethodSegment segment : segments ) {
+			// Each segment becomes a sub-method, and that sub-method is split recursively,
+			// so the largest SEGMENT is the lower bound on the real worst case (the
+			// sub-method also carries its prologue and flow-control tail).
+			int size = estimateBytecodeSize( segment.nodes() );
+			if ( size > largest.size() ) {
+				largest = new LargestSegment( size, sourceLineOf( segment.nodes(), 0 ) );
+			}
+		}
+		return largest;
+	}
+
+	/**
+	 * The largest method body a set of instructions can be split into.
+	 *
+	 * @param size The estimated bytecode size of that body
+	 * @param line The source line it starts on (-1 when unknown)
+	 */
+	public record LargestSegment( int size, int line ) {
+	}
+
+	/**
+	 * Split the instructions into sub-methods, IGNORING the try-catch protected-range
+	 * rule.
+	 * <p>
+	 * Last-resort mode used when keeping every protected range intact would leave a
+	 * method the JVM rejects: it restores the pre-existing behaviour of cutting through
+	 * a protected range so the file still compiles. Correctness of the exception
+	 * handling is preferred whenever the method can fit without cutting a range.
+	 *
+	 * @param nodes         The instruction list
+	 * @param methodName    Base name for the generated sub-methods
+	 * @param parameterType The parameter type (typically IBoxContext)
+	 * @param returnType    The return type
+	 *
+	 * @return The rewritten instruction list (sub-method calls)
+	 */
+	public List<AbstractInsnNode> processMethodAllowingProtectedRangeSplits(
+	    List<AbstractInsnNode> nodes,
+	    String methodName,
+	    Type parameterType,
+	    Type returnType ) {
+		if ( estimateBytecodeSize( nodes ) < BYTECODE_SIZE_LIMIT ) {
+			return nodes;
+		}
+		return splitOnce( nodes, methodName, parameterType, returnType, false );
+	}
+
+	/**
+	 * The first try-catch construct whose protected range is too large for the JVM to
+	 * accept as a single method, or null when every range fits.
+	 * <p>
+	 * Used to tell the user EXACTLY what has to change: a range that big can never be
+	 * split (the exception table entry needs its start/end/handler labels in one
+	 * method), so the source has to be restructured.
+	 *
+	 * @param nodes The instruction list of the method
+	 *
+	 * @return the offending range, or null
+	 */
+	public OversizedProtectedRange firstOversizedProtectedRange( List<AbstractInsnNode> nodes ) {
+		java.util.Map<LabelNode, Integer>					labelPositions	= labelPositionsOf( nodes );
+
+		// Every block of one construct shares its start label; group them so the range is
+		// measured once, out to the LAST end/handler label (an inlined finally adds copies).
+		java.util.Map<LabelNode, List<TryCatchBlockNode>>	byStart			= new java.util.LinkedHashMap<>();
+		for ( TryCatchBlockNode block : this.tryCatchBlocks ) {
+			if ( labelPositions.containsKey( block.start ) && labelPositions.containsKey( block.end ) ) {
+				byStart.computeIfAbsent( block.start, key -> new ArrayList<>() ).add( block );
+			}
+		}
+
+		for ( var entry : byStart.entrySet() ) {
+			int	start	= labelPositions.get( entry.getKey() );
+			int	last	= start;
+			for ( TryCatchBlockNode block : entry.getValue() ) {
+				last	= Math.max( last, labelPositions.getOrDefault( block.end, last ) );
+				last	= Math.max( last, labelPositions.getOrDefault( block.handler, last ) );
+			}
+			int size = 0;
+			for ( int i = start; i <= last && i < nodes.size(); i++ ) {
+				size += estimateInstructionSize( nodes.get( i ) );
+			}
+			if ( size > JVM_METHOD_SIZE_LIMIT ) {
+				return new OversizedProtectedRange( sourceLineOf( nodes, start ), size, entry.getValue() );
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * A try-catch protected range that can never fit inside one JVM method.
+	 *
+	 * @param line   The source line the protected range starts on (-1 if unknown)
+	 * @param size   The estimated bytecode size of the range
+	 * @param blocks The exception-table blocks of the range
+	 */
+	public record OversizedProtectedRange( int line, int size, List<TryCatchBlockNode> blocks ) {
+	}
+
+	/** Map every label in the list to its index. */
+	private static java.util.Map<LabelNode, Integer> labelPositionsOf( List<AbstractInsnNode> nodes ) {
+		java.util.Map<LabelNode, Integer> labelPositions = new java.util.HashMap<>();
+		for ( int i = 0; i < nodes.size(); i++ ) {
+			if ( nodes.get( i ) instanceof LabelNode labelNode ) {
+				labelPositions.put( labelNode, i );
+			}
+		}
+		return labelPositions;
+	}
+
+	/** The first source line recorded at or after the given index, or -1. */
+	private static int sourceLineOf( List<AbstractInsnNode> nodes, int fromIndex ) {
+		for ( int i = Math.max( fromIndex, 0 ); i < nodes.size(); i++ ) {
+			if ( nodes.get( i ) instanceof LineNumberNode lineNumber ) {
+				return lineNumber.line;
+			}
+		}
+		return -1;
 	}
 
 	private boolean isSameAsOriginalSegment( List<AbstractInsnNode> nodes, MethodSegment segment ) {
@@ -325,16 +534,19 @@ public class MethodSplitter {
 
 	/**
 	 * Split instructions into segments at DividerNode boundaries.
-	 * Ensures that labels and their references stay within the same segment.
+	 * Ensures that labels and their references stay within the same segment, and -
+	 * unless {@code respectProtectedRanges} is false - that no try-catch block's
+	 * start/end/handler labels are separated.
 	 *
-	 * @param nodes      The instruction list to split
-	 * @param methodName The base method name for logging
+	 * @param nodes                  The instruction list to split
+	 * @param methodName             The base method name for logging
+	 * @param respectProtectedRanges Whether try-catch ranges must stay unsplit
 	 *
 	 * @return List of method segments
 	 */
-	private List<MethodSegment> splitIntoSegments( List<AbstractInsnNode> nodes, String methodName ) {
+	private List<MethodSegment> splitIntoSegments( List<AbstractInsnNode> nodes, String methodName, boolean respectProtectedRanges ) {
 		// First, find all safe split points (DividerNodes that don't break label references)
-		List<Integer> safeSplitPoints = findSafeSplitPoints( nodes );
+		List<Integer> safeSplitPoints = findSafeSplitPoints( nodes, respectProtectedRanges );
 
 		// If no safe split points found, we can't split safely - return single segment
 		if ( safeSplitPoints.isEmpty() ) {
@@ -391,11 +603,15 @@ public class MethodSplitter {
 	 * A DividerNode is safe to split at if no jump instruction before it references
 	 * a label after it, and no jump instruction after it references a label before it.
 	 *
-	 * @param nodes The instruction list
+	 * @param nodes                  The instruction list
+	 * @param respectProtectedRanges Whether a split may not separate a try-catch block's
+	 *                               start/end/handler labels (the exception table entry is
+	 *                               only emitted when all of them survive in one method, so
+	 *                               separating them silently drops the handler)
 	 *
 	 * @return List of indices where it's safe to split (at DividerNodes)
 	 */
-	private List<Integer> findSafeSplitPoints( List<AbstractInsnNode> nodes ) {
+	private List<Integer> findSafeSplitPoints( List<AbstractInsnNode> nodes, boolean respectProtectedRanges ) {
 		// Collect all label positions and their references
 		java.util.Map<LabelNode, Integer>	labelPositions	= new java.util.HashMap<>();
 		java.util.Map<Integer, LabelNode>	jumpReferences	= new java.util.HashMap<>();
@@ -412,6 +628,22 @@ public class MethodSplitter {
 			} else if ( node instanceof LookupSwitchInsnNode ) {
 				// LookupSwitch has multiple labels
 				// Mark as unsafe to split near switch statements
+			}
+		}
+
+		// Try-catch blocks whose range labels are present in this list. A split must not
+		// separate them: the exception table entry is only written when the block's
+		// start, end AND handler labels all survive in the same method, so a split that
+		// separates any of them silently drops the handler and lets the exception escape
+		// uncaught. The labels are therefore treated as one atomic group.
+		List<LabelNode[]> protectedRanges = new ArrayList<>();
+		for ( TryCatchBlockNode block : this.tryCatchBlocks ) {
+			LabelNode[] labels = new LabelNode[] { block.start, block.end, block.handler };
+			for ( LabelNode label : labels ) {
+				if ( labelPositions.containsKey( label ) ) {
+					protectedRanges.add( labels );
+					break;
+				}
 			}
 		}
 
@@ -440,6 +672,29 @@ public class MethodSplitter {
 				if ( ( jumpPos < i && labelPos >= i ) || ( jumpPos >= i && labelPos < i ) ) {
 					isSafe = false;
 					break;
+				}
+			}
+
+			if ( isSafe && respectProtectedRanges ) {
+				// A split must never separate a try-catch block's start/end/handler labels
+				for ( LabelNode[] labels : protectedRanges ) {
+					boolean	anyBefore	= false;
+					boolean	anyAfter	= false;
+					for ( LabelNode label : labels ) {
+						Integer pos = labelPositions.get( label );
+						if ( pos == null ) {
+							continue;
+						}
+						if ( pos < i ) {
+							anyBefore = true;
+						} else if ( pos > i ) {
+							anyAfter = true;
+						}
+					}
+					if ( anyBefore && anyAfter ) {
+						isSafe = false;
+						break;
+					}
 				}
 			}
 
@@ -538,6 +793,7 @@ public class MethodSplitter {
 		    this.transpiler,
 		    false,
 		    this.tryCatchBlocks,
+		    this.localSlotFloor,
 		    () -> {
 			    List<AbstractInsnNode> wrapped = new ArrayList<>( nodes );
 

@@ -214,6 +214,38 @@ public class MethodContextTracker {
 		return new VarStore( varCount, List.of( new VarInsnNode( opcode, varCount ) ) );
 	}
 
+	/**
+	 * The highest JVM local variable slot this tracker has allocated so far. Callers
+	 * that clone a body into a NEW method (split sub-methods) use this as a floor so
+	 * the new method's own locals never collide with the cloned body's slots.
+	 *
+	 * @return the highest allocated slot (-1 for a static method with none yet)
+	 */
+	public int getVarCount() {
+		return this.varCount;
+	}
+
+	/**
+	 * Prevent {@link #storeNewVariable(int)} from allocating any slot at or below
+	 * {@code highestUsedSlot}.
+	 * <p>
+	 * A split sub-method receives the parent method's instructions verbatim, so those
+	 * instructions keep reading and writing the local slots the PARENT tracker handed
+	 * out (context, class locator and every body temporary). A sub-method gets a
+	 * FRESH tracker that would otherwise restart numbering from scratch, so a newly
+	 * allocated local could land on one of those inherited slots — clobbering it and
+	 * making the verifier reject the handler that reads it
+	 * ({@code VerifyError: Bad local variable type}). Reserving past the inherited
+	 * slots keeps new allocations out of the cloned body's way.
+	 *
+	 * @param highestUsedSlot the highest slot used by the inherited body
+	 */
+	public void reserveLocalSlotsUpTo( int highestUsedSlot ) {
+		if ( highestUsedSlot > this.varCount ) {
+			this.varCount = highestUsedSlot;
+		}
+	}
+
 	public List<AbstractInsnNode> trackNewContext() {
 		VarStore res = storeNewVariable( Opcodes.ASTORE );
 

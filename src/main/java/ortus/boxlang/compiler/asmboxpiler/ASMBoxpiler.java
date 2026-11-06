@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodTooLargeException;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -229,6 +230,21 @@ public class ASMBoxpiler extends Boxpiler {
 				classNode.accept( classWriter );
 			}
 			return classWriter.toByteArray();
+		} catch ( MethodTooLargeException e ) {
+			// A method that is STILL larger than the JVM's 64KB per-method limit after
+			// every split the splitter could make. Report it against the SOURCE and what
+			// has to change, rather than letting the class writer's exception (and the
+			// enormous traced-class dump the generic handler below produces) reach the
+			// user. Also catches the estimate-vs-reality gap: our size estimates are
+			// approximations, so the post-split check can pass while the writer still
+			// refuses the method.
+			String source = classInfo == null || classInfo.resolvedFilePath() == null
+			    ? null
+			    : classInfo.resolvedFilePath().absolutePath().toString();
+			throw AsmHelper.oversizedMethodException( source, String.format(
+			    "The generated method \"%s\" is about %d bytes of bytecode, over the 65535 byte limit, and it cannot be "
+			        + "split any further.",
+			    e.getMethodName(), e.getCodeSize() ) );
 		} catch ( Exception e ) {
 			StringWriter out = new StringWriter();
 			classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( out ) ) ) );
