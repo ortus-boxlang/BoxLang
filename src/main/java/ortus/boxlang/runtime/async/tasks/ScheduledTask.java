@@ -304,6 +304,11 @@ public class ScheduledTask implements Runnable {
 	private final Logger							logger;
 
 	/**
+	 * How many executions of this task are in flight right now
+	 */
+	private final AtomicInteger						runningCount						= new AtomicInteger( 0 );
+
+	/**
 	 * A cron fire or periodic tick running at least this many seconds after it was due is logged as a warning
 	 */
 	private static final long						CRON_LATE_WARNING_SECONDS			= 2;
@@ -501,6 +506,29 @@ public class ScheduledTask implements Runnable {
 	 *              disabled or constrained
 	 */
 	public void run( Boolean force ) {
+		this.runningCount.incrementAndGet();
+		try {
+			runInternal( force );
+		} finally {
+			this.runningCount.decrementAndGet();
+		}
+	}
+
+	/**
+	 * The number of executions of this task running right now
+	 *
+	 * @return The in-flight execution count
+	 */
+	public int getRunningCount() {
+		return this.runningCount.get();
+	}
+
+	/**
+	 * The actual task execution, see {@link #run(Boolean)}
+	 *
+	 * @param force Whether to force execution or not
+	 */
+	private void runInternal( Boolean force ) {
 
 		debugLog( String.format( "run( force: %b )", force ) );
 		String timerLabel = "task-" + System.currentTimeMillis();

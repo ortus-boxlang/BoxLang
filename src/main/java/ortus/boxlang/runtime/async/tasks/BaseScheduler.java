@@ -33,6 +33,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
+import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
 import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
@@ -79,6 +80,16 @@ public class BaseScheduler implements IScheduler {
 	 * Null means the scheduler builds and owns a private pool named <code>{name}-scheduler</code>.
 	 */
 	protected String							globalExecutorName		= null;
+
+	/**
+	 * True when the started scheduler runs on a shared global executor it must never shut down
+	 */
+	protected boolean							sharedExecutor			= false;
+
+	/**
+	 * Fallback global executor name used when the requested one is unusable. Visible for testing.
+	 */
+	protected String							fallbackExecutorName	= DEFAULT_GLOBAL_EXECUTOR;
 
 	/**
 	 * The timezone for the scheduler and the tasks it creates and manages
@@ -315,21 +326,44 @@ public class BaseScheduler implements IScheduler {
 	}
 
 	/**
-	 * Resolve the global executor this scheduler is bound to. An unknown name falls back to {@code scheduled-tasks}.
+	 * Override the fallback global executor name. Visible for testing.
 	 *
-	 * @return The shared executor, or null if this scheduler is not bound to a global executor (or none is available)
+	 * @param name The fallback executor name
+	 *
+	 * @return This scheduler
+	 */
+	public BaseScheduler setFallbackExecutorNameForTest( String name ) {
+		this.fallbackExecutorName = name;
+		return this;
+	}
+
+	/**
+	 * Is there a global executor with this name that can schedule tasks?
+	 */
+	private boolean isUsableGlobalExecutor( String executorName ) {
+		return this.asyncService.hasExecutor( executorName )
+		    && this.asyncService.getExecutor( executorName ).executor() instanceof BoxScheduledExecutor;
+	}
+
+	/**
+	 * Resolve the global executor this scheduler is bound to. An unknown or non-scheduled executor falls back to {@code scheduled-tasks}.
+	 *
+	 * @return The shared executor, or null if this scheduler is not bound to a global executor or no usable one exists
 	 */
 	private BoxExecutor resolveGlobalExecutor() {
 		if ( this.globalExecutorName == null ) {
 			return null;
 		}
-		if ( this.asyncService.hasExecutor( this.globalExecutorName ) ) {
+		if ( isUsableGlobalExecutor( this.globalExecutorName ) ) {
 			return this.asyncService.getExecutor( this.globalExecutorName );
 		}
-		this.logger.warn( "Scheduler [{}] global executor [{}] does not exist, falling back to [{}]", this.name, this.globalExecutorName,
-		    DEFAULT_GLOBAL_EXECUTOR );
-		this.globalExecutorName = DEFAULT_GLOBAL_EXECUTOR;
-		return this.asyncService.hasExecutor( DEFAULT_GLOBAL_EXECUTOR ) ? this.asyncService.getExecutor( DEFAULT_GLOBAL_EXECUTOR ) : null;
+		this.logger.warn( "Scheduler [{}] global executor [{}] does not exist or is not a scheduled executor, falling back to [{}]", this.name,
+		    this.globalExecutorName, this.fallbackExecutorName );
+		if ( isUsableGlobalExecutor( this.fallbackExecutorName ) ) {
+			return this.asyncService.getExecutor( this.fallbackExecutorName );
+		}
+		this.logger.warn( "Scheduler [{}] fallback executor [{}] is not usable either, using a private pool", this.name, this.fallbackExecutorName );
+		return null;
 	}
 
 	/**
@@ -338,7 +372,8 @@ public class BaseScheduler implements IScheduler {
 	public synchronized BaseScheduler startup() {
 		if ( !this.started ) {
 			// Run on the shared global executor if bound to one, else build out a private executor for this scheduler
-			this.executor = resolveGlobalExecutor();
+			this.executor		= resolveGlobalExecutor();
+			this.sharedExecutor	= this.executor != null;
 			if ( this.executor == null ) {
 				this.executor = asyncService.newScheduledExecutor( name + "-scheduler", getConfiguredThreads() );
 			}
@@ -491,7 +526,12 @@ public class BaseScheduler implements IScheduler {
 			}
 		} );
 
-		if ( this.globalExecutorName == null ) {
+		if ( this.sharedExecutor ) {
+			// Shared executor: it keeps running, but a graceful shutdown still waits for executions already in flight
+			if ( !force ) {
+				awaitRunningTasks( timeout );
+			}
+		} else {
 			// Private executor: shutdown and await termination or kill it now! A shared global executor is never shut down.
 			if ( force ) {
 				this.executor.scheduledExecutor().shutdownNow();
@@ -511,6 +551,26 @@ public class BaseScheduler implements IScheduler {
 		// Log it
 		this.logger.info( "Scheduler [{}] has been shutdown!", this.name );
 		return this;
+	}
+
+	/**
+	 * Wait for the executions of this scheduler's tasks that are in flight, up to the timeout. Used instead of an executor
+	 * termination wait when the executor is shared.
+	 */
+	private void awaitRunningTasks( long timeout ) {
+		long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos( timeout );
+		while ( this.tasks.values().stream().anyMatch( record -> record.task.getRunningCount() > 0 ) ) {
+			if ( System.nanoTime() >= deadline ) {
+				this.logger.warn( "Scheduler [{}] shutdown timed out waiting for running tasks", this.name );
+				return;
+			}
+			try {
+				Thread.sleep( 25 );
+			} catch ( InterruptedException e ) {
+				Thread.currentThread().interrupt();
+				return;
+			}
+		}
 	}
 
 	/**

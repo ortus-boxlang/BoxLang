@@ -527,4 +527,70 @@ public class SchedulerServiceTest {
 		schedulerService.startupScheduler( scheduler );
 		assertThat( scheduler.getExecutor().name() ).isEqualTo( "bxschedule-custom-test-scheduler" );
 	}
+
+	@Test
+	@DisplayName( "A scheduler bound to a non-scheduled global executor falls back to scheduled-tasks" )
+	void testNonScheduledGlobalExecutorFallsBack() {
+		BaseScheduler scheduler = new BaseScheduler( "bxschedule-custom-test" );
+		scheduler.useGlobalExecutor( "io-tasks" );
+		schedulerService.registerScheduler( scheduler, true );
+		schedulerService.startupScheduler( scheduler );
+		assertThat( scheduler.getExecutor() ).isSameInstanceAs( runtime.getAsyncService().getExecutor( "scheduled-tasks" ) );
+	}
+
+	@Test
+	@DisplayName( "A private fallback pool is shut down with the scheduler when no global executor is usable" )
+	void testPrivateFallbackPoolIsReleased() {
+		var				asyncService	= runtime.getAsyncService();
+		BaseScheduler	scheduler		= new BaseScheduler( "bxschedule-custom-test" );
+		// Neither the requested executor nor scheduled-tasks is usable
+		scheduler.useGlobalExecutor( "io-tasks" ).setFallbackExecutorNameForTest( "io-tasks" );
+		schedulerService.registerScheduler( scheduler, true );
+		schedulerService.startupScheduler( scheduler );
+		assertThat( scheduler.getExecutor().name() ).isEqualTo( "bxschedule-custom-test-scheduler" );
+		assertThat( asyncService.hasExecutor( "bxschedule-custom-test-scheduler" ) ).isTrue();
+		schedulerService.removeScheduler( Key.of( "bxschedule-custom-test" ), true, 0L );
+		assertThat( asyncService.hasExecutor( "bxschedule-custom-test-scheduler" ) ).isFalse();
+	}
+
+	@Test
+	@DisplayName( "Cancelled tasks are removed from the shared executor queue" )
+	void testCancelledTasksAreRemovedFromQueue() {
+		var				shared		= runtime.getAsyncService().getExecutor( "scheduled-tasks" );
+		var				queue		= ( ( java.util.concurrent.ThreadPoolExecutor ) shared.executor() ).getQueue();
+		int				before		= queue.size();
+		BaseScheduler	scheduler	= new BaseScheduler( "bxschedule-custom-test" );
+		scheduler.useGlobalExecutor( "scheduled-tasks" );
+		scheduler.task( "queuedTask" ).call( () -> {
+		} ).delay( 1, java.util.concurrent.TimeUnit.HOURS ).every( 1, java.util.concurrent.TimeUnit.HOURS );
+		schedulerService.registerScheduler( scheduler, true );
+		schedulerService.startupScheduler( scheduler );
+		assertThat( queue.size() ).isEqualTo( before + 1 );
+		schedulerService.removeScheduler( Key.of( "bxschedule-custom-test" ), true, 0L );
+		assertThat( queue.size() ).isEqualTo( before );
+	}
+
+	@Test
+	@DisplayName( "A graceful shutdown on a shared executor waits for running task executions" )
+	void testSharedShutdownWaitsForRunningTasks() throws Exception {
+		java.util.concurrent.CountDownLatch			started		= new java.util.concurrent.CountDownLatch( 1 );
+		java.util.concurrent.atomic.AtomicBoolean	finished	= new java.util.concurrent.atomic.AtomicBoolean( false );
+		BaseScheduler								scheduler	= new BaseScheduler( "bxschedule-custom-test" );
+		scheduler.useGlobalExecutor( "scheduled-tasks" );
+		scheduler.task( "slowTask" ).call( () -> {
+			started.countDown();
+			try {
+				Thread.sleep( 700 );
+			} catch ( InterruptedException e ) {
+				Thread.currentThread().interrupt();
+				return;
+			}
+			finished.set( true );
+		} ).every( 1, java.util.concurrent.TimeUnit.HOURS );
+		schedulerService.registerScheduler( scheduler, true );
+		schedulerService.startupScheduler( scheduler );
+		assertThat( started.await( 5, java.util.concurrent.TimeUnit.SECONDS ) ).isTrue();
+		scheduler.shutdown( false, 5 );
+		assertThat( finished.get() ).isTrue();
+	}
 }
