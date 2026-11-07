@@ -62,6 +62,8 @@ public class SchedulerServiceTest {
 		schedulerService.removeScheduler( Key.of( "bxschedule-partial-test" ), true, 0L );
 		schedulerService.removeScheduler( Key.of( "bxschedule-watcher-test" ), true, 0L );
 		schedulerService.removeScheduler( Key.of( "bxschedule-grace-test" ), true, 0L );
+		schedulerService.removeScheduler( Key.of( "bxschedule-custom-test" ), true, 0L );
+		schedulerService.removeScheduler( Key.of( SchedulerService.DEFAULT_SCHEDULER_NAME ), true, 0L );
 	}
 
 	@DisplayName( "Test it can get an instance of the service" )
@@ -416,5 +418,179 @@ public class SchedulerServiceTest {
 			schedulerService.onTasksFileChanged();
 			assertThat( schedulerService.getScheduler( key ) ).isSameInstanceAs( scheduler );
 		} );
+	}
+
+	@Test
+	@DisplayName( "tasks.json tasks with no scheduler run on the global scheduled-tasks executor" )
+	void testPersistedTaskWithoutSchedulerUsesGlobalExecutor() {
+		String json = "[ { \"task\": \"defaultExecTask\", \"url\": \"http://localhost/x\", \"interval\": \"3600\" } ]";
+		withTasksFile( json, file -> {
+			schedulerService.removeScheduler( Key.of( SchedulerService.DEFAULT_SCHEDULER_NAME ), true, 0L );
+			schedulerService.registerPersistedScheduleTasks();
+			BaseScheduler scheduler = ( BaseScheduler ) schedulerService.getScheduler( Key.of( SchedulerService.DEFAULT_SCHEDULER_NAME ) );
+			assertThat( scheduler.hasTask( "defaultExecTask" ) ).isTrue();
+			schedulerService.startupScheduler( scheduler );
+			assertThat( scheduler.getExecutor() ).isSameInstanceAs( runtime.getAsyncService().getExecutor( "scheduled-tasks" ) );
+			assertThat( scheduler.getExecutor().name() ).isEqualTo( "scheduled-tasks" );
+		} );
+	}
+
+	@Test
+	@DisplayName( "tasks.json tasks use the global executor whatever their scheduler name is (it is only a grouping)" )
+	void testPersistedTaskWithAnySchedulerNameUsesGlobalExecutor() {
+		String json = "[ { \"task\": \"customExecTask\", \"scheduler\": \"bxschedule-custom-test\", \"url\": \"http://localhost/x\", \"interval\": \"3600\" } ]";
+		withTasksFile( json, file -> {
+			schedulerService.registerPersistedScheduleTasks();
+			BaseScheduler scheduler = ( BaseScheduler ) schedulerService.getScheduler( Key.of( "bxschedule-custom-test" ) );
+			schedulerService.startupScheduler( scheduler );
+			assertThat( scheduler.getExecutor() ).isSameInstanceAs( runtime.getAsyncService().getExecutor( "scheduled-tasks" ) );
+		} );
+	}
+
+	@Test
+	@DisplayName( "A tasks.json task that names an executor runs on it" )
+	void testPersistedTaskWithExecutorNameUsesIt() {
+		String json = "[ { \"task\": \"namedExecTask\", \"scheduler\": \"bxschedule-custom-test\", \"executor\": \"cpu-tasks\", \"url\": \"http://localhost/x\", \"interval\": \"3600\" } ]";
+		withTasksFile( json, file -> {
+			schedulerService.registerPersistedScheduleTasks();
+			BaseScheduler	scheduler	= ( BaseScheduler ) schedulerService.getScheduler( Key.of( "bxschedule-custom-test" ) );
+			var				task		= scheduler.getTaskRecord( "namedExecTask" ).task;
+			schedulerService.startupScheduler( scheduler );
+			assertThat( task.getExecutorForTest() ).isSameInstanceAs( runtime.getAsyncService().getExecutor( "cpu-tasks" ) );
+			// The scheduler itself stays on the global executor
+			assertThat( scheduler.getExecutor() ).isSameInstanceAs( runtime.getAsyncService().getExecutor( "scheduled-tasks" ) );
+		} );
+	}
+
+	@Test
+	@DisplayName( "A tasks.json task naming an unknown or non-scheduled executor falls back to the scheduler's executor" )
+	void testPersistedTaskWithBadExecutorNameFallsBack() {
+		String json = "[ { \"task\": \"unknownExecTask\", \"scheduler\": \"bxschedule-custom-test\", \"executor\": \"nope\", \"url\": \"http://localhost/x\", \"interval\": \"3600\" },"
+		    + " { \"task\": \"nonScheduledExecTask\", \"scheduler\": \"bxschedule-custom-test\", \"executor\": \"io-tasks\", \"url\": \"http://localhost/x\", \"interval\": \"3600\" } ]";
+		withTasksFile( json, file -> {
+			schedulerService.registerPersistedScheduleTasks();
+			BaseScheduler scheduler = ( BaseScheduler ) schedulerService.getScheduler( Key.of( "bxschedule-custom-test" ) );
+			schedulerService.startupScheduler( scheduler );
+			var global = runtime.getAsyncService().getExecutor( "scheduled-tasks" );
+			assertThat( scheduler.getTaskRecord( "unknownExecTask" ).task.getExecutorForTest() ).isSameInstanceAs( global );
+			assertThat( scheduler.getTaskRecord( "nonScheduledExecTask" ).task.getExecutorForTest() ).isSameInstanceAs( global );
+		} );
+	}
+
+	@Test
+	@DisplayName( "persistTask writes the executor name to tasks.json" )
+	void testPersistTaskStoresExecutor() {
+		withTasksFile( "[]", file -> {
+			schedulerService.persistTask( Struct.of(
+			    Key.task, "persistExecTask",
+			    Key.scheduler, "bxschedule-custom-test",
+			    Key.executor, "cpu-tasks",
+			    Key.URL, "http://localhost/x",
+			    Key.interval, "3600"
+			) );
+			Array saved = schedulerService.loadTasksFromDisk();
+			assertThat( saved ).hasSize( 1 );
+			assertThat( ( ( ortus.boxlang.runtime.types.IStruct ) saved.get( 0 ) ).getAsString( Key.executor ) ).isEqualTo( "cpu-tasks" );
+		} );
+	}
+
+	@Test
+	@DisplayName( "Shutting down the default scheduler does not shut down the shared global executor" )
+	void testShutdownOfDefaultSchedulerKeepsGlobalExecutor() {
+		String json = "[ { \"task\": \"shutdownExecTask\", \"url\": \"http://localhost/x\", \"interval\": \"3600\" } ]";
+		withTasksFile( json, file -> {
+			schedulerService.removeScheduler( Key.of( SchedulerService.DEFAULT_SCHEDULER_NAME ), true, 0L );
+			schedulerService.registerPersistedScheduleTasks();
+			BaseScheduler scheduler = ( BaseScheduler ) schedulerService.getScheduler( Key.of( SchedulerService.DEFAULT_SCHEDULER_NAME ) );
+			schedulerService.startupScheduler( scheduler );
+			schedulerService.removeScheduler( Key.of( SchedulerService.DEFAULT_SCHEDULER_NAME ), true, 0L );
+			assertThat( runtime.getAsyncService().hasExecutor( "scheduled-tasks" ) ).isTrue();
+			assertThat( runtime.getAsyncService().getExecutor( "scheduled-tasks" ).executor().isShutdown() ).isFalse();
+		} );
+	}
+
+	@Test
+	@DisplayName( "A scheduler bound to an unknown global executor falls back to scheduled-tasks" )
+	void testUnknownGlobalExecutorFallsBack() {
+		BaseScheduler scheduler = new BaseScheduler( "bxschedule-custom-test" );
+		scheduler.useGlobalExecutor( "does-not-exist" );
+		schedulerService.registerScheduler( scheduler, true );
+		schedulerService.startupScheduler( scheduler );
+		assertThat( scheduler.getExecutor() ).isSameInstanceAs( runtime.getAsyncService().getExecutor( "scheduled-tasks" ) );
+	}
+
+	@Test
+	@DisplayName( "A plain scheduler without a global executor still builds a private pool" )
+	void testPlainSchedulerKeepsPrivatePool() {
+		BaseScheduler scheduler = new BaseScheduler( "bxschedule-custom-test" );
+		schedulerService.registerScheduler( scheduler, true );
+		schedulerService.startupScheduler( scheduler );
+		assertThat( scheduler.getExecutor().name() ).isEqualTo( "bxschedule-custom-test-scheduler" );
+	}
+
+	@Test
+	@DisplayName( "A scheduler bound to a non-scheduled global executor falls back to scheduled-tasks" )
+	void testNonScheduledGlobalExecutorFallsBack() {
+		BaseScheduler scheduler = new BaseScheduler( "bxschedule-custom-test" );
+		scheduler.useGlobalExecutor( "io-tasks" );
+		schedulerService.registerScheduler( scheduler, true );
+		schedulerService.startupScheduler( scheduler );
+		assertThat( scheduler.getExecutor() ).isSameInstanceAs( runtime.getAsyncService().getExecutor( "scheduled-tasks" ) );
+	}
+
+	@Test
+	@DisplayName( "A private fallback pool is shut down with the scheduler when no global executor is usable" )
+	void testPrivateFallbackPoolIsReleased() {
+		var				asyncService	= runtime.getAsyncService();
+		BaseScheduler	scheduler		= new BaseScheduler( "bxschedule-custom-test" );
+		// Neither the requested executor nor scheduled-tasks is usable
+		scheduler.useGlobalExecutor( "io-tasks" ).setFallbackExecutorNameForTest( "io-tasks" );
+		schedulerService.registerScheduler( scheduler, true );
+		schedulerService.startupScheduler( scheduler );
+		assertThat( scheduler.getExecutor().name() ).isEqualTo( "bxschedule-custom-test-scheduler" );
+		assertThat( asyncService.hasExecutor( "bxschedule-custom-test-scheduler" ) ).isTrue();
+		schedulerService.removeScheduler( Key.of( "bxschedule-custom-test" ), true, 0L );
+		assertThat( asyncService.hasExecutor( "bxschedule-custom-test-scheduler" ) ).isFalse();
+	}
+
+	@Test
+	@DisplayName( "Cancelled tasks are removed from the shared executor queue" )
+	void testCancelledTasksAreRemovedFromQueue() {
+		var				shared		= runtime.getAsyncService().getExecutor( "scheduled-tasks" );
+		var				queue		= ( ( java.util.concurrent.ThreadPoolExecutor ) shared.executor() ).getQueue();
+		int				before		= queue.size();
+		BaseScheduler	scheduler	= new BaseScheduler( "bxschedule-custom-test" );
+		scheduler.useGlobalExecutor( "scheduled-tasks" );
+		scheduler.task( "queuedTask" ).call( () -> {
+		} ).delay( 1, java.util.concurrent.TimeUnit.HOURS ).every( 1, java.util.concurrent.TimeUnit.HOURS );
+		schedulerService.registerScheduler( scheduler, true );
+		schedulerService.startupScheduler( scheduler );
+		assertThat( queue.size() ).isEqualTo( before + 1 );
+		schedulerService.removeScheduler( Key.of( "bxschedule-custom-test" ), true, 0L );
+		assertThat( queue.size() ).isEqualTo( before );
+	}
+
+	@Test
+	@DisplayName( "A graceful shutdown on a shared executor waits for running task executions" )
+	void testSharedShutdownWaitsForRunningTasks() throws Exception {
+		java.util.concurrent.CountDownLatch			started		= new java.util.concurrent.CountDownLatch( 1 );
+		java.util.concurrent.atomic.AtomicBoolean	finished	= new java.util.concurrent.atomic.AtomicBoolean( false );
+		BaseScheduler								scheduler	= new BaseScheduler( "bxschedule-custom-test" );
+		scheduler.useGlobalExecutor( "scheduled-tasks" );
+		scheduler.task( "slowTask" ).call( () -> {
+			started.countDown();
+			try {
+				Thread.sleep( 700 );
+			} catch ( InterruptedException e ) {
+				Thread.currentThread().interrupt();
+				return;
+			}
+			finished.set( true );
+		} ).every( 1, java.util.concurrent.TimeUnit.HOURS );
+		schedulerService.registerScheduler( scheduler, true );
+		schedulerService.startupScheduler( scheduler );
+		assertThat( started.await( 5, java.util.concurrent.TimeUnit.SECONDS ) ).isTrue();
+		scheduler.shutdown( false, 5 );
+		assertThat( finished.get() ).isTrue();
 	}
 }

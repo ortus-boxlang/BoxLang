@@ -30,8 +30,8 @@ import ortus.boxlang.runtime.types.Struct;
 public class SchedulerConfig implements IConfigSegment {
 
 	/**
-	 * The name of the executor to use for scheduled tasks.
-	 * This is used to determine which executor to use for scheduling tasks.
+	 * The name of the global executor that tasks from {@code tasks.json} with no custom scheduler run on, and whose
+	 * thread count sizes the private pool of every other scheduler.
 	 * Ex: "executor": "scheduled-tasks"
 	 * PLEASE REMEMBER TO REGISTER THE EXECUTOR IN THE RUNTIME CONFIGURATION
 	 */
@@ -85,8 +85,8 @@ public class SchedulerConfig implements IConfigSegment {
 	 */
 	@Override
 	public IConfigSegment process( IStruct config ) {
-		PropertyHelper.processString( config, Key.executor, this.executor );
-		PropertyHelper.processString( config, Key.cacheName, this.cacheName );
+		this.executor	= PropertyHelper.processString( config, Key.executor, this.executor );
+		this.cacheName	= PropertyHelper.processString( config, Key.cacheName, this.cacheName );
 		PropertyHelper.processStringOrArrayToArray( config, Key.schedulers, this.schedulers );
 		this.tasksFile = PropertyHelper.processString( config, Key.tasksFile, this.tasksFile );
 		if ( config.containsKey( Key.reloadOnChange ) ) {

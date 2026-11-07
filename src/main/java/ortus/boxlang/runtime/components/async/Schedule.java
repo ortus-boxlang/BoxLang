@@ -69,6 +69,8 @@ import ortus.boxlang.runtime.validation.Validator;
  *
  * @attribute.group Task group name for organizational purposes.
  *
+ * @attribute.executor Optional name of a configured scheduled executor to run this task on. Defaults to the scheduler.executor setting in boxlang.json ("scheduled-tasks").
+ *
  * @attribute.url The URL to request when the task fires. Mutually exclusive with {@code class}; exactly one of the two is required for create/update/modify.
  *
  * @attribute.class The dotted path/name of a BoxLang class to instantiate and invoke when the task fires, instead of making an HTTP request. Mutually exclusive with {@code url}; exactly one of the two is required for create/update/modify. The class
@@ -157,6 +159,7 @@ public class Schedule extends Component {
 		    new Attribute( Key.task, "string" ),
 		    new Attribute( Key.scheduler, "string", DEFAULT_SCHEDULER_NAME ),
 		    new Attribute( Key.group, "string", "" ),
+		    new Attribute( Key.executor, "string" ),
 		    new Attribute( Key.URL, "string" ),
 		    new Attribute( Key._CLASS, "string" ),
 		    new Attribute( Key.method, "string", "run" ),
@@ -564,7 +567,7 @@ public class Schedule extends Component {
 			}
 
 			// Register only — do NOT start. Startup happens after tasks are added (see _invoke post-switch).
-			BaseScheduler scheduler = new BaseScheduler( name, context );
+			BaseScheduler scheduler = svc.newTaskScheduler( name, context );
 			svc.registerScheduler( scheduler, false );
 			return scheduler;
 		}
@@ -689,6 +692,12 @@ public class Schedule extends Component {
 		String	url				= taskDef.getAsString( Key.URL );
 		String	className		= taskDef.getAsString( Key._CLASS );
 		String	method			= taskDef.getAsString( Key.method );
+
+		// Run on a specific executor if the task names one
+		String	executorName	= taskDef.getAsString( Key.executor );
+		if ( executorName != null && !executorName.isBlank() ) {
+			task.useExecutor( executorName );
+		}
 
 		// Apply scheduling
 		if ( cronTime != null && !cronTime.isBlank() ) {

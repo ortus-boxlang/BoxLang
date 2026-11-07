@@ -31,6 +31,9 @@ public class BoxScheduledExecutor extends ScheduledThreadPoolExecutor {
 	 */
 	public BoxScheduledExecutor( int corePoolSize ) {
 		super( corePoolSize );
+		// Drop cancelled tasks from the queue right away instead of holding them until their due time. Matters for
+		// shared pools that outlive the schedulers using them.
+		setRemoveOnCancelPolicy( true );
 	}
 
 }
