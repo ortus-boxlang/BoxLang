@@ -22,12 +22,12 @@ import java.util.Set;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( description = "Capture output from code blocks into a variable", requiresBody = true )
 public class SaveContent extends Component {
@@ -85,6 +85,38 @@ public class SaveContent extends Component {
 
 		// Set the result back into the page
 		ExpressionInterpreter.setVariable( context, variableName, content );
+		return DEFAULT_RETURN;
+	}
+
+	/** Compiled destination assignment for the Adobe savecontent assignment form. */
+	@FunctionalInterface
+	public interface AssignmentBody {
+
+		void assign( IBoxContext context, String content );
+	}
+
+	/**
+	 * Capture a body and assign its content only on normal completion.
+	 * The original context is retained and the output buffer is restored before assignment.
+	 * Return, break and continue results are propagated without assigning the destination.
+	 *
+	 * @param context    the surrounding execution context
+	 * @param body       the capture body
+	 * @param assignment the compiled destination assignment
+	 */
+	public static BodyResult captureAssignment( IBoxContext context, ComponentBody body, AssignmentBody assignment ) {
+		StringBuffer	buffer	= new StringBuffer();
+		BodyResult		result;
+		context.pushBuffer( buffer );
+		try {
+			result = body.process( context );
+		} finally {
+			context.popBuffer();
+		}
+		if ( result.isEarlyExit() ) {
+			return result;
+		}
+		assignment.assign( context, buffer.toString() );
 		return DEFAULT_RETURN;
 	}
 }

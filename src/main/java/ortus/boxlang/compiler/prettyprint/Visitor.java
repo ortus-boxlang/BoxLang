@@ -58,6 +58,7 @@ import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxSaveContentAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
@@ -2301,4 +2302,15 @@ public class Visitor extends VoidBoxVisitor {
 		}
 	}
 
+	@Override
+	public void visit( BoxSaveContentAssignment node ) {
+		printPreComments( node );
+		for ( var modifier : node.getModifiers() ) {
+			print( modifier.toString().toLowerCase( java.util.Locale.ROOT ) + " " );
+		}
+		node.getLeft().accept( this );
+		print( " " + node.getOp().getSymbol() + " savecontent " );
+		this.helperPrinter.printBlock( node.getComponent(), node.getComponent().getBody() );
+		printPostComments( node );
+	}
 }

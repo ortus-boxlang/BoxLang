@@ -78,6 +78,7 @@ import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxSaveContentAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
@@ -284,6 +285,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxScriptIsland.class, new BoxScriptIslandTransformer( this ) );
 		registry.put( BoxTemplateIsland.class, new BoxTemplateIslandTransformer( this ) );
 		registry.put( BoxComponent.class, new BoxComponentTransformer( this ) );
+		registry.put( BoxSaveContentAssignment.class, new BoxComponentTransformer( this ) );
 		registry.put( BoxInterface.class, new BoxInterfaceTransformer( this ) );
 
 	}

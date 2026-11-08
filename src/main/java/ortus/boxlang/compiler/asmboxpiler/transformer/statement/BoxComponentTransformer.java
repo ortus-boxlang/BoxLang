@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.objectweb.asm.Handle;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -18,18 +19,22 @@ import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
+import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxAssignmentTransformer;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxSaveContentAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
@@ -37,7 +42,9 @@ import ortus.boxlang.compiler.ast.expression.BoxStructType;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.system.SaveContent;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
@@ -49,7 +56,8 @@ public class BoxComponentTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxComponent					boxComponent	= ( BoxComponent ) node;
+		BoxSaveContentAssignment		capture			= node instanceof BoxSaveContentAssignment assignment ? assignment : null;
+		BoxComponent					boxComponent	= capture == null ? ( BoxComponent ) node : capture.getComponent();
 
 		Optional<MethodContextTracker>	trackerOption	= transpiler.getCurrentMethodContextTracker();
 
@@ -127,57 +135,70 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			componentName = "component";
 		}
 
-		// create key of component name
-		nodes.addAll( transpiler.createKey( componentName ) );
+		if ( capture != null ) {
+			this.transpiler.incrementComponentCounter();
+			nodes.addAll( generateBodyNodes( boxComponent.getBody() ) );
+			nodes.addAll( generateAssignmentCallback( capture ) );
+			this.transpiler.decrementComponentCounter();
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC, Type.getInternalName( SaveContent.class ), "captureAssignment",
+			    Type.getMethodDescriptor( Type.getType( Component.BodyResult.class ), Type.getType( IBoxContext.class ),
+			        Type.getType( Component.ComponentBody.class ), Type.getType( SaveContent.AssignmentBody.class ) ),
+			    false ) );
+		} else {
 
-		// INCLUSIVE timing: open the tag's call-site bracket BEFORE the attribute
-		// struct is built, so the tag's on-stack time INCLUDES attribute evaluation
-		// (the attributes are evaluated as part of invoking the tag). Opened here,
-		// closed after invokeComponent below.
-		int		callSpan	= transpiler.callSpanIdOf( boxComponent );
-		int[]	shell		= callSpan >= 0 ? transpiler.peekCallShell( callSpan ) : null;
-		// Bump every shell token's execution count as ONE atomic mark — the whole
-		// shell (head + interstitials + closing `>`) runs together when the tag runs.
-		// The tag's inclusive bracket (markEnter/markExit) then charges the shell
-		// tokens the tag's time (via the same shell passed to markEnter).
-		//
-		// The shell mark is emitted HERE (not left to the generic statement-start
-		// hook) because, for a SINGLE-LINE tag, the construct's reset-null node
-		// consumes the generic mark before the shell alias is resolved, so leaving it
-		// to the generic hook fired the shell count only on multi-line tags.
-		if ( shell != null && shell.length > 0 ) {
-			// The component transformer is the SOLE marker of the tag SHELL (the generic
-			// statement-start hook is skipped for BoxComponent). Claim each token so a
-			// repeat transform of the same construct cannot mark it twice.
-			java.util.List<Integer> mark = new java.util.ArrayList<>();
-			for ( int token : shell ) {
-				if ( transpiler.claimSpanMark( token ) ) {
-					mark.add( token );
+			// create key of component name
+			nodes.addAll( transpiler.createKey( componentName ) );
+
+			// INCLUSIVE timing: open the tag's call-site bracket BEFORE the attribute
+			// struct is built, so the tag's on-stack time INCLUDES attribute evaluation
+			// (the attributes are evaluated as part of invoking the tag). Opened here,
+			// closed after invokeComponent below.
+			int		callSpan	= transpiler.callSpanIdOf( boxComponent );
+			int[]	shell		= callSpan >= 0 ? transpiler.peekCallShell( callSpan ) : null;
+			// Bump every shell token's execution count as ONE atomic mark — the whole
+			// shell (head + interstitials + closing `>`) runs together when the tag runs.
+			// The tag's inclusive bracket (markEnter/markExit) then charges the shell
+			// tokens the tag's time (via the same shell passed to markEnter).
+			//
+			// The shell mark is emitted HERE (not left to the generic statement-start
+			// hook) because, for a SINGLE-LINE tag, the construct's reset-null node
+			// consumes the generic mark before the shell alias is resolved, so leaving it
+			// to the generic hook fired the shell count only on multi-line tags.
+			if ( shell != null && shell.length > 0 ) {
+				// The component transformer is the SOLE marker of the tag SHELL (the generic
+				// statement-start hook is skipped for BoxComponent). Claim each token so a
+				// repeat transform of the same construct cannot mark it twice.
+				java.util.List<Integer> mark = new java.util.ArrayList<>();
+				for ( int token : shell ) {
+					if ( transpiler.claimSpanMark( token ) ) {
+						mark.add( token );
+					}
+				}
+				if ( !mark.isEmpty() ) {
+					nodes.addAll( transpiler.emitMarkVarargs( mark.stream().mapToInt( Integer::intValue ).toArray() ) );
 				}
 			}
-			if ( !mark.isEmpty() ) {
-				nodes.addAll( transpiler.emitMarkVarargs( mark.stream().mapToInt( Integer::intValue ).toArray() ) );
+			nodes.addAll( transpiler.emitMarkEnter( callSpan, shell ) );
+
+			// convert attributes to struct
+			nodes.addAll( transpiler.transformAnnotations( attributes, true, false ) );
+
+			// Component.ComponentBody
+			transpiler.incrementComponentCounter();
+			nodes.addAll( generateBodyNodes( boxComponent.getBody() ) );
+			transpiler.decrementComponentCounter();
+
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+			    Type.getInternalName( IBoxContext.class ),
+			    "invokeComponent",
+			    Type.getMethodDescriptor( Type.getType( Component.BodyResult.class ), Type.getType( Key.class ), Type.getType( IStruct.class ),
+			        Type.getType( Component.ComponentBody.class ) ),
+			    true ) );
+
+			if ( callSpan >= 0 ) {
+				nodes.addAll( transpiler.emitMarkExit() );
 			}
-		}
-		nodes.addAll( transpiler.emitMarkEnter( callSpan, shell ) );
 
-		// convert attributes to struct
-		nodes.addAll( transpiler.transformAnnotations( attributes, true, false ) );
-
-		// Component.ComponentBody
-		transpiler.incrementComponentCounter();
-		nodes.addAll( generateBodyNodes( boxComponent.getBody() ) );
-		transpiler.decrementComponentCounter();
-
-		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
-		    Type.getInternalName( IBoxContext.class ),
-		    "invokeComponent",
-		    Type.getMethodDescriptor( Type.getType( Component.BodyResult.class ), Type.getType( Key.class ), Type.getType( IStruct.class ),
-		        Type.getType( Component.ComponentBody.class ) ),
-		    true ) );
-
-		if ( callSpan >= 0 ) {
-			nodes.addAll( transpiler.emitMarkExit() );
 		}
 
 		if ( transpiler.isInsideComponent() ) {
@@ -302,8 +323,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			    List<AbstractInsnNode> methodNodes = new ArrayList<>();
 
 			    methodNodes.addAll( body.stream()
-			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
-			        .toList() );
+			        .flatMap( statement -> this.transpiler.transform( statement, TransformerContext.NONE ).stream() ).toList() );
 
 			    methodNodes.add(
 			        new FieldInsnNode( Opcodes.GETSTATIC,
@@ -346,5 +366,46 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		) );
 
 		return nodes;
+	}
+
+	/** Generate a destination callback with the original context and captured text as arguments. */
+	private List<AbstractInsnNode> generateAssignmentCallback( BoxSaveContentAssignment assignment ) {
+		String					methodName	= "saveContentAssignment_" + this.transpiler.incrementAndGetLambdaCounter();
+		var						owningClass	= this.transpiler.getOwningClass();
+		Type					methodType	= Type.getMethodType( Type.VOID_TYPE, Type.getType( IBoxContext.class ), Type.getType( String.class ) );
+		MethodContextTracker	tracker		= new MethodContextTracker( true );
+		// Reserve the context and captured-content parameters before allocating generated locals.
+		tracker.storeNewVariable( Opcodes.ASTORE );
+		tracker.storeNewVariable( Opcodes.ASTORE );
+		this.transpiler.addMethodContextTracker( tracker );
+		try {
+			MethodVisitor visitor = owningClass.visitMethod( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+			    methodName, methodType.getDescriptor(), null, null );
+			visitor.visitCode();
+			visitor.visitVarInsn( Opcodes.ALOAD, 0 );
+			tracker.trackNewContext().forEach( instruction -> instruction.accept( visitor ) );
+			visitor.visitMethodInsn( Opcodes.INVOKESTATIC, Type.getInternalName( ClassLocator.class ), "getInstance",
+			    Type.getMethodDescriptor( Type.getType( ClassLocator.class ) ), false );
+			var locator = tracker.storeNewVariable( Opcodes.ASTORE );
+			tracker.setClassLocatorSlot( locator.index() );
+			locator.nodes().forEach( instruction -> instruction.accept( visitor ) );
+			new BoxAssignmentTransformer( ( AsmTranspiler ) this.transpiler )
+			    .transformWithRight( assignment, List.of( new VarInsnNode( Opcodes.ALOAD, 1 ) ) )
+			    .forEach( instruction -> instruction.accept( visitor ) );
+			visitor.visitInsn( Opcodes.POP );
+			visitor.visitInsn( Opcodes.RETURN );
+			tracker.getTryCatchStack().forEach( block -> block.accept( visitor ) );
+			visitor.visitMaxs( 0, 0 );
+			visitor.visitEnd();
+		} finally {
+			this.transpiler.popMethodContextTracker();
+		}
+		return List.of( new InvokeDynamicInsnNode( "assign", "()" + Type.getDescriptor( SaveContent.AssignmentBody.class ),
+		    new Handle( Opcodes.H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "metafactory",
+		        Type.getMethodDescriptor( Type.getType( CallSite.class ), Type.getType( MethodHandles.Lookup.class ), Type.getType( String.class ),
+		            Type.getType( MethodType.class ), Type.getType( MethodType.class ), Type.getType( MethodHandle.class ), Type.getType( MethodType.class ) ),
+		        false ),
+		    methodType,
+		    new Handle( Opcodes.H_INVOKESTATIC, owningClass.name, methodName, methodType.getDescriptor(), false ), methodType ) );
 	}
 }

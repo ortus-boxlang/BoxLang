@@ -28,6 +28,7 @@ import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxSaveContentAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
@@ -50,6 +51,10 @@ public class BoxExpressionStatementTransformer extends AbstractTransformer {
 		// as such we need to unnest the parenthesis and just provide the expression itself
 		while ( expr instanceof BoxParenthesis bpExpr ) {
 			expr = bpExpr.getExpression();
+		}
+
+		if ( expr instanceof BoxSaveContentAssignment ) {
+			return this.transpiler.transform( expr, context );
 		}
 
 		if ( expr instanceof BoxIntegerLiteral || expr instanceof BoxStringLiteral || expr instanceof BoxBooleanLiteral || expr instanceof BoxDecimalLiteral

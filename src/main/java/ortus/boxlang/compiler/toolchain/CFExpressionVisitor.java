@@ -73,6 +73,7 @@ import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxSaveContentAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
@@ -87,6 +88,8 @@ import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
+import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.parser.CFParser;
 import ortus.boxlang.parser.antlr.CFGrammar.AnnotationContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ArgumentContext;
@@ -129,7 +132,6 @@ import ortus.boxlang.parser.antlr.CFGrammar.ExprPowerContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprPrecedenceContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprPrefixContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprRelationalContext;
-import ortus.boxlang.parser.antlr.CFGrammar.ExprSaveContentContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprStatInvocableContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprTernaryContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprUnaryContext;
@@ -687,8 +689,27 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		var	pos		= tools.getPosition( ctx );
 		var	src		= tools.getSourceText( ctx );
 		var	left	= ctx.el2().accept( this );
-		var	right	= ctx.expression().accept( this );
 		var	op		= buildAssignOp( ctx.op );
+		if ( ctx.invalidSaveContentAssignmentValue() != null ) {
+			this.tools.reportError( "Attributes are not allowed on a savecontent assignment", pos );
+			return new BoxNull( pos, src );
+		}
+		if ( ctx.saveContentAssignmentValue() != null ) {
+			var parent = ctx.getParent();
+			while ( parent instanceof InvocableContext || parent instanceof ExprVarDeclContext || parent instanceof ExprPrecedenceContext ) {
+				parent = parent.getParent();
+			}
+			if ( ! ( parent instanceof ExprStatInvocableContext ) ) {
+				this.tools.reportError( "savecontent assignments must be complete statements", pos );
+				return new BoxNull( pos, src );
+			}
+			var	capture		= ctx.saveContentAssignmentValue();
+			var	block		= ( BoxStatementBlock ) capture.normalStatementBlock().accept( this.statementVisitor );
+			var	component	= new BoxComponent( "savecontent", new ArrayList<>(), block.getBody(), 0,
+			    this.tools.getPosition( capture ), this.tools.getSourceText( capture ) );
+			return new BoxSaveContentAssignment( left, op, List.of(), component, pos, src );
+		}
+		var right = ctx.expression().accept( this );
 		if ( op == BoxAssignmentOperator.Equal ) {
 			BoxObjectDestructuringPattern objectDestructuringPattern = tryBuildDestructuringPatternFromExpression( left );
 			if ( objectDestructuringPattern != null ) {
@@ -1075,23 +1096,6 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	@Override
 	public BoxExpression visitExprLiterals( ExprLiteralsContext ctx ) {
 		return ctx.literals().accept( this );
-	}
-
-	/**
-	 * Visit the savecontent expression context. Adobe's savecontent expression syntax is only supported
-	 * as a full assignment statement, which CFVisitor rewrites before reaching here, so any other
-	 * position such as a = b = savecontent { ... } is reported as an error.
-	 *
-	 * @param ctx the parse tree
-	 *
-	 * @return a placeholder null node, since the error stops compilation
-	 */
-	@Override
-	public BoxExpression visitExprSaveContent( ExprSaveContentContext ctx ) {
-		var	pos	= tools.getPosition( ctx );
-		var	src	= tools.getSourceText( ctx );
-		tools.reportError( "savecontent can only be used as the value of an assignment, e.g. result = savecontent { ... }", pos );
-		return new BoxNull( pos, src );
 	}
 
 	/**

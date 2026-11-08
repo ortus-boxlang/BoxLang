@@ -57,6 +57,7 @@ import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxSaveContentAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
@@ -1230,4 +1231,11 @@ public abstract class ReplacingBoxVisitor {
 		}
 	}
 
+	public BoxNode visit( BoxSaveContentAssignment node ) {
+		BoxNode result = visit( ( BoxAssignment ) node );
+		if ( result == node ) {
+			node.setComponent( ( BoxComponent ) node.getComponent().accept( this ) );
+		}
+		return result;
+	}
 }

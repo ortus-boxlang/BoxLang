@@ -38,6 +38,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxSaveContentAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
@@ -48,6 +49,7 @@ import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxAssignmentTransformer;
 
 public class BoxComponentTransformer extends AbstractTransformer {
 
@@ -57,11 +59,12 @@ public class BoxComponentTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxComponent		boxComponent	= ( BoxComponent ) node;
-		Expression			jComponentBody;
-		String				componentName	= boxComponent.getName();
-		Boolean				hasBody			= boxComponent.getBody() != null;
-		List<BoxAnnotation>	attributes		= new ArrayList<BoxAnnotation>();
+		BoxSaveContentAssignment	capture			= node instanceof BoxSaveContentAssignment assignment ? assignment : null;
+		BoxComponent				boxComponent	= capture == null ? ( BoxComponent ) node : capture.getComponent();
+		Expression					jComponentBody;
+		String						componentName	= boxComponent.getName();
+		Boolean						hasBody			= boxComponent.getBody() != null;
+		List<BoxAnnotation>			attributes		= new ArrayList<BoxAnnotation>();
 		attributes.addAll( boxComponent.getAttributes() );
 
 		// Check for custom tag shortcut like <cf_brad>
@@ -149,29 +152,43 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			jComponentBody = new NullLiteralExpr();
 		}
 
-		BlockStmt				jBlock						= new BlockStmt();
-		int						componentOptionalCounter	= transpiler.incrementAndGetComponentOptionalCounter();
-		String					optionalResultName			= "optionalResult" + componentOptionalCounter;
-		Map<String, String>		values						= new HashMap<>() {
+		BlockStmt			jBlock						= new BlockStmt();
+		int					componentOptionalCounter	= transpiler.incrementAndGetComponentOptionalCounter();
+		String				optionalResultName			= "optionalResult" + componentOptionalCounter;
+		Map<String, String>	values						= new HashMap<>() {
 
-																{
-																	put( "optionalResultName", optionalResultName );
+															{
+																put( "optionalResultName", optionalResultName );
 
-																}
-															};
-		VariableDeclarationExpr	jStatement					= new VariableDeclarationExpr(
+															}
+														};
+		Expression			invocation;
+		if ( capture != null ) {
+			String assignmentContext = "lambdaContext" + this.transpiler.incrementAndGetLambdaContextCounter();
+			this.transpiler.pushContextName( assignmentContext );
+			Expression	right					= new NameExpr( "capturedContent" );
+			Expression	assignmentExpression	= ( Expression ) new BoxAssignmentTransformer( ( JavaTranspiler ) this.transpiler )
+			    .transformWithRight( capture, right, context );
+			this.transpiler.popContextName();
+			BlockStmt assignmentBody = new BlockStmt();
+			assignmentBody.addStatement( assignmentExpression );
+			LambdaExpr assignmentLambda = new LambdaExpr();
+			assignmentLambda.setEnclosingParameters( true );
+			assignmentLambda.setParameters(
+			    new NodeList<>( new Parameter( new UnknownType(), assignmentContext ), new Parameter( new UnknownType(), "capturedContent" ) ) );
+			assignmentLambda.setBody( assignmentBody );
+			invocation = new MethodCallExpr( new NameExpr( "ortus.boxlang.runtime.components.system.SaveContent" ), "captureAssignment",
+			    new NodeList<>( new NameExpr( this.transpiler.peekContextName() ), jComponentBody, assignmentLambda ) );
+		} else {
+			invocation = new MethodCallExpr( new NameExpr( this.transpiler.peekContextName() ), "invokeComponent",
+			    new NodeList<>( createKey( componentName ), transformAnnotations( attributes, true, false ), jComponentBody ) );
+		}
+
+		VariableDeclarationExpr jStatement = new VariableDeclarationExpr(
 		    new VariableDeclarator(
 		        new ClassOrInterfaceType( null, "Component.BodyResult" ),
 		        optionalResultName,
-		        new MethodCallExpr(
-		            new NameExpr( transpiler.peekContextName() ),
-		            "invokeComponent",
-		            new NodeList<Expression>(
-		                createKey( componentName ),
-		                transformAnnotations( attributes, true, false ),
-		                jComponentBody
-		            )
-		        )
+		        invocation
 		    )
 		);
 		jBlock.addStatement( jStatement );

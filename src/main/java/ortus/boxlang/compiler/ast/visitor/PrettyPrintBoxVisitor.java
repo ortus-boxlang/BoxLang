@@ -56,6 +56,7 @@ import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxSaveContentAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
@@ -2225,4 +2226,19 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		    && key.getName().equals( target.getName() );
 	}
 
+	@Override
+	public void visit( BoxSaveContentAssignment node ) {
+		printPreComments( node );
+		for ( var modifier : node.getModifiers() ) {
+			print( modifier.toString().toLowerCase( java.util.Locale.ROOT ) + " " );
+		}
+		node.getLeft().accept( this );
+		print( " " + node.getOp().getSymbol() + " savecontent {" );
+		newLine();
+		increaseIndent();
+		node.getComponent().getBody().forEach( statement -> statement.accept( this ) );
+		decreaseIndent();
+		print( "}" );
+		printPostComments( node );
+	}
 }

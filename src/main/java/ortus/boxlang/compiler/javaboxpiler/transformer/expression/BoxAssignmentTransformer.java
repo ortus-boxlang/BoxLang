@@ -596,6 +596,10 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	}
 
 	private Node transformCompoundEquals( BoxAssignment assignment, TransformerContext context ) throws IllegalStateException {
+		return transformCompoundEquals( assignment, context, null );
+	}
+
+	private Node transformCompoundEquals( BoxAssignment assignment, TransformerContext context, Expression suppliedRight ) {
 		// Note any var keyword is completley ignored in this code path!
 
 		final String	right;
@@ -603,7 +607,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		Node			accessKey;
 
 		// Special handling for ConcatEqual with BoxStringConcat to avoid nested Concat.invoke calls
-		if ( assignment.getOp() == BoxAssignmentOperator.ConcatEqual && assignment.getRight() instanceof BoxStringConcat concat ) {
+		if ( suppliedRight != null ) {
+			right = suppliedRight.toString();
+		} else if ( assignment.getOp() == BoxAssignmentOperator.ConcatEqual && assignment.getRight() instanceof BoxStringConcat concat ) {
 			// Get optimized values and build Object[] array directly
 			List<BoxExpression> optimized = optimizeStringLiterals( concat.getValues() );
 			if ( optimized.size() == 1 ) {
@@ -739,4 +745,10 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		};
 	}
 
+	/** Compile an assignment using a supplied value instead of transforming its RHS. */
+	public Node transformWithRight( BoxAssignment assignment, Expression right, TransformerContext context ) {
+		return assignment.getOp() == BoxAssignmentOperator.Equal
+		    ? transformEquals( assignment.getLeft(), right, assignment.getOp(), assignment.getModifiers(), assignment.getSourceText(), context )
+		    : transformCompoundEquals( assignment, context, right );
+	}
 }

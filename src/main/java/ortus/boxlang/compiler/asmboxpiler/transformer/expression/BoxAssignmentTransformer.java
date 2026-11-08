@@ -752,11 +752,13 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	}
 
 	private List<AbstractInsnNode> transformCompoundEquals( BoxAssignment assigment ) throws IllegalStateException {
-		// Note any var keyword is completley ignored in this code path!
+		return transformCompoundEquals( assigment, this.transpiler.transform( assigment.getRight(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
+	}
 
-		Optional<MethodContextTracker>	tracker	= transpiler.getCurrentMethodContextTracker();
+	private List<AbstractInsnNode> transformCompoundEquals( BoxAssignment assigment, List<AbstractInsnNode> right ) {
+		// Note any var keyword is completley ignored in this code path!
+		Optional<MethodContextTracker>	tracker	= this.transpiler.getCurrentMethodContextTracker();
 		List<AbstractInsnNode>			nodes	= new ArrayList<>();
-		List<AbstractInsnNode>			right	= transpiler.transform( assigment.getRight(), TransformerContext.NONE, ReturnValueContext.VALUE );
 
 		/*
 		 * ${operation}.invoke(${contextName},
@@ -913,4 +915,10 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return nodes;
 	}
 
+	/** Compile an assignment using a supplied value instead of transforming its RHS. */
+	public List<AbstractInsnNode> transformWithRight( BoxAssignment assignment, List<AbstractInsnNode> right ) {
+		return assignment.getOp() == BoxAssignmentOperator.Equal
+		    ? transformEquals( assignment.getLeft(), right, assignment.getOp(), assignment.getModifiers() )
+		    : transformCompoundEquals( assignment, right );
+	}
 }

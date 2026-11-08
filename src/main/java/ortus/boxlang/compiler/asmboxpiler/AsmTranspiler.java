@@ -115,6 +115,7 @@ import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxSaveContentAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
@@ -438,6 +439,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxForIndex.class, new BoxForIndexTransformer( this ) );
 		registry.put( BoxClosure.class, new BoxClosureTransformer( this ) );
 		registry.put( BoxComponent.class, new BoxComponentTransformer( this ) );
+		registry.put( BoxSaveContentAssignment.class, new BoxComponentTransformer( this ) );
 		registry.put( BoxStaticInitializer.class, new BoxStaticInitializerTransformer( this ) );
 		registry.put( BoxStaticAccess.class, new BoxStaticAccessTransformer( this ) );
 		registry.put( BoxStaticMethodInvocation.class, new BoxStaticMethodInvocationTransformer( this ) );

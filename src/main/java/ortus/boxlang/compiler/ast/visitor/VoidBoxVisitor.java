@@ -52,6 +52,7 @@ import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxSaveContentAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
@@ -544,4 +545,7 @@ public abstract class VoidBoxVisitor {
 		visitChildren( node );
 	}
 
+	public void visit( BoxSaveContentAssignment node ) {
+		visit( ( BoxAssignment ) node );
+	}
 }

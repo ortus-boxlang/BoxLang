@@ -42,6 +42,7 @@ import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
+import ortus.boxlang.compiler.ast.expression.BoxSaveContentAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
@@ -4311,4 +4312,9 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 		}
 	}
 
+	@Override
+	public void visit( BoxSaveContentAssignment node ) {
+		node.getLeft().accept( this );
+		node.getComponent().accept( this );
+	}
 }

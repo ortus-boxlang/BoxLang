@@ -19,12 +19,15 @@
 package ortus.boxlang.runtime.components.system;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -33,6 +36,8 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ParseException;
 
 public class SaveContentTest {
 
@@ -166,6 +171,20 @@ public class SaveContentTest {
 		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
 	}
 
+	@DisplayName( "It concatenates captured content using compound assignment" )
+	@Test
+	public void testCanCaptureContentExpressionSyntaxConcatAssignment() {
+		instance.executeSource(
+		    """
+		    result = "before-";
+		    result &= savecontent {
+		        writeOutput( "after" );
+		    }
+		    """,
+		    this.context, BoxSourceType.CFSCRIPT );
+		assertThat( this.variables.getAsString( result ) ).isEqualTo( "before-after" );
+	}
+
 	@DisplayName( "It can capture content with the expression syntax into bracket notation" )
 	@Test
 	public void testCanCaptureContentExpressionSyntaxBracket() {
@@ -181,17 +200,12 @@ public class SaveContentTest {
 		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
 	}
 
-	@DisplayName( "It can capture trimmed content with the expression syntax" )
-	@Test
-	public void testCanCaptureTrimmedContentExpressionSyntax() {
-		instance.executeSource(
-		    """
-		    result = savecontent trim=true {
-		    	echo( "   Hello World   " );
-		    }
-		    """,
-		    context, BoxSourceType.CFSCRIPT );
-		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
+	@DisplayName( "It rejects attributes on the assignment form" )
+	@ParameterizedTest
+	@org.junit.jupiter.params.provider.ValueSource( strings = { "trim=true", "append=true", "variable=\"other\"" } )
+	public void testExpressionSyntaxRejectsAttributes( String attribute ) {
+		assertThrows( ParseException.class, () -> instance.executeSource(
+		    "result = savecontent " + attribute + " { writeOutput( 'test' ); }", this.context, BoxSourceType.CFSCRIPT ) );
 	}
 
 	@DisplayName( "It can capture content with the expression syntax into a var scoped variable" )
@@ -226,51 +240,43 @@ public class SaveContentTest {
 		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
 	}
 
-	@DisplayName( "It errors when final is used with the expression syntax" )
+	@DisplayName( "It supports final local capture assignments" )
 	@Test
-	public void testExpressionSyntaxRejectsFinal() {
-		org.junit.jupiter.api.Assertions.assertThrows( ortus.boxlang.runtime.types.exceptions.ParseException.class,
-		    () -> instance.executeSource(
-		        """
-		        function getContent() {
-		        	final var html = savecontent { echo( "Hello World" ); }
-		        	return html;
-		        }
-		        """,
-		        context, BoxSourceType.CFSCRIPT ) );
+	public void testExpressionSyntaxSupportsFinal() {
+		instance.executeSource(
+		    """
+		    function getContent() {
+		        final var html = savecontent { writeOutput( "Hello World" ); }
+		        return html;
+		    }
+		    result = getContent();
+		    """, this.context, BoxSourceType.CFSCRIPT );
+		assertThat( this.variables.getAsString( result ) ).isEqualTo( "Hello World" );
+		var error = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    function changeContent() {
+		        final var html = savecontent { writeOutput( "first" ); }
+		        html = "second";
+		    }
+		    changeContent();
+		    """, this.context, BoxSourceType.CFSCRIPT ) );
+		assertThat( error.getMessage() ).contains( "Cannot reassign final key" );
 	}
 
-	@DisplayName( "It errors when static is used with the expression syntax" )
+	@DisplayName( "It supports static capture assignments inside a class" )
 	@Test
-	public void testExpressionSyntaxRejectsStatic() {
-		org.junit.jupiter.api.Assertions.assertThrows( ortus.boxlang.runtime.types.exceptions.ParseException.class,
-		    () -> instance.executeSource(
-		        """
-		        static html = savecontent { echo( "Hello World" ); }
-		        """,
-		        context, BoxSourceType.CFSCRIPT ) );
+	public void testExpressionSyntaxSupportsStatic() {
+		instance.executeSource(
+		    "result = new src.test.java.ortus.boxlang.runtime.components.system.SaveContentStatic().run();",
+		    this.context, BoxSourceType.CFSCRIPT );
+		assertThat( this.variables.getAsString( result ) ).isEqualTo( "static content" );
 	}
 
-	@DisplayName( "It errors when the variable attribute is also passed to the expression syntax" )
+	@DisplayName( "It rejects savecontent as a direct function argument" )
 	@Test
-	public void testExpressionSyntaxRejectsVariableAttribute() {
-		org.junit.jupiter.api.Assertions.assertThrows( ortus.boxlang.runtime.types.exceptions.ParseException.class,
-		    () -> instance.executeSource(
-		        """
-		        result = savecontent variable="other" { echo( "Hello World" ); }
-		        """,
-		        context, BoxSourceType.CFSCRIPT ) );
-	}
-
-	@DisplayName( "It errors when the expression syntax is not a plain assignment statement" )
-	@Test
-	public void testExpressionSyntaxRejectsNestedAssignment() {
-		org.junit.jupiter.api.Assertions.assertThrows( ortus.boxlang.runtime.types.exceptions.ParseException.class,
-		    () -> instance.executeSource(
-		        """
-		        a = b = savecontent { echo( "Hello World" ); }
-		        """,
-		        context, BoxSourceType.CFSCRIPT ) );
+	public void testExpressionSyntaxRejectsDirectArgument() {
+		assertThrows( ParseException.class, () -> instance.executeSource(
+		    "writeDump( savecontent { writeOutput( 'test' ); } );", this.context, BoxSourceType.CFSCRIPT ) );
 	}
 
 	@DisplayName( "It does not write the captured content to the page with the expression syntax" )
@@ -350,4 +356,155 @@ public class SaveContentTest {
 		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
 	}
 
+	@DisplayName( "It applies arithmetic assignment operators to captured content" )
+	@ParameterizedTest
+	@CsvSource( { "+=,10", "-=,0", "*=,25", "/=,1", "%=,0" } )
+	public void testExpressionSyntaxArithmeticAssignment( String operator, int expected ) {
+		instance.executeSource( "result = 5; result " + operator + " savecontent { writeOutput( '5' ); }",
+		    this.context, BoxSourceType.CFSCRIPT );
+		assertThat( ( ( Number ) this.variables.get( result ) ).doubleValue() ).isEqualTo( ( double ) expected );
+	}
+
+	@Test
+	public void testExpressionSyntaxComputedTargets() {
+		instance.executeSource(
+		    """
+		    data = {};
+		    key = "html";
+		    data[ "#key#" ] = savecontent { writeOutput( "first" ); }
+		    data[ key & "Suffix" ] = savecontent { writeOutput( "second" ); }
+		    result = data.html & data.htmlSuffix;
+		    """, this.context, BoxSourceType.CFSCRIPT );
+		assertThat( this.variables.getAsString( result ) ).isEqualTo( "firstsecond" );
+		assertThat( this.variables.getAsStruct( Key.of( "data" ) ).containsKey( Key.of( "#key#" ) ) ).isFalse();
+	}
+
+	@Test
+	public void testExpressionSyntaxFunctionTargetAndDeepAssignment() {
+		instance.executeSource(
+		    """
+		    data = {};
+		    calls = 0;
+		    function getData() { calls++; return data; }
+		    getData().name = savecontent { writeOutput( "brad" ); }
+		    foo = { baz: () => data };
+		    foo.baz().bar.qux = savecontent { writeOutput( "test" ); }
+		    result = data.name & data.bar.qux;
+		    """, this.context, BoxSourceType.CFSCRIPT );
+		assertThat( this.variables.getAsString( result ) ).isEqualTo( "bradtest" );
+		assertThat( this.variables.getAsInteger( Key.of( "calls" ) ) ).isEqualTo( 1 );
+	}
+
+	@Test
+	public void testExpressionSyntaxPreservesPreviousLocalDuringCapture() {
+		instance.executeSource(
+		    """
+		    function getContent() {
+		        var html = "before";
+		        var html = savecontent { writeOutput( html & "after" ); }
+		        return html;
+		    }
+		    result = getContent();
+		    """, this.context, BoxSourceType.CFSCRIPT );
+		assertThat( this.variables.getAsString( result ) ).isEqualTo( "beforeafter" );
+		assertThat( this.variables.containsKey( Key.of( "html" ) ) ).isFalse();
+	}
+
+	@Test
+	public void testExpressionSyntaxNestedCapture() {
+		instance.executeSource(
+		    """
+		    result = savecontent {
+		        inner = savecontent { writeOutput( "inner" ); }
+		        writeOutput( inner & "outer" );
+		    }
+		    """, this.context, BoxSourceType.CFSCRIPT );
+		assertThat( this.variables.getAsString( result ) ).isEqualTo( "innerouter" );
+	}
+
+	@Test
+	public void testExpressionSyntaxReturnSkipsAssignment() {
+		instance.executeSource(
+		    """
+		    target = "before";
+		    function getContent() {
+		        target = savecontent {
+		            writeOutput( "discard" );
+		            return "exit";
+		        }
+		        return "unreachable";
+		    }
+		    result = getContent();
+		    """, this.context, BoxSourceType.CFSCRIPT );
+		assertThat( this.variables.getAsString( result ) ).isEqualTo( "exit" );
+		assertThat( this.variables.getAsString( Key.of( "target" ) ) ).isEqualTo( "before" );
+		assertThat( this.context.getBuffer().toString() ).isEmpty();
+	}
+
+	@Test
+	public void testExpressionSyntaxRestoresBufferAfterException() {
+		instance.executeSource(
+		    """
+		    result = "before";
+		    try {
+		        result = savecontent { writeOutput( "discard" ); throw "capture failure"; }
+		    } catch ( any e ) {}
+		    writeOutput( "after" );
+		    output = getBoxContext().getBuffer().toString();
+		    """, this.context, BoxSourceType.CFSCRIPT );
+		assertThat( this.variables.getAsString( result ) ).isEqualTo( "before" );
+		assertThat( this.variables.getAsString( Key.of( "output" ) ) ).isEqualTo( "after" );
+	}
+
+	@Test
+	public void testExpressionSyntaxBreakAndContinueInBodyLoops() {
+		instance.executeSource(
+		    """
+		    result = savecontent {
+		        for ( i = 1; i <= 5; i++ ) {
+		            if ( i == 2 ) continue;
+		            if ( i == 4 ) break;
+		            writeOutput( i );
+		        }
+		    }
+		    """, this.context, BoxSourceType.CFSCRIPT );
+		assertThat( this.variables.getAsString( result ) ).isEqualTo( "13" );
+	}
+
+	@Test
+	public void testExpressionSyntaxPropagatesComponentLoopExits() {
+		instance.executeSource(
+		    """
+		    target = "before";
+		    count = 0;
+		    loop times=3 {
+		        count++;
+		        target = savecontent { writeOutput( "discard" ); continue; }
+		        count += 100;
+		    }
+		    loop times=3 {
+		        count++;
+		        target = savecontent { writeOutput( "discard" ); break; }
+		        count += 100;
+		    }
+		    result = count;
+		    """, this.context, BoxSourceType.CFSCRIPT );
+		assertThat( this.variables.getAsInteger( result ) ).isEqualTo( 4 );
+		assertThat( this.variables.getAsString( Key.of( "target" ) ) ).isEqualTo( "before" );
+		assertThat( this.context.getBuffer().toString() ).isEmpty();
+	}
+
+	@Test
+	public void testExpressionSyntaxDoesNotCaptureDestinationOutput() {
+		instance.executeSource(
+		    """
+		    data = {};
+		    function getTarget() { writeOutput( "target" ); return data; }
+		    getTarget().html = savecontent { writeOutput( "body" ); }
+		    result = data.html;
+		    output = getBoxContext().getBuffer().toString();
+		    """, this.context, BoxSourceType.CFSCRIPT );
+		assertThat( this.variables.getAsString( result ) ).isEqualTo( "body" );
+		assertThat( this.variables.getAsString( Key.of( "output" ) ) ).isEqualTo( "target" );
+	}
 }

@@ -624,7 +624,6 @@ el2
     : ILLEGAL_IDENTIFIER                                                    # exprIllegalIdentifier // 50foo
     | LPAREN expression RPAREN                                              # exprPrecedence        // ( foo )
     | new                                                                   # exprNew               // new foo.bar.Baz()
-    | { isSaveContentExpression(_input) }? identifier (componentAttribute COMMA?)* normalStatementBlock # exprSaveContent // x = savecontent { ... } (Adobe)
     | el2 LPAREN argumentList? RPAREN                                       # exprFunctionCall      // foo(bar, baz)
     | el2 (QM? DOT DOT? | COLONCOLON) el2                                   # exprDotOrColonAccess  // xc.y?.z or foo::bar recursive and Adobe's stupid foo..bar bug they allow
     | el2 QM? DOT? DOT_FLOAT_LITERAL                                        # exprDotFloat          // foo.50
@@ -655,7 +654,7 @@ el2
         | SLASHEQUAL
         | MODEQUAL
         | CONCATEQUAL
-    ) expression # exprAssign // foo = bar
+    ) (saveContentAssignmentValue | invalidSaveContentAssignmentValue | expression) # exprAssign // foo = bar
     // ({ a } = foo)
     | objectDestructuringPattern EQUALSIGN expression # exprDestructuringAssign // ({ a } = foo)
     // [ a ] = foo
@@ -672,6 +671,19 @@ el2
     | arrayLiteral                                                     # exprArrayLiteral // [1,2,3]
     | { isAssignmentModifier(_input) }? assignmentModifier+ expression # exprVarDecl      // var foo = bar or final foo = bar
     | identifier                                                       # exprIdentifier   // foo
+    ;
+
+// Adobe permits this body as an assignment value, not as a standalone expression.
+saveContentAssignmentValue
+    : { _input.LT(1).getType() == IDENTIFIER && _input.LT(1).getText().equalsIgnoreCase("savecontent") }?
+      IDENTIFIER normalStatementBlock
+    ;
+
+// Recognize malformed attribute syntax only to report a parse error instead of
+// treating savecontent as a variable followed by unrelated statements.
+invalidSaveContentAssignmentValue
+    : { _input.LT(1).getType() == IDENTIFIER && _input.LT(1).getText().equalsIgnoreCase("savecontent") }?
+      IDENTIFIER (componentAttribute COMMA?)+ normalStatementBlock
     ;
 
 // Use this instead of redoing it as arrayValues, arguments etc.
