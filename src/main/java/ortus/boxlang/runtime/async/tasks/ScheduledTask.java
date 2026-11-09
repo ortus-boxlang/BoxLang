@@ -304,6 +304,11 @@ public class ScheduledTask implements Runnable {
 	private final Logger							logger;
 
 	/**
+	 * How many executions of this task are in flight right now
+	 */
+	private final AtomicInteger						runningCount						= new AtomicInteger( 0 );
+
+	/**
 	 * A cron fire or periodic tick running at least this many seconds after it was due is logged as a warning
 	 */
 	private static final long						CRON_LATE_WARNING_SECONDS			= 2;
@@ -501,6 +506,29 @@ public class ScheduledTask implements Runnable {
 	 *              disabled or constrained
 	 */
 	public void run( Boolean force ) {
+		this.runningCount.incrementAndGet();
+		try {
+			runInternal( force );
+		} finally {
+			this.runningCount.decrementAndGet();
+		}
+	}
+
+	/**
+	 * The number of executions of this task running right now
+	 *
+	 * @return The in-flight execution count
+	 */
+	public int getRunningCount() {
+		return this.runningCount.get();
+	}
+
+	/**
+	 * The actual task execution, see {@link #run(Boolean)}
+	 *
+	 * @param force Whether to force execution or not
+	 */
+	private void runInternal( Boolean force ) {
 
 		debugLog( String.format( "run( force: %b )", force ) );
 		String timerLabel = "task-" + System.currentTimeMillis();
@@ -1919,7 +1947,9 @@ public class ScheduledTask implements Runnable {
 				if ( this.scheduler != null ) {
 					message.append( " The pool size comes from the [" )
 					    .append( BoxRuntime.getInstance().getConfiguration().scheduler.executor )
-					    .append( "] executor's threads setting in boxlang.json." );
+					    .append( "] executor's threads setting in boxlang.json (scheduler [" )
+					    .append( this.scheduler.getSchedulerName() )
+					    .append( "], executor [" ).append( exec.name() ).append( "])." );
 				}
 			}
 		} catch ( Exception e ) {
@@ -3333,6 +3363,35 @@ public class ScheduledTask implements Runnable {
 	public ScheduledTask setOnTaskFailure( BiConsumer<ScheduledTask, Exception> onTaskFailure ) {
 		this.onTaskFailure = onTaskFailure;
 		return this;
+	}
+
+	/**
+	 * Run this task on a specific named executor instead of its scheduler's. The executor must exist and be a scheduled executor,
+	 * otherwise a warning is logged and the scheduler's executor is used.
+	 *
+	 * @param executorName The name of the executor
+	 *
+	 * @return This task
+	 */
+	public ScheduledTask useExecutor( String executorName ) {
+		var asyncService = BoxRuntime.getInstance().getAsyncService();
+		if ( !asyncService.hasExecutor( executorName ) ) {
+			this.logger.warn( "Task [{}] executor [{}] does not exist, using the scheduler's executor", this.name, executorName );
+		} else if ( ! ( asyncService.getExecutor( executorName ).executor() instanceof ortus.boxlang.runtime.async.executors.BoxScheduledExecutor ) ) {
+			this.logger.warn( "Task [{}] executor [{}] is not a scheduled executor, using the scheduler's executor", this.name, executorName );
+		} else {
+			this.executor = asyncService.getExecutor( executorName );
+		}
+		return this;
+	}
+
+	/**
+	 * The executor this task will run on, resolving to its scheduler's executor when it has none of its own. Visible for testing.
+	 *
+	 * @return The executor
+	 */
+	public BoxExecutor getExecutorForTest() {
+		return getExecutor();
 	}
 
 	/**

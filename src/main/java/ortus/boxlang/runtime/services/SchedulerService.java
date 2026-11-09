@@ -264,6 +264,20 @@ public class SchedulerService extends BaseService {
 	}
 
 	/**
+	 * Build a scheduler for tasks managed by {@code bx:schedule} and persisted in {@code tasks.json}. For these tasks the scheduler name is
+	 * only a grouping label, so every such scheduler runs on the global executor named by {@code scheduler.executor}
+	 * ({@code scheduled-tasks} by default). A task can still pick its own executor with an {@code executor} setting.
+	 *
+	 * @param name    The scheduler name
+	 * @param context The context
+	 *
+	 * @return The unregistered scheduler
+	 */
+	public BaseScheduler newTaskScheduler( String name, IBoxContext context ) {
+		return new BaseScheduler( name, context ).useGlobalExecutor( this.runtime.getConfiguration().scheduler.executor );
+	}
+
+	/**
 	 * Build a persisted task definition into its scheduler. The scheduler is registered, but not started, if it does not exist yet.
 	 *
 	 * @param taskDef        The persisted task definition
@@ -283,7 +297,7 @@ public class SchedulerService extends BaseService {
 		// Get or create the named scheduler (register only — startup happens later via startupRegisteredSchedulers)
 		Key		schedulerKey	= Key.of( schedulerName );
 		if ( !hasScheduler( schedulerKey ) ) {
-			registerScheduler( new BaseScheduler( schedulerName, runtimeContext ), false );
+			registerScheduler( newTaskScheduler( schedulerName, runtimeContext ), false );
 		}
 		BaseScheduler	scheduler	= ( BaseScheduler ) getScheduler( schedulerKey );
 
@@ -884,6 +898,7 @@ public class SchedulerService extends BaseService {
 			    "task", taskName,
 			    "scheduler", scheduler,
 			    "group", attributes.getAsString( Key.group ),
+			    "executor", attributes.getAsString( Key.executor ),
 			    "url", attributes.getAsString( Key.URL ),
 			    "class", attributes.getAsString( Key._CLASS ),
 			    "method", attributes.getAsString( Key.method ),
