@@ -32,6 +32,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -1488,5 +1489,24 @@ class CodeProfilerCFTemplateTest {
 		String key = IBoxpiler.MD5( BoxSourceType.CFTEMPLATE.toString() + source );
 
 		assertThat( service.spanAt( key, 6, 0 ).stats().count() ).isEqualTo( 1 ); // </CFTRY>
+	}
+
+	@DisplayName( "It does not NPE on a synthetic attributeCollection struct with no source position (tag)" )
+	@Test
+	void testAttributeCollectionSyntheticStructWithoutPositions() {
+		// CF tag transpilation rewrites an `attributeCollection` attribute into a
+		// transpileCollectionKeySwap( ..., { ... } ) call whose synthetic struct
+		// literal — and every key/value string literal inside it — carries NO source
+		// position (see CFTranspilerVisitor). Span collection must tolerate that
+		// instead of dereferencing the null start (which used to NPE).
+		String		source		= """
+		                          <cfinvoke attributeCollection="#{ method = 'foo' }#">
+		                          """;
+
+		ASMBoxpiler	boxpiler	= ( ASMBoxpiler ) RunnableLoader.getInstance().getBoxpiler();
+		ClassInfo	classInfo	= ClassInfo.forScript( source, BoxSourceType.CFTEMPLATE, boxpiler );
+		boxpiler.getClassPool( classInfo.classPoolName() ).put( classInfo.fqn().toString(), classInfo );
+
+		assertThat( boxpiler.compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() ) ).isNotEmpty();
 	}
 }

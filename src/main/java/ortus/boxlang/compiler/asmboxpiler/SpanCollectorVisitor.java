@@ -833,8 +833,9 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			// The closing `)` belongs to the ENCLOSING PARENTHESIS's own source text
 			// (the inner ternary's text ends before the `)`).
 			BoxParenthesis	parenNode	= enclosingParenthesis( node );
-			Point			parenClose	= parenNode == null ? null : findParenAfter( parenNode, falseEnd );
-			if ( parenClose != null && parenClose.getLine() > falseEnd.getLine() ) {
+			// A position is ALWAYS nullable — never scan or compare against a null end.
+			Point			parenClose	= ( parenNode == null || falseEnd == null ) ? null : findParenAfter( parenNode, falseEnd );
+			if ( falseEnd != null && parenClose != null && parenClose.getLine() > falseEnd.getLine() ) {
 				// Close the false branch at its OWN end so the tail span is purely
 				// `[falseEnd, parenEnd]` and does NOT swallow the false branch (which
 				// would wrongly count the untaken branch when the tail's mark fires).
@@ -932,9 +933,13 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 				transpiler.registerSpanGroup( new int[] { valueId, keyId } );
 			}
 			// Remember the value span (for the closing-delimiter tail grouping).
-			Point	valueStart	= leftmostStart( value );
-			long	packed		= ( ( long ) valueStart.getLine() << 32 ) | ( valueStart.getColumn() & 0xFFFFFFFFL );
-			lastValueId = transpiler.getSpanId( packed );
+			// A position is ALWAYS nullable on an AST node, so only resolve the
+			// back-reference when the value actually has a start point.
+			Point valueStart = leftmostStart( value );
+			if ( valueStart != null ) {
+				long packed = ( ( long ) valueStart.getLine() << 32 ) | ( valueStart.getColumn() & 0xFFFFFFFFL );
+				lastValueId = transpiler.getSpanId( packed );
+			}
 		}
 		// The struct's CLOSING `}` (and any `)` of an enclosing call that trails
 		// after the last value) runs whenever the struct runs, but no node starts
@@ -2456,6 +2461,10 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 *             @param close the closing {@code }} position (or null)
 	 */
 	private void registerOpenCloseBraceGroup( Point open, Point close ) {
+		// A position is ALWAYS nullable — nothing to register without an open brace.
+		if ( open == null ) {
+			return;
+		}
 		int openId = addSpan( open, new Point( open.getLine(), open.getColumn() + 1 ) );
 		if ( openId < 0 ) {
 			return;
@@ -4241,9 +4250,13 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 	 *
 	 * @param p the point
 	 *
-	 * @return the packed point
+	 * @return the packed point, or -1 when the point is null (a position is ALWAYS
+	 *         nullable)
 	 */
 	private static long pack( Point p ) {
+		if ( p == null ) {
+			return -1L;
+		}
 		return ( ( long ) p.getLine() << 32 ) | ( p.getColumn() & 0xFFFFFFFFL );
 	}
 
