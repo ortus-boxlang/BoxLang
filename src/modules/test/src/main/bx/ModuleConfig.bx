@@ -78,10 +78,15 @@ class{
 
 	/**
 	 * The main method of the module.  This is the entry point of the module
-	 * when it's being executed from the CLI
+	 * when it's being executed from the CLI.
+	 *
+	 * The value returned becomes the exit code the CLI process exits with. Returning
+	 * nothing (null) means a successful exit (0).
 	 */
 	function main( args = {} ){
 		println( "Executing from the test module" );
+		// Echo the first argument back as the exit code so tests can exercise the convention
+		return args.len() ? args[ 1 ] : 0;
 	}
 
 	/**

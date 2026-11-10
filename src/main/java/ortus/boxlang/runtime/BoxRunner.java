@@ -220,7 +220,8 @@ public class BoxRunner {
 			// Execute a Module — modules trump ALL other execution modes
 			if ( options.targetModule() != null ) {
 				System.setProperty( "boxlang.cliModule", options.targetModule() );
-				boxRuntime.executeModule( options.targetModule(), options.cliArgs().toArray( new String[ 0 ] ) );
+				// The module's main() return value becomes the process exit code
+				exitCode = boxRuntime.executeModule( options.targetModule(), options.cliArgs().toArray( new String[ 0 ] ) );
 			}
 			// Show version
 			else if ( Boolean.TRUE.equals( options.showVersion() ) ) {

@@ -113,14 +113,15 @@ public class BoxModuleConfig implements IModuleConfig {
 
 	/**
 	 * Invokes the BX {@code main()} method, converting {@code String[]} args to a
-	 * BoxLang {@link Array}. Throws if the method is not defined.
+	 * BoxLang {@link Array} and returning whatever the method returns so it can be
+	 * used as the CLI exit code. Throws if the method is not defined.
 	 */
 	@Override
-	public void main( IBoxContext context, String[] args ) {
+	public Object runMain( IBoxContext context, String[] args ) {
 		if ( !this.bxClass.getThisScope().containsKey( Key.main ) ) {
 			throw new BoxRuntimeException( "Module is not executable. It must have a 'main' method in its ModuleConfig.bx descriptor." );
 		}
-		RequestBoxContext.runInContext(
+		return RequestBoxContext.runInContext(
 		    context,
 		    ctx -> this.bxClass.dereferenceAndInvoke( ctx, Key.main, new Object[] { Array.fromArray( args ) }, false )
 		);

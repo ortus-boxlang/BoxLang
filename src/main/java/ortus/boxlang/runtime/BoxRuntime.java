@@ -1421,11 +1421,14 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param module The module to execute
 	 * @param args   The arguments to pass to the module
 	 *
+	 * @return The status code the module's {@code main()} method wants the CLI to exit
+	 *         with; {@code 0} when it returns nothing coercible
+	 *
 	 * @throws BoxRuntimeException if the module does not exist
 	 * @throws BoxRuntimeException If the module is not executable, meaning it
 	 *                             doesn't have a main method
 	 */
-	public void executeModule( String module, String[] args ) {
+	public int executeModule( String module, String[] args ) {
 		// Verify module exists or throw an exception
 		Key moduleName = Key.of( module );
 		if ( !getModuleService().hasModule( moduleName ) ) {
@@ -1445,7 +1448,7 @@ public class BoxRuntime implements java.io.Closeable {
 		ScriptingRequestBoxContext scriptingContext = new ScriptingRequestBoxContext( getRuntimeContext() );
 		try {
 			RequestBoxContext.setCurrent( scriptingContext );
-			getModuleService()
+			return getModuleService()
 			    .getModuleRecord( moduleName )
 			    .execute( scriptingContext, args );
 		} finally {
