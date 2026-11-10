@@ -548,6 +548,254 @@ public class PendingQuery {
 	}
 
 	/**
+	 * Determines whether this query is a single INSERT, UPDATE, or DELETE
+	 * statement with an explicit top-level RETURNING clause.
+	 *
+	 * @return true when this query contains a supported DML RETURNING clause
+	 */
+	boolean hasReturningClause() {
+		String	sql						= this.originalSql;
+		int		depth					= 0;
+		int		index					= 0;
+		boolean	sawStatementContent		= false;
+		boolean	statementEnded			= false;
+		boolean	multipleStatements		= false;
+		boolean	withStatement			= false;
+		boolean	awaitingReturningTarget	= false;
+		boolean	hasReturningTarget		= false;
+		String	command					= null;
+		String	previousUnit			= null;
+
+		while ( index < sql.length() ) {
+			char character = sql.charAt( index );
+
+			if ( Character.isWhitespace( character ) ) {
+				index++;
+				continue;
+			}
+
+			if ( character == '-' && index + 1 < sql.length() && sql.charAt( index + 1 ) == '-' ) {
+				index = skipLineComment( sql, index + 2 );
+				continue;
+			}
+
+			if ( character == '/' && index + 1 < sql.length() && sql.charAt( index + 1 ) == '*' ) {
+				index = skipBlockComment( sql, index + 2 );
+				continue;
+			}
+
+			if ( character == '\'' || character == '"' || character == '`' || character == '[' ) {
+				if ( depth == 0 ) {
+					multipleStatements	|= statementEnded;
+					sawStatementContent	= true;
+					if ( awaitingReturningTarget ) {
+						hasReturningTarget		= true;
+						awaitingReturningTarget	= false;
+					}
+					previousUnit = "VALUE";
+				}
+				index = skipQuotedValue( sql, index, character == '[' ? ']' : character );
+				continue;
+			}
+
+			String dollarQuoteDelimiter = getDollarQuoteDelimiter( sql, index );
+			if ( dollarQuoteDelimiter != null ) {
+				if ( depth == 0 ) {
+					multipleStatements	|= statementEnded;
+					sawStatementContent	= true;
+					if ( awaitingReturningTarget ) {
+						hasReturningTarget		= true;
+						awaitingReturningTarget	= false;
+					}
+					previousUnit = "VALUE";
+				}
+				index = skipDollarQuotedValue( sql, index, dollarQuoteDelimiter );
+				continue;
+			}
+
+			if ( character == '(' ) {
+				if ( depth == 0 ) {
+					multipleStatements	|= statementEnded;
+					sawStatementContent	= true;
+					if ( awaitingReturningTarget ) {
+						hasReturningTarget		= true;
+						awaitingReturningTarget	= false;
+					}
+					previousUnit = "(";
+				}
+				depth++;
+				index++;
+				continue;
+			}
+
+			if ( character == ')' ) {
+				if ( depth > 0 ) {
+					depth--;
+					if ( depth == 0 ) {
+						previousUnit = ")";
+					}
+				} else {
+					multipleStatements	|= statementEnded;
+					sawStatementContent	= true;
+					previousUnit		= ")";
+				}
+				index++;
+				continue;
+			}
+
+			if ( depth > 0 ) {
+				index++;
+				continue;
+			}
+
+			if ( character == ';' ) {
+				if ( sawStatementContent ) {
+					statementEnded = true;
+				}
+				awaitingReturningTarget = false;
+				index++;
+				continue;
+			}
+
+			multipleStatements	|= statementEnded;
+			sawStatementContent	= true;
+
+			if ( isIdentifierCharacter( character ) && !Character.isDigit( character ) && character != '$' ) {
+				int wordEnd = index + 1;
+				while ( wordEnd < sql.length() && isIdentifierCharacter( sql.charAt( wordEnd ) ) ) {
+					wordEnd++;
+				}
+				String word = sql.substring( index, wordEnd );
+
+				if ( command == null ) {
+					if ( previousUnit == null && word.equalsIgnoreCase( "WITH" ) ) {
+						withStatement = true;
+					} else if ( previousUnit == null || withStatement && isStatementCommand( word ) ) {
+						command = word;
+					}
+				}
+
+				if ( awaitingReturningTarget ) {
+					if ( isInvalidReturningTargetWord( word ) ) {
+						awaitingReturningTarget = false;
+					} else {
+						hasReturningTarget		= true;
+						awaitingReturningTarget	= false;
+					}
+				}
+
+				if ( isDmlCommand( command ) && word.equalsIgnoreCase( "RETURNING" ) && !hasReturningTarget
+				    && canPrecedeReturningClause( previousUnit ) ) {
+					awaitingReturningTarget = true;
+				}
+
+				previousUnit	= word;
+				index			= wordEnd;
+				continue;
+			}
+
+			if ( awaitingReturningTarget ) {
+				if ( character == '=' || character == '.' || character == ',' ) {
+					awaitingReturningTarget = false;
+				} else {
+					hasReturningTarget		= true;
+					awaitingReturningTarget	= false;
+				}
+			}
+			previousUnit = Character.toString( character );
+			index++;
+		}
+
+		return isDmlCommand( command ) && hasReturningTarget && !multipleStatements;
+	}
+
+	private static boolean isStatementCommand( String word ) {
+		return isDmlCommand( word ) || word.equalsIgnoreCase( "SELECT" );
+	}
+
+	private static boolean isDmlCommand( String word ) {
+		return word != null && ( word.equalsIgnoreCase( "INSERT" ) || word.equalsIgnoreCase( "UPDATE" ) || word.equalsIgnoreCase( "DELETE" ) );
+	}
+
+	private static boolean canPrecedeReturningClause( String previousUnit ) {
+		return previousUnit != null && switch ( previousUnit.toUpperCase() ) {
+			case "INTO", "UPDATE", "FROM", "SET", "SELECT", "AS", "JOIN", "ON", "WHERE", "CASE", "WHEN", "THEN", "ELSE", "AND", "OR", "NOT",
+			    "BETWEEN", "BY", "DISTINCT", "=", ".", ",", "+", "-", "/", "*", "%" -> false;
+			default -> true;
+		};
+	}
+
+	private static boolean isInvalidReturningTargetWord( String word ) {
+		return switch ( word.toUpperCase() ) {
+			case "AS", "FROM", "INTO", "JOIN", "ON", "SELECT", "SET", "USING", "VALUES", "WHERE", "GROUP", "HAVING", "ORDER", "LIMIT", "UNION",
+			    "INTERSECT", "EXCEPT", "IS" -> true;
+			default -> false;
+		};
+	}
+
+	private static boolean isIdentifierCharacter( char character ) {
+		return Character.isLetterOrDigit( character ) || character == '_' || character == '$';
+	}
+
+	private static int skipLineComment( String sql, int index ) {
+		while ( index < sql.length() && sql.charAt( index ) != '\n' && sql.charAt( index ) != '\r' ) {
+			index++;
+		}
+		return index;
+	}
+
+	private static int skipBlockComment( String sql, int index ) {
+		int commentDepth = 1;
+		while ( index < sql.length() && commentDepth > 0 ) {
+			if ( index + 1 < sql.length() && sql.charAt( index ) == '/' && sql.charAt( index + 1 ) == '*' ) {
+				commentDepth++;
+				index += 2;
+			} else if ( index + 1 < sql.length() && sql.charAt( index ) == '*' && sql.charAt( index + 1 ) == '/' ) {
+				commentDepth--;
+				index += 2;
+			} else {
+				index++;
+			}
+		}
+		return index;
+	}
+
+	private static int skipQuotedValue( String sql, int index, char closingQuote ) {
+		index++;
+		while ( index < sql.length() ) {
+			if ( sql.charAt( index ) == closingQuote ) {
+				if ( index + 1 < sql.length() && sql.charAt( index + 1 ) == closingQuote ) {
+					index += 2;
+					continue;
+				}
+				return index + 1;
+			}
+			index++;
+		}
+		return index;
+	}
+
+	private static String getDollarQuoteDelimiter( String sql, int index ) {
+		if ( sql.charAt( index ) != '$' ) {
+			return null;
+		}
+		int delimiterEnd = index + 1;
+		while ( delimiterEnd < sql.length() && sql.charAt( delimiterEnd ) != '$' ) {
+			char character = sql.charAt( delimiterEnd );
+			if ( !Character.isLetterOrDigit( character ) && character != '_' ) {
+				return null;
+			}
+			delimiterEnd++;
+		}
+		return delimiterEnd < sql.length() ? sql.substring( index, delimiterEnd + 1 ) : null;
+	}
+
+	private static int skipDollarQuotedValue( String sql, int index, String delimiter ) {
+		int closingDelimiter = sql.indexOf( delimiter, index + delimiter.length() );
+		return closingDelimiter < 0 ? sql.length() : closingDelimiter + delimiter.length();
+	}
+
+	/**
 	 * Return final SQL with paramter values
 	 *
 	 * @return

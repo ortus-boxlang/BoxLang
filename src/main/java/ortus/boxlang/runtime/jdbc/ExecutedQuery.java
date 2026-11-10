@@ -190,6 +190,7 @@ public final class ExecutedQuery implements Serializable {
 		int					affectedCount					= -1;
 		Array				allGeneratedKeys				= new Array();
 		ObjectRef<Boolean>	generatedKeyIsActuallyRowID		= new ObjectRef<>( false );
+		boolean				hasReturningClause				= pendingQuery.hasReturningClause();
 		if ( debug )
 			System.out.println( "****************************** process query result. hasResults: " + hasResults );
 
@@ -255,8 +256,14 @@ public final class ExecutedQuery implements Serializable {
 								if ( debug )
 									System.out.println( "retrieving generated keys" );
 								if ( keys != null ) {
-									generatedKey = processGeneratedKeys( keys, allGeneratedKeys, generatedKey,
-									    affectedCount, generatedKeyIsActuallyRowID );
+									if ( hasReturningClause && results == null && !isRowIDResultSet( keys ) ) {
+										results			= Query.fromResultSet( statement, keys );
+										recordCount		= results.size();
+										generatedKey	= processGeneratedKeys( results, allGeneratedKeys, generatedKey, affectedCount );
+									} else {
+										generatedKey = processGeneratedKeys( keys, allGeneratedKeys, generatedKey,
+										    affectedCount, generatedKeyIsActuallyRowID );
+									}
 									try {
 										keys.close();
 									} catch ( SQLException | NullPointerException e ) {
@@ -339,7 +346,9 @@ public final class ExecutedQuery implements Serializable {
 		// I'm not sure what the precedent is here, but if there were multiple updates
 		// or inserts and no selects,
 		// then make our record count the total number of updated rows.
-		if ( results == null ) {
+		if ( hasReturningClause ) {
+			recordCount = results == null ? 0 : results.size();
+		} else if ( results == null ) {
 			recordCount = totalUpdateCount;
 		}
 
@@ -381,6 +390,10 @@ public final class ExecutedQuery implements Serializable {
 		// If we only had an update or insert, we need an empty query object to return
 		if ( results == null ) {
 			results = new Query();
+		}
+
+		if ( hasReturningClause ) {
+			queryMeta.put( Key.returningRows, results.toArrayOfStructs() );
 		}
 
 		// important that we set the metadata on the Query object for later
@@ -431,13 +444,13 @@ public final class ExecutedQuery implements Serializable {
 			return generatedKey;
 		}
 
-		Array theseKeys = new Array();
+		Array	theseKeys	= new Array();
 		// MariaDB returns ALL the generated keys at once for the current statement and
 		// future statements, so we should never take more keys than the updated count
 		// showed.
+		boolean	first		= true;
 		try {
 			while ( rs.next() && ( affectedCount == -1 || affectedCount > theseKeys.size() ) ) {
-				boolean first = true;
 				if ( debug ) {
 					System.out.println( "acquired generated key: " + rs.getObject( 1 ) );
 				}
@@ -463,6 +476,33 @@ public final class ExecutedQuery implements Serializable {
 			generatedKey = theseKeys.get( 0 );
 		}
 		return generatedKey;
+	}
+
+	/**
+	 * Derives the existing generated-key metadata from the first column of a
+	 * materialized RETURNING query.
+	 */
+	private static Object processGeneratedKeys( Query results, Array allGeneratedKeys, Object generatedKey, int affectedCount ) {
+		Array	theseKeys	= new Array();
+		int		keyCount	= affectedCount == -1 ? results.size() : Math.min( affectedCount, results.size() );
+		for ( int index = 0; index < keyCount; index++ ) {
+			theseKeys.add( results.getRow( index )[ 0 ] );
+		}
+		allGeneratedKeys.add( theseKeys );
+		if ( generatedKey == null && !theseKeys.isEmpty() ) {
+			generatedKey = theseKeys.get( 0 );
+		}
+		return generatedKey;
+	}
+
+	/**
+	 * Oracle exposes generated ROWIDs through the generated-keys result set. They
+	 * remain key metadata and must not become explicit RETURNING rows.
+	 */
+	private static boolean isRowIDResultSet( ResultSet resultSet ) throws SQLException {
+		return resultSet != null
+		    && resultSet.getMetaData().getColumnCount() == 1
+		    && resultSet.getMetaData().getColumnLabel( 1 ).equalsIgnoreCase( "ROWID" );
 	}
 
 	/**
@@ -520,8 +560,13 @@ public final class ExecutedQuery implements Serializable {
 	 * <li>SQL: The SQL statement that was executed. (string)
 	 * <li>SqlParameters: An ordered Array of queryparam values. (array)
 	 * <li>ExecutionTime: Execution time for the SQL request. (numeric)
+	 * <li>RecordCount: The number of rows in the query result. (numeric)
+	 * <li>UpdateCount: The number of rows affected by DML, when available. (numeric)
 	 * <li>GENERATEDKEY: If the query was an INSERT with an identity or
 	 * auto-increment value the value of that ID is placed in this variable.
+	 * <li>GENERATEDKEYS: Generated keys grouped by executed statement. (array)
+	 * <li>ReturningRows: For a single INSERT, UPDATE, or DELETE statement with an explicit top-level RETURNING clause, every returned row represented as a
+	 * struct. Present as an empty array when no rows are returned. (array)
 	 * <li>Cached: If the query was cached. (boolean)
 	 * <li>CacheProvider: The cache provider used to cache the query. (string)
 	 * <li>CacheKey: The cache key used to store the query in the cache. (string)

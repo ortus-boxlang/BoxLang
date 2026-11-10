@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- [GH-533](https://github.com/ortus-boxlang/BoxLang/issues/533) Single-statement PostgreSQL `INSERT`, `UPDATE`, and `DELETE ... RETURNING` now return every requested row and column through the normal query result and expose the same ordered row structs as `result.returningRows`. Existing generated-key metadata remains available, including for plain inserts
 - Cron scheduled tasks no longer silently skip a day when a tick runs late, e.g. when it is queued behind other tasks on a saturated scheduler executor. A tick now fires if a cron time was due since the previous check, runs late rather than never, and logs a warning (with a thread-count hint when the executor is saturated). Scheduled task constraints (weekdays, day of the week or month, first/last business day, time windows, start/end dates) are now judged against the time a tick was due, so a late tick is not skipped by crossing midnight. Scheduler executors are now sized from the `threads` of the executor named by `scheduler.executor` in `boxlang.json` (they were always 10), and the documented `threads` property of `executors` entries is now honored. Also fixes `exclude` replacing the cron gate on `bx:schedule` tasks that set both `cronTime` and `exclude`
 ## [1.19.0] - 2026-11-03
 
