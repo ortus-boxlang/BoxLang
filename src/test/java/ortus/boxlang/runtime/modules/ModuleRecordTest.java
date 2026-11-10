@@ -18,13 +18,13 @@
 package ortus.boxlang.runtime.modules;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -217,8 +217,9 @@ class ModuleRecordTest {
 
 		// Then
 
-		// Execute the main module
-		assertDoesNotThrow( () -> moduleRecord.execute( context, new String[] {} ) );
+		// Execute the main module - its main() returns the first arg (or 0), which becomes the exit code
+		assertThat( moduleRecord.execute( context, new String[] { "3" } ) ).isEqualTo( 3 );
+		assertThat( moduleRecord.execute( context, new String[] {} ) ).isEqualTo( 0 );
 
 		// It should register global functions
 		FunctionService functionService = runtime.getFunctionService();
@@ -290,5 +291,60 @@ class ModuleRecordTest {
 		);
 		// @formatter:on
 		assertThat( variables.getAsString( Key.result ) ).contains( "ModuleLand" );
+	}
+
+	@DisplayName( "Module main() return value is coerced into the CLI exit code" )
+	@Test
+	void testItCoercesTheMainReturnValueIntoAnExitCode() {
+		IBoxContext context = new ScriptingRequestBoxContext();
+
+		// Integers are used as-is
+		assertThat( executeWithReturnValue( context, 42 ) ).isEqualTo( 42 );
+		// Numeric strings are coerced
+		assertThat( executeWithReturnValue( context, "7" ) ).isEqualTo( 7 );
+		// Decimals are truncated
+		assertThat( executeWithReturnValue( context, 3.9 ) ).isEqualTo( 3 );
+		// Nothing returned means success
+		assertThat( executeWithReturnValue( context, null ) ).isEqualTo( 0 );
+		// Values that can't be coerced to a number are ignored
+		assertThat( executeWithReturnValue( context, "not-a-number" ) ).isEqualTo( 0 );
+		assertThat( executeWithReturnValue( context, new Struct() ) ).isEqualTo( 0 );
+	}
+
+	/**
+	 * Builds a throwaway module whose {@code runMain()} returns the given value, then executes
+	 * it to observe the resulting exit code.
+	 */
+	private int executeWithReturnValue( IBoxContext context, Object returnValue ) {
+		ModuleRecord moduleRecord = new ModuleRecord( "/path/to/TestModule" );
+		moduleRecord.moduleConfig = new IModuleConfig() {
+
+			@Override
+			public Object runMain( IBoxContext ctx, String[] args ) {
+				return returnValue;
+			}
+		};
+		return moduleRecord.execute( context, new String[] {} );
+	}
+
+	@DisplayName( "The deprecated void main() entry point still executes through the runMain() shim" )
+	@Test
+	void testItStillExecutesTheDeprecatedMainEntryPoint() {
+		IBoxContext		context			= new ScriptingRequestBoxContext();
+		AtomicBoolean	mainCalled		= new AtomicBoolean( false );
+
+		ModuleRecord	moduleRecord	= new ModuleRecord( "/path/to/TestModule" );
+		moduleRecord.moduleConfig = new IModuleConfig() {
+
+			@Override
+			@SuppressWarnings( "deprecation" )
+			public void main( IBoxContext ctx, String[] args ) {
+				mainCalled.set( true );
+			}
+		};
+
+		// Legacy implementations always exit 0, but must still be invoked
+		assertThat( moduleRecord.execute( context, new String[] {} ) ).isEqualTo( 0 );
+		assertThat( mainCalled.get() ).isTrue();
 	}
 }

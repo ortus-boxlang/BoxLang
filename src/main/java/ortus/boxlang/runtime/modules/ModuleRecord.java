@@ -51,6 +51,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.events.IInterceptor;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.jdbc.drivers.DriverShim;
@@ -1187,20 +1188,29 @@ public class ModuleRecord {
 
 	/**
 	 * Execute the module via the BoxRunner
+	 * <p>
+	 * The value returned by the module's {@code runMain()} method (the BX {@code main()} method
+	 * for {@code ModuleConfig.bx} modules) is coerced to the status code the CLI should exit
+	 * with. A {@code null} return, or any value that can't be coerced to a whole number, is
+	 * treated as {@code 0}.
 	 *
 	 * @param context The current context of execution
 	 * @param args    The arguments to pass to the module
 	 *
+	 * @return The status code the module wants the CLI to exit with; {@code 0} when it
+	 *         returns nothing coercible
+	 *
 	 * @throws BoxRuntimeException If the module is not executable, meaning it
 	 *                             doesn't have a main method
 	 */
-	public void execute( IBoxContext context, String[] args ) {
+	public int execute( IBoxContext context, String[] args ) {
 		if ( this.moduleConfig == null ) {
 			throw new BoxRuntimeException( "Module " + this.id + " is not executable. It has no valid descriptor." );
 		}
 
 		try {
-			this.moduleConfig.main( context, args );
+			Integer exitCode = IntegerCaster.cast( true, this.moduleConfig.runMain( context, args ), false );
+			return exitCode == null ? 0 : exitCode;
 		} catch ( AbortException ae ) {
 			throw ae;
 		} catch ( Exception e ) {

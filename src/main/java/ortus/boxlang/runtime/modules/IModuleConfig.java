@@ -60,7 +60,9 @@ import ortus.boxlang.runtime.types.Struct;
  * {@code moduleRecord.settings} to configure the module.</li>
  * <li>{@link #onLoad(IBoxContext, ModuleRecord)} — called during activation.</li>
  * <li>{@link #onUnload(IBoxContext, ModuleRecord)} — called during deactivation.</li>
- * <li>{@link #main(IBoxContext, String[])} — called when the module is executed from the CLI.</li>
+ * <li>{@link #runMain(IBoxContext, String[])} — called when the module is executed from the CLI; its
+ * return value becomes the process exit code. The legacy {@link #main(IBoxContext, String[])} entry
+ * point is deprecated but still honored.</li>
  * </ul>
  *
  * <p>
@@ -108,10 +110,43 @@ public interface IModuleConfig {
 
 	/**
 	 * Called when the module is executed directly from the BoxLang CLI.
+	 * <p>
+	 * The returned value is used as the process status code the CLI exits with. Returning
+	 * {@code null} (or nothing at all in a {@code ModuleConfig.bx}) means a successful exit
+	 * ({@code 0}). The value is coerced to an integer; anything that can't be coerced to a
+	 * whole number is treated as {@code 0}.
+	 * <p>
+	 * The default implementation shims to the deprecated {@link #main(IBoxContext, String[])}
+	 * entry point, so Java modules written against the original {@code void main(...)} contract
+	 * keep executing unchanged (they always exit {@code 0}).
 	 *
 	 * @param context The current execution context
 	 * @param args    Command-line arguments passed to the module
+	 *
+	 * @return The status code the CLI should exit with; {@code null} means {@code 0}
 	 */
+	default Object runMain( IBoxContext context, String[] args ) {
+		main( context, args );
+		return null;
+	}
+
+	/**
+	 * The legacy module entry point, called when the module is executed directly from the
+	 * BoxLang CLI.
+	 * <p>
+	 * BoxLang modules ({@code ModuleConfig.bx}) still declare {@code main()}, and its return
+	 * value is used as the process exit code. Java modules should implement
+	 * {@link #runMain(IBoxContext, String[])} instead, which is the only method the runtime
+	 * invokes: this method is retained as a no-op default purely so existing implementations
+	 * that override it keep compiling and keep running.
+	 *
+	 * @param context The current execution context
+	 * @param args    Command-line arguments passed to the module
+	 *
+	 * @deprecated Implement {@link #runMain(IBoxContext, String[])} instead so your module can
+	 *             return the status code the CLI exits with.
+	 */
+	@Deprecated
 	default void main( IBoxContext context, String[] args ) {
 	}
 
