@@ -305,6 +305,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		BIFMap.put( "objectSave", "objectSerialize" );
 		BIFMap.put( "objectLoad", "objectDeserialize" );
 		BIFMap.put( "querygetrow", "queryrowdata" );
+		BIFMap.put( "gettaglist", "getcomponentlist" );
 		// valueList() and quotedValueList() are special cases below
 		// queryColumnData().toList( delimiter )
 		// queryColumnData().map().toList( delimiter )
