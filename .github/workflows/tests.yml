@@ -73,7 +73,7 @@ jobs:
 
       - name: Install JDBC modules
         if: ${{ matrix.os != 'windows-latest' }}
-        run: box install id=bx-mssql@be,bx-mysql,bx-oracle@be directory=${{ github.workspace }}/build/test-home/.boxlang/modules --verbose --nosave
+        run: box install id=bx-mssql@be,bx-mysql,bx-oracle@be,bx-postgresql@be directory=${{ github.workspace }}/build/test-home/.boxlang/modules --verbose --nosave
 
       - name: Setup MySQL Service
         if: ${{ matrix.os != 'windows-latest' }}
@@ -100,6 +100,24 @@ jobs:
           app-user-password: "123456Password"
           oracle-password: "123456Password"
           oracle-database: "XEPDB1"
+
+      - name: Setup PostgreSQL 18
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: |
+          docker run --detach --name boxlang-postgresql-18 \
+            --publish 54329:5432 \
+            --env POSTGRES_DB=boxlang \
+            --env POSTGRES_USER=boxlang \
+            --env POSTGRES_PASSWORD=123456Password \
+            postgres:18
+          for attempt in {1..30}; do
+            if docker exec boxlang-postgresql-18 pg_isready --username boxlang --dbname boxlang; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs boxlang-postgresql-18
+          exit 1
 
       - name: Build Java Compiler JAR
         if: ${{ matrix.compiler == 'java' }}

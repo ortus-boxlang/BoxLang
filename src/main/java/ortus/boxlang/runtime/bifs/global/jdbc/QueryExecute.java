@@ -98,11 +98,17 @@ public class QueryExecute extends BIF {
 	 * <li><strong>fetchsize:numeric</strong> - Number of rows to fetch from database at once, defaults to all rows (0)</li>
 	 * <li><strong>maxrows:numeric</strong> - Maximum number of rows to return</li>
 	 * <li><strong>password:string</strong> - Override the datasource password for this query only. NOTE: Not all JDBC drivers support this; will fall back to unpooled connection if unsupported</li>
-	 * <li><strong>result</strong> - The name of the variable to store the results of the query</li>
+	 * <li><strong>result</strong> - The name of the variable to store query execution metadata</li>
 	 * <li><strong>returntype</strong> - The return type: "query", "array", "struct"</li>
 	 * <li><strong>timeout</strong> - Query timeout in seconds</li>
 	 * <li><strong>username:string</strong> - Override the datasource username for this query only. NOTE: Not all JDBC drivers support this; will fall back to unpooled connection if unsupported</li>
 	 * </ul>
+	 *
+	 * <h2>DML RETURNING</h2>
+	 * A single INSERT, UPDATE, or DELETE statement with an explicit top-level <code>RETURNING</code> clause returns the requested rows and columns through
+	 * the normal query result. When the <code>result</code> option is set, its metadata struct also includes <code>returningRows</code>, an array of row structs
+	 * in query order. The array is present and empty when no rows are returned. Existing <code>generatedKey</code> and <code>generatedKeys</code> metadata remains
+	 * available.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -111,7 +117,8 @@ public class QueryExecute extends BIF {
 	 *
 	 * @argument.params An array of binding parameters or a struct of named binding parameters
 	 *
-	 * @argument.options A struct of query options
+	 * @argument.options A struct of query options. Its `result` option names a variable that receives query execution metadata, including `returningRows` for
+	 *                   a single INSERT, UPDATE, or DELETE statement with an explicit top-level RETURNING clause.
 	 *
 	 * @return The executed query results, based on the return type specified in the options
 	 */

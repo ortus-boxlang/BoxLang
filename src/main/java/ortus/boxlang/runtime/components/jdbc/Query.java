@@ -84,6 +84,10 @@ public class Query extends Component {
 	 * Execute a SQL query to the default or specified datasource.
 	 * <p>
 	 * <strong>We recommend you ALWAYS use query params on any bind variables</strong>
+	 * <p>
+	 * A single INSERT, UPDATE, or DELETE statement with an explicit top-level <code>RETURNING</code> clause places every requested row and column in the normal
+	 * query result. When the <code>result</code> attribute is set, its metadata struct also contains <code>returningRows</code>, an array of row structs in query
+	 * order. This array is present and empty when no rows are returned. Existing <code>generatedKey</code> and <code>generatedKeys</code> metadata remains available.
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
@@ -121,7 +125,8 @@ public class Query extends Component {
 	 *
 	 * @attribute.cacheProvider String name of the cache provider to use. Defaults to the default cache provider.
 	 *
-	 * @attribute.result The name of the variable to store the query result in.
+	 * @attribute.result The name of the variable to store query execution metadata in, including `returningRows` for a single INSERT, UPDATE, or DELETE
+	 *                   statement with an explicit top-level RETURNING clause.
 	 */
 	@Override
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
