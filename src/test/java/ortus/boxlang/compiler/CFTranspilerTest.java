@@ -1011,4 +1011,15 @@ public class CFTranspilerTest {
 		assertThat( variables.getAsArray( Key.of( "arr" ) ) ).contains( "\n" + "asdf" );
 	}
 
+	@DisplayName( "It transpiles getTagList to getComponentList" )
+	@Test
+	public void testGetTagListTranspilesToGetComponentList() {
+		instance.executeSource(
+		    """
+		    	results = getTagList()
+		    """, context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsStruct( Key.of( "results" ) ) ).isNotEmpty();
+	}
+
 }
