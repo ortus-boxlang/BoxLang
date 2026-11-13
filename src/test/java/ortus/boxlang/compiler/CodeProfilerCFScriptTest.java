@@ -2670,9 +2670,9 @@ class CodeProfilerCFScriptTest {
 	void testImportAsFirstTokenInitializes() {
 		// Regression: with code profiling enabled, a declaration whose FIRST token is
 		// an `import` line failed on class initialization with
-		//   java.lang.VerifyError: Bad type on operand stack
-		//     Location: boxgenerated/boxclass/lib/Ithing$cfc.<clinit>()V @143: aastore
-		//     Reason: Type integer (current frame, stack[2]) is not assignable to 'java/lang/Object'
+		// java.lang.VerifyError: Bad type on operand stack
+		// Location: boxgenerated/boxclass/lib/Ithing$cfc.<clinit>()V @143: aastore
+		// Reason: Type integer (current frame, stack[2]) is not assignable to 'java/lang/Object'
 		// Cause: the class/interface SHELL span is registered at the declaration's start
 		// position, which for such a file IS the import's position — so the generic
 		// Pass B mark hook resolved the IMPORT statement to the shell HEAD and
