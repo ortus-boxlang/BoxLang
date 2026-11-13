@@ -3500,6 +3500,15 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			}
 		}
 
+		// The class SHELL mark is emitted by the class transformer's <clinit> shell
+		// mark, so register the shell head as SELF-MARKED: the generic per-node mark
+		// hook must never consume the shell group at a statement site that happens to
+		// share the shell's start position — e.g. a file whose FIRST token is an
+		// `import`, where the import statement resolves to the shell head.
+		if ( shellId >= 0 ) {
+			transpiler.markShellSelfMarked( shellId );
+		}
+
 		// Abstract method shells become static metadata of the class, like property
 		// declarations — collect them to merge with the class shell (marked GREEN at
 		// load). Also captures the tag </cffunction> close for abstract tag methods.
@@ -3701,6 +3710,15 @@ public class SpanCollectorVisitor extends VoidBoxVisitor {
 			if ( shellId >= 0 ) {
 				registerBraceGroup( shellId, closeBrace );
 			}
+		}
+
+		// The interface SHELL mark is emitted by the interface transformer's <clinit>
+		// shell mark, so register the shell head as SELF-MARKED: the generic per-node
+		// mark hook must never consume the shell group at a statement site that happens
+		// to share the shell's start position — e.g. a file whose FIRST token is an
+		// `import`, where the import statement resolves to the shell head.
+		if ( shellId >= 0 ) {
+			transpiler.markShellSelfMarked( shellId );
 		}
 
 		// Body: static functions, default methods, and static initializers carry

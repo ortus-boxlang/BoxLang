@@ -655,15 +655,18 @@ public abstract class Transpiler implements ITranspiler {
 
 	/**
 	 * Span ids that head a call shell whose OWN transformer emits the shell mark (a
-	 * tag/component), so the generic statement-start mark hook must SKIP them —
-	 * otherwise the tag head is marked twice. Function-call shells are NOT in this
-	 * set (the generic hook marks them normally).
+	 * tag/component), or that head a CLASS/INTERFACE shell whose mark is emitted by
+	 * the class/interface transformer's {@code <clinit>} emitter, so the generic
+	 * statement-start mark hook must SKIP them — otherwise the shell head is marked
+	 * twice, or (worse) the shell group is consumed at a statement site that merely
+	 * shares the shell's start position. Function-call shells are NOT in this set
+	 * (the generic hook marks them normally).
 	 */
 	private final java.util.Set<Integer> selfMarkedShellHeads = new java.util.HashSet<>();
 
 	/**
-	 * Mark a call-shell head as SELF-MARKED: its construct's transformer emits the
-	 * shell mark itself, so the generic statement-start hook must not also mark it.
+	 * Mark a shell head as SELF-MARKED: its construct's transformer emits the shell
+	 * mark itself, so the generic statement-start hook must not also mark it.
 	 *
 	 * @param headSpanId the shell head span id
 	 */
@@ -672,7 +675,7 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	/**
-	 * Whether a span heads a call shell whose transform self-marks (see
+	 * Whether a span heads a shell whose transform self-marks (see
 	 * {@link #markShellSelfMarked}).
 	 *
 	 * @param headSpanId the span id to test

@@ -2665,6 +2665,48 @@ class CodeProfilerCFScriptTest {
 		assertThat( service.lineAt( ghostKey, 18 ).covered() ).isFalse();
 	}
 
+	@DisplayName( "It loads a CFSCRIPT class + interface whose FIRST token is an import (regression: the shell mark must not corrupt the static imports array)" )
+	@Test
+	void testImportAsFirstTokenInitializes() {
+		// Regression: with code profiling enabled, a declaration whose FIRST token is
+		// an `import` line failed on class initialization with
+		//   java.lang.VerifyError: Bad type on operand stack
+		//     Location: boxgenerated/boxclass/lib/Ithing$cfc.<clinit>()V @143: aastore
+		//     Reason: Type integer (current frame, stack[2]) is not assignable to 'java/lang/Object'
+		// Cause: the class/interface SHELL span is registered at the declaration's start
+		// position, which for such a file IS the import's position — so the generic
+		// Pass B mark hook resolved the IMPORT statement to the shell HEAD and
+		// prepended the (void) shell-group mark call to the import's transform result.
+		// The class/interface transformer uses those results as literal ARRAY ELEMENTS
+		// when building the static `imports` list, so the void call left the array
+		// index on the stack as the element -> VerifyError. The shell head is now
+		// registered as SELF-MARKED, leaving the shell group to the transformer's
+		// <clinit> shell emitter.
+		IBoxContext context = new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+
+		// Instantiating the class runs its <clinit> AND initializes the interface it
+		// implements — the two declarations that used to throw.
+		runtime.executeSource( "pc = new src.test.resources.profiler.ProfilerImportClassCF();", context, BoxSourceType.CFSCRIPT );
+
+		// ---- the CLASS: shell, static block and closing "}" all run at load ----
+		String classKey = keyFor( "src/test/resources/profiler/ProfilerImportClassCF.cfc" );
+		assertThat( service.spanAt( classKey, 2, 0 ).stats().count() ).isEqualTo( 1 );  // "component ... {" shell
+		assertThat( service.spanAt( classKey, 5, 2 ).stats().count() ).isEqualTo( 1 );  // importedInitRan = true
+		assertThat( service.spanAt( classKey, 6, 1 ).stats().count() ).isEqualTo( 1 );  // static "}"
+		assertThat( service.spanAt( classKey, 11, 0 ).stats().count() ).isEqualTo( 1 ); // class "}"
+		assertThat( service.spanAt( classKey, 8, 1 ).stats().count() ).isEqualTo( 1 );  // getQ shell (declared at load)
+		assertThat( service.spanAt( classKey, 9, 2 ).stats().count() ).isEqualTo( 0 );  // getQ body (never called)
+		// The import line owns NO span of its own — an import is class-load metadata.
+		assertThat( service.spansOnLine( classKey, 1 ) ).isEmpty();
+
+		// ---- the INTERFACE: the SHELL group is marked by the interface transformer's
+		// <clinit> emitter (NOT swallowed by the import's position) ----
+		String ifaceKey = keyFor( "src/test/resources/profiler/ProfilerImportInterfaceCF.cfc" );
+		assertThat( service.spanAt( ifaceKey, 1, 0 ).stats().count() ).isEqualTo( 1 ); // shell (starts on the import line)
+		assertThat( service.spanAt( ifaceKey, 4, 0 ).stats().count() ).isEqualTo( 1 ); // interface "}"
+		assertThat( service.spanAt( ifaceKey, 3, 1 ).stats().count() ).isEqualTo( 1 ); // abstract getQ shell (merged into the shell group)
+	}
+
 	@DisplayName( "It profiles the named-argument param statement (cfscript)" )
 	@Test
 	void testParamNamed() {
