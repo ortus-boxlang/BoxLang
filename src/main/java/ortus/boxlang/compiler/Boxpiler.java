@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -70,32 +71,40 @@ public abstract class Boxpiler implements IBoxpiler {
 	/**
 	 * Logger Instance
 	 */
-	protected static final Logger					logger			= BoxRuntime.getInstance().getLoggingService().getLogger( Boxpiler.class.getSimpleName() );
+	protected static final Logger								logger			= BoxRuntime.getInstance().getLoggingService()
+	    .getLogger( Boxpiler.class.getSimpleName() );
 
 	/**
 	 * Keeps track of the classes we've compiled
 	 */
-	protected Map<String, Map<String, ClassInfo>>	classPools		= new HashMap<>();
+	protected Map<String, Map<String, ClassInfo>>				classPools		= new HashMap<>();
+
+	/**
+	 * Per class pool hint from a file path to the FQN it was last resolved to, so compileClass( ResolvedFilePath ) doesn't
+	 * scan the whole pool on every instantiation. It holds names, not ClassInfo instances, so it never keeps a retired class
+	 * loader alive, and a hint is used only when the pool entry under that FQN still has exactly this path.
+	 */
+	protected final Map<String, Map<ResolvedFilePath, String>>	pathIndex		= new ConcurrentHashMap<>();
 
 	/**
 	 * The transaction service used to track subtransactions
 	 */
-	protected FRTransService						frTransService	= FRTransService.getInstance( true );
+	protected FRTransService									frTransService	= FRTransService.getInstance( true );
 
 	/**
 	 * The disk class util
 	 */
-	protected DiskClassUtil							diskClassUtil;
+	protected DiskClassUtil										diskClassUtil;
 
 	/**
 	 * The directory where the generated classes are stored
 	 */
-	protected Path									classGenerationDirectory;
+	protected Path												classGenerationDirectory;
 
 	/**
 	 * The BoxRuntime instance
 	 */
-	protected BoxRuntime							runtime			= BoxRuntime.getInstance();
+	protected BoxRuntime										runtime			= BoxRuntime.getInstance();
 
 	/**
 	 * The constructor for the Boxpiler class. It initializes the class generation directory and
@@ -208,6 +217,7 @@ public abstract class Boxpiler implements IBoxpiler {
 				}
 			} );
 		}
+		this.pathIndex.clear();
 	}
 
 	/**
@@ -404,11 +414,12 @@ public abstract class Boxpiler implements IBoxpiler {
 	 */
 	@Override
 	public Class<IBoxRunnable> compileClass( ResolvedFilePath resolvedFilePath ) {
-		ClassInfo				classInfo			= null;
-		ClassInfo				ensuredClassInfo	= null;
-		Map<String, ClassInfo>	classPool			= null;
-		FQN						fqn					= null;
-		long					lastModifiedCurrent	= 0;
+		ClassInfo						classInfo			= null;
+		ClassInfo						ensuredClassInfo	= null;
+		Map<String, ClassInfo>			classPool			= null;
+		Map<ResolvedFilePath, String>	poolIndex			= null;
+		FQN								fqn					= null;
+		long							lastModifiedCurrent	= 0;
 
 		// In order to try hard to avoid creating a new ClassInfo instance, we'll try some quick attempts at finding an existing one first
 		if ( resolvedFilePath.mappingPath() != null ) {
@@ -418,17 +429,26 @@ public abstract class Boxpiler implements IBoxpiler {
 				// If so, see if an exising entry patches our absolute path (the casing could be different on Windows, but there's a good chance it matches)
 				// We're not looping directly over the values() collection as the internal iterator can give ConcurrentModificationExceptions
 				// Pre-size with headroom to prevent AIOOBE if another thread adds entries during toArray()
-				ClassInfo[] snapshot = classPool.values().toArray( new ClassInfo[ classPool.size() + 50 ] );
-				for ( ClassInfo entry : snapshot ) {
-					if ( entry == null ) {
-						break;
-					}
-					if ( entry.resolvedFilePath().equals( resolvedFilePath ) ) {
-						classInfo			= entry;
-						ensuredClassInfo	= classInfo;
-						// The classInfo may be cached, but get a fresh modified date
-						lastModifiedCurrent	= classInfo.getFreshLastModified();
-						break;
+				poolIndex = this.pathIndex.computeIfAbsent( resolvedFilePath.mappingPath(), k -> new ConcurrentHashMap<>() );
+				String		indexedFQN	= poolIndex.get( resolvedFilePath );
+				ClassInfo	indexed		= indexedFQN == null ? null : classPool.get( indexedFQN );
+				if ( indexed != null && resolvedFilePath.equals( indexed.resolvedFilePath() ) ) {
+					classInfo			= indexed;
+					ensuredClassInfo	= classInfo;
+					lastModifiedCurrent	= classInfo.getFreshLastModified();
+				} else {
+					ClassInfo[] snapshot = classPool.values().toArray( new ClassInfo[ classPool.size() + 50 ] );
+					for ( ClassInfo entry : snapshot ) {
+						if ( entry == null ) {
+							break;
+						}
+						if ( entry.resolvedFilePath().equals( resolvedFilePath ) ) {
+							classInfo			= entry;
+							ensuredClassInfo	= classInfo;
+							// The classInfo may be cached, but get a fresh modified date
+							lastModifiedCurrent	= classInfo.getFreshLastModified();
+							break;
+						}
 					}
 				}
 				// Ok, if that didn't work, look for the normalized FQN.
@@ -485,6 +505,10 @@ public abstract class Boxpiler implements IBoxpiler {
 			}
 		} else {
 			classInfo = ensuredClassInfo;
+		}
+		// Publish into the map read at lookup, so a clearPagePool() running meanwhile detaches this write
+		if ( poolIndex != null && resolvedFilePath.equals( classInfo.resolvedFilePath() ) ) {
+			poolIndex.put( resolvedFilePath, classInfo.fqn().toString() );
 		}
 		// This will block if the class info is still being compiled
 		return classInfo.getDiskClass();
