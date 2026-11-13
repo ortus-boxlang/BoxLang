@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.types;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -494,6 +495,138 @@ public class ChunkedArrayListTest {
 		for ( int i = 0; i < 8; i++ ) {
 			assertThat( list.get( i ) ).isEqualTo( i );
 		}
+	}
+
+	@Test
+	@DisplayName( "trimToSize() keeps rows that live past the first layer" )
+	void testTrimToSizeAcrossSecondLayer() {
+		// chunkSize 8 puts indices 0-63 in the first layer and index 64 in the second
+		// layer, top slot 0. Every first-layer slot still holds live rows, so trimming
+		// must not release slots past the slot that holds the last row (BL-2717).
+		ChunkedArrayList<Integer>	list	= new ChunkedArrayList<>( 8 );
+		int							count	= 66;
+		for ( int i = 0; i < count; i++ ) {
+			list.add( i );
+		}
+
+		list.trimToSize();
+
+		assertThat( list.size() ).isEqualTo( count );
+		for ( int i = 0; i < count; i++ ) {
+			assertThat( list.get( i ) ).isEqualTo( i );
+		}
+		assertThat( list.toArray() ).asList().containsExactlyElementsIn( IntStream.range( 0, count ).boxed().toList() );
+	}
+
+	@Test
+	@DisplayName( "trimToSize() keeps rows spread across three layers" )
+	void testTrimToSizeAcrossThirdLayer() {
+		int							chunkSize	= 4;
+		ChunkedArrayList<Integer>	list		= new ChunkedArrayList<>( chunkSize );
+		// 37 rows with chunkSize 4: layers are 0-15, 16-31 and 32-47, and the last row
+		// is index 36, which lives in layer 2, top slot 1
+		int							count		= 2 * chunkSize * chunkSize + chunkSize + 1;
+		for ( int i = 0; i < count; i++ ) {
+			list.add( i );
+		}
+
+		list.trimToSize();
+
+		assertThat( list.size() ).isEqualTo( count );
+		for ( int i = 0; i < count; i++ ) {
+			assertThat( list.get( i ) ).isEqualTo( i );
+		}
+	}
+
+	@Test
+	@DisplayName( "trimToSize() preserves every row across sizes and chunk sizes" )
+	void testTrimToSizeSweep() {
+		for ( int chunkSize : new int[] { 2, 4, 8 } ) {
+			int maxCount = 5 * chunkSize * chunkSize + 3;
+			for ( int count = 1; count <= maxCount; count++ ) {
+				ChunkedArrayList<Integer> list = new ChunkedArrayList<>( chunkSize );
+				for ( int i = 0; i < count; i++ ) {
+					list.add( i );
+				}
+				list.trimToSize();
+				assertThat( list.size() ).isEqualTo( count );
+				for ( int i = 0; i < count; i++ ) {
+					assertThat( list.get( i ) ).isEqualTo( i );
+				}
+			}
+		}
+	}
+
+	// ----------------------------------------------------------
+	// truncateToSize()
+	// ----------------------------------------------------------
+
+	@Test
+	@DisplayName( "truncateToSize() keeps rows that live past the first layer" )
+	void testTruncateToSizeAcrossSecondLayer() {
+		ChunkedArrayList<Integer>	list	= new ChunkedArrayList<>( 8 );
+		int							count	= 200;
+		for ( int i = 0; i < count; i++ ) {
+			list.add( i );
+		}
+
+		list.truncateToSize( 66 );
+
+		assertThat( list.size() ).isEqualTo( 66 );
+		for ( int i = 0; i < 66; i++ ) {
+			assertThat( list.get( i ) ).isEqualTo( i );
+		}
+		// The list can still grow after the trim
+		list.add( 66 );
+		assertThat( list.size() ).isEqualTo( 67 );
+		assertThat( list.get( 66 ) ).isEqualTo( 66 );
+	}
+
+	@Test
+	@DisplayName( "truncateToSize() releases every chunk beyond the new size" )
+	void testTruncateToSizeReleasesChunks() throws ReflectiveOperationException {
+		int							chunkSize	= 8;
+		ChunkedArrayList<Integer>	list		= new ChunkedArrayList<>( chunkSize );
+		// 256 rows with chunkSize 8 fill the first four layers
+		for ( int i = 0; i < 4 * chunkSize * chunkSize; i++ ) {
+			list.add( i );
+		}
+		assertThat( countLiveChunks( list ) ).isEqualTo( 4 * chunkSize );
+
+		// 66 rows keep the whole first layer (8 chunks) plus one second-layer chunk
+		list.truncateToSize( 66 );
+		assertThat( countLiveChunks( list ) ).isEqualTo( chunkSize + 1 );
+		for ( int i = 0; i < 66; i++ ) {
+			assertThat( list.get( i ) ).isEqualTo( i );
+		}
+
+		// 13 rows keep only the two used first-layer chunks
+		list.truncateToSize( 13 );
+		assertThat( countLiveChunks( list ) ).isEqualTo( 2 );
+		for ( int i = 0; i < 13; i++ ) {
+			assertThat( list.get( i ) ).isEqualTo( i );
+		}
+	}
+
+	/**
+	 * Count the live chunks of a list, including every nested layer
+	 */
+	private static int countLiveChunks( ChunkedArrayList<?> list ) throws ReflectiveOperationException {
+		Field	chunksField		= ChunkedArrayList.class.getDeclaredField( "chunks" );
+		Field	chunkSizeField	= ChunkedArrayList.class.getDeclaredField( "chunkSize" );
+		chunksField.setAccessible( true );
+		chunkSizeField.setAccessible( true );
+		Object[]	chunks		= ( Object[] ) chunksField.get( list );
+		int			chunkSize	= chunkSizeField.getInt( list );
+		int			count		= 0;
+		for ( Object chunk : chunks ) {
+			Object current = chunk;
+			while ( current != null ) {
+				count++;
+				current = ( ( Object[] ) current )[ chunkSize ];
+			}
+		}
+		return count;
 	}
 
 	// ----------------------------------------------------------

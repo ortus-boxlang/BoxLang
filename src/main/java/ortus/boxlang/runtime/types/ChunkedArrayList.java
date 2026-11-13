@@ -295,35 +295,52 @@ public class ChunkedArrayList<E> extends AbstractList<E> implements Serializable
 			Arrays.fill( this.chunks, null );
 			return;
 		}
+
 		// The last used index is s - 1
 		int	lastIndex		= s - 1;
 		int	lastTopIndex	= ( lastIndex & this.layerMask ) >> this.chunkShift;
 		int	lastDepth		= lastIndex >> this.layerShift;
+		int	lastOffset		= lastIndex & this.chunkMask;
 
-		// Null out all top-level chunk slots beyond the last used one
-		for ( int top = lastTopIndex + 1; top < this.chunkSize; top++ ) {
-			this.chunks[ top ] = null;
-		}
+		for ( int top = 0; top < this.chunkSize; top++ ) {
+			Object[] chunk = ( Object[] ) this.chunks[ top ];
+			if ( chunk == null ) {
+				continue;
+			}
 
-		// For the last used top-level slot, null out depth links beyond the last used depth
-		Object[] chunk = ( Object[] ) this.chunks[ lastTopIndex ];
-		if ( chunk != null ) {
-			for ( int d = 0; d < lastDepth; d++ ) {
-				Object[] next = ( Object[] ) chunk[ this.chunkSize ];
-				if ( next == null ) {
+			// Slots past lastTopIndex are unused in the last used depth, but they still
+			// hold live rows in every shallower depth. They may only be released
+			// entirely when the list ends inside the very first depth.
+			if ( top > lastTopIndex && lastDepth == 0 ) {
+				this.chunks[ top ] = null;
+				continue;
+			}
+
+			// Deepest layer of this slot that can still hold rows: everything below
+			// lastDepth is in use for all slots, and lastDepth itself only for
+			// slots up to lastTopIndex.
+			int			maxDepth	= top > lastTopIndex ? lastDepth - 1 : lastDepth;
+
+			// Walk down to that layer
+			Object[]	deepest		= chunk;
+			for ( int d = 0; d < maxDepth; d++ ) {
+				deepest = ( Object[] ) deepest[ this.chunkSize ];
+				if ( deepest == null ) {
 					break;
 				}
-				chunk = next;
 			}
-			// Null out the link beyond the last used depth
-			chunk[ this.chunkSize ] = null;
-		}
+			if ( deepest == null ) {
+				continue;
+			}
 
-		// Null out data slots in the last chunk beyond the last used offset
-		if ( chunk != null ) {
-			int lastOffset = lastIndex & this.chunkMask;
-			for ( int i = lastOffset + 1; i < this.chunkSize; i++ ) {
-				chunk[ i ] = null;
+			// Null out the link beyond the deepest layer still holding rows
+			deepest[ this.chunkSize ] = null;
+
+			// The very last chunk also releases the data slots beyond the last used offset
+			if ( top == lastTopIndex ) {
+				for ( int i = lastOffset + 1; i < this.chunkSize; i++ ) {
+					deepest[ i ] = null;
+				}
 			}
 		}
 	}

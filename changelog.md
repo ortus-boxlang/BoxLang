@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- [BL-2717](https://ortussolutions.atlassian.net/browse/BL-2717) Queries with more than 1,048,576 rows no longer lose rows or throw a NullPointerException when read. `ChunkedArrayList.trimToSize()` released top-level chunks that still held live rows once a list had grown past its first layer of chunks, which chunked query storage reaches at 1,048,576 rows with the default chunk size
 - Cron scheduled tasks no longer silently skip a day when a tick runs late, e.g. when it is queued behind other tasks on a saturated scheduler executor. A tick now fires if a cron time was due since the previous check, runs late rather than never, and logs a warning (with a thread-count hint when the executor is saturated). Scheduled task constraints (weekdays, day of the week or month, first/last business day, time windows, start/end dates) are now judged against the time a tick was due, so a late tick is not skipped by crossing midnight. Scheduler executors are now sized from the `threads` of the executor named by `scheduler.executor` in `boxlang.json` (they were always 10), and the documented `threads` property of `executors` entries is now honored. Also fixes `exclude` replacing the cron gate on `bx:schedule` tasks that set both `cronTime` and `exclude`
 ## [1.19.0] - 2026-11-03
 
