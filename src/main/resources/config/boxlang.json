@@ -391,8 +391,21 @@
 		// The default scheduler for all scheduled tasks
 		// Each scheduler can have a different executor if needed
 		"executor": "scheduled-tasks",
-		// The cache to leverage for server fixation or distribution
-		"cacheName": "default",
+		// How clustered occurrences are shared out across nodes:
+		//   eager    - each node waits a random short delay before claiming an occurrence
+		//   balanced - nodes are ranked by their published load, and the busiest waits longest
+		"clusterMode": "eager",
+		// What a task does when its previous occurrence is still running:
+		//   skip - the next occurrence is dropped, matching single-node behaviour
+		//   run  - occurrences may run concurrently
+		"taskOverlapPolicy": "skip",
+		// Shutdown behaviour for scheduled tasks.
+		// shutdownGraceSeconds: how long a shutdown waits for in-flight runs to finish before
+		// interrupting them. 0 skips the graceful wait and interrupts immediately.
+		"shutdownGraceSeconds": 15,
+		// shutdownInterruptGraceSeconds: how long to wait after interrupting before the executor is
+		// forced down. 0 skips that wait. With BOTH set to 0, shutdown kills the runs immediately.
+		"shutdownInterruptGraceSeconds": 5,
 		// An array of BoxLang Schedulers to register upon startup
 		// Must be an absolute path to the scheduler file
 		// You can use the ${user-dir} or ${boxlang-home} variables or any other environment variable
@@ -404,6 +417,27 @@
 		// When true, the scheduler service watches tasks.json for external changes and automatically
 		// reloads all affected schedulers. Self-writes from bx:schedule actions are suppressed.
 		"reloadOnChange": false
+	},
+	// BoxLang Cluster
+	// Lets this node coordinate with other BoxLang nodes through a shared cache. Scheduled tasks that opt
+	// in then run on one node per occurrence instead of on every node, and the work is shared out.
+	//
+	// Requires a cache backed by a store every node can see: FileSystemStore on a shared volume, a JDBC
+	// store, or a distributed provider such as Redis.
+	"cluster": {
+		// Master switch for this node. When false nothing here is used and clustered tasks refuse to start.
+		"enabled": false,
+		// This node's identity. null means not set: the runtime then uses "{hostname}-{pid}", which is
+		// unique per process. Set it when your platform gives you a stable pod or task name.
+		"nodeId": null,
+		// The cluster name. Nodes with the same name see each other and share work; different names never
+		// do, so one shared cache can serve several independent clusters.
+		"name": "default",
+		// The cache used for coordination. It must be backed by a store the other nodes can see.
+		"cacheName": "bxcluster",
+		// How often this node rewrites its record, attributes included. A node is considered gone after
+		// three missed beats.
+		"heartbeatSeconds": 5
 	},
 	// BoxLang Watcher Service
 	// Manages filesystem watchers that fire BoxLang listeners whenever files change.
@@ -672,3 +706,4 @@
 		// }
 	}
 }
+

@@ -1379,6 +1379,70 @@ public class Key implements Comparable<Key>, Serializable {
 
 	/**
 	 * --------------------------------------------------------------------------
+	 * Cluster Service Keys
+	 * --------------------------------------------------------------------------
+	 */
+
+	public static final Key		node								= Key.of( "node" );
+	public static final Key		nodes								= Key.of( "nodes" );
+	public static final Key		nodeId								= Key.of( "nodeId" );
+	public static final Key		startedAt							= Key.of( "startedAt" );
+	public static final Key		heartbeatAt							= Key.of( "heartbeatAt" );
+	public static final Key		attributesUpdatedAt					= Key.of( "attributesUpdatedAt" );
+	public static final Key		heartbeatSeconds					= Key.of( "heartbeatSeconds" );
+	public static final Key		attributesSeconds					= Key.of( "attributesSeconds" );
+	public static final Key		heartbeatStaleAfter					= Key.of( "heartbeatStaleAfter" );
+	public static final Key		attributesStaleAfter				= Key.of( "attributesStaleAfter" );
+	public static final Key		snapshotFreshMillis					= Key.of( "snapshotFreshMillis" );
+	public static final Key		snapshotTimeoutMillis				= Key.of( "snapshotTimeoutMillis" );
+	public static final Key		randomDelayMillis					= Key.of( "randomDelayMillis" );
+	public static final Key		maxPushbackMillis					= Key.of( "maxPushbackMillis" );
+	public static final Key		tieJitterMillis						= Key.of( "tieJitterMillis" );
+	public static final Key		settleMillis						= Key.of( "settleMillis" );
+	public static final Key		verifyRounds						= Key.of( "verifyRounds" );
+	public static final Key		attempts							= Key.of( "attempts" );
+	public static final Key		pollSeconds							= Key.of( "pollSeconds" );
+	public static final Key		taskHeartbeatSeconds				= Key.of( "taskHeartbeatSeconds" );
+	public static final Key		abandonedAfterSeconds				= Key.of( "abandonedAfterSeconds" );
+	public static final Key		loadWindowSeconds					= Key.of( "loadWindowSeconds" );
+	public static final Key		taskSeconds							= Key.of( "taskSeconds" );
+	public static final Key		inFlight							= Key.of( "inFlight" );
+	public static final Key		clusterName							= Key.of( "clusterName" );
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Clustered Task Claim Keys
+	 * --------------------------------------------------------------------------
+	 */
+
+	public static final Key		claimId								= Key.of( "claimId" );
+	public static final Key		occurrenceId						= Key.of( "occurrenceId" );
+	public static final Key		claimedAt							= Key.of( "claimedAt" );
+	public static final Key		finishedAt							= Key.of( "finishedAt" );
+	public static final Key		lastResult							= Key.of( "lastResult" );
+	public static final Key		overlap								= Key.of( "overlap" );
+
+	/**
+	 * Scheduling policy keys: how clustered occurrences are shared out, and what a task does when its
+	 * previous occurrence is still running.
+	 */
+	public static final Key		clusterMode							= Key.of( "clusterMode" );
+	public static final Key		taskOverlapPolicy					= Key.of( "taskOverlapPolicy" );
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Shutdown Configuration Keys
+	 * --------------------------------------------------------------------------
+	 */
+
+	public static final Key		shutdownGraceSeconds				= Key.of( "shutdownGraceSeconds" );
+	public static final Key		shutdownInterruptGraceSeconds		= Key.of( "shutdownInterruptGraceSeconds" );
+	public static final Key		shutdown							= Key.of( "shutdown" );
+	public static final Key		graceSeconds						= Key.of( "graceSeconds" );
+	public static final Key		interruptGraceSeconds				= Key.of( "interruptGraceSeconds" );
+
+	/**
+	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */

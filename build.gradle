@@ -229,6 +229,59 @@ application {
 }
 
 /**
+ * Multi-process cluster harness.
+ *
+ * This is deliberately NOT part of `test`: it launches real JVM processes, runs for minutes, and
+ * analyzes their logs, so it is a separate entry point you invoke on demand:
+ *
+ *   ./gradlew clusterHarness --args="--nodes 3 --run-seconds 90"
+ *
+ * Or as a plain CLI process, which is how CI will drive it:
+ *
+ *   java -cp "$(./gradlew -q printTestClasspath)" ortus.boxlang.cluster.ClusterHarness --nodes 3
+ *
+ * See src/test/java/ortus/boxlang/cluster/ClusterHarness.java
+ */
+tasks.register( 'clusterHarness', JavaExec ) {
+	group = 'verification'
+	description = 'Run the multi-process cluster harness (not part of the normal test run)'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'ortus.boxlang.cluster.ClusterHarness'
+	// The harness supervises child processes and analyzes their logs; give it room
+	maxHeapSize = '1g'
+}
+
+/**
+ * End-to-end cluster soak: every node is a real runtime with its own boxlang.json + tasks.json, loading a
+ * clustered task through SchedulerService, running it through BaseScheduler, and stopped through the real
+ * runtime shutdown. Writes build/cluster-soak/timeline.html (overwritten every run).
+ *
+ *   ./gradlew clusterSoak --args="--minutes 6 --nodes 3"
+ *
+ * See src/test/java/ortus/boxlang/cluster/ClusterSoakReal.java
+ */
+tasks.register( 'clusterSoak', JavaExec ) {
+	group = 'verification'
+	description = 'End-to-end cluster soak: real runtimes, real tasks.json, real graceful shutdown'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'ortus.boxlang.cluster.ClusterSoakReal'
+	maxHeapSize = '1g'
+}
+
+/**
+ * Print the test runtime classpath so the harness can be launched as a plain CLI process:
+ *
+ *   java -cp "$(./gradlew -q printTestClasspath)" ortus.boxlang.cluster.ClusterHarness --nodes 3
+ */
+tasks.register( 'printTestClasspath' ) {
+	group = 'verification'
+	description = 'Print the test runtime classpath for launching the cluster harness as a plain CLI process'
+	doLast {
+		println sourceSets.test.runtimeClasspath.asPath
+	}
+}
+
+/**
  * This task processes resources to inject build metadata into version.properties
  */
 processResources {

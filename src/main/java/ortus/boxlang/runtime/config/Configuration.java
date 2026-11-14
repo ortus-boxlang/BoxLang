@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.RuntimeSettingsUtil;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
+import ortus.boxlang.runtime.config.segments.ClusterConfig;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.config.segments.IConfigSegment;
@@ -396,6 +397,12 @@ public class Configuration implements IConfigSegment {
 	public SchedulerConfig														scheduler							= new SchedulerConfig();
 
 	/**
+	 * The cluster service configuration. Top level because the cluster service owns cluster
+	 * membership and this node's record, which are not scheduler concepts.
+	 */
+	public ClusterConfig														cluster								= new ClusterConfig();
+
+	/**
 	 * The watcher configuration
 	 */
 	public WatcherConfig														watcher								= new WatcherConfig();
@@ -459,6 +466,58 @@ public class Configuration implements IConfigSegment {
 	 *
 	 * @return The new configuration object based on the core + overrides
 	 */
+	/**
+	 * Backwards compatibility bridge, to be removed in a future release.
+	 * <p>
+	 * Server fixation used to read its coordination cache from {@code scheduler.cacheName}. A deployment that
+	 * set that key was asking for tasks that run once across the cluster, so honour it: coordinate through that
+	 * cache and enable clustering unless the {@code cluster} block says otherwise. It only applies when the key
+	 * is explicitly present, so the shipped defaults never trigger it.
+	 *
+	 * @param config The raw configuration struct
+	 */
+	private void applySchedulerCacheNameBridge( IStruct config ) {
+		if ( !config.containsKey( Key.scheduler ) ) {
+			return;
+		}
+
+		IStruct	schedulerStruct	= StructCaster.cast( config.get( Key.scheduler ) );
+		IStruct	clusterStruct	= config.containsKey( Key.cluster ) ? StructCaster.cast( config.get( Key.cluster ) ) : null;
+
+		if ( !schedulerStruct.containsKey( Key.cacheName ) ) {
+			return;
+		}
+
+		String legacyCacheName = schedulerStruct.getAsString( Key.cacheName );
+		if ( legacyCacheName == null || legacyCacheName.isBlank() ) {
+			return;
+		}
+
+		// The old shipped default was "default", so every existing deployment has this key. Treating that as an
+		// opt-in would switch clustering on, pointed at a memory cache, for everybody - the opposite of a bridge.
+		if ( "default".equalsIgnoreCase( legacyCacheName ) ) {
+			logger.debug(
+			    "[scheduler.cacheName] is the old default [{}] and is ignored for cluster coordination.",
+			    legacyCacheName
+			);
+			return;
+		}
+
+		if ( clusterStruct == null || !clusterStruct.containsKey( Key.cacheName ) ) {
+			this.cluster.cacheName = legacyCacheName;
+		}
+		if ( clusterStruct == null || !clusterStruct.containsKey( Key.enabled ) ) {
+			this.cluster.enabled = true;
+		}
+
+		logger.warn(
+		    "[scheduler.cacheName] is deprecated for cluster coordination and will be removed in a future release. "
+		        + "Using it as the cluster coordination cache [{}] and enabling the cluster service. Move the setting "
+		        + "to [cluster.cacheName] and use [cluster.enabled].",
+		    legacyCacheName
+		);
+	}
+
 	public Configuration process( IStruct config ) {
 
 		// Store original config
@@ -872,6 +931,22 @@ public class Configuration implements IConfigSegment {
 			scheduler.process( StructCaster.cast( config.get( Key.scheduler ) ) );
 		}
 
+		// Process our cluster service configuration. The scheduler's own cluster settings were
+		// historically nested under "scheduler.cluster", so fall back to them when the top level
+		// block is absent.
+		if ( config.containsKey( Key.cluster ) ) {
+			cluster.process( StructCaster.cast( config.get( Key.cluster ) ) );
+		} else if ( config.containsKey( Key.scheduler )
+		    && StructCaster.cast( config.get( Key.scheduler ) ).containsKey( Key.cluster ) ) {
+			cluster.process( StructCaster.cast( StructCaster.cast( config.get( Key.scheduler ) ).get( Key.cluster ) ) );
+		}
+
+		// Backwards compatibility bridge, to be removed in a future release. Server fixation used to take its
+		// cache from the scheduler's cacheName, so a deployment that set that key was asking for coordinated
+		// tasks. Honour it: use that cache for coordination, and turn clustering on unless the cluster block
+		// says otherwise. Only applies when the key is explicitly present in the configuration file.
+		applySchedulerCacheNameBridge( config );
+
 		// Process our watcher configuration
 		if ( config.containsKey( Key.watcher ) ) {
 			watcher.process( StructCaster.cast( config.get( Key.watcher ) ) );
@@ -1271,6 +1346,7 @@ public class Configuration implements IConfigSegment {
 		    Key.setDomainCookies, this.setDomainCookies,
 		    Key.security, this.security.asStruct(),
 		    Key.scheduler, this.scheduler.asStruct(),
+		    Key.cluster, this.cluster.asStruct(),
 		    Key.watcher, this.watcher.asStruct(),
 		    Key.xml, this.xml.asStruct(),
 		    Key.queries, this.queries.asStruct(),

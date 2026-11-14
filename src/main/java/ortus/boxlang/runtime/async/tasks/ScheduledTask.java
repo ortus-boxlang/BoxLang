@@ -40,7 +40,6 @@ import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
-import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
@@ -51,7 +50,6 @@ import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.net.NetworkUtil;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -79,17 +77,6 @@ public class ScheduledTask implements Runnable {
 	 * Static Constants
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * The prefix used to build the server fixation cache key: {@code {prefix}{taskName}-{schedulerName}}
-	 */
-	private static final String						SERVER_FIXATION_CACHE_KEY_PREFIX	= "bxtasks-server-fixation-";
-
-	/**
-	 * The default lock timeout (in minutes) used by {@link #calculateLockTimeout()} when no better
-	 * estimate can be determined. Mirrors ColdBox's default of 60 minutes.
-	 */
-	private static final long						DEFAULT_LOCK_TIMEOUT_MINUTES		= 60L;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -201,18 +188,25 @@ public class ScheduledTask implements Runnable {
 	private Boolean									lastBusinessDay						= false;
 
 	/**
-	 * Server fixation: when true, and this task is running in a clustered/multi-server deployment
-	 * sharing the same cache, only ONE server in the cluster will actually execute this task. This is
-	 * enforced via a distributed mutual-exclusion lock stored in the cache named by {@link #cacheName}.
-	 * Ported from ColdBox's {@code onOneServer()} scheduled task feature.
+	 * Whether this task takes part in cluster coordination.
+	 * <p>
+	 * This is a tri-state on purpose: {@code null} inherits {@code cluster.enabled} from the deployment
+	 * configuration, {@code true} opts the task in, and {@code false} opts a single task out of an
+	 * otherwise clustered deployment. A task left with this set to {@code false} while other cluster
+	 * settings remain in place is a normal configuration - those settings are simply dormant.
 	 */
-	private Boolean									serverFixation						= false;
+	private Boolean									cluster								= null;
 
 	/**
-	 * The name of the cache to use for server fixation locking. Defaults to whatever is configured
-	 * on the owning scheduler (see {@code SchedulerConfig.cacheName}), or "default" when unbound.
+	 * What to do when a previous occurrence of this task is still running.
+	 * <p>
+	 * {@code "skip"} (default) does not claim the next occurrence while one is live, matching today's
+	 * behavior where a periodic task never runs concurrently with itself. {@code "run"} allows a long
+	 * job to overlap its own next occurrence. {@code null} inherits the scheduler default.
+	 * <p>
+	 * This is about the nature of the job, not about clustering, so it applies to unclustered tasks too.
 	 */
-	private String									cacheName							= "default";
+	private String									overlap								= null;
 
 	/**
 	 * By default tasks execute in an interval frequency which can cause tasks to
@@ -304,9 +298,26 @@ public class ScheduledTask implements Runnable {
 	private final Logger							logger;
 
 	/**
+	 * Whether this task still accepts new executions being scheduled.
+	 * <p>
+	 * Set to false when its scheduler starts shutting down, so nothing can slip a new execution into an
+	 * executor that is being torn down.
+	 */
+	private volatile boolean						acceptingSubmissions				= true;
+
+	/**
 	 * How many executions of this task are in flight right now
 	 */
 	private final AtomicInteger						runningCount						= new AtomicInteger( 0 );
+
+	/**
+	 * The threads currently executing this task.
+	 * <p>
+	 * A shutdown must be able to interrupt exactly this task's runs. When the task runs on a shared
+	 * executor it is not ours to shut down, so instead of reaching into the pool we interrupt the
+	 * threads we started through this task.
+	 */
+	private final java.util.Set<Thread>				runningThreads						= java.util.concurrent.ConcurrentHashMap.newKeySet();
 
 	/**
 	 * A cron fire or periodic tick running at least this many seconds after it was due is logged as a warning
@@ -506,12 +517,106 @@ public class ScheduledTask implements Runnable {
 	 *              disabled or constrained
 	 */
 	public void run( Boolean force ) {
+		// The executor can still fire a fixed-rate tick after its scheduler has begun shutting down: the gate
+		// closes the moment shutdown is signalled, but the pool is only shut down once the drain starts. Without
+		// this check a periodic task keeps starting new occurrences during the drain - which is exactly the work
+		// shutdown is trying to stop, and what made nodes in the soak appear to schedule tasks after shutdown.
+		// A forced run is an explicit caller request (a manual run), so it is still honoured.
+		if ( !Boolean.TRUE.equals( force ) && !this.acceptingSubmissions ) {
+			debugLog( "run refused: its scheduler is shutting down" );
+			return;
+		}
+
+		Thread current = Thread.currentThread();
 		this.runningCount.incrementAndGet();
+		this.runningThreads.add( current );
 		try {
 			runInternal( force );
 		} finally {
+			this.runningThreads.remove( current );
 			this.runningCount.decrementAndGet();
 		}
+	}
+
+	/**
+	 * Stop accepting new executions for this task. Called when its scheduler begins shutting down.
+	 *
+	 * @return This task
+	 */
+	public ScheduledTask stopAcceptingSubmissions() {
+		this.acceptingSubmissions = false;
+		return this;
+	}
+
+	/**
+	 * Start accepting new executions again. Called when its scheduler starts up.
+	 *
+	 * @return This task
+	 */
+	public ScheduledTask resumeAcceptingSubmissions() {
+		this.acceptingSubmissions = true;
+		return this;
+	}
+
+	/**
+	 * Is this task still allowed to schedule new executions?
+	 *
+	 * @return true when new executions may be scheduled
+	 */
+	public boolean isAcceptingSubmissions() {
+		return this.acceptingSubmissions;
+	}
+
+	/**
+	 * Interrupt every run of this task that is currently executing.
+	 * <p>
+	 * This is what lets a shutdown enforce its timeout: a graceful shutdown waits for in-flight runs,
+	 * and once the wait expires the runs are interrupted and given a further grace period before the
+	 * executor is forced down. Interrupting per task is deliberate - the executor may be shared with
+	 * other schedulers, whose runs must not be touched.
+	 *
+	 * @return The number of runs that were interrupted
+	 */
+	public int interruptRunningTasks() {
+		int interrupted = 0;
+		for ( Thread thread : this.runningThreads ) {
+			if ( thread.isAlive() ) {
+				thread.interrupt();
+				interrupted++;
+			}
+		}
+		if ( interrupted > 0 ) {
+			logger.warn(
+			    "Task [{}] was interrupted mid-run by shutdown after the graceful wait expired ({} run(s))",
+			    this.name,
+			    interrupted
+			);
+		}
+		return interrupted;
+	}
+
+	/**
+	 * Wait for this task's in-flight runs to finish, up to the given deadline.
+	 *
+	 * @param timeout The maximum time to wait
+	 * @param unit    The time unit
+	 *
+	 * @return true when nothing is running any more, false when the wait timed out
+	 */
+	public boolean awaitRunning( long timeout, TimeUnit unit ) {
+		long deadline = System.nanoTime() + unit.toNanos( timeout );
+		while ( this.runningCount.get() > 0 ) {
+			if ( System.nanoTime() >= deadline ) {
+				return false;
+			}
+			try {
+				Thread.sleep( 25 );
+			} catch ( InterruptedException e ) {
+				Thread.currentThread().interrupt();
+				return this.runningCount.get() == 0;
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -531,11 +636,13 @@ public class ScheduledTask implements Runnable {
 	private void runInternal( Boolean force ) {
 
 		debugLog( String.format( "run( force: %b )", force ) );
-		String timerLabel = "task-" + System.currentTimeMillis();
-		timer.start( timerLabel );
+		// Measure this run locally rather than through the shared timer map: the same task can run
+		// concurrently (overlap=run, or a manual run alongside a scheduled one), and two runs sharing
+		// a millisecond-resolution label would collide in that map.
+		long	runStartNanos	= System.nanoTime();
 
 		// When this tick was due, null if forced or not started by an executor. Consumed first so every tick advances it.
-		Instant dueInstant = force ? null : consumeDueInstant();
+		Instant	dueInstant		= force ? null : consumeDueInstant();
 		if ( dueInstant != null ) {
 			warnIfRanLate( dueInstant );
 		}
@@ -556,10 +663,28 @@ public class ScheduledTask implements Runnable {
 			return;
 		}
 
+		// Cluster coordination: claim this occurrence before running it. A forced (manual) run is not
+		// claimed - "run now" is an operator action, not a scheduled occurrence.
+		TaskClusterClaim.Claim clusterClaim = null;
+		if ( !force ) {
+			clusterClaim = TaskClusterClaim.attempt( this, dueInstant );
+			if ( clusterClaim == null && TaskClusterClaim.isClustered( this ) ) {
+				// Clustered, but another node owns this occurrence or it is already handled
+				setNextRunTime();
+				return;
+			}
+		}
+
 		// Mark the task as it will run now for the first time
 		this.stats.put( "neverRun", false );
-		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+		boolean		clusterRunFailed		= false;
+		boolean		clusterRunInterrupted	= false;
+		ClassLoader	oldClassLoader			= Thread.currentThread().getContextClassLoader();
 		try {
+			if ( clusterClaim != null ) {
+				// Keep the claim alive for as long as the job runs, and detect a lost claim while it runs
+				clusterClaim.startHeartbeat();
+			}
 			RequestBoxContext.setCurrent( this.taskContext );
 			if ( this.taskContext.getRequestContext() != null ) {
 				Thread.currentThread().setContextClassLoader( this.taskContext.getRequestContext().getRequestClassLoader() );
@@ -668,6 +793,8 @@ public class ScheduledTask implements Runnable {
 				e = new BoxRuntimeException( "A low level exception occurred when running the scheduled task: " + t.getMessage(), t );
 			}
 
+			clusterRunFailed		= true;
+			clusterRunInterrupted	= isInterruption( t );
 			final Exception exception = e;
 			// store failures
 			( ( AtomicInteger ) this.stats.get( "totalFailures" ) ).incrementAndGet();
@@ -705,9 +832,16 @@ public class ScheduledTask implements Runnable {
 				logger.error( "Error running task " + name + " after/error handlers: " + afterException.getMessage(), afterException );
 			}
 		} finally {
+			// Record the cluster outcome first, so the claim is released as soon as the job is done.
+			// An interrupted run is recorded as abandoned rather than failed: the job did not finish,
+			// so nobody may treat the occurrence as completed, and nobody may re-run it either.
+			if ( clusterClaim != null ) {
+				clusterClaim.finish( clusterRunInterrupted ? "abandoned" : ( clusterRunFailed ? "failed" : "success" ), null );
+			}
+
 			// Store finalization stats
 			this.stats.put( "lastRun", getNow() );
-			( ( AtomicLong ) this.stats.get( "lastExecutionTime" ) ).set( timer.stopAndGetMillis( timerLabel ) );
+			( ( AtomicLong ) this.stats.get( "lastExecutionTime" ) ).set( ( System.nanoTime() - runStartNanos ) / 1_000_000L );
 			( ( AtomicInteger ) this.stats.get( "totalRuns" ) ).incrementAndGet();
 			try {
 				// Call internal cleanups event
@@ -733,6 +867,25 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
+	 * Is this throwable an interruption, directly or anywhere in its cause chain? Used so a run cut
+	 * short by shutdown is recorded as abandoned rather than failed.
+	 *
+	 * @param throwable The throwable to inspect
+	 *
+	 * @return true when an InterruptedException is involved
+	 */
+	private static boolean isInterruption( Throwable throwable ) {
+		Throwable current = throwable;
+		while ( current != null ) {
+			if ( current instanceof InterruptedException ) {
+				return true;
+			}
+			current = current.getCause();
+		}
+		return Thread.currentThread().isInterrupted();
+	}
+
+	/**
 	 * Get the last result of the task
 	 *
 	 * @return The last result of the task as an Optional
@@ -751,6 +904,12 @@ public class ScheduledTask implements Runnable {
 	 *         ScheduledFuture if the task was not registered
 	 */
 	public ScheduledFuture<?> start() {
+		// Once a shutdown has begun nothing may be submitted into a pool that is being torn down
+		if ( !this.acceptingSubmissions ) {
+			logger.warn( "Task [{}] refused to schedule: its scheduler is shutting down", this.name );
+			return null;
+		}
+
 		// If we have overlaps and the spaced delay is 0 then grab it from the period
 		if ( this.noOverlaps && this.spacedDelay == 0 ) {
 			this.spacedDelay = this.period;
@@ -1129,11 +1288,9 @@ public class ScheduledTask implements Runnable {
 			}
 		}
 
-		// Server fixation: in a clustered deployment, only the server holding the distributed lock
-		// may run this task. All other servers are constrained.
-		if ( serverFixation && !canRunOnThisServer() ) {
-			return true;
-		}
+		// Cluster coordination is deliberately NOT evaluated here. This method is a side-effect free
+		// predicate, while claiming an occurrence writes records and waits through settle rounds. The
+		// claim lives in runInternal(), after the constraints pass and before the job executes.
 
 		return false;
 	}
@@ -1151,22 +1308,19 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * Enable server fixation for this task. When a multi-server/clustered deployment runs the same
-	 * scheduler configuration on every node, this makes the task actually execute on only ONE server
-	 * in the cluster, using a distributed cache as a mutual-exclusion lock, instead of firing
-	 * redundantly on every node.
-	 *
-	 * Ported from ColdBox's {@code onOneServer()} scheduled task feature.
-	 *
-	 * Note: cluster schedule synchronization (realigning a newly-joined server's initial delay to
-	 * match an already-established lock anchor) is not yet implemented; each server currently
-	 * schedules its own polling independently and simply defers execution to the lock holder.
+	 * Opt this task into cluster coordination: when the same scheduler configuration runs on every
+	 * node of a cluster, the task will execute on exactly one node per occurrence, spread across the
+	 * nodes, instead of firing redundantly everywhere.
+	 * <p>
+	 * This is the public switch for clustered coordination. It sets the task's participation to
+	 * {@code true}; the deployment-wide {@code cluster.mode} decides how nodes coordinate (eager or
+	 * balanced). See {@link TaskClusterClaim} for the protocol.
 	 *
 	 * @return The ScheduledTask instance
 	 */
 	public ScheduledTask onOneServer() {
 		debugLog( "onOneServer" );
-		return setServerFixation( true );
+		return setCluster( true );
 	}
 
 	/**
@@ -2361,152 +2515,6 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * --------------------------------------------------------------------------
-	 * Server Fixation / Clustering
-	 * --------------------------------------------------------------------------
-	 * These methods support running the same scheduler configuration on every node of a
-	 * multi-server/clustered deployment while only actually executing a given task on ONE
-	 * of those servers, using a shared cache as a distributed mutual-exclusion lock.
-	 */
-
-	/**
-	 * Checks if this server is allowed to run this task right now. This is the actual gate behind
-	 * {@link #onOneServer()}: it atomically get-or-sets a lock entry in the configured cache
-	 * ({@link #cacheName}) and compares the entry's recorded host/IP against this JVM's own, as
-	 * tracked in {@code stats.inetHost}/{@code stats.localIp}.
-	 *
-	 * The lock is deliberately NOT actively cleared after a successful run. It is left to expire
-	 * naturally per its TTL (see {@link #calculateLockTimeout()}), so that a failed/crashed server's
-	 * lock releases automatically (failover) without another server racing to grab it mid-cycle.
-	 *
-	 * @return true if this server holds the lock and may run the task, false if it is constrained
-	 */
-	public boolean canRunOnThisServer() {
-		ICacheProvider	cache			= getServerFixationCache();
-		String			cacheKey		= getServerFixationCacheKey();
-		long			timeoutSeconds	= calculateLockTimeout() * 60L;
-
-		// Atomic get-or-set: the first server to reach this "wins" the lock for the TTL window
-		IStruct			lockInfo		= ( IStruct ) cache.getOrSet(
-		    cacheKey,
-		    () -> buildServerFixationEntry( null ),
-		    timeoutSeconds
-		);
-
-		String			myHost			= ( String ) this.stats.get( "inetHost" );
-		String			myIp			= ( String ) this.stats.get( "localIp" );
-		boolean			weHoldTheLock	= myHost.equals( lockInfo.get( "serverHost" ) )
-		    && myIp.equals( lockInfo.get( "serverIp" ) );
-
-		// If we already hold the lock, refresh/extend it, preserving the original schedule anchor
-		if ( weHoldTheLock ) {
-			cache.set(
-			    cacheKey,
-			    buildServerFixationEntry( ( LocalDateTime ) lockInfo.get( "scheduleStart" ) ),
-			    timeoutSeconds
-			);
-		}
-
-		return weHoldTheLock;
-	}
-
-	/**
-	 * Builds the struct stored in the cache to represent this server's claim on the task's lock.
-	 *
-	 * @param existingAnchor The original {@code scheduleStart} anchor to preserve across a lock
-	 *                       refresh, or null to anchor it to right now (first time the lock is set)
-	 *
-	 * @return The lock entry struct
-	 */
-	private IStruct buildServerFixationEntry( LocalDateTime existingAnchor ) {
-		return Struct.ofNonConcurrent(
-		    "name", getName(),
-		    "lockOn", getNow(),
-		    "serverHost", this.stats.get( "inetHost" ),
-		    "serverIp", this.stats.get( "localIp" ),
-		    "nextRun", this.stats.get( "nextRun" ),
-		    "scheduleStart", existingAnchor != null ? existingAnchor : getNow(),
-		    "period", this.period,
-		    "timeUnit", this.timeUnit.toString()
-		);
-	}
-
-	/**
-	 * Builds the cache key used to store this task's server fixation lock entry.
-	 *
-	 * @return The cache key
-	 */
-	private String getServerFixationCacheKey() {
-		return SERVER_FIXATION_CACHE_KEY_PREFIX + getName() + "-" + ( hasScheduler() ? getScheduler().getSchedulerName() : "" );
-	}
-
-	/**
-	 * Resolves the cache provider to use for server fixation locking, using the configured
-	 * {@link #cacheName}, falling back to the runtime's default cache if it doesn't exist.
-	 *
-	 * @return The cache provider to use for locking
-	 */
-	private ICacheProvider getServerFixationCache() {
-		CacheService cacheService = BoxRuntime.getInstance().getCacheService();
-		return cacheService.hasCache( this.cacheName ) ? cacheService.getCache( this.cacheName ) : cacheService.getDefaultCache();
-	}
-
-	/**
-	 * Sizes the server fixation lock's TTL in minutes.
-	 *
-	 * For date-based constraints (monthly {@code dayOfTheMonth}, {@code firstBusinessDay},
-	 * {@code lastBusinessDay}) this task is internally polled far more often than its real cadence
-	 * and gated by {@link #isConstrained()}, so {@link #period}/{@link #timeUnit} reflects the poll
-	 * interval, NOT the real ~monthly gap. This computes the REAL next occurrence instead and sizes
-	 * the TTL as the minutes until that real occurrence.
-	 *
-	 * Otherwise, it falls back to converting {@link #period}/{@link #timeUnit} (or
-	 * {@link #spacedDelay}/{@link #timeUnit}) to minutes directly, which is correct for non-date-based
-	 * tasks (hourly, daily, weekly, {@code every()}) since their poll interval IS their real cadence.
-	 *
-	 * @return The lock timeout in minutes
-	 */
-	public long calculateLockTimeout() {
-		LocalDateTime	now				= getNow();
-		String			validatedTime	= this.taskTime.length() > 0 ? this.taskTime : "00:00";
-
-		if ( this.dayOfTheMonth > 0 ) {
-			LocalDateTime nextOccurrence = DateTimeHelper.getNextDayOfMonthOccurrence( this.dayOfTheMonth, validatedTime, false, now );
-			if ( now.compareTo( nextOccurrence ) >= 0 ) {
-				nextOccurrence = DateTimeHelper.getNextDayOfMonthOccurrence( this.dayOfTheMonth, validatedTime, true, now );
-			}
-			return Duration.between( now, nextOccurrence ).toMinutes();
-		}
-
-		if ( this.firstBusinessDay ) {
-			LocalDateTime nextOccurrence = DateTimeHelper.getFirstBusinessDayOfTheMonth( validatedTime, false, now );
-			if ( now.compareTo( nextOccurrence ) >= 0 ) {
-				nextOccurrence = DateTimeHelper.getFirstBusinessDayOfTheMonth( validatedTime, true, now );
-			}
-			return Duration.between( now, nextOccurrence ).toMinutes();
-		}
-
-		if ( this.lastBusinessDay ) {
-			LocalDateTime nextOccurrence = DateTimeHelper.getLastBusinessDayOfTheMonth( validatedTime, false, now );
-			if ( now.compareTo( nextOccurrence ) >= 0 ) {
-				nextOccurrence = DateTimeHelper.getLastBusinessDayOfTheMonth( validatedTime, true, now );
-			}
-			return Duration.between( now, nextOccurrence ).toMinutes();
-		}
-
-		// Non-date-based tasks: the poll interval IS the real cadence
-		long amount = this.spacedDelay != 0 ? this.spacedDelay : this.period;
-		if ( amount > 0 ) {
-			long minutes = TimeUnit.MINUTES.convert( amount, this.timeUnit );
-			if ( minutes > 0 ) {
-				return minutes;
-			}
-		}
-
-		return DEFAULT_LOCK_TIMEOUT_MINUTES;
-	}
-
-	/**
 	 * This method calculates the next run date according to initial and recurrent
 	 * scenarios.
 	 */
@@ -3052,32 +3060,68 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * Get whether server fixation is enabled for this task. See {@link #onOneServer()}.
+	 * Get whether this task takes part in cluster coordination.
+	 * <p>
+	 * Tri-state: {@code null} inherits {@code cluster.enabled}, {@code true} opts in, {@code false}
+	 * opts this one task out of an otherwise clustered deployment.
+	 *
+	 * @return The participation flag, or null to inherit
 	 */
-	public Boolean getServerFixation() {
-		return this.serverFixation;
+	public Boolean getCluster() {
+		return this.cluster;
 	}
 
 	/**
-	 * Set whether server fixation is enabled for this task. See {@link #onOneServer()}.
+	 * Set whether this task takes part in cluster coordination.
+	 *
+	 * @param cluster true to opt in, false to opt out, null to inherit the deployment default
+	 *
+	 * @return This task
 	 */
-	public ScheduledTask setServerFixation( Boolean serverFixation ) {
-		this.serverFixation = serverFixation;
+	public ScheduledTask setCluster( Boolean cluster ) {
+		this.cluster = cluster;
 		return this;
 	}
 
 	/**
-	 * Get the name of the cache used for server fixation locking.
+	 * Get whether this task is clustered. Retained as an alias for {@link #getCluster()} so existing
+	 * callers keep working; a task that has not opted in or out is not considered clustered.
+	 *
+	 * @return true when this task is explicitly clustered
 	 */
-	public String getCacheName() {
-		return this.cacheName;
+	public Boolean getServerFixation() {
+		return Boolean.TRUE.equals( this.cluster );
 	}
 
 	/**
-	 * Set the name of the cache used for server fixation locking.
+	 * Set whether this task is clustered. Retained as an alias for {@link #setCluster(Boolean)}.
+	 *
+	 * @param serverFixation true to cluster this task
+	 *
+	 * @return This task
 	 */
-	public ScheduledTask setCacheName( String cacheName ) {
-		this.cacheName = cacheName;
+	public ScheduledTask setServerFixation( Boolean serverFixation ) {
+		return setCluster( Boolean.TRUE.equals( serverFixation ) );
+	}
+
+	/**
+	 * Get the overlap policy for this task: what to do when the previous occurrence is still running.
+	 *
+	 * @return "skip", "run", or null to inherit the scheduler default
+	 */
+	public String getOverlap() {
+		return this.overlap;
+	}
+
+	/**
+	 * Set the overlap policy for this task.
+	 *
+	 * @param overlap "skip" to drop an occurrence while one is live, "run" to overlap, null to inherit
+	 *
+	 * @return This task
+	 */
+	public ScheduledTask setOverlap( String overlap ) {
+		this.overlap = overlap;
 		return this;
 	}
 
@@ -3235,6 +3279,42 @@ public class ScheduledTask implements Runnable {
 	public ScheduledTask setMetaKey( String key, Object value ) {
 		this.meta.put( Key.of( key ), value );
 		return this;
+	}
+
+	/**
+	 * Get a meta value by key.
+	 *
+	 * @param key The key to read
+	 *
+	 * @return The value, or null when absent
+	 */
+	public Object getMetaKey( String key ) {
+		return this.meta.get( Key.of( key ) );
+	}
+
+	/**
+	 * The cron expression this task was configured with, if any.
+	 * <p>
+	 * Read from the task metadata, where {@code cron()} records it, so claim arbitration can identify
+	 * which cron fire time an occurrence belongs to.
+	 *
+	 * @return The cron expression, or null when this is not a cron task
+	 */
+	public String getCronExpression() {
+		Object expression = getMetaKey( "cronExpression" );
+		return expression == null ? null : expression.toString();
+	}
+
+	/**
+	 * The task's period expressed in milliseconds, which is what occurrence bucketing needs.
+	 *
+	 * @return The period in milliseconds, or 0 when the task has no fixed period
+	 */
+	public long getPeriodMillis() {
+		if ( this.period <= 0 || this.timeUnit == null ) {
+			return 0;
+		}
+		return this.timeUnit.toMillis( this.period );
 	}
 
 	/**

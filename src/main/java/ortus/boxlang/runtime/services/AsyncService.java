@@ -177,7 +177,16 @@ public class AsyncService extends BaseService {
 	@Override
 	public void onShutdown( Boolean force ) {
 		logger.info( "AsyncService.onShutdown()" );
-		shutdownAllExecutors( force, DEFAULT_TIMEOUT, TimeUnit.SECONDS );
+		// Honour the configured shutdown timings, so an operator can dial the wait in one place. The
+		// graceful timeout is how long a pool may finish its work, and the interrupt grace is how long
+		// it has to unwind after the forced interrupt. Zero either one to skip that stage, and zero on
+		// both to kill it dead rather than sitting through a default timeout.
+		shutdownAllExecutors(
+		    force,
+		    runtime.getConfiguration().scheduler.shutdownGraceSeconds,
+		    TimeUnit.SECONDS,
+		    TimeUnit.SECONDS.toMillis( runtime.getConfiguration().scheduler.shutdownInterruptGraceSeconds )
+		);
 	}
 
 	/**
@@ -277,6 +286,30 @@ public class AsyncService extends BaseService {
 	    Boolean force,
 	    Long timeout,
 	    TimeUnit unit ) {
+		return shutdownExecutor( name, force, timeout, unit, null );
+	}
+
+	/**
+	 * Shutdown an executor or force it to shutdown, you can also do this from the
+	 * Executor themselves.
+	 * If an un-registered executor name is passed, it will ignore it
+	 *
+	 * @param name            The name of the executor
+	 * @param force           Use the shutdownNow() instead of the shutdown() method
+	 * @param timeout         The timeout to use when force=false, to make sure all tasks
+	 *                        finish gracefully. Deafult is 30 seconds.
+	 * @param unit            The time unit to use, available units are: days, hours,
+	 *                        microseconds, milliseconds, minutes, nanoseconds, and seconds.
+	 *                        The default
+	 * @param postForceWaitMs How long to wait after the forced interrupt. Null means the
+	 *                        executor's own default; zero means do not wait at all.
+	 */
+	public AsyncService shutdownExecutor(
+	    String name,
+	    Boolean force,
+	    Long timeout,
+	    TimeUnit unit,
+	    Long postForceWaitMs ) {
 
 		timeout	= timeout == null ? AsyncService.DEFAULT_TIMEOUT : timeout;
 		unit	= unit == null ? TimeUnit.SECONDS : unit;
@@ -289,7 +322,7 @@ public class AsyncService extends BaseService {
 			if ( Boolean.TRUE.equals( force ) ) {
 				getExecutor( name ).executor().shutdownNow();
 			} else {
-				getExecutor( name ).shutdownAndAwaitTermination( timeout, unit );
+				getExecutor( name ).shutdownAndAwaitTermination( timeout, unit, postForceWaitMs );
 			}
 
 			// Now remove it
@@ -329,21 +362,68 @@ public class AsyncService extends BaseService {
 	    Boolean force,
 	    Long timeout,
 	    TimeUnit unit ) {
+		return shutdownAllExecutors( force, timeout, unit, null );
+	}
+
+	/**
+	 * Shutdown all executors or force them to shutdown, you can also do this from
+	 * the Executor themselves.
+	 * We do this in parallel to speed things up.
+	 *
+	 * @param force           Use the shutdownNow() instead of the shutdown() method
+	 * @param timeout         The timeout to use when force=false, to make sure all tasks
+	 *                        finish gracefully. Deafult is 30 seconds.
+	 * @param unit            The time unit to use, available units are: days, hours,
+	 *                        microseconds, milliseconds, minutes, nanoseconds, and seconds.
+	 *                        The default
+	 * @param postForceWaitMs How long to wait after the forced interrupt before giving up on each
+	 *                        pool. Null means the executor's own default; zero means do not wait
+	 *                        at all after the interrupt.
+	 */
+	public AsyncService shutdownAllExecutors(
+	    Boolean force,
+	    Long timeout,
+	    TimeUnit unit,
+	    Long postForceWaitMs ) {
 		getTimerUtil().start( "shutdownAllExecutors" );
 		logger.debug( "+ Starting to shutdown all executors..." );
 
-		// IMPORTANT: Do NOT use parallelStream() here.
-		// parallelStream() uses ForkJoinPool.commonPool(), and shutdown can block
-		// awaiting executor termination.
-		// If shutdown work itself runs on (or depends on) the common pool, this can
-		// lead to starvation/hangs.
-		// Also take a snapshot of the keys to avoid concurrent modification concerns.
+		// IMPORTANT: do not use parallelStream() here.
+		// parallelStream() uses ForkJoinPool.commonPool(), and shutdown blocks awaiting executor
+		// termination. If the common pool is already busy - or the work itself depends on it - that
+		// starves and can hang. A dedicated pool keeps the parallelism without the shared resource.
 		List<String> executorNames = new ArrayList<>( this.executors.keySet() );
-		for ( String executorName : executorNames ) {
-			try {
-				shutdownExecutor( executorName, force, timeout, unit );
-			} catch ( Throwable e ) {
-				logger.warn( "+ Error shutting down executor ({}): {}", executorName, e.getMessage(), e );
+		if ( executorNames.isEmpty() ) {
+			return this;
+		}
+
+		// Every pool is drained concurrently, so the wall clock is the slowest single pool rather than
+		// the sum of all of them
+		int poolSize = Math.min( executorNames.size(), 16 );
+		try ( var pool = java.util.concurrent.Executors.newFixedThreadPool( poolSize, runnable -> {
+			Thread thread = new Thread( runnable, "boxlang-executor-shutdown" );
+			thread.setDaemon( true );
+			return thread;
+		} ) ) {
+			List<java.util.concurrent.Future<?>> futures = new ArrayList<>( executorNames.size() );
+			for ( String executorName : executorNames ) {
+				futures.add( pool.submit( () -> {
+					try {
+						shutdownExecutor( executorName, force, timeout, unit, postForceWaitMs );
+					} catch ( Throwable e ) {
+						logger.warn( "+ Error shutting down executor ({}): {}", executorName, e.getMessage(), e );
+					}
+				} ) );
+			}
+			for ( java.util.concurrent.Future<?> future : futures ) {
+				try {
+					future.get();
+				} catch ( InterruptedException e ) {
+					Thread.currentThread().interrupt();
+					break;
+				} catch ( Throwable ignored ) {
+					// already logged by the task
+				}
 			}
 		}
 

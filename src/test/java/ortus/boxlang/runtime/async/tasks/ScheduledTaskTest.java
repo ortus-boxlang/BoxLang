@@ -19,12 +19,14 @@ package ortus.boxlang.runtime.async.tasks;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -43,6 +45,7 @@ import org.junit.jupiter.api.TestFactory;
 import org.mockito.Mockito;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -519,84 +522,155 @@ class ScheduledTaskTest {
 	}
 
 	@Nested
-	class ServerFixation {
+	class Clustered {
 
-		@DisplayName( "onOneServer() enables the server fixation flag" )
+		@DisplayName( "a clustered task refuses to start when clustering is disabled on the node" )
 		@Test
-		void testOnOneServerEnablesTheFlag() {
-			assertThat( task.getServerFixation() ).isFalse();
+		void testClusteredTaskRefusesWhenClusteringDisabled() {
+			// The cluster service exists but is disabled, which is the shipped default: a task that opted in
+			// must not silently run on every node instead
+			BoxRuntime	runtime		= BoxRuntime.getInstance();
+			boolean		wasEnabled	= runtime.getConfiguration().cluster.enabled;
+			runtime.getConfiguration().cluster.enabled = false;
+			try {
+				BaseScheduler scheduler = new BaseScheduler( "no-cluster-" + UUID.randomUUID() );
+				scheduler.task( "clustered-" + UUID.randomUUID() ).call( () -> {
+				} ).every( 30, java.util.concurrent.TimeUnit.SECONDS ).setCluster( true );
+
+				String				taskName	= scheduler.getTaskRecords().iterator().next().name;
+				BoxRuntimeException	e			= assertThrows( BoxRuntimeException.class, () -> scheduler.startupTask( taskName ) );
+				assertThat( e.getMessage() ).contains( "clustering is not enabled" );
+				assertThat( e.getMessage() ).contains( "cluster.cacheName" );
+			} finally {
+				runtime.getConfiguration().cluster.enabled = wasEnabled;
+			}
+		}
+
+		@DisplayName( "onOneServer() opts the task into cluster coordination" )
+		@Test
+		void testOnOneServerOptsIn() {
+			assertThat( task.getCluster() ).isNull();
 			task.onOneServer();
+			assertThat( task.getCluster() ).isTrue();
 			assertThat( task.getServerFixation() ).isTrue();
 		}
 
-		@DisplayName( "only one server wins the distributed lock when two servers race for the same task" )
+		@DisplayName( "participation is a tri-state with an explicit override winning" )
 		@Test
-		void testOnlyOneServerCanRunTheTask() {
-			String			taskName	= "server-fixation-" + java.util.UUID.randomUUID();
+		void testParticipationTriState() {
+			// No override and no cluster service: not clustered
+			assertThat( TaskClusterClaim.isClustered( task, null ) ).isFalse();
 
-			ScheduledTask	serverA		= new ScheduledTask( taskName );
-			ScheduledTask	serverB		= new ScheduledTask( taskName );
+			// Explicit opt-in clusters even without a cluster service configured
+			task.setCluster( true );
+			assertThat( TaskClusterClaim.isClustered( task, null ) ).isTrue();
 
-			// Simulate two different physical/virtual servers sharing the same "default" cache
-			serverA.getStats().put( "inetHost", "server-a-host" );
-			serverA.getStats().put( "localIp", "10.0.0.1" );
-			serverB.getStats().put( "inetHost", "server-b-host" );
-			serverB.getStats().put( "localIp", "10.0.0.2" );
-
-			boolean	aCanRun	= serverA.canRunOnThisServer();
-			boolean	bCanRun	= serverB.canRunOnThisServer();
-
-			// Exactly one of the two servers must win the lock
-			assertThat( aCanRun ).isNotEqualTo( bCanRun );
-
-			// The winner must keep winning on subsequent polls (lock refresh), the loser must keep losing
-			assertThat( serverA.canRunOnThisServer() ).isEqualTo( aCanRun );
-			assertThat( serverB.canRunOnThisServer() ).isEqualTo( bCanRun );
+			// Explicit opt-out wins over everything
+			task.setCluster( false );
+			assertThat( TaskClusterClaim.isClustered( task, null ) ).isFalse();
 		}
 
-		@DisplayName( "calculateLockTimeout() for a day-of-the-month task spans close to a real month, not a poll interval" )
+		@DisplayName( "the overlap policy defaults to inheritance and can be set" )
 		@Test
-		void testCalculateLockTimeoutForDayOfTheMonthTask() throws InvalidAttributeValueException {
-			task.everyMonthOn( 28, "09:00" );
-
-			// Pretend "now" is early in the month so the real next occurrence is ~weeks away,
-			// while the internal poll period (period/timeUnit) is only ~1 day
-			LocalDateTime mockNow = LocalDateTime.of( 2026, 3, 1, 10, 0 );
-			Mockito.when( task.getNow() ).thenReturn( mockNow );
-
-			long timeoutMinutes = task.calculateLockTimeout();
-
-			// The real gap (Mar 1 10:00 -> Mar 28 09:00) is ~27 days, nowhere close to the
-			// ~1 day poll interval the regression class of bug would have produced
-			assertThat( timeoutMinutes ).isGreaterThan( TimeUnit.DAYS.toMinutes( 20 ) );
-			assertThat( timeoutMinutes ).isLessThan( TimeUnit.DAYS.toMinutes( 32 ) );
+		void testOverlap() {
+			assertThat( task.getOverlap() ).isNull();
+			task.setOverlap( "run" );
+			assertThat( task.getOverlap() ).isEqualTo( "run" );
 		}
 
-		@DisplayName( "calculateLockTimeout() for a last-business-day task spans close to a real month, not a poll interval" )
+		@DisplayName( "an interval occurrence id is the period bucket of the due instant, not the wall clock" )
 		@Test
-		void testCalculateLockTimeoutForLastBusinessDayTask() throws InvalidAttributeValueException {
-			task.onLastBusinessDayOfTheMonth( "09:00" );
+		void testOccurrenceIdBucketsByDueInstant() {
+			task.every( 10, TimeUnit.SECONDS );
 
-			LocalDateTime mockNow = LocalDateTime.of( 2026, 3, 1, 10, 0 );
-			Mockito.when( task.getNow() ).thenReturn( mockNow );
+			Instant	first	= Instant.parse( "2026-03-01T10:00:05Z" );
+			Instant	late	= Instant.parse( "2026-03-01T10:00:05.900Z" );
 
-			long timeoutMinutes = task.calculateLockTimeout();
+			String	firstId	= TaskClusterClaim.occurrenceId( task, first );
+			String	lateId	= TaskClusterClaim.occurrenceId( task, late );
 
-			assertThat( timeoutMinutes ).isGreaterThan( TimeUnit.DAYS.toMinutes( 20 ) );
-			assertThat( timeoutMinutes ).isLessThan( TimeUnit.DAYS.toMinutes( 32 ) );
+			// A tick that runs 900ms late still belongs to the same occurrence
+			assertThat( lateId ).isEqualTo( firstId );
+
+			// The next period is a different occurrence
+			assertThat( TaskClusterClaim.occurrenceId( task, first.plusSeconds( 10 ) ) ).isNotEqualTo( firstId );
 		}
 
-		@DisplayName( "calculateLockTimeout() falls back to the period/timeUnit converted to minutes for non date-based tasks" )
+		@DisplayName( "occurrence ids are stable across nodes for the same due instant" )
 		@Test
-		void testCalculateLockTimeoutForNonDateBasedTask() {
-			task.every( 30, TimeUnit.MINUTES );
-			assertThat( task.calculateLockTimeout() ).isEqualTo( 30L );
+		void testOccurrenceIdIsDeterministic() {
+			task.every( 30, TimeUnit.SECONDS );
+			Instant due = Instant.parse( "2026-03-01T10:00:00Z" );
+
+			assertThat( TaskClusterClaim.occurrenceId( task, due ) )
+			    .isEqualTo( TaskClusterClaim.occurrenceId( task, due ) );
 		}
 
-		@DisplayName( "calculateLockTimeout() falls back to the default timeout when nothing else can be determined" )
+		@DisplayName( "a calendar task's occurrence id identifies the fire time" )
 		@Test
-		void testCalculateLockTimeoutDefaultsWhenUndetermined() {
-			assertThat( task.calculateLockTimeout() ).isEqualTo( 60L );
+		void testOccurrenceIdForCalendarTask() throws InvalidAttributeValueException {
+			task.everyDayAt( "02:00" );
+
+			String	id1	= TaskClusterClaim.occurrenceId( task, Instant.parse( "2026-03-01T08:00:00Z" ) );
+			String	id2	= TaskClusterClaim.occurrenceId( task, Instant.parse( "2026-03-02T08:00:00Z" ) );
+
+			assertThat( id1 ).isNotEqualTo( id2 );
+		}
+
+		@DisplayName( "the eager delay stays within the configured random window" )
+		@Test
+		void testEagerDelayBounds() {
+			ortus.boxlang.runtime.services.ClusterService		cluster	= claimTestCluster();
+			ortus.boxlang.runtime.config.segments.ClusterConfig	config	= cluster.getConfig();
+
+			for ( int i = 0; i < 25; i++ ) {
+				long delay = TaskClusterClaim.computeDelayMillis( task, cluster, config );
+				assertThat( delay ).isAtLeast( 0L );
+				assertThat( delay ).isAtMost( TaskClusterClaim.RANDOM_DELAY_MILLIS );
+			}
+		}
+
+		@DisplayName( "balanced mode falls back to the eager random delay when no peers are visible" )
+		void testBalancedDelayWithNoPeers() {
+			ortus.boxlang.runtime.services.ClusterService		cluster	= claimTestCluster();
+			ortus.boxlang.runtime.config.segments.ClusterConfig	config	= cluster.getConfig();
+
+			// This node is alone in its own cluster name, so there is nobody to be pushed back behind
+			cluster.invalidateSnapshot();
+			for ( int i = 0; i < 10; i++ ) {
+				assertThat( TaskClusterClaim.computeDelayMillis( task, cluster, config ) ).isLessThan( 30L );
+			}
+		}
+
+		@DisplayName( "a cluster floor rejects a task period it cannot service" )
+		@Test
+		void testMinimumPeriodFloor() {
+			ortus.boxlang.runtime.config.segments.ClusterConfig config = new ortus.boxlang.runtime.config.segments.ClusterConfig();
+
+			// 2 x 1000 + 1000 + 1000 margin = 4s eager
+			assertThat( TaskClusterClaim.minimumPeriodSeconds() ).isEqualTo( 4 );
+
+			task.every( 2, TimeUnit.SECONDS );
+			assertThat( TaskClusterClaim.meetsMinimumPeriod( task, config ) ).isFalse();
+
+			task.every( 10, TimeUnit.SECONDS );
+			assertThat( TaskClusterClaim.meetsMinimumPeriod( task, config ) ).isTrue();
+		}
+
+		/**
+		 * A cluster service for delay tests: enabled, its own cluster name so no peers leak in from
+		 * other tests, over the default cache.
+		 */
+		private ortus.boxlang.runtime.services.ClusterService claimTestCluster() {
+			ortus.boxlang.runtime.config.segments.ClusterConfig config = new ortus.boxlang.runtime.config.segments.ClusterConfig();
+			config.enabled	= true;
+			config.name		= "claim-test-" + java.util.UUID.randomUUID();
+			config.nodeId	= "claim-node";
+			return new ortus.boxlang.runtime.services.ClusterService(
+			    ortus.boxlang.runtime.BoxRuntime.getInstance(),
+			    config,
+			    ortus.boxlang.runtime.BoxRuntime.getInstance().getCacheService().getDefaultCache()
+			);
 		}
 	}
 
