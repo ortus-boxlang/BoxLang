@@ -134,6 +134,87 @@ public class FileSystemUtilTest {
 		Path	other	= Files.createFile( tempDir.resolve( "Other.bx" ) );
 		assertThat( FileSystemUtil.pathExistsCaseInsensitive( lookup ) ).isEqualTo( renamed );
 		assertThat( FileSystemUtil.pathExistsCaseInsensitive( tempDir.resolve( "OTHER.bx" ) ) ).isEqualTo( other );
+
 	}
 
+	@DisplayName( "writeAtomic writes contents and replaces the existing file" )
+	@Test
+	void testWriteAtomicReplacesFile( @TempDir Path tempDir ) throws IOException {
+		Path target = tempDir.resolve( "tasks.json" );
+		FileSystemUtil.writeAtomic( target.toString(), "[ 1, 2, 3 ]" );
+		assertThat( Files.readString( target ) ).isEqualTo( "[ 1, 2, 3 ]" );
+
+		// Replacing a longer file with a shorter one must not leave trailing bytes behind
+		FileSystemUtil.writeAtomic( target.toString(), "[]" );
+		assertThat( Files.readString( target ) ).isEqualTo( "[]" );
+	}
+
+	@DisplayName( "writeAtomic honours the charset and the ensureDirectory flag" )
+	@Test
+	void testWriteAtomicCharsetAndDirectory( @TempDir Path tempDir ) throws IOException {
+		Path target = tempDir.resolve( "nested/deeper/tasks.json" );
+		FileSystemUtil.writeAtomic( target.toString(), "café", StandardCharsets.UTF_16.name(), true );
+
+		assertThat( Files.exists( target ) ).isTrue();
+		assertThat( Files.readString( target, StandardCharsets.UTF_16 ) ).isEqualTo( "café" );
+	}
+
+	@DisplayName( "a reader never sees a partially written file" )
+	@Test
+	void testWriteAtomicNeverExposesAPartialFile( @TempDir Path tempDir ) throws Exception {
+		Path	target	= tempDir.resolve( "tasks.json" );
+		// Both payloads are valid JSON, so any observed value must be exactly one of them. A plain
+		// truncating write would let a reader see "" or a truncated prefix instead.
+		String	before	= "[" + "1,".repeat( 50_000 ) + "1]";
+		String	after	= "[" + "2,".repeat( 50_000 ) + "2]";
+		FileSystemUtil.writeAtomic( target.toString(), before );
+
+		java.util.concurrent.atomic.AtomicReference<String>	bad		= new java.util.concurrent.atomic.AtomicReference<>();
+		java.util.concurrent.atomic.AtomicBoolean			running	= new java.util.concurrent.atomic.AtomicBoolean( true );
+
+		Thread												reader	= new Thread( () -> {
+																		while ( running.get() ) {
+																			try {
+																				String seen = Files.readString( target );
+																				if ( !seen.equals( before ) && !seen.equals( after ) ) {
+																					bad.compareAndSet( null, "length=" + seen.length() );
+																					return;
+																				}
+																				// A reader that never pauses holds the file open continuously, which on Windows
+																				// blocks every replace. Brief gaps model the real reader (a watcher or a reload).
+																				Thread.sleep( 1 );
+																			} catch ( Exception e ) {
+																				bad.compareAndSet( null, e.getClass().getSimpleName() + ": " + e.getMessage() );
+																				return;
+																			}
+																		}
+																	}, "atomic-write-reader" );
+		reader.setDaemon( true );
+		reader.start();
+
+		try {
+			for ( int i = 0; i < 200; i++ ) {
+				FileSystemUtil.writeAtomic( target.toString(), i % 2 == 0 ? after : before );
+			}
+		} finally {
+			running.set( false );
+			reader.join( 10_000 );
+		}
+
+		assertThat( bad.get() ).isNull();
+		assertThat( java.util.Set.of( before, after ) ).contains( Files.readString( target ) );
+	}
+
+	@DisplayName( "writeAtomic leaves no temporary files behind" )
+	@Test
+	void testWriteAtomicCleansUp( @TempDir Path tempDir ) throws IOException {
+		Path target = tempDir.resolve( "tasks.json" );
+		FileSystemUtil.writeAtomic( target.toString(), "[]" );
+		FileSystemUtil.writeAtomic( target.toString(), "[ 1 ]" );
+
+		try ( var entries = Files.list( tempDir ) ) {
+			assertThat( entries.map( path -> path.getFileName().toString() ).toList() )
+			    .containsExactly( "tasks.json" );
+		}
+	}
 }

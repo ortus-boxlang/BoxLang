@@ -46,3 +46,15 @@ jobs:
 
       - name: Verify Code Formatting
         run: ./gradlew spotlessCheck
+
+  #############################################
+  # Cluster Soak
+  #
+  # Same shape as the snapshot build: after formatting, alongside the unit suites.
+  #############################################
+  soak:
+    uses: ./.github/workflows/soak.yml
+    needs: format_check
+    secrets: inherit
+    permissions:
+      contents: read

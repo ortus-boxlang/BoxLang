@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -85,6 +86,7 @@ import ortus.boxlang.runtime.services.IService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.services.SchedulerService;
+import ortus.boxlang.runtime.services.ClusterService;
 import ortus.boxlang.runtime.services.WatcherService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -247,6 +249,11 @@ public class BoxRuntime implements java.io.Closeable {
 	 * The Scheduler service in charge of all schedulers
 	 */
 	private SchedulerService					schedulerService;
+
+	/**
+	 * The Cluster service in charge of cluster membership and this node's record
+	 */
+	private ClusterService						clusterService;
 
 	/**
 	 * The Watcher service in charge of all filesystem watchers
@@ -508,6 +515,7 @@ public class BoxRuntime implements java.io.Closeable {
 		this.applicationService		= new ApplicationService( this );
 		this.moduleService			= new ModuleService( this );
 		this.schedulerService		= new SchedulerService( this );
+		this.clusterService			= new ClusterService( this );
 		this.watcherService			= new WatcherService( this );
 		this.dataSourceService		= new DatasourceService( this );
 		this.httpService			= new HttpService( this );
@@ -540,6 +548,7 @@ public class BoxRuntime implements java.io.Closeable {
 		this.applicationService.onConfigurationLoad();
 		this.moduleService.onConfigurationLoad();
 		this.schedulerService.onConfigurationLoad();
+		this.clusterService.onConfigurationLoad();
 		this.watcherService.onConfigurationLoad();
 		this.dataSourceService.onConfigurationLoad();
 		this.httpService.onConfigurationLoad();
@@ -566,6 +575,8 @@ public class BoxRuntime implements java.io.Closeable {
 		// Now the cache service can be started, this allows for modules to register
 		// caches
 		this.cacheService.onStartup();
+		// Now the cluster service can be started, since it needs the coordination cache to exist
+		this.clusterService.onStartup();
 		// Now all schedulers can be started, this allows for modules to register
 		// schedulers
 		this.schedulerService.onStartup();
@@ -810,6 +821,15 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public SchedulerService getSchedulerService() {
 		return schedulerService;
+	}
+
+	/**
+	 * Get the cluster service
+	 *
+	 * @return {@link ClusterService} or null if the runtime has not started
+	 */
+	public ClusterService getClusterService() {
+		return clusterService;
 	}
 
 	/**
@@ -1139,6 +1159,48 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
+	 * Run shutdown work concurrently and wait for all of it.
+	 * <p>
+	 * Used so independent services stop at the same time instead of one after another. A dedicated
+	 * daemon pool is used rather than {@code parallelStream()}, because shutdown blocks and the common
+	 * pool must not be a dependency of the work being shut down.
+	 *
+	 * @param tasks The shutdown tasks to run
+	 */
+	private void runShutdownTasksInParallel( List<Runnable> tasks ) {
+		if ( tasks.isEmpty() ) {
+			return;
+		}
+
+		try ( var pool = java.util.concurrent.Executors.newFixedThreadPool( tasks.size(), runnable -> {
+			Thread thread = new Thread( runnable, "boxlang-shutdown" );
+			thread.setDaemon( true );
+			return thread;
+		} ) ) {
+			List<java.util.concurrent.Future<?>> futures = new ArrayList<>( tasks.size() );
+			for ( Runnable task : tasks ) {
+				futures.add( pool.submit( () -> {
+					try {
+						task.run();
+					} catch ( Throwable e ) {
+						instance.logger.error( "Error during parallel shutdown: {}", e.getMessage(), e );
+					}
+				} ) );
+			}
+			for ( java.util.concurrent.Future<?> future : futures ) {
+				try {
+					future.get();
+				} catch ( InterruptedException e ) {
+					Thread.currentThread().interrupt();
+					return;
+				} catch ( Throwable ignored ) {
+					// already logged
+				}
+			}
+		}
+	}
+
+	/**
 	 * Shut down the runtime with the option to force it
 	 *
 	 * @force If true, forces the shutdown of the runtime, nothing will be
@@ -1163,18 +1225,37 @@ public class BoxRuntime implements java.io.Closeable {
 		// Shutdown the services
 		instance.applicationService.onShutdown( force );
 		instance.moduleService.onShutdown( force );
-		instance.cacheService.onShutdown( force );
-		// Watcher service must shut down BEFORE asyncService so virtual-thread loops
-		// can be cancelled before their executor is terminated
-		instance.watcherService.onShutdown( force );
+
+		// Phase 1: stop every producer of new work, concurrently. These only signal - nothing is drained
+		// here - so the whole stop takes as long as the slowest signaler, not the sum.
+		instance.runShutdownTasksInParallel( List.of(
+		    () -> instance.watcherService.onShutdown( force ),
+		    // Signalling the schedulers closes their gate and cancels their futures. Their pools are
+		    // drained together with every other pool in phase 2, instead of one wait after another.
+		    () -> instance.schedulerService.shutdownSignal()
+		) );
+
+		// The cluster service must stop its threads before the cache it writes to goes away, but both
+		// must outlive the pool drain: a clustered run that finishes during the drain still needs to
+		// record its outcome. So the drain comes first, then the cluster service, then the cache.
 		// Parser DFA cache eviction must shut down BEFORE asyncService so no
 		// unmanaged virtual threads block shutdown
 		Parser.shutdown();
+
+		// Phase 2: drain every executor pool concurrently. Each pool has its own graceful timeout, and
+		// they all run at the same time, so the wall clock is the slowest pool rather than their sum.
 		instance.asyncService.onShutdown( force );
+
+		// Schedulers finish their own bookkeeping (records cleared, started=false) after the drain
+		instance.schedulerService.completeShutdown();
+
+		// Now that nothing is running, the cluster record and the cache can go
+		instance.clusterService.onShutdown( force );
+		instance.cacheService.onShutdown( force );
+
 		instance.functionService.onShutdown( force );
 		instance.componentService.onShutdown( force );
 		instance.interceptorService.onShutdown( force );
-		instance.schedulerService.onShutdown( force );
 		instance.dataSourceService.onShutdown( force );
 		instance.codeProfilerService.onShutdown( force );
 

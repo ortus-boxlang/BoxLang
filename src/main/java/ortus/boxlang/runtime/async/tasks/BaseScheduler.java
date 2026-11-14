@@ -26,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -39,7 +40,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
-import ortus.boxlang.runtime.services.SchedulerService;
+import ortus.boxlang.runtime.services.ClusterService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -111,6 +112,13 @@ public class BaseScheduler implements IScheduler {
 	 * Is the scheduler started?
 	 */
 	protected Boolean							started					= false;
+
+	/**
+	 * True from the moment a shutdown begins until the scheduler starts up again. While set, no new
+	 * tasks may be registered and no task may schedule a new execution, so nothing can be submitted
+	 * into an executor that is being torn down.
+	 */
+	protected volatile boolean					shuttingDown			= false;
 
 	/**
 	 * When the scheduler was started
@@ -275,6 +283,12 @@ public class BaseScheduler implements IScheduler {
 	 * @return a ScheduledTask object so you can work on the registration of the task
 	 */
 	public ScheduledTask task( String name, String group ) {
+		// A shutdown in progress means nothing may be added to a pool that is being torn down
+		if ( this.shuttingDown ) {
+			throw new BoxRuntimeException(
+			    "Scheduler [" + this.name + "] is shutting down and cannot register task [" + name + "]"
+			);
+		}
 		// Create task with custom name
 		var oTask =
 		    // Give me the task broda!
@@ -282,9 +296,9 @@ public class BaseScheduler implements IScheduler {
 		        // Register ourselves in the task
 		        .setScheduler( this )
 		        // Set default timezone into the task
-		        .setTimezone( this.getTimezone() )
-		        // Set the cache to use for server fixation locking into the task
-		        .setCacheName( this.getCacheName() );
+		        .setTimezone( this.getTimezone() );
+		// Cluster coordination uses the single coordination cache owned by the cluster service, so
+		// there is no per-scheduler cache to propagate
 
 		// Register the task by name
 		this.tasks.put( name, new TaskRecord( name, group, oTask ) );
@@ -371,6 +385,11 @@ public class BaseScheduler implements IScheduler {
 	 */
 	public synchronized BaseScheduler startup() {
 		if ( !this.started ) {
+			// A (re)start clears the shutdown gate, so the scheduler can accept work again
+			this.shuttingDown = false;
+			// ...and so must its tasks: the submission gate is per task, and leaving it closed would make
+			// every restart a scheduler that never runs anything again.
+			this.tasks.values().forEach( record -> record.task.resumeAcceptingSubmissions() );
 			// Run on the shared global executor if bound to one, else build out a private executor for this scheduler
 			this.executor		= resolveGlobalExecutor();
 			this.sharedExecutor	= this.executor != null;
@@ -409,6 +428,10 @@ public class BaseScheduler implements IScheduler {
 		this.logger.info( "+ Restarting scheduler [{}] with force: {} and timeout: {}", this.name, force, timeout );
 		// Shutdown first
 		shutdown( force, timeout );
+		// Re-open the gate before configuring. shutdown() closes it, and configure() registers the tasks - the
+		// gate is otherwise only reopened by startup(), which runs after configure(), so restart() would throw
+		// on its own scheduler's task registration.
+		this.shuttingDown = false;
 		// Clear tasks
 		clearTasks();
 		// Configure again
@@ -427,6 +450,65 @@ public class BaseScheduler implements IScheduler {
 	public synchronized BaseScheduler clearTasks() {
 		this.tasks.clear();
 		return this;
+	}
+
+	/**
+	 * Reject a clustered task whose period cannot accommodate the claim protocol.
+	 * <p>
+	 * The floor comes from the configured timings ({@code verifyRounds x settleMillis} plus the claim
+	 * delay, plus a margin), and is computed as if peers exist - a task must not validate against
+	 * today's peer count and then start failing the moment a second node joins.
+	 *
+	 * @param taskRecord The task record being started
+	 *
+	 * @throws BoxRuntimeException When the task is clustered and its period is below the floor
+	 */
+	private void validateClusterPeriod( TaskRecord taskRecord ) {
+		ClusterService cluster = BoxRuntime.getInstance().getClusterService();
+
+		// A task that explicitly opts into clustering on a server that is not clustered would otherwise run on
+		// every node - the opposite of what it asked for - so refuse it with a message that says what to do.
+		if ( Boolean.TRUE.equals( taskRecord.task.getCluster() )
+		    && ( cluster == null || cluster.getConfig() == null || !cluster.getConfig().enabled ) ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "Task [%s] in scheduler [%s] is marked as clustered, but clustering is not enabled on this node. "
+			            + "Enable it with cluster.enabled=true and set cluster.cacheName to a cache backed by a store every "
+			            + "node can see, or set the task's cluster=false.",
+			        taskRecord.name,
+			        this.name
+			    )
+			);
+		}
+		if ( cluster == null || cluster.getConfig() == null ) {
+			return;
+		}
+		if ( !TaskClusterClaim.isClustered( taskRecord.task, cluster ) ) {
+			return;
+		}
+
+		var		config		= cluster.getConfig();
+		long	floor		= TaskClusterClaim.minimumPeriodSeconds();
+		long	periodSec	= TaskClusterClaim.periodSeconds( taskRecord.task );
+
+		// Cron and calendar tasks are polled, not period-bound, so only explicit periods are checked
+		if ( periodSec <= 0 || periodSec >= floor ) {
+			return;
+		}
+
+		throw new BoxRuntimeException(
+		    String.format(
+		        "Task [%s] in scheduler [%s] is clustered with a period of %ds, below the minimum of %ds for cluster mode [%s]. "
+		            + "Lower the task period, or set the task's cluster=false. "
+		            + "The period is not silently clamped because that would change the claim geometry.",
+		        taskRecord.name,
+		        this.name,
+		        periodSec,
+		        floor,
+		        TaskClusterClaim.modeName(),
+		        TaskClusterClaim.isBalanced() ? "balanced pushback" : "eager delay"
+		    )
+		);
 	}
 
 	/**
@@ -450,6 +532,18 @@ public class BaseScheduler implements IScheduler {
 	public TaskRecord startupTask( String taskName ) {
 		// Get the task record
 		var taskRecord = getTaskRecord( taskName );
+
+		// Nothing may be submitted once a shutdown has begun
+		if ( this.shuttingDown ) {
+			this.logger.warn( "- Scheduler ({}) is shutting down, not scheduling task ({})", this.name, taskName );
+			return taskRecord;
+		}
+
+		// A clustered task whose period is below the cluster floor cannot service a claim. Reject it
+		// loudly rather than silently clamping the protocol timings, which would change the geometry
+		// the node computed.
+		validateClusterPeriod( taskRecord );
+
 		// Verify we can start it up the task or not
 		if ( taskRecord.task.isDisabled() ) {
 			taskRecord.disabled = true;
@@ -480,7 +574,13 @@ public class BaseScheduler implements IScheduler {
 
 		// Send it off for scheduling
 		try {
-			taskRecord.future		= taskRecord.task.start();
+			ScheduledFuture<?> future = taskRecord.task.start();
+			if ( future == null ) {
+				// The task refused the submission, because a shutdown began underneath us
+				this.logger.warn( "- Scheduler ({}) did not schedule task ({}) as it is shutting down", this.name, taskName );
+				return taskRecord;
+			}
+			taskRecord.future		= future;
 			taskRecord.scheduledAt	= LocalDateTime.now( this.timezone );
 			this.logger.debug(
 			    "√ Task ({}) scheduled successfully.",
@@ -516,6 +616,9 @@ public class BaseScheduler implements IScheduler {
 			return this;
 		}
 
+		// Refuse any new work from this instant, before anything is cancelled or interrupted
+		beginShutdown();
+
 		// callback
 		this.onShutdown();
 
@@ -526,14 +629,21 @@ public class BaseScheduler implements IScheduler {
 			}
 		} );
 
+		if ( force ) {
+			// Precise, and works whichever pool the task runs on
+			interruptRunningTasks();
+		}
+
 		if ( this.sharedExecutor ) {
-			// Shared executor: it keeps running, but a graceful shutdown still waits for executions already in flight
+			// Shared executor: it keeps running for everyone else, but shutdown still honours its timeout
+			// for this scheduler's runs - wait, then interrupt, then wait once more before giving up.
 			if ( !force ) {
 				awaitRunningTasks( timeout );
 			}
 		} else {
 			// Private executor: shutdown and await termination or kill it now! A shared global executor is never shut down.
-			if ( force ) {
+			if ( force || timeout <= 0 ) {
+				// Zero grace means "kill it dead": no waiting, no interrupting, just stop it
 				this.executor.scheduledExecutor().shutdownNow();
 			} else {
 				this.executor.shutdownAndAwaitTermination( timeout, TimeUnit.SECONDS );
@@ -557,20 +667,110 @@ public class BaseScheduler implements IScheduler {
 	 * Wait for the executions of this scheduler's tasks that are in flight, up to the timeout. Used instead of an executor
 	 * termination wait when the executor is shared.
 	 */
+	/**
+	 * Stop accepting new work for this scheduler: no new tasks may be registered and no task may
+	 * schedule a new execution from this point until the scheduler starts up again.
+	 */
+	private void beginShutdown() {
+		this.shuttingDown = true;
+		this.tasks.values().forEach( record -> record.task.stopAcceptingSubmissions() );
+	}
+
+	/**
+	 * Enforce the shutdown timeout for this scheduler's in-flight runs.
+	 * <p>
+	 * Three phases, in order:
+	 * <ol>
+	 * <li><b>Wait</b> - give every run the chance to finish on its own.</li>
+	 * <li><b>Interrupt</b> - if the wait expires, interrupt exactly this scheduler's runs. Per task,
+	 * because the executor may be shared with other schedulers whose work must not be touched.</li>
+	 * <li><b>Wait again, briefly</b> - give the interrupted runs a moment to unwind and record their
+	 * outcome, then let shutdown proceed.</li>
+	 * </ol>
+	 * Only this scheduler's tasks are affected; the shared executor itself is left running and is
+	 * stopped by {@code AsyncService} when the runtime shuts down.
+	 */
 	private void awaitRunningTasks( long timeout ) {
+		long interruptGrace = interruptGraceSeconds();
+
+		// Phase 1: wait for a clean finish. A zero grace means "do not wait at all".
+		if ( timeout > 0 && awaitAllTasksRunning( timeout ) ) {
+			return;
+		}
+
+		this.logger.warn(
+		    "Scheduler [{}] shutdown: [{}] task(s) still running after [{}s], interrupting them",
+		    this.name,
+		    this.tasks.values().stream().filter( record -> record.task.getRunningCount() > 0 ).count(),
+		    timeout
+		);
+
+		// Phase 2: interrupt this scheduler's runs
+		interruptRunningTasks();
+
+		// Phase 3: give them a bounded chance to unwind. A zero interrupt grace goes straight on to the
+		// forced shutdown, which is how "kill it dead" is expressed.
+		if ( interruptGrace <= 0 ) {
+			return;
+		}
+		if ( !awaitAllTasksRunning( interruptGrace ) ) {
+			this.tasks.values()
+			    .stream()
+			    .filter( record -> record.task.getRunningCount() > 0 )
+			    .forEach( record -> this.logger.warn(
+			        "Scheduler [{}] shutdown: task [{}] is still running [{}s] after being interrupted",
+			        this.name,
+			        record.name,
+			        interruptGrace
+			    ) );
+		}
+	}
+
+	/**
+	 * How long to wait after interrupting, from configuration. Zero means do not wait: go straight to
+	 * the forced shutdown.
+	 *
+	 * @return The interrupt grace in seconds
+	 */
+	private long interruptGraceSeconds() {
+		return BoxRuntime.getInstance().getConfiguration().scheduler.shutdownInterruptGraceSeconds;
+	}
+
+	/**
+	 * Wait until no task in this scheduler is running.
+	 *
+	 * @return true when everything finished within the timeout
+	 */
+	private boolean awaitAllTasksRunning( long timeout ) {
 		long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos( timeout );
 		while ( this.tasks.values().stream().anyMatch( record -> record.task.getRunningCount() > 0 ) ) {
 			if ( System.nanoTime() >= deadline ) {
-				this.logger.warn( "Scheduler [{}] shutdown timed out waiting for running tasks", this.name );
-				return;
+				return false;
 			}
 			try {
 				Thread.sleep( 25 );
 			} catch ( InterruptedException e ) {
 				Thread.currentThread().interrupt();
-				return;
+				return this.tasks.values().stream().noneMatch( record -> record.task.getRunningCount() > 0 );
 			}
 		}
+		return true;
+	}
+
+	/**
+	 * Interrupt every in-flight run of every task in this scheduler.
+	 */
+	private void interruptRunningTasks() {
+		this.tasks.values().forEach( record -> record.task.interruptRunningTasks() );
+	}
+
+	/**
+	 * The shutdown timeout used when none is given: the configured grace, so operators can dial it.
+	 *
+	 * @return The configured graceful shutdown timeout in seconds
+	 */
+	public long getShutdownGraceSeconds() {
+		return BoxRuntime.getInstance().getConfiguration().scheduler.shutdownGraceSeconds;
 	}
 
 	/**
@@ -582,7 +782,7 @@ public class BaseScheduler implements IScheduler {
 	 * @return The scheduler object
 	 */
 	public BaseScheduler shutdown( boolean force ) {
-		return shutdown( force, SchedulerService.DEFAULT_SHUTDOWN_TIMEOUT );
+		return shutdown( force, BoxRuntime.getInstance().getSchedulerService().getShutdownGraceSeconds() );
 	}
 
 	/**
@@ -592,7 +792,7 @@ public class BaseScheduler implements IScheduler {
 	 * @return The scheduler object
 	 */
 	public BaseScheduler shutdown() {
-		return shutdown( false, SchedulerService.DEFAULT_SHUTDOWN_TIMEOUT );
+		return shutdown( false, BoxRuntime.getInstance().getSchedulerService().getShutdownGraceSeconds() );
 	}
 
 	/**
@@ -739,6 +939,15 @@ public class BaseScheduler implements IScheduler {
 	}
 
 	/**
+	 * Every task record this scheduler holds, for reporting and load accounting.
+	 *
+	 * @return The task records
+	 */
+	public java.util.Collection<TaskRecord> getTaskRecords() {
+		return java.util.List.copyOf( this.tasks.values() );
+	}
+
+	/**
 	 * Removes a task from the scheduler.
 	 * It tries to cancel the task first and then removes it from the scheduler.
 	 * if the task has a future, then it will try to cancel it with interrupt.
@@ -859,23 +1068,84 @@ public class BaseScheduler implements IScheduler {
 	}
 
 	/**
-	 * Get the name of the cache used for server fixation/clustering locks
+	 * Signal this scheduler to stop, without waiting for anything.
+	 * <p>
+	 * Used by runtime shutdown, where every pool is signalled first and then all of them are drained
+	 * concurrently: waiting here as well would serialise the scheduler's drain behind the executor
+	 * drain for no benefit, since both are waiting on the same runs.
 	 *
-	 * @return the cacheName
+	 * @return This scheduler
+	 */
+	public BaseScheduler signalShutdown() {
+		if ( !this.started ) {
+			return this;
+		}
+		beginShutdown();
+		this.tasks.values().forEach( record -> {
+			if ( record.future != null ) {
+				record.future.cancel( false );
+			}
+		} );
+		return this;
+	}
+
+	/**
+	 * Finish this scheduler's shutdown after its pool has been drained. Clears the task records and
+	 * marks the scheduler stopped, without waiting for anything.
+	 *
+	 * @return This scheduler
+	 */
+	public BaseScheduler completeShutdown() {
+		clearTasks();
+		this.started	= false;
+		this.startedAt	= null;
+		this.logger.info( "Scheduler [{}] has been shutdown!", this.name );
+		return this;
+	}
+
+	/**
+	 * Is this scheduler shutting down? Visible so callers and tests can see the gate.
+	 *
+	 * @return true once a shutdown has begun and before the scheduler starts again
+	 */
+	public boolean isShuttingDown() {
+		return this.shuttingDown;
+	}
+
+	/**
+	 * Get the name of the coordination cache.
+	 * <p>
+	 * There is exactly one coordination cache for the deployment, owned by the cluster service, so this
+	 * reads it from there rather than keeping a per-scheduler copy.
+	 *
+	 * @return the coordination cache name
 	 */
 	public String getCacheName() {
+		ClusterService clusterService = BoxRuntime.getInstance().getClusterService();
+		if ( clusterService != null && clusterService.getConfig() != null ) {
+			return clusterService.getCacheName();
+		}
 		return this.cacheName;
 	}
 
 	/**
-	 * Set the name of the cache used for server fixation/clustering locks
+	 * Set the name of the coordination cache.
 	 *
 	 * @param cacheName the cache name to set
 	 *
 	 * @return the scheduler object
+	 *
+	 * @deprecated There is one coordination cache for the deployment, configured as
+	 *             {@code cluster.cacheName}. Per-scheduler cache selection is ignored.
 	 */
+	@Deprecated
 	public BaseScheduler setCacheName( String cacheName ) {
 		this.cacheName = cacheName;
+		this.logger.warn(
+		    "Scheduler [{}] set a per-scheduler cache name [{}], which is ignored: cluster coordination uses the single [cluster.cacheName]",
+		    this.name,
+		    cacheName
+		);
 		return this;
 	}
 

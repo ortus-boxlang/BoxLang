@@ -63,7 +63,15 @@ public class BoxExecutor {
 
 	// Health monitoring thresholds
 	private final Map<String, Map<String, Object>>			healthThresholds;
-	private static final Map<String, Map<String, Object>>	FEATURES	= initializeFeatures();
+	private static final Map<String, Map<String, Object>>	FEATURES				= initializeFeatures();
+
+	/**
+	 * How long to wait after {@code shutdownNow()} for threads to actually stop, when the caller does
+	 * not supply its own value. Runtime shutdown passes the configured interrupt grace
+	 * ({@code scheduler.shutdownInterruptGraceSeconds}) instead of this default, so the same setting
+	 * governs both shutdown paths.
+	 */
+	private static final long								POST_FORCE_AWAIT_MILLIS	= 2_000L;
 
 	/**
 	 * Constructor
@@ -422,10 +430,31 @@ public class BoxExecutor {
 	 * @param unit    The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds. The default
 	 */
 	public void shutdownAndAwaitTermination( Long timeout, TimeUnit unit ) {
+		shutdownAndAwaitTermination( timeout, unit, POST_FORCE_AWAIT_MILLIS );
+	}
+
+	/**
+	 * Blocks until all tasks have completed execution after a shutdown request, or the timeout occurs, or
+	 * the current thread is interrupted, whichever happens first.
+	 *
+	 * @param timeout         The maximum time to wait gracefully before interrupting
+	 * @param unit            The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds. The default
+	 * @param postForceWaitMs How long to wait after the forced interrupt before giving up on the executor.
+	 *                        Zero means do not wait at all after the interrupt.
+	 */
+	public void shutdownAndAwaitTermination( Long timeout, TimeUnit unit, Long postForceWaitMs ) {
 		if ( executor == null )
 			return;
-		timeout	= timeout == null ? AsyncService.DEFAULT_TIMEOUT : timeout;
-		unit	= unit == null ? TimeUnit.SECONDS : unit;
+		timeout			= timeout == null ? AsyncService.DEFAULT_TIMEOUT : timeout;
+		unit			= unit == null ? TimeUnit.SECONDS : unit;
+		postForceWaitMs	= postForceWaitMs == null ? POST_FORCE_AWAIT_MILLIS : postForceWaitMs;
+
+		// A zero (or negative) grace means kill it dead: no graceful wait, no second wait
+		if ( timeout <= 0 ) {
+			getLogger().debug( "Executor ({}) shutdown grace is 0, shutting down immediately", this.name );
+			this.executor.shutdownNow();
+			return;
+		}
 
 		// Disable new tasks from being submitted
 		this.executor.shutdown();
@@ -441,9 +470,18 @@ public class BoxExecutor {
 
 				getLogger().trace( "Tasks waiting execution on executor ({}) -> tasks({})", this.name, taskList.size() );
 
-				// Wait again now forcibly
-				if ( !this.executor.awaitTermination( timeout, unit ) ) {
-					getLogger().error( "Executor ({}) did not terminate even gracefully :(", this.name );
+				// Wait again, for the configured settle time: interrupted tasks need a moment to unwind.
+				// A thread that ignores the interrupt as well will not stop because we wait, which is why
+				// this wait is its own setting rather than another full timeout.
+				boolean terminated = postForceWaitMs > 0
+				    ? this.executor.awaitTermination( postForceWaitMs, TimeUnit.MILLISECONDS )
+				    : this.executor.isTerminated();
+
+				if ( !terminated ) {
+					getLogger().error(
+					    "Executor ({}) did not terminate even after shutdownNow() - it may be running a task that ignores interrupts",
+					    this.name
+					);
 				}
 			} else {
 				getLogger().trace( "Executor ({}) shutdown complete", this.name );

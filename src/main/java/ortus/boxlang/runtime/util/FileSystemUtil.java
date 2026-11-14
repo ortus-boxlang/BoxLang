@@ -33,6 +33,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.CopyOption;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
@@ -149,7 +150,7 @@ public final class FileSystemUtil {
 	/**
 	 * The default charset for file operations in BoxLang
 	 */
-	public static final Charset				DEFAULT_CHARSET			= StandardCharsets.UTF_8;
+	public static final Charset				DEFAULT_CHARSET				= StandardCharsets.UTF_8;
 
 	/**
 	 * MimeType suffixes which denote files which should be treated as text - e.g.
@@ -187,35 +188,45 @@ public final class FileSystemUtil {
 	 * Thanks to
 	 * http://www.java2s.com/example/java-utility-method/posix/tooctalfilemode-set-posixfilepermission-permissions-64fb4.html
 	 */
-	private static final int				OWNER_READ_FILEMODE		= 0400;
-	private static final int				OWNER_WRITE_FILEMODE	= 0200;
-	private static final int				OWNER_EXEC_FILEMODE		= 0100;
-	private static final int				GROUP_READ_FILEMODE		= 0040;
-	private static final int				GROUP_WRITE_FILEMODE	= 0020;
-	private static final int				GROUP_EXEC_FILEMODE		= 0010;
-	private static final int				OTHERS_READ_FILEMODE	= 0004;
-	private static final int				OTHERS_WRITE_FILEMODE	= 0002;
-	private static final int				OTHERS_EXEC_FILEMODE	= 0001;
+	private static final int				OWNER_READ_FILEMODE			= 0400;
+	private static final int				OWNER_WRITE_FILEMODE		= 0200;
+	private static final int				OWNER_EXEC_FILEMODE			= 0100;
+	private static final int				GROUP_READ_FILEMODE			= 0040;
+	private static final int				GROUP_WRITE_FILEMODE		= 0020;
+	private static final int				GROUP_EXEC_FILEMODE			= 0010;
+	private static final int				OTHERS_READ_FILEMODE		= 0004;
+	private static final int				OTHERS_WRITE_FILEMODE		= 0002;
+	private static final int				OTHERS_EXEC_FILEMODE		= 0001;
+
+	/**
+	 * How many times {@link #moveReplacing} retries a failed atomic replace before giving up.
+	 */
+	private static final int				ATOMIC_MOVE_ATTEMPTS		= 40;
+
+	/**
+	 * How long to pause between atomic replace attempts, in milliseconds.
+	 */
+	private static final long				ATOMIC_MOVE_RETRY_MILLIS	= 25;
 
 	/**
 	 * The Necessary constants for the file mode
 	 */
-	public static final boolean				IS_WINDOWS				= SystemUtils.IS_OS_WINDOWS;
+	public static final boolean				IS_WINDOWS					= SystemUtils.IS_OS_WINDOWS;
 
 	/**
 	 * The OS line separator
 	 */
-	public static final String				LINE_SEPARATOR			= System.getProperty( "line.separator" );
+	public static final String				LINE_SEPARATOR				= System.getProperty( "line.separator" );
 
 	/**
 	 * A starting file slash prefix
 	 */
-	public static final String				SLASH_PREFIX			= "/";
+	public static final String				SLASH_PREFIX				= "/";
 
 	/**
 	 * The interceptor service for BoxLang
 	 */
-	private static InterceptorService		interceptorService		= BoxRuntime.getInstance().getInterceptorService();
+	private static InterceptorService		interceptorService			= BoxRuntime.getInstance().getInterceptorService();
 
 	/**
 	 * ------------------------------------------------------------------
@@ -552,6 +563,132 @@ public final class FileSystemUtil {
 	}
 
 	/**
+	 * Writes a file given a path and string contents using the default charset (UTF-8), atomically.
+	 *
+	 * @param filePath The absolute path to write the file to
+	 * @param contents The contents of the file as a string
+	 *
+	 * @throws IOException if an I/O error occurs writing the file
+	 */
+	public static void writeAtomic( String filePath, String contents ) {
+		writeAtomic( filePath, contents.getBytes( DEFAULT_CHARSET ), false );
+	}
+
+	/**
+	 * Writes a file given a string and specified charset, atomically.
+	 *
+	 * @param filePath The absolute path to write the file to
+	 * @param contents The contents of the file as a string
+	 * @param charset  The charset to use for the file encoding
+	 *
+	 * @throws IOException if an I/O error occurs writing the file
+	 */
+	public static void writeAtomic( String filePath, String contents, String charset ) {
+		writeAtomic( filePath, contents.getBytes( Charset.forName( charset ) ), false );
+	}
+
+	/**
+	 * Writes a file given a string and specified charset with ensured directory, atomically.
+	 *
+	 * @param filePath        The absolute path to write the file to
+	 * @param contents        The contents of the file as a string
+	 * @param charset         The charset to use for the file encoding
+	 * @param ensureDirectory Ensure the directory exists before writing the file if true
+	 *
+	 * @throws IOException if an I/O error occurs writing the file
+	 */
+	public static void writeAtomic( String filePath, String contents, String charset, boolean ensureDirectory ) {
+		writeAtomic( filePath, contents.getBytes( Charset.forName( charset ) ), ensureDirectory );
+	}
+
+	/**
+	 * Writes a file given a path and byte array atomically, so that another reader can never observe a
+	 * partially written file.
+	 * <p>
+	 * The contents are written to a temporary file in the same directory and then swapped in with an
+	 * atomic move, so a reader always sees either the previous contents or the complete new contents -
+	 * never a truncated file. An interrupted write leaves the previous file untouched rather than
+	 * emptying it.
+	 *
+	 * @param filePath        The absolute path to write the file to
+	 * @param contents        The contents of the file as a charset encoded byte array
+	 * @param ensureDirectory Ensure the directory exists before writing the file if true
+	 *
+	 * @throws IOException if an I/O error occurs writing the file
+	 */
+	public static void writeAtomic( String filePath, byte[] contents, boolean ensureDirectory ) {
+		Path	fileTarget	= Path.of( filePath ).toAbsolutePath();
+		Path	directory	= fileTarget.getParent();
+
+		try {
+
+			if ( ensureDirectory && directory != null && !Files.exists( directory ) ) {
+				Files.createDirectories( directory );
+			}
+
+			// Same directory as the target, so the move is a rename rather than a cross-device copy.
+			// Note: createTempFile applies owner-only permissions on POSIX, which is appropriate for a
+			// file that can hold credentials.
+			Path tempFile = Files.createTempFile( directory, fileTarget.getFileName().toString(), ".tmp" );
+			try {
+				Files.write( tempFile, contents, StandardOpenOption.WRITE );
+				moveReplacing( tempFile, fileTarget );
+			} finally {
+				// A no-op when the move succeeded; cleans up when it did not
+				Files.deleteIfExists( tempFile );
+			}
+
+		} catch ( NoSuchFileException e ) {
+			throw new BoxRuntimeException(
+			    "The file [" + filePath + "] could not be written. The directory ["
+			        + ( directory != null ? directory.toString() : "null" ) + "] does not exist." );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+	}
+
+	/**
+	 * Replace a file with an atomic move, retrying when the platform refuses to replace a file that is
+	 * currently open.
+	 * <p>
+	 * Windows fails a replace with {@code AccessDeniedException} while another thread or process has the
+	 * target open for reading, which is exactly what a reload-on-change watcher or a
+	 * {@code bx:schedule} reload does while a task is being persisted. Retrying briefly turns a failed
+	 * write into a slightly delayed one. On POSIX the first attempt succeeds and this never loops.
+	 *
+	 * @param source The fully written temporary file
+	 * @param target The file to replace
+	 *
+	 * @throws IOException if every attempt failed
+	 */
+	private static void moveReplacing( Path source, Path target ) throws IOException {
+		IOException lastFailure = null;
+
+		for ( int attempt = 1; attempt <= ATOMIC_MOVE_ATTEMPTS; attempt++ ) {
+			try {
+				try {
+					Files.move( source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING );
+				} catch ( AtomicMoveNotSupportedException e ) {
+					// Some filesystems cannot promise atomicity. Replacing is still strictly better than
+					// truncating the target in place, which is what a plain write does.
+					Files.move( source, target, StandardCopyOption.REPLACE_EXISTING );
+				}
+				return;
+			} catch ( IOException e ) {
+				lastFailure = e;
+				try {
+					Thread.sleep( ATOMIC_MOVE_RETRY_MILLIS );
+				} catch ( InterruptedException interrupted ) {
+					Thread.currentThread().interrupt();
+					throw e;
+				}
+			}
+		}
+
+		throw lastFailure;
+	}
+
+	/**
 	 * Moves a file from source to destination
 	 *
 	 * @param source      the source file path
@@ -804,18 +941,32 @@ public final class FileSystemUtil {
 	 * @param filePath The file path to serialize to
 	 */
 	public static void serializeToFile( Object target, Path filePath ) {
-		try ( OutputStream fileStream = Files.newOutputStream( filePath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING ) ) {
-			try ( ObjectOutputStream objStream = new ObjectOutputStream( fileStream ) ) {
-				objStream.writeObject( target );
-			} catch ( IOException e ) {
-				throw new BoxIOException( String.format(
-				    "The target entry [%s] could not be written to the file path [%s]. The message received was: %s",
-				    TypeUtil.getObjectName( target ),
-				    filePath.toString(),
-				    e.getMessage()
-				),
-				    e
-				);
+		Path directory = filePath.toAbsolutePath().getParent();
+
+		try {
+			// Serialize to a sibling temp file, then swap it in. A plain truncate-then-write lets another
+			// process read a half-written stream, which fails deserialization with EOFException - and in a
+			// clustered cache that is a reader crashing because a writer was mid-write, not a corrupt entry.
+			Path tempFile = Files.createTempFile( directory, filePath.getFileName().toString(), ".tmp" );
+			try {
+				try ( OutputStream fileStream = Files.newOutputStream( tempFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
+				    StandardOpenOption.WRITE ) ) {
+					try ( ObjectOutputStream objStream = new ObjectOutputStream( fileStream ) ) {
+						objStream.writeObject( target );
+					} catch ( IOException e ) {
+						throw new BoxIOException( String.format(
+						    "The target entry [%s] could not be written to the file path [%s]. The message received was: %s",
+						    TypeUtil.getObjectName( target ),
+						    filePath.toString(),
+						    e.getMessage()
+						),
+						    e
+						);
+					}
+				}
+				moveReplacing( tempFile, filePath );
+			} finally {
+				Files.deleteIfExists( tempFile );
 			}
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
