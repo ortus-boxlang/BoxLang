@@ -428,6 +428,10 @@ public class BaseScheduler implements IScheduler {
 		this.logger.info( "+ Restarting scheduler [{}] with force: {} and timeout: {}", this.name, force, timeout );
 		// Shutdown first
 		shutdown( force, timeout );
+		// Re-open the gate before configuring. shutdown() closes it, and configure() registers the tasks - the
+		// gate is otherwise only reopened by startup(), which runs after configure(), so restart() would throw
+		// on its own scheduler's task registration.
+		this.shuttingDown = false;
 		// Clear tasks
 		clearTasks();
 		// Configure again
