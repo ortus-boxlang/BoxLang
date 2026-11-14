@@ -46,6 +46,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.AbstractMap;
@@ -628,7 +629,7 @@ public final class FileSystemUtil {
 
 			// Same directory as the target, so the move is a rename rather than a cross-device copy.
 			// Note: createTempFile applies owner-only permissions on POSIX, which is appropriate for a
-			// file that can hold credentials.
+			// file that can hold credentials - but it must not narrow an existing file's permissions.
 			Path tempFile = Files.createTempFile( directory, fileTarget.getFileName().toString(), ".tmp" );
 			try {
 				Files.write( tempFile, contents, StandardOpenOption.WRITE );
@@ -648,6 +649,36 @@ public final class FileSystemUtil {
 	}
 
 	/**
+	 * Give a replacement file the permissions of the file it is replacing.
+	 * <p>
+	 * {@code Files.createTempFile} creates owner-only files on POSIX. Swapping one in over an existing file
+	 * would therefore narrow that file to the writer's user id: on a shared volume, any node running as a
+	 * different user id would afterwards read it as unreadable. For a cache entry that is a silent cache miss,
+	 * and in the clustered cache a lost claim record. Carrying the existing permissions across the swap keeps
+	 * the file as shareable as it already was. When the target does not exist yet, the temp file's own
+	 * permissions are left alone - the caller's directory policy then decides who can see it.
+	 * <p>
+	 * A no-op on filesystems without POSIX permissions (Windows), and never fails the write: permissions are a
+	 * best-effort concern, and refusing to replace a file because they could not be copied would be worse.
+	 *
+	 * @param source The fully written temporary file about to be moved into place
+	 * @param target The file it replaces
+	 */
+	private static void carryPermissions( Path source, Path target ) {
+		try {
+			PosixFileAttributeView	targetView	= Files.getFileAttributeView( target, PosixFileAttributeView.class );
+			PosixFileAttributeView	sourceView	= Files.getFileAttributeView( source, PosixFileAttributeView.class );
+			if ( targetView == null || sourceView == null || !Files.exists( target ) ) {
+				return;
+			}
+			Set<PosixFilePermission> permissions = targetView.readAttributes().permissions();
+			sourceView.setPermissions( permissions );
+		} catch ( IOException | UnsupportedOperationException e ) {
+			// Best effort only - see above
+		}
+	}
+
+	/**
 	 * Replace a file with an atomic move, retrying when the platform refuses to replace a file that is
 	 * currently open.
 	 * <p>
@@ -662,6 +693,7 @@ public final class FileSystemUtil {
 	 * @throws IOException if every attempt failed
 	 */
 	private static void moveReplacing( Path source, Path target ) throws IOException {
+		carryPermissions( source, target );
 		IOException lastFailure = null;
 
 		for ( int attempt = 1; attempt <= ATOMIC_MOVE_ATTEMPTS; attempt++ ) {

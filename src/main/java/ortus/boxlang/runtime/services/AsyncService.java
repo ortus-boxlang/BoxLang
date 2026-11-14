@@ -397,14 +397,12 @@ public class AsyncService extends BaseService {
 			return this;
 		}
 
-		// Every pool is drained concurrently, so the wall clock is the slowest single pool rather than
-		// the sum of all of them
-		int poolSize = Math.min( executorNames.size(), 16 );
-		try ( var pool = java.util.concurrent.Executors.newFixedThreadPool( poolSize, runnable -> {
-			Thread thread = new Thread( runnable, "boxlang-executor-shutdown" );
-			thread.setDaemon( true );
-			return thread;
-		} ) ) {
+		// One worker per executor, so every pool begins its drain at the same time. A fixed-size pool of 16 meant
+		// that with more executors than workers, the pools past the cap were neither signalled nor drained until
+		// a worker became free - shutdown then cost two full grace periods instead of one, and the queued pool
+		// kept accepting work through the first one.
+		try ( var pool = java.util.concurrent.Executors.newThreadPerTaskExecutor(
+		    Thread.ofVirtual().name( "boxlang-executor-shutdown" ).factory() ) ) {
 			List<java.util.concurrent.Future<?>> futures = new ArrayList<>( executorNames.size() );
 			for ( String executorName : executorNames ) {
 				futures.add( pool.submit( () -> {

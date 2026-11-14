@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.config.util.PropertyHelper;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * The cluster service configuration: how this node identifies itself, which cluster it belongs to, and which
@@ -68,14 +69,29 @@ public class ClusterConfig implements IConfigSegment {
 		this.enabled	= BooleanCaster.cast( config.getOrDefault( Key.enabled, this.enabled ) );
 		this.cacheName	= PropertyHelper.processString( config, Key.cacheName, this.cacheName );
 		this.name		= PropertyHelper.processString( config, Key._name, this.name );
-		// null means not set, and is a legitimate value here - do not string-resolve it
-		Object rawNodeId = config.get( Key.nodeId );
-		this.nodeId				= rawNodeId == null ? null : PropertyHelper.processString( config, Key.nodeId, this.nodeId );
-		this.heartbeatSeconds	= IntegerCaster.cast( config.getOrDefault( Key.heartbeatSeconds, this.heartbeatSeconds ) );
 
-		// Null means not set. A blank value is not an identity, so it collapses to the same thing.
-		if ( this.nodeId != null && this.nodeId.isBlank() ) {
-			this.nodeId = null;
+		// Only touch nodeId when the key is actually present. Every other field above keeps its current value
+		// when absent, and nodeId must behave the same way: processing a partial configuration would otherwise
+		// silently reset an identity that an earlier one set. An explicitly supplied null still clears it.
+		if ( config.containsKey( Key.nodeId ) ) {
+			// null means not set, and is a legitimate value here - do not string-resolve it
+			Object rawNodeId = config.get( Key.nodeId );
+			this.nodeId = rawNodeId == null ? null : PropertyHelper.processString( config, Key.nodeId, this.nodeId );
+			// Null means not set. A blank value is not an identity, so it collapses to the same thing.
+			if ( this.nodeId != null && this.nodeId.isBlank() ) {
+				this.nodeId = null;
+			}
+		}
+
+		this.heartbeatSeconds = IntegerCaster.cast( config.getOrDefault( Key.heartbeatSeconds, this.heartbeatSeconds ) );
+
+		// A heartbeat interval of zero or less would rewrite this node's record in a tight loop, and would make
+		// the staleness threshold zero so every live claim looked stale. Refuse it instead of starting with it.
+		if ( this.heartbeatSeconds <= 0 ) {
+			throw new BoxRuntimeException(
+			    "cluster.heartbeatSeconds must be greater than zero, but was [" + this.heartbeatSeconds + "]. "
+			        + "Leave it at the default of 5 unless you have a specific reason to change it."
+			);
 		}
 
 		return this;

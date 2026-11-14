@@ -203,32 +203,41 @@ public class SchedulerService extends BaseService {
 	/**
 	 * The number of buckets in the rolling load window
 	 */
-	private long[]				loadBuckets			= new long[ 60 ];
+	private long[]									loadBuckets			= new long[ 60 ];
 
 	/**
 	 * Cursor into the rolling window
 	 */
-	private int					loadCursor			= 0;
+	private int										loadCursor			= 0;
 
 	/**
 	 * When the load window was last ticked
 	 */
-	private long				loadLastTick		= 0;
+	private long									loadLastTick		= 0;
 
 	/**
 	 * The load tracker thread, a daemon so it can never keep the JVM alive
 	 */
-	private volatile Thread		loadTrackerThread;
+	private volatile Thread							loadTrackerThread;
 
 	/**
 	 * Stop flag for the load tracker
 	 */
-	private volatile boolean	loadTrackerStopped	= true;
+	private volatile boolean						loadTrackerStopped	= true;
 
 	/**
 	 * True once this service has shut down. Nothing may be submitted to any executor from then on.
 	 */
-	private volatile boolean	hasShutdown			= false;
+	private volatile boolean						hasShutdown			= false;
+
+	/**
+	 * The single contributor instance registered with the cluster service.
+	 * <p>
+	 * It has to be one object: {@code ClusterService} unregisters contributors by identity, so building a
+	 * fresh {@code this::getLoadSnapshot} at removal time would never match the one that was registered -
+	 * the contributor would accumulate on every restart and keep publishing a frozen metric after stopping.
+	 */
+	private java.util.function.Supplier<IStruct>	loadContributor		= null;
 
 	/**
 	 * Start publishing this node's scheduler load to the cluster, and keep it current.
@@ -256,8 +265,11 @@ public class SchedulerService extends BaseService {
 		this.loadLastTick		= System.currentTimeMillis();
 		this.loadTrackerStopped	= false;
 
-		// Publish on the attributes cycle
-		cluster.addAttributeContributor( this::getLoadSnapshot );
+		// Publish on the attributes cycle. One instance, reused for removal - see loadContributor.
+		if ( this.loadContributor == null ) {
+			this.loadContributor = this::getLoadSnapshot;
+		}
+		cluster.addAttributeContributor( this.loadContributor );
 
 		Thread thread = new Thread( () -> {
 			while ( !this.loadTrackerStopped ) {
@@ -295,7 +307,12 @@ public class SchedulerService extends BaseService {
 		}
 		ClusterService cluster = runtime.getClusterService();
 		if ( cluster != null ) {
-			cluster.removeAttributeContributor( this::getLoadSnapshot );
+			if ( this.loadContributor != null ) {
+				cluster.removeAttributeContributor( this.loadContributor );
+			}
+			// Drop the published value too, or the node record keeps advertising the last metric it saw after
+			// tracking has stopped.
+			cluster.removeAttribute( Key.scheduler.getName() );
 		}
 	}
 
@@ -526,12 +543,43 @@ public class SchedulerService extends BaseService {
 	 * @return This service
 	 */
 	public SchedulerService shutdownSignal() {
+		return shutdownSignal( false );
+	}
+
+	/**
+	 * Signal every scheduler to stop producing work, without waiting for anything, and fire the shutdown
+	 * lifecycle exactly once on the way through.
+	 *
+	 * @param force Whether the runtime shutdown is forced, reported on the events
+	 *
+	 * @return This service
+	 */
+	public SchedulerService shutdownSignal( boolean force ) {
 		this.hasShutdown = true;
 		stopTasksFileWatcher();
 		stopClusterLoadTracking();
+
+		// Announced here because this is the phase that begins the shutdown. Runtime shutdown does not go
+		// through onShutdown()/shutdownScheduler(), so without this the event never fired and any listener
+		// registered against it was silently skipped.
+		announce(
+		    BoxEvent.ON_SCHEDULER_SERVICE_SHUTDOWN,
+		    Struct.of( "schedulerService", this )
+		);
+
+		long grace = runtime.getConfiguration().scheduler.shutdownGraceSeconds;
+
 		this.schedulers.values().forEach( scheduler -> {
+			announce(
+			    BoxEvent.ON_SCHEDULER_SHUTDOWN,
+			    Struct.of( "scheduler", scheduler, "force", force, "timeout", grace )
+			);
 			if ( scheduler instanceof BaseScheduler base ) {
 				base.signalShutdown();
+			} else {
+				// Not a BaseScheduler: there is no gate to close, so run its shutdown lifecycle explicitly,
+				// otherwise a custom IScheduler implementation would never see onShutdown() at all.
+				scheduler.onShutdown();
 			}
 		} );
 		return this;

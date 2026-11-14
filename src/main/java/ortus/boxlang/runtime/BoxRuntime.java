@@ -1232,7 +1232,7 @@ public class BoxRuntime implements java.io.Closeable {
 		    () -> instance.watcherService.onShutdown( force ),
 		    // Signalling the schedulers closes their gate and cancels their futures. Their pools are
 		    // drained together with every other pool in phase 2, instead of one wait after another.
-		    () -> instance.schedulerService.shutdownSignal()
+		    () -> instance.schedulerService.shutdownSignal( Boolean.TRUE.equals( force ) )
 		) );
 
 		// The cluster service must stop its threads before the cache it writes to goes away, but both

@@ -642,11 +642,18 @@ public class BaseScheduler implements IScheduler {
 			}
 		} else {
 			// Private executor: shutdown and await termination or kill it now! A shared global executor is never shut down.
-			if ( force || timeout <= 0 ) {
-				// Zero grace means "kill it dead": no waiting, no interrupting, just stop it
+			if ( force ) {
+				// Forced means kill it dead: no waiting, no interrupting
 				this.executor.scheduledExecutor().shutdownNow();
 			} else {
-				this.executor.shutdownAndAwaitTermination( timeout, TimeUnit.SECONDS );
+				// Pass the configured interrupt grace through as well. A zero graceful timeout is not "no wait
+				// at all": the interrupted runs still get their short unwind window, so they can record an
+				// outcome before this scheduler's executor - and the coordination cache - go away.
+				this.executor.shutdownAndAwaitTermination(
+				    timeout,
+				    TimeUnit.SECONDS,
+				    BoxRuntime.getInstance().getSchedulerService().getShutdownInterruptGraceSeconds() * 1000L
+				);
 			}
 			// Remove executor
 			this.asyncService.deleteExecutor( this.name + "-scheduler" );
@@ -1079,6 +1086,14 @@ public class BaseScheduler implements IScheduler {
 	public BaseScheduler signalShutdown() {
 		if ( !this.started ) {
 			return this;
+		}
+		// Run the lifecycle callback here: runtime shutdown uses this path instead of shutdown(...), which is
+		// the only other place that calls it, so overriding onShutdown() in a scheduler would otherwise never
+		// be invoked during a runtime shutdown. Guarded, because a user hook throwing must not abort shutdown.
+		try {
+			this.onShutdown();
+		} catch ( Throwable t ) {
+			this.logger.error( "Scheduler [{}] onShutdown() hook failed: {}", this.name, t.getMessage(), t );
 		}
 		beginShutdown();
 		this.tasks.values().forEach( record -> {

@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -867,7 +868,13 @@ public class Schedule extends Component {
 			}
 			String templatePath = ( file != null && !file.isBlank() ) ? Paths.get( path ).resolve( file ).toString() : path;
 
-			return () -> runtimeContext.includeTemplate( templatePath );
+			return () -> {
+				// Run the template in the per-run request context that the task installed, not in the shared
+				// runtime context. The runtime context has no variables scope for the template to write to, and
+				// its unscoped assignments would persist in server-wide state between runs and between tasks.
+				IBoxContext invocationContext = RequestBoxContext.getCurrent( runtimeContext );
+				invocationContext.includeTemplate( templatePath );
+			};
 		}
 
 		return () -> {

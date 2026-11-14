@@ -434,6 +434,28 @@ public class BoxExecutor {
 	}
 
 	/**
+	 * Wait the post-interrupt grace for the pool to terminate after a {@code shutdownNow()}, and say so if it
+	 * never does.
+	 *
+	 * @param postForceWaitMs How long to wait, in milliseconds. Zero or less does not wait at all.
+	 */
+	private void awaitPostInterrupt( long postForceWaitMs ) {
+		if ( postForceWaitMs <= 0 ) {
+			return;
+		}
+		try {
+			if ( !this.executor.awaitTermination( postForceWaitMs, TimeUnit.MILLISECONDS ) ) {
+				getLogger().error(
+				    "Executor ({}) did not terminate even after shutdownNow() - it may be running a task that ignores interrupts",
+				    this.name
+				);
+			}
+		} catch ( InterruptedException e ) {
+			Thread.currentThread().interrupt();
+		}
+	}
+
+	/**
 	 * Blocks until all tasks have completed execution after a shutdown request, or the timeout occurs, or
 	 * the current thread is interrupted, whichever happens first.
 	 *
@@ -449,10 +471,13 @@ public class BoxExecutor {
 		unit			= unit == null ? TimeUnit.SECONDS : unit;
 		postForceWaitMs	= postForceWaitMs == null ? POST_FORCE_AWAIT_MILLIS : postForceWaitMs;
 
-		// A zero (or negative) grace means kill it dead: no graceful wait, no second wait
+		// A zero (or negative) graceful timeout means interrupt immediately - but only that stage. The
+		// post-interrupt wait is its own setting and still applies: an interrupted task needs a moment to
+		// record its outcome, and skipping the wait lets the coordination cache close underneath the run.
 		if ( timeout <= 0 ) {
-			getLogger().debug( "Executor ({}) shutdown grace is 0, shutting down immediately", this.name );
+			getLogger().debug( "Executor ({}) shutdown grace is 0, interrupting immediately", this.name );
 			this.executor.shutdownNow();
+			awaitPostInterrupt( postForceWaitMs );
 			return;
 		}
 

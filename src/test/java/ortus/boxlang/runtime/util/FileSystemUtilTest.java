@@ -217,4 +217,27 @@ public class FileSystemUtilTest {
 			    .containsExactly( "tasks.json" );
 		}
 	}
+
+	@DisplayName( "An atomic replace keeps the permissions the file already had" )
+	@Test
+	void testWriteAtomicPreservesPermissions( @TempDir Path tempDir ) throws IOException {
+		Path	target	= tempDir.resolve( "entry.cache" );
+		var		shared	= java.nio.file.attribute.PosixFilePermissions.fromString( "rw-rw-r--" );
+
+		Files.writeString( target, "original" );
+		try {
+			Files.setPosixFilePermissions( target, shared );
+		} catch ( UnsupportedOperationException e ) {
+			// Not a POSIX filesystem (Windows): nothing to assert
+			return;
+		}
+
+		// A replacement is written to a temp file, which is owner-only on POSIX. Swapping it in must not
+		// narrow the entry: on a shared volume another node running as a different user could no longer read
+		// it, and in the clustered cache that reads as a lost claim record.
+		FileSystemUtil.writeAtomic( target.toString(), "replaced" );
+
+		assertThat( Files.readString( target ) ).isEqualTo( "replaced" );
+		assertThat( Files.getPosixFilePermissions( target ) ).isEqualTo( shared );
+	}
 }

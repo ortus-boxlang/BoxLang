@@ -353,6 +353,15 @@ public class ScheduledTask implements Runnable {
 	private volatile LocalDateTime					constraintTime						= null;
 
 	/**
+	 * The cron fire instant matched by the most recent gate evaluation, or null.
+	 * <p>
+	 * A cron task's occurrence is the fire time it matched, not the poll slot that discovered it. If claim
+	 * arbitration used the poll slot, two nodes whose polls were delayed by different amounts would compute
+	 * different occurrence ids for the same fire and both run it. Consumed by the claim and cleared per tick.
+	 */
+	private volatile Instant						cronFireInstant						= null;
+
+	/**
 	 * BoxLang Timer utility
 	 */
 	private final Timer								timer								= new Timer();
@@ -665,9 +674,28 @@ public class ScheduledTask implements Runnable {
 
 		// Cluster coordination: claim this occurrence before running it. A forced (manual) run is not
 		// claimed - "run now" is an operator action, not a scheduled occurrence.
+		// A cron task claims the fire time it matched rather than the poll slot that found it; the value is
+		// consumed here so a later tick can never inherit it.
+		Instant claimAnchor = this.cronFireInstant != null ? this.cronFireInstant : dueInstant;
+		this.cronFireInstant = null;
+
 		TaskClusterClaim.Claim clusterClaim = null;
 		if ( !force ) {
-			clusterClaim = TaskClusterClaim.attempt( this, dueInstant );
+			try {
+				clusterClaim = TaskClusterClaim.attempt( this, claimAnchor );
+			} catch ( Throwable t ) {
+				// A coordination-store failure must not escape. An exception thrown out of a periodic Runnable
+				// cancels every future execution of the task, so one transient cache error would silently stop
+				// this schedule for good. Skip the occurrence and let the next tick try again.
+				logger.error(
+				    "Task [{}] could not be claimed from the cluster and will be skipped for this occurrence: {}",
+				    name,
+				    t.getMessage(),
+				    t
+				);
+				setNextRunTime();
+				return;
+			}
 			if ( clusterClaim == null && TaskClusterClaim.isClustered( this ) ) {
 				// Clustered, but another node owns this occurrence or it is already handled
 				setNextRunTime();
@@ -835,8 +863,18 @@ public class ScheduledTask implements Runnable {
 			// Record the cluster outcome first, so the claim is released as soon as the job is done.
 			// An interrupted run is recorded as abandoned rather than failed: the job did not finish,
 			// so nobody may treat the occurrence as completed, and nobody may re-run it either.
+			// Guarded on its own: this reads the coordination store, and a failure there must not skip the
+			// local cleanup below (request context, class loader, JDBC connections).
 			if ( clusterClaim != null ) {
-				clusterClaim.finish( clusterRunInterrupted ? "abandoned" : ( clusterRunFailed ? "failed" : "success" ), null );
+				// A task that catches InterruptedException, restores the flag and returns normally was still cut
+				// short by shutdown, so the thread's interrupt status counts as an interruption too.
+				boolean	interrupted	= clusterRunInterrupted || Thread.currentThread().isInterrupted();
+				String	outcome		= interrupted ? "abandoned" : ( clusterRunFailed ? "failed" : "success" );
+				try {
+					clusterClaim.finish( outcome, null );
+				} catch ( Throwable t ) {
+					logger.error( "Task [{}] could not record its cluster outcome [{}]: {}", name, outcome, t.getMessage(), t );
+				}
 			}
 
 			// Store finalization stats
@@ -2034,7 +2072,9 @@ public class ScheduledTask implements Runnable {
 		}
 
 		// Judge the calendar constraints and exclusions against the matched fire time, not the polling slot that found it
-		this.constraintTime = window.get().last();
+		this.constraintTime		= window.get().last();
+		// Remember it for claim arbitration: the occurrence this tick represents is that fire, not this poll
+		this.cronFireInstant	= window.get().last().atZone( getTimezone() ).toInstant();
 		warnIfLate( cron, window.get(), now );
 		return true;
 	}

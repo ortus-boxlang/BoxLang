@@ -586,6 +586,79 @@ class ClusterServiceTest {
 			assertThat( legacyDefault.cluster.cacheName ).isEqualTo( "bxcluster" );
 		}
 
+		@DisplayName( "the legacy scheduler.cacheName bridge respects an explicit scheduler.cluster block" )
+		@Test
+		void testBridgeRespectsLegacySchedulerClusterBlock() {
+			// scheduler.cluster is the older, nested home of the cluster block and process() still falls back to
+			// it. The bridge has to resolve the same block, or the even older scheduler.cacheName overwrites the
+			// explicit values the operator set there.
+			Configuration config = new Configuration();
+			config.process( Struct.of(
+			    Key.scheduler, Struct.of(
+			        Key.cacheName, "legacyCoordination",
+			        Key.cluster, Struct.of( Key.enabled, false, Key.cacheName, "explicitNestedCache" )
+			    )
+			) );
+
+			assertThat( config.cluster.enabled ).isFalse();
+			assertThat( config.cluster.cacheName ).isEqualTo( "explicitNestedCache" );
+		}
+
+		@DisplayName( "processing a partial cluster config keeps the nodeId it already had" )
+		@Test
+		void testPartialClusterConfigPreservesNodeId() {
+			ClusterConfig config = new ClusterConfig();
+			config.process( Struct.of( Key.nodeId, "web01" ) );
+			assertThat( config.nodeId ).isEqualTo( "web01" );
+
+			// enabled-only must not reset the identity, the way every other field keeps its value
+			config.process( Struct.of( Key.enabled, true ) );
+			assertThat( config.nodeId ).isEqualTo( "web01" );
+
+			// An explicitly supplied null still clears it
+			IStruct cleared = new Struct();
+			cleared.put( Key.nodeId, null );
+			config.process( cleared );
+			assertThat( config.nodeId ).isNull();
+		}
+
+		@DisplayName( "a non-positive heartbeat interval is rejected instead of starting a tight loop" )
+		@Test
+		void testNonPositiveHeartbeatIsRejected() {
+			for ( long bad : new long[] { 0, -1 } ) {
+				BoxRuntimeException e = org.junit.jupiter.api.Assertions.assertThrows(
+				    BoxRuntimeException.class,
+				    () -> new ClusterConfig().process( Struct.of( Key.heartbeatSeconds, bad ) ),
+				    "heartbeatSeconds of " + bad + " must be refused"
+				);
+				assertThat( e.getMessage() ).contains( "heartbeatSeconds" );
+			}
+
+			// A positive value is accepted and stored
+			ClusterConfig ok = new ClusterConfig();
+			ok.process( Struct.of( Key.heartbeatSeconds, 2 ) );
+			assertThat( ok.heartbeatSeconds ).isEqualTo( 2 );
+		}
+
+		@DisplayName( "a cluster attribute contributor is unregistered by identity" )
+		@Test
+		void testAttributeContributorRoundTrip() {
+			ClusterService	service		= newNode( "contribCluster", "contribNode" );
+			IStruct			contributed	= Struct.of( "customMetric", 42 );
+			var				supplier	= ( java.util.function.Supplier<IStruct> ) () -> contributed;
+
+			service.addAttributeContributor( supplier );
+			service.mergeContributors();
+			assertThat( service.getLocalAttributes().get( Key.of( "customMetric" ) ) ).isEqualTo( 42 );
+
+			// Removing the same instance must actually unregister it: a fresh method reference would not match,
+			// and the contributor would keep publishing on every restart
+			service.removeAttributeContributor( supplier );
+			service.removeAttribute( "customMetric" );
+			service.mergeContributors();
+			assertThat( service.getLocalAttributes().get( Key.of( "customMetric" ) ) ).isNull();
+		}
+
 		@DisplayName( "enabling clustering with a cache that does not exist fails at startup with a useful message" )
 		@Test
 		void testMissingCoordinationCacheFailsAtStartup() {
