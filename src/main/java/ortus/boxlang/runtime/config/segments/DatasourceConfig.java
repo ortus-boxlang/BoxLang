@@ -547,7 +547,11 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 
 		// Make sure the `custom` property is a struct: Normalize it using the driver's delimiter
 		if ( this.properties.get( Key.custom ) instanceof String castedCustomParams ) {
-			this.properties.put( Key.custom, StructUtil.fromQueryString( castedCustomParams, jdbcDriver.getDefaultDelimiter() ) );
+			String parseDelimiter = jdbcDriver.getDefaultDelimiter();
+			if ( !castedCustomParams.contains( parseDelimiter ) && !parseDelimiter.equals( "&" ) ) {
+				parseDelimiter = "&";
+			}
+			this.properties.put( Key.custom, StructUtil.fromQueryString( castedCustomParams, parseDelimiter ) );
 		}
 
 		// Incorporate the driver's default 'custom' properties
