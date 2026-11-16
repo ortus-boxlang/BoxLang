@@ -301,7 +301,9 @@ public class BaseScheduler implements IScheduler {
 		// there is no per-scheduler cache to propagate
 
 		// Register the task by name
-		this.tasks.put( name, new TaskRecord( name, group, oTask ) );
+		synchronized ( this.tasks ) {
+			this.tasks.put( name, new TaskRecord( name, group, oTask ) );
+		}
 
 		return oTask;
 	}
@@ -448,7 +450,9 @@ public class BaseScheduler implements IScheduler {
 	 * @return The scheduler object
 	 */
 	public synchronized BaseScheduler clearTasks() {
-		this.tasks.clear();
+		synchronized ( this.tasks ) {
+			this.tasks.clear();
+		}
 		return this;
 	}
 
@@ -657,6 +661,8 @@ public class BaseScheduler implements IScheduler {
 			}
 			// Remove executor
 			this.asyncService.deleteExecutor( this.name + "-scheduler" );
+			// Anything that ran on a different executor, or on the caller's thread, was not covered by that drain
+			drainRemainingTrackedRuns();
 		}
 		// Remove task records
 		clearTasks();
@@ -731,6 +737,23 @@ public class BaseScheduler implements IScheduler {
 			        interruptGrace
 			    ) );
 		}
+	}
+
+	/**
+	 * Interrupt and briefly drain any tracked runs still executing, whichever executor started them.
+	 * <p>
+	 * An executor-level drain only waits for that executor's own threads. A task moved to another executor with
+	 * {@code useExecutor()}, or started directly on the caller's thread by {@code bx:schedule action="run"}, is
+	 * invisible to it - so its record could be cleared while the run was still going. This catches those.
+	 */
+	public void drainRemainingTrackedRuns() {
+		boolean anyRunning = this.tasks.values().stream().anyMatch( record -> record.task.getRunningCount() > 0 );
+		if ( !anyRunning ) {
+			return;
+		}
+		// Zero graceful wait: the pools have already had their graceful window, so go straight to the interrupt
+		// and the configured unwind grace.
+		awaitRunningTasks( 0 );
 	}
 
 	/**
@@ -951,7 +974,12 @@ public class BaseScheduler implements IScheduler {
 	 * @return The task records
 	 */
 	public java.util.Collection<TaskRecord> getTaskRecords() {
-		return java.util.List.copyOf( this.tasks.values() );
+		// The load tracker thread calls this once a second while requests, the tasks-file watcher and shutdown
+		// can all be mutating the map. Copying a LinkedHashMap under concurrent mutation can throw or produce an
+		// inconsistent snapshot - and an exception here would kill the tracker, freezing the published load.
+		synchronized ( this.tasks ) {
+			return java.util.List.copyOf( this.tasks.values() );
+		}
 	}
 
 	/**
@@ -972,7 +1000,9 @@ public class BaseScheduler implements IScheduler {
 		}
 
 		// Delete it
-		this.tasks.remove( name );
+		synchronized ( this.tasks ) {
+			this.tasks.remove( name );
+		}
 
 		return this;
 	}
@@ -1087,6 +1117,10 @@ public class BaseScheduler implements IScheduler {
 		if ( !this.started ) {
 			return this;
 		}
+		// Close the gate first. Everything below - the user hook, and any periodic tick that fires while the
+		// hook is running - must see a scheduler that has already stopped accepting work, or a slow hook would
+		// leave a window in which new runs and new task registrations still succeed.
+		beginShutdown();
 		// Run the lifecycle callback here: runtime shutdown uses this path instead of shutdown(...), which is
 		// the only other place that calls it, so overriding onShutdown() in a scheduler would otherwise never
 		// be invoked during a runtime shutdown. Guarded, because a user hook throwing must not abort shutdown.
@@ -1095,7 +1129,6 @@ public class BaseScheduler implements IScheduler {
 		} catch ( Throwable t ) {
 			this.logger.error( "Scheduler [{}] onShutdown() hook failed: {}", this.name, t.getMessage(), t );
 		}
-		beginShutdown();
 		this.tasks.values().forEach( record -> {
 			if ( record.future != null ) {
 				record.future.cancel( false );

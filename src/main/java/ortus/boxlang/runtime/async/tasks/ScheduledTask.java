@@ -1347,8 +1347,12 @@ public class ScheduledTask implements Runnable {
 
 	/**
 	 * Opt this task into cluster coordination: when the same scheduler configuration runs on every
-	 * node of a cluster, the task will execute on exactly one node per occurrence, spread across the
+	 * node of a cluster, the task will normally execute on one node per occurrence, spread across the
 	 * nodes, instead of firing redundantly everywhere.
+	 * <p>
+	 * <b>Coordination is best effort.</b> The cache offers no atomic create, so two nodes racing for the same
+	 * occurrence can, in a narrow window, both run it. A lost claim is detected and logged, but the duplicate's
+	 * side effects cannot be undone - so a clustered task should be safe to run more than once.
 	 * <p>
 	 * This is the public switch for clustered coordination. It sets the task's participation to
 	 * {@code true}; the deployment-wide {@code cluster.mode} decides how nodes coordinate (eager or

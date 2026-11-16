@@ -282,7 +282,13 @@ public class SchedulerService extends BaseService {
 				if ( this.loadTrackerStopped ) {
 					return;
 				}
-				advanceLoadWindow();
+				try {
+					advanceLoadWindow();
+				} catch ( Throwable t ) {
+					// Never let a bad sample kill the tracker: an escaped exception ends this thread, and the
+					// node would then publish a frozen load value forever.
+					this.logger.warn( "Scheduler load tracker tick failed: {}", t.getMessage(), t );
+				}
 			}
 		}, "boxlang-cluster-load-tracker" );
 		thread.setDaemon( true );
@@ -616,6 +622,10 @@ public class SchedulerService extends BaseService {
 	public SchedulerService completeShutdown() {
 		this.schedulers.values().forEach( scheduler -> {
 			if ( scheduler instanceof BaseScheduler base ) {
+				// Runs started directly on the caller's thread by bx:schedule action="run" live in no pool, so the
+				// concurrent executor drain never waited for them. Interrupt and briefly drain them before the
+				// task records are cleared out from under them.
+				base.drainRemainingTrackedRuns();
 				base.completeShutdown();
 			}
 		} );

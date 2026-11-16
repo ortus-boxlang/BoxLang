@@ -884,6 +884,16 @@ public class TaskClusterClaim {
 			return 0;
 		}
 
+		// A fixed-delay ("spaced") schedule repeats just like a period one, it simply measures the gap from the
+		// end of the previous run rather than from its start. Counting it as "no cadence" let a one-second
+		// spaced-delay clustered task pass the floor check even though it can never complete a claim in time.
+		long spacedMillis = task.getTimeUnit() != null
+		    ? task.getTimeUnit().toMillis( task.getSpacedDelay() )
+		    : 0;
+		if ( spacedMillis > 0 ) {
+			return Math.max( 1, Duration.ofMillis( spacedMillis ).toSeconds() );
+		}
+
 		long periodMillis = task.getPeriodMillis();
 		if ( periodMillis <= 0 ) {
 			return 0;

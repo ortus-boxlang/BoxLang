@@ -631,14 +631,28 @@ class ScheduledTaskTest {
 		}
 
 		@DisplayName( "balanced mode falls back to the eager random delay when no peers are visible" )
+		@Test
 		void testBalancedDelayWithNoPeers() {
-			ortus.boxlang.runtime.services.ClusterService		cluster	= claimTestCluster();
-			ortus.boxlang.runtime.config.segments.ClusterConfig	config	= cluster.getConfig();
+			ortus.boxlang.runtime.services.ClusterService		cluster			= claimTestCluster();
+			ortus.boxlang.runtime.config.segments.ClusterConfig	config			= cluster.getConfig();
+			var													schedulerCfg	= ortus.boxlang.runtime.BoxRuntime.getInstance()
+			    .getConfiguration().scheduler;
+			String												original		= schedulerCfg.clusterMode;
 
-			// This node is alone in its own cluster name, so there is nobody to be pushed back behind
-			cluster.invalidateSnapshot();
-			for ( int i = 0; i < 10; i++ ) {
-				assertThat( TaskClusterClaim.computeDelayMillis( task, cluster, config ) ).isLessThan( 30L );
+			try {
+				// The fallback only exists in balanced mode, so select it
+				schedulerCfg.clusterMode = "balanced";
+
+				// This node is alone in its own cluster name, so there is nobody to be pushed back behind
+				cluster.invalidateSnapshot();
+				for ( int i = 0; i < 10; i++ ) {
+					long delay = TaskClusterClaim.computeDelayMillis( task, cluster, config );
+					assertThat( delay ).isAtLeast( 0L );
+					// The fallback is the eager random window, not an arbitrary bound
+					assertThat( delay ).isAtMost( TaskClusterClaim.RANDOM_DELAY_MILLIS );
+				}
+			} finally {
+				schedulerCfg.clusterMode = original;
 			}
 		}
 

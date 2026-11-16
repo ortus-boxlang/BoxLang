@@ -39,6 +39,7 @@ import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -869,11 +870,26 @@ public class Schedule extends Component {
 			String templatePath = ( file != null && !file.isBlank() ) ? Paths.get( path ).resolve( file ).toString() : path;
 
 			return () -> {
-				// Run the template in the per-run request context that the task installed, not in the shared
-				// runtime context. The runtime context has no variables scope for the template to write to, and
-				// its unscoped assignments would persist in server-wide state between runs and between tasks.
-				IBoxContext invocationContext = RequestBoxContext.getCurrent( runtimeContext );
-				invocationContext.includeTemplate( templatePath );
+				// A fresh request context per run. The runtime context is shared by the whole server and has no
+				// variables scope, so a template containing an ordinary assignment (x = 1) would either fail with
+				// ScopeNotFoundException or write into server-wide state. Installing and restoring the current
+				// context keeps each run isolated without leaking it onto the calling thread.
+				IBoxContext					previous	= RequestBoxContext.getCurrent();
+				ScriptingRequestBoxContext	taskContext	= new ScriptingRequestBoxContext( runtimeContext );
+				try {
+					RequestBoxContext.setCurrent( taskContext );
+					taskContext.includeTemplate( templatePath );
+				} finally {
+					RequestBoxContext.setCurrent( previous );
+					// Release anything the template opened on this request
+					if ( taskContext instanceof ortus.boxlang.runtime.context.IJDBCCapableContext jdbcContext ) {
+						try {
+							jdbcContext.shutdownConnections();
+						} catch ( Throwable ignored ) {
+							// best effort - the run itself already happened
+						}
+					}
+				}
 			};
 		}
 
