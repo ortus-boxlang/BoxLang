@@ -567,7 +567,7 @@ public abstract class BaseApplicationListener {
 			throw new BoxRuntimeException( "No session to invalidate.  Is session management enabled?" );
 		}
 		Session terminalSession = sessionContext.getSession();
-		context.getParentOfType( ApplicationBoxContext.class ).getApplication().getSessionsCache().clear( terminalSession.getID().getName() );
+		context.getParentOfType( ApplicationBoxContext.class ).getApplication().getSessionsCache().clear( terminalSession.getCacheKey() );
 		terminalSession.shutdown( this );
 		initializeSession( newID );
 	}
