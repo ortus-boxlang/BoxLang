@@ -855,7 +855,11 @@ public class ClusterSoakReal {
 			}
 		}
 
-		List<String> failures = new ArrayList<>();
+		List<String>	failures	= new ArrayList<>();
+
+		// The claimed runs at least one node other than the owner reported seeing in flight. Those are the runs a
+		// peer had the chance to watch, which is what makes their endings accountable below.
+		Set<String>		witnessed	= peerWitnessed( claimed, runObservers );
 
 		// 1. Exactly once: an occurrence the runtime claimed on two nodes is a duplicate
 		for ( Map.Entry<String, Set<String>> entry : claimed.entrySet() ) {
@@ -896,9 +900,19 @@ public class ClusterSoakReal {
 		} else if ( succeeded > claimed.size() ) {
 			failures.add( ( succeeded - claimed.size() ) + " task run(s) succeeded without a claim - duplicate execution" );
 		} else if ( succeeded + accounted.size() < claimed.size() ) {
-			int unaccounted = claimed.size() - succeeded - accounted.size();
-			System.out.println( unaccounted + " claimed run(s) neither succeeded nor were reported abandoned" );
-			failures.add( unaccounted + " task run(s) started but neither finished nor were reported abandoned" );
+			// A run can legitimately have no reported ending: a node killed inside one heartbeat is gone before any
+			// peer's running list ever contains the run, so no peer can report it and the dead node cannot either
+			// (see 3c). Only a run a peer actually watched in flight must have an ending - those are the ones that
+			// prove the observer did its job.
+			Set<String> unwitnessed = new LinkedHashSet<>( claimed.keySet() );
+			unwitnessed.removeAll( witnessed );
+			unwitnessed.removeAll( accounted );
+			int unaccounted = claimed.size() - succeeded - accounted.size() - unwitnessed.size();
+
+			if ( unaccounted > 0 ) {
+				System.out.println( unaccounted + " claimed run(s) neither succeeded nor were reported abandoned" );
+				failures.add( unaccounted + " task run(s) started but neither finished nor were reported abandoned" );
+			}
 		}
 
 		// 3b. A hard kill must hit a node that is actually working, and must produce a peer-declared abandonment.
@@ -917,18 +931,11 @@ public class ClusterSoakReal {
 		// happened to any run - so a run nobody else noticed is a failure, not a detail.
 		int uncovered = 0;
 		for ( Map.Entry<String, Set<String>> entry : claimed.entrySet() ) {
-			Set<String>	reporters	= runObservers.getOrDefault( entry.getKey(), Set.of() );
-			String		owner		= entry.getValue().iterator().next();
-			// Each reporter is recorded as "<observing node>><run owner>"; it counts when the observer is somebody
-			// other than the node that ran it.
-			boolean		seenByPeer	= reporters.stream().anyMatch( reporter -> {
-										int sep = reporter.indexOf( '>' );
-										return sep > 0 && !reporter.substring( 0, sep ).equals( owner );
-									} );
-			if ( !seenByPeer ) {
+			if ( !witnessed.contains( entry.getKey() ) ) {
 				uncovered++;
 				if ( uncovered <= 5 ) {
-					System.out.println( "NOT OBSERVED: " + entry.getKey() + " ran on " + owner + ", no other node reported it" );
+					System.out.println( "NOT OBSERVED: " + entry.getKey() + " ran on " + entry.getValue().iterator().next()
+					    + ", no other node reported it" );
 				}
 			}
 		}
@@ -991,6 +998,28 @@ public class ClusterSoakReal {
 		}
 
 		return failures;
+	}
+
+	/**
+	 * The claimed runs that at least one node other than the owner reported seeing in flight. Each observer is
+	 * recorded as {@code <observing node>><run owner>}, so an entry only counts when the observing node is
+	 * somebody other than the node that ran it.
+	 */
+	private static Set<String> peerWitnessed( Map<String, Set<String>> claimed, Map<String, Set<String>> runObservers ) {
+		Set<String> witnessed = new LinkedHashSet<>();
+
+		for ( Map.Entry<String, Set<String>> entry : claimed.entrySet() ) {
+			String	owner		= entry.getValue().iterator().next();
+			boolean	seenByPeer	= runObservers.getOrDefault( entry.getKey(), Set.of() ).stream().anyMatch( reporter -> {
+									int sep = reporter.indexOf( '>' );
+									return sep > 0 && !reporter.substring( 0, sep ).equals( owner );
+								} );
+			if ( seenByPeer ) {
+				witnessed.add( entry.getKey() );
+			}
+		}
+
+		return witnessed;
 	}
 
 	/** The runtime's own scheduler log for a node. */

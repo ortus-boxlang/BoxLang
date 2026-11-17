@@ -535,6 +535,8 @@ public final class ClusterSoakTimeline {
 		      <strong style="font-size:12px">node:</strong>
 		      <span><i class="swatch" style="background:#c8e6c9;border:1px solid #2e7d32"></i>up</span>
 		      <span><i class="swatch" style="background:#e1bee7;border:1px solid #6a1b9a"></i>died on its own (crash)</span>
+		      <span><i class="swatch" style="background:#b71c1c;width:4px"></i>killed outright (no shutdown)</span>
+		      <span><i class="swatch" style="background:#ffe0b2;border:1px dashed #ef6c00"></i>shutdown requested &#8594; draining (no new runs accepted)</span>
 		    </div>
 		    <div class="legend">
 		      <strong style="font-size:12px">task run:</strong>
@@ -542,13 +544,7 @@ public final class ClusterSoakTimeline {
 		      <span><i class="swatch" style="background:#b71c1c"></i>failed</span>
 		      <span><i class="swatch" style="background:#f9a825"></i>started but never finished</span>
 		      <span><i class="swatch" style="background:#ef6c00"></i>interrupted by shutdown</span>
-		      <span><i class="swatch" style="background:#b71c1c;width:4px"></i>killed outright (no shutdown)</span>
-		      <span><i class="swatch" style="background:#ffe0b2;border:1px dashed #ef6c00"></i>shutdown requested &#8594; draining (no new runs accepted)</span>
-		    </div>
-		    <div class="legend">
-		      <strong style="font-size:12px">other:</strong>
-		      <span><i class="swatch" style="background:#bbdefb;border:1px solid #1e88e5"></i>nodes up (top strip)</span>
-		      <span>hover any bar or marker for its exact times</span>
+		      <span><i class="swatch" style="background:#6a1b9a"></i>abandoned (its node vanished holding it)</span>
 		    </div>
 		    <h2>Nodes</h2>
 		    <div class="sub">Load is measured in task-seconds - one task running for one second is 1.0 - which is
