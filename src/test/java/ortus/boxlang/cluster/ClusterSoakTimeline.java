@@ -350,14 +350,15 @@ public final class ClusterSoakTimeline {
 		for ( NodeSpan span : spans ) {
 			int		from	= x( Math.max( span.from(), t0 ), t0, t1 );
 			int		to		= Math.max( x( Math.min( span.to(), t1 ), t0, t1 ), from + 2 );
+			// A killed node keeps the normal "up" fill: it did not shut down, it just stopped. The death is marked
+			// by a hard red vertical line instead of by recolouring the whole lifespan.
 			String	fill	= switch ( span.endReason() ) {
 								case "crashed" -> "#e1bee7";
-								case "killed" -> "#ffcdd2";
 								default -> "#c8e6c9";
 							};
 			String	stroke	= switch ( span.endReason() ) {
 								case "crashed" -> "#6a1b9a";
-								case "killed" -> "#c62828";
+								case "killed" -> "#2e7d32";
 								default -> "#2e7d32";
 							};
 
@@ -368,7 +369,18 @@ public final class ClusterSoakTimeline {
 			        + " (" + seconds( span.to() - span.from() ) + "), " + endReasonText( span.endReason() ) ) )
 			    .append( "</title></rect>" );
 
-			if ( !"stopped".equals( span.endReason() ) ) {
+			// A hard kill gets a full-height red line: no shutdown, no drain, nothing recorded. Distinct from the
+			// orange dashed drain band, which means "asked to stop and finishing its work".
+			if ( "killed".equals( span.endReason() ) ) {
+				int killX = x( Math.min( span.to(), t1 ), t0, t1 );
+				out.append( "<line x1=\"" ).append( killX ).append( "\" y1=\"" ).append( top ).append( "\" x2=\"" ).append( killX )
+				    .append( "\" y2=\"" ).append( top + rowHeight ).append( "\" stroke=\"#b71c1c\" stroke-width=\"3\">" )
+				    .append( "<title>" ).append( esc( nodeId + " killed outright at " + clock( span.to(), t0 )
+				        + " - no shutdown, no drain, nothing recorded" ) )
+				    .append( "</title></line>" );
+				out.append( "<text x=\"" ).append( killX + 3 ).append( "\" y=\"" ).append( top + rowHeight - 3 )
+				    .append( "\" font-size=\"9\" fill=\"#b71c1c\" font-weight=\"700\">killed</text>" );
+			} else if ( !"stopped".equals( span.endReason() ) ) {
 				int endX = x( Math.min( span.to(), t1 ), t0, t1 );
 				out.append( "<line x1=\"" ).append( endX ).append( "\" y1=\"" ).append( top + 2 ).append( "\" x2=\"" ).append( endX )
 				    .append( "\" y2=\"" ).append( top + rowHeight - 2 ).append( "\" stroke=\"" ).append( stroke )
@@ -421,6 +433,9 @@ public final class ClusterSoakTimeline {
 			int		to		= Math.max( x( Math.min( execution.end(), t1 ), t0, t1 ), from + 4 );
 			String	fill	= switch ( execution.outcome() ) {
 								case "failed" -> "#b71c1c";
+								// Cut short by shutdown: distinct from both success and "never finished"
+								case "interrupted" -> "#ef6c00";
+								case "abandoned" -> "#6a1b9a";
 								case "unknown", "running" -> "#f9a825";
 								default -> "#1b5e20";
 							};
@@ -526,6 +541,8 @@ public final class ClusterSoakTimeline {
 		      <span><i class="swatch" style="background:#1b5e20"></i>ran successfully</span>
 		      <span><i class="swatch" style="background:#b71c1c"></i>failed</span>
 		      <span><i class="swatch" style="background:#f9a825"></i>started but never finished</span>
+		      <span><i class="swatch" style="background:#ef6c00"></i>interrupted by shutdown</span>
+		      <span><i class="swatch" style="background:#b71c1c;width:4px"></i>killed outright (no shutdown)</span>
 		      <span><i class="swatch" style="background:#ffe0b2;border:1px dashed #ef6c00"></i>shutdown requested &#8594; draining (no new runs accepted)</span>
 		    </div>
 		    <div class="legend">
@@ -606,10 +623,16 @@ public final class ClusterSoakTimeline {
 		}
 
 		long unfinished = run.executions().stream()
-		    .filter( execution -> !"success".equals( execution.outcome() ) && !"failed".equals( execution.outcome() ) )
+		    .filter( execution -> !"success".equals( execution.outcome() ) && !"failed".equals( execution.outcome() )
+		        && !"interrupted".equals( execution.outcome() ) && !"abandoned".equals( execution.outcome() ) )
 		    .count();
 		if ( unfinished > 0 ) {
 			reasons.add( unfinished + " task run(s) started but never finished" );
+		}
+
+		long interrupted = run.executions().stream().filter( execution -> "interrupted".equals( execution.outcome() ) ).count();
+		if ( interrupted > 0 ) {
+			reasons.add( interrupted + " task run(s) interrupted by shutdown (expected: no new work is accepted while draining)" );
 		}
 
 		long failed = run.executions().stream().filter( execution -> "failed".equals( execution.outcome() ) ).count();

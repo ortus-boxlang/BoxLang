@@ -517,12 +517,43 @@ class ClusterTaskShutdownTest {
 
 		assertThat( interrupted.get() ).isTrue();
 
-		IStruct record = ( IStruct ) cache.get( TaskClusterClaim.buildTaskKey( cluster, task ) ).orElse( null );
+		IStruct record = ( IStruct ) cache.get( claim.cacheKey() ).orElse( null );
 		assertThat( record ).isNotNull();
 		assertThat( record.getAsString( Key.status ) ).isEqualTo( "abandoned" );
 
 		// A cut-short run must never be re-run: that would be a second execution of the same occurrence
 		assertThat( TaskClusterClaim.attempt( task, due, cluster ) ).isNull();
+	}
+
+	@DisplayName( "the task maintenance thread is stopped by scheduler shutdown, with no lingering thread" )
+	@Test
+	void testMaintenanceThreadStopsOnShutdown() throws Exception {
+		ClusterService			cluster	= node( "shutdown-maint-" + UUID.randomUUID() );
+		ScheduledTask			task	= new ScheduledTask( "maint-" + UUID.randomUUID() ).every( 10, TimeUnit.SECONDS ).setCluster( true );
+
+		TaskClusterClaim.Claim	claim	= TaskClusterClaim.attempt( task, Instant.now(), cluster );
+		assertThat( claim ).isNotNull();
+		claim.startHeartbeat();
+
+		// A claim is now held, so the maintenance thread is running
+		assertThat( TaskClusterClaim.heldClaimCount() ).isAtLeast( 1 );
+		Thread maintenance = null;
+		for ( Thread thread : Thread.getAllStackTraces().keySet() ) {
+			if ( "boxlang-cluster-task-heartbeat".equals( thread.getName() ) ) {
+				maintenance = thread;
+				break;
+			}
+		}
+		assertThat( maintenance ).isNotNull();
+
+		// Shutdown must stop it, and must not wait long for it
+		long before = System.currentTimeMillis();
+		TaskClusterClaim.shutdownMaintenance();
+		long elapsed = System.currentTimeMillis() - before;
+
+		assertThat( elapsed ).isLessThan( 1_500L );
+		assertThat( TaskClusterClaim.heldClaimCount() ).isEqualTo( 0 );
+		assertThat( maintenance.isAlive() ).isFalse();
 	}
 
 	@DisplayName( "an interrupted run is never recorded as success" )
@@ -533,10 +564,9 @@ class ClusterTaskShutdownTest {
 		ScheduledTask			task		= new ScheduledTask( "interrupted-" + UUID.randomUUID() )
 		    .every( 1, TimeUnit.HOURS )
 		    .setCluster( true );
-		String					key			= TaskClusterClaim.buildTaskKey( cluster, task );
-
 		TaskClusterClaim.Claim	claim		= TaskClusterClaim.attempt( task, Instant.now(), cluster );
 		assertThat( claim ).isNotNull();
+		String key = claim.cacheKey();
 
 		// What runInternal() now does on an interrupt
 		claim.finish( "abandoned", null );

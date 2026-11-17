@@ -869,7 +869,11 @@ public class ScheduledTask implements Runnable {
 				// A task that catches InterruptedException, restores the flag and returns normally was still cut
 				// short by shutdown, so the thread's interrupt status counts as an interruption too.
 				boolean	interrupted	= clusterRunInterrupted || Thread.currentThread().isInterrupted();
-				String	outcome		= interrupted ? "abandoned" : ( clusterRunFailed ? "failed" : "success" );
+				// `interrupted` is its own status, not `abandoned`. The two mean different things:
+				// interrupted - this node was told to stop and cut its own run short. A deliberate shutdown.
+				// abandoned - the runner disappeared and a peer had to pronounce the run dead.
+				// Collapsing them conflated an orderly shutdown with a crash in both the logs and the metrics.
+				String	outcome		= interrupted ? "interrupted" : ( clusterRunFailed ? "failed" : "success" );
 				try {
 					clusterClaim.finish( outcome, null );
 				} catch ( Throwable t ) {

@@ -81,38 +81,43 @@ class TaskClusterClaimTest {
 		return TaskClusterClaim.occurrenceId( task, due );
 	}
 
-	@DisplayName( "an older occurrence cannot displace a newer claim, and the newer one stays protected" )
+	@DisplayName( "each occurrence has its own key, so an older occurrence cannot displace a newer one" )
 	@Test
-	void testAnOlderOccurrenceCannotDisplaceANewerClaim() {
-		// The regression this guards: the record is one slot per task, so a node evaluating a bucket that
-		// is already behind could overwrite a newer occurrence's live claim - which deleted that newer
-		// occurrence's guard, and the next node to evaluate it found nothing in its way and ran it again.
+	void testOccurrencesHaveIndependentKeys() {
+		// The bug this design removes: with one slot per task, a node evaluating a bucket that was already
+		// behind could overwrite a newer occurrence's live claim, deleting that newer occurrence's guard so the
+		// next node to evaluate it ran it a second time. Per-occurrence keys make that impossible - there is
+		// nothing to overwrite.
 		String					clusterName	= "claim-displace-" + UUID.randomUUID();
 		ClusterService			one			= node( clusterName, "nodeOne" );
 		ClusterService			two			= node( clusterName, "nodeTwo" );
-		ClusterService			three		= node( clusterName, "nodeThree" );
-		ScheduledTask			task		= task();
-		String					key			= TaskClusterClaim.buildTaskKey( one, task );
+		// overlap=run so the two occurrences may legitimately be in flight together; the point of this test is
+		// that their keys are independent, not the overlap policy.
+		ScheduledTask			task		= task().setOverlap( "run" );
 
-		// nodeOne claims the current bucket
 		Instant					now			= Instant.now();
-		TaskClusterClaim.Claim	claim		= TaskClusterClaim.attempt( task, now, one );
-		assertThat( claim ).isNotNull();
+		TaskClusterClaim.Claim	newer		= TaskClusterClaim.attempt( task, now, one );
+		assertThat( newer ).isNotNull();
 
-		// nodeTwo is a bucket behind: it must stand down rather than write over that claim
-		Instant	behind		= now.minusSeconds( 10 );
-		String	behindId	= TaskClusterClaim.occurrenceId( task, behind );
-		assertThat( TaskClusterClaim.attempt( task, behind, two ) ).isNull();
+		// A different (older) occurrence belongs to a different key, and is free to be claimed separately
+		Instant					behind	= now.minusSeconds( 10 );
+		TaskClusterClaim.Claim	older	= TaskClusterClaim.attempt( task, behind, two );
+		assertThat( older ).isNotNull();
+		assertThat( older.cacheKey() ).isNotEqualTo( newer.cacheKey() );
 
-		// and nodeOne's claim must still be intact
-		IStruct record = ( IStruct ) cache.get( key ).orElse( null );
-		assertThat( record ).isNotNull();
-		assertThat( record.getAsString( Key.occurrenceId ) ).isNotEqualTo( behindId );
-		assertThat( record.getAsString( Key.nodeId ) ).isEqualTo( "nodeOne" );
-		assertThat( record.getAsString( Key.status ) ).isEqualTo( "running" );
+		// Both records survive independently - claiming the older one did not touch the newer one
+		IStruct newerRecord = ( IStruct ) cache.get( newer.cacheKey() ).orElse( null );
+		assertThat( newerRecord ).isNotNull();
+		assertThat( newerRecord.getAsString( Key.nodeId ) ).isEqualTo( "nodeOne" );
+		assertThat( newerRecord.getAsString( Key.status ) ).isEqualTo( "running" );
+		assertThat( newerRecord.getAsString( Key.occurrenceId ) ).isEqualTo( TaskClusterClaim.occurrenceId( task, now ) );
 
-		// so a third node still cannot run the newer occurrence
-		assertThat( TaskClusterClaim.attempt( task, now, three ) ).isNull();
+		// And neither occurrence may be claimed again by anyone
+		assertThat( TaskClusterClaim.attempt( task, now, two ) ).isNull();
+		assertThat( TaskClusterClaim.attempt( task, behind, one ) ).isNull();
+
+		newer.finish( "success", null );
+		older.finish( "success", null );
 	}
 
 	@DisplayName( "an unverified candidate claim blocks another node just like a running one" )
@@ -124,9 +129,9 @@ class TaskClusterClaimTest {
 		ClusterService	one			= node( clusterName, "nodeOne" );
 		ClusterService	two			= node( clusterName, "nodeTwo" );
 		ScheduledTask	task		= task();
-		String			key			= TaskClusterClaim.buildTaskKey( one, task );
 		Instant			now			= Instant.now();
 		String			occurrence	= TaskClusterClaim.occurrenceId( task, now );
+		String			key			= TaskClusterClaim.buildTaskKey( one, task, occurrence );
 
 		cache.set( key, Struct.ofNonConcurrent(
 		    Key.claimId, UUID.randomUUID().toString(),
@@ -140,18 +145,23 @@ class TaskClusterClaimTest {
 		assertThat( TaskClusterClaim.attempt( task, now, two ) ).isNull();
 	}
 
-	@DisplayName( "a clustered cron task is not measured against the minimum period floor" )
+	@DisplayName( "a clustered cron task is measured by its own shortest interval, not its poll cadence" )
 	@Test
 	void testCronTaskIsNotPeriodBound() {
-		// A cron task polls every second (or minute), which is its poll cadence, not its occurrence cadence.
-		// Reading that as the period rejected every clustered cron task as "period of 1s, below the minimum".
-		ClusterService	cluster	= node( "overlap-cron-" + UUID.randomUUID(), "nodeOne" );
-		ScheduledTask	task	= new ScheduledTask( "cron-" + UUID.randomUUID() ).cron( "*/5 * * * * *" ).setCluster( true );
+		// A cron task polls every second (or minute), which is its poll cadence, not its occurrence cadence. Reading
+		// that as the period rejected every clustered cron task. The interval is derived from the expression instead,
+		// so an every-second cron is still refused and a sane one is accepted.
+		ClusterService	cluster		= node( "overlap-cron-" + UUID.randomUUID(), "nodeOne" );
 
-		assertThat( TaskClusterClaim.periodSeconds( task ) ).isEqualTo( 0L );
+		// Every second: cannot service a claim, so it is effectively a 1s task
+		ScheduledTask	everySecond	= new ScheduledTask( "cron-fast-" + UUID.randomUUID() ).cron( "* * * * * *" ).setCluster( true );
+		assertThat( TaskClusterClaim.periodSeconds( everySecond ) ).isEqualTo( 1L );
+		assertThat( TaskClusterClaim.meetsMinimumPeriod( everySecond, cluster.getConfig() ) ).isFalse();
 
-		// And the claim path works for it
-		assertThat( TaskClusterClaim.attempt( task, Instant.now(), cluster ) ).isNotNull();
+		// Every five seconds: below the eager floor of 4s? No - 5 >= 4, so it is accepted
+		ScheduledTask everyFive = new ScheduledTask( "cron-5-" + UUID.randomUUID() ).cron( "*/5 * * * * *" ).setCluster( true );
+		assertThat( TaskClusterClaim.periodSeconds( everyFive ) ).isEqualTo( 5L );
+		assertThat( TaskClusterClaim.attempt( everyFive, Instant.now(), cluster ) ).isNotNull();
 	}
 
 	@DisplayName( "one node claims an occurrence and the other is refused" )
@@ -218,7 +228,7 @@ class TaskClusterClaimTest {
 		TaskClusterClaim.Claim	claim		= TaskClusterClaim.attempt( task, due, one );
 		assertThat( claim ).isNotNull();
 
-		IStruct record = ( IStruct ) cache.get( TaskClusterClaim.buildTaskKey( one, task ) ).orElse( null );
+		IStruct record = ( IStruct ) cache.get( claim.cacheKey() ).orElse( null );
 		assertThat( record ).isNotNull();
 		assertThat( record.getAsString( Key.nodeId ) ).isEqualTo( "nodeOne" );
 		assertThat( record.getAsString( Key.status ) ).isEqualTo( "running" );
@@ -239,7 +249,7 @@ class TaskClusterClaimTest {
 		claim.startHeartbeat();
 
 		// Simulate the residual race: another node's claim lands after the winner verified
-		String	key		= TaskClusterClaim.buildTaskKey( one, task );
+		String	key		= claim.cacheKey();
 		IStruct	stolen	= ortus.boxlang.runtime.types.Struct.ofNonConcurrent(
 		    Key.claimId, UUID.randomUUID().toString(),
 		    Key.occurrenceId, occurrenceOf( task ),
@@ -276,7 +286,7 @@ class TaskClusterClaimTest {
 
 		claim.finish( "failed", "boom" );
 
-		IStruct record = ( IStruct ) cache.get( TaskClusterClaim.buildTaskKey( one, task ) ).orElse( null );
+		IStruct record = ( IStruct ) cache.get( claim.cacheKey() ).orElse( null );
 		assertThat( record.getAsString( Key.status ) ).isEqualTo( "failed" );
 		assertThat( record.getAsString( Key.nodeId ) ).isEqualTo( "nodeOne" );
 		assertThat( record.get( Key.finishedAt ) ).isNotNull();

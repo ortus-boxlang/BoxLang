@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
 import ortus.boxlang.runtime.async.tasks.ScheduledTask;
+import ortus.boxlang.runtime.async.tasks.TaskClusterClaim;
 import ortus.boxlang.runtime.async.tasks.TaskRecord;
 import ortus.boxlang.runtime.async.watchers.WatcherEvent;
 import ortus.boxlang.runtime.async.watchers.WatcherInstance;
@@ -270,6 +271,9 @@ public class SchedulerService extends BaseService {
 			this.loadContributor = this::getLoadSnapshot;
 		}
 		cluster.addAttributeContributor( this.loadContributor );
+
+		// Hand the cluster service the means to name recent occurrences, so it can look for claim records nobody
+		// observed without ever enumerating cache keys.
 
 		Thread thread = new Thread( () -> {
 			while ( !this.loadTrackerStopped ) {
@@ -564,6 +568,10 @@ public class SchedulerService extends BaseService {
 		this.hasShutdown = true;
 		stopTasksFileWatcher();
 		stopClusterLoadTracking();
+		// Deliberately NOT stopping the task claim maintenance thread here. Runs are still draining at this
+		// point (the grace window has not been waited yet), and if their heartbeats stop now their records go
+		// stale mid-run - so a peer reports a perfectly healthy run as abandoned. It is stopped in
+		// completeShutdown(), once every pool has actually drained.
 
 		// Announced here because this is the phase that begins the shutdown. Runtime shutdown does not go
 		// through onShutdown()/shutdownScheduler(), so without this the event never fired and any listener
@@ -629,6 +637,9 @@ public class SchedulerService extends BaseService {
 				base.completeShutdown();
 			}
 		} );
+		// Every pool has drained, so no run needs its claim heartbeated any more. Stop the maintenance thread
+		// here - not at the start of shutdown, which made in-flight records look stale midway through a job.
+		TaskClusterClaim.shutdownMaintenance();
 		this.logger.info( "+ Scheduler Service shutdown" );
 		return this;
 	}
@@ -653,6 +664,9 @@ public class SchedulerService extends BaseService {
 
 		// Stop publishing load to the cluster, and release its thread
 		stopClusterLoadTracking();
+
+		// Stop the task claim maintenance thread (beats claims, resolves watched ones). This path drains the
+		// schedulers below before returning, so the heartbeats have done their job by the time we get here.
 
 		// Call shutdown on each scheduler in parallel, using the configured shutdown grace. A forced
 		// runtime shutdown stays forced here too, otherwise it would still sit through every timeout.

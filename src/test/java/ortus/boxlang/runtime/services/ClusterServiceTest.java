@@ -551,6 +551,70 @@ class ClusterServiceTest {
 	}
 
 	@Nested
+	@DisplayName( "Run observation" )
+	class RunObservation {
+
+		@DisplayName( "a peer reports a run as finished when it stops appearing in that node's record" )
+		@Test
+		void testPeerReportsFinished() {
+			String			clusterName	= "observe-finished";
+			ClusterService	worker		= newNode( clusterName, "worker" );
+			ClusterService	observer	= newNode( clusterName, "observer" );
+
+			worker.trackRunStarted( "sched", "monthly-task", "2026-01-01T00:00:00", "test-key-1" );
+			worker.writeLocalRecord();
+			worker.registerInMemberList();
+
+			// First sweep is the baseline: the observer learns what the peer is doing, and announces it started
+			var baseline = observer.sweepPeerRuns();
+			assertThat( baseline ).hasSize( 1 );
+			assertThat( baseline.get( 0 ) ).contains( "STARTED on worker" );
+			assertThat( baseline.get( 0 ) ).contains( "monthly-task" );
+
+			// The run ends - which the observer learns from the node record, not from the task firing again
+			worker.trackRunFinished( "sched", "monthly-task", "2026-01-01T00:00:00", "success" );
+			worker.writeLocalRecord();
+
+			var reports = observer.sweepPeerRuns();
+			assertThat( reports ).hasSize( 1 );
+			// Reported with the actual outcome its owner published, not a generic "finished"
+			assertThat( reports.get( 0 ) ).contains( "SUCCESS" );
+			assertThat( reports.get( 0 ) ).contains( "on worker" );
+			assertThat( reports.get( 0 ) ).contains( "monthly-task" );
+		}
+
+		@DisplayName( "a run held by a node whose record disappears is reported abandoned" )
+		@Test
+		void testPeerReportsAbandoned() {
+			String			clusterName	= "observe-abandoned";
+			ClusterService	worker		= newNode( clusterName, "worker" );
+			ClusterService	observer	= newNode( clusterName, "observer" );
+
+			worker.trackRunStarted( "sched", "monthly-task", "2026-02-01T00:00:00", "test-key-2" );
+			worker.writeLocalRecord();
+			worker.registerInMemberList();
+
+			// Baseline: the observer sees the run start
+			var baseline = observer.sweepPeerRuns();
+			assertThat( baseline ).hasSize( 1 );
+			assertThat( baseline.get( 0 ) ).contains( "STARTED on worker" );
+
+			// The node dies: its record goes away, so it stops appearing in the snapshot entirely
+			sharedCache.clear( worker.getKeyPrefix() + "node:" + worker.getNodeId() );
+			observer.invalidateSnapshot();
+
+			var reports = observer.sweepPeerRuns();
+			// A single miss is not confirmation: a peer read can transiently miss a record, so the ending is
+			// reported only after CONFIRM_MISSING_BEATS consecutive sweeps without it.
+			assertThat( reports ).isEmpty();
+			reports = observer.sweepPeerRuns();
+			assertThat( reports ).hasSize( 1 );
+			assertThat( reports.get( 0 ) ).contains( "ABANDONED" );
+			assertThat( reports.get( 0 ) ).contains( "monthly-task" );
+		}
+	}
+
+	@Nested
 	@DisplayName( "Configuration" )
 	class Config {
 

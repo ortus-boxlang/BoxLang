@@ -147,13 +147,14 @@ class TaskOverlapAndFloorTest {
 	@DisplayName( "a cron task has no period floor, because it is polled rather than period bound" )
 	@Test
 	void testCronHasNoFloor() {
-		ClusterConfig	config	= new ClusterConfig();
-		ScheduledTask	cron	= new ScheduledTask( "cron-" + UUID.randomUUID() ).cron( "*/1 * * * *" );
+		// A cron fires on its own schedule, so an interval is only derived when one is measurable. A nightly task has
+		// no fires inside the measurement window, so it is exempt (0 = no floor). An every-second cron measures as
+		// 1s and is refused - which is the case that used to slip through when every cron returned 0.
+		ScheduledTask	nightly		= new ScheduledTask( "cron-nightly-" + UUID.randomUUID() ).cron( "0 0 2 * * *" );
+		ScheduledTask	everySecond	= new ScheduledTask( "cron-fast-" + UUID.randomUUID() ).cron( "* * * * * *" );
 
-		// A cron task is polled, not period bound. Its getPeriodMillis() is the poll cadence (a second for a
-		// second-level cron), which is not the occurrence cadence - reporting that as the period made every
-		// clustered cron task look like a 1s task and rejected it against the minimum period floor.
-		assertThat( TaskClusterClaim.periodSeconds( cron ) ).isEqualTo( 0L );
+		assertThat( TaskClusterClaim.periodSeconds( nightly ) ).isEqualTo( 0L );
+		assertThat( TaskClusterClaim.periodSeconds( everySecond ) ).isEqualTo( 1L );
 	}
 
 	@DisplayName( "a task with no fixed period reports a zero period" )
@@ -174,7 +175,7 @@ class TaskOverlapAndFloorTest {
 		assertThat( claim ).isNotNull();
 		claim.finish( "success", null );
 
-		IStruct record = ( IStruct ) cache.get( TaskClusterClaim.buildTaskKey( cluster, task ) ).orElse( null );
+		IStruct record = ( IStruct ) cache.get( claim.cacheKey() ).orElse( null );
 		assertThat( record.get( Key.occurrenceId ) ).isEqualTo( TaskClusterClaim.occurrenceId( task, due ) );
 		assertThat( record.get( Key.status ) ).isEqualTo( "success" );
 	}
@@ -185,7 +186,7 @@ class TaskOverlapAndFloorTest {
 		ClusterService	cluster	= node( "overlap-stale-" + UUID.randomUUID(), "nodeOne", 1 );
 		ScheduledTask	task	= new ScheduledTask( "overlap-" + UUID.randomUUID() ).every( 10, TimeUnit.SECONDS ).setCluster( true );
 		Instant			due		= Instant.now();
-		String			key		= TaskClusterClaim.buildTaskKey( cluster, task );
+		String			key		= TaskClusterClaim.buildTaskKey( cluster, task, TaskClusterClaim.occurrenceId( task, due ) );
 
 		// A node claimed it and then stopped heartbeating
 		cache.set( key, Struct.ofNonConcurrent(
@@ -293,7 +294,7 @@ class TaskOverlapAndFloorTest {
 		ClusterService	cluster	= node( "overlap-abandoned-" + UUID.randomUUID(), "nodeOne", 1 );
 		ScheduledTask	task	= new ScheduledTask( "overlap-" + UUID.randomUUID() ).every( 10, TimeUnit.SECONDS ).setCluster( true );
 		Instant			due		= Instant.now();
-		String			key		= TaskClusterClaim.buildTaskKey( cluster, task );
+		String			key		= TaskClusterClaim.buildTaskKey( cluster, task, TaskClusterClaim.occurrenceId( task, due ) );
 
 		// Simulate a node that claimed and died: the record says abandoned
 		cache.set( key, Struct.ofNonConcurrent(

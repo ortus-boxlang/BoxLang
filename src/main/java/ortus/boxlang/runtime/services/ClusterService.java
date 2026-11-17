@@ -174,6 +174,11 @@ public class ClusterService extends BaseService {
 	 */
 	private volatile Thread												heartbeatThread;
 	private volatile Thread												attributesThread;
+	/**
+	 * The peer-observation loop. Its own thread on purpose: see {@code observerLoop()} for why it must never
+	 * share the heartbeat's.
+	 */
+	private volatile Thread												observerThread;
 	private volatile boolean											loopsRunning				= false;
 
 	/**
@@ -324,9 +329,11 @@ public class ClusterService extends BaseService {
 
 		this.heartbeatThread	= newLoopThread( "boxlang-cluster-heartbeat", this::heartbeatLoop );
 		this.attributesThread	= newLoopThread( "boxlang-cluster-attributes", this::attributesLoop );
+		this.observerThread		= newLoopThread( "boxlang-cluster-observer", this::observerLoop );
 
 		this.heartbeatThread.start();
 		this.attributesThread.start();
+		this.observerThread.start();
 		this.loopsRunning = true;
 
 		// Announce ourselves immediately so peers show up without waiting a full cadence
@@ -348,6 +355,7 @@ public class ClusterService extends BaseService {
 
 		Thread	heartbeat	= this.heartbeatThread;
 		Thread	attributes	= this.attributesThread;
+		Thread	observer	= this.observerThread;
 
 		if ( heartbeat != null ) {
 			heartbeat.interrupt();
@@ -355,12 +363,17 @@ public class ClusterService extends BaseService {
 		if ( attributes != null ) {
 			attributes.interrupt();
 		}
+		if ( observer != null ) {
+			observer.interrupt();
+		}
 
 		joinQuietly( heartbeat );
 		joinQuietly( attributes );
+		joinQuietly( observer );
 
 		this.heartbeatThread	= null;
 		this.attributesThread	= null;
+		this.observerThread		= null;
 		this.loopsRunning		= false;
 		this.stopRequested		= false;
 
@@ -426,9 +439,37 @@ public class ClusterService extends BaseService {
 				if ( stopRequested ) {
 					break;
 				}
+				// Publish what this node is working on before writing, so the record peers read is current
+				publishRunState();
 				writeLocalRecord();
 			} catch ( Throwable t ) {
 				this.logger.error( "+ Cluster heartbeat error on node [{}]: {}", this.nodeId, t.getMessage() );
+			}
+		}
+	}
+
+	/**
+	 * Observer loop: report what peers are running, and what they stopped running.
+	 * <p>
+	 * Deliberately <b>not</b> on the heartbeat thread. Reading peers costs a member-list read plus one record
+	 * per peer, and a slow cache can take longer than a heartbeat - which would delay this node's own heartbeat,
+	 * make it look stale to everyone else, and get its live claims reported abandoned by the very watcher meant
+	 * to protect them. Its own thread also means the heartbeat cadence is never a function of cluster size.
+	 * <p>
+	 * Fixed-delay, not fixed-rate: a sweep that overruns simply starts the next one late instead of queueing.
+	 */
+	private void observerLoop() {
+		while ( !stopRequested ) {
+			try {
+				if ( stopRequested ) {
+					break;
+				}
+				sweepPeerRuns();
+			} catch ( Throwable t ) {
+				this.logger.error( "+ Cluster observer error on node [{}]: {}", this.nodeId, t.getMessage() );
+			}
+			if ( !sleepSeconds( this.config.heartbeatSeconds ) ) {
+				break;
 			}
 		}
 	}
@@ -751,6 +792,8 @@ public class ClusterService extends BaseService {
 		if ( resolved == null ) {
 			return;
 		}
+		// Publish what this node is working on before the record goes out, so peers can observe it
+		publishRunState();
 		try {
 			resolved.set( nodeKey( this.nodeId ), buildLocalRecord(), nodeTtlSeconds() );
 		} catch ( Throwable t ) {
@@ -760,6 +803,362 @@ public class ClusterService extends BaseService {
 
 	private long nodeTtlSeconds() {
 		return Math.max( this.config.heartbeatSeconds * 3 * 2, this.config.heartbeatSeconds * 2 );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Run observation
+	 *
+	 * The heartbeat thread used to write this node's record and nothing else, which meant the record's only
+	 * reader was a peer's own task tick. For a task that fires monthly, that reader never arrives - so a run
+	 * that died was never noticed and its claim simply expired. These methods let peers see what every node is
+	 * working on, and let the heartbeat thread report it on its own cadence instead of the task's.
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Runs this node currently holds. Published inside the node record, so it costs no extra cache writes and
+	 * peers pick it up with the record they already read.
+	 */
+	private final java.util.Map<String, IStruct>	inFlightRuns			= new java.util.concurrent.ConcurrentHashMap<>();
+
+	/**
+	 * Recently finished runs, newest first, so a peer can report an outcome ("finished", "failed") rather than
+	 * only noticing that something stopped.
+	 */
+	private final java.util.Deque<IStruct>			recentRuns				= new java.util.concurrent.ConcurrentLinkedDeque<>();
+
+	/** Longer history of finished runs, so an outcome stays visible well after the short recent window. */
+	private final java.util.Deque<IStruct>			runHistory				= new java.util.concurrent.ConcurrentLinkedDeque<>();
+
+	/** How many finished runs are kept for peers to observe. Kept small: it rides every peer read. */
+	private static final int						RECENT_RUNS_KEPT		= 8;
+
+	/**
+	 * How many finished runs are kept in the longer history list. This is what lets a peer report how a run ended
+	 * even if it missed the short {@code recent} window - a slow sweep, or a node that was briefly unreachable.
+	 */
+	private static final int						HISTORY_RUNS_KEPT		= 64;
+
+	/** A finished run older than this many heartbeats is dropped, so peer records stay small. */
+	private static final int						RECENT_RUNS_TTL_BEATS	= 2;
+
+	/**
+	 * How many consecutive sweeps a run must be missing before its ending is reported. A single peer read can
+	 * transiently miss a record - a store hiccup, a record mid-write - and reporting on the first miss produced
+	 * false "ABANDONED (its node disappeared)" lines for nodes that were perfectly healthy.
+	 */
+	private static final int						CONFIRM_MISSING_BEATS	= 2;
+
+	/** What each peer was last seen running, so a disappearance can be classified. */
+	private final java.util.Map<String, String>		previousPeerRuns		= new java.util.concurrent.ConcurrentHashMap<>();
+
+	/** The occurrence cache key for each peer run, so an authoritative outcome can be read when a node is gone. */
+	private final java.util.Map<String, String>		peerRunKeys				= new java.util.concurrent.ConcurrentHashMap<>();
+
+	/** Every run this observer has ever seen start, so a run that flickers out and back is not reported twice. */
+	private final java.util.Set<String>				knownRuns				= java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+	/** Runs that have disappeared but are not yet confirmed ended, with how many sweeps they have been missing. */
+	private final java.util.Map<String, int[]>		pendingEnded			= new java.util.concurrent.ConcurrentHashMap<>();
+
+	/** Runs this observer has already reported a terminal status for, so nothing is reported twice. */
+	private final java.util.Set<String>				reportedEnded			= java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+	/** The announcement fired when a peer's run is reported finished, failed or abandoned. */
+	public static final Key							ON_TASK_RUN_REPORTED	= Key.of( "onClusterTaskRunReported" );
+
+	/**
+	 * Run reports go to the scheduler log, not the runtime log, so that a single file on every node carries the
+	 * full track record of every clustered task - the node's own runs and every peer's.
+	 */
+	private BoxLangLogger							runLogger				= null;
+
+	private BoxLangLogger runLogger() {
+		if ( this.runLogger == null ) {
+			this.runLogger = BoxRuntime.getInstance().getLoggingService().SCHEDULER_LOGGER;
+		}
+		return this.runLogger;
+	}
+
+	private static String runKey( String schedulerName, String taskName, String occurrence ) {
+		return schedulerName + "::" + taskName + "::" + occurrence;
+	}
+
+	/**
+	 * Record that this node has started a clustered run, so peers can see it in the node record.
+	 *
+	 * @param schedulerName The scheduler name
+	 * @param taskName      The task name
+	 * @param occurrence    The occurrence id
+	 * @param cacheKey      The occurrence's cache key, so a peer can read the authoritative outcome even after
+	 *                      this node has gone away
+	 *
+	 * @return This service
+	 */
+	public ClusterService trackRunStarted( String schedulerName, String taskName, String occurrence, String cacheKey ) {
+		this.inFlightRuns.put(
+		    runKey( schedulerName, taskName, occurrence ),
+		    Struct.ofNonConcurrent(
+		        Key.task, taskName,
+		        Key.scheduler, schedulerName,
+		        Key.occurrenceId, occurrence,
+		        Key.of( "cacheKey" ), cacheKey,
+		        Key.startedAt, Instant.now()
+		    )
+		);
+		return this;
+	}
+
+	/**
+	 * Record that a clustered run this node held has ended, and why.
+	 *
+	 * @param schedulerName The scheduler name
+	 * @param taskName      The task name
+	 * @param occurrence    The occurrence id
+	 * @param outcome       success, failed or abandoned
+	 *
+	 * @return This service
+	 */
+	public ClusterService trackRunFinished( String schedulerName, String taskName, String occurrence, String outcome ) {
+		this.inFlightRuns.remove( runKey( schedulerName, taskName, occurrence ) );
+		IStruct finished = Struct.ofNonConcurrent(
+		    Key.task, taskName,
+		    Key.scheduler, schedulerName,
+		    Key.occurrenceId, occurrence,
+		    Key.status, outcome,
+		    Key.finishedAt, Instant.now()
+		);
+		this.recentRuns.addFirst( finished );
+		while ( this.recentRuns.size() > RECENT_RUNS_KEPT ) {
+			this.recentRuns.pollLast();
+		}
+		this.runHistory.addFirst( finished );
+		while ( this.runHistory.size() > HISTORY_RUNS_KEPT ) {
+			this.runHistory.pollLast();
+		}
+		return this;
+	}
+
+	/** Visible for tests: how many runs this node is currently holding. */
+	public int getInFlightRunCount() {
+		return this.inFlightRuns.size();
+	}
+
+	/**
+	 * Publish this node's run state into its attributes, so the next record write carries it.
+	 */
+	private void publishRunState() {
+		// Age out finished runs as well as capping the count: this rides every record write, and peers read it
+		// on every sweep, so it has to stay small.
+		Instant					cutoff	= Instant.now().minusSeconds( this.config.heartbeatSeconds * RECENT_RUNS_TTL_BEATS );
+		IStruct					bxtasks	= new Struct();
+		java.util.List<IStruct>	recent	= new java.util.ArrayList<>( this.recentRuns.size() );
+		for ( IStruct run : this.recentRuns ) {
+			Object finishedAt = run.get( Key.finishedAt );
+			if ( finishedAt instanceof Instant at && at.isAfter( cutoff ) ) {
+				recent.add( run );
+			}
+		}
+		// Keep a bounded history beyond the short "recent" window, so a peer that was busy or briefly
+		// disconnected can still see how a run ended rather than reporting it as "status not published".
+		java.util.List<IStruct>	history	= new java.util.ArrayList<>( Math.min( this.runHistory.size(), HISTORY_RUNS_KEPT ) );
+		int						count	= 0;
+		for ( IStruct run : this.runHistory ) {
+			if ( count++ >= HISTORY_RUNS_KEPT ) {
+				break;
+			}
+			history.add( run );
+		}
+		bxtasks.put( Key.of( "running" ), ortus.boxlang.runtime.types.Array.fromList( new java.util.ArrayList<>( this.inFlightRuns.values() ) ) );
+		bxtasks.put( Key.of( "recent" ), ortus.boxlang.runtime.types.Array.fromList( recent ) );
+		bxtasks.put( Key.of( "history" ), ortus.boxlang.runtime.types.Array.fromList( history ) );
+		this.localAttributes.put( Key.of( "bxtasks" ), bxtasks );
+	}
+
+	/**
+	 * Compare what peers were last seen running against what they report now, and say what changed.
+	 * <p>
+	 * This is the observer that makes the claim heartbeat worth writing: it runs on the cluster heartbeat's own
+	 * cadence, so a run is reported whether or not the task ever fires again.
+	 *
+	 * @return One description per change, for logging and for tests
+	 */
+	public java.util.List<String> sweepPeerRuns() {
+		java.util.List<String>			reports			= new java.util.ArrayList<>();
+		IStruct							peers			= getPeers( 0 );
+		java.util.Map<String, String>	current			= new java.util.concurrent.ConcurrentHashMap<>();
+		// Every peer's recent outcomes, so a run's ending can be reported with its actual status rather than a
+		// generic "finished".
+		java.util.Map<String, String>	outcomes		= new java.util.concurrent.ConcurrentHashMap<>();
+		java.util.Map<String, String>	outcomeOwner	= new java.util.concurrent.ConcurrentHashMap<>();
+
+		for ( Key peerKey : peers.keySet() ) {
+			String	peerId	= peerKey.getName();
+			IStruct	bxtasks	= ClusterService.attributesOf( peers.getAsStruct( peerKey ) ).getAsStruct( Key.of( "bxtasks" ) );
+			if ( bxtasks == null ) {
+				continue;
+			}
+			if ( bxtasks.get( Key.of( "running" ) ) instanceof ortus.boxlang.runtime.types.Array list ) {
+				for ( Object entry : list ) {
+					if ( entry instanceof IStruct run ) {
+						String key = runKey( run.getAsString( Key.scheduler ), run.getAsString( Key.task ), run.getAsString( Key.occurrenceId ) );
+						current.put( key, peerId );
+						String cacheKey = run.getAsString( Key.of( "cacheKey" ) );
+						if ( cacheKey != null && !cacheKey.isBlank() ) {
+							this.peerRunKeys.put( key, cacheKey );
+						}
+					}
+				}
+			}
+			if ( bxtasks.get( Key.of( "recent" ) ) instanceof ortus.boxlang.runtime.types.Array recentList ) {
+				for ( Object entry : recentList ) {
+					if ( entry instanceof IStruct run ) {
+						String runKey = runKey( run.getAsString( Key.scheduler ), run.getAsString( Key.task ),
+						    run.getAsString( Key.occurrenceId ) );
+						outcomes.put( runKey, run.getAsString( Key.status ) );
+						outcomeOwner.put( runKey, peerId );
+					}
+				}
+			}
+			// The longer history covers a peer whose recent window has already moved on
+			if ( bxtasks.get( Key.of( "history" ) ) instanceof ortus.boxlang.runtime.types.Array historyList ) {
+				for ( Object entry : historyList ) {
+					if ( entry instanceof IStruct run ) {
+						String runKey = runKey( run.getAsString( Key.scheduler ), run.getAsString( Key.task ),
+						    run.getAsString( Key.occurrenceId ) );
+						outcomes.putIfAbsent( runKey, run.getAsString( Key.status ) );
+						outcomeOwner.putIfAbsent( runKey, peerId );
+					}
+				}
+			}
+		}
+
+		// A run that appeared since the last beat: log it, so this node's log carries the full track record of
+		// every run in the cluster, not just the ones it was involved in. A run already known is not re-reported:
+		// a peer's record can drop out of one snapshot read and come back on the next.
+		for ( java.util.Map.Entry<String, String> entry : current.entrySet() ) {
+			this.pendingEnded.remove( entry.getKey() );
+			if ( !this.knownRuns.add( entry.getKey() ) ) {
+				continue;
+			}
+			String report = entry.getKey() + " STARTED on " + entry.getValue();
+			reports.add( report );
+			runLogger().info( "+ Cluster run report: [{}]", report );
+			announce( ON_TASK_RUN_REPORTED, Struct.of( "report", report, "nodeId", entry.getValue(), "status", "running" ) );
+		}
+
+		// A run that disappeared since the last beat: it is no longer running. Its ending is only reported once
+		// confirmed, because a single snapshot read can transiently miss a peer's record - that produced
+		// "ABANDONED (its node disappeared)" for nodes that were perfectly healthy.
+		for ( java.util.Map.Entry<String, String> previous : this.previousPeerRuns.entrySet() ) {
+			if ( current.containsKey( previous.getKey() ) ) {
+				continue;
+			}
+			String published = outcomes.get( previous.getKey() );
+			if ( published != null && !published.isBlank() ) {
+				// Its owner published the outcome, so there is nothing to wait for
+				reportEnded( reports, previous.getKey(), published.toUpperCase() + " on " + previous.getValue(),
+				    previous.getValue(), false );
+				continue;
+			}
+			this.pendingEnded.computeIfAbsent( previous.getKey(), key -> new int[] { 0 } )[ 0 ]++;
+		}
+
+		// Confirm or drop the pending endings, beat by beat
+		for ( java.util.Map.Entry<String, int[]> pending : this.pendingEnded.entrySet() ) {
+			String	runKey	= pending.getKey();
+			String	peerId	= this.previousPeerRuns.get( runKey );
+			int		beats	= pending.getValue()[ 0 ];
+
+			if ( current.containsKey( runKey ) ) {
+				// Came back: the earlier reads simply missed it
+				this.pendingEnded.remove( runKey );
+				continue;
+			}
+			// A run whose owner is gone is not confirmed by one absent read either
+			boolean peerAlive = peerId != null && peers.containsKey( Key.of( peerId ) );
+			if ( beats < CONFIRM_MISSING_BEATS ) {
+				pending.getValue()[ 0 ] = beats + 1;
+				continue;
+			}
+			this.pendingEnded.remove( runKey );
+			String status;
+			if ( peerAlive ) {
+				status = "ENDED (status not published)";
+			} else {
+				// The node is gone. Read the occurrence record itself before calling it abandoned: if the owner got
+				// as far as recording an outcome (interrupted by shutdown, for instance) that is the truth, and
+				// reporting it abandoned would be a false accusation.
+				String recorded = readOccurrenceStatus( runKey );
+				if ( recorded != null ) {
+					status = recorded.toUpperCase() + " (recorded by the owner before it went away)";
+				} else {
+					status = "ABANDONED (its node disappeared)";
+				}
+			}
+			reportEnded( reports, runKey, status + ( peerId == null ? "" : " on " + peerId ), peerId,
+			    status.startsWith( "ABANDONED" ) );
+		}
+
+		// A run that finished faster than one sweep never appeared in a peer's running list, so it is only ever
+		// visible in the owner's `recent` outcomes. Report those too, otherwise a short task leaves no trace in
+		// any other node's log - which is exactly what "full track record on every node" is supposed to prevent.
+		for ( java.util.Map.Entry<String, String> entry : outcomes.entrySet() ) {
+			String runKey = entry.getKey();
+			if ( current.containsKey( runKey ) || this.reportedEnded.contains( runKey ) || this.previousPeerRuns.containsKey( runKey ) ) {
+				continue;
+			}
+			String status = entry.getValue();
+			if ( status == null || status.isBlank() ) {
+				continue;
+			}
+			reportEnded( reports, runKey,
+			    status.toUpperCase() + " (seen only as an outcome - shorter than one beat) on "
+			        + outcomeOwner.getOrDefault( runKey, "" ),
+			    outcomeOwner.get( runKey ), "ABANDONED".equalsIgnoreCase( status ) );
+		}
+
+		this.previousPeerRuns.clear();
+		this.previousPeerRuns.putAll( current );
+		return reports;
+	}
+
+	/**
+	 * Read the terminal status an owner recorded for one of its runs, or null when there is nothing usable.
+	 */
+	private String readOccurrenceStatus( String runKey ) {
+		String cacheKey = this.peerRunKeys.get( runKey );
+		if ( cacheKey == null ) {
+			return null;
+		}
+		try {
+			IStruct record = asStruct( resolveCache( false ) == null ? null : resolveCache( false ).get( cacheKey ).orElse( null ) );
+			if ( record == null ) {
+				return null;
+			}
+			String status = record.getAsString( Key.status );
+			return ( status == null || "running".equals( status ) || "claimed".equals( status ) ) ? null : status;
+		} catch ( Throwable t ) {
+			return null;
+		}
+	}
+
+	private static IStruct asStruct( Object value ) {
+		return value instanceof IStruct struct ? struct : null;
+	}
+
+	/**
+	 * /**
+	 * Report the end of a run: log it, announce it, and stop tracking it.
+	 */
+	private void reportEnded( java.util.List<String> reports, String runKey, String detail, String peerId, boolean abandoned ) {
+		String report = runKey + " " + detail;
+		reports.add( report );
+		runLogger().warn( "+ Cluster run report: [{}]", report );
+		announce( ON_TASK_RUN_REPORTED, Struct.of( "report", report, "nodeId", peerId == null ? "" : peerId, "abandoned", abandoned ) );
+		this.knownRuns.remove( runKey );
+		this.reportedEnded.add( runKey );
 	}
 
 	/**
