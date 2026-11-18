@@ -65,14 +65,19 @@ public class BoxBreakTransformer extends AbstractTransformer {
 			labelTarget = getTargetAncestor( breakNode );
 		}
 
-		LabelNode currentBreak = tracker.getBreak( labelTarget != null ? labelTarget : getTargetAncestor( breakNode ) );
+		BoxNode		target			= labelTarget;
+		LabelNode	currentBreak	= tracker.getBreak( target );
 
 		if ( currentBreak != null ) {
+			// The JVM does not run exception handlers (where the finally lives) for a GOTO,
+			// so any finally between here and our target is inlined onto the exit path first.
+			nodes.addAll( transformPendingFinallyBodies( tracker, breakNode, target, context ) );
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, currentBreak ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
+			nodes.addAll( transformPendingFinallyBodies( tracker, breakNode, null, context ) );
 			if ( breakNode.getLabel() != null ) {
 				nodes.add( new LdcInsnNode( breakNode.getLabel() ) );
 			} else {
@@ -87,12 +92,14 @@ public class BoxBreakTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
+			nodes.addAll( transformPendingFinallyBodies( tracker, breakNode, null, context ) );
 			if ( transpiler.canReturn() ) {
 				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			}
 			nodes.add( new InsnNode( transpiler.canReturn() ? Opcodes.ARETURN : Opcodes.RETURN ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
+			nodes.addAll( transformPendingFinallyBodies( tracker, breakNode, null, context ) );
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );

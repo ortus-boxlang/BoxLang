@@ -108,16 +108,25 @@ public class BoxReturnTransformer extends AbstractTransformer {
 		// actually executes.
 		var finallyMarksSnapshot = transpiler.snapshotEmittedMarks();
 
-		reversed.stream().skip( returnDepth ).forEach( finallyBody -> {
-			// The finally braces are batch-marked when the finally runs (this copy).
-			transpiler.emitBraceGroupMark( nodes, finallyBody.keywordPos(), false );
-			nodes.addAll( AsmHelper.transformBodyExpressions(
-			    transpiler,
-			    finallyBody.body(),
-			    context,
-			    returnContext
-			) );
-		} );
+		reversed.stream().skip( returnDepth )
+		    // A finally that is ALREADY being inlined by an enclosing exit (return, break or
+		    // continue) is executing right now, so it must not be inlined a second time.
+		    .filter( finallyBody -> !tracker.isOpenFinallyBody( finallyBody ) )
+		    .forEach( finallyBody -> {
+			    tracker.pushOpenFinallyBody( finallyBody );
+			    try {
+				    // The finally braces are batch-marked when the finally runs (this copy).
+				    transpiler.emitBraceGroupMark( nodes, finallyBody.keywordPos(), false );
+				    nodes.addAll( AsmHelper.transformBodyExpressions(
+				        transpiler,
+				        finallyBody.body(),
+				        context,
+				        returnContext
+				    ) );
+			    } finally {
+				    tracker.popOpenFinallyBody();
+			    }
+		    } );
 
 		transpiler.restoreEmittedMarks( finallyMarksSnapshot );
 

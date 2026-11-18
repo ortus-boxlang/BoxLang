@@ -7199,4 +7199,167 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( Struct.of( "a", false ) );
 
 	}
+
+	@Test
+	public void testTryFinallyAfterContinue() {
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = "";
+				for (i=1; i<=5; i++) {
+					try {
+						result &= i;
+						// exit the current loop iteration
+						continue;
+					} finally {
+						// never fires
+						result &= "finally";
+					}
+				}
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "1finally2finally3finally4finally5finally" );
+	}
+
+	@Test
+	public void testTryFinallyAfterBreak() {
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = "";
+				for (i=1; i<=5; i++) {
+					try {
+						result &= i;
+						// exit the current loop iteration
+						break;
+					} finally {
+						result &= "finally";
+					}
+				}
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "1finally" );
+	}
+
+	@Test
+	public void testTryFinallyAfterBreakWithNestedFinally() {
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = "";
+				for (i=1; i<=2; i++) {
+					try {
+						try {
+							result &= "inner";
+							break;
+						} finally {
+							result &= "-innerFinally";
+						}
+					} finally {
+						result &= "-outerFinally";
+					}
+				}
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "inner-innerFinally-outerFinally" );
+	}
+
+	@Test
+	public void testTryFinallyAfterBreakWhenBreakStaysInsideTry() {
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = "";
+				try {
+					for (i=1; i<=3; i++) {
+						result &= i;
+						// exits the loop only, so the finally must not run until the try completes
+						break;
+					}
+					result &= "-afterLoop";
+				} finally {
+					result &= "finally";
+				}
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "1-afterLoopfinally" );
+	}
+
+	@Test
+	public void testTryFinallyAfterLabeledContinue() {
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = "";
+				outer : for (i=1; i<=2; i++) {
+					for (j=1; j<=2; j++) {
+						try {
+							result &= i & j;
+							continue outer;
+						} finally {
+							result &= "finally";
+						}
+					}
+				}
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "11finally21finally" );
+	}
+
+	@Test
+	public void testTryFinallyAfterLabeledBreak() {
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = "";
+				outer : for (i=1; i<=2; i++) {
+					for (j=1; j<=2; j++) {
+						try {
+							result &= i & j;
+							break outer;
+						} finally {
+							result &= "finally";
+						}
+					}
+				}
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "11finally" );
+	}
+
+	@Test
+	public void testTryFinallyContinueInsideFinallyAfterBreak() {
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = "";
+				for (i=1; i<=3; i++) {
+					try {
+						result &= i;
+						break;
+					} finally {
+						result &= "finally";
+						// the continue in the finally wins over the pending break
+						if (i < 2) continue;
+					}
+				}
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "1finally2finally" );
+	}
+
 }
