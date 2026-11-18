@@ -41,7 +41,6 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
-import ortus.boxlang.runtime.util.FQN;
 import ortus.boxlang.runtime.util.FRTransService;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -404,61 +403,29 @@ public abstract class Boxpiler implements IBoxpiler {
 	 */
 	@Override
 	public Class<IBoxRunnable> compileClass( ResolvedFilePath resolvedFilePath ) {
-		ClassInfo				classInfo			= null;
-		ClassInfo				ensuredClassInfo	= null;
-		Map<String, ClassInfo>	classPool			= null;
-		FQN						fqn					= null;
-		long					lastModifiedCurrent	= 0;
-
-		// In order to try hard to avoid creating a new ClassInfo instance, we'll try some quick attempts at finding an existing one first
-		if ( resolvedFilePath.mappingPath() != null ) {
-			// Start by seeing if there is already a class pool for the mapping path
-			classPool = getClassPool( resolvedFilePath.mappingPath() );
-			if ( classPool != null ) {
-				// If so, see if an exising entry patches our absolute path (the casing could be different on Windows, but there's a good chance it matches)
-				// We're not looping directly over the values() collection as the internal iterator can give ConcurrentModificationExceptions
-				// Pre-size with headroom to prevent AIOOBE if another thread adds entries during toArray()
-				ClassInfo[] snapshot = classPool.values().toArray( new ClassInfo[ classPool.size() + 50 ] );
-				for ( ClassInfo entry : snapshot ) {
-					if ( entry == null ) {
-						break;
-					}
-					if ( entry.resolvedFilePath().equals( resolvedFilePath ) ) {
-						classInfo			= entry;
-						ensuredClassInfo	= classInfo;
-						// The classInfo may be cached, but get a fresh modified date
-						lastModifiedCurrent	= classInfo.getFreshLastModified();
-						break;
-					}
-				}
-				// Ok, if that didn't work, look for the normalized FQN.
-				if ( classInfo == null ) {
-					fqn					= resolvedFilePath.getFQN( "boxgenerated.boxclass" );
-					classInfo			= classPool.get( fqn.toString() );
-					ensuredClassInfo	= classInfo;
-					if ( classInfo != null ) {
-						// The classInfo may be cached, but get a fresh modified date
-						lastModifiedCurrent = classInfo.getFreshLastModified();
-					}
-				}
-			}
-		}
+		// Try hard to avoid creating a new ClassInfo instance by finding an existing one first
+		ClassInfo	classInfo	= findClassInfo( resolvedFilePath );
+		ClassInfo	ensuredClassInfo;
+		long		lastModifiedCurrent;
 
 		// Ok, we give up. Now we create a full ClassInfo instance.
 		if ( classInfo == null ) {
-			// If we created an FQN above, don't let that effort be in vain. Pass it here. If it's null, it will be created internally.
-			classInfo			= ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this, fqn );
+			classInfo			= ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this );
 			// This date will be fresh since we just created the ClassInfo.
 			lastModifiedCurrent	= classInfo.lastModified();
-			classPool			= getClassPool( classInfo.classPoolName() );
-			ensuredClassInfo	= ensureClassInfo( classPool, classInfo );
+			ensuredClassInfo	= ensureClassInfo( getClassPool( classInfo.classPoolName() ), classInfo );
+		} else {
+			// The classInfo may be cached, but get a fresh modified date
+			lastModifiedCurrent	= classInfo.getFreshLastModified();
+			ensuredClassInfo	= classInfo;
 		}
 
 		// If the new class is newer than the one on disk, recompile it
 		@SuppressWarnings( "null" )
-		long	lastModifiedPrevious	= ensuredClassInfo.lastModified();
+		long					lastModifiedPrevious	= ensuredClassInfo.lastModified();
+		Map<String, ClassInfo>	classPool				= getClassPool( classInfo.classPoolName() );
 		// This needs to be tested at decision time since the setting may have changed in the runtime since the compiler was created
-		Boolean	trustedCache			= runtime.getConfiguration().trustedCache;
+		Boolean					trustedCache			= runtime.getConfiguration().trustedCache;
 		if ( ( lastModifiedPrevious > 0 ) && ( lastModifiedCurrent > 0 ) && !trustedCache && ( lastModifiedPrevious != lastModifiedCurrent ) ) {
 			// Double check lock using the class name as the lock. This ensures only one thread recompiles a class at a time
 			String internedFQN = classInfo.fqn().toString().intern();
@@ -469,7 +436,7 @@ public abstract class Boxpiler implements IBoxpiler {
 				if ( ( lastModifiedPrevious > 0 ) && ( lastModifiedCurrent > 0 ) && !trustedCache && ( lastModifiedPrevious != lastModifiedCurrent ) ) {
 					ensuredClassInfo.shutdownClassLoader();
 					// Get a fresh class info since we may have had a used one from above with an outdated modified date and class loader
-					classInfo = ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this, fqn );
+					classInfo = ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this );
 					try {
 						// Mark the class info instance as not ready to use yet
 						classInfo.startCompiling();
@@ -488,6 +455,42 @@ public abstract class Boxpiler implements IBoxpiler {
 		}
 		// This will block if the class info is still being compiled
 		return classInfo.getDiskClass();
+	}
+
+	/**
+	 * Look for an already compiled ClassInfo for a resolved file path in its mapping's class pool.
+	 * <p>
+	 * The pool is keyed by the normalized FQN, so a single hash lookup answers this whenever a file is reached the same
+	 * way it was compiled. The fallback scan covers entries living under a different key, such as a file that was first
+	 * pooled as a template.
+	 *
+	 * @param resolvedFilePath The resolved file path to find
+	 *
+	 * @return The pooled ClassInfo, or null if this path has not been compiled yet
+	 */
+	protected ClassInfo findClassInfo( ResolvedFilePath resolvedFilePath ) {
+		// Files without a mapping path are not pooled by path
+		if ( resolvedFilePath.mappingPath() == null ) {
+			return null;
+		}
+		Map<String, ClassInfo>	classPool	= getClassPool( resolvedFilePath.mappingPath() );
+		// This is the FQN the class was registered under when it was compiled
+		ClassInfo				classInfo	= classPool.get( resolvedFilePath.getFQN( "boxgenerated.boxclass" ).toString() );
+		if ( classInfo != null ) {
+			return classInfo;
+		}
+		// We're not looping directly over the values() collection as the internal iterator can give ConcurrentModificationExceptions
+		// Pre-size with headroom to prevent AIOOBE if another thread adds entries during toArray()
+		ClassInfo[] snapshot = classPool.values().toArray( new ClassInfo[ classPool.size() + 50 ] );
+		for ( ClassInfo entry : snapshot ) {
+			if ( entry == null ) {
+				break;
+			}
+			if ( entry.resolvedFilePath() != null && entry.resolvedFilePath().equals( resolvedFilePath ) ) {
+				return entry;
+			}
+		}
+		return null;
 	}
 
 	@Override
