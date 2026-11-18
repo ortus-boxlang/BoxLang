@@ -664,6 +664,25 @@ public final class FileSystemUtil {
 	 * @param source The fully written temporary file about to be moved into place
 	 * @param target The file it replaces
 	 */
+	/**
+	 * Turn a directory's permissions into the permissions to give a new file in it.
+	 * <p>
+	 * A directory's execute bits mean "traversable", not "executable", so they are dropped: a directory of
+	 * {@code rwxrwxr-x} produces a file of {@code rw-rw-r--}. Without this, every new cache entry would come
+	 * out executable.
+	 *
+	 * @param directoryPermissions The permissions of the directory the file is created in
+	 *
+	 * @return The permissions for the new file
+	 */
+	static Set<PosixFilePermission> asFilePermissions( Set<PosixFilePermission> directoryPermissions ) {
+		return directoryPermissions.stream()
+		    .filter( permission -> permission != PosixFilePermission.OWNER_EXECUTE
+		        && permission != PosixFilePermission.GROUP_EXECUTE
+		        && permission != PosixFilePermission.OTHERS_EXECUTE )
+		    .collect( Collectors.toSet() );
+	}
+
 	private static void carryPermissions( Path source, Path target ) {
 		try {
 			PosixFileAttributeView sourceView = Files.getFileAttributeView( source, PosixFileAttributeView.class );
@@ -682,6 +701,9 @@ public final class FileSystemUtil {
 				return;
 			}
 			Set<PosixFilePermission> permissions = donorView.readAttributes().permissions();
+			if ( !Files.exists( target ) ) {
+				permissions = asFilePermissions( permissions );
+			}
 			sourceView.setPermissions( permissions );
 		} catch ( IOException | UnsupportedOperationException e ) {
 			// Best effort only - see above

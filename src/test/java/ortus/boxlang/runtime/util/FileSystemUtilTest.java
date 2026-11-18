@@ -245,7 +245,8 @@ public class FileSystemUtilTest {
 	@Test
 	void testWriteAtomicInheritsDirectoryPermissions( @TempDir Path tempDir ) throws IOException {
 		Path	target	= tempDir.resolve( "new-entry.cache" );
-		var		shared	= java.nio.file.attribute.PosixFilePermissions.fromString( "rw-rw-r--" );
+		// A real shared directory: the execute bits make it traversable, and they must not end up on the file
+		var		shared	= java.nio.file.attribute.PosixFilePermissions.fromString( "rwxrwxr-x" );
 
 		try {
 			Files.setPosixFilePermissions( tempDir, shared );
@@ -260,6 +261,24 @@ public class FileSystemUtilTest {
 		FileSystemUtil.writeAtomic( target.toString(), "fresh" );
 
 		assertThat( Files.readString( target ) ).isEqualTo( "fresh" );
-		assertThat( Files.getPosixFilePermissions( target ) ).isEqualTo( shared );
+		assertThat( Files.getPosixFilePermissions( target ) ).isEqualTo( java.nio.file.attribute.PosixFilePermissions.fromString( "rw-rw-r--" ) );
+	}
+
+	/**
+	 * The permissions a directory hands to a new file in it. Pure set logic, so it is asserted on every
+	 * platform rather than only where POSIX attributes exist.
+	 */
+	@DisplayName( "A directory's execute bits do not follow its permissions onto a new file" )
+	@Test
+	void testDirectoryPermissionsBecomeFilePermissions() {
+		var	directory	= java.nio.file.attribute.PosixFilePermissions.fromString( "rwxrwxr-x" );
+		var	file		= java.nio.file.attribute.PosixFilePermissions.fromString( "rw-rw-r--" );
+
+		assertThat( FileSystemUtil.asFilePermissions( directory ) ).isEqualTo( file );
+		// Already a file mode: nothing to strip
+		assertThat( FileSystemUtil.asFilePermissions( file ) ).isEqualTo( file );
+		// Owner-only directory, which is what a private temp directory looks like
+		assertThat( FileSystemUtil.asFilePermissions( java.nio.file.attribute.PosixFilePermissions.fromString( "rwx------" ) ) )
+		    .isEqualTo( java.nio.file.attribute.PosixFilePermissions.fromString( "rw-------" ) );
 	}
 }
