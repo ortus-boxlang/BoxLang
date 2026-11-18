@@ -78,7 +78,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 		// causes a ClassFormatError ("Illegal exception table range") when the JVM verifies the class.
 		nodes.add( new InsnNode( Opcodes.NOP ) );
 
-		nodes.addAll( generateBodyNodesWithInlinedFinally( context, returnValueContext, boxTry.getTryBody(), boxTry.getFinallyBody(), finallyKeyword( boxTry ),
+		nodes.addAll( generateBodyNodesWithInlinedFinally( context, returnValueContext, boxTry, boxTry.getTryBody(), boxTry.getFinallyBody(),
+		    finallyKeyword( boxTry ),
 		    () -> tryEndLabel ) );
 
 		// if we hit this instruction we have successfully executed the try body and inlined finally code
@@ -173,6 +174,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 	private List<AbstractInsnNode> generateBodyNodesWithInlinedFinally(
 	    TransformerContext context,
 	    ReturnValueContext returnValueContext,
+	    BoxTry boxTry,
 	    List<BoxStatement> codeBody,
 	    List<BoxStatement> finallyBody,
 	    Point finallyKeyword,
@@ -195,7 +197,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 			return nodes;
 		}
 
-		tracker.addFinallyBody( finallyBody, finallyKeyword );
+		tracker.addFinallyBody( boxTry, finallyBody, finallyKeyword );
 		nodes.addAll( AsmHelper.transformBodyExpressions(
 		    transpiler,
 		    codeBody,
@@ -454,7 +456,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 		nodes.addAll( tracker.trackNewContext() );
 		// end catch context
 
-		nodes.addAll( generateBodyNodesWithInlinedFinally( context, returnValueContext, boxCatch.getCatchBody(), boxTry.getFinallyBody(),
+		nodes.addAll( generateBodyNodesWithInlinedFinally( context, returnValueContext, boxTry, boxCatch.getCatchBody(), boxTry.getFinallyBody(),
 		    finallyKeyword( boxTry ), () -> {
 			    tracker.popContext();
 			    return null;

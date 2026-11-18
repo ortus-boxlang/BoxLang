@@ -16,6 +16,7 @@ import org.objectweb.asm.tree.VarInsnNode;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Point;
+import ortus.boxlang.compiler.ast.statement.BoxTry;
 
 public class MethodContextTracker {
 
@@ -26,6 +27,7 @@ public class MethodContextTracker {
 	private List<Integer>			contextStack		= new ArrayList<Integer>();
 	private List<TryCatchBlockNode>	tryCatchBlockNodes	= new ArrayList<TryCatchBlockNode>();
 	private List<FinallyBody>		finallyBodies		= new ArrayList<FinallyBody>();
+	private List<FinallyBody>		openFinallyBodies	= new ArrayList<FinallyBody>();
 	private Map<String, LabelNode>	breaks				= new LinkedHashMap<>();
 	private Map<String, LabelNode>	continues			= new LinkedHashMap<>();
 	private final CompilationType	type;
@@ -44,15 +46,16 @@ public class MethodContextTracker {
 	}
 
 	/**
-	 * A {@code finally} body queued for inlining by an enclosing {@code return},
-	 * paired with the {@code finally} keyword position so the return path can emit
-	 * the finally brace-group mark (the header + closing brace) — the SAME group the
-	 * fall-through, no-catch-matched and exception-handler copies emit.
+	 * A {@code finally} body queued for inlining by an enclosing exit ({@code return},
+	 * {@code break} or {@code continue}), paired with the {@code finally} keyword position
+	 * so the exit path can emit the finally brace-group mark (the header + closing brace) —
+	 * the SAME group the fall-through, no-catch-matched and exception-handler copies emit.
 	 *
+	 * @param tryNode    the {@code try} statement that owns this finally body
 	 * @param body       the finally body statements
 	 * @param keywordPos the {@code finally} keyword start position (brace-group key)
 	 */
-	public record FinallyBody( List<BoxStatement> body, Point keywordPos ) {
+	public record FinallyBody( BoxTry tryNode, List<BoxStatement> body, Point keywordPos ) {
 
 	}
 
@@ -82,20 +85,89 @@ public class MethodContextTracker {
 	}
 
 	/**
-	 * Queue a {@code finally} body for inlining by any enclosing {@code return}.
-	 * The {@code finally} keyword position is retained so the return path can also
+	 * Queue a {@code finally} body for inlining by any enclosing exit.
+	 * The {@code finally} keyword position is retained so the exit path can also
 	 * emit the finally brace-group mark (its body is compiled into several bytecode
 	 * copies of which only one runs).
 	 *
+	 * @param tryNode     the {@code try} statement that owns the finally body
 	 * @param finallyBody the finally body statements
 	 * @param keywordPos  the {@code finally} keyword start position
 	 */
-	public void addFinallyBody( List<BoxStatement> finallyBody, Point keywordPos ) {
-		this.finallyBodies.add( new FinallyBody( finallyBody, keywordPos ) );
+	public void addFinallyBody( BoxTry tryNode, List<BoxStatement> finallyBody, Point keywordPos ) {
+		this.finallyBodies.add( new FinallyBody( tryNode, finallyBody, keywordPos ) );
 	}
 
 	public void popFinallyBody() {
 		this.finallyBodies.removeLast();
+	}
+
+	/**
+	 * Mark a finally body as currently being inlined by an enclosing exit. A nested exit
+	 * ({@code return}, {@code break} or {@code continue}) inside that inlined copy must not
+	 * inline the SAME finally again — it is already executing and would otherwise recurse
+	 * forever while duplicating the AST.
+	 *
+	 * @param finallyBody the finally body whose copy is currently being generated
+	 */
+	public void pushOpenFinallyBody( FinallyBody finallyBody ) {
+		this.openFinallyBodies.add( finallyBody );
+	}
+
+	public void popOpenFinallyBody() {
+		this.openFinallyBodies.removeLast();
+	}
+
+	/**
+	 * Determine if the given finally body is currently being inlined by an enclosing exit.
+	 *
+	 * @param finallyBody the finally body to check
+	 *
+	 * @return true if that finally copy is being generated right now
+	 */
+	public boolean isOpenFinallyBody( FinallyBody finallyBody ) {
+		// Identity comparison: two distinct trys can have structurally equal finally bodies.
+		return this.openFinallyBodies.stream().anyMatch( open -> open == finallyBody );
+	}
+
+	/**
+	 * Collect the finally bodies an exit statement must run before transferring control,
+	 * innermost first (the order they must be inlined in). Only the finally blocks whose
+	 * {@code try} is strictly between the exit and its target are returned, so a
+	 * {@code break}/{@code continue} that stays inside the {@code try} (e.g. a loop inside
+	 * the try body) does NOT run the finally yet. Finally bodies that are already being
+	 * inlined (a nested exit inside a finally copy) are excluded.
+	 *
+	 * @param exitNode the {@code break}/{@code continue} node
+	 * @param target   the node the exit transfers control to, or null when the exit leaves
+	 *                 the current method (then every enclosing finally must run)
+	 *
+	 * @return the finally bodies to run, innermost first
+	 */
+	public List<FinallyBody> getPendingFinallyBodies( BoxNode exitNode, BoxNode target ) {
+		List<FinallyBody>	pending	= new ArrayList<FinallyBody>();
+		BoxNode				parent	= exitNode.getParent();
+
+		while ( parent != null && parent != target ) {
+			if ( parent instanceof BoxTry boxTry ) {
+				FinallyBody finallyBody = findFinallyBody( boxTry );
+				// A finally body that is not on the stack is already running (the exit lives
+				// inside it), so it must not be run again.
+				if ( finallyBody != null && !isOpenFinallyBody( finallyBody ) ) {
+					pending.add( finallyBody );
+				}
+			}
+			parent = parent.getParent();
+		}
+
+		return pending;
+	}
+
+	private FinallyBody findFinallyBody( BoxTry tryNode ) {
+		return this.finallyBodies.stream()
+		    .filter( finallyBody -> finallyBody.tryNode() == tryNode )
+		    .findFirst()
+		    .orElse( null );
 	}
 
 	public boolean canReturn() {

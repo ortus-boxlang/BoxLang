@@ -24,7 +24,9 @@ import java.util.function.Supplier;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.decision.IsJSON;
+import ortus.boxlang.runtime.bifs.global.system.CreateObject;
 import ortus.boxlang.runtime.config.Configuration;
+import ortus.boxlang.runtime.config.util.RuntimeSettingsUtil;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
@@ -56,7 +58,6 @@ import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.JSONUtil;
-import ortus.boxlang.runtime.config.util.RuntimeSettingsUtil;
 import ortus.boxlang.runtime.util.ConfigSecretUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -567,7 +568,7 @@ public abstract class BaseApplicationListener {
 			throw new BoxRuntimeException( "No session to invalidate.  Is session management enabled?" );
 		}
 		Session terminalSession = sessionContext.getSession();
-		context.getParentOfType( ApplicationBoxContext.class ).getApplication().getSessionsCache().clear( terminalSession.getID().getName() );
+		context.getParentOfType( ApplicationBoxContext.class ).getApplication().getSessionsCache().clear( terminalSession.getCacheKey() );
 		terminalSession.shutdown( this );
 		initializeSession( newID );
 	}
@@ -1048,7 +1049,7 @@ public abstract class BaseApplicationListener {
 	 * @return The class instance
 	 */
 	protected IClassRunnable loadClassInstance( IBoxContext context, String className ) {
-		Object possibleClassInstance = context.invokeFunction( Key.createObject, new Object[] { className } );
+		Object possibleClassInstance = CreateObject.createBoxClass( context, className, true );
 		if ( possibleClassInstance instanceof IClassRunnable icr ) {
 			return icr;
 		}

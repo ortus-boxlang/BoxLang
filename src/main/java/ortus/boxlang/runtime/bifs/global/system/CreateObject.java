@@ -274,7 +274,7 @@ public class CreateObject extends BIF {
 	 *
 	 * @return The created object.
 	 */
-	private static Object createBoxClass( IBoxContext context, String className, Boolean externalOnly ) {
+	public static Object createBoxClass( IBoxContext context, String className, Boolean externalOnly ) {
 		IStruct props = Struct.EMPTY;
 		if ( externalOnly != null ) {
 			props = Struct.of( Key.externalOnly, externalOnly );
