@@ -872,15 +872,17 @@ public class Schedule extends Component {
 			return () -> {
 				// A fresh request context per run. The runtime context is shared by the whole server and has no
 				// variables scope, so a template containing an ordinary assignment (x = 1) would either fail with
-				// ScopeNotFoundException or write into server-wide state. Installing and restoring the current
-				// context keeps each run isolated without leaking it onto the calling thread.
-				IBoxContext					previous	= RequestBoxContext.getCurrent();
-				ScriptingRequestBoxContext	taskContext	= new ScriptingRequestBoxContext( runtimeContext );
+				// ScopeNotFoundException or write into server-wide state. Installing the current context keeps each
+				// run isolated without leaking it onto the calling thread.
+				ScriptingRequestBoxContext taskContext = new ScriptingRequestBoxContext( runtimeContext );
 				try {
 					RequestBoxContext.setCurrent( taskContext );
 					taskContext.includeTemplate( templatePath );
 				} finally {
-					RequestBoxContext.setCurrent( previous );
+					// Pop the context this run installed. setCurrent() pushes onto the thread's stack, so
+					// "restoring" the previous context by pushing it again would leave the task's context behind on
+					// the stack for whatever the thread runs next - and pushing a null previous context throws.
+					RequestBoxContext.removeCurrent();
 					// Release anything the template opened on this request
 					if ( taskContext instanceof ortus.boxlang.runtime.context.IJDBCCapableContext jdbcContext ) {
 						try {

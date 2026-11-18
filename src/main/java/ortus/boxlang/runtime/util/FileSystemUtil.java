@@ -666,12 +666,22 @@ public final class FileSystemUtil {
 	 */
 	private static void carryPermissions( Path source, Path target ) {
 		try {
-			PosixFileAttributeView	targetView	= Files.getFileAttributeView( target, PosixFileAttributeView.class );
-			PosixFileAttributeView	sourceView	= Files.getFileAttributeView( source, PosixFileAttributeView.class );
-			if ( targetView == null || sourceView == null || !Files.exists( target ) ) {
+			PosixFileAttributeView sourceView = Files.getFileAttributeView( source, PosixFileAttributeView.class );
+			if ( sourceView == null ) {
 				return;
 			}
-			Set<PosixFilePermission> permissions = targetView.readAttributes().permissions();
+			// The replacement was written to a temp file, which POSIX creates owner-only, so what it inherits
+			// matters as soon as two processes on the same volume use different user ids:
+			// - replacing an entry keeps the permissions the entry already had, so a shared file stays shared;
+			// - a brand new entry takes the permissions of the directory it is created in, so it is as shared as
+			// the directory itself. Leaving it owner-only would make a new coordination record unreadable to
+			// the other nodes, which a file-backed cluster cache would see as a cache miss.
+			Path					donor		= Files.exists( target ) ? target : target.toAbsolutePath().getParent();
+			PosixFileAttributeView	donorView	= donor == null ? null : Files.getFileAttributeView( donor, PosixFileAttributeView.class );
+			if ( donorView == null ) {
+				return;
+			}
+			Set<PosixFilePermission> permissions = donorView.readAttributes().permissions();
 			sourceView.setPermissions( permissions );
 		} catch ( IOException | UnsupportedOperationException e ) {
 			// Best effort only - see above

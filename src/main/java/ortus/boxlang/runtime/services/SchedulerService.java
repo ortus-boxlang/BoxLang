@@ -232,6 +232,12 @@ public class SchedulerService extends BaseService {
 	private volatile boolean						hasShutdown			= false;
 
 	/**
+	 * When this shutdown was signalled, so every drain phase can share one graceful window instead of each
+	 * spending its own. Zero when no signal has been received.
+	 */
+	private volatile long							shutdownSignalledAt	= 0L;
+
+	/**
 	 * The single contributor instance registered with the cluster service.
 	 * <p>
 	 * It has to be one object: {@code ClusterService} unregisters contributors by identity, so building a
@@ -565,7 +571,8 @@ public class SchedulerService extends BaseService {
 	 * @return This service
 	 */
 	public SchedulerService shutdownSignal( boolean force ) {
-		this.hasShutdown = true;
+		this.hasShutdown			= true;
+		this.shutdownSignalledAt	= System.nanoTime();
 		stopTasksFileWatcher();
 		stopClusterLoadTracking();
 		// Deliberately NOT stopping the task claim maintenance thread here. Runs are still draining at this
@@ -620,28 +627,95 @@ public class SchedulerService extends BaseService {
 	}
 
 	/**
-	 * Finish the shutdown of every scheduler after its pools have been drained. *
+	 * Finish the shutdown of every scheduler after its pools have been drained.
 	 * <p>
-	 * The waiting happened in {@code AsyncService}, which drained every pool concurrently. This just
-	 * clears the bookkeeping and marks each scheduler stopped.
+	 * The pools were drained concurrently by {@code AsyncService}, which spent one graceful window between
+	 * them rather than one each. This phase finishes the same shutdown: it clears the bookkeeping and marks
+	 * each scheduler stopped, and it deals with the runs no pool owned - a {@code bx:schedule action="run"}
+	 * runs on the caller's thread, so nothing has waited for it yet.
+	 * <p>
+	 * Schedulers are drained <b>concurrently</b> too, against whatever is left of the window this shutdown
+	 * was given. Draining them one after another made the wall clock the sum of their waits, so a scheduler
+	 * whose runs ignore interruption added its whole interrupt grace to every other scheduler's.
 	 *
 	 * @return This service
 	 */
 	public SchedulerService completeShutdown() {
-		this.schedulers.values().forEach( scheduler -> {
-			if ( scheduler instanceof BaseScheduler base ) {
-				// Runs started directly on the caller's thread by bx:schedule action="run" live in no pool, so the
-				// concurrent executor drain never waited for them. Interrupt and briefly drain them before the
-				// task records are cleared out from under them.
-				base.drainRemainingTrackedRuns();
-				base.completeShutdown();
+		return completeShutdown( false );
+	}
+
+	/**
+	 * Finish the shutdown of every scheduler after its pools have been drained.
+	 *
+	 * @param force Whether the runtime shutdown is forced, in which case nothing is waited for
+	 *
+	 * @return This service
+	 */
+	public SchedulerService completeShutdown( boolean force ) {
+		// What is left of the graceful window the runtime shutdown was given, measured from the signal so the
+		// concurrent pool drain and this phase add up to one window instead of two.
+		long				grace		= force ? 0L : remainingGraceSeconds( getShutdownGraceSeconds() );
+
+		List<BaseScheduler>	drainable	= this.schedulers.values()
+		    .stream()
+		    .filter( BaseScheduler.class::isInstance )
+		    .map( BaseScheduler.class::cast )
+		    .toList();
+
+		if ( !drainable.isEmpty() ) {
+			// One worker per scheduler: the total is the slowest scheduler, never the sum.
+			try ( var pool = java.util.concurrent.Executors.newThreadPerTaskExecutor(
+			    Thread.ofVirtual().name( "boxlang-scheduler-drain" ).factory() ) ) {
+				List<java.util.concurrent.Future<?>> futures = new ArrayList<>( drainable.size() );
+				for ( BaseScheduler base : drainable ) {
+					futures.add( pool.submit( () -> {
+						try {
+							base.drainRemainingTrackedRuns( grace );
+						} catch ( Throwable t ) {
+							this.logger.warn( "+ Error draining scheduler ({}): {}", base.getSchedulerName(), t.getMessage(), t );
+						}
+						base.completeShutdown();
+					} ) );
+				}
+				for ( var future : futures ) {
+					try {
+						future.get();
+					} catch ( InterruptedException e ) {
+						Thread.currentThread().interrupt();
+						break;
+					} catch ( java.util.concurrent.ExecutionException e ) {
+						// The worker logged its own failure; nothing here can act on it
+						this.logger.warn( "+ Scheduler drain worker failed: {}", e.getCause() == null ? e.getMessage() : e.getCause().getMessage() );
+					}
+				}
 			}
-		} );
+		}
+
 		// Every pool has drained, so no run needs its claim heartbeated any more. Stop the maintenance thread
 		// here - not at the start of shutdown, which made in-flight records look stale midway through a job.
 		TaskClusterClaim.shutdownMaintenance();
 		this.logger.info( "+ Scheduler Service shutdown" );
 		return this;
+	}
+
+	/**
+	 * How much of the graceful shutdown window is still unspent.
+	 * <p>
+	 * Measured from the signal, so a drain phase cannot hand out a fresh window: the pool drain and the
+	 * scheduler drain share one. A zero window means "do not wait", which is what both a zero setting and a
+	 * forced shutdown mean.
+	 *
+	 * @param graceSeconds The configured graceful window
+	 *
+	 * @return The seconds still available, never negative
+	 */
+	private long remainingGraceSeconds( long graceSeconds ) {
+		long signalledAt = this.shutdownSignalledAt;
+		if ( signalledAt == 0L ) {
+			return graceSeconds;
+		}
+		long elapsed = ( System.nanoTime() - signalledAt ) / 1_000_000_000L;
+		return Math.max( 0L, graceSeconds - elapsed );
 	}
 
 	/**

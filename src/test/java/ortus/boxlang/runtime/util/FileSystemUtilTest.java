@@ -240,4 +240,26 @@ public class FileSystemUtilTest {
 		assertThat( Files.readString( target ) ).isEqualTo( "replaced" );
 		assertThat( Files.getPosixFilePermissions( target ) ).isEqualTo( shared );
 	}
+
+	@DisplayName( "A new file written atomically is as shared as the directory it lands in" )
+	@Test
+	void testWriteAtomicInheritsDirectoryPermissions( @TempDir Path tempDir ) throws IOException {
+		Path	target	= tempDir.resolve( "new-entry.cache" );
+		var		shared	= java.nio.file.attribute.PosixFilePermissions.fromString( "rw-rw-r--" );
+
+		try {
+			Files.setPosixFilePermissions( tempDir, shared );
+		} catch ( UnsupportedOperationException e ) {
+			// Not a POSIX filesystem (Windows): nothing to assert
+			return;
+		}
+
+		// There is no existing entry to copy permissions from, and the temp file the write goes through is
+		// owner-only. Without taking the directory's permissions a brand new record would be readable only by
+		// the node that wrote it - a miss for every other node sharing the volume.
+		FileSystemUtil.writeAtomic( target.toString(), "fresh" );
+
+		assertThat( Files.readString( target ) ).isEqualTo( "fresh" );
+		assertThat( Files.getPosixFilePermissions( target ) ).isEqualTo( shared );
+	}
 }

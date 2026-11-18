@@ -572,15 +572,25 @@ public class TaskClusterClaim {
 		if ( pointer == null ) {
 			return null;
 		}
-		String	pointerOccurrence	= getString( pointer, Key.occurrenceId );
-		String	pointerStatus		= getString( pointer, Key.status );
+		String pointerOccurrence = getString( pointer, Key.occurrenceId );
 		if ( pointerOccurrence == null || occurrence.equals( pointerOccurrence ) ) {
 			return null;
 		}
-		if ( !isInFlight( pointerStatus ) || !isFresh( pointer, cluster.getConfig() ) ) {
+		// The pointer is only advisory and is never rewritten when a run finishes, so its own status cannot be
+		// trusted: a run that ended a moment ago would still read as in flight until its heartbeat went stale,
+		// and a task firing every few seconds would silently skip the occurrences in between. Ask the occurrence
+		// it names instead - that record is the authoritative state, and it is terminal the instant the run ends.
+		IStruct referenced;
+		try {
+			referenced = asStruct( cache.get( buildTaskKey( cluster, task, pointerOccurrence ) ).orElse( null ) );
+		} catch ( Throwable t ) {
+			// A failed read must not block work: treat it as no overlap
 			return null;
 		}
-		return "previous occurrence " + pointerOccurrence + " still in flight on " + getString( pointer, Key.nodeId );
+		if ( referenced == null || !isInFlight( getString( referenced, Key.status ) ) || !isFresh( referenced, cluster.getConfig() ) ) {
+			return null;
+		}
+		return "previous occurrence " + pointerOccurrence + " still in flight on " + getString( referenced, Key.nodeId );
 	}
 
 	/**

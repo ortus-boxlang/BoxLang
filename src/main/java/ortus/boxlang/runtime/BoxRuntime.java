@@ -1247,7 +1247,7 @@ public class BoxRuntime implements java.io.Closeable {
 		instance.asyncService.onShutdown( force );
 
 		// Schedulers finish their own bookkeeping (records cleared, started=false) after the drain
-		instance.schedulerService.completeShutdown();
+		instance.schedulerService.completeShutdown( Boolean.TRUE.equals( force ) );
 
 		// Now that nothing is running, the cluster record and the cache can go
 		instance.clusterService.onShutdown( force );

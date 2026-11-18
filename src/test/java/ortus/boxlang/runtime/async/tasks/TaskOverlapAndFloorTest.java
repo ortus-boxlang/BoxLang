@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.async.tasks;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -28,12 +29,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.config.segments.ClusterConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ClusterService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Overlap policy and minimum-period enforcement.
@@ -162,6 +165,45 @@ class TaskOverlapAndFloorTest {
 	void testOneShotHasNoPeriod() {
 		ScheduledTask oneShot = new ScheduledTask( "once-" + UUID.randomUUID() );
 		assertThat( TaskClusterClaim.periodSeconds( oneShot ) ).isEqualTo( 0L );
+	}
+
+	@DisplayName( "overlap=skip lets the next occurrence run once the previous one has finished" )
+	@Test
+	void testSkipOverlapReleasesWhenTheRunFinishes() {
+		ClusterService			cluster		= node( "overlap-release-" + UUID.randomUUID(), "nodeOne", 1 );
+		ScheduledTask			task		= new ScheduledTask( "overlap-" + UUID.randomUUID() ).every( 5, TimeUnit.SECONDS ).setCluster( true )
+		    .setOverlap( "skip" );
+
+		Instant					firstDue	= Instant.now();
+		TaskClusterClaim.Claim	first		= TaskClusterClaim.attempt( task, firstDue, cluster );
+		assertThat( first ).isNotNull();
+
+		// The run ends. Its occurrence record is terminal from this instant.
+		first.finish( "success", null );
+
+		// The next occurrence must be free to run: a finished run is not overlapping, and the pointer the claim
+		// left behind may not keep blocking this task until its heartbeat goes stale - for a task firing every
+		// few seconds that window silently skips occurrences.
+		TaskClusterClaim.Claim next = TaskClusterClaim.attempt( task, firstDue.plusSeconds( 5 ), cluster );
+		assertThat( next ).isNotNull();
+		next.finish( "success", null );
+	}
+
+	@DisplayName( "an executor-created clustered task is validated before it is submitted" )
+	@Test
+	void testExecutorCreatedTaskIsValidated() {
+		// `executor.newTask(...)` reaches ScheduledTask.start() without passing through BaseScheduler.startupTask(),
+		// which is where the cluster policy lives - so without validation here a clustered task with an impossible
+		// period is accepted and only fails later, inside the claim path, where the error is logged and the
+		// occurrence skipped.
+		BoxExecutor		executor	= runtime.getAsyncService().newScheduledExecutor( "floor-" + UUID.randomUUID() );
+		ScheduledTask	task		= executor.newTask( "job-" + UUID.randomUUID() ).onOneServer().every( 1, TimeUnit.SECONDS );
+
+		try {
+			assertThrows( BoxRuntimeException.class, task::start );
+		} finally {
+			executor.shutdownAndAwaitTermination( 1L, TimeUnit.SECONDS );
+		}
 	}
 
 	@DisplayName( "the record keeps the occurrence id of the run that finished" )

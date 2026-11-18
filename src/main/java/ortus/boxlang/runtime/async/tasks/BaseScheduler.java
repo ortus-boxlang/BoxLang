@@ -462,38 +462,43 @@ public class BaseScheduler implements IScheduler {
 	 * The floor comes from the configured timings ({@code verifyRounds x settleMillis} plus the claim
 	 * delay, plus a margin), and is computed as if peers exist - a task must not validate against
 	 * today's peer count and then start failing the moment a second node joins.
+	 * <p>
+	 * Static, and called from both entry points that submit a task: {@code startupTask()} for tasks
+	 * registered with a scheduler, and {@link ScheduledTask#start()} for a task built straight off an
+	 * executor. Validating in only one of them let {@code executor.newTask(...).start()} skip the policy.
 	 *
-	 * @param taskRecord The task record being started
+	 * @param task          The task being started
+	 * @param schedulerName The scheduler it belongs to, or null when it was created from an executor
 	 *
 	 * @throws BoxRuntimeException When the task is clustered and its period is below the floor
 	 */
-	private void validateClusterPeriod( TaskRecord taskRecord ) {
-		ClusterService cluster = BoxRuntime.getInstance().getClusterService();
+	public static void validateClusterPeriod( ScheduledTask task, String schedulerName ) {
+		ClusterService	cluster		= BoxRuntime.getInstance().getClusterService();
+		String			scheduler	= schedulerName == null ? "(no scheduler)" : schedulerName;
 
 		// A task that explicitly opts into clustering on a server that is not clustered would otherwise run on
 		// every node - the opposite of what it asked for - so refuse it with a message that says what to do.
-		if ( Boolean.TRUE.equals( taskRecord.task.getCluster() )
+		if ( Boolean.TRUE.equals( task.getCluster() )
 		    && ( cluster == null || cluster.getConfig() == null || !cluster.getConfig().enabled ) ) {
 			throw new BoxRuntimeException(
 			    String.format(
 			        "Task [%s] in scheduler [%s] is marked as clustered, but clustering is not enabled on this node. "
 			            + "Enable it with cluster.enabled=true and set cluster.cacheName to a cache backed by a store every "
 			            + "node can see, or set the task's cluster=false.",
-			        taskRecord.name,
-			        this.name
+			        task.getName(),
+			        scheduler
 			    )
 			);
 		}
 		if ( cluster == null || cluster.getConfig() == null ) {
 			return;
 		}
-		if ( !TaskClusterClaim.isClustered( taskRecord.task, cluster ) ) {
+		if ( !TaskClusterClaim.isClustered( task, cluster ) ) {
 			return;
 		}
 
-		var		config		= cluster.getConfig();
 		long	floor		= TaskClusterClaim.minimumPeriodSeconds();
-		long	periodSec	= TaskClusterClaim.periodSeconds( taskRecord.task );
+		long	periodSec	= TaskClusterClaim.periodSeconds( task );
 
 		// Cron and calendar tasks are polled, not period-bound, so only explicit periods are checked
 		if ( periodSec <= 0 || periodSec >= floor ) {
@@ -503,10 +508,10 @@ public class BaseScheduler implements IScheduler {
 		throw new BoxRuntimeException(
 		    String.format(
 		        "Task [%s] in scheduler [%s] is clustered with a period of %ds, below the minimum of %ds for cluster mode [%s]. "
-		            + "Lower the task period, or set the task's cluster=false. "
+		            + "Raise the task period, or set the task's cluster=false. "
 		            + "The period is not silently clamped because that would change the claim geometry.",
-		        taskRecord.name,
-		        this.name,
+		        task.getName(),
+		        scheduler,
 		        periodSec,
 		        floor,
 		        TaskClusterClaim.modeName(),
@@ -545,8 +550,8 @@ public class BaseScheduler implements IScheduler {
 
 		// A clustered task whose period is below the cluster floor cannot service a claim. Reject it
 		// loudly rather than silently clamping the protocol timings, which would change the geometry
-		// the node computed.
-		validateClusterPeriod( taskRecord );
+		// the node computed. Same check runs in ScheduledTask.start(), for tasks built off an executor.
+		validateClusterPeriod( taskRecord.task, this.name );
 
 		// Verify we can start it up the task or not
 		if ( taskRecord.task.isDisabled() ) {
@@ -661,8 +666,10 @@ public class BaseScheduler implements IScheduler {
 			}
 			// Remove executor
 			this.asyncService.deleteExecutor( this.name + "-scheduler" );
-			// Anything that ran on a different executor, or on the caller's thread, was not covered by that drain
-			drainRemainingTrackedRuns();
+			// Anything that ran on a different executor, or on the caller's thread, was not covered by that drain.
+			// The executor drain above already spent this scheduler's graceful window, so there is nothing left
+			// to wait for here - interrupt and give the runs the configured interrupt grace to unwind.
+			drainRemainingTrackedRuns( 0 );
 		}
 		// Remove task records
 		clearTasks();
@@ -745,15 +752,19 @@ public class BaseScheduler implements IScheduler {
 	 * An executor-level drain only waits for that executor's own threads. A task moved to another executor with
 	 * {@code useExecutor()}, or started directly on the caller's thread by {@code bx:schedule action="run"}, is
 	 * invisible to it - so its record could be cleared while the run was still going. This catches those.
+	 *
+	 * @param graceSeconds How long to wait for a clean finish before interrupting. Callers pass the window their
+	 *                     shutdown has left, so one shutdown never grants two of them.
 	 */
-	public void drainRemainingTrackedRuns() {
+	public void drainRemainingTrackedRuns( long graceSeconds ) {
 		boolean anyRunning = this.tasks.values().stream().anyMatch( record -> record.task.getRunningCount() > 0 );
 		if ( !anyRunning ) {
 			return;
 		}
-		// Zero graceful wait: the pools have already had their graceful window, so go straight to the interrupt
-		// and the configured unwind grace.
-		awaitRunningTasks( 0 );
+		// Wait what is left of the window, then interrupt, then wait the configured interrupt grace. A run no pool
+		// owned never had a graceful window, so this is where it gets one instead of being cut off the instant
+		// shutdown began.
+		awaitRunningTasks( graceSeconds );
 	}
 
 	/**

@@ -204,7 +204,9 @@ public class ScheduledTask implements Runnable {
 	 * behavior where a periodic task never runs concurrently with itself. {@code "run"} allows a long
 	 * job to overlap its own next occurrence. {@code null} inherits the scheduler default.
 	 * <p>
-	 * This is about the nature of the job, not about clustering, so it applies to unclustered tasks too.
+	 * This is enforced when a claim is arbitrated, so it governs a <b>clustered</b> task. An unclustered
+	 * task never reaches that code and keeps its existing local dispatch, where a period makes runs
+	 * serial - {@code overlap="run"} does not make an unclustered task overlap itself.
 	 */
 	private String									overlap								= null;
 
@@ -538,11 +540,19 @@ public class ScheduledTask implements Runnable {
 
 		Thread current = Thread.currentThread();
 		this.runningCount.incrementAndGet();
-		this.runningThreads.add( current );
+		// Registration, deregistration and interruption all take this lock. Deregistering on its own would leave a
+		// window in which a run has finished but its worker thread is still registered: a shared executor can hand
+		// that thread to another scheduler's task, and intervening here while it was busy would interrupt unrelated
+		// work. While this lock is held the run cannot finish, so the thread it holds cannot be reused.
+		synchronized ( this.runningThreads ) {
+			this.runningThreads.add( current );
+		}
 		try {
 			runInternal( force );
 		} finally {
-			this.runningThreads.remove( current );
+			synchronized ( this.runningThreads ) {
+				this.runningThreads.remove( current );
+			}
 			this.runningCount.decrementAndGet();
 		}
 	}
@@ -588,10 +598,14 @@ public class ScheduledTask implements Runnable {
 	 */
 	public int interruptRunningTasks() {
 		int interrupted = 0;
-		for ( Thread thread : this.runningThreads ) {
-			if ( thread.isAlive() ) {
-				thread.interrupt();
-				interrupted++;
+		// Held while interrupting so that a run cannot deregister - and its worker thread cannot be handed to
+		// another task - between the liveness check and the interrupt.
+		synchronized ( this.runningThreads ) {
+			for ( Thread thread : this.runningThreads ) {
+				if ( thread.isAlive() ) {
+					thread.interrupt();
+					interrupted++;
+				}
 			}
 		}
 		if ( interrupted > 0 ) {
@@ -951,6 +965,12 @@ public class ScheduledTask implements Runnable {
 			logger.warn( "Task [{}] refused to schedule: its scheduler is shutting down", this.name );
 			return null;
 		}
+
+		// A task built straight off an executor (executor.newTask(...).start()) never passes through
+		// BaseScheduler.startupTask(), which is where the cluster policy is enforced. Without this it would be
+		// accepted here and only fail later, inside the claim path, where the error is logged and the occurrence
+		// silently skipped.
+		BaseScheduler.validateClusterPeriod( this, hasScheduler() ? getScheduler().getSchedulerName() : null );
 
 		// If we have overlaps and the spaced delay is 0 then grab it from the period
 		if ( this.noOverlaps && this.spacedDelay == 0 ) {

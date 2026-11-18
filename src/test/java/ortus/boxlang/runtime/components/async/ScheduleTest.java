@@ -22,8 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -43,6 +45,7 @@ import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.async.tasks.ScheduledTask;
 import ortus.boxlang.runtime.async.tasks.TaskRecord;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -106,6 +109,31 @@ public class ScheduleTest {
 	// --------------------------------------------------------------------------
 	// Update action tests
 	// --------------------------------------------------------------------------
+
+	@DisplayName( "a task that runs a local template leaves the thread's context stack as it found it" )
+	@Test
+	public void testLocalTemplateTaskDoesNotLeakItsContext() throws Exception {
+		// The "/" mapping is the working directory, which is how a real task names its template
+		Path template = Paths.get( "build", "bx-schedule-task-" + UUID.randomUUID() + ".bxm" );
+		Files.writeString( template, "<bx:script>x = 1;</bx:script>" );
+
+		Runnable	task		= Schedule.buildTaskCallable( context, Struct.of( Key.path, template.toString() ) );
+
+		// What the calling thread had installed before the run - usually nothing, and the run must leave exactly
+		// that behind. The context it installs is popped, not "restored" by pushing again, which would leave the
+		// task's context on the stack for the next thing to run on this thread.
+		IBoxContext	previous	= RequestBoxContext.getCurrent();
+
+		try {
+			task.run();
+			// Running twice proves nothing was left behind by the first run
+			task.run();
+
+			assertThat( RequestBoxContext.getCurrent() ).isEqualTo( previous );
+		} finally {
+			Files.deleteIfExists( template );
+		}
+	}
 
 	@DisplayName( "It can create a task with a numeric interval" )
 	@Test
