@@ -44,8 +44,8 @@ import org.junit.jupiter.api.io.TempDir;
 @EnabledOnOs( OS.WINDOWS )
 public class EnvFileLauncherTest {
 
-	private static final String VAR_NAME  = "BOX_ENV_FILE_TEST_VAR";
-	private static final String VAR_VALUE = "hello-from-env-file";
+	private static final String	VAR_NAME	= "BOX_ENV_FILE_TEST_VAR";
+	private static final String	VAR_VALUE	= "hello-from-env-file";
 
 	@DisplayName( "It exports values from .env to the JVM" )
 	@Test
@@ -67,20 +67,20 @@ public class EnvFileLauncherTest {
 	 * Stages a copy of the generated launcher next to a runtime jar and runs it with an
 	 * environment file, returning everything the launcher wrote to standard output.
 	 *
-	 * @param tempDir        Scratch directory for the staged image.
-	 * @param envFileName    Environment file to pass with --envfile, or null for the default .env.
+	 * @param tempDir     Scratch directory for the staged image.
+	 * @param envFileName Environment file to pass with --envfile, or null for the default .env.
 	 */
 	private String runLauncher( Path tempDir, String envFileName ) throws IOException, InterruptedException {
-		Path launcher = Path.of( "build/scriptsShadow/boxlang.bat" ).toAbsolutePath();
-		Path runtimeJar = findRuntimeJar();
+		Path	launcher	= Path.of( "build/scriptsShadow/boxlang.bat" ).toAbsolutePath();
+		Path	runtimeJar	= findRuntimeJar();
 
 		assumeTrue( Files.isRegularFile( launcher ), "Run startShadowScripts to generate " + launcher );
 		assumeTrue( runtimeJar != null, "Run the jar task to produce a BoxLang runtime jar in build/libs" );
 
-		Path binDirectory = Files.createDirectories( tempDir.resolve( "bin" ) );
-		Path libDirectory = Files.createDirectories( tempDir.resolve( "lib" ) );
-		Path homeDirectory = Files.createDirectories( tempDir.resolve( "home" ) );
-		Path workDirectory = Files.createDirectories( tempDir.resolve( "work" ) );
+		Path	binDirectory	= Files.createDirectories( tempDir.resolve( "bin" ) );
+		Path	libDirectory	= Files.createDirectories( tempDir.resolve( "lib" ) );
+		Path	homeDirectory	= Files.createDirectories( tempDir.resolve( "home" ) );
+		Path	workDirectory	= Files.createDirectories( tempDir.resolve( "work" ) );
 
 		Files.copy( launcher, binDirectory.resolve( "boxlang.bat" ) );
 		Files.copy( runtimeJar, libDirectory.resolve( runtimeJar.getFileName() ) );
@@ -100,7 +100,7 @@ public class EnvFileLauncherTest {
 		ProcessBuilder builder = new ProcessBuilder( command ).directory( workDirectory.toFile() );
 		builder.environment().put( "BOXLANG_HOME", homeDirectory.toString() );
 		builder.redirectErrorStream( true );
-		Process process = builder.start();
+		Process	process	= builder.start();
 		String	output	= new String( process.getInputStream().readAllBytes() );
 
 		assertThat( process.waitFor( 120, TimeUnit.SECONDS ) ).isTrue();
