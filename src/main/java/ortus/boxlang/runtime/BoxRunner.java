@@ -1000,6 +1000,17 @@ public class BoxRunner {
 				continue;
 			}
 
+			// Environment File Flag
+			// The launchers read this flag to load a .env file BEFORE the JVM starts,
+			// because environment variables cannot be injected into an already running
+			// process. There is nothing left for the runtime to do with it, so it is
+			// discarded here. That is what allows the launchers to hand their arguments
+			// over untouched, and it keeps the flag from reaching a module or template.
+			// Only the equals form is recognized, matching what the launchers support.
+			if ( arg.toLowerCase().startsWith( "--envfile=" ) ) {
+				continue;
+			}
+
 			argsList.add( arg );
 		}
 

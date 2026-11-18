@@ -331,6 +331,50 @@ startShadowScripts {
 }
 
 /**
+ * Replace expected text in a generated launcher script, failing the build when the text is missing.
+ *
+ * Gradle builds these launchers from a template inside its own distribution, not from a file in
+ * this repository, so a Gradle upgrade can reword the template.  A missing marker means the
+ * customization silently stopped being applied, so the build stops instead.
+ *
+ * @param scriptName The generated script being customized, for the failure message.
+ * @param content The script text to update.
+ * @param marker The exact text the generated script is expected to contain.
+ * @param replacement The text to put in its place.
+ * @param firstOnly Replace only the first occurrence instead of every occurrence.
+ * @return The updated script text.
+ */
+static String replaceLauncherText( String scriptName, String content, String marker, String replacement, boolean firstOnly = false ) {
+	if ( !content.contains( marker ) ) {
+		throw new GradleException( """\
+BoxLang launcher customization failed for ${scriptName}.
+
+WHAT THIS MEANS
+Gradle creates this launcher from a template inside the Gradle distribution, and this build then
+patches the generated script with the text below.  That text is no longer there, so whatever the
+patch adds to the launcher (AppCDS caching, .env loading, BOX_JAVA_ARGS, ...) is missing from it.
+Nothing else fails, which is why this stops the build instead of letting it pass quietly.
+
+  Generated script : ${scriptName}
+  Expected to find : ${marker}
+
+HOW TO FIX
+1. Look at the generated script and find the text the new template uses for the same thing.
+2. Update the marker in the matching replaceLauncherText( ... ) call in build.gradle, either in
+   ext.customizeUnixScript or ext.customizeWindowsScript.
+3. Re-run the build and confirm the launcher contains the patch again.
+""" )
+	}
+	if ( firstOnly ) {
+		return content.replaceFirst(
+			java.util.regex.Pattern.quote( marker ),
+			java.util.regex.Matcher.quoteReplacement( replacement )
+		)
+	}
+	return content.replace( marker, replacement )
+}
+
+/**
  * Add .env file loading support to Unix script with --envfile argument support.
  * Also injects AppCDS -Xshare:on flag when boxlang.jsa is present alongside the JAR.
  */
@@ -344,9 +388,6 @@ ext.customizeUnixScript = { File scriptFile ->
 ######################################
 # Source the env-loader script inline (to preserve environment variables)
 ${envLoaderScript}
-
-# Update arguments to filtered args (without --envfile)
-set -- \$FILTERED_ARGS
 
 ######################################
 # End .env loading
@@ -404,9 +445,20 @@ fi
 '''
 
 	// Insert env-loader and AppCDS together before the JVM detection line.
-	content = content.replace(
+	content = replaceLauncherText(
+		scriptFile.name,
+		content,
 		'# Determine the Java command to use to start the JVM.',
 		appCdsSnippet + envLoadingInvocation + '# Determine the Java command to use to start the JVM.'
+	)
+
+	// Let BOX_JAVA_ARGS supply ad-hoc JVM args at runtime, the way CommandBox does.
+	// The generated script word-splits and unquotes these variables through xargs.
+	content = replaceLauncherText(
+		scriptFile.name,
+		content,
+		'"$DEFAULT_JVM_OPTS $JAVA_OPTS $BOXLANG_OPTS"',
+		'"$DEFAULT_JVM_OPTS $JAVA_OPTS $BOXLANG_OPTS $BOX_JAVA_ARGS"'
 	)
 
 	scriptFile.text = content
@@ -423,9 +475,12 @@ ext.customizeWindowsScript = { File scriptFile ->
 
 	// Enable delayed expansion at the beginning of the script (needed for !variable! syntax)
 	if (!content.contains('@setlocal enabledelayedexpansion')) {
-		content = content.replaceFirst(
-			'(@echo off)',
-			'$1\r\n@setlocal enabledelayedexpansion'
+		content = replaceLauncherText(
+			scriptFile.name,
+			content,
+			'@echo off',
+			'@echo off\r\n@setlocal enabledelayedexpansion',
+			true
 		)
 	}
 
@@ -477,9 +532,6 @@ ext.customizeWindowsScript = { File scriptFile ->
 @rem ######################################
 ${envLoaderScript}
 
-@rem Update CMD_LINE_ARGS with filtered arguments
-set "CMD_LINE_ARGS_TEMP=%FILTERED_ARGS%"
-
 @rem ######################################
 @rem End .env loading
 @rem ######################################
@@ -487,15 +539,35 @@ set "CMD_LINE_ARGS_TEMP=%FILTERED_ARGS%"
 """
 
 	// Insert both blocks together: AppCDS first, then env-loader, both before "Setup the command line"
-	content = content.replace(
+	content = replaceLauncherText(
+		scriptFile.name,
+		content,
 		'@rem Setup the command line',
 		appCdsSnippet + envLoadingInvocation + '@rem Setup the command line'
 	)
 
-	// Replace CMD_LINE_ARGS with filtered arguments after it's set
-	content = content.replaceFirst(
-		/(set CMD_LINE_ARGS=%\*)/,
-		'$1\r\nif defined CMD_LINE_ARGS_TEMP set CMD_LINE_ARGS=%CMD_LINE_ARGS_TEMP%'
+	// The old CMD_LINE_ARGS patch is gone: it targeted "set CMD_LINE_ARGS=%*", which Gradle's
+	// Windows template does not contain, so it had been a silent no-op for the whole time.
+	// Retargeting it to the exec line is not safe either, because the .env loader rebuilds the
+	// arguments with "for %%a in (%*)", which splits every argument containing an equal sign
+	// (port=8080 becomes port 8080).  Argument filtering is therefore Unix-only until the
+	// loader can rebuild arguments without mangling them.
+
+	// Load the environment files after the launcher clears its local scope, so the values land in
+	// the environment the JVM inherits. See the note in workbench/scripts/env-loader.bat.
+	content = replaceLauncherText(
+		scriptFile.name,
+		content,
+		'endlocal & "%JAVA_EXE%"',
+		'endlocal & call :load_env_file "%USERPROFILE%\\.box.env" & call :load_env_file "%ENV_FILE%" & "%JAVA_EXE%"'
+	)
+
+	// Let BOX_JAVA_ARGS supply ad-hoc JVM args at runtime, the way CommandBox does.
+	content = replaceLauncherText(
+		scriptFile.name,
+		content,
+		'%JAVA_OPTS% %BOXLANG_OPTS%',
+		'%JAVA_OPTS% %BOXLANG_OPTS% %BOX_JAVA_ARGS%'
 	)
 
 	scriptFile.text = content
@@ -1645,6 +1717,9 @@ test {
 	// IMPORTANT: Do not leave this uncommented and commit or all tests locally will run on the specified compiler
 	// systemProperty 'boxlang.experimental.compiler', System.getProperty('boxlang.experimental.compiler', "java")
 	useJUnitPlatform()
+
+	// EnvFileLauncherTest exercises the generated launcher, so the scripts must exist before tests run
+	dependsOn tasks.named( "startShadowScripts" )
 
 	// Isolate test runtime from developer ~/.boxlang modules (e.g. bx-compat-cfml)
 	// so local environment state does not affect test outcomes.

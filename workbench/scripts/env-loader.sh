@@ -8,20 +8,12 @@
 # Default environment file
 ENV_FILE=".env"
 
-# Parse command line arguments to find --envfile parameter
-# Store filtered arguments for later use
-FILTERED_ARGS=""
+# Read --envfile=<path> out of the arguments. The arguments are not rebuilt or forwarded from
+# here: BoxLang discards the flag itself, so they reach it exactly as they were given.
 for arg in "$@"; do
     case "$arg" in
         --envfile=*)
             ENV_FILE="${arg#--envfile=}"
-            ;;
-        *)
-            if [ -z "$FILTERED_ARGS" ]; then
-                FILTERED_ARGS="$arg"
-            else
-                FILTERED_ARGS="$FILTERED_ARGS $arg"
-            fi
             ;;
     esac
 done

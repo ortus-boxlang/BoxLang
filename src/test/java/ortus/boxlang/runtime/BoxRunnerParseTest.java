@@ -91,6 +91,34 @@ public class BoxRunnerParseTest {
 		assertThat( options.targetModule() ).isEqualTo( "cli" );
 	}
 
+	@DisplayName( "It discards --envfile so it never leaks to the module" )
+	@Test
+	void testEnvFileBeforeModule() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--envfile=/path/to/.env", "module:cli", "arg1" } );
+
+		assertThat( options.targetModule() ).isEqualTo( "cli" );
+		assertThat( options.cliArgs() ).containsExactly( "arg1" ).inOrder();
+	}
+
+	@DisplayName( "It discards --envfile placed AFTER the module" )
+	@Test
+	void testEnvFileAfterModule() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "module:cli", "--envfile=/path/to/.env", "arg1" } );
+
+		assertThat( options.targetModule() ).isEqualTo( "cli" );
+		assertThat( options.cliArgs() ).containsExactly( "arg1" ).inOrder();
+	}
+
+	@DisplayName( "It leaves arguments containing an equals sign alone" )
+	@Test
+	void testEqualsArgumentsAreNotTouched() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "module:cli", "port=8080", "--bx-config=/config.json" } );
+
+		assertThat( options.configFile() ).isEqualTo( "/config.json" );
+		assertThat( options.targetModule() ).isEqualTo( "cli" );
+		assertThat( options.cliArgs() ).containsExactly( "port=8080" ).inOrder();
+	}
+
 	@DisplayName( "It extracts --bx-debug from any position" )
 	@Test
 	void testDebugFlag() {
