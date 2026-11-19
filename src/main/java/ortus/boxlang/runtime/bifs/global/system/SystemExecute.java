@@ -128,7 +128,7 @@ public class SystemExecute extends BIF {
 	 *
 	 * @argument.directory A working directory to execute the command from
 	 *
-	 * @argument.ouptut An optional file path to write the command output to
+	 * @argument.output An optional file path to write the command output to
 	 *
 	 * @argument.error An optional file path to write errors to
 	 *
