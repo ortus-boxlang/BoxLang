@@ -212,6 +212,22 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	public Object putIfAbsent( String key, Object value );
 
 	/**
+	 * Put a value only if the key is absent and report whether it was inserted. Implementations backed by a concurrent
+	 * map should make this atomic. Unlike putIfAbsent, a key holding a null value counts as present.
+	 *
+	 * @param key   The key to set
+	 * @param value The value to set
+	 *
+	 * @return true if the key was absent, false if it already existed
+	 */
+	public default boolean tryPutIfAbsent( Key key, Object value ) {
+		if ( containsKey( key ) ) {
+			return false;
+		}
+		return putIfAbsent( key, value ) == null;
+	}
+
+	/**
 	 * Remove a value from the struct by a Key object
 	 *
 	 * @param key The string key to remove

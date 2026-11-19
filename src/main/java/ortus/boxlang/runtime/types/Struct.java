@@ -647,19 +647,62 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	}
 
 	/**
-	 * Put a value in the struct if the key doesn't exist
+	 * Put a value in the struct if the key doesn't exist, following the {@link java.util.Map#putIfAbsent} contract.
+	 * Delegates to the wrapped map, so it is atomic for ConcurrentHashMap (default, case sensitive and soft),
+	 * ConcurrentSkipListMap (sorted) and the synchronized linked and weak maps (concurrent structs).
+	 * Non-concurrent structs are backed by plain maps and are not thread safe, as with every other operation.
+	 * Change listeners are notified only when a value is inserted.
 	 *
 	 * @param key   The key to set
 	 * @param value The value to set
 	 *
-	 * @return The previous value of the key, or null if not found
+	 * @return The existing value of the key, or null if the key was absent (or holds a null value)
 	 */
 	@Override
 	public Object putIfAbsent( Key key, Object value ) {
-		if ( !containsKey( key ) ) {
-			return put( key, value );
+		return unWrapNullInternal( putIfAbsentRaw( key, value ) );
+	}
+
+	/**
+	 * Put a value in the struct only if the key is absent, and report whether this call inserted it.
+	 * Unlike {@link #putIfAbsent(Key, Object)}, this distinguishes an absent key from a key holding a null value.
+	 *
+	 * @param key   The key to set
+	 * @param value The value to set
+	 *
+	 * @return true if the key was absent (the value was offered for insertion), false if it already existed
+	 */
+	@Override
+	public boolean tryPutIfAbsent( Key key, Object value ) {
+		return putIfAbsentRaw( key, value ) == null;
+	}
+
+	/**
+	 * Shared implementation for putIfAbsent: returns the raw stored value (still null wrapped) of an existing key, or null if
+	 * the key was absent. The change listener runs inside the wrapped map's computeIfAbsent, so it is invoked only by the
+	 * caller that wins the insert, never for an existing key. A listener returning null vetoes the insert, as in put().
+	 * Listeners must not modify this struct from inside the notification (ConcurrentHashMap forbids it).
+	 * ConcurrentSkipListMap does not guarantee computeIfAbsent runs the function once under contention.
+	 */
+	private Object putIfAbsentRaw( Key key, Object value ) {
+		Key		wrappedKey	= isCaseSensitive() && ! ( key instanceof KeyCased ) ? new KeyCased( key.getName() ) : key;
+		// Cheap read first so the common "already there" path takes no lock and runs no listener
+		Object	existing	= wrapped.get( wrappedKey );
+		if ( existing != null ) {
+			return existing;
 		}
-		return null;
+		boolean[]	inserted	= new boolean[ 1 ];
+		Object		current		= wrapped.computeIfAbsent( wrappedKey, k -> {
+									Object v = notifyListeners( key, wrapNull( value ) );
+									inserted[ 0 ] = v != null;
+									return v;
+								} );
+		if ( inserted[ 0 ] ) {
+			this.cachedHashCode = 0;
+			return null;
+		}
+		// Lost the race (existing value) or a listener vetoed the insert (null)
+		return current;
 	}
 
 	/**
@@ -668,10 +711,10 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	 * @param key   The String key to set
 	 * @param value The value to set
 	 *
-	 * @return The previous value of the key, or null if not found
+	 * @return The existing value of the key, or null if the key was absent
 	 */
 	public Object putIfAbsent( String key, Object value ) {
-		return putIfAbsent( Key.of( key ), value );
+		return putIfAbsent( isCaseSensitive() ? KeyCased.of( key ) : Key.of( key ), value );
 	}
 
 	/**
