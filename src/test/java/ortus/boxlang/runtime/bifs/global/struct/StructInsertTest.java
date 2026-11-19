@@ -118,4 +118,43 @@ public class StructInsertTest {
 
 	}
 
+	@DisplayName( "structInsert with overwrite=false keeps the first value and throws for an existing null value" )
+	@Test
+	public void testBifOverwriteFalseKeepsExisting() {
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    myStruct = { "foo" : nullValue() };
+		    structInsert( myStruct, "foo", "bar", false );
+		    """,
+		    context ) );
+		instance.executeSource(
+		    """
+		    myStruct = {};
+		    structInsert( myStruct, "foo", "first" );
+		    try { structInsert( myStruct, "foo", "second" ); } catch ( any e ) { result = e.message; }
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "The key [foo] already exists in the struct" );
+		assertThat( variables.getAsStruct( Key.of( "myStruct" ) ).get( Key.of( "foo" ) ) ).isEqualTo( "first" );
+	}
+
+	@DisplayName( "structInsert with overwrite=false has exactly one winner under concurrency" )
+	@Test
+	public void testBifConcurrent() {
+		instance.executeSource(
+		    """
+		    s = {};
+		    wins = [];
+		    threads = [];
+		    for ( t = 1; t <= 16; t++ ) {
+		        threads.append( runAsync( () => {
+		            try { structInsert( s, "claim", "x" ); return 1; } catch ( any e ) { return 0; }
+		        } ) );
+		    }
+		    result = threads.map( f => f.get() ).sum();
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).intValue() ).isEqualTo( 1 );
+	}
+
 }

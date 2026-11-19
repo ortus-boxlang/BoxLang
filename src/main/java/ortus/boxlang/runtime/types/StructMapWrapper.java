@@ -386,13 +386,14 @@ public class StructMapWrapper implements IStruct, IListenable<IStruct>, Serializ
 	 */
 	@Override
 	public Object putIfAbsent( Key key, Object value ) {
-		if ( !containsKey( key ) ) {
-			return wrapped.putIfAbsent(
-			    key.getOriginalValue(),
-			    notifyListeners( key, value )
-			);
+		Object existing = wrapped.get( key.getOriginalValue() );
+		if ( existing != null ) {
+			return existing;
 		}
-		return null;
+		return wrapped.putIfAbsent(
+		    key.getOriginalValue(),
+		    notifyListeners( key, value )
+		);
 	}
 
 	/**
