@@ -54,6 +54,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.JSONUtil;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 /**
@@ -870,13 +871,15 @@ public class Schedule extends Component {
 			String templatePath = ( file != null && !file.isBlank() ) ? Paths.get( path ).resolve( file ).toString() : path;
 
 			return () -> {
-				// A fresh request context per run. The runtime context is shared by the whole server and has no
-				// variables scope, so a template containing an ordinary assignment (x = 1) would either fail with
-				// ScopeNotFoundException or write into server-wide state. Installing the current context keeps each
-				// run isolated without leaking it onto the calling thread.
-				ScriptingRequestBoxContext taskContext = new ScriptingRequestBoxContext( runtimeContext );
+				// A fresh request context per run, created WITHOUT the default application descriptor. The task
+				// template belongs to whatever application owns it, and loading the default descriptor here would
+				// make includeTemplate() skip discovery of that one - so a task under Application.bx would run
+				// without its settings, mappings and datasources. Same order the runtime uses for a request:
+				// create the context, install it as current, then load the descriptor for the template to run.
+				ScriptingRequestBoxContext taskContext = new ScriptingRequestBoxContext( runtimeContext, false );
 				try {
 					RequestBoxContext.setCurrent( taskContext );
+					taskContext.loadApplicationDescriptor( FileSystemUtil.expandPath( taskContext, templatePath ).absolutePath().toUri() );
 					taskContext.includeTemplate( templatePath );
 				} finally {
 					// Pop the context this run installed. setCurrent() pushes onto the thread's stack, so

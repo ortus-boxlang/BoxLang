@@ -300,8 +300,16 @@ public class BaseScheduler implements IScheduler {
 		// Cluster coordination uses the single coordination cache owned by the cluster service, so
 		// there is no per-scheduler cache to propagate
 
-		// Register the task by name
+		// Register the task by name. The gate is re-checked under the same lock beginShutdown() takes, because
+		// checking it before creating the task leaves a window: shutdown could close every existing task's gate and
+		// then this task lands in the map afterwards with its own gate still open, free to submit work after
+		// shutdown was signalled.
 		synchronized ( this.tasks ) {
+			if ( this.shuttingDown ) {
+				throw new BoxRuntimeException(
+				    "Scheduler [" + this.name + "] is shutting down and cannot register task [" + name + "]"
+				);
+			}
 			this.tasks.put( name, new TaskRecord( name, group, oTask ) );
 		}
 
@@ -647,7 +655,7 @@ public class BaseScheduler implements IScheduler {
 			// Shared executor: it keeps running for everyone else, but shutdown still honours its timeout
 			// for this scheduler's runs - wait, then interrupt, then wait once more before giving up.
 			if ( !force ) {
-				awaitRunningTasks( timeout );
+				awaitRunningTasks( timeout, interruptGraceSeconds() );
 			}
 		} else {
 			// Private executor: shutdown and await termination or kill it now! A shared global executor is never shut down.
@@ -667,9 +675,10 @@ public class BaseScheduler implements IScheduler {
 			// Remove executor
 			this.asyncService.deleteExecutor( this.name + "-scheduler" );
 			// Anything that ran on a different executor, or on the caller's thread, was not covered by that drain.
-			// The executor drain above already spent this scheduler's graceful window, so there is nothing left
-			// to wait for here - interrupt and give the runs the configured interrupt grace to unwind.
-			drainRemainingTrackedRuns( 0 );
+			// The executor drain above already spent this scheduler's graceful window, so there is nothing left to
+			// wait for here - interrupt and, unless this is a forced shutdown, give the runs the interrupt grace to
+			// unwind.
+			drainRemainingTrackedRuns( 0, force );
 		}
 		// Remove task records
 		clearTasks();
@@ -692,8 +701,12 @@ public class BaseScheduler implements IScheduler {
 	 * schedule a new execution from this point until the scheduler starts up again.
 	 */
 	private void beginShutdown() {
-		this.shuttingDown = true;
-		this.tasks.values().forEach( record -> record.task.stopAcceptingSubmissions() );
+		// Under the same lock task registration takes, so closing the gates and refusing new registrations is one
+		// transition rather than two steps a registering thread can slip between.
+		synchronized ( this.tasks ) {
+			this.shuttingDown = true;
+			this.tasks.values().forEach( record -> record.task.stopAcceptingSubmissions() );
+		}
 	}
 
 	/**
@@ -710,8 +723,15 @@ public class BaseScheduler implements IScheduler {
 	 * Only this scheduler's tasks are affected; the shared executor itself is left running and is
 	 * stopped by {@code AsyncService} when the runtime shuts down.
 	 */
-	private void awaitRunningTasks( long timeout ) {
-		long interruptGrace = interruptGraceSeconds();
+	/**
+	 * Wait until no task in this scheduler is running, interrupting whatever is left after the graceful wait.
+	 *
+	 * @param timeout        How long to wait for a clean finish, zero to go straight to the interrupt
+	 * @param interruptGrace How long to wait after interrupting, zero to not wait at all
+	 *
+	 * @return true when everything finished within the timeout
+	 */
+	private void awaitRunningTasks( long timeout, long interruptGrace ) {
 
 		// Phase 1: wait for a clean finish. A zero grace means "do not wait at all".
 		if ( timeout > 0 && awaitAllTasksRunning( timeout ) ) {
@@ -755,8 +775,9 @@ public class BaseScheduler implements IScheduler {
 	 *
 	 * @param graceSeconds How long to wait for a clean finish before interrupting. Callers pass the window their
 	 *                     shutdown has left, so one shutdown never grants two of them.
+	 * @param force        Whether this shutdown is forced, in which case nothing is waited for at all
 	 */
-	public void drainRemainingTrackedRuns( long graceSeconds ) {
+	public void drainRemainingTrackedRuns( long graceSeconds, boolean force ) {
 		boolean anyRunning = this.tasks.values().stream().anyMatch( record -> record.task.getRunningCount() > 0 );
 		if ( !anyRunning ) {
 			return;
@@ -764,7 +785,11 @@ public class BaseScheduler implements IScheduler {
 		// Wait what is left of the window, then interrupt, then wait the configured interrupt grace. A run no pool
 		// owned never had a graceful window, so this is where it gets one instead of being cut off the instant
 		// shutdown began.
-		awaitRunningTasks( graceSeconds );
+		//
+		// A forced shutdown waits for neither: "stop now" means the interrupt is the end of it, not the start of a
+		// grace period. Without that, a forced shutdown still sat for the full interrupt grace on a run that
+		// ignores interrupts.
+		awaitRunningTasks( graceSeconds, force ? 0L : interruptGraceSeconds() );
 	}
 
 	/**

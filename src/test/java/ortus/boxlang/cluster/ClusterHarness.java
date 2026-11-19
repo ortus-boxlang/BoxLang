@@ -290,9 +290,6 @@ public class ClusterHarness {
 
 			// 4. Every surviving node must still be producing heartbeats (no wedged threads)
 			passed	&= allStillReporting( logDir, survivors );
-
-			// 5. Exactly once per occurrence: no bucket may appear as RUN in two nodes' logs
-			passed	&= assertExactlyOnce( logDir, nodeIds );
 		} finally {
 			System.out.println( "Stopping remaining nodes" );
 			for ( Process process : processes.values() ) {
@@ -309,6 +306,11 @@ public class ClusterHarness {
 					System.out.println( "  " + entry.getKey() + " exited with " + process.exitValue() );
 				}
 			}
+
+			// 5. Exactly once per occurrence, and only now that every child has stopped writing. Checking while
+			// survivors were still executing tasks let a RUN line appended afterwards escape validation - the
+			// harness would print PASS and then delete the log that would have shown the duplicate.
+			passed &= assertExactlyOnce( logDir, nodeIds );
 
 			summary( logDir, nodeIds );
 
@@ -343,7 +345,9 @@ public class ClusterHarness {
 	 * @return true when every occurrence was executed by exactly one node
 	 */
 	private static boolean assertExactlyOnce( Path logDir, List<String> nodeIds ) {
-		Map<String, Set<String>> runners = new java.util.TreeMap<>();
+		// One entry per RUN line: the node and how many times it ran this occurrence. A Set of node ids would
+		// collapse a second run by the same node, which is a duplicate too - the occurrence ran twice.
+		Map<String, Map<String, Integer>> runners = new java.util.TreeMap<>();
 
 		for ( String nodeId : nodeIds ) {
 			for ( String line : readLines( logDir.resolve( nodeId + ".log" ) ) ) {
@@ -352,7 +356,7 @@ public class ClusterHarness {
 					continue;
 				}
 				String occurrence = line.substring( at + 4 ).trim();
-				runners.computeIfAbsent( occurrence, key -> new TreeSet<>() ).add( nodeId );
+				runners.computeIfAbsent( occurrence, key -> new java.util.TreeMap<>() ).merge( nodeId, 1, Integer::sum );
 			}
 		}
 
@@ -360,12 +364,13 @@ public class ClusterHarness {
 		Map<String, Integer>	perNode	= new LinkedHashMap<>();
 		nodeIds.forEach( id -> perNode.put( id, 0 ) );
 
-		for ( Map.Entry<String, Set<String>> entry : runners.entrySet() ) {
-			if ( entry.getValue().size() > 1 ) {
-				System.out.println( "DUPLICATE occurrence " + entry.getKey() + " run by " + entry.getValue() );
+		for ( Map.Entry<String, Map<String, Integer>> entry : runners.entrySet() ) {
+			int runs = entry.getValue().values().stream().mapToInt( Integer::intValue ).sum();
+			if ( runs > 1 ) {
+				System.out.println( "DUPLICATE occurrence " + entry.getKey() + " run " + runs + " times by " + entry.getValue() );
 				ok = false;
 			} else {
-				perNode.merge( entry.getValue().iterator().next(), 1, Integer::sum );
+				perNode.merge( entry.getValue().keySet().iterator().next(), 1, Integer::sum );
 			}
 		}
 

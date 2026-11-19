@@ -656,25 +656,28 @@ public class SchedulerService extends BaseService {
 		// concurrent pool drain and this phase add up to one window instead of two.
 		long				grace		= force ? 0L : remainingGraceSeconds( getShutdownGraceSeconds() );
 
-		List<BaseScheduler>	drainable	= this.schedulers.values()
-		    .stream()
-		    .filter( BaseScheduler.class::isInstance )
-		    .map( BaseScheduler.class::cast )
-		    .toList();
+		List<IScheduler>	drainable	= List.copyOf( this.schedulers.values() );
 
 		if ( !drainable.isEmpty() ) {
 			// One worker per scheduler: the total is the slowest scheduler, never the sum.
 			try ( var pool = java.util.concurrent.Executors.newThreadPerTaskExecutor(
 			    Thread.ofVirtual().name( "boxlang-scheduler-drain" ).factory() ) ) {
 				List<java.util.concurrent.Future<?>> futures = new ArrayList<>( drainable.size() );
-				for ( BaseScheduler base : drainable ) {
+				for ( IScheduler scheduler : drainable ) {
 					futures.add( pool.submit( () -> {
 						try {
-							base.drainRemainingTrackedRuns( grace );
+							if ( scheduler instanceof BaseScheduler base ) {
+								base.drainRemainingTrackedRuns( grace, force );
+								base.completeShutdown();
+							} else {
+								// A custom implementation: its lifecycle callback is not the thing that stops it.
+								// shutdown(force, timeout) is, and its contract allows it to wait - which is why it
+								// belongs here, in the concurrent phase, rather than in the signal phase.
+								scheduler.shutdown( force, grace );
+							}
 						} catch ( Throwable t ) {
-							this.logger.warn( "+ Error draining scheduler ({}): {}", base.getSchedulerName(), t.getMessage(), t );
+							this.logger.warn( "+ Error draining scheduler ({}): {}", scheduler.getSchedulerName(), t.getMessage(), t );
 						}
-						base.completeShutdown();
 					} ) );
 				}
 				for ( var future : futures ) {

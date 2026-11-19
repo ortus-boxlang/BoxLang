@@ -800,14 +800,17 @@ public class ClusterSoakReal {
 	    Set<String> freshIds ) throws IOException {
 		// Keyed by task + occurrence: each scheduled task has its own occurrence ids, so the same id can
 		// legitimately appear for two different tasks at the same moment.
-		Map<String, Set<String>>	claimed			= new LinkedHashMap<>();
-		Map<String, Integer>		perNode			= new LinkedHashMap<>();
-		Map<String, Integer>		perTask			= new LinkedHashMap<>();
-		Map<String, Integer>		plainRuns		= new LinkedHashMap<>();
-		Set<String>					abandoned		= new LinkedHashSet<>();
-		Set<String>					peerAbandoned	= new LinkedHashSet<>();
-		Map<String, Set<String>>	runObservers	= new LinkedHashMap<>();
-		int							succeeded		= 0;
+		Map<String, Set<String>>			claimed			= new LinkedHashMap<>();
+		// How many times each occurrence was claimed, per node. `claimed` collapses repeats by the same node,
+		// which is exactly the duplicate that must not be missed: the occurrence ran twice.
+		Map<String, Map<String, Integer>>	claimCounts		= new LinkedHashMap<>();
+		Map<String, Integer>				perNode			= new LinkedHashMap<>();
+		Map<String, Integer>				perTask			= new LinkedHashMap<>();
+		Map<String, Integer>				plainRuns		= new LinkedHashMap<>();
+		Set<String>							abandoned		= new LinkedHashSet<>();
+		Set<String>							peerAbandoned	= new LinkedHashSet<>();
+		Map<String, Set<String>>			runObservers	= new LinkedHashMap<>();
+		int									succeeded		= 0;
 
 		nodeIds.forEach( id -> perNode.put( id, 0 ) );
 		nodeIds.forEach( id -> plainRuns.put( id, 0 ) );
@@ -820,9 +823,12 @@ public class ClusterSoakReal {
 			for ( String line : Files.readAllLines( log ) ) {
 				Matcher claim = CLAIMED.matcher( line );
 				if ( claim.find() ) {
-					String task = claim.group( 1 );
-					claimed.computeIfAbsent( task + " @ " + claim.group( 2 ), key -> new TreeSet<>() ).add( claim.group( 3 ) );
-					perNode.merge( claim.group( 3 ), 1, Integer::sum );
+					String	task		= claim.group( 1 );
+					String	occurrence	= task + " @ " + claim.group( 2 );
+					String	node		= claim.group( 3 );
+					claimed.computeIfAbsent( occurrence, key -> new TreeSet<>() ).add( node );
+					claimCounts.computeIfAbsent( occurrence, key -> new LinkedHashMap<>() ).merge( node, 1, Integer::sum );
+					perNode.merge( node, 1, Integer::sum );
 					perTask.merge( task, 1, Integer::sum );
 				}
 				if ( SUCCEEDED.matcher( line ).find() ) {
@@ -861,11 +867,13 @@ public class ClusterSoakReal {
 		// peer had the chance to watch, which is what makes their endings accountable below.
 		Set<String>		witnessed	= peerWitnessed( claimed, runObservers );
 
-		// 1. Exactly once: an occurrence the runtime claimed on two nodes is a duplicate
-		for ( Map.Entry<String, Set<String>> entry : claimed.entrySet() ) {
-			if ( entry.getValue().size() > 1 ) {
-				System.out.println( "DUPLICATE " + entry.getKey() + " claimed by " + entry.getValue() );
-				failures.add( entry.getKey() + " claimed by " + entry.getValue() );
+		// 1. Exactly once: an occurrence claimed more than once is a duplicate - on two nodes, or twice on the same
+		// node, which is the case a set of node ids silently swallowed.
+		for ( Map.Entry<String, Map<String, Integer>> entry : claimCounts.entrySet() ) {
+			int runs = entry.getValue().values().stream().mapToInt( Integer::intValue ).sum();
+			if ( runs > 1 ) {
+				System.out.println( "DUPLICATE " + entry.getKey() + " claimed " + runs + " time(s) by " + entry.getValue() );
+				failures.add( entry.getKey() + " claimed " + runs + " time(s) by " + entry.getValue() );
 			}
 		}
 

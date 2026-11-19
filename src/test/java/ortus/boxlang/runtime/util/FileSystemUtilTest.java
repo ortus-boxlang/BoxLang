@@ -241,44 +241,24 @@ public class FileSystemUtilTest {
 		assertThat( Files.getPosixFilePermissions( target ) ).isEqualTo( shared );
 	}
 
-	@DisplayName( "A new file written atomically is as shared as the directory it lands in" )
+	@DisplayName( "A new file written atomically keeps the permissions the OS gave it" )
 	@Test
-	void testWriteAtomicInheritsDirectoryPermissions( @TempDir Path tempDir ) throws IOException {
-		Path	target	= tempDir.resolve( "new-entry.cache" );
-		// A real shared directory: the execute bits make it traversable, and they must not end up on the file
-		var		shared	= java.nio.file.attribute.PosixFilePermissions.fromString( "rwxrwxr-x" );
+	void testWriteAtomicDoesNotWidenNewFilePermissions( @TempDir Path tempDir ) throws IOException {
+		Path target = tempDir.resolve( "new-entry.cache" );
 
 		try {
-			Files.setPosixFilePermissions( tempDir, shared );
+			// A world-readable directory: the new file must still not inherit that
+			Files.setPosixFilePermissions( tempDir, java.nio.file.attribute.PosixFilePermissions.fromString( "rwxrwxrwx" ) );
 		} catch ( UnsupportedOperationException e ) {
 			// Not a POSIX filesystem (Windows): nothing to assert
 			return;
 		}
 
-		// There is no existing entry to copy permissions from, and the temp file the write goes through is
-		// owner-only. Without taking the directory's permissions a brand new record would be readable only by
-		// the node that wrote it - a miss for every other node sharing the volume.
 		FileSystemUtil.writeAtomic( target.toString(), "fresh" );
 
 		assertThat( Files.readString( target ) ).isEqualTo( "fresh" );
-		assertThat( Files.getPosixFilePermissions( target ) ).isEqualTo( java.nio.file.attribute.PosixFilePermissions.fromString( "rw-rw-r--" ) );
-	}
-
-	/**
-	 * The permissions a directory hands to a new file in it. Pure set logic, so it is asserted on every
-	 * platform rather than only where POSIX attributes exist.
-	 */
-	@DisplayName( "A directory's execute bits do not follow its permissions onto a new file" )
-	@Test
-	void testDirectoryPermissionsBecomeFilePermissions() {
-		var	directory	= java.nio.file.attribute.PosixFilePermissions.fromString( "rwxrwxr-x" );
-		var	file		= java.nio.file.attribute.PosixFilePermissions.fromString( "rw-rw-r--" );
-
-		assertThat( FileSystemUtil.asFilePermissions( directory ) ).isEqualTo( file );
-		// Already a file mode: nothing to strip
-		assertThat( FileSystemUtil.asFilePermissions( file ) ).isEqualTo( file );
-		// Owner-only directory, which is what a private temp directory looks like
-		assertThat( FileSystemUtil.asFilePermissions( java.nio.file.attribute.PosixFilePermissions.fromString( "rwx------" ) ) )
+		// No existing entry to copy from, so the deployment's umask decides - not the directory's mode
+		assertThat( Files.getPosixFilePermissions( target ) )
 		    .isEqualTo( java.nio.file.attribute.PosixFilePermissions.fromString( "rw-------" ) );
 	}
 }

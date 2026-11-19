@@ -77,6 +77,54 @@ class ClusterTaskShutdownTest {
 		return new ClusterService( runtime, config, cache );
 	}
 
+	@DisplayName( "a forced scheduler shutdown does not wait the interrupt grace for a stubborn run" )
+	@Test
+	void testForcedShutdownDoesNotWaitInterruptGrace() throws Exception {
+		long originalInterrupt = runtime.getConfiguration().scheduler.shutdownInterruptGraceSeconds;
+		// Long enough that waiting it out is unmistakable in the elapsed time
+		runtime.getConfiguration().scheduler.shutdownInterruptGraceSeconds = 30;
+
+		BaseScheduler	scheduler	= new BaseScheduler( "forced-drain-" + UUID.randomUUID() );
+		AtomicBoolean	running		= new AtomicBoolean( false );
+		scheduler.task( "stubborn" )
+		    .call( () -> {
+			    running.set( true );
+			    // Refuses to die on time, so only a real wait keeps shutdown here
+			    long until = System.currentTimeMillis() + 5_000;
+			    while ( System.currentTimeMillis() < until ) {
+				    try {
+					    Thread.sleep( 20 );
+				    } catch ( InterruptedException e ) {
+					    // Ignore, and do not restore the flag: this run is deliberately unresponsive
+				    }
+			    }
+		    } )
+		    .delay( 1, TimeUnit.HOURS ).every( 1, TimeUnit.HOURS );
+
+		// Registered with the scheduler, or its shutdown has no tracked run to drain
+		scheduler.startup();
+
+		try {
+			// Started on this thread, so it belongs to no pool - the case the tracked-run drain exists for
+			Thread runner = new Thread( () -> scheduler.getTaskRecord( "stubborn" ).task.run( true ), "stubborn-run" );
+			runner.setDaemon( true );
+			runner.start();
+			assertThat( awaitFlag( running, 5_000 ) ).isTrue();
+			while ( scheduler.getTaskRecord( "stubborn" ).task.getRunningCount() == 0 ) {
+				Thread.sleep( 5 );
+			}
+
+			long before = System.currentTimeMillis();
+			scheduler.shutdown( true, 0 );
+			long elapsed = System.currentTimeMillis() - before;
+
+			// A forced shutdown means "stop now": it may interrupt, but it may not sit through a grace period
+			assertThat( elapsed ).isLessThan( 2_000L );
+		} finally {
+			runtime.getConfiguration().scheduler.shutdownInterruptGraceSeconds = originalInterrupt;
+		}
+	}
+
 	@DisplayName( "a shared-executor scheduler interrupts its own overrunning task at the timeout" )
 	@Test
 	void testSharedExecutorShutdownInterruptsOverrunningTask() throws Exception {

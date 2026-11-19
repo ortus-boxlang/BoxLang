@@ -18,14 +18,33 @@
 package ortus.boxlang.runtime.config.segments;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class SchedulerConfigTest {
+
+	@Test
+	@DisplayName( "An unknown task overlap policy is rejected instead of quietly disabling overlap control" )
+	void testUnknownOverlapPolicyIsRejected() {
+		SchedulerConfig config = new SchedulerConfig();
+
+		// A typo must not be accepted. The policy is compared to "skip" when a claim is arbitrated, so an
+		// unrecognised value simply fails that comparison and the safety policy becomes "overlap everything" -
+		// silently, in the one place a task was trying to protect itself.
+		assertThrows( BoxRuntimeException.class, () -> config.process( Struct.of( Key.taskOverlapPolicy, "skpi" ) ) );
+
+		// Both real policies still pass
+		config.process( Struct.of( Key.taskOverlapPolicy, "run" ) );
+		assertThat( config.taskOverlapPolicy ).isEqualTo( "run" );
+		config.process( Struct.of( Key.taskOverlapPolicy, "SKIP" ) );
+		assertThat( config.taskOverlapPolicy ).isEqualTo( "skip" );
+	}
 
 	@Test
 	@DisplayName( "Defaults use the scheduled-tasks executor and the default cache" )

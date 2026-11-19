@@ -47,6 +47,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.AbstractMap;
@@ -664,47 +665,25 @@ public final class FileSystemUtil {
 	 * @param source The fully written temporary file about to be moved into place
 	 * @param target The file it replaces
 	 */
-	/**
-	 * Turn a directory's permissions into the permissions to give a new file in it.
-	 * <p>
-	 * A directory's execute bits mean "traversable", not "executable", so they are dropped: a directory of
-	 * {@code rwxrwxr-x} produces a file of {@code rw-rw-r--}. Without this, every new cache entry would come
-	 * out executable.
-	 *
-	 * @param directoryPermissions The permissions of the directory the file is created in
-	 *
-	 * @return The permissions for the new file
-	 */
-	static Set<PosixFilePermission> asFilePermissions( Set<PosixFilePermission> directoryPermissions ) {
-		return directoryPermissions.stream()
-		    .filter( permission -> permission != PosixFilePermission.OWNER_EXECUTE
-		        && permission != PosixFilePermission.GROUP_EXECUTE
-		        && permission != PosixFilePermission.OTHERS_EXECUTE )
-		    .collect( Collectors.toSet() );
-	}
-
 	private static void carryPermissions( Path source, Path target ) {
 		try {
 			PosixFileAttributeView sourceView = Files.getFileAttributeView( source, PosixFileAttributeView.class );
-			if ( sourceView == null ) {
+			if ( sourceView == null || !Files.exists( target ) ) {
+				// A brand new entry is left exactly as the OS created it (umask and all). There is no "as before"
+				// to copy, and inventing wider permissions for a file nobody asked to share is not this helper's
+				// job.
 				return;
 			}
-			// The replacement was written to a temp file, which POSIX creates owner-only, so what it inherits
-			// matters as soon as two processes on the same volume use different user ids:
-			// - replacing an entry keeps the permissions the entry already had, so a shared file stays shared;
-			// - a brand new entry takes the permissions of the directory it is created in, so it is as shared as
-			// the directory itself. Leaving it owner-only would make a new coordination record unreadable to
-			// the other nodes, which a file-backed cluster cache would see as a cache miss.
-			Path					donor		= Files.exists( target ) ? target : target.toAbsolutePath().getParent();
-			PosixFileAttributeView	donorView	= donor == null ? null : Files.getFileAttributeView( donor, PosixFileAttributeView.class );
-			if ( donorView == null ) {
+			PosixFileAttributeView targetView = Files.getFileAttributeView( target, PosixFileAttributeView.class );
+			if ( targetView == null ) {
 				return;
 			}
-			Set<PosixFilePermission> permissions = donorView.readAttributes().permissions();
-			if ( !Files.exists( target ) ) {
-				permissions = asFilePermissions( permissions );
-			}
-			sourceView.setPermissions( permissions );
+			// Replacing an entry keeps what the entry already had: the replacement was written to a temp file, and
+			// POSIX creates those owner-only, so without this a shared cache entry would narrow to owner-only - and
+			// on a volume without setgid it would also change group, which is just as unreadable to the other nodes.
+			PosixFileAttributes attributes = targetView.readAttributes();
+			sourceView.setPermissions( attributes.permissions() );
+			sourceView.setGroup( attributes.group() );
 		} catch ( IOException | UnsupportedOperationException e ) {
 			// Best effort only - see above
 		}

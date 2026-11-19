@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.components.async;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -132,6 +133,52 @@ public class ScheduleTest {
 			assertThat( RequestBoxContext.getCurrent() ).isEqualTo( previous );
 		} finally {
 			Files.deleteIfExists( template );
+		}
+	}
+
+	@DisplayName( "a local template task runs in the application that owns the template" )
+	@Test
+	public void testLocalTemplateTaskLoadsItsApplication() throws Exception {
+		// Relative to the working directory, which is what the "/" mapping is, so the template can name the file
+		String	relative	= "build/bx-schedule-app-" + UUID.randomUUID();
+		Path	appDir		= Paths.get( relative );
+		Path	ran			= appDir.resolve( "ran.txt" );
+		Files.createDirectories( appDir );
+		// The app the task template belongs to, so it can announce itself through application.name
+		Files.writeString( appDir.resolve( "Application.bx" ), """
+		                                                       	class {
+		                                                       		this.name = "scheduleApp";
+		                                                       	}
+		                                                       """ );
+		Files.writeString(
+		    appDir.resolve( "task.bxm" ),
+		    "<bx:script>fileWrite( \"ran.txt\", [ getApplicationMetadata().name ?: \"nometa\", application.name ?: \"none\" ].toList( \"|\" ) );</bx:script>"
+		);
+
+		try {
+			Schedule.buildTaskCallable( context, Struct.of( Key.path, relative + "/task.bxm" ) ).run();
+
+			// A task template under Application.bx must run inside that application. Building the context with a
+			// null template loads the default application instead, and includeTemplate() does not discover the
+			// real one afterwards - so the task would silently run without the app's settings, mappings and
+			// datasources.
+			assertThat( Files.exists( ran ) ).isTrue();
+			assertThat( Files.readString( ran ) ).startsWith( "scheduleApp|" );
+		} finally {
+			deleteTree( appDir );
+		}
+	}
+
+	/** Remove a directory and everything under it. */
+	private static void deleteTree( Path root ) throws IOException {
+		try ( var paths = Files.walk( root ) ) {
+			paths.sorted( java.util.Comparator.reverseOrder() ).forEach( path -> {
+				try {
+					Files.deleteIfExists( path );
+				} catch ( IOException e ) {
+					// Best effort: this is test cleanup
+				}
+			} );
 		}
 	}
 
