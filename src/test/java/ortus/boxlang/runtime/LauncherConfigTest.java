@@ -161,31 +161,31 @@ public class LauncherConfigTest {
 	 * Stages a copy of the generated launcher next to a runtime jar, drops the given launcher
 	 * configuration files in beside it and in the BoxLang home, and runs a probe script.
 	 *
-	 * @param tempDir           Scratch directory for the staged image.
-	 * @param adjacentFiles     File name to contents, written next to the launcher.
-	 * @param homeFiles         File name to contents, written into the BoxLang home.
-	 * @param extraEnv          Environment variables for the launched process.
-	 * @param useAliasLauncher  Stage a module style launcher that records BOXLANG_PROCESS_PATH.
+	 * @param tempDir          Scratch directory for the staged image.
+	 * @param adjacentFiles    File name to contents, written next to the launcher.
+	 * @param homeFiles        File name to contents, written into the BoxLang home.
+	 * @param extraEnv         Environment variables for the launched process.
+	 * @param useAliasLauncher Stage a module style launcher that records BOXLANG_PROCESS_PATH.
 	 */
 	private String runLauncher( Path tempDir, Map<String, String> adjacentFiles, Map<String, String> homeFiles,
 	    Map<String, String> extraEnv, boolean useAliasLauncher ) throws IOException, InterruptedException {
-		Path launcher = Path.of( "build/scriptsShadow/boxlang.bat" ).toAbsolutePath();
-		Path runtimeJar = findRuntimeJar();
+		Path	launcher	= Path.of( "build/scriptsShadow/boxlang.bat" ).toAbsolutePath();
+		Path	runtimeJar	= findRuntimeJar();
 
 		assumeTrue( Files.isRegularFile( launcher ), "Run startShadowScripts to generate " + launcher );
 		assumeTrue( runtimeJar != null, "Run the jar task to produce a BoxLang runtime jar in build/libs" );
 
-		Path binDirectory = Files.createDirectories( tempDir.resolve( "bin" ) );
-		Path libDirectory = Files.createDirectories( tempDir.resolve( "lib" ) );
-		Path homeDirectory = Files.createDirectories( tempDir.resolve( "home" ) );
-		Path workDirectory = Files.createDirectories( tempDir.resolve( "work" ) );
+		Path	binDirectory	= Files.createDirectories( tempDir.resolve( "bin" ) );
+		Path	libDirectory	= Files.createDirectories( tempDir.resolve( "lib" ) );
+		Path	homeDirectory	= Files.createDirectories( tempDir.resolve( "home" ) );
+		Path	workDirectory	= Files.createDirectories( tempDir.resolve( "work" ) );
 
 		Files.copy( launcher, binDirectory.resolve( "boxlang.bat" ) );
 		Files.copy( runtimeJar, libDirectory.resolve( runtimeJar.getFileName() ) );
-		for( Map.Entry<String, String> entry : adjacentFiles.entrySet() ) {
+		for ( Map.Entry<String, String> entry : adjacentFiles.entrySet() ) {
 			Files.writeString( binDirectory.resolve( entry.getKey() ), entry.getValue() );
 		}
-		for( Map.Entry<String, String> entry : homeFiles.entrySet() ) {
+		for ( Map.Entry<String, String> entry : homeFiles.entrySet() ) {
 			Files.writeString( homeDirectory.resolve( entry.getKey() ), entry.getValue() );
 		}
 		Files.writeString(
@@ -211,15 +211,15 @@ public class LauncherConfigTest {
 			invoked = binDirectory.resolve( "boxlang.bat" ).toString();
 		}
 
-		List<String> command = List.of( "cmd.exe", "/c", invoked, "check.bxs" );
+		List<String>	command	= List.of( "cmd.exe", "/c", invoked, "check.bxs" );
 
-		ProcessBuilder builder = new ProcessBuilder( command ).directory( workDirectory.toFile() );
+		ProcessBuilder	builder	= new ProcessBuilder( command ).directory( workDirectory.toFile() );
 		builder.environment().put( "BOXLANG_HOME", homeDirectory.toString() );
-		for( Map.Entry<String, String> entry : extraEnv.entrySet() ) {
+		for ( Map.Entry<String, String> entry : extraEnv.entrySet() ) {
 			builder.environment().put( entry.getKey(), entry.getValue() );
 		}
 		builder.redirectErrorStream( true );
-		Process process = builder.start();
+		Process	process	= builder.start();
 		String	output	= new String( process.getInputStream().readAllBytes() );
 
 		assertThat( process.waitFor( 120, TimeUnit.SECONDS ) ).isTrue();
