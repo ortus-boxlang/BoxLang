@@ -352,7 +352,8 @@ BoxLang launcher customization failed for ${scriptName}.
 WHAT THIS MEANS
 Gradle creates this launcher from a template inside the Gradle distribution, and this build then
 patches the generated script with the text below.  That text is no longer there, so whatever the
-patch adds to the launcher (AppCDS caching, .env loading, BOX_JAVA_ARGS, ...) is missing from it.
+patch adds to the launcher (AppCDS caching, .env loading, launcher config files, JVM args from
+the environment, ...) is missing from it.
 Nothing else fails, which is why this stops the build instead of letting it pass quietly.
 
   Generated script : ${scriptName}
@@ -381,8 +382,10 @@ HOW TO FIX
 ext.customizeUnixScript = { File scriptFile ->
 	def content = scriptFile.text
 	def envLoaderScript = file('workbench/scripts/env-loader.sh').text
+	def launcherConfigScript = file('workbench/scripts/launcher-config.sh').text
 
 	def envLoadingInvocation = """
+${launcherConfigScript}
 ######################################
 # Load environment variables from .env file
 ######################################
@@ -452,13 +455,13 @@ fi
 		appCdsSnippet + envLoadingInvocation + '# Determine the Java command to use to start the JVM.'
 	)
 
-	// Let BOX_JAVA_ARGS supply ad-hoc JVM args at runtime, the way CommandBox does.
-	// The generated script word-splits and unquotes these variables through xargs.
+	// JVM args from the launcher config (files, then BOXLANG_* / <LAUNCHER>_* env vars). No module
+	// specific variable names live here; the launcher config snippet derives them.
 	content = replaceLauncherText(
 		scriptFile.name,
 		content,
 		'"$DEFAULT_JVM_OPTS $JAVA_OPTS $BOXLANG_OPTS"',
-		'"$DEFAULT_JVM_OPTS $JAVA_OPTS $BOXLANG_OPTS $BOX_JAVA_ARGS"'
+		'"$DEFAULT_JVM_OPTS $JAVA_OPTS $BOXLANG_OPTS $_BL_CFG_JVM_ARGS"'
 	)
 
 	scriptFile.text = content
@@ -472,6 +475,7 @@ fi
 ext.customizeWindowsScript = { File scriptFile ->
 	def content = scriptFile.text
 	def envLoaderScript = file('workbench/scripts/env-loader.bat').text
+	def launcherConfigScript = file('workbench/scripts/launcher-config.bat').text
 
 	// Enable delayed expansion at the beginning of the script (needed for !variable! syntax)
 	if (!content.contains('@setlocal enabledelayedexpansion')) {
@@ -524,9 +528,9 @@ ext.customizeWindowsScript = { File scriptFile ->
 		'@rem End AppCDS\r\n' +
 		'@rem ######################################\r\n\r\n'
 
-	// Insert the env loading code before "Setup the command line"
+	// Insert the launcher config and env loading code before "Setup the command line"
 	def envLoadingInvocation = """
-
+${launcherConfigScript}
 @rem ######################################
 @rem Load environment variables from .env file
 @rem ######################################
@@ -538,7 +542,8 @@ ${envLoaderScript}
 
 """
 
-	// Insert both blocks together: AppCDS first, then env-loader, both before "Setup the command line"
+	// Insert both blocks together: AppCDS first, then launcher config + env-loader, all before
+	// "Setup the command line"
 	content = replaceLauncherText(
 		scriptFile.name,
 		content,
@@ -562,12 +567,13 @@ ${envLoaderScript}
 		'endlocal & call :load_env_file "%USERPROFILE%\\.box.env" & call :load_env_file "%ENV_FILE%" & "%JAVA_EXE%"'
 	)
 
-	// Let BOX_JAVA_ARGS supply ad-hoc JVM args at runtime, the way CommandBox does.
+	// JVM args from the launcher config (files, then BOXLANG_* / <LAUNCHER>_* env vars). No module
+	// specific variable names live here; the launcher config snippet derives them.
 	content = replaceLauncherText(
 		scriptFile.name,
 		content,
 		'%JAVA_OPTS% %BOXLANG_OPTS%',
-		'%JAVA_OPTS% %BOXLANG_OPTS% %BOX_JAVA_ARGS%'
+		'%JAVA_OPTS% %BOXLANG_OPTS% %_BL_CFG_JVM_ARGS%'
 	)
 
 	scriptFile.text = content
