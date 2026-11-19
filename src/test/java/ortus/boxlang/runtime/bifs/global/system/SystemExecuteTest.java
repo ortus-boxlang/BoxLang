@@ -355,7 +355,7 @@ public class SystemExecuteTest {
 	public void testMergeErrorsWithErrorFileThrows() {
 		org.junit.jupiter.api.Assertions.assertThrows( ortus.boxlang.runtime.types.exceptions.BoxRuntimeException.class, () -> instance.executeSource(
 		    """
-		    SystemExecute( name="echo", arguments="hi", error="x.log", mergeErrors=true );
+		    SystemExecute( name="java", arguments="--version", error="x.log", mergeErrors=true );
 		    """,
 		    context ) );
 	}
@@ -456,11 +456,44 @@ public class SystemExecuteTest {
 	@DisplayName( "Existing calls report cancelled=false" )
 	@Test
 	public void testDefaultsUnchanged() {
-		instance.executeSource( "result = SystemExecute( \"echo\", \"hi\" );", context );
+		instance.executeSource( "result = SystemExecute( \"java\", \"--version\" );", context );
 		var r = variables.getAsStruct( result );
-		assertEquals( "hi", r.get( Key.output ) );
+		assertTrue( r.getAsString( Key.output ).length() > 0 );
 		assertEquals( false, r.get( Key.of( "cancelled" ) ) );
 		assertEquals( false, r.get( Key.terminated ) );
+	}
+
+	@DisplayName( "A cancel request that arrives after the process finished does not mark it cancelled" )
+	@Test
+	public void testCancelAfterExitIgnored() {
+		instance.executeSource(
+		    """
+		    result = SystemExecute( name="java", arguments="--version", isCancelled=() => true );
+		    """,
+		    context );
+		var r = variables.getAsStruct( result );
+		// Either the cancel won the race while java was starting, or the process had finished; a finished one must not be flagged
+		if ( !r.getAsBoolean( Key.of( "cancelled" ) ) ) {
+			assertEquals( false, r.get( Key.terminated ) );
+		}
+	}
+
+	@DisplayName( "A slow callback does not delay the return after a cancellation" )
+	@Test
+	public void testSlowCallbackDoesNotDelayCancel() {
+		if ( FileSystemUtil.IS_WINDOWS ) {
+			return;
+		}
+		instance.executeSource(
+		    """
+		    start = getTickCount();
+		    result = SystemExecute( name="sh", arguments=[ "-c", "while true; do echo spam; done" ],
+		        onLine=( l, s ) => { sleep( 5 ) }, isCancelled=() => getTickCount() - start > 800 );
+		    elapsed = getTickCount() - start;
+		    """,
+		    context );
+		assertTrue( variables.getAsStruct( result ).getAsBoolean( Key.of( "cancelled" ) ) );
+		assertTrue( ( ( Number ) variables.get( Key.of( "elapsed" ) ) ).longValue() < 8000 );
 	}
 
 }

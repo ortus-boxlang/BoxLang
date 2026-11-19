@@ -141,7 +141,8 @@ public class SystemExecute extends BIF {
 	 *                  If the function throws, the process is killed and the error is rethrown.
 	 *
 	 * @argument.isCancelled An optional function polled while the process runs. When it returns true the process tree is terminated and the output captured so
-	 *                       far is returned with cancelled = true and terminated = true. A cancellation is not a timeout.
+	 *                       far is returned with cancelled = true and terminated = true. A cancellation is not a timeout. Lines still queued when the
+	 *                       process is killed are not delivered to onLine, but remain in the captured output.
 	 *
 	 * @argument.mergeErrors When true, stderr is combined into stdout, so there is a single stream and every line is reported as "stdout". When false (default)
 	 *                       the streams stay separate. Cannot be combined with the error argument.
@@ -306,11 +307,25 @@ public class SystemExecute extends BIF {
 			joinStreamThread( stdoutThread, finalProcess.getInputStream(), grace );
 			joinStreamThread( stderrThread, finalProcess.getErrorStream(), grace );
 
-			// Deliver any lines that arrived while we were waiting for the readers to finish, including a final partial line
+			// Deliver any lines that arrived while we were waiting for the readers to finish, including a final partial line.
+			// After a cancellation or a terminated timeout the backlog is dropped, so a slow callback cannot delay the return.
+			// The text is still part of the captured output.
 			if ( live ) {
-				OutputLine pending;
-				while ( ( pending = lineQueue.poll() ) != null ) {
-					deliver( context, onLine, pending );
+				if ( response.getAsBoolean( Key.terminated ) ) {
+					lineQueue.clear();
+				} else {
+					try {
+						OutputLine pending;
+						while ( ( pending = lineQueue.poll() ) != null ) {
+							deliver( context, onLine, pending );
+						}
+					} catch ( RuntimeException | Error e ) {
+						// A timeout without terminateOnTimeout leaves the child running: do not leave it with nobody listening
+						if ( process.isAlive() ) {
+							killProcessTree( process );
+						}
+						throw e;
+					}
 				}
 			}
 
@@ -390,14 +405,15 @@ public class SystemExecute extends BIF {
 					line = lineQueue.poll();
 				}
 
+				// A process that already finished keeps its normal completion state, whatever the cancel callback would say
+				if ( !process.isAlive() ) {
+					return process.exitValue();
+				}
+
 				if ( isCancelled != null && checkCancelled( context, isCancelled ) ) {
 					response.put( Key.cancelled, true );
 					response.put( Key.terminated, true );
 					killProcessTree( process );
-					return process.exitValue();
-				}
-
-				if ( !process.isAlive() ) {
 					return process.exitValue();
 				}
 
@@ -411,7 +427,7 @@ public class SystemExecute extends BIF {
 					return null;
 				}
 			}
-		} catch ( RuntimeException e ) {
+		} catch ( RuntimeException | Error e ) {
 			// A callback failed: do not leave the child running with nobody listening
 			killProcessTree( process );
 			throw e;
