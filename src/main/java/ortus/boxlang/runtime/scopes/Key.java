@@ -341,6 +341,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		cacheService						= Key.of( "cacheService" );
 	public static final Key		callback							= Key.of( "callback" );
 	public static final Key		caller								= Key.of( "caller" );
+	public static final Key		cancelled							= Key.of( "cancelled" );
 	public static final Key		canonicalize						= Key.of( "canonicalize" );
 	public static final Key		caseSensitive						= Key.of( "caseSensitive" );
 	public static final Key		cast								= Key.of( "cast" );
@@ -694,6 +695,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		ip									= Key.of( "ip" );
 	public static final Key		isBinaryNever						= Key.of( "isBinaryNever" );
 	public static final Key		isBinaryRequest						= Key.of( "isBinaryRequest" );
+	public static final Key		isCancelled							= Key.of( "isCancelled" );
 	public static final Key		isDaily								= Key.of( "isDaily" );
 	public static final Key		isGlobal							= Key.of( "isGlobal" );
 	public static final Key		isNew								= Key.of( "isNew" );
@@ -804,6 +806,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		maxThreads							= Key.of( "maxThreads" );
 	public static final Key		maxTrackedCompletedThreads			= Key.of( "maxTrackedCompletedThreads" );
 	public static final Key		merge								= Key.of( "merge" );
+	public static final Key		mergeErrors							= Key.of( "mergeErrors" );
 	public static final Key		message								= Key.of( "message" );
 	public static final Key		metadata							= Key.of( "metadata" );
 	public static final Key		method								= Key.of( "method" );
@@ -883,6 +886,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onError								= Key.of( "onError" );
 	public static final Key		onException							= Key.of( "onException" );
 	public static final Key		onLoad								= Key.of( "onLoad" );
+	public static final Key		onLine								= Key.of( "onLine" );
 	public static final Key		onMessage							= Key.of( "onMessage" );
 	public static final Key		onMisfire							= Key.of( "onMisfire" );
 	public static final Key		onMissingMethod						= Key.of( "onMissingMethod" );
