@@ -679,24 +679,30 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 
 	/**
 	 * Shared implementation for putIfAbsent: returns the raw stored value (still null wrapped) of an existing key, or null if
-	 * the key was absent. A change listener returning null vetoes the insert, as in put().
+	 * the key was absent. The change listener runs inside the wrapped map's computeIfAbsent, so it is invoked only by the
+	 * caller that wins the insert, never for an existing key. A listener returning null vetoes the insert, as in put().
+	 * Listeners must not modify this struct from inside the notification (ConcurrentHashMap forbids it).
+	 * ConcurrentSkipListMap does not guarantee computeIfAbsent runs the function once under contention.
 	 */
 	private Object putIfAbsentRaw( Key key, Object value ) {
 		Key		wrappedKey	= isCaseSensitive() && ! ( key instanceof KeyCased ) ? new KeyCased( key.getName() ) : key;
-		// Cheap check first so listeners are not invoked when nothing will change
+		// Cheap read first so the common "already there" path takes no lock and runs no listener
 		Object	existing	= wrapped.get( wrappedKey );
 		if ( existing != null ) {
 			return existing;
 		}
-		value = notifyListeners( key, wrapNull( value ) );
-		if ( value == null ) {
+		boolean[]	inserted	= new boolean[ 1 ];
+		Object		current		= wrapped.computeIfAbsent( wrappedKey, k -> {
+									Object v = notifyListeners( key, wrapNull( value ) );
+									inserted[ 0 ] = v != null;
+									return v;
+								} );
+		if ( inserted[ 0 ] ) {
+			this.cachedHashCode = 0;
 			return null;
 		}
-		existing = wrapped.putIfAbsent( wrappedKey, value );
-		if ( existing == null ) {
-			this.cachedHashCode = 0;
-		}
-		return existing;
+		// Lost the race (existing value) or a listener vetoed the insert (null)
+		return current;
 	}
 
 	/**

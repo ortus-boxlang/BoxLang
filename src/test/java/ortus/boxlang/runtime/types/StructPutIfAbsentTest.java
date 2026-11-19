@@ -186,4 +186,33 @@ class StructPutIfAbsentTest {
 		assertThat( wins.get() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "Under contention the listener fires exactly once per key, only for the winner" )
+	@Test
+	void testListenerFiresOncePerKeyConcurrently() throws Exception {
+		Struct			s		= new Struct();
+		AtomicInteger	fired	= new AtomicInteger();
+		s.registerChangeListener( ( key, newValue, oldValue, obj ) -> {
+			fired.incrementAndGet();
+			return newValue;
+		} );
+		CountDownLatch	start	= new CountDownLatch( 1 );
+		ExecutorService	pool	= Executors.newFixedThreadPool( 32 );
+		List<Future<?>>	futures	= new ArrayList<>();
+		for ( int t = 0; t < 32; t++ ) {
+			futures.add( pool.submit( () -> {
+				start.await();
+				for ( int i = 0; i < 200; i++ ) {
+					s.putIfAbsent( Key.of( "key-" + i ), "x" );
+				}
+				return null;
+			} ) );
+		}
+		start.countDown();
+		for ( Future<?> f : futures ) {
+			f.get();
+		}
+		pool.shutdown();
+		assertThat( fired.get() ).isEqualTo( 200 );
+	}
+
 }
