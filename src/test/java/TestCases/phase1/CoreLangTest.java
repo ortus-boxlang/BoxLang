@@ -7362,4 +7362,40 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "1finally2finally" );
 	}
 
+	/**
+	 * Same construct as {@link #testTryFinallyContinueInsideFinallyAfterBreak()}, but with a
+	 * counter-based escape hatch. The java compiler lowers a for loop by putting the step
+	 * expression in the loop's finally guarded by a didBreak flag, so a continue that unwinds a
+	 * pending break skips the step and the index never advances. The escape hatch bounds the loop
+	 * so that defect fails the assertion instead of hanging the suite forever.
+	 */
+	@DisplayName( "for loop step runs when a continue in finally unwinds a pending break" )
+	@Test
+	public void testForLoopStepAfterContinueInFinallyUnwindsBreak() {
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = "";
+				iterations = 0;
+				for (i=1; i<=3; i++) {
+					// Escape hatch- bounds the loop even if i never advances
+					iterations++;
+					if (iterations > 10) break;
+					try {
+						result &= i;
+						break;
+					} finally {
+						result &= "finally";
+						// the continue in the finally wins over the pending break
+						if (i < 2) continue;
+					}
+				}
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "1finally2finally" );
+		assertThat( variables.get( Key.of( "iterations" ) ) ).isEqualTo( 2 );
+	}
+
 }

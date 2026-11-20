@@ -20,6 +20,10 @@ import com.github.javaparser.ast.Node;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
+import ortus.boxlang.compiler.ast.statement.BoxDo;
+import ortus.boxlang.compiler.ast.statement.BoxForIn;
+import ortus.boxlang.compiler.ast.statement.BoxForIndex;
+import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -45,7 +49,15 @@ public class BoxContinueTransformer extends AbstractTransformer {
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
 			template = "if(true) return Component.BodyResult.ofContinue(" + componentLabel + ");";
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
-			template = "if(true) continue " + continueLabel + ";";
+			Integer breakCounter = transpiler.peekForLoopBreakCounter();
+			if ( breakCounter != null && continuesInnermostForLoop( continueNode ) ) {
+				// A for loop keeps its step in the loop's finally guarded by a didBreak flag. A
+				// continue supersedes any pending break, so the flag must be cleared or the step
+				// would be skipped and the loop would never advance.
+				template = "if(true) { didBreak" + breakCounter + "=false; continue " + continueLabel + "; }";
+			} else {
+				template = "if(true) continue " + continueLabel + ";";
+			}
 		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			template = "if(true) return null;";
 		} else {
@@ -56,5 +68,24 @@ public class BoxContinueTransformer extends AbstractTransformer {
 		// logger.trace( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
+	}
+
+	/**
+	 * Determine if this continue targets the innermost enclosing {@code for} loop (a BoxForIndex).
+	 * Only that loop owns the {@code didBreak} counter currently on the transpiler's stack, so only
+	 * it may have its flag cleared. A labelled continue naming an outer loop leaves this loop
+	 * instead, and its flag must be left untouched.
+	 *
+	 * @param continueNode the continue statement being transformed
+	 *
+	 * @return true if the continue transfers control to the innermost enclosing for loop
+	 */
+	private boolean continuesInnermostForLoop( BoxContinue continueNode ) {
+		BoxNode nearestLoop = continueNode.getFirstNodeOfTypes( BoxForIndex.class, BoxForIn.class, BoxWhile.class, BoxDo.class );
+		if ( ! ( nearestLoop instanceof BoxForIndex forIndex ) ) {
+			return false;
+		}
+		String label = continueNode.getLabel();
+		return label == null || label.equalsIgnoreCase( forIndex.getLabel() );
 	}
 }
