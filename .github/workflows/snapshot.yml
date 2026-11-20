@@ -63,6 +63,7 @@ jobs:
     needs: format
     with:
       compilers: '["java"]'
+      timeoutMinutes: 30
     secrets: inherit
     permissions:
       checks: write
