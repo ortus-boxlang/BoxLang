@@ -29,12 +29,14 @@ import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.BoxCacheEntry;
 import ortus.boxlang.runtime.cache.ICacheEntry;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -51,28 +53,50 @@ public class FileSystemStore extends AbstractStore {
 	/**
 	 * The extension for the cache files
 	 */
-	private static final String			FILE_EXTENSION			= ".cache";
+	private static final String			FILE_EXTENSION					= ".cache";
+
+	/**
+	 * The suffix of the temporary files written before an entry is swapped into place
+	 */
+	private static final String			TEMP_FILE_SUFFIX				= ".tmp";
+
+	/**
+	 * How old an orphaned temporary file must be before it is removed on startup. Recently written ones may
+	 * belong to another process that is mid-write.
+	 */
+	private static final long			ORPHANED_TEMP_FILE_AGE_MILLIS	= 5 * 60 * 1000L;
 
 	/**
 	 * Characters which cannot appear in a file name on Windows, plus the escape character itself so
 	 * that the encoding stays reversible.
 	 */
-	private static final String			ILLEGAL_FILE_NAME_CHARS	= "<>:\"/\\|?*%";
+	private static final String			ILLEGAL_FILE_NAME_CHARS			= "<>:\"/\\|?*%";
 
 	/**
 	 * The digits used when escaping a character as two hex digits
 	 */
-	private static final String			HEX_DIGITS				= "0123456789ABCDEF";
+	private static final String			HEX_DIGITS						= "0123456789ABCDEF";
 
 	/**
 	 * The matcher for the cache files
 	 */
-	private static final PathMatcher	cacheFileMatcher		= FileSystems.getDefault().getPathMatcher( "glob:*" + FILE_EXTENSION );
+	private static final PathMatcher	cacheFileMatcher				= FileSystems.getDefault().getPathMatcher( "glob:*" + FILE_EXTENSION );
 
 	/**
 	 * The pool that holds the objects
 	 */
 	private Path						directory;
+
+	/**
+	 * Logger
+	 */
+	private static final BoxLangLogger	logger							= BoxRuntime.getInstance().getLoggingService().CACHE_LOGGER;
+
+	/**
+	 * Entry paths already reported as unreadable, so a corrupt entry that is polled every second does not
+	 * flood the log.
+	 */
+	private final java.util.Set<String>	reportedCorrupt					= java.util.concurrent.ConcurrentHashMap.newKeySet();
 
 	/**
 	 * Constructor
@@ -102,7 +126,42 @@ public class FileSystemStore extends AbstractStore {
 			throw new BoxIOException( e );
 		}
 
+		purgeOrphanedTempFiles();
+
 		return this;
+	}
+
+	/**
+	 * Delete temporary files left behind by a process that died mid-write.
+	 * <p>
+	 * Writes go to a temporary file and are then swapped in, so an interrupted write leaves a complete
+	 * previous entry plus one orphan. Only files older than a few minutes are removed: the directory is
+	 * shared between processes, so a recent temporary file may belong to another node writing right now.
+	 */
+	private void purgeOrphanedTempFiles() {
+		long cutoff = System.currentTimeMillis() - ORPHANED_TEMP_FILE_AGE_MILLIS;
+
+		try ( Stream<Path> paths = Files.list( this.directory ) ) {
+			paths.filter( path -> path.getFileName().toString().endsWith( TEMP_FILE_SUFFIX ) )
+			    .filter( path -> {
+				    try {
+					    return Files.getLastModifiedTime( path ).toMillis() < cutoff;
+				    } catch ( IOException e ) {
+					    return false;
+				    }
+			    } )
+			    .forEach( path -> {
+				    try {
+					    Files.deleteIfExists( path );
+					    logger.debug( "+ Removed orphaned cache temp file [{}]", path );
+				    } catch ( IOException ignored ) {
+					    // Another process may be using it; it will be collected on a later start
+				    }
+			    } );
+		} catch ( IOException e ) {
+			// A cache directory that cannot be listed is not a startup failure
+			logger.debug( "+ Could not scan cache directory [{}] for temp files: {}", this.directory, e.getMessage() );
+		}
 	}
 
 	/**
@@ -558,15 +617,39 @@ public class FileSystemStore extends AbstractStore {
 	}
 
 	/**
-	 * Deserialize an entry from the file system
+	 * Deserialize an entry from the file system.
+	 * <p>
+	 * A file that cannot be deserialized is treated as a <b>miss</b>, not as an error. The cache directory
+	 * is shared between processes, so an entry file can be truncated by a crash, a full disk, or a
+	 * filesystem that cannot replace atomically - none of which the caller did anything wrong to cause, and
+	 * none of which should crash the process that happened to read it. Writes are atomic
+	 * ({@link FileSystemUtil#serializeToFile}), so this is the belt to that braces: a corrupt entry is
+	 * ignored and overwritten by the next write of that key.
 	 *
 	 * @param entryPath The path to the entry
 	 *
-	 * @return The deserialized entry
+	 * @return The deserialized entry, or null when the file is unreadable
 	 */
 	private ICacheEntry deserializeEntry( Path entryPath ) {
-		Object result = FileSystemUtil.deserializeFromFile( entryPath );
+		Object result;
+		try {
+			result = FileSystemUtil.deserializeFromFile( entryPath );
+		} catch ( Throwable e ) {
+			// Logged once per path: this sits on the read path, so repeating it for every poll would bury
+			// whatever else the log had to say.
+			if ( this.reportedCorrupt.add( entryPath.toString() ) ) {
+				logger.warn(
+				    "+ Cache entry [{}] is unreadable and will be treated as a miss: {}",
+				    entryPath,
+				    e.getMessage()
+				);
+			}
+			return null;
+		}
+
 		if ( result instanceof ICacheEntry ) {
+			// Readable again (rewritten by someone), so a future corruption should be reported afresh
+			this.reportedCorrupt.remove( entryPath.toString() );
 			return ( ICacheEntry ) result;
 		} else {
 			return new BoxCacheEntry(

@@ -38,6 +38,8 @@ import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -52,6 +54,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.JSONUtil;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 /**
@@ -190,7 +193,8 @@ public class Schedule extends Component {
 		    ) ),
 		    new Attribute( Key.onComplete, "string" ),
 		    new Attribute( Key.eventHandler, "string" ),
-		    new Attribute( Key.cluster, "boolean", false ),
+		    new Attribute( Key.cluster, "boolean" ),
+		    new Attribute( Key.overlap, "string", Set.of( Validator.valueOneOf( "skip", "run" ) ) ),
 		    new Attribute( Key.result, "string" )
 		};
 	}
@@ -688,13 +692,23 @@ public class Schedule extends Component {
 		String	onComplete		= taskDef.getAsString( Key.onComplete );
 		String	eventHandler	= taskDef.getAsString( Key.eventHandler );
 		Integer	retryCount		= taskDef.getAsInteger( Key.retryCount );
-		boolean	cluster			= BooleanCaster.cast( taskDef.getOrDefault( Key.cluster, false ) );
+		Object	clusterRaw		= taskDef.get( Key.cluster );
+		String	overlap			= taskDef.getAsString( Key.overlap );
 		String	url				= taskDef.getAsString( Key.URL );
 		String	className		= taskDef.getAsString( Key._CLASS );
 		String	method			= taskDef.getAsString( Key.method );
 
+		// Cluster participation. Only applied when actually supplied, so a task that says nothing
+		// inherits the deployment default instead of being pinned to false.
+		if ( clusterRaw != null ) {
+			task.setCluster( BooleanCaster.cast( clusterRaw ) );
+		}
+		if ( overlap != null && !overlap.isBlank() ) {
+			task.setOverlap( overlap );
+		}
+
 		// Run on a specific executor if the task names one
-		String	executorName	= taskDef.getAsString( Key.executor );
+		String executorName = taskDef.getAsString( Key.executor );
 		if ( executorName != null && !executorName.isBlank() ) {
 			task.useExecutor( executorName );
 		}
@@ -782,7 +796,7 @@ public class Schedule extends Component {
 
 		// Store metadata
 		task.setMetaKey( "retryCount", retryCount );
-		task.setMetaKey( "cluster", cluster );
+		task.setMetaKey( "overlap", overlap );
 		task.setMetaKey( "onException", onException );
 		task.setMetaKey( "eventhandler", eventHandler );
 		task.setMetaKey( "oncomplete", onComplete );
@@ -846,6 +860,43 @@ public class Schedule extends Component {
 		ortus.boxlang.runtime.BoxRuntime	rt				= ortus.boxlang.runtime.BoxRuntime.getInstance();
 		IBoxContext							runtimeContext	= rt.getRuntimeContext();
 		HttpService							httpService		= rt.getHttpService();
+
+		// No URL means a local task: run the template through the include flow, the same way bx:include
+		// does. Persisted tasks used to build an HTTP callable unconditionally, so a task defined with only
+		// a path performed a request to null and reported success without running anything.
+		if ( url == null || url.isBlank() ) {
+			if ( path == null || path.isBlank() ) {
+				throw new BoxRuntimeException( "A scheduled task needs one of: a url, a path to a template, or a class to run." );
+			}
+			String templatePath = ( file != null && !file.isBlank() ) ? Paths.get( path ).resolve( file ).toString() : path;
+
+			return () -> {
+				// A fresh request context per run, created WITHOUT the default application descriptor. The task
+				// template belongs to whatever application owns it, and loading the default descriptor here would
+				// make includeTemplate() skip discovery of that one - so a task under Application.bx would run
+				// without its settings, mappings and datasources. Same order the runtime uses for a request:
+				// create the context, install it as current, then load the descriptor for the template to run.
+				ScriptingRequestBoxContext taskContext = new ScriptingRequestBoxContext( runtimeContext, false );
+				try {
+					RequestBoxContext.setCurrent( taskContext );
+					taskContext.loadApplicationDescriptor( FileSystemUtil.expandPath( taskContext, templatePath ).absolutePath().toUri() );
+					taskContext.includeTemplate( templatePath );
+				} finally {
+					// Pop the context this run installed. setCurrent() pushes onto the thread's stack, so
+					// "restoring" the previous context by pushing it again would leave the task's context behind on
+					// the stack for whatever the thread runs next - and pushing a null previous context throws.
+					RequestBoxContext.removeCurrent();
+					// Release anything the template opened on this request
+					if ( taskContext instanceof ortus.boxlang.runtime.context.IJDBCCapableContext jdbcContext ) {
+						try {
+							jdbcContext.shutdownConnections();
+						} catch ( Throwable ignored ) {
+							// best effort - the run itself already happened
+						}
+					}
+				}
+			};
+		}
 
 		return () -> {
 			BoxHttpClient	client	= httpService.getOrBuildClient(

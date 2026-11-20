@@ -196,6 +196,10 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		this.reapingFuture = this.cacheService.getTaskScheduler()
 		    // Get a new task
 		    .newTask( "boxcache-reaper-" + getName().getName() )
+		    // A reaper maintains *this node's* cache, so every node has to reap its own. Inheriting the
+		    // deployment's clustering would let one node skip its local reaping because a peer claimed the
+		    // shared task key, and the two caches are not the same object.
+		    .setCluster( false )
 		    // Don't start immediately, wait for the first reaping
 		    .delay( frequency, TimeUnit.SECONDS )
 		    // Reap every x seconds according to the config

@@ -34,6 +34,8 @@ import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
 import ortus.boxlang.runtime.async.tasks.ScheduledTask;
+import ortus.boxlang.runtime.async.tasks.TaskClusterClaim;
+import ortus.boxlang.runtime.async.tasks.TaskRecord;
 import ortus.boxlang.runtime.async.watchers.WatcherEvent;
 import ortus.boxlang.runtime.async.watchers.WatcherInstance;
 import ortus.boxlang.runtime.async.watchers.listeners.IWatcherListener;
@@ -76,6 +78,11 @@ public class SchedulerService extends BaseService {
 	 * The default scheduler name used by the bx:schedule component when none is specified.
 	 */
 	public static final String		DEFAULT_SCHEDULER_NAME		= "bxschedule";
+
+	/**
+	 * The trailing window, in seconds, over which task-seconds are summed for the published load.
+	 */
+	private static final long		LOAD_WINDOW_SECONDS			= 60;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -158,6 +165,7 @@ public class SchedulerService extends BaseService {
 	public void onStartup() {
 		BoxRuntime.timerUtil.start( "schedulerservice-startup" );
 		this.logger.info( "+ Starting up Scheduler Service..." );
+		this.hasShutdown = false;
 
 		// Register the Global Scheduler
 		// This will look in the configuration for the global scheduler and start it up
@@ -168,6 +176,9 @@ public class SchedulerService extends BaseService {
 
 		// Startup all the schedulers
 		startupRegisteredSchedulers();
+
+		// Publish our rolling task load to the cluster, and keep it current
+		startClusterLoadTracking();
 
 		// Start tasks.json file watcher if reloadOnChange is enabled
 		if ( Boolean.TRUE.equals( runtime.getConfiguration().scheduler.reloadOnChange ) ) {
@@ -182,6 +193,219 @@ public class SchedulerService extends BaseService {
 
 		// Let it be known!
 		this.logger.info( "+ Scheduler Service started in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "schedulerservice-startup" ) );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Cluster load tracking
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The number of buckets in the rolling load window
+	 */
+	private long[]									loadBuckets			= new long[ 60 ];
+
+	/**
+	 * Cursor into the rolling window
+	 */
+	private int										loadCursor			= 0;
+
+	/**
+	 * When the load window was last ticked
+	 */
+	private long									loadLastTick		= 0;
+
+	/**
+	 * The load tracker thread, a daemon so it can never keep the JVM alive
+	 */
+	private volatile Thread							loadTrackerThread;
+
+	/**
+	 * Stop flag for the load tracker
+	 */
+	private volatile boolean						loadTrackerStopped	= true;
+
+	/**
+	 * True once this service has shut down. Nothing may be submitted to any executor from then on.
+	 */
+	private volatile boolean						hasShutdown			= false;
+
+	/**
+	 * When this shutdown was signalled, so every drain phase can share one graceful window instead of each
+	 * spending its own. Zero when no signal has been received.
+	 */
+	private volatile long							shutdownSignalledAt	= 0L;
+
+	/**
+	 * The single contributor instance registered with the cluster service.
+	 * <p>
+	 * It has to be one object: {@code ClusterService} unregisters contributors by identity, so building a
+	 * fresh {@code this::getLoadSnapshot} at removal time would never match the one that was registered -
+	 * the contributor would accumulate on every restart and keep publishing a frozen metric after stopping.
+	 */
+	private java.util.function.Supplier<IStruct>	loadContributor		= null;
+
+	/**
+	 * Start publishing this node's scheduler load to the cluster, and keep it current.
+	 * <p>
+	 * The load tracker ticks once a second and adds the number of tasks currently running to the
+	 * current bucket, so {@code taskSeconds} is the sum of the trailing window: one task running the
+	 * whole window reports 60, two report 120, five 5-second runs report 25. Accumulating while jobs
+	 * run is required - adding a duration at completion would report a node running one 10-minute job
+	 * as idle for ten minutes.
+	 * <p>
+	 * The value is contributed as {@code scheduler.taskSeconds}, which is what balanced mode ranks
+	 * nodes by.
+	 */
+	public void startClusterLoadTracking() {
+		ClusterService cluster = runtime.getClusterService();
+		if ( cluster == null || cluster.getConfig() == null || !cluster.getConfig().enabled ) {
+			return;
+		}
+		if ( this.hasShutdown || this.loadTrackerThread != null ) {
+			return;
+		}
+
+		this.loadBuckets		= new long[ ( int ) Math.max( 1, LOAD_WINDOW_SECONDS ) ];
+		this.loadCursor			= 0;
+		this.loadLastTick		= System.currentTimeMillis();
+		this.loadTrackerStopped	= false;
+
+		// Publish on the attributes cycle. One instance, reused for removal - see loadContributor.
+		if ( this.loadContributor == null ) {
+			this.loadContributor = this::getLoadSnapshot;
+		}
+		cluster.addAttributeContributor( this.loadContributor );
+
+		// Hand the cluster service the means to name recent occurrences, so it can look for claim records nobody
+		// observed without ever enumerating cache keys.
+
+		Thread thread = new Thread( () -> {
+			while ( !this.loadTrackerStopped ) {
+				try {
+					Thread.sleep( 1_000 );
+				} catch ( InterruptedException e ) {
+					Thread.currentThread().interrupt();
+					return;
+				}
+				if ( this.loadTrackerStopped ) {
+					return;
+				}
+				try {
+					advanceLoadWindow();
+				} catch ( Throwable t ) {
+					// Never let a bad sample kill the tracker: an escaped exception ends this thread, and the
+					// node would then publish a frozen load value forever.
+					this.logger.warn( "Scheduler load tracker tick failed: {}", t.getMessage(), t );
+				}
+			}
+		}, "boxlang-cluster-load-tracker" );
+		thread.setDaemon( true );
+		this.loadTrackerThread = thread;
+		thread.start();
+	}
+
+	/**
+	 * Stop the load tracker and remove its contribution.
+	 */
+	public void stopClusterLoadTracking() {
+		this.loadTrackerStopped = true;
+		Thread thread = this.loadTrackerThread;
+		if ( thread != null ) {
+			thread.interrupt();
+			try {
+				thread.join( 5_000 );
+			} catch ( InterruptedException e ) {
+				Thread.currentThread().interrupt();
+			}
+			this.loadTrackerThread = null;
+		}
+		ClusterService cluster = runtime.getClusterService();
+		if ( cluster != null ) {
+			if ( this.loadContributor != null ) {
+				cluster.removeAttributeContributor( this.loadContributor );
+			}
+			// Drop the published value too, or the node record keeps advertising the last metric it saw after
+			// tracking has stopped.
+			cluster.removeAttribute( Key.scheduler.getName() );
+		}
+	}
+
+	/**
+	 * Advance the rolling window by one second, adding the number of tasks running right now.
+	 * <p>
+	 * If the tick was delayed (a busy JVM), the buckets it skipped are filled with the same sample, so
+	 * the window still represents the elapsed time rather than silently under-counting.
+	 */
+	synchronized void advanceLoadWindow() {
+		long	now		= System.currentTimeMillis();
+		long	elapsed	= Math.max( 1, ( now - this.loadLastTick ) / 1000 );
+		long	running	= countRunningTasks();
+		int		size	= this.loadBuckets.length;
+
+		for ( long i = 0; i < Math.min( elapsed, size ); i++ ) {
+			this.loadCursor						= ( this.loadCursor + 1 ) % size;
+			this.loadBuckets[ this.loadCursor ]	= running;
+		}
+
+		this.loadLastTick = now;
+	}
+
+	/**
+	 * How many tasks are executing right now, across every registered scheduler.
+	 *
+	 * @return The in-flight task count
+	 */
+	public long countRunningTasks() {
+		long total = 0;
+		for ( IScheduler scheduler : this.schedulers.values() ) {
+			if ( scheduler instanceof BaseScheduler base ) {
+				for ( TaskRecord record : base.getTaskRecords() ) {
+					total += record.task.getRunningCount();
+				}
+			}
+		}
+		return total;
+	}
+
+	/**
+	 * The current scheduler load snapshot, contributed to the cluster node record as
+	 * {@code scheduler.taskSeconds}.
+	 *
+	 * @return A struct with taskSeconds, inFlight and windowSeconds
+	 */
+	public IStruct getLoadSnapshot() {
+		long total;
+		synchronized ( this ) {
+			total = java.util.Arrays.stream( this.loadBuckets ).sum();
+		}
+		return Struct.ofNonConcurrent(
+		    Key.scheduler, Struct.ofNonConcurrent(
+		        Key.taskSeconds, total,
+		        Key.inFlight, countRunningTasks(),
+		        Key.of( "windowSeconds" ), ( long ) this.loadBuckets.length
+		    )
+		);
+	}
+
+	/**
+	 * Reset the load window. Visible for tests.
+	 */
+	synchronized void resetLoadWindow() {
+		this.loadBuckets	= new long[ this.loadBuckets.length ];
+		this.loadCursor		= 0;
+		this.loadLastTick	= System.currentTimeMillis();
+	}
+
+	/**
+	 * Set the in-flight count directly for a tick. Visible for tests.
+	 *
+	 * @param running The sample to record
+	 */
+	synchronized void sampleLoad( long running ) {
+		this.loadCursor						= ( this.loadCursor + 1 ) % this.loadBuckets.length;
+		this.loadBuckets[ this.loadCursor ]	= running;
 	}
 
 	/**
@@ -326,12 +550,187 @@ public class SchedulerService extends BaseService {
 	}
 
 	/**
+	 * Signal every scheduler to stop producing work, without waiting for anything to drain.
+	 * <p>
+	 * Runtime shutdown calls this so that every pool can then be drained <b>concurrently</b> by
+	 * {@code AsyncService}. Waiting for the scheduler's runs here as well would mean draining the same
+	 * threads twice in sequence, which is exactly the serialisation we do not want.
+	 *
+	 * @return This service
+	 */
+	public SchedulerService shutdownSignal() {
+		return shutdownSignal( false );
+	}
+
+	/**
+	 * Signal every scheduler to stop producing work, without waiting for anything, and fire the shutdown
+	 * lifecycle exactly once on the way through.
+	 *
+	 * @param force Whether the runtime shutdown is forced, reported on the events
+	 *
+	 * @return This service
+	 */
+	public SchedulerService shutdownSignal( boolean force ) {
+		this.hasShutdown			= true;
+		this.shutdownSignalledAt	= System.nanoTime();
+		stopTasksFileWatcher();
+		stopClusterLoadTracking();
+		// Deliberately NOT stopping the task claim maintenance thread here. Runs are still draining at this
+		// point (the grace window has not been waited yet), and if their heartbeats stop now their records go
+		// stale mid-run - so a peer reports a perfectly healthy run as abandoned. It is stopped in
+		// completeShutdown(), once every pool has actually drained.
+
+		// Announced here because this is the phase that begins the shutdown. Runtime shutdown does not go
+		// through onShutdown()/shutdownScheduler(), so without this the event never fired and any listener
+		// registered against it was silently skipped.
+		announce(
+		    BoxEvent.ON_SCHEDULER_SERVICE_SHUTDOWN,
+		    Struct.of( "schedulerService", this )
+		);
+
+		long grace = runtime.getConfiguration().scheduler.shutdownGraceSeconds;
+
+		this.schedulers.values().forEach( scheduler -> {
+			announce(
+			    BoxEvent.ON_SCHEDULER_SHUTDOWN,
+			    Struct.of( "scheduler", scheduler, "force", force, "timeout", grace )
+			);
+			if ( scheduler instanceof BaseScheduler base ) {
+				base.signalShutdown();
+			} else {
+				// Not a BaseScheduler: there is no gate to close, so run its shutdown lifecycle explicitly,
+				// otherwise a custom IScheduler implementation would never see onShutdown() at all.
+				scheduler.onShutdown();
+			}
+		} );
+		return this;
+	}
+
+	/**
+	 * The configured graceful shutdown timeout, so operators can dial it in one place. Zero means
+	 * interrupt immediately instead of waiting.
+	 *
+	 * @return The graceful shutdown timeout in seconds
+	 */
+	public long getShutdownGraceSeconds() {
+		return runtime.getConfiguration().scheduler.shutdownGraceSeconds;
+	}
+
+	/**
+	 * The configured grace after interrupting, before the executor is forced down. Zero means do not
+	 * wait after interrupting.
+	 *
+	 * @return The interrupt grace in seconds
+	 */
+	public long getShutdownInterruptGraceSeconds() {
+		return runtime.getConfiguration().scheduler.shutdownInterruptGraceSeconds;
+	}
+
+	/**
+	 * Finish the shutdown of every scheduler after its pools have been drained.
+	 * <p>
+	 * The pools were drained concurrently by {@code AsyncService}, which spent one graceful window between
+	 * them rather than one each. This phase finishes the same shutdown: it clears the bookkeeping and marks
+	 * each scheduler stopped, and it deals with the runs no pool owned - a {@code bx:schedule action="run"}
+	 * runs on the caller's thread, so nothing has waited for it yet.
+	 * <p>
+	 * Schedulers are drained <b>concurrently</b> too, against whatever is left of the window this shutdown
+	 * was given. Draining them one after another made the wall clock the sum of their waits, so a scheduler
+	 * whose runs ignore interruption added its whole interrupt grace to every other scheduler's.
+	 *
+	 * @return This service
+	 */
+	public SchedulerService completeShutdown() {
+		return completeShutdown( false );
+	}
+
+	/**
+	 * Finish the shutdown of every scheduler after its pools have been drained.
+	 *
+	 * @param force Whether the runtime shutdown is forced, in which case nothing is waited for
+	 *
+	 * @return This service
+	 */
+	public SchedulerService completeShutdown( boolean force ) {
+		// What is left of the graceful window the runtime shutdown was given, measured from the signal so the
+		// concurrent pool drain and this phase add up to one window instead of two.
+		long				grace		= force ? 0L : remainingGraceSeconds( getShutdownGraceSeconds() );
+
+		List<IScheduler>	drainable	= List.copyOf( this.schedulers.values() );
+
+		if ( !drainable.isEmpty() ) {
+			// One worker per scheduler: the total is the slowest scheduler, never the sum.
+			try ( var pool = java.util.concurrent.Executors.newThreadPerTaskExecutor(
+			    Thread.ofVirtual().name( "boxlang-scheduler-drain" ).factory() ) ) {
+				List<java.util.concurrent.Future<?>> futures = new ArrayList<>( drainable.size() );
+				for ( IScheduler scheduler : drainable ) {
+					futures.add( pool.submit( () -> {
+						try {
+							if ( scheduler instanceof BaseScheduler base ) {
+								base.drainRemainingTrackedRuns( grace, force );
+								base.completeShutdown();
+							} else {
+								// A custom implementation: its lifecycle callback is not the thing that stops it.
+								// shutdown(force, timeout) is, and its contract allows it to wait - which is why it
+								// belongs here, in the concurrent phase, rather than in the signal phase.
+								scheduler.shutdown( force, grace );
+							}
+						} catch ( Throwable t ) {
+							this.logger.warn( "+ Error draining scheduler ({}): {}", scheduler.getSchedulerName(), t.getMessage(), t );
+						}
+					} ) );
+				}
+				for ( var future : futures ) {
+					try {
+						future.get();
+					} catch ( InterruptedException e ) {
+						Thread.currentThread().interrupt();
+						break;
+					} catch ( java.util.concurrent.ExecutionException e ) {
+						// The worker logged its own failure; nothing here can act on it
+						this.logger.warn( "+ Scheduler drain worker failed: {}", e.getCause() == null ? e.getMessage() : e.getCause().getMessage() );
+					}
+				}
+			}
+		}
+
+		// Every pool has drained, so no run needs its claim heartbeated any more. Stop the maintenance thread
+		// here - not at the start of shutdown, which made in-flight records look stale midway through a job.
+		TaskClusterClaim.shutdownMaintenance();
+		this.logger.info( "+ Scheduler Service shutdown" );
+		return this;
+	}
+
+	/**
+	 * How much of the graceful shutdown window is still unspent.
+	 * <p>
+	 * Measured from the signal, so a drain phase cannot hand out a fresh window: the pool drain and the
+	 * scheduler drain share one. A zero window means "do not wait", which is what both a zero setting and a
+	 * forced shutdown mean.
+	 *
+	 * @param graceSeconds The configured graceful window
+	 *
+	 * @return The seconds still available, never negative
+	 */
+	private long remainingGraceSeconds( long graceSeconds ) {
+		long signalledAt = this.shutdownSignalledAt;
+		if ( signalledAt == 0L ) {
+			return graceSeconds;
+		}
+		long elapsed = ( System.nanoTime() - signalledAt ) / 1_000_000_000L;
+		return Math.max( 0L, graceSeconds - elapsed );
+	}
+
+	/**
 	 * The shutdown event is fired when the runtime shuts down
 	 *
 	 * @param force If true, forces the shutdown of the scheduler
 	 */
 	@Override
 	public void onShutdown( Boolean force ) {
+		// Refuse all new work from this instant
+		this.hasShutdown = true;
+
 		// Announce it
 		announce(
 		    BoxEvent.ON_SCHEDULER_SERVICE_SHUTDOWN,
@@ -340,10 +739,18 @@ public class SchedulerService extends BaseService {
 		// Stop the tasks.json file watcher if running
 		stopTasksFileWatcher();
 
-		// Call shutdown on each scheduler in parallel
+		// Stop publishing load to the cluster, and release its thread
+		stopClusterLoadTracking();
+
+		// Stop the task claim maintenance thread (beats claims, resolves watched ones). This path drains the
+		// schedulers below before returning, so the heartbeats have done their job by the time we get here.
+
+		// Call shutdown on each scheduler in parallel, using the configured shutdown grace. A forced
+		// runtime shutdown stays forced here too, otherwise it would still sit through every timeout.
+		long grace = runtime.getConfiguration().scheduler.shutdownGraceSeconds;
 		schedulers.values()
 		    .parallelStream()
-		    .forEach( scheduler -> shutdownScheduler( scheduler, false, DEFAULT_SHUTDOWN_TIMEOUT ) );
+		    .forEach( scheduler -> shutdownScheduler( scheduler, Boolean.TRUE.equals( force ), grace ) );
 		// Log it
 		this.logger.info( "+ Scheduler Service shutdown" );
 	}
@@ -381,6 +788,11 @@ public class SchedulerService extends BaseService {
 	 * @return Scheduler
 	 */
 	public SchedulerService startupScheduler( IScheduler scheduler ) {
+		// Nothing may be submitted to an executor once shutdown has begun
+		if ( this.hasShutdown ) {
+			this.logger.warn( "+ Scheduler Service is shutting down, refusing to start scheduler [{}]", scheduler.getSchedulerName() );
+			return this;
+		}
 
 		if ( scheduler.hasStarted() ) {
 			this.logger.debug(
@@ -877,7 +1289,10 @@ public class SchedulerService extends BaseService {
 		try {
 			encryptTaskCredentials( tasks );
 			String json = JSONUtil.getJSONBuilder( true ).asString( tasks );
-			FileSystemUtil.write( tasksFile.toString(), json, "UTF-8", true );
+			// Atomic: readers (the reload-on-change watcher, a bx:schedule reload) can read this file at
+			// any moment, and a plain write truncates it first, so they would see an unparseable file.
+			// An interrupted write must also leave the previous file intact rather than empty.
+			FileSystemUtil.writeAtomic( tasksFile.toString(), json, "UTF-8", true );
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Failed to persist tasks to disk: " + e.getMessage(), e );
 		}
@@ -926,7 +1341,8 @@ public class SchedulerService extends BaseService {
 			    "onException", attributes.getAsString( Key.onException ),
 			    "oncomplete", attributes.getAsString( Key.onComplete ),
 			    "eventhandler", attributes.getAsString( Key.eventHandler ),
-			    "cluster", BooleanCaster.cast( attributes.getOrDefault( Key.cluster, false ) ),
+			    "cluster", attributes.get( Key.cluster ) == null ? null : BooleanCaster.cast( attributes.get( Key.cluster ) ),
+			    "overlap", attributes.getAsString( Key.overlap ),
 			    "isDaily", BooleanCaster.cast( attributes.getOrDefault( Key.isDaily, false ) ),
 			    "paused", false
 			);

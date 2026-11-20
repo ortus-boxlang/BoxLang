@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
+import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -134,6 +135,83 @@ class FileSystemStoreTest extends BaseStoreTest {
 
 		// Allow a small amount of JVM noise, but reject a linear leak (which would be ~500+)
 		assertThat( after - before ).isAtMost( 20 );
+	}
+
+	@Test
+	@DisplayName( "FileSystemStore: a corrupt entry file is a miss, not an error, and the next write heals it" )
+	void testCorruptEntryIsAMiss() throws Exception {
+		Key					key		= Key.of( "corrupt-entry" );
+		java.nio.file.Path	path	= ( ( FileSystemStore ) store ).cacheKeyToPath( key );
+
+		store.set( key, newTestEntry( "corrupt-entry" ) );
+		assertThat( store.getQuiet( key ) ).isNotNull();
+
+		// Truncate it the way a crash or a non-atomic writer would
+		java.nio.file.Files.write( path, new byte[] { 1, 2, 3, 4, 5 } );
+
+		// A reader must get a miss instead of an exception: the cache directory is shared between
+		// processes, so a corrupt file is not something the caller did.
+		assertThat( store.getQuiet( key ) ).isNull();
+		assertThat( store.get( key ) ).isNull();
+
+		// And a write of that key puts it back
+		store.set( key, newTestEntry( "corrupt-entry" ) );
+		assertThat( store.getQuiet( key ) ).isNotNull();
+		assertThat( store.get( key ).value() ).isNotNull();
+	}
+
+	@Test
+	@DisplayName( "FileSystemStore: an empty entry file is a miss, not an error" )
+	void testEmptyEntryFileIsAMiss() throws Exception {
+		Key					key		= Key.of( "empty-entry" );
+		java.nio.file.Path	path	= ( ( FileSystemStore ) store ).cacheKeyToPath( key );
+
+		store.set( key, newTestEntry( "empty-entry" ) );
+		java.nio.file.Files.write( path, new byte[ 0 ] );
+
+		assertThat( store.getQuiet( key ) ).isNull();
+	}
+
+	@Test
+	@DisplayName( "FileSystemStore: writing an entry never leaves a partially written file behind" )
+	void testWritesAreAtomic() throws Exception {
+		Key				key		= Key.of( "atomic-write" );
+		FileSystemStore	fsStore	= ( FileSystemStore ) store;
+
+		store.set( key, newTestEntry( "atomic-write" ) );
+
+		List<String> names = entryNames( fsStore.getDirectory() );
+		assertThat( names ).contains( "atomic-write.cache" );
+		// No temp file survives a completed write
+		assertThat( names.stream().noneMatch( name -> name.endsWith( ".tmp" ) ) ).isTrue();
+	}
+
+	private List<String> entryNames( java.nio.file.Path dir ) throws java.io.IOException {
+		try ( var stream = java.nio.file.Files.list( dir ) ) {
+			return stream.map( entry -> entry.getFileName().toString() ).toList();
+		}
+	}
+
+	@Test
+	@DisplayName( "FileSystemStore: an orphaned temp file is cleaned up on init, a recent one is left alone" )
+	void testOrphanedTempFilesArePurged() throws Exception {
+		java.nio.file.Path	dir		= java.nio.file.Files.createTempDirectory( "fsstore-temp-purge" );
+		java.nio.file.Path	oldTemp	= java.nio.file.Files.writeString( dir.resolve( "stale.cache123.tmp" ), "junk" );
+		java.nio.file.Path	newTemp	= java.nio.file.Files.writeString( dir.resolve( "fresh.cache456.tmp" ), "junk" );
+
+		java.nio.file.Files.setLastModifiedTime( oldTemp, java.nio.file.attribute.FileTime.fromMillis( System.currentTimeMillis() - 3_600_000 ) );
+
+		try {
+			FileSystemStore						other	= new FileSystemStore();
+			ortus.boxlang.runtime.types.IStruct	config	= ortus.boxlang.runtime.types.Struct.of( Key.directory, dir.toString() );
+			other.init( mockProvider, config );
+
+			assertThat( java.nio.file.Files.exists( oldTemp ) ).isFalse();
+			// Another process may be writing right now, so a recent temp file is not touched
+			assertThat( java.nio.file.Files.exists( newTemp ) ).isTrue();
+		} finally {
+			FileSystemUtil.deleteDirectory( dir.toString(), true );
+		}
 	}
 
 }

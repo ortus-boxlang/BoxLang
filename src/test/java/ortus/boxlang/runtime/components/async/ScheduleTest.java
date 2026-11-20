@@ -20,10 +20,13 @@ package ortus.boxlang.runtime.components.async;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -43,6 +46,7 @@ import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.async.tasks.ScheduledTask;
 import ortus.boxlang.runtime.async.tasks.TaskRecord;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -106,6 +110,77 @@ public class ScheduleTest {
 	// --------------------------------------------------------------------------
 	// Update action tests
 	// --------------------------------------------------------------------------
+
+	@DisplayName( "a task that runs a local template leaves the thread's context stack as it found it" )
+	@Test
+	public void testLocalTemplateTaskDoesNotLeakItsContext() throws Exception {
+		// The "/" mapping is the working directory, which is how a real task names its template
+		Path template = Paths.get( "build", "bx-schedule-task-" + UUID.randomUUID() + ".bxm" );
+		Files.writeString( template, "<bx:script>x = 1;</bx:script>" );
+
+		Runnable	task		= Schedule.buildTaskCallable( context, Struct.of( Key.path, template.toString() ) );
+
+		// What the calling thread had installed before the run - usually nothing, and the run must leave exactly
+		// that behind. The context it installs is popped, not "restored" by pushing again, which would leave the
+		// task's context on the stack for the next thing to run on this thread.
+		IBoxContext	previous	= RequestBoxContext.getCurrent();
+
+		try {
+			task.run();
+			// Running twice proves nothing was left behind by the first run
+			task.run();
+
+			assertThat( RequestBoxContext.getCurrent() ).isEqualTo( previous );
+		} finally {
+			Files.deleteIfExists( template );
+		}
+	}
+
+	@DisplayName( "a local template task runs in the application that owns the template" )
+	@Test
+	public void testLocalTemplateTaskLoadsItsApplication() throws Exception {
+		// Relative to the working directory, which is what the "/" mapping is, so the template can name the file
+		String	relative	= "build/bx-schedule-app-" + UUID.randomUUID();
+		Path	appDir		= Paths.get( relative );
+		Path	ran			= appDir.resolve( "ran.txt" );
+		Files.createDirectories( appDir );
+		// The app the task template belongs to, so it can announce itself through application.name
+		Files.writeString( appDir.resolve( "Application.bx" ), """
+		                                                       	class {
+		                                                       		this.name = "scheduleApp";
+		                                                       	}
+		                                                       """ );
+		Files.writeString(
+		    appDir.resolve( "task.bxm" ),
+		    "<bx:script>fileWrite( \"ran.txt\", [ getApplicationMetadata().name ?: \"nometa\", application.name ?: \"none\" ].toList( \"|\" ) );</bx:script>"
+		);
+
+		try {
+			Schedule.buildTaskCallable( context, Struct.of( Key.path, relative + "/task.bxm" ) ).run();
+
+			// A task template under Application.bx must run inside that application. Building the context with a
+			// null template loads the default application instead, and includeTemplate() does not discover the
+			// real one afterwards - so the task would silently run without the app's settings, mappings and
+			// datasources.
+			assertThat( Files.exists( ran ) ).isTrue();
+			assertThat( Files.readString( ran ) ).startsWith( "scheduleApp|" );
+		} finally {
+			deleteTree( appDir );
+		}
+	}
+
+	/** Remove a directory and everything under it. */
+	private static void deleteTree( Path root ) throws IOException {
+		try ( var paths = Files.walk( root ) ) {
+			paths.sorted( java.util.Comparator.reverseOrder() ).forEach( path -> {
+				try {
+					Files.deleteIfExists( path );
+				} catch ( IOException e ) {
+					// Best effort: this is test cleanup
+				}
+			} );
+		}
+	}
 
 	@DisplayName( "It can create a task with a numeric interval" )
 	@Test

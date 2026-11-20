@@ -1,0 +1,76 @@
+name: Cluster Soak
+
+# The end-to-end soak for clustered scheduled tasks: several real BoxLang runtimes, their own
+# boxlang.json and tasks.json, real scheduled tasks, and continuous churn (scale up, retire,
+# replace, restart) for the length of the run. It asserts that every scheduled run happened
+# exactly once, that every one of them finished, and that no node was left without work.
+#
+# Reusable on purpose, so each caller decides when it runs rather than every caller paying for it:
+# callers gate it on their formatting job so it starts at the same time as the unit suites.
+#
+#   soak:
+#     uses: ./.github/workflows/soak.yml
+#     needs: [format]        # starts once formatting is done, in parallel with the tests
+#     secrets: inherit
+
+on:
+  workflow_call:
+    inputs:
+      minutes:
+        required: false
+        type: number
+        default: 4
+        description: 'How long the soak churns for. Four minutes is the shortest run that reliably spreads work across every node.'
+
+env:
+  MODULE_ID: ${{ github.event.repository.name }}
+
+jobs:
+  soak:
+    name: "Cluster Soak (${{ inputs.minutes }} min)"
+    if: "!contains( github.event.head_commit.message, 'skip tests' )"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      BOXLANG_COMPILER: asm
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      # The task exits non-zero when an assertion fails - a duplicate run, a run that was claimed
+      # but never finished, or a node that never won any work - which fails this job, and so fails
+      # the build for any caller that lists it in `needs`.
+      - name: Run Cluster Soak
+        run: ./gradlew clusterSoak --args="--minutes ${{ inputs.minutes }}" --stacktrace --console=plain
+
+      # Uploaded whether the soak passed or failed, because on failure the timeline *is* the
+      # evidence: it names the duplicate or the idle node in its banner and shows which node was
+      # online when. `if-no-files-found: warn` rather than error so a soak that died before it
+      # could write a report reports that one failure, instead of two.
+      - name: Upload Soak Timeline
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cluster-soak-timeline
+          path: build/cluster-soak/timeline.html
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Inform Slack
+        if: ${{ failure() && github.ref == 'refs/heads/development' }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_CHANNEL: boxlang
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_ICON_EMOJI: ":bell:"
+          SLACK_MESSAGE: "${{ github.repository }} Cluster Soak FAILED!  A clustered task ran twice, or a node was left without work. The timeline artifact names which."
+          SLACK_TITLE: "${{ github.repository }} Build Failure"
+          SLACK_USERNAME: CI
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          MSG_MINIMAL: true

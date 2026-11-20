@@ -296,6 +296,37 @@ public class BoxExecutorTest {
 	}
 
 	@Test
+	@DisplayName( "A zero graceful timeout still honours the post-interrupt wait" )
+	void testZeroGraceStillHonoursInterruptGrace() throws Exception {
+		// A task that swallows the interrupt: only the post-interrupt wait can bound it
+		BoxExecutor							executor	= new BoxExecutor( Executors.newSingleThreadExecutor(), "test-zero-grace", ExecutorType.SINGLE, 1 );
+		java.util.concurrent.CountDownLatch	started		= new java.util.concurrent.CountDownLatch( 1 );
+
+		executor.submit( () -> {
+			started.countDown();
+			long end = System.currentTimeMillis() + 5_000;
+			while ( System.currentTimeMillis() < end ) {
+				try {
+					Thread.sleep( 10 );
+				} catch ( InterruptedException e ) {
+					// deliberately swallowed, so shutdownNow() alone cannot stop this
+				}
+			}
+		} );
+		assertThat( started.await( 5, TimeUnit.SECONDS ) ).isTrue();
+
+		long	before	= System.currentTimeMillis();
+		long	after	= 0;
+
+		// Zero graceful means "interrupt now", but the interrupt grace is a separate setting and still applies
+		executor.shutdownAndAwaitTermination( 0L, TimeUnit.SECONDS, 400L );
+		after = System.currentTimeMillis();
+
+		assertThat( after - before ).isAtLeast( 350L );
+		assertThat( after - before ).isLessThan( 4_000L );
+	}
+
+	@Test
 	@DisplayName( "Test shutdownAndAwaitTermination" )
 	void testShutdownAndAwaitTermination() {
 		// This should complete without throwing exceptions

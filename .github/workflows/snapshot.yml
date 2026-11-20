@@ -71,11 +71,25 @@ jobs:
       issues: read
 
   #############################################
+  # Cluster Soak
+  #
+  # Waits for formatting so it never churns against code that is about to be rewritten, then runs
+  # alongside the unit suites rather than after them - the soak is four minutes of real runtimes,
+  # and putting it behind the tests would simply add that to the run.
+  #############################################
+  soak:
+    uses: ./.github/workflows/soak.yml
+    needs: format
+    secrets: inherit
+    permissions:
+      contents: read
+
+  #############################################
   # Build Snapshot Release
   #############################################
   build:
     uses: ./.github/workflows/release.yml
-    needs: [format, tests-asm]
+    needs: [format, tests-asm, soak]
     secrets: inherit
     permissions:
       checks: write
