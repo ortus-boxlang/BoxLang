@@ -17,7 +17,10 @@ package ortus.boxlang.compiler;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -1020,6 +1023,50 @@ public class CFTranspilerTest {
 		    """, context, BoxSourceType.CFSCRIPT );
 
 		assertThat( variables.getAsStruct( Key.of( "results" ) ) ).isNotEmpty();
+	}
+
+	@DisplayName( "It transpiles objectSave() and objectLoad() to objectSerialize() and objectDeserialize()" )
+	@Test
+	public void testObjectSaveLoadTranspilesToObjectSerializeDeserialize() {
+		instance.executeSource(
+		    """
+		    	data = { name: "Brad", age: 42, nested: [ 1, 2, 3 ] }
+		    	result = objectSave( data )
+		    	restored = objectLoad( result )
+		    """, context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.get( result ) ).isInstanceOf( byte[].class );
+		assertThat( ( ( byte[] ) variables.get( result ) ).length ).isGreaterThan( 0 );
+		assertThat( variables.getAsStruct( Key.of( "restored" ) ).getAsString( Key.of( "name" ) ) ).isEqualTo( "Brad" );
+		assertThat( variables.getAsStruct( Key.of( "restored" ) ).getAsInteger( Key.of( "age" ) ) ).isEqualTo( 42 );
+		assertThat( variables.getAsStruct( Key.of( "restored" ) ).getAsArray( Key.of( "nested" ) ) ).containsExactly( 1, 2, 3 ).inOrder();
+	}
+
+	@DisplayName( "It transpiles objectSave( object, file ) and objectLoad( file )" )
+	@Test
+	public void testObjectSaveLoadWithFileTranspilesToObjectSerializeDeserialize() throws IOException {
+		Path targetFile = Files.createTempFile( "bx-objectSave-", ".bin" );
+		try {
+			variables.put( Key.of( "targetFile" ), targetFile.toString() );
+			instance.executeSource(
+			    """
+			    	data = { name: "Luis", nested: { book: "Cloud Atlas" } }
+			    	result = objectSave( object=data, file=targetFile )
+			    	restored = objectLoad( targetFile )
+			    """, context, BoxSourceType.CFSCRIPT );
+
+			assertThat( Files.exists( targetFile ) ).isTrue();
+			assertThat( Files.size( targetFile ) ).isGreaterThan( 0L );
+			assertThat( variables.get( result ) ).isInstanceOf( byte[].class );
+			assertThat( variables.getAsStruct( Key.of( "restored" ) ).getAsString( Key.of( "name" ) ) ).isEqualTo( "Luis" );
+			assertThat(
+			    variables.getAsStruct( Key.of( "restored" ) )
+			        .getAsStruct( Key.of( "nested" ) )
+			        .getAsString( Key.of( "book" ) )
+			).isEqualTo( "Cloud Atlas" );
+		} finally {
+			Files.deleteIfExists( targetFile );
+		}
 	}
 
 }
