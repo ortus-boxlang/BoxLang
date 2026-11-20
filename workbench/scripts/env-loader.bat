@@ -7,29 +7,29 @@
 
 @rem Default environment file
 set "ENV_FILE=.env"
-set "FILTERED_ARGS="
 
-@rem Parse command line arguments to find --envfile parameter
-for %%a in (%*) do (
-    set "arg=%%a"
-    setlocal enabledelayedexpansion
-    if "!arg:~0,10!"=="--envfile=" (
-        endlocal
-        set "ENV_FILE=%%a"
-        set "ENV_FILE=!ENV_FILE:~10!"
-    ) else (
-        endlocal
-        if defined FILTERED_ARGS (
-            set "FILTERED_ARGS=!FILTERED_ARGS! %%a"
-        ) else (
-            set "FILTERED_ARGS=%%a"
-        )
-    )
+@rem Read --envfile=<path> out of the raw argument string.
+@rem The arguments are never rebuilt and never forwarded from here: cmd splits every argument
+@rem containing an equal sign when it assigns positional parameters or iterates a "for" set, so
+@rem the value is read from %* one space delimited token at a time instead. BoxLang discards the
+@rem flag itself, which means the arguments reach it exactly as they were typed.
+set "_BL_EF_REMAINING=%*"
+
+:bl_envfile_scan
+if not defined _BL_EF_REMAINING goto :bl_envfile_scan_done
+for /f "tokens=1,* delims= " %%A in ("!_BL_EF_REMAINING!") do (
+    set "_BL_EF_TOKEN=%%A"
+    set "_BL_EF_REMAINING=%%B"
 )
+if /i "!_BL_EF_TOKEN:~0,10!"=="--envfile=" set "ENV_FILE=!_BL_EF_TOKEN:~10!"
+goto :bl_envfile_scan
+:bl_envfile_scan_done
+set "_BL_EF_TOKEN="
+set "_BL_EF_REMAINING="
 
-@rem Load the user's home secrets file first, then the project-level env file
-call :load_env_file "%USERPROFILE%\.box.env"
-call :load_env_file "%ENV_FILE%"
+@rem The env files are NOT loaded here. The launcher calls :load_env_file itself, after it clears
+@rem its own local scope, so the values land in the environment the JVM inherits. Loading them at
+@rem this point would put them in a scope the launcher discards before Java starts.
 
 @rem goto :eof This was exiting out of the script completely without ctually starting java
 
@@ -39,34 +39,13 @@ goto :postenv
 @rem Subroutine: load_env_file <filepath>
 @rem Reads key=value pairs from the given file and exports them as environment variables
 :load_env_file
-echo File Processed %~1
 if not exist "%~1" goto :eof
 
 @rem Uncomment for debugging: echo Loading environment variables from %~1
-@rem setlocal enabledelayedexpansion
-for /f "usebackq tokens=* delims==" %%a in ("%~1") do (
-  set "line=%%a"
-
-  @rem Skip empty lines and comments starting with #
-  if not "!line!"=="" if not "!line:~0,1!"=="#" (
-
-    :: Clean and split the key and value
-    for /f "tokens=1* delims==" %%B in ("!line!") do (
-      set "key=%%B"
-      set "val=%%C"
-
-      :: Remove any surrounding quotes from the value if they exist
-      set "val=!val:"=!"
-
-      for /f "tokens=1,2 delims==" %%D in ("!key!=!val!") do (
-          endlocal
-          set "%%D=%%E"
-          setlocal EnableExtensions EnableDelayedExpansion
-      )
-    )
-  )
-  
-)
+@rem eol=# skips comment lines, tokens=1,* keeps any further equal signs in the value, and %%~B
+@rem drops surrounding quotes. No setlocal/endlocal dance is needed, which is what makes the
+@rem values survive into the JVM environment.
+for /f "usebackq eol=# tokens=1,* delims==" %%A in ("%~1") do if not "%%A"=="" if not "%%~B"=="" set "%%A=%%~B"
 
 @rem break out of the subroutine otherwise anything after this in the main script will run as if it is part of it.
 goto :eof

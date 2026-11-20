@@ -65,11 +65,12 @@ public class StructInsert extends BIF {
 		Key		key			= Key.of( arguments.get( Key.key ) );
 		Boolean	overwrite	= arguments.getAsBoolean( Key.overwrite );
 
-		if ( !overwrite && struct.containsKey( key ) ) {
+		if ( overwrite ) {
+			struct.put( key, arguments.get( Key.value ) );
+		} else if ( !struct.tryPutIfAbsent( key, arguments.get( Key.value ) ) ) {
+			// Atomic check and insert, so concurrent callers cannot both pass the existence check
 			throw new BoxRuntimeException( String.format( "The key [%s] already exists in the struct", key.getName() ) );
 		}
-
-		struct.put( key, arguments.get( Key.value ) );
 
 		return struct;
 	}
