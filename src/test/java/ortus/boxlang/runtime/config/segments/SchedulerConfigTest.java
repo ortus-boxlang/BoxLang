@@ -69,6 +69,26 @@ public class SchedulerConfigTest {
 	}
 
 	@Test
+	@DisplayName( "Tasks are clustered by default, and the deployment can turn that off on a clustered node" )
+	void testClusterTasksDefault() {
+		SchedulerConfig config = new SchedulerConfig();
+
+		// Default preserves the existing behaviour: a task with no opinion clusters on a clustered node
+		assertThat( config.clusterTasks ).isTrue();
+
+		config.process( Struct.of( Key.clusterTasks, false ) );
+		assertThat( config.clusterTasks ).isFalse();
+
+		// Explicit true still wins, and a partial config keeps what it had
+		config.process( Struct.of( Key.clusterTasks, true ) );
+		assertThat( config.clusterTasks ).isTrue();
+		config.process( Struct.of() );
+		assertThat( config.clusterTasks ).isTrue();
+
+		assertThat( config.asStruct().get( Key.clusterTasks ) ).isEqualTo( true );
+	}
+
+	@Test
 	@DisplayName( "Missing keys keep the defaults" )
 	void testProcessKeepsDefaults() {
 		SchedulerConfig config = new SchedulerConfig();

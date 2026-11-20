@@ -650,22 +650,20 @@ class ClusterServiceTest {
 			assertThat( legacyDefault.cluster.cacheName ).isEqualTo( "bxcluster" );
 		}
 
-		@DisplayName( "the legacy scheduler.cacheName bridge respects an explicit scheduler.cluster block" )
+		@DisplayName( "a nested scheduler.cluster block is not a cluster configuration: only the top-level block is read" )
 		@Test
-		void testBridgeRespectsLegacySchedulerClusterBlock() {
-			// scheduler.cluster is the older, nested home of the cluster block and process() still falls back to
-			// it. The bridge has to resolve the same block, or the even older scheduler.cacheName overwrites the
-			// explicit values the operator set there.
+		void testNestedSchedulerClusterBlockIsIgnored() {
+			// There has never been a released config shape with the cluster block nested under scheduler, so a
+			// stray nested block is inert data rather than a cluster configuration.
 			Configuration config = new Configuration();
 			config.process( Struct.of(
 			    Key.scheduler, Struct.of(
-			        Key.cacheName, "legacyCoordination",
-			        Key.cluster, Struct.of( Key.enabled, false, Key.cacheName, "explicitNestedCache" )
+			        Key.cluster, Struct.of( Key.enabled, true, Key.cacheName, "nestedCache" )
 			    )
 			) );
 
 			assertThat( config.cluster.enabled ).isFalse();
-			assertThat( config.cluster.cacheName ).isEqualTo( "explicitNestedCache" );
+			assertThat( config.cluster.cacheName ).isEqualTo( "bxcluster" );
 		}
 
 		@DisplayName( "processing a partial cluster config keeps the nodeId it already had" )

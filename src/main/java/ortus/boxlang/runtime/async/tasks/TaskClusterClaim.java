@@ -338,8 +338,8 @@ public class TaskClusterClaim {
 	/**
 	 * Resolve whether this task participates in cluster coordination.
 	 * <p>
-	 * {@code task.cluster} is a tri-state: absent inherits {@code cluster.enabled} from the deployment
-	 * configuration.
+	 * {@code task.cluster} is a tri-state: absent inherits the deployment's scheduler default,
+	 * {@code scheduler.clusterTasks}, and that default only applies on a node that is itself clustered.
 	 *
 	 * @param task The task
 	 *
@@ -359,11 +359,41 @@ public class TaskClusterClaim {
 	 * @return true when this task should coordinate through the cluster
 	 */
 	public static boolean isClustered( ScheduledTask task, ClusterService cluster ) {
+		return isClustered( task, cluster, schedulerClusterTasksByDefault() );
+	}
+
+	/**
+	 * Resolve participation against explicit inputs, so a caller can supply the deployment default without
+	 * reading the runtime configuration.
+	 *
+	 * @param task                  The task
+	 * @param cluster               The cluster service, may be null
+	 * @param clusterTasksByDefault Whether a task stating no preference clusters on a clustered node
+	 *
+	 * @return true when this task should coordinate through the cluster
+	 */
+	public static boolean isClustered( ScheduledTask task, ClusterService cluster, boolean clusterTasksByDefault ) {
 		Boolean override = task.getCluster();
 		if ( override != null ) {
 			return override;
 		}
-		return cluster != null && cluster.getConfig() != null && cluster.getConfig().enabled;
+		// No preference follows the scheduler's default, but only on a node that is itself clustered: with no
+		// cluster service there is nothing to coordinate through, so the task runs locally exactly as before.
+		if ( cluster == null || cluster.getConfig() == null || !cluster.getConfig().enabled ) {
+			return false;
+		}
+		return clusterTasksByDefault;
+	}
+
+	/**
+	 * Whether scheduled tasks cluster by default on this deployment ({@code scheduler.clusterTasks}). This is a
+	 * scheduler policy, deliberately separate from {@code cluster.enabled}, which only says whether this node
+	 * belongs to a cluster.
+	 *
+	 * @return true when a task stating no preference should cluster
+	 */
+	public static boolean schedulerClusterTasksByDefault() {
+		return BoxRuntime.getInstance().getConfiguration().scheduler.clusterTasks;
 	}
 
 	/**

@@ -53,6 +53,13 @@ public class SchedulerConfig implements IConfigSegment {
 	public String						taskOverlapPolicy				= "skip";
 
 	/**
+	 * Whether scheduled tasks take part in cluster coordination by default. A task that states no preference
+	 * inherits this; a task that sets {@code cluster} explicitly always wins. Set to false to keep every task
+	 * local on a clustered node unless it opts in.
+	 */
+	public boolean						clusterTasks					= true;
+
+	/**
 	 * The accepted values of {@link #clusterMode}.
 	 */
 	private static final Set<String>	CLUSTER_MODES					= Set.of( "eager", "balanced" );
@@ -132,6 +139,7 @@ public class SchedulerConfig implements IConfigSegment {
 		this.cacheName			= PropertyHelper.processString( config, Key.cacheName, this.cacheName );
 		this.clusterMode		= PropertyHelper.processString( config, Key.clusterMode, this.clusterMode ).toLowerCase();
 		this.taskOverlapPolicy	= PropertyHelper.processString( config, Key.taskOverlapPolicy, this.taskOverlapPolicy ).toLowerCase();
+		this.clusterTasks		= BooleanCaster.cast( config.getOrDefault( Key.clusterTasks, this.clusterTasks ) );
 		// A typo must not pass silently in either of these. The overlap policy is compared to "skip" when a claim
 		// is arbitrated, so an unrecognised value silently becomes "overlap everything" - the opposite of the
 		// protection the task asked for. The cluster mode picks which pushback timing the claim protocol uses.
@@ -169,6 +177,7 @@ public class SchedulerConfig implements IConfigSegment {
 		    Key.executor, this.executor,
 		    Key.cacheName, this.cacheName,
 		    Key.clusterMode, this.clusterMode,
+		    Key.clusterTasks, this.clusterTasks,
 		    Key.taskOverlapPolicy, this.taskOverlapPolicy,
 		    Key.shutdownGraceSeconds, this.shutdownGraceSeconds,
 		    Key.shutdownInterruptGraceSeconds, this.shutdownInterruptGraceSeconds,

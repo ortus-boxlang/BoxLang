@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.config.segments.ClusterConfig;
+import ortus.boxlang.runtime.config.segments.SchedulerConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ClusterService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -302,6 +303,43 @@ class TaskClusterClaimTest {
 		assertThat( cache.get( TaskClusterClaim.buildTaskKey( one, unclustered ) ).isPresent() ).isFalse();
 	}
 
+	@DisplayName( "a task stating no preference follows scheduler.clusterTasks on a clustered node" )
+	@Test
+	void testSchedulerClusterTasksDefault() {
+		ClusterService	cluster	= node( "cluster-tasks-" + UUID.randomUUID(), "nodeOne" );
+		ScheduledTask	quiet	= new ScheduledTask( "quiet-" + UUID.randomUUID() ).every( 10, TimeUnit.SECONDS );
+
+		// The default (true) is the pre-existing behaviour: a quiet task clusters on a clustered node
+		assertThat( TaskClusterClaim.isClustered( quiet, cluster, true ) ).isTrue();
+
+		// With the deployment default off, a clustered node still runs this task locally - which is what lets an
+		// operator cluster the server without clustering any task.
+		assertThat( TaskClusterClaim.isClustered( quiet, cluster, false ) ).isFalse();
+
+		// A task that states a preference always wins over the deployment default
+		assertThat( TaskClusterClaim.isClustered( quiet.setCluster( true ), cluster, false ) ).isTrue();
+		assertThat( TaskClusterClaim.isClustered( quiet.setCluster( false ), cluster, true ) ).isFalse();
+	}
+
+	@DisplayName( "the runtime resolves the default from scheduler.clusterTasks" )
+	@Test
+	void testSchedulerClusterTasksReadFromConfiguration() {
+		ClusterService	cluster			= node( "cluster-tasks-cfg-" + UUID.randomUUID(), "nodeOne" );
+		ScheduledTask	quiet			= new ScheduledTask( "quiet-cfg-" + UUID.randomUUID() ).every( 10, TimeUnit.SECONDS );
+		SchedulerConfig	schedulerConfig	= runtime.getConfiguration().scheduler;
+		boolean			original		= schedulerConfig.clusterTasks;
+
+		try {
+			schedulerConfig.clusterTasks = false;
+			assertThat( TaskClusterClaim.isClustered( quiet, cluster ) ).isFalse();
+
+			schedulerConfig.clusterTasks = true;
+			assertThat( TaskClusterClaim.isClustered( quiet, cluster ) ).isTrue();
+		} finally {
+			schedulerConfig.clusterTasks = original;
+		}
+	}
+
 	@DisplayName( "a task that inherits and a disabled deployment does not cluster" )
 	@Test
 	void testInheritanceFromDisabledDeployment() {
@@ -313,6 +351,9 @@ class TaskClusterClaimTest {
 
 		ScheduledTask	inheriting	= new ScheduledTask( "inherit-" + UUID.randomUUID() ).every( 10, TimeUnit.SECONDS );
 		assertThat( TaskClusterClaim.isClustered( inheriting, cluster ) ).isFalse();
+
+		// An unclustered node is never clustered, whatever the scheduler default says
+		assertThat( TaskClusterClaim.isClustered( inheriting, cluster, true ) ).isFalse();
 
 		inheriting.setCluster( true );
 		assertThat( TaskClusterClaim.isClustered( inheriting, cluster ) ).isTrue();

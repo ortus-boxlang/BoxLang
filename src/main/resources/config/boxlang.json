@@ -399,6 +399,11 @@
 		//   skip - the next occurrence is dropped, matching single-node behaviour
 		//   run  - occurrences may run concurrently
 		"taskOverlapPolicy": "skip",
+		// Whether scheduled tasks are clustered by default. A task that sets its own "cluster" flag always
+		// wins; this is only the value a task with no opinion inherits. Set to false to keep every task local
+		// on a clustered node unless it opts in. This is separate from cluster.enabled, which only says
+		// whether this node belongs to a cluster.
+		"clusterTasks": true,
 		// Shutdown behaviour for scheduled tasks.
 		// shutdownGraceSeconds: how long a shutdown waits for in-flight runs to finish before
 		// interrupting them. 0 skips the graceful wait and interrupts immediately.

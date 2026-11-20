@@ -1431,6 +1431,7 @@ public class Key implements Comparable<Key>, Serializable {
 	 * previous occurrence is still running.
 	 */
 	public static final Key		clusterMode							= Key.of( "clusterMode" );
+	public static final Key		clusterTasks						= Key.of( "clusterTasks" );
 	public static final Key		taskOverlapPolicy					= Key.of( "taskOverlapPolicy" );
 
 	/**

@@ -190,10 +190,11 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Whether this task takes part in cluster coordination.
 	 * <p>
-	 * This is a tri-state on purpose: {@code null} inherits {@code cluster.enabled} from the deployment
-	 * configuration, {@code true} opts the task in, and {@code false} opts a single task out of an
-	 * otherwise clustered deployment. A task left with this set to {@code false} while other cluster
-	 * settings remain in place is a normal configuration - those settings are simply dormant.
+	 * This is a tri-state on purpose: {@code null} inherits the scheduler's own default,
+	 * {@code scheduler.clusterTasks} (itself only meaningful on a node that is clustered), {@code true} opts
+	 * the task in, and {@code false} opts a single task out of an otherwise clustered deployment. A task left
+	 * with this set to {@code false} while other cluster settings remain in place is a normal configuration -
+	 * those settings are simply dormant.
 	 */
 	private Boolean									cluster								= null;
 
@@ -1379,7 +1380,7 @@ public class ScheduledTask implements Runnable {
 	 * side effects cannot be undone - so a clustered task should be safe to run more than once.
 	 * <p>
 	 * This is the public switch for clustered coordination. It sets the task's participation to
-	 * {@code true}; the deployment-wide {@code cluster.mode} decides how nodes coordinate (eager or
+	 * {@code true}; the deployment-wide {@code scheduler.clusterMode} decides how nodes coordinate (eager or
 	 * balanced). See {@link TaskClusterClaim} for the protocol.
 	 *
 	 * @return The ScheduledTask instance

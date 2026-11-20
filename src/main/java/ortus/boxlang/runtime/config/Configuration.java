@@ -482,7 +482,7 @@ public class Configuration implements IConfigSegment {
 		}
 
 		IStruct	schedulerStruct	= StructCaster.cast( config.get( Key.scheduler ) );
-		IStruct	clusterStruct	= effectiveClusterStruct( config );
+		IStruct	clusterStruct	= config.containsKey( Key.cluster ) ? StructCaster.cast( config.get( Key.cluster ) ) : null;
 
 		if ( !schedulerStruct.containsKey( Key.cacheName ) ) {
 			return;
@@ -516,29 +516,6 @@ public class Configuration implements IConfigSegment {
 		        + "to [cluster.cacheName] and use [cluster.enabled].",
 		    legacyCacheName
 		);
-	}
-
-	/**
-	 * The cluster block the configuration actually uses: the top-level one when present, otherwise the legacy
-	 * {@code scheduler.cluster} block. The bridge must resolve it the same way {@code process()} does, or a
-	 * legacy {@code scheduler.cluster} holding explicit values would be overwritten by the even older
-	 * {@code scheduler.cacheName} key.
-	 *
-	 * @param config The raw configuration struct
-	 *
-	 * @return The effective cluster block, or null when neither is present
-	 */
-	private IStruct effectiveClusterStruct( IStruct config ) {
-		if ( config.containsKey( Key.cluster ) ) {
-			return StructCaster.cast( config.get( Key.cluster ) );
-		}
-		if ( config.containsKey( Key.scheduler ) ) {
-			IStruct schedulerStruct = StructCaster.cast( config.get( Key.scheduler ) );
-			if ( schedulerStruct.containsKey( Key.cluster ) ) {
-				return StructCaster.cast( schedulerStruct.get( Key.cluster ) );
-			}
-		}
-		return null;
 	}
 
 	public Configuration process( IStruct config ) {
@@ -954,14 +931,9 @@ public class Configuration implements IConfigSegment {
 			scheduler.process( StructCaster.cast( config.get( Key.scheduler ) ) );
 		}
 
-		// Process our cluster service configuration. The scheduler's own cluster settings were
-		// historically nested under "scheduler.cluster", so fall back to them when the top level
-		// block is absent.
+		// Process our cluster service configuration
 		if ( config.containsKey( Key.cluster ) ) {
 			cluster.process( StructCaster.cast( config.get( Key.cluster ) ) );
-		} else if ( config.containsKey( Key.scheduler )
-		    && StructCaster.cast( config.get( Key.scheduler ) ).containsKey( Key.cluster ) ) {
-			cluster.process( StructCaster.cast( StructCaster.cast( config.get( Key.scheduler ) ).get( Key.cluster ) ) );
 		}
 
 		// Backwards compatibility bridge, to be removed in a future release. Server fixation used to take its
