@@ -11,3 +11,23 @@ updates:
     directory: "/" # Adjust if build.gradle is in a subfolder
     schedule:
       interval: "monthly"
+    ignore:
+      # These are transitive-only dependencies. Dependabot's Gradle support only
+      # updates dependencies declared directly in build.gradle, so security alerts
+      # for them are reported as `dependency_not_found` and fail the whole update
+      # job. They are pulled in transitively and must be patched via the direct
+      # dependency that brings them in (see build.gradle):
+      #   jackson-core/jackson-databind <- com.fasterxml.jackson.jr:jackson-jr-*
+      #   jetty-*, httpclient5, httpcore5, httpcore5-h2, handlebars <- org.wiremock:wiremock
+      # guava is no longer on the classpath at all (it only came from
+      # javaparser-symbol-solver-core, which was removed in BL-2775).
+      - dependency-name: "com.fasterxml.jackson.core:jackson-core"
+      - dependency-name: "com.fasterxml.jackson.core:jackson-databind"
+      - dependency-name: "com.github.jknack:handlebars"
+      - dependency-name: "com.google.guava:guava"
+      - dependency-name: "org.apache.httpcomponents.client5:httpclient5"
+      - dependency-name: "org.apache.httpcomponents.core5:httpcore5"
+      - dependency-name: "org.apache.httpcomponents.core5:httpcore5-h2"
+      - dependency-name: "org.eclipse.jetty:jetty-http"
+      - dependency-name: "org.eclipse.jetty:jetty-security"
+      - dependency-name: "org.eclipse.jetty:jetty-server"
