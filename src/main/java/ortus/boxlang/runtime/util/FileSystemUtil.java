@@ -32,8 +32,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.CopyOption;
 import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
@@ -1670,6 +1670,7 @@ public final class FileSystemUtil {
 	 *
 	 * @return The expanded path represented in a ResolvedFilePath record
 	 */
+	@SuppressWarnings( "unused" )
 	public static ResolvedFilePath expandPath( IStruct mappings, String path, ResolvedFilePath basePath, boolean externalOnly, boolean forceRelative ) {
 		// This really isn't a valid path, but ColdBox does this by carelessly appending too many slashes to view paths
 		if ( path.startsWith( "//" ) ) {
@@ -1783,9 +1784,19 @@ public final class FileSystemUtil {
 		}
 
 		// We give up, just assume it uses the root mapping of /
-		String	rootMapping	= mappings.getAs( Mapping.class, Key.of( "/" ) ).path();
-		Path	result		= Path.of( rootMapping, path ).toAbsolutePath();
-		return ResolvedFilePath.of( "/", rootMapping, Path.of( finalPath ).normalize().toString(), result.normalize() );
+		Mapping rootMapping = mappings.getAs( Mapping.class, Key._slash );
+		// This SHOULD always exist, but I suppose it could be deleted technically.
+		if ( rootMapping == null ) {
+			throw new BoxRuntimeException( "No mapping found for /, cannot expand path." );
+		}
+		// Not sure there is really any valid value we can return here. If the / mapping is marked private, then we basically can't expand
+		// anything not serviced by a more specific mapping.
+		if ( externalOnly && !rootMapping.external() ) {
+			throw new BoxRuntimeException( "The mapping for / is not external, cannot expand path." );
+		}
+		String	rootMappingTarget	= rootMapping.path();
+		Path	result				= Path.of( rootMappingTarget, path ).toAbsolutePath();
+		return ResolvedFilePath.of( "/", rootMappingTarget, Path.of( finalPath ).normalize().toString(), result.normalize() );
 	}
 
 	/**
