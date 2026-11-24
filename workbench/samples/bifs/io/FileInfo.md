@@ -30,4 +30,23 @@ dump( var=FileInfo( file ), label="FileInfo" );
 
 ```
 
+### Check if a path is a symbolic link
+
+`fileInfo()` and `getFileInfo()` return `isLink` and `linkTarget`. `linkTarget` is an empty string when the path is not a link. The other keys describe what the link points to.
+
+```java
+base = getTempDirectory() & "linkDemo";
+directoryCreate( base & "/releases/v2" );
+fileWrite( base & "/releases/v2/app.txt", "app" );
+fileCreateSymlink( base & "/current", "releases/v2" );
+
+link = fileInfo( base & "/current" );
+writeOutput( link.isLink & " " & link.linkTarget & ", " );
+
+file = fileInfo( base & "/releases/v2/app.txt" );
+writeOutput( file.isLink & " [" & file.linkTarget & "]" );
+
+```
+
+Result: true releases/v2, false []
 

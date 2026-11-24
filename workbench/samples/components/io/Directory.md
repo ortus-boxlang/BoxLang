@@ -282,4 +282,20 @@ Directory List
 <bx:directory action="rename" directory="#expandPath( "./my_directory" )#" newdirectory="#expandPath( "./new_directory" )#">
 ```
 
+### List a Directory and Follow Symbolic Links (Tag Syntax)
+
+Symbolic links are not followed by default. Set `followLinks` to list, copy or recursively delete through them.
+
+```java
+<bx:directory action="list" directory="#expandPath( "./" )#" name="listing" recurse="true" followLinks="true">
+```
+
+
+### Delete a Directory Containing Symbolic Links (Tag Syntax)
+
+Links are removed as links and the folders they point to are left alone, unless `followLinks` is true.
+
+```java
+<bx:directory action="delete" directory="#expandPath( "./build" )#" recurse="true">
+```
 
