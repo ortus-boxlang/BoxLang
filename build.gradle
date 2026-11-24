@@ -492,7 +492,9 @@ if [ -n "$BL_JAR" ]; then
         rm -f "$BL_CLASSLIST" "$BL_JSA.tmp"
     fi
     if [ -f "$BL_JSA" ]; then
-        JAVA_OPTS="$JAVA_OPTS -XX:TieredStopAtLevel=1 -Xshare:auto \"-XX:SharedArchiveFile=$BL_JSA\""
+        # \\" is a Groovy escape that emits a literal \" into the generated script. Gradle's template splits
+        # JAVA_OPTS with xargs, which honors the quotes, so a path containing spaces stays one argument.
+        JAVA_OPTS="$JAVA_OPTS -XX:TieredStopAtLevel=1 -Xshare:auto \\"-XX:SharedArchiveFile=$BL_JSA\\""
     fi
 fi
 ######################################
