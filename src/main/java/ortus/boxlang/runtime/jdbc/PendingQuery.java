@@ -427,8 +427,10 @@ public class PendingQuery {
 					} else if ( c == '/' && i < SQL.length() - 1 && SQL.charAt( i + 1 ) == '*' ) {
 						// If we've reached a /* then we're inside a multi-line comment
 						state = 3;
-					} else if ( c == '?' && isPositional ) {
-						// We've encountered a positional parameter
+					} else if ( c == '?' && isPositional
+					    && ! ( i < SQL.length() - 1 && ( SQL.charAt( i + 1 ) == '|' || SQL.charAt( i + 1 ) == '&' ) ) ) {
+						// We've encountered a positional parameter and not a PostgreSQL JSON operator shorthand
+						// (e.g. jsoncol ?| array['x'] or jsoncol ?& array['x'])
 						paramsEncountered++;
 						if ( paramsEncountered > positionalParameters.size() ) {
 							throw new DatabaseException( "Too few positional parameters [" + positionalParameters.size()
@@ -459,8 +461,10 @@ public class PendingQuery {
 						newSQL.append( c );
 						break;
 					} else if ( c == ':' && !isPositional && i < SQL.length() - 1
-					    && isValidIdentiferStartChar.test( SQL.charAt( i + 1 ) ) ) {
-						// We've encountered a named parameter
+					    && isValidIdentiferStartChar.test( SQL.charAt( i + 1 ) )
+					    && ( i == 0 || SQL.charAt( i - 1 ) != ':' ) ) {
+						// We've encountered a named parameter and not an instance of `::` which
+						// is the PostgreSQL casting shorthand (e.g. col::varchar)
 						state = 4;
 						// Do not append anything
 						break;
