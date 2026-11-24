@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF( description = "Create a symbolic link" )
@@ -58,6 +59,10 @@ public class FileCreateSymlink extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String linkPath = FileSystemUtil.expandPath( context, arguments.getAsString( Key.link ) ).absolutePath().toString();
+		// The link name is the file that is created, so it is held to the same rules as the destination of fileCopy and fileMove
+		if ( !FileSystemUtil.isFileOperationAllowed( context, linkPath ) ) {
+			throw new BoxRuntimeException( "The link path contains an extension disallowed by the runtime security settings." );
+		}
 		return FileSystemUtil.createSymlink( linkPath, arguments.getAsString( Key.target ), arguments.getAsBoolean( Key.overwrite ) );
 	}
 

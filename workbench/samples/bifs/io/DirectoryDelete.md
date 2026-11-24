@@ -41,7 +41,7 @@ Result: false true
 
 ### Delete a symbolic link given as the path
 
-Only the link is removed, with or without `recursive`.
+Only the link is removed, with or without `recursive` and even when `followLinks` is true.
 
 ```java
 fileCreateSymlink( build, shared );
@@ -54,7 +54,7 @@ Result: false true
 
 ### Follow symbolic links when deleting
 
-Pass `followLinks=true` to delete the contents of the folders the links point to as well. Use with care, the targets are emptied.
+Pass `followLinks=true` to delete the contents of the folders that links inside the directory point to as well. Use with care, the targets are emptied. A link that leads back into the folder being deleted, or to a folder above it, is removed as a link.
 
 ```java
 directoryCreate( build );

@@ -1235,14 +1235,15 @@ public final class FileSystemUtil {
 	 * @param directoryPath the path to delete. This can be root-relative or absolute.
 	 * @param recursive     whether to delete the directory recursively, including all contents
 	 * @param followLinks   whether to follow symbolic links when recursing. If false, links are removed as links and their targets are never touched.
-	 *                      A symbolic link given as the top-level path only has the link itself removed. If true, the contents of the folders the links
-	 *                      point to are deleted as well, except for a link that leads back into the tree being deleted or to a folder above it. That
-	 *                      kind of link is removed as a link, so cycles cannot loop or delete the folder the tree lives in.
+	 *                      A symbolic link given as the top-level path only has the link itself removed, whatever the value of followLinks. If true, the
+	 *                      contents of the folders that links inside the directory point to are deleted as well, except for a link that leads back into
+	 *                      the tree being deleted or to a folder above it. That kind of link is removed as a link, so cycles cannot loop or delete the
+	 *                      folder the tree lives in.
 	 *
 	 * @throws IOException if an I/O error occurs deleting the directory or if the path is invalid
 	 */
 	public static void deleteDirectory( String directoryPath, boolean recursive, boolean followLinks ) {
-		deleteDirectory( directoryPath, recursive, followLinks, new ArrayList<>() );
+		deleteDirectory( directoryPath, recursive, followLinks, true, new ArrayList<>() );
 	}
 
 	/**
@@ -1250,15 +1251,18 @@ public final class FileSystemUtil {
 	 *
 	 * @param directoryPath the path to delete
 	 * @param recursive     whether to delete the contents first
-	 * @param followLinks   whether to follow symbolic links
+	 * @param followLinks   whether to follow symbolic links found inside the directory
+	 * @param topLevel      true for the path the caller asked to delete, false for anything found while recursing. A symbolic link at the top level is
+	 *                      always removed as a link.
 	 * @param active        the real paths of the directories above this one that are still being emptied. Only used when following links.
 	 */
-	private static void deleteDirectory( String directoryPath, boolean recursive, boolean followLinks, List<Path> active ) {
+	private static void deleteDirectory( String directoryPath, boolean recursive, boolean followLinks, boolean topLevel, List<Path> active ) {
 		Path			targetDirectory	= Path.of( directoryPath );
 		LinkOption[]	linkOptions		= followLinks ? new LinkOption[ 0 ] : new LinkOption[] { LinkOption.NOFOLLOW_LINKS };
 
-		// A top-level symbolic link is removed as a link unless we were told to follow links
-		boolean			descend			= recursive && ( followLinks || !Files.isSymbolicLink( targetDirectory ) );
+		// A symbolic link is only descended into when followLinks is true, and never when it is the path the caller gave us
+		boolean			isLink			= Files.isSymbolicLink( targetDirectory );
+		boolean			descend			= recursive && ( !isLink || ( followLinks && !topLevel ) );
 		Path			realPath		= null;
 
 		if ( descend && followLinks ) {
@@ -1282,7 +1286,7 @@ public final class FileSystemUtil {
 			try ( DirectoryStream<Path> stream = Files.newDirectoryStream( targetDirectory ) ) {
 				for ( Path entry : stream ) {
 					if ( Files.isDirectory( entry, linkOptions ) ) {
-						deleteDirectory( entry.toString(), true, followLinks, active );
+						deleteDirectory( entry.toString(), true, followLinks, false, active );
 					} else {
 						Files.delete( entry );
 					}
@@ -1496,11 +1500,16 @@ public final class FileSystemUtil {
 		if ( Files.isDirectory( start ) ) {
 			Stream<Path> directoryListing = null;
 			if ( filter instanceof String filterString ) {
-				directoryListing = listDirectory( source, recurse, filterString, "name", recurse ? "all" : "file", followLinks );
+				directoryListing = listDirectory( source, recurse, filterString, "name", "all", followLinks );
 			} else if ( filter instanceof java.util.function.Predicate<?> filterPredicate ) {
-				directoryListing = listDirectory( source, recurse, createPaths ? filterPredicate : null, "name", recurse ? "all" : "file", followLinks );
+				directoryListing = listDirectory( source, recurse, createPaths ? filterPredicate : null, "name", "all", followLinks );
 			} else {
 				throw new BoxRuntimeException( "The filter argument to the method DirectoryCopy filter must either be a string or function/closure" );
+			}
+			if ( !recurse ) {
+				// A shallow copy only copies files, not sub directories. Symbolic links are copied as links, even when they point to a directory
+				// or to nothing, unless we are following links.
+				directoryListing = directoryListing.filter( item -> Files.isRegularFile( item ) || ( !followLinks && Files.isSymbolicLink( item ) ) );
 			}
 			directoryListing.forEachOrdered( path -> {
 				Path	sourcePath		= Path.of( source );
@@ -1517,9 +1526,8 @@ public final class FileSystemUtil {
 				}
 				try {
 					// our stream is in parallel async so if this is a directory it may already have
-					// been created
-					if ( !Files.isDirectory( targetPath )
-					    || ( Files.isDirectory( targetPath ) && !Files.exists( targetPath ) ) ) {
+					// been created. A symbolic link at the target is not a directory, so it reaches the copy and its overwrite rules.
+					if ( !Files.isDirectory( targetPath, LinkOption.NOFOLLOW_LINKS ) ) {
 						Files.copy( path, targetPath, copyOptions );
 					}
 				} catch ( IOException e ) {

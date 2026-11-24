@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -268,6 +269,80 @@ public class SymlinkTest {
 		assertThat( Files.exists( tree ) ).isFalse();
 		// The folder above the tree and its other content must not be deleted
 		assertThat( Files.exists( outside.resolve( "keep.txt" ) ) ).isTrue();
+	}
+
+	@DisplayName( "directoryDelete with followLinks=true still only removes a link given as the path" )
+	@Test
+	public void testDeleteTopLevelLinkWithFollowLinks() throws IOException {
+		Path link = Files.createSymbolicLink( root.resolve( "lnk" ), outside );
+		variables.put( Key.of( "link" ), link.toString() );
+		instance.executeSource(
+		    """
+		    directoryDelete( variables.link, true, true );
+		    """,
+		    context );
+		assertThat( Files.exists( link, LinkOption.NOFOLLOW_LINKS ) ).isFalse();
+		assertThat( Files.exists( outside.resolve( "keep.txt" ) ) ).isTrue();
+		assertThat( Files.exists( outside.resolve( "deep/inner.txt" ) ) ).isTrue();
+	}
+
+	@DisplayName( "A shallow directoryCopy copies links to directories and dangling links as links, but not real sub directories" )
+	@Test
+	public void testShallowCopyLinks() throws IOException {
+		Files.createSymbolicLink( tree.resolve( "dirLink" ), outside );
+		Files.createSymbolicLink( tree.resolve( "dangling" ), root.resolve( "nope" ) );
+		Files.createDirectories( tree.resolve( "sub" ) );
+		variables.put( Key.of( "dest" ), root.resolve( "dest" ).toString() );
+		instance.executeSource(
+		    """
+		    directoryCopy( variables.tree, variables.dest );
+		    """,
+		    context );
+		assertThat( Files.isSymbolicLink( root.resolve( "dest/dirLink" ) ) ).isTrue();
+		assertThat( Files.isSymbolicLink( root.resolve( "dest/dangling" ) ) ).isTrue();
+		assertThat( Files.exists( root.resolve( "dest/a.txt" ) ) ).isTrue();
+		assertThat( Files.exists( root.resolve( "dest/sub" ) ) ).isFalse();
+	}
+
+	@DisplayName( "directoryCopy with overwrite replaces a link at the destination" )
+	@Test
+	public void testCopyOverwritesLink() throws IOException {
+		Path	other	= Files.createDirectories( root.resolve( "other" ) );
+		Path	link	= Files.createSymbolicLink( tree.resolve( "lnk" ), outside );
+		variables.put( Key.of( "dest" ), root.resolve( "dest" ).toString() );
+		instance.executeSource(
+		    """
+		    directoryCopy( variables.tree, variables.dest, true );
+		    """,
+		    context );
+		assertThat( Files.readSymbolicLink( root.resolve( "dest/lnk" ) ) ).isEqualTo( outside );
+
+		// Point the source link somewhere else and copy again
+		Files.delete( link );
+		Files.createSymbolicLink( link, other );
+		instance.executeSource(
+		    """
+		    directoryCopy( variables.tree, variables.dest, true, "*", true, true );
+		    """,
+		    context );
+		assertThat( Files.readSymbolicLink( root.resolve( "dest/lnk" ) ) ).isEqualTo( other );
+	}
+
+	@DisplayName( "fileCreateSymlink honors the disallowed file extensions" )
+	@Test
+	public void testCreateSymlinkSecurity() {
+		context.getRequestContext().getApplicationListener().updateSettings( Struct.of( "disallowedFileOperationExtensions", "exe" ) );
+		try {
+			assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+			    """
+			    fileCreateSymlink( variables.root & "/alias.exe", variables.outside & "/keep.txt" );
+			    """,
+			    context ) );
+			assertThat( Files.exists( root.resolve( "alias.exe" ), LinkOption.NOFOLLOW_LINKS ) ).isFalse();
+		} finally {
+			context.getRequestContext().getApplicationListener()
+			    .updateSettings( Struct.of( "disallowedFileOperationExtensions", new Array() ) );
+		}
 	}
 
 	@DisplayName( "directoryDelete handles links to files and dangling links" )

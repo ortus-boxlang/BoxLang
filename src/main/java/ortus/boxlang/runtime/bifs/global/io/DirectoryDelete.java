@@ -50,8 +50,10 @@ public class DirectoryDelete extends BIF {
 	 * @argument.recursive [default:false] whether to recursively delete the directory.
 	 *                     If falls and the directory is not empty, with throw a runtime exception
 	 *
-	 * @argument.followLinks [default:false] whether to follow symbolic links when deleting recursively. When false, links are removed as links and the
-	 *                       folders they point to are never touched. A symbolic link given as the path only has the link removed.
+	 * @argument.followLinks [default:false] whether to follow symbolic links found inside the directory when deleting recursively. When false, links are
+	 *                       removed as links and the folders they point to are never touched. When true, the contents of those folders are deleted too,
+	 *                       except for a link that leads back into the directory being deleted or to a folder above it, which is removed as a link.
+	 *                       A symbolic link given as the path only has the link removed, whatever the value of followLinks.
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
