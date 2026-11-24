@@ -37,8 +37,10 @@ import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
+import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
@@ -486,6 +488,86 @@ public final class FileSystemUtil {
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
+	}
+
+	/**
+	 * ------------------------------------------------------------------
+	 * Symbolic Links
+	 * ------------------------------------------------------------------
+	 */
+
+	/**
+	 * Is the path a symbolic link? True even if the link is dangling (its target does not exist)
+	 *
+	 * @param path the path to test
+	 *
+	 * @return true if the path is a symbolic link
+	 */
+	public static boolean isSymlink( Path path ) {
+		return Files.isSymbolicLink( path );
+	}
+
+	/**
+	 * Reads the target of a symbolic link
+	 *
+	 * @param path    the symbolic link
+	 * @param resolve if true, the target is returned as an absolute path resolved against the link's parent directory. If false, the target is returned
+	 *                exactly as stored in the link.
+	 *
+	 * @return the target of the link
+	 *
+	 * @throws BoxRuntimeException if the path is not a symbolic link
+	 */
+	public static String readSymlink( Path path, boolean resolve ) {
+		if ( !Files.isSymbolicLink( path ) ) {
+			throw new BoxRuntimeException( "The path [" + path + "] is not a symbolic link." );
+		}
+		try {
+			Path target = Files.readSymbolicLink( path );
+			if ( resolve ) {
+				Path parent = path.toAbsolutePath().getParent();
+				target = parent != null ? parent.resolve( target ) : target;
+				return target.normalize().toString();
+			}
+			return target.toString();
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+	}
+
+	/**
+	 * Creates a symbolic link
+	 *
+	 * @param link      the path of the link to create
+	 * @param target    the path the link points to. Stored exactly as given.
+	 * @param overwrite if true, an existing link or file at the link path is replaced. Existing directories are never replaced.
+	 *
+	 * @return the path of the created link
+	 *
+	 * @throws BoxRuntimeException if the link already exists and overwrite is false, or if the link cannot be created, for example when the operating
+	 *                             system or filesystem does not allow the current user to create symbolic links
+	 */
+	public static String createSymlink( String link, String target, boolean overwrite ) {
+		Path linkPath = Path.of( link );
+		try {
+			if ( Files.exists( linkPath, LinkOption.NOFOLLOW_LINKS ) ) {
+				if ( !overwrite ) {
+					throw new BoxRuntimeException( "The path [" + link + "] already exists and the overwrite argument is set to false." );
+				}
+				if ( Files.isDirectory( linkPath, LinkOption.NOFOLLOW_LINKS ) ) {
+					throw new BoxRuntimeException( "The path [" + link + "] is a directory and cannot be replaced by a symbolic link." );
+				}
+				Files.delete( linkPath );
+			}
+			Path parent = linkPath.toAbsolutePath().getParent();
+			if ( parent != null && !Files.exists( parent ) ) {
+				Files.createDirectories( parent );
+			}
+			Files.createSymbolicLink( linkPath, Path.of( target ) );
+		} catch ( UnsupportedOperationException | IOException | java.lang.SecurityException e ) {
+			throw new BoxRuntimeException( "Could not create the symbolic link [" + link + "] pointing to [" + target + "]: " + e.getMessage(), e );
+		}
+		return linkPath.toAbsolutePath().toString();
 	}
 
 	/**
@@ -944,6 +1026,9 @@ public final class FileSystemUtil {
 			infoStruct.put( "path", path.toAbsolutePath().toString() );
 			infoStruct.put( "size", Files.isDirectory( path ) ? 0l : Files.size( path ) );
 			infoStruct.put( "type", Files.isDirectory( path ) ? "directory" : "file" );
+			boolean isLink = Files.isSymbolicLink( path );
+			infoStruct.put( "isLink", isLink );
+			infoStruct.put( "linkTarget", isLink ? Files.readSymbolicLink( path ).toString() : "" );
 			infoStruct.put( "lastModified",
 			    new DateTime( Files.getLastModifiedTime( path ).toInstant() ).setFormat( "MMMM, d, yyyy HH:mm:ss Z" ) );
 			if ( verbose == null || !verbose ) {
@@ -1141,13 +1226,29 @@ public final class FileSystemUtil {
 	 * @throws IOException if an I/O error occurs deleting the directory or if the path is invalid
 	 */
 	public static void deleteDirectory( String directoryPath, boolean recursive ) {
-		Path targetDirectory = Path.of( directoryPath );
+		deleteDirectory( directoryPath, recursive, false );
+	}
 
-		if ( recursive ) {
+	/**
+	 * Deletes a directory from a string path.
+	 *
+	 * @param directoryPath the path to delete. This can be root-relative or absolute.
+	 * @param recursive     whether to delete the directory recursively, including all contents
+	 * @param followLinks   whether to follow symbolic links when recursing. If false, links are removed as links and their targets are never touched.
+	 *                      A symbolic link given as the top-level path only has the link itself removed.
+	 *
+	 * @throws IOException if an I/O error occurs deleting the directory or if the path is invalid
+	 */
+	public static void deleteDirectory( String directoryPath, boolean recursive, boolean followLinks ) {
+		Path			targetDirectory	= Path.of( directoryPath );
+		LinkOption[]	linkOptions		= followLinks ? new LinkOption[ 0 ] : new LinkOption[] { LinkOption.NOFOLLOW_LINKS };
+
+		// A top-level symbolic link is removed as a link unless we were told to follow links
+		if ( recursive && ( followLinks || !Files.isSymbolicLink( targetDirectory ) ) ) {
 			try ( DirectoryStream<Path> stream = Files.newDirectoryStream( targetDirectory ) ) {
 				for ( Path entry : stream ) {
-					if ( Files.isDirectory( entry ) ) {
-						deleteDirectory( entry.toString(), true );
+					if ( Files.isDirectory( entry, linkOptions ) ) {
+						deleteDirectory( entry.toString(), true, followLinks );
 					} else {
 						Files.delete( entry );
 					}
@@ -1184,8 +1285,24 @@ public final class FileSystemUtil {
 	 *
 	 * @return a stream of paths
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static Stream<Path> listDirectory( String path, boolean recurse, Object filter, String sort, String type ) {
+		return listDirectory( path, recurse, filter, sort, type, false );
+	}
+
+	/**
+	 * Lists the contents of a directory
+	 *
+	 * @param path        the path to list
+	 * @param recurse     whether to recurse into subdirectories
+	 * @param filter      a glob filter or a closure to filter the results as a Predicate
+	 * @param sort        a string containing the sort field and direction
+	 * @param type        the type of files to list
+	 * @param followLinks whether to descend into symbolic links to directories when recursing. The top-level path is always resolved.
+	 *
+	 * @return a stream of paths
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Stream<Path> listDirectory( String path, boolean recurse, Object filter, String sort, String type, boolean followLinks ) {
 		Path targetPath = Path.of( path );
 
 		// If path doesn't exist, return an empty stream
@@ -1230,12 +1347,18 @@ public final class FileSystemUtil {
 				break;
 		}
 
+		// The top-level path is the one the caller asked for, so a symbolic link there is always resolved.
+		// Links found while walking are only descended into when followLinks is true.
+		FileVisitOption[]	walkOptions	= followLinks ? new FileVisitOption[] { FileVisitOption.FOLLOW_LINKS } : new FileVisitOption[ 0 ];
+		int					maxDepth	= recurse ? Integer.MAX_VALUE : 1;
+
 		try {
-			if ( recurse ) {
-				directoryStream = Files.walk( targetPath ).parallel().filter( filterPath -> !filterPath.equals( targetPath ) );
-			} else {
-				directoryStream = Files.walk( targetPath, 1 ).parallel().filter( filterPath -> !filterPath.equals( targetPath ) );
-			}
+			Path walkRoot = !followLinks && Files.isSymbolicLink( targetPath ) ? targetPath.toRealPath() : targetPath;
+			directoryStream = Files.walk( walkRoot, maxDepth, walkOptions )
+			    // Present results under the path the caller gave us, not the resolved one
+			    .map( walked -> walkRoot == targetPath ? walked : targetPath.resolve( walkRoot.relativize( walked ) ) )
+			    .parallel()
+			    .filter( filterPath -> !filterPath.equals( targetPath ) );
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
@@ -1291,9 +1414,38 @@ public final class FileSystemUtil {
 	    Object filter,
 	    boolean createPaths,
 	    boolean overwrite ) {
-		Path			start		= Path.of( source );
-		Path			end			= Path.of( destination );
-		CopyOption[]	copyOptions	= overwrite ? new CopyOption[] { StandardCopyOption.REPLACE_EXISTING } : new CopyOption[ 0 ];
+		copyDirectory( source, destination, recurse, filter, createPaths, overwrite, false );
+	}
+
+	/**
+	 * Copies a file or directory from source to destination
+	 *
+	 * @param source      the source file path
+	 * @param destination the destination file path
+	 * @param recurse     whether to recurse into subdirectories
+	 * @param filter      a glob filter or a closure to filter the results as a Predicate
+	 * @param createPaths whether to create the parent directory if it does not exist
+	 * @param overwrite   whether to overwrite existing files at the destination
+	 * @param followLinks whether to follow symbolic links. If false, a link inside the source is copied as a link. If true, the target content is copied.
+	 */
+	public static void copyDirectory(
+	    String source,
+	    String destination,
+	    boolean recurse,
+	    Object filter,
+	    boolean createPaths,
+	    boolean overwrite,
+	    boolean followLinks ) {
+		Path				start	= Path.of( source );
+		Path				end		= Path.of( destination );
+		List<CopyOption>	options	= new ArrayList<>();
+		if ( overwrite ) {
+			options.add( StandardCopyOption.REPLACE_EXISTING );
+		}
+		if ( !followLinks ) {
+			options.add( LinkOption.NOFOLLOW_LINKS );
+		}
+		CopyOption[] copyOptions = options.toArray( new CopyOption[ 0 ] );
 
 		if ( createPaths && !Files.exists( end ) ) {
 			try {
@@ -1306,9 +1458,9 @@ public final class FileSystemUtil {
 		if ( Files.isDirectory( start ) ) {
 			Stream<Path> directoryListing = null;
 			if ( filter instanceof String filterString ) {
-				directoryListing = listDirectory( source, recurse, filterString, "name", recurse ? "all" : "file" );
+				directoryListing = listDirectory( source, recurse, filterString, "name", recurse ? "all" : "file", followLinks );
 			} else if ( filter instanceof java.util.function.Predicate<?> filterPredicate ) {
-				directoryListing = listDirectory( source, recurse, createPaths ? filterPredicate : null, "name", recurse ? "all" : "file" );
+				directoryListing = listDirectory( source, recurse, createPaths ? filterPredicate : null, "name", recurse ? "all" : "file", followLinks );
 			} else {
 				throw new BoxRuntimeException( "The filter argument to the method DirectoryCopy filter must either be a string or function/closure" );
 			}
@@ -1338,7 +1490,7 @@ public final class FileSystemUtil {
 			} );
 		} else {
 			try {
-				Files.copy( start, end, copyOptions );
+				Files.copy( start, end, overwrite ? new CopyOption[] { StandardCopyOption.REPLACE_EXISTING } : new CopyOption[ 0 ] );
 			} catch ( IOException e ) {
 				throw new BoxIOException( e );
 			}

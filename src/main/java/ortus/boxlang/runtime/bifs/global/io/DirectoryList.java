@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.bifs.global.io;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
@@ -53,7 +54,8 @@ public class DirectoryList extends BIF {
 		    new Argument( false, "string", Key.listInfo, "path", Set.of( Validator.REQUIRED ) ),
 		    new Argument( false, "any", Key.filter ),
 		    new Argument( false, "string", Key.sort, "name" ),
-		    new Argument( false, "string", Key.type, "all" )
+		    new Argument( false, "string", Key.type, "all" ),
+		    new Argument( false, "boolean", Key.followLinks, false )
 		};
 	}
 
@@ -69,6 +71,8 @@ public class DirectoryList extends BIF {
 	 * <li>{@code attributes} - The attributes of the item (R, W, X, H).</li>
 	 * <li>{@code dateLastModified} - The date the item was last modified.</li>
 	 * <li>{@code directory} - The directory containing the item.</li>
+	 * <li>{@code isLink} - True if the item is a symbolic link.</li>
+	 * <li>{@code linkTarget} - The target of the symbolic link, or an empty string if the item is not a link.</li>
 	 * <li>{@code mode} - The mode of the item.</li>
 	 * <li>{@code name} - The name of the item.</li>
 	 * <li>{@code size} - The size of the item in bytes.</li>
@@ -106,6 +110,8 @@ public class DirectoryList extends BIF {
 	 * @argument.sort The sort order of the listing. Valid values are "name", "size", "date", and "type". The default is "name".You can also use <code>asc</code> or <code>desc</code> to specify the sort order. E.g. <code>sort: "name desc"</code>.
 	 *
 	 * @argument.type The type of items to list. Valid values are "all", "file", and "dir". Default is "all".
+	 *
+	 * @argument.followLinks Whether to descend into symbolic links to directories when recursing. The default is false. A symbolic link given as the path is always resolved.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	returnType		= arguments.getAsString( Key.listInfo ).toLowerCase();
@@ -120,7 +126,8 @@ public class DirectoryList extends BIF {
 		    arguments.getAsBoolean( Key.recurse ),
 		    arguments.get( Key.filter ),
 		    arguments.getAsString( Key.sort ),
-		    arguments.getAsString( Key.type )
+		    arguments.getAsString( Key.type ),
+		    arguments.getAsBoolean( Key.followLinks )
 		);
 
 		return switch ( returnType ) {
@@ -149,7 +156,9 @@ public class DirectoryList extends BIF {
 		    .addColumn( Key.dateLastModified, QueryColumnType.TIMESTAMP )
 		    .addColumn( Key.attributes, QueryColumnType.VARCHAR )
 		    .addColumn( Key.mode, QueryColumnType.VARCHAR )
-		    .addColumn( Key.directory, QueryColumnType.VARCHAR );
+		    .addColumn( Key.directory, QueryColumnType.VARCHAR )
+		    .addColumn( Key.isLink, QueryColumnType.BOOLEAN )
+		    .addColumn( Key.linkTarget, QueryColumnType.VARCHAR );
 
 		listing.forEachOrdered( item -> {
 			try {
@@ -166,10 +175,14 @@ public class DirectoryList extends BIF {
 				        item.getFileName().toString(),
 				        size,
 				        Files.isDirectory( item ) ? "Dir" : "File",
-				        new DateTime( Files.getLastModifiedTime( item ).toInstant() ),
+				        // A dangling link has no target to read a date from, so use the link itself
+				        new DateTime( ( Files.exists( item ) ? Files.getLastModifiedTime( item )
+				            : Files.getLastModifiedTime( item, LinkOption.NOFOLLOW_LINKS ) ).toInstant() ),
 				        getAttributes( item ),
 				        "",
-				        item.getParent().toAbsolutePath().toString()
+				        item.getParent().toAbsolutePath().toString(),
+				        Files.isSymbolicLink( item ),
+				        Files.isSymbolicLink( item ) ? Files.readSymbolicLink( item ).toString() : ""
 				    }
 				);
 			} catch ( IOException e ) {

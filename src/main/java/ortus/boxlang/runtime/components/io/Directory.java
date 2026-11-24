@@ -76,7 +76,8 @@ public class Directory extends Component {
 		        Validator.NON_EMPTY,
 		        Validator.valueOneOf( "name", "all" )
 		    ) ),
-		    new Attribute( Key.createPath, "boolean", true )
+		    new Attribute( Key.createPath, "boolean", true ),
+		    new Attribute( Key.followLinks, "boolean", false )
 		};
 	}
 
@@ -113,6 +114,8 @@ public class Directory extends Component {
 	 *
 	 * @attribute.createPath Whether to create all paths necessary to create the directory path.
 	 *
+	 * @attribute.followLinks Whether to follow symbolic links when listing, copying or deleting recursively. Defaults to false.
+	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		Key		action			= Key.of( attributes.getAsString( Key.action ) );
@@ -127,17 +130,18 @@ public class Directory extends Component {
 		String	type			= attributes.getAsString( Key.type );
 		String	listInfo		= attributes.getAsString( Key.listInfo );
 		Boolean	createPath		= attributes.getAsBoolean( Key.createPath );
+		Boolean	followLinks		= attributes.getAsBoolean( Key.followLinks );
 
 		if ( action.equals( Key.list ) ) {
-			list( context, directory, name, filter, sort, recurse, type, listInfo );
+			list( context, directory, name, filter, sort, recurse, type, listInfo, followLinks );
 		} else if ( action.equals( Key.create ) ) {
 			create( context, directory, createPath, mode );
 		} else if ( action.equals( Key.delete ) ) {
-			delete( context, directory, recurse );
+			delete( context, directory, recurse, followLinks );
 		} else if ( action.equals( Key.rename ) ) {
 			rename( context, directory, newDirectory, createPath );
 		} else if ( action.equals( Key.copy ) ) {
-			copy( context, directory, destination, recurse, filter, createPath );
+			copy( context, directory, destination, recurse, filter, createPath, followLinks );
 		} else {
 			throw new BoxRuntimeException( "Unimplemeted directory action: " + action.getName() );
 		}
@@ -159,13 +163,14 @@ public class Directory extends Component {
 		    );
 	}
 
-	private void delete( IBoxContext context, String directory, Boolean recurse ) {
+	private void delete( IBoxContext context, String directory, Boolean recurse, Boolean followLinks ) {
 		actionsMap.get( Key.delete )
 		    .invoke(
 		        context,
 		        Map.of(
 		            Key.path, directory,
-		            Key.recursive, recurse
+		            Key.recursive, recurse,
+		            Key.followLinks, followLinks
 		        ),
 		        false,
 		        Key.directoryDelete
@@ -189,18 +194,21 @@ public class Directory extends Component {
 		);
 	}
 
-	private void copy( IBoxContext context, String directory, String newDirectory, Boolean recurse, String filter, Boolean createPath ) {
+	private void copy( IBoxContext context, String directory, String newDirectory, Boolean recurse, String filter, Boolean createPath,
+	    Boolean followLinks ) {
 		IStruct argumentsMap = Struct.of(
 		    Key.source, directory,
 		    Key.destination, newDirectory,
 		    Key.recurse, recurse,
 		    Key.filter, filter,
-		    Key.createPath, createPath
+		    Key.createPath, createPath,
+		    Key.followLinks, followLinks
 		);
 		actionsMap.get( Key.copy ).invoke( context, argumentsMap, false, Key.directoryCopy );
 	}
 
-	private void list( IBoxContext context, String directory, String name, String filter, String sort, Boolean recurse, String type, String listInfo ) {
+	private void list( IBoxContext context, String directory, String name, String filter, String sort, Boolean recurse, String type, String listInfo,
+	    Boolean followLinks ) {
 		ExpressionInterpreter.setVariable(
 		    context,
 		    name,
@@ -213,7 +221,8 @@ public class Directory extends Component {
 		                Key.listInfo, listInfo.equalsIgnoreCase( "name" ) ? "querynames" : "query",
 		                Key.filter, filter != null ? filter : "",
 		                Key.sort, sort != null ? sort : "",
-		                Key.type, type
+		                Key.type, type,
+		                Key.followLinks, followLinks
 		            ),
 		            false,
 		            Key.directoryList

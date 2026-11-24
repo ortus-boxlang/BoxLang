@@ -39,7 +39,8 @@ public class DirectoryCopy extends BIF {
 		    new Argument( false, "boolean", Key.recurse, false ),
 		    new Argument( false, "any", Key.filter, "*" ),
 		    new Argument( false, "boolean", Key.createPath, true ),
-		    new Argument( false, "boolean", Key.overwrite, false )
+		    new Argument( false, "boolean", Key.overwrite, false ),
+		    new Argument( false, "boolean", Key.followLinks, false )
 		};
 	}
 
@@ -60,6 +61,9 @@ public class DirectoryCopy extends BIF {
 	 * @argument.createPath whether to create any nested paths required to the new directory
 	 *
 	 * @argument.overwrite whether to overwrite existing files at the destination
+	 *
+	 * @argument.followLinks [default:false] whether to follow symbolic links. When false, a link inside the source is copied as a link. When true, the
+	 *                       content the link points to is copied instead.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	sourcePath		= arguments.getAsString( Key.source );
@@ -81,7 +85,8 @@ public class DirectoryCopy extends BIF {
 		    arguments.getAsBoolean( Key.recurse ),
 		    arguments.get( Key.filter ),
 		    arguments.getAsBoolean( Key.createPath ),
-		    arguments.getAsBoolean( Key.overwrite )
+		    arguments.getAsBoolean( Key.overwrite ),
+		    arguments.getAsBoolean( Key.followLinks )
 		);
 
 		return null;
