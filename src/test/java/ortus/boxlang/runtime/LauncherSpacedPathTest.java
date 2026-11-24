@@ -66,6 +66,9 @@ public class LauncherSpacedPathTest {
 		Files.writeString( work.resolve( "check.bxs" ), "println( 'launcher-ok' )" );
 
 		ProcessBuilder builder = new ProcessBuilder( List.of( staged.toString(), "check.bxs" ) ).directory( work.toFile() );
+		// CI exports BOXLANG_COMPILER (and friends) for the whole job. The jar staged here has no java Boxpiler,
+		// so drop every inherited BOXLANG_* variable and run with a clean config.
+		builder.environment().keySet().removeIf( name -> name.startsWith( "BOXLANG_" ) );
 		builder.environment().put( "BOXLANG_HOME", home.toString() );
 		builder.redirectErrorStream( true );
 		Process	process	= builder.start();
