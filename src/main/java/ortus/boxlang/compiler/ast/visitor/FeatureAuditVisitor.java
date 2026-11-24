@@ -903,7 +903,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "client", "" );
 		componentMap.put( "clientsettings", "" );
 		componentMap.put( "col", "" );
-		componentMap.put( "collection", "" );
+		componentMap.put( "collection", "bx-search" );
 		componentMap.put( "component", "core" );
 		componentMap.put( "content", "bx-web-support" );
 		// componentMap.put( "continue", "core" );
@@ -955,7 +955,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "imapfilter", "" );
 		// componentMap.put( "import", "core" );
 		componentMap.put( "include", "core" );
-		componentMap.put( "index", "" );
+		componentMap.put( "index", "bx-search" );
 		componentMap.put( "input", "bx-ui-forms" );
 		componentMap.put( "insert", "core" );
 		// componentMap.put( "interface", "core" );
@@ -1015,7 +1015,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "savecontent", "core" );
 		componentMap.put( "schedule", "" );
 		componentMap.put( "script", "core" );
-		componentMap.put( "search", "" );
+		componentMap.put( "search", "bx-search" );
 		componentMap.put( "select", "bx-ui-forms" );
 		componentMap.put( "servlet", "" );
 		componentMap.put( "servletparam", "" );
