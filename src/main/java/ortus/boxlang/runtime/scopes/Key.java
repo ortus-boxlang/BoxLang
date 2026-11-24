@@ -604,6 +604,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		fixnewline							= Key.of( "fixnewline" );
 	public static final Key		flatList							= Key.of( "flatList" );
 	public static final Key		force								= Key.of( "force" );
+	public static final Key		followLinks							= Key.of( "followLinks" );
 	public static final Key		format								= Key.of( "format" );
 	public static final Key		freeMemoryPercentageThreshold		= Key.of( "freeMemoryPercentageThreshold" );
 	public static final Key		from								= Key.of( "from" );
@@ -704,6 +705,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		isShutdown							= Key.of( "isShutdown" );
 	public static final Key		isSuper								= Key.of( "isSuper" );
 	public static final Key		isSynchronized						= Key.of( "isSynchronized" );
+	public static final Key		isLink								= Key.of( "isLink" );
 	public static final Key		isValid								= Key.of( "isValid" );
 	public static final Key		item								= Key.of( "item" );
 	public static final Key		itemCount							= Key.of( "itemCount" );
@@ -762,6 +764,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		lexical								= Key.of( "lexical" );
 	public static final Key		limit								= Key.of( "limit" );
 	public static final Key		line								= Key.of( "line" );
+	public static final Key		link								= Key.of( "link" );
+	public static final Key		linkTarget							= Key.of( "linkTarget" );
 	public static final Key		lineNumber							= Key.of( "lineNumber" );
 	public static final Key		lines								= Key.of( "lines" );
 	public static final Key		list								= Key.of( "list" );
@@ -1002,6 +1006,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		response							= Key.of( "response" );
 	public static final Key		responseHeader						= Key.of( "responseHeader" );
 	public static final Key		retryCount							= Key.of( "retryCount" );
+	public static final Key		resolve								= Key.of( "resolve" );
 	public static final Key		result								= Key.of( "result" );
 	public static final Key		results								= Key.of( "results" );
 	public static final Key		retainKeys							= Key.of( "retainKeys" );

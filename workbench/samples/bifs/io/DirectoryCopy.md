@@ -19,4 +19,36 @@ directorycopy( "directorypath", "directorypath" );
 
 ```
 
+### Copy a folder that contains symbolic links
+
+By default a symbolic link is copied as a link that points to the same place.
+
+```java
+shared = getTempDirectory() & "linkDemoShared";
+build = getTempDirectory() & "linkDemoBuild";
+dest = getTempDirectory() & "linkDemoCopy";
+directoryCreate( shared );
+fileWrite( shared & "/keep.txt", "keep" );
+directoryCreate( build );
+fileCreateSymlink( build & "/lib", shared );
+
+directoryCopy( build, dest, true );
+writeOutput( fileIsSymlink( dest & "/lib" ) );
+
+```
+
+Result: true
+
+### Copy what the links point to
+
+Pass `followLinks=true` to copy the content of the linked folders instead of the link.
+
+```java
+directoryDelete( dest, true );
+directoryCopy( source=build, destination=dest, recurse=true, followLinks=true );
+writeOutput( fileIsSymlink( dest & "/lib" ) & " " & fileExists( dest & "/lib/keep.txt" ) );
+
+```
+
+Result: false true
 

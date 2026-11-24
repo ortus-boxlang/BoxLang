@@ -34,7 +34,8 @@ public class DirectoryDelete extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.path ),
-		    new Argument( true, "boolean", Key.recursive, false )
+		    new Argument( true, "boolean", Key.recursive, false ),
+		    new Argument( false, "boolean", Key.followLinks, false )
 		};
 	}
 
@@ -49,13 +50,18 @@ public class DirectoryDelete extends BIF {
 	 * @argument.recursive [default:false] whether to recursively delete the directory.
 	 *                     If falls and the directory is not empty, with throw a runtime exception
 	 *
+	 * @argument.followLinks [default:false] whether to follow symbolic links found inside the directory when deleting recursively. When false, links are
+	 *                       removed as links and the folders they point to are never touched. When true, the contents of those folders are deleted too,
+	 *                       except for a link that leads back into the directory being deleted or to a folder above it, which is removed as a link.
+	 *                       A symbolic link given as the path only has the link removed, whatever the value of followLinks.
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String directoryPath = arguments.getAsString( Key.path );
 		if ( !FileSystemUtil.exists( directoryPath ) ) {
 			directoryPath = FileSystemUtil.expandPath( context, directoryPath ).absolutePath().toString();
 		}
-		FileSystemUtil.deleteDirectory( directoryPath, arguments.getAsBoolean( Key.recursive ) );
+		FileSystemUtil.deleteDirectory( directoryPath, arguments.getAsBoolean( Key.recursive ), arguments.getAsBoolean( Key.followLinks ) );
 		return null;
 	}
 

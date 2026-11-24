@@ -226,7 +226,7 @@ public class DirectoryTest {
 		assertTrue( listing.size() == 2 );
 		for ( var i = 0; i < listing.size(); i++ ) {
 			Object[] currentRow = listing.getRow( i );
-			assertTrue( currentRow.length == 7 );
+			assertTrue( currentRow.length == 9 );
 			assertThat( listing.getCell( Key.of( "name" ), i ) ).isInstanceOf( String.class );
 			assertThat( listing.getCell( Key.size, i ) ).isInstanceOf( Long.class );
 			assertThat( listing.getCell( Key.dateLastModified, i ) ).isInstanceOf( DateTime.class );
@@ -252,7 +252,7 @@ public class DirectoryTest {
 		assertTrue( listing.size() == 2 );
 		for ( var i = 0; i < listing.size(); i++ ) {
 			Object[] currentRow = listing.getRow( i );
-			assertTrue( currentRow.length == 7 );
+			assertTrue( currentRow.length == 9 );
 			assertThat( listing.getCell( Key.of( "name" ), i ) ).isInstanceOf( String.class );
 			assertThat( listing.getCell( Key.size, i ) ).isInstanceOf( Long.class );
 			assertThat( listing.getCell( Key.dateLastModified, i ) ).isInstanceOf( DateTime.class );
