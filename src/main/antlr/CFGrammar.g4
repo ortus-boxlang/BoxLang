@@ -751,17 +751,17 @@ template_componentName: COMPONENT_NAME
 
 // <cfANYTHING ... >
 template_genericOpenComponent
-    : COMPONENT_OPEN PREFIX template_componentName template_attribute* COMPONENT_CLOSE
+    : COMPONENT_OPEN (PREFIX | TAGLIB_PREFIX) template_componentName template_attribute* COMPONENT_CLOSE
     ;
 
 // <cfANYTHING />
 template_genericOpenCloseComponent
-    : COMPONENT_OPEN PREFIX template_componentName template_attribute* COMPONENT_SLASH_CLOSE
+    : COMPONENT_OPEN (PREFIX | TAGLIB_PREFIX) template_componentName template_attribute* COMPONENT_SLASH_CLOSE
     ;
 
 // </cfANYTHING>
 template_genericCloseComponent
-    : COMPONENT_OPEN SLASH_PREFIX template_componentName COMPONENT_CLOSE
+    : COMPONENT_OPEN (SLASH_PREFIX | TAGLIB_SLASH_PREFIX) template_componentName COMPONENT_CLOSE
     ;
 
 template_interpolatedExpression: ICHAR expression ICHAR

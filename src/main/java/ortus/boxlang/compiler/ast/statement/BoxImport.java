@@ -36,6 +36,13 @@ public class BoxImport extends BoxStatement {
 	private BoxIdentifier	alias;
 
 	/**
+	 * For a tag library import, &lt;cfimport taglib="/tags" prefix="app"&gt;: the directory and the prefix as written.
+	 * Such an import has no expression; the tags written with its prefix carry the directory themselves.
+	 */
+	private String			taglib;
+	private String			taglibPrefix;
+
+	/**
 	 * Creates the AST node
 	 *
 	 * @param expression argument expression to assert
@@ -72,9 +79,32 @@ public class BoxImport extends BoxStatement {
 		}
 	}
 
+	/**
+	 * Mark this import as a tag library import
+	 *
+	 * @param taglib the tag library directory as written
+	 * @param prefix the prefix as written
+	 */
+	public void setTaglib( String taglib, String prefix ) {
+		this.taglib			= taglib;
+		this.taglibPrefix	= prefix;
+	}
+
+	public String getTaglib() {
+		return this.taglib;
+	}
+
+	public String getTaglibPrefix() {
+		return this.taglibPrefix;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
+		if ( this.taglib != null ) {
+			map.put( "taglib", this.taglib );
+			map.put( "taglibPrefix", this.taglibPrefix );
+		}
 		if ( expression != null ) {
 			map.put( "expression", expression.toMap() );
 		} else {

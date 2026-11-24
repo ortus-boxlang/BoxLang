@@ -148,10 +148,29 @@ options {
 		return result;
 	}
 
+	/**
+	 * Lower-cased prefixes imported so far with <cfimport taglib="..." prefix="...">.  A tag such as <prefix:name>
+	 * is only lexed as a component once its prefix has been imported earlier in the same file.
+	 */
+	protected java.util.Set<String>	taglibPrefixes										= new java.util.HashSet<String>();
+
 	public void reset() {
 		expressionCountStack.clear();
 		thisComponentIsOutputting = false;
+		taglibPrefixes.clear();
 		super.reset();
+	}
+
+	/**
+	 * Check if the matched text is the opening "prefix:" or closing "/prefix:" of an imported tag library
+	 *
+	 * @param text the matched text, including the trailing colon
+	 *
+	 * @return true if the prefix was imported earlier in this file
+	 */
+	protected boolean isTaglibPrefix( String text ) {
+		int start = text.startsWith( "/" ) ? 1 : 0;
+		return taglibPrefixes.contains( text.substring( start, text.length() - 1 ).toLowerCase() );
 	}
 
 	private boolean isExpressionComplete() {
@@ -595,6 +614,21 @@ fragment COMPONENT_NameChar: COMPONENT_NameStartChar | '_' | '-' | TEMPLATE_DIGI
 fragment COMPONENT_NameStartChar: [a-z_];
 
 // *********************************************************************************************************************
+mode TEMPLATE_TAGLIB_COMPONENT_NAME_MODE;
+
+// After an imported prefix every name is a custom tag, keywords such as include or set included
+TAGLIB_COMPONENT_NAME: COMPONENT_NameStartChar COMPONENT_NameChar* -> type(COMPONENT_NAME), pushMode( TEMPLATE_COMPONENT_MODE );
+
+// *********************************************************************************************************************
+mode TEMPLATE_TAGLIB_END_COMPONENT;
+
+TAGLIB_END_WHITESPACE: [\p{White_Space}] -> skip;
+
+TAGLIB_END_COMPONENT_NAME: COMPONENT_NameStartChar COMPONENT_NameChar* -> type(COMPONENT_NAME);
+
+TAGLIB_END_COMPONENT_CLOSE: '>' -> popMode, popMode, type(COMPONENT_CLOSE);
+
+// *********************************************************************************************************************
 mode TEMPLATE_COMPONENT_MODE;
 
 // Comments can live inside of a tag <cfTag <!--- comment ---> foo=bar >
@@ -770,6 +804,16 @@ DUMMY2: .;
 
 // *********************************************************************************************************************
 mode TEMPLATE_POSSIBLE_COMPONENT;
+
+// <prefix:name> and </prefix:name> for a prefix imported earlier with <cfimport taglib="..." prefix="...">
+TAGLIB_PREFIX:
+    TAGLIB_PrefixName ':' { isTaglibPrefix( getText() ) }? {thisComponentIsOutputting=false;} -> pushMode(TEMPLATE_TAGLIB_COMPONENT_NAME_MODE)
+;
+TAGLIB_SLASH_PREFIX:
+    '/' TAGLIB_PrefixName ':' { isTaglibPrefix( getText() ) }? {thisComponentIsOutputting=false;} -> pushMode(TEMPLATE_TAGLIB_END_COMPONENT)
+;
+
+fragment TAGLIB_PrefixName: [a-z_] [a-z0-9_-]*;
 
 // If we're just now encountering a new tag, reset our flag to false
 PREFIX       : 'cf'  {thisComponentIsOutputting=false;} -> pushMode(TEMPLATE_COMPONENT_NAME_MODE);

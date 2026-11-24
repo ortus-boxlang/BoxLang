@@ -1393,7 +1393,11 @@ public class Visitor extends VoidBoxVisitor {
 	@Override
 	public void visit( BoxImport node ) {
 		printPreComments( node );
-		// work around for unsupported taglib imports
+		if ( node.getTaglib() != null ) {
+			print( "<" + this.componentPrefix + "import taglib=\"" + node.getTaglib() + "\" prefix=\"" + node.getTaglibPrefix() + "\">" );
+			printPostComments( node );
+			return;
+		}
 		if ( node.getExpression() == null ) {
 			return;
 		}
