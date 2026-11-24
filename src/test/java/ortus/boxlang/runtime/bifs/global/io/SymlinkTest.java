@@ -255,6 +255,21 @@ public class SymlinkTest {
 		assertThat( Files.exists( outside.resolve( "keep.txt" ) ) ).isFalse();
 	}
 
+	@DisplayName( "directoryDelete with followLinks=true removes links back into the tree and to its parent as links" )
+	@Test
+	public void testDeleteLinkCycle() throws IOException {
+		Files.createSymbolicLink( tree.resolve( "loop" ), tree );
+		Files.createSymbolicLink( tree.resolve( "up" ), root );
+		instance.executeSource(
+		    """
+		    directoryDelete( path=variables.tree, recursive=true, followLinks=true );
+		    """,
+		    context );
+		assertThat( Files.exists( tree ) ).isFalse();
+		// The folder above the tree and its other content must not be deleted
+		assertThat( Files.exists( outside.resolve( "keep.txt" ) ) ).isTrue();
+	}
+
 	@DisplayName( "directoryDelete handles links to files and dangling links" )
 	@Test
 	public void testDeleteFileAndDanglingLinks() throws IOException {

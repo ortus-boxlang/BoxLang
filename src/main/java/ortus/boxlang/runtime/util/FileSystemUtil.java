@@ -1235,26 +1235,64 @@ public final class FileSystemUtil {
 	 * @param directoryPath the path to delete. This can be root-relative or absolute.
 	 * @param recursive     whether to delete the directory recursively, including all contents
 	 * @param followLinks   whether to follow symbolic links when recursing. If false, links are removed as links and their targets are never touched.
-	 *                      A symbolic link given as the top-level path only has the link itself removed.
+	 *                      A symbolic link given as the top-level path only has the link itself removed. If true, the contents of the folders the links
+	 *                      point to are deleted as well, except for a link that leads back into the tree being deleted or to a folder above it. That
+	 *                      kind of link is removed as a link, so cycles cannot loop or delete the folder the tree lives in.
 	 *
 	 * @throws IOException if an I/O error occurs deleting the directory or if the path is invalid
 	 */
 	public static void deleteDirectory( String directoryPath, boolean recursive, boolean followLinks ) {
+		deleteDirectory( directoryPath, recursive, followLinks, new ArrayList<>() );
+	}
+
+	/**
+	 * Deletes a directory, tracking the real paths of the directories being emptied so link cycles can be detected.
+	 *
+	 * @param directoryPath the path to delete
+	 * @param recursive     whether to delete the contents first
+	 * @param followLinks   whether to follow symbolic links
+	 * @param active        the real paths of the directories above this one that are still being emptied. Only used when following links.
+	 */
+	private static void deleteDirectory( String directoryPath, boolean recursive, boolean followLinks, List<Path> active ) {
 		Path			targetDirectory	= Path.of( directoryPath );
 		LinkOption[]	linkOptions		= followLinks ? new LinkOption[ 0 ] : new LinkOption[] { LinkOption.NOFOLLOW_LINKS };
 
 		// A top-level symbolic link is removed as a link unless we were told to follow links
-		if ( recursive && ( followLinks || !Files.isSymbolicLink( targetDirectory ) ) ) {
+		boolean			descend			= recursive && ( followLinks || !Files.isSymbolicLink( targetDirectory ) );
+		Path			realPath		= null;
+
+		if ( descend && followLinks ) {
+			try {
+				realPath = targetDirectory.toRealPath();
+			} catch ( IOException e ) {
+				throw new BoxIOException( e );
+			}
+			final Path resolved = realPath;
+			// This is a directory that is already being emptied, or one that contains it. Following it would loop or delete the folder we
+			// are inside, so only the link is removed.
+			if ( active.stream().anyMatch( dir -> dir.startsWith( resolved ) ) ) {
+				descend = false;
+			}
+		}
+
+		if ( descend ) {
+			if ( realPath != null ) {
+				active.add( realPath );
+			}
 			try ( DirectoryStream<Path> stream = Files.newDirectoryStream( targetDirectory ) ) {
 				for ( Path entry : stream ) {
 					if ( Files.isDirectory( entry, linkOptions ) ) {
-						deleteDirectory( entry.toString(), true, followLinks );
+						deleteDirectory( entry.toString(), true, followLinks, active );
 					} else {
 						Files.delete( entry );
 					}
 				}
 			} catch ( IOException e ) {
 				throw new BoxIOException( e );
+			} finally {
+				if ( realPath != null ) {
+					active.remove( active.size() - 1 );
+				}
 			}
 		}
 
