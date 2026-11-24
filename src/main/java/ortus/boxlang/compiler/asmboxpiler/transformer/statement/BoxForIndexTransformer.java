@@ -116,7 +116,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 		nodes.add( new JumpInsnNode( Opcodes.IFEQ, loopEnd ) );
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - body" );
-		nodes.addAll( transpiler.transform( forIn.getBody(), context, ReturnValueContext.VALUE_OR_NULL ) );
+		nodes.addAll( transformLoopBody( forIn.getBody(), context, "forIndexBody" ) );
 		nodes.addAll( varStore.nodes() );
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - goto loopStart" );

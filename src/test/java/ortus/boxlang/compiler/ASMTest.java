@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -210,6 +211,76 @@ public class ASMTest {
 	}
 
 	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@DisplayName( "large TOP-LEVEL if body should compile even though it has no enclosing body to outline into" )
+	@Test
+	public void testLargeTopLevelIfBodyShouldCompile() {
+		assertDoesNotThrow( () -> compileTemplateSource( buildLargeTopLevelIfBodyTemplate() ) );
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@DisplayName( "large TOP-LEVEL loop body should compile by outlining the loop body" )
+	@Test
+	public void testLargeTopLevelLoopBodyShouldCompile() {
+		assertDoesNotThrow( () -> compileTemplateSource( buildLargeTopLevelWhileBodyTemplate() ) );
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@DisplayName( "a large if inside a function must not be hoisted out of the enclosing early-exit contract" )
+	@Test
+	public void testLargeIfInsideFunctionKeepsEarlyExitContract() throws Exception {
+		executeTemplateSource( buildLargeFunctionIfTemplate() );
+
+		assertEquals( "1", variables.get( Key.of( "result" ) ) );
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@DisplayName( "an outlined top-level if branch should still write its variables and fall through" )
+	@Test
+	public void testOutlinedTopLevelIfBranchShouldRunAndFallThrough() throws Exception {
+		executeTemplateSource( buildOutlinedTopLevelIfBranchTemplate() );
+
+		assertEquals( 300, ( ( Number ) variables.get( Key.of( "count" ) ) ).intValue() );
+		assertEquals( "123", variables.get( Key.of( "parts" ) ) );
+		assertEquals( "done", variables.get( Key.of( "after" ) ) );
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@DisplayName( "an outlined loop body should still run every iteration and keep the loop's value" )
+	@Test
+	public void testOutlinedLoopBodyShouldRunEveryIteration() throws Exception {
+		executeTemplateSource( buildOutlinedWhileBodyTemplate() );
+
+		assertEquals( 900, ( ( Number ) variables.get( Key.of( "counter" ) ) ).intValue() );
+		assertEquals( 3, ( ( Number ) variables.get( Key.of( "iterations" ) ) ).intValue() );
+		assertEquals( "done", variables.get( Key.of( "after" ) ) );
+	}
+
+	/**
+	 * Compile a source as a real template file (not as an ad-hoc script) so the outline paths that
+	 * only apply to a template's {@code void _invoke} are actually exercised.
+	 */
+	private Class<?> compileTemplateSource( String source ) throws Exception {
+		Path file = Files.createTempFile( "boxlang-large-template", ".cfm" );
+		try {
+			Files.writeString( file, source, StandardCharsets.UTF_8 );
+			return RunnableLoader.getInstance().getBoxpiler().compileTemplate( ResolvedFilePath.of( file ) );
+		} finally {
+			Files.deleteIfExists( file );
+		}
+	}
+
+	/** Load and run a source as a real template file. */
+	private void executeTemplateSource( String source ) throws Exception {
+		Path file = Files.createTempFile( "boxlang-large-template", ".cfm" );
+		try {
+			Files.writeString( file, source, StandardCharsets.UTF_8 );
+			RunnableLoader.getInstance().loadTemplateAbsolute( context, ResolvedFilePath.of( file ) ).invoke( context );
+		} finally {
+			Files.deleteIfExists( file );
+		}
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@DisplayName( "outlined component if branch should preserve variables for later branches" )
 	@Test
 	public void testOutlinedComponentIfBranchShouldPreserveVariablesForLaterBranches() {
@@ -310,6 +381,129 @@ public class ASMTest {
 
 		source.append( "</cfif>\n" );
 		source.append( "</cfloop>\n" );
+
+		return source.toString();
+	}
+
+	/**
+	 * A single top-level {@code <cfif>} whose body is large enough that the compiled body cannot fit in
+	 * one JVM method. Unlike {@link #buildLargeIfBodyInsideLoopTemplate()} there is no enclosing
+	 * loop/component body, so there is no enclosing body the compiler can outline the branch into.
+	 */
+	private String buildLargeTopLevelIfBodyTemplate() {
+		StringBuilder source = new StringBuilder();
+
+		source.append( "<cfset before = 0>\n" );
+		source.append( "<cfif true>\n" );
+
+		for ( int i = 0; i < 5000; i++ ) {
+			source.append( "<cfset item = 'x" ).append( i ).append( "'>\n" );
+		}
+
+		source.append( "</cfif>\n" );
+		source.append( "<cfset after = 0>\n" );
+
+		return source.toString();
+	}
+
+	/**
+	 * A single top-level loop (a native script loop inside a {@code <cfscript>} island, not a
+	 * {@code <cfloop>} component - a component body is already compiled as its own method) whose
+	 * body is large enough that it cannot be compiled into the enclosing template method.
+	 */
+	private String buildLargeTopLevelWhileBodyTemplate() {
+		StringBuilder source = new StringBuilder();
+
+		source.append( "<cfset before = 0>\n" );
+		source.append( "<cfscript>\n" );
+		source.append( "while( true ) {\n" );
+
+		for ( int i = 0; i < 5000; i++ ) {
+			source.append( "item = 'x" ).append( i ).append( "';\n" );
+		}
+
+		source.append( "}\n" );
+		source.append( "</cfscript>\n" );
+		source.append( "<cfset after = 0>\n" );
+
+		return source.toString();
+	}
+
+	/**
+	 * A template function holding a large {@code <cfif>} whose branch raises a component early
+	 * exit (a labeled {@code <cfbreak>}). The branch must stay in the function's own method: the
+	 * exit is reported to the *caller* of the component as a {@code Component.BodyResult}, and
+	 * hoisting the branch into a void helper would emit an {@code ARETURN} into a void method.
+	 */
+	private String buildLargeFunctionIfTemplate() {
+		StringBuilder source = new StringBuilder();
+
+		source.append( "<cffunction name=\"f\">\n" );
+		source.append( "  <cfset parts = ''>\n" );
+		source.append( "  <cfif true>\n" );
+
+		for ( int i = 0; i < 300; i++ ) {
+			source.append( "    <cfset unused = " ).append( i ).append( ">\n" );
+		}
+
+		source.append( "    <cfloop from=\"1\" to=\"3\" index=\"i\" label=\"L\">\n" );
+		source.append( "      <cfset parts = parts & i>\n" );
+		source.append( "      <cfbreak L>\n" );
+		source.append( "    </cfloop>\n" );
+		source.append( "  </cfif>\n" );
+		source.append( "  <cfreturn parts>\n" );
+		source.append( "</cffunction>\n" );
+		source.append( "<cfset result = f()>\n" );
+
+		return source.toString();
+	}
+
+	/**
+	 * A top-level {@code <cfif>} whose branch is large enough (by descendant count) to be
+	 * outlined, but which must still behave exactly like an inline branch - including a
+	 * component call ({@code <cfloop>}) inside the hoisted body, whose result is discarded at
+	 * this level.
+	 */
+	private String buildOutlinedTopLevelIfBranchTemplate() {
+		StringBuilder source = new StringBuilder();
+
+		source.append( "<cfset count = 0>\n" );
+		source.append( "<cfset parts = ''>\n" );
+		source.append( "<cfif true>\n" );
+
+		for ( int i = 0; i < 300; i++ ) {
+			source.append( "<cfset count = count + 1>\n" );
+		}
+
+		source.append( "<cfloop from=\"1\" to=\"3\" index=\"i\">\n" );
+		source.append( "<cfset parts = parts & i>\n" );
+		source.append( "</cfloop>\n" );
+		source.append( "</cfif>\n" );
+		source.append( "<cfset after = 'done'>\n" );
+
+		return source.toString();
+	}
+
+	/**
+	 * A template loop (native script loop inside a {@code <cfscript>} island) whose body is large
+	 * enough (by descendant count) to be outlined, and which must still run every iteration.
+	 */
+	private String buildOutlinedWhileBodyTemplate() {
+		StringBuilder source = new StringBuilder();
+
+		source.append( "<cfscript>\n" );
+		source.append( "counter = 0;\n" );
+		source.append( "iterations = 0;\n" );
+		source.append( "while( iterations < 3 ) {\n" );
+
+		for ( int i = 0; i < 300; i++ ) {
+			source.append( "counter = counter + 1;\n" );
+		}
+
+		source.append( "iterations = iterations + 1;\n" );
+		source.append( "}\n" );
+		source.append( "after = 'done';\n" );
+		source.append( "</cfscript>\n" );
 
 		return source.toString();
 	}

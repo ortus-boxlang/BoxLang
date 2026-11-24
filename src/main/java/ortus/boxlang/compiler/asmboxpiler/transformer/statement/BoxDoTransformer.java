@@ -68,7 +68,7 @@ public class BoxDoTransformer extends AbstractTransformer {
 
 		nodes.add( start );
 
-		nodes.addAll( transpiler.transform( boxDo.getBody(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
+		nodes.addAll( transformLoopBody( boxDo.getBody(), TransformerContext.NONE, "doBody" ) );
 		nodes.addAll( varStore.nodes() );
 
 		nodes.add( continueLabel );

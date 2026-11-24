@@ -182,7 +182,9 @@ class ProfilerMethodSplitTest {
 	/**
 	 * A template whose body is one try/catch containing a single huge {@code <cfif>}:
 	 * there is no statement boundary inside it at all, so no split can ever bring it
-	 * under the JVM's per-method limit.
+	 * under the JVM's per-method limit. The bare {@code <cfreturn>} inside the branch
+	 * keeps it from being hoisted into its own method (an escaping return cannot leave
+	 * the method it is moved to).
 	 */
 	private static String templateWithUnsplittableTry( int n ) {
 		StringBuilder sb = new StringBuilder();
@@ -190,6 +192,7 @@ class ProfilerMethodSplitTest {
 		sb.append( "<cftry>\n" );
 		sb.append( "  <cfset x = 1>\n" );
 		sb.append( "  <cfif x EQ 1>\n" );
+		sb.append( "    <cfreturn>\n" );
 		for ( int i = 0; i < n; i++ ) {
 			sb.append( "    <cfset x = x + " ).append( i ).append( ">\n" );
 		}
@@ -270,6 +273,9 @@ class ProfilerMethodSplitTest {
 		StringBuilder sb = new StringBuilder();
 		sb.append( "<cfset x = 1>\n" );
 		sb.append( "<cfif x EQ 1>\n" );
+		// The bare <cfreturn> is an exit that escapes the branch, so the branch cannot be
+		// hoisted into its own method and the whole <cfif> has to fit in one method.
+		sb.append( "  <cfreturn>\n" );
 		for ( int i = 0; i < 2500; i++ ) {
 			sb.append( "  <cfset x = x + " ).append( i ).append( ">\n" );
 		}

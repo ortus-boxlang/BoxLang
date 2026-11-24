@@ -42,9 +42,6 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
 public class BoxIfElseTransformer extends AbstractTransformer {
 
-	private static final int	OUTLINE_SOURCE_THRESHOLD		= 12000;
-	private static final int	OUTLINE_DESCENDANT_THRESHOLD	= 250;
-
 	public BoxIfElseTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
@@ -106,24 +103,24 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 			return List.of();
 		}
 
-		if ( shouldOutlineBranch( branchBody, returnContext ) ) {
-			return generateOutlinedComponentBranchCall( branchBody, isThenBranch );
+		if ( transpiler.isInsideComponent() ) {
+			// Existing behaviour: a component body can hand an early exit back to its caller
+			// through Component.BodyResult, so a large branch is outlined there even when it
+			// contains a return/break/continue.
+			if ( returnContext == ReturnValueContext.EMPTY && isLargeBody( branchBody ) ) {
+				return generateOutlinedComponentBranchCall( branchBody, isThenBranch );
+			}
+		} else if ( canHoistStatementBodies() && returnContext == ReturnValueContext.EMPTY && isLargeBody( branchBody )
+		    && !containsEscapingFlowControl( branchBody ) ) {
+			// This is a template body (no component, no return-capable method), so a component
+			// called from inside the branch discards its early-exit result and nothing inside
+			// the branch has to escape into the enclosing method - which makes the branch
+			// equivalent to a plain call. This is what keeps a single huge top-level <cfif>
+			// from compiling into one method that exceeds the JVM's 64KB per-method limit.
+			return generateOutlinedStandaloneBranchCall( branchBody, isThenBranch );
 		}
 
 		return transpiler.transform( branchBody, TransformerContext.NONE, returnContext );
-	}
-
-	private boolean shouldOutlineBranch( BoxStatement branchBody, ReturnValueContext returnContext ) {
-		if ( returnContext != ReturnValueContext.EMPTY || !transpiler.isInsideComponent() ) {
-			return false;
-		}
-
-		return getNodeSourceLength( branchBody ) >= OUTLINE_SOURCE_THRESHOLD
-		    || branchBody.getDescendants().size() >= OUTLINE_DESCENDANT_THRESHOLD;
-	}
-
-	private int getNodeSourceLength( BoxStatement branchBody ) {
-		return branchBody.getSourceText() != null ? branchBody.getSourceText().length() : 0;
 	}
 
 	private List<AbstractInsnNode> generateOutlinedComponentBranchCall( BoxStatement branchBody, boolean isThenBranch ) {
@@ -165,6 +162,50 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		nodes.add( new InsnNode( Opcodes.ARETURN ) );
 		nodes.add( continueLabel );
 		nodes.add( new InsnNode( Opcodes.POP ) );
+
+		return nodes;
+	}
+
+	/**
+	 * Hoist a large branch body out of the enclosing template/script method into its own
+	 * method and call it in its place.
+	 * <p>
+	 * Unlike {@link #generateOutlinedComponentBranchCall(BoxStatement, boolean)} the helper
+	 * returns void and carries no Component.BodyResult: the caller only gets here when the body
+	 * has no escaping flow control (see {@code containsEscapingFlowControl}), so a plain call
+	 * preserves the semantics exactly.
+	 *
+	 * @param branchBody   the branch body to hoist
+	 * @param isThenBranch whether this is the then branch (naming only)
+	 *
+	 * @return the instructions calling the generated method
+	 */
+	private List<AbstractInsnNode> generateOutlinedStandaloneBranchCall( BoxStatement branchBody, boolean isThenBranch ) {
+		ClassNode	owningClass		= transpiler.getOwningClass();
+		String		methodName		= "ifBranch_" + ( isThenBranch ? "then" : "else" ) + "_" + transpiler.incrementAndGetLambdaCounter();
+		Type		declaringType	= Type.getObjectType( owningClass.name );
+
+		AsmHelper.methodWithContextAndClassLocator(
+		    owningClass,
+		    methodName,
+		    Type.getType( IBoxContext.class ),
+		    Type.VOID_TYPE,
+		    true,
+		    transpiler,
+		    false,
+		    () -> new ArrayList<>( transpiler.transform( branchBody, TransformerContext.NONE, ReturnValueContext.EMPTY ) )
+		);
+
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+
+		nodes.addAll( transpiler.getCurrentMethodContextTracker().orElseThrow().loadCurrentContext() );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    declaringType.getInternalName(),
+		    methodName,
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
+		    false
+		) );
 
 		return nodes;
 	}

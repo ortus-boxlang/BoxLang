@@ -292,7 +292,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 
 		nodes.addAll( expressionPos.end() );
 
-		nodes.addAll( transpiler.transform( forIn.getBody(), context, ReturnValueContext.VALUE_OR_NULL ) );
+		nodes.addAll( transformLoopBody( forIn.getBody(), context, "forInBody" ) );
 		nodes.addAll( varStore.nodes() );
 
 		nodes.add( continueTarget );

@@ -94,7 +94,7 @@ public class BoxWhileTransformer extends AbstractTransformer {
 		AsmHelper.addDebugLabel( nodes, "BoxWhile - jump end" );
 		nodes.add( new JumpInsnNode( Opcodes.IFEQ, end ) );
 
-		nodes.addAll( transpiler.transform( boxWhile.getBody(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
+		nodes.addAll( transformLoopBody( boxWhile.getBody(), TransformerContext.NONE, "whileBody" ) );
 		nodes.addAll( varStore.nodes() );
 
 		AsmHelper.addDebugLabel( nodes, "BoxWhile - jump start" );
