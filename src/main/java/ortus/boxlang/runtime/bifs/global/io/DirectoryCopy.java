@@ -18,6 +18,7 @@ package ortus.boxlang.runtime.bifs.global.io;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -62,7 +63,7 @@ public class DirectoryCopy extends BIF {
 	 *
 	 * @argument.overwrite whether to overwrite existing files at the destination
 	 *
-	 * @argument.followLinks [default:false] whether to follow symbolic links. When false, a link inside the source is copied as a link. When true, the
+	 * @argument.followLinks whether to follow symbolic links. When false, a link inside the source is copied as a link. When true, the
 	 *                       content the link points to is copied instead.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
@@ -86,7 +87,8 @@ public class DirectoryCopy extends BIF {
 		    arguments.get( Key.filter ),
 		    arguments.getAsBoolean( Key.createPath ),
 		    arguments.getAsBoolean( Key.overwrite ),
-		    arguments.getAsBoolean( Key.followLinks )
+		    // older version of compat override this BIF and don't have this arg, so treat the value carefully for now
+		    BooleanCaster.attempt( arguments.get( Key.followLinks ) ).orElse( false )
 		);
 
 		return null;
