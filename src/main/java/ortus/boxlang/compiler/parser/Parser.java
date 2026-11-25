@@ -206,6 +206,10 @@ public class Parser {
 				parser		= new BoxParser();
 				isScript	= false;
 			}
+			case GROOVYSCRIPT -> {
+				parser		= new GroovyParser();
+				isScript	= true;
+			}
 			default -> {
 				throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
 			}
@@ -290,6 +294,10 @@ public class Parser {
 			case BOXTEMPLATE -> {
 				parser		= new BoxParser();
 				isScript	= false;
+			}
+			case GROOVYSCRIPT -> {
+				parser		= new GroovyParser();
+				isScript	= true;
 			}
 			default -> {
 				throw new RuntimeException( "Unsupported language" );
@@ -410,6 +418,9 @@ public class Parser {
 			}
 			case "bx" -> {
 				return BoxSourceType.BOXSCRIPT;
+			}
+			case "groovy" -> {
+				return BoxSourceType.GROOVYSCRIPT;
 			}
 			default -> {
 				// TODO: For CFCompat. Figure out how to contribute this from the compat module, and decide

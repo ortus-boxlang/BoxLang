@@ -22,6 +22,7 @@ import java.math.BigInteger;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.GroovyEnumValue;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.util.MathUtil;
 import ortus.boxlang.runtime.types.util.TypeUtil;
@@ -118,6 +119,9 @@ public class StringCasterStrict implements IBoxCaster {
 		}
 		if ( object instanceof String str ) {
 			return str;
+		}
+		if ( object instanceof GroovyEnumValue enumValue ) {
+			return enumValue.toString();
 		}
 
 		if ( object instanceof Boolean bool ) {
