@@ -26,17 +26,7 @@ writeOutput( encMsg )
 
 ```
 
-
-### Encrypt using AES Galois/Counter Mode (GCM)
-
-
-```java
-msg = "data to encrypt"
-key = generateSecretKey( "AES" )
-encMsg = encrypt( msg, key, "AES/GCM/NoPadding", "Base64" )
-writeOutput( encMsg )
-
-```
+Result: a hex string which is different on every run
 
 
 ### Additional Examples
@@ -50,4 +40,27 @@ writeDump( testEncrypt )
 
 ```
 
+Result: a Base64 string which is different on every run
 
+### Unknown encodings throw an error
+
+```java
+key = generateSecretKey( "AES" )
+try {
+	encrypt( "top secret", key, "AES", "bogus" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: The encoding argument [bogus] is not a valid encoding type
+
+### The default encoding is UU
+
+```java
+key = generateSecretKey( "AES" )
+encrypted = encrypt( "top secret", key )
+writeOutput( decrypt( encrypted, key ) )
+```
+
+Result: top secret

@@ -43,16 +43,20 @@ public class StringBind extends BIF {
 	}
 
 	/**
-	 * This BIF allows you to bind a string with placeholders to a set of values.
-	 * Each placeholder is defined as {@code ${placeholder-name}} and can be used anywhere
-	 * and multiple times in the string.
+	 * Bind a set of values to the placeholders of a string. Each placeholder is written as <code>${placeholder-name}</code>, and can be used
+	 * anywhere and multiple times in the string.
+	 * A default value can be provided with <code>${placeholder-name:default}</code>. Placeholders with no value and no default are left
+	 * untouched.
+	 * Also available as the string member function <code>bind()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to bind with placeholders
+	 * @argument.string The string with the placeholders.
 	 *
-	 * @argument.placeholders A struct containing the placeholder values
+	 * @argument.placeholders A struct with the values of the placeholders, keyed by placeholder name.
+	 *
+	 * @return The string with the placeholders replaced by their values.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String input = arguments.getAsString( Key.string );

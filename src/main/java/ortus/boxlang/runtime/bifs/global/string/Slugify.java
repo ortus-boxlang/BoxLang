@@ -41,16 +41,21 @@ public class Slugify extends BIF {
 	}
 
 	/**
-	 * Slugify a string for URL safety
+	 * Slugify a string so it is safe to use in a URL. The string is trimmed and lowercased, runs of whitespace become a hyphen, accents are
+	 * removed, and every character
+	 * that is not a-z or 0-9 (or one of the allowed characters) is replaced with a hyphen. Consecutive hyphens are not collapsed.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The target string
+	 * @argument.string The string to slugify.
 	 *
-	 * @argument.maxLength The maximum number of chracters to allow, 0 is all
+	 * @argument.maxLength The maximum number of characters of the resulting slug. 0 means no limit. Defaults to 0.
 	 *
-	 * @argument.allow A regex safe list of additional characters to allow. The default is <code>[^a-z0-9]</code>
+	 * @argument.allow Additional characters to allow, written so they are safe inside a regular expression character class (for example "_" or
+	 *                 "\\-"). Defaults to none.
+	 *
+	 * @return The slug.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return StringUtil.slugify(

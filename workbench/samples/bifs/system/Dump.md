@@ -1,56 +1,56 @@
-### Dump Server Scope
-
-
-
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUChOLSpLLVLQtOYCAFhRBy8%3D" target="_blank">Run Example</a>
+### Dump the server scope
 
 ```java
 writeDump( server )
-
 ```
 
+Result: an HTML dump of the server scope structure
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwlzLEOgjAUheGdpzhhgsTIAxg2HdxZdLvCoTRpbxu4qLy9Tdz%2BfMPfdXikHaMopj1miB6wxavDwpVn3GQrkLCRxYkxqVENaS4Zc%2BAXk5jAjszqs3rjtWwavGXtHW3wkc%2BkvOucmvaEIC%2BGvh7E%2FbNGe6l%2B5%2B8tJw%3D%3D" target="_blank">Run Example</a>
+### Dump with a label
 
 ```java
-// You can dump any thing here. Easy to see the content of complex data type
-writeDump( var=getTimeZoneInfo(), label="Tag label" )
-
+writeDump( var = getTimeZoneInfo(), label = "Time zone" )
 ```
 
+Result: an HTML dump of the time zone struct headed by the label Time zone
 
 ### Limit recursion depth
 
-Prevents dumping deeply nested structures by limiting how many levels are recursed into.
-`depth` is 1-based: `-1` (the default) is unlimited, `0` shows nothing, `1` shows the top
-level with no recursion, `2` recurses once, etc.
+depth is 1-based: -1 (the default) is unlimited, 0 shows nothing, 1 shows the top level with no recursion, 2 recurses once, and so on.
 
 ```java
-writeDump( var=complexObject, depth=3 )
-
+complexObject = { a : { b : { c : 1 } } }
+writeDump( var = complexObject, depth = 2 )
 ```
+
+Result: a dump showing key a and its key b, without expanding the contents of b
 
 ### Limit the number of rows/items shown
 
-Limits how many keys, array elements, or query rows are shown per level, independently of
-recursion depth. Same 1-based semantics as `depth`.
+maxRows limits how many keys, array elements or query rows are shown per level, independently of depth. It has the same 1-based semantics as depth.
 
 ```java
-writeDump( var=bigArray, maxRows=10 )
-
+bigArray = [ 1, 2, 3, 4, 5, 6 ]
+writeDump( var = bigArray, maxRows = 3 )
 ```
+
+Result: a dump showing only the first 3 array items
+
+### Dump to the console as text
+
+```java
+writeDump( var = { a : 1 }, output = "console" )
+```
+
+Result: the struct is printed as plain text on the console and nothing is added to the page output
 
 ### Deprecated: top
 
-`top` is deprecated in favor of `maxRows` and `depth` above. For backwards compatibility it is
-still accepted and, when `maxRows` is not also passed, its value is used as `maxRows`. A
-deprecation warning is logged when it's used.
+top is deprecated in favor of maxRows. For backwards compatibility it is still accepted and, when maxRows is not also passed, its value is used as maxRows. A deprecation warning is logged when it is used.
 
 ```java
-writeDump( var=bigArray, top=10 )
-
+bigArray = [ 1, 2, 3, 4, 5, 6 ]
+writeDump( var = bigArray, top = 3 )
 ```
 
-
+Result: a dump showing only the first 3 array items

@@ -14,6 +14,8 @@ writeDump( ex )
 
 ```
 
+Result: a struct where DECRYPTED is `top secret`
+
 
 ### Additional Examples
 
@@ -27,4 +29,25 @@ writeDump( testDecrypt )
 
 ```
 
+Result: safe_our_tree
 
+### Decrypt a known value
+
+```java
+writeOutput( decrypt( "keciULin7bxOWvN/BOarWw==", "WTq8zYcZfaWVvMncigHqwQ==", "AES", "Base64" ) )
+```
+
+Result: top secret
+
+### Decrypt using CBC mode with an explicit initialization vector
+
+The same IV must be supplied to `encrypt()` and `decrypt()`. A string IV is padded or truncated to 16 bytes.
+
+```java
+key = generateSecretKey( "AES" )
+iv = "0123456789abcdef"
+encrypted = encrypt( "data", key, "AES/CBC/PKCS5Padding", "Base64", iv )
+writeOutput( decrypt( encrypted, key, "AES/CBC/PKCS5Padding", "Base64", iv ) )
+```
+
+Result: data

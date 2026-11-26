@@ -39,7 +39,9 @@ public class PascalCase extends BIF {
 	}
 
 	/**
-	 * Convert a string to PascalCase: the words of the string are joined and each word starts with an uppercase letter.
+	 * Convert a string to PascalCase: every word starts with an uppercase letter and the words are joined together. Words are detected by
+	 * underscores, hyphens, other
+	 * non-alphanumeric characters, and camelCase or acronym boundaries.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

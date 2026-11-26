@@ -53,8 +53,8 @@ public class SchedulerNew extends BIF {
 	 *
 	 * @argument.name The name of the scheduler to create. Required and must not be empty.
 	 *
-	 * @argument.timezone The timezone ID for the scheduler (for example <code>America/New_York</code>), parsed as a Java ZoneId. Defaults to the system
-	 *                    default timezone if not provided or blank.
+	 * @argument.timezone The timezone ID for the scheduler (for example <code>America/New_York</code>), parsed as a Java ZoneId.
+	 *                    Defaults to the system default timezone if not provided or blank.
 	 *
 	 * @argument.force Whether to register the scheduler even if one with the same name already exists. Defaults to false.
 	 *

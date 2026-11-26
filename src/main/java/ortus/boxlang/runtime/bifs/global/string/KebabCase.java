@@ -39,7 +39,9 @@ public class KebabCase extends BIF {
 	}
 
 	/**
-	 * Convert a string to kebab-case: lowercase words separated by hyphens.
+	 * Convert a string to kebab-case: lowercase words separated by hyphens. Words are detected by underscores, hyphens, other non-alphanumeric
+	 * characters,
+	 * and camelCase or acronym boundaries.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

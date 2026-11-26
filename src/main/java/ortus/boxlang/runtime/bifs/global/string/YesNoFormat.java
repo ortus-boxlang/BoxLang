@@ -38,14 +38,14 @@ public class YesNoFormat extends BIF {
 	}
 
 	/**
-	 *
-	 * Return Yes/No based on whether the input is true/false
+	 * Return "Yes" or "No" based on whether the input is true or false.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value The value to check for true/false and return Yes/No
+	 * @argument.value The value to check, any value that can be cast to a boolean (for example true, false, "yes", "no", 1, 0).
 	 *
+	 * @return "Yes" if the value is true, "No" otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsBoolean( Key.value ) ? "Yes" : "No";

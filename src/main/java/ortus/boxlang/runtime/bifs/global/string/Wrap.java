@@ -38,16 +38,20 @@ public class Wrap extends BIF {
 	}
 
 	/**
-	 * Wraps a string at the specified limit, breaking at the last space within the limit.
+	 * Wraps a string at the specified limit, breaking at the last space within the limit. If there is no space to break at, the line is broken
+	 * at the limit.
+	 * Lines are joined with the line separator of the operating system.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string The string to wrap.
 	 *
-	 * @argument.limit The character limit at which to wrap the string.
+	 * @argument.limit The maximum number of characters per line.
 	 *
-	 * @argument.strip If true, replaces all line endings with spaces before wrapping. Default is false.
+	 * @argument.strip If true, all line endings in the string are replaced with spaces before wrapping. Defaults to false.
+	 *
+	 * @return The wrapped string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	input	= arguments.getAsString( Key.string );

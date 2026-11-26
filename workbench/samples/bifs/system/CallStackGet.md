@@ -1,60 +1,36 @@
-### Tag Syntax
-
-This example the factorial of a number is computed.
-
+### Get the current call stack
 
 ```java
-<!--- callfact.bxm --->
-<bx:try>
-    <bx:include template="fact.bxm">
-
-<bx:catch type="any">
-    <bx:output>
-        #bxcatch.MESSAGE#
-        <br>#bxcatch.DETAIL#<br>
-    </bx:output>
-</bx:catch></bx:try>
+stack = callStackGet()
+writeOutput( isArray( stack ) )
 ```
 
+Result: true
 
-### Script Syntax
-
-This example the factorial of a number is computed.
-
+### Limit the number of frames
 
 ```java
-<!--- fact.bxm --->
-<bx:script>
-
-	numeric function factorial( Any n ) {
-		if( n == 1 ) {
-			writeDump( callStackGet() )
-			writeOutput( "<br>" )
-			return 1
-		}
-		 else {
-			writeDump( callStackGet() )
-			writeOutput( "<br>" )
-			return n * factorial( n - 1 )
-		}
-	}
-	factorial( 5 )
-</bx:script>
-
+function inner() {
+    return callStackGet( maxFrames = 1 )
+}
+frames = inner()
+writeOutput( isArray( frames ) && frames.len() <= 1 )
 ```
 
+Result: true
 
-### Additional Examples
+### Inspect the stack from a recursive function
 
+Each call adds frames to the stack, so the stack gets deeper as the recursion goes.
 
 ```java
-dump( var=CallStackGet( type="json" ), label="json " )
-dump( var=CallStackGet( type="json", offset=2 ), label="json with offset" )
-dump( var=CallStackGet( type="json", maxframes=2 ), label="json with maxFrames" )
-dump( var=CallStackGet( "string" ), label="string" )
-dump( var=CallStackGet( "array" ), label="array" )
-dump( var=CallStackGet( "html" ), label="html" )
-
+function factorial( n ) {
+    if ( n == 1 ) {
+        return callStackGet().len()
+    }
+    return factorial( n - 1 )
+}
+writeOutput( factorial( 3 ) > factorial( 1 ) )
 ```
 
-
+Result: true

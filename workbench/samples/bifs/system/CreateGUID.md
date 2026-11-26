@@ -1,23 +1,19 @@
-### Creates a Globally Unique Identifier (GUID). Each GUID will be unique
+### Create a GUID
 
-
-
-<a href="https://try.boxlang.io/?code=eJxLLkpNLEl1D%2FV00dC05gIAJW4ENA%3D%3D" target="_blank">Run Example</a>
+Each call returns a new, uppercase UUID v4 string in the 8-4-4-4-12 format. The value shown here is an example; it is different every time.
 
 ```java
-createGUID()
-
+writeOutput( createGUID() )
 ```
 
-Result: 38E5D44A-8D6A-42BF-B3A5-23FB2542786C
+Result: a 36-character uppercase string such as 38E5D44A-8D6A-42BF-B3A5-23FB2542786C
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FBwLkpNLEl1D%2FV00dBU0LTmAgBUQgZb" target="_blank">Run Example</a>
+### GUIDs are unique
 
 ```java
-dump( CreateGUID() )
-
+a = createGUID()
+b = createGUID()
+writeOutput( ( a != b ) & " " & len( a ) )
 ```
 
-
+Result: true 36

@@ -103,6 +103,8 @@ public class CreateObject extends BIF {
 	 *
 	 * @argument.properties Depending on the type, this can be used to pass additional properties to the object creation process
 	 *
+	 * @argument.externalOnly Optional. Whether to only load classes from external mappings when resolving a class (applies to class/component types).
+	 *
 	 * @argument.classLoader Optional class loader to use when loading Java classes. Only applicable for type="java".
 	 *
 	 * @throws BoxRuntimeException If the type is not supported and no interception is available.

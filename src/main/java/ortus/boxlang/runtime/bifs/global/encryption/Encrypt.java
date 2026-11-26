@@ -55,26 +55,33 @@ public class Encrypt extends BIF {
 	}
 
 	/**
-	 * Encrypts an object using the specified algorithm and key
+	 * Encrypts an object using the specified algorithm and key and returns the encrypted data as an encoded string. Strings (and values castable
+	 * to strings) are encrypted as UTF-8 bytes, binary values as raw bytes, and any other object must be serializable. A null object throws an
+	 * exception.
+	 *
+	 * This BIF is also registered as `EncryptBinary`, which currently runs exactly the same code and so also returns an encoded string.
+	 *
+	 * @argument.object The object to encrypt. If the object is not a string or binary data, it must implement java.io.Serializable.
+	 *
+	 * @argument.key The Base64 string representation of the secret key to use for encryption (see `generateSecretKey()` and
+	 *               `generatePBKDFKey()`). RSA algorithms instead take a Base64 RSA key (see `generateKeyPair()`).
+	 *
+	 * @argument.algorithm Optional. The algorithm to use, optionally with mode and padding, e.g. `AES/CBC/PKCS5Padding`. Defaults to `AES`.
+	 *
+	 * @argument.encoding Optional. The encoding of the returned encrypted text: `UU`, `Hex`, `Base64` or `Base64Url`. Defaults to `UU`.
+	 *
+	 * @argument.IVorSalt Optional. The initialization vector or salt (a string or binary). Required for feedback modes such as CBC and for PBE
+	 *                    algorithms. For feedback-mode algorithms, a string is padded or truncated to 16 bytes. If omitted for these algorithms, a random one
+	 *                    is generated and prepended to the encrypted data, so that `decrypt()` can also be called without it.
+	 *
+	 * @argument.iterations Optional. The number of iterations used by PBE algorithms. Defaults to 1000.
+	 *
+	 * @argument.precise Optional. Declared for compatibility but currently not used by the implementation. Defaults to true.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @function.EncryptBinary Encrypts a binary object using the specified algorithm and key
-	 *
-	 * @argument.object The object to encrypt. If the object is not a string or binary data, the object must implement the java.io.Serializable interface
-	 *
-	 * @argument.key The string representation of the secret key to use for encryption ( see generateSecretKey() )
-	 *
-	 * @argument.algorithm The algorithm to use for encryption. Default is AES
-	 *
-	 * @argument.encoding The encoding type to use for encoding the encrypted data. Default is UUEncode
-	 *
-	 * @argument.IVorSalt The initialization vector or salt to use for encryption.
-	 *
-	 * @argument.iterations The number of iterations to use for encryption. Default is 1000
-	 *
-	 * @argument.precise If set to true, the string and key will be validated before encryption to ensure conformity to the algorithm. Default is false
+	 * @return The encrypted data as a string, in the requested encoding.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Backwards compat argument named "string" is now "object"

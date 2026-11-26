@@ -52,8 +52,8 @@ public class ToBXStruct extends BIF {
 	 *
 	 * @argument.stream The Java stream of Map.Entry instances to collect. This is the object the member function is called on.
 	 *
-	 * @argument.type The type of struct to create: "default", "ordered" (insertion order), "sorted", "casesensitive", "ordered-casesensitive", "soft" or
-	 *                "weak". Defaults to "default". An unknown type throws a BoxRuntimeException.
+	 * @argument.type The type of struct to create: "default", "ordered" (insertion order), "sorted", "casesensitive",
+	 *                "ordered-casesensitive", "soft" or "weak". Defaults to "default". An unknown type throws a BoxRuntimeException.
 	 *
 	 * @return A BoxLang Struct of the requested type with the entries of the stream.
 	 */

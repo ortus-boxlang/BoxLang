@@ -50,20 +50,24 @@ public class Hmac extends BIF {
 	}
 
 	/**
-	 * Creates an algorithmic hash of an object
+	 * Generates an HMAC (Hash-based Message Authentication Code) of a value using a secret key, returned as a lowercase hexadecimal string. The
+	 * input is converted to bytes with the given encoding. This BIF is also a member function on strings, e.g. `"message".hmac( "secret",
+	 * "HmacSHA256" )`.
+	 *
+	 * @argument.input The value to generate the HMAC for.
+	 *
+	 * @argument.key The secret key used to generate the HMAC, as a string or binary value. Any other type throws an exception.
+	 *
+	 * @argument.algorithm Optional. The HMAC algorithm, e.g. HmacMD5, HmacSHA1, HmacSHA256, HmacSHA384 or HmacSHA512. Defaults to HmacMD5.
+	 *
+	 * @argument.encoding Optional. The charset used to convert strings to bytes. Defaults to utf-8.
+	 *
+	 * @argument.numIterations Optional. Declared for compatibility but currently not used by the implementation. Defaults to 1.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.input The item to be hashed
-	 *
-	 * @argument.key The secret key used to generate the HMAC. Can be a string or a binary value.
-	 *
-	 * @argument.algorithm The supported {@link java.security.MessageDigest } algorithm (case-insensitive)
-	 *
-	 * @argument.encoding Applicable to strings ( default "utf-8" )
-	 *
-	 * @argument.numIterations The number of iterations to re-digest the object ( default 1 );
+	 * @return The HMAC as a lowercase hexadecimal string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	hashItem	= arguments.get( Key.input );

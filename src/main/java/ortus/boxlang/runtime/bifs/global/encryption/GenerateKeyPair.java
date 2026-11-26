@@ -42,18 +42,20 @@ public class GenerateKeyPair extends BIF {
 	}
 
 	/**
-	 * Generates an asymmetric key pair and returns it as a struct with
-	 * algorithm, privateKey (base64 PKCS8 DER), publicKey (base64 X.509 SPKI DER),
-	 * privatePem and publicPem.
+	 * Generates an asymmetric key pair and returns it as a struct with the keys `algorithm`, `privateKey` (Base64 PKCS8 DER), `publicKey`
+	 * (Base64 X.509 SPKI DER), `privatePem` and `publicPem`. An unsupported algorithm, or a `keySize`/`curve` which does not apply to the
+	 * algorithm, throws an exception.
+	 *
+	 * @argument.algorithm The algorithm: Ed25519, Ed448, X25519, X448, RSA or EC (case-insensitive).
+	 *
+	 * @argument.keySize Optional. RSA only: 2048 (default), 3072 or 4096.
+	 *
+	 * @argument.curve Optional. EC only: secp256r1 (default), secp384r1 or secp521r1.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.algorithm The algorithm: Ed25519, Ed448, X25519, X448, RSA or EC.
-	 *
-	 * @argument.keySize RSA only. 2048 (default), 3072 or 4096.
-	 *
-	 * @argument.curve EC only. secp256r1 (default), secp384r1 or secp521r1.
+	 * @return A struct containing the algorithm and the private/public keys in DER (Base64) and PEM formats.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	size	= arguments.get( Key.keySize );

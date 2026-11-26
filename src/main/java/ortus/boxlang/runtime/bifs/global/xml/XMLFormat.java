@@ -47,15 +47,19 @@ public class XMLFormat extends BIF {
 	}
 
 	/**
-	 * Formats a string so that special XML characters can be used as text in XML
+	 * Escapes a string so that it can be used as text in XML, replacing the characters &lt; &gt; &amp; " and ' with entities. Also available as
+	 * the string member function {@code xmlFormat()}.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string The string to format
 	 *
-	 * @argument.escapeChars whether to escape additional characters restricted as per XML standards. For details, see
-	 *                       http://www.w3.org/TR/2006/REC-xml11-20060816/#NT-RestrictedChar.
+	 * @argument.escapeChars Defaults to false, which applies XML 1.1 escaping where control characters are encoded as numeric entities.
+	 *                       When true, XML 1.0 escaping is applied instead, which removes characters that are not allowed in XML 1.0 documents.
+	 *                       For details, see http://www.w3.org/TR/2006/REC-xml11-20060816/#NT-RestrictedChar.
+	 *
+	 * @return The escaped string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsBoolean( Key.escapeChars )

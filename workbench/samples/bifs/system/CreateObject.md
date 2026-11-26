@@ -1,64 +1,48 @@
-### Create a BX / Component Instance
+### Create and use a Java object
 
-createObject Component
-
-
-```java
-<bx:script>
-	tellTimeClass = createObject( "component", "appResources.components.tellTime" )
-	tellTimeClass.getLocalTime()
-</bx:script>
-
-```
-
-
-### Create a SOAP WebService Instance
-
-createObject WebService
-
+With the java type the class is loaded and the constructor is called with init().
 
 ```java
-<bx:script>
-	ws = createObject( "webservice", "http://www.xmethods.net/sd/2001/TemperatureService.wsdl" )
-	xlatstring = ws.getTemp( zipcode="55987" )
-	writeOutput( "The temperature at 55987 is " & xlatstring )
-</bx:script>
-      
+list = createObject( "java", "java.util.ArrayList" ).init()
+list.add( "a" )
+writeOutput( list.size() )
 ```
 
+Result: 1
 
-### Create a java class with specified bundle and version
+### Create a BoxLang class instance
 
-createObject filesystem
-
+For the class (or component) type the call returns a class reference; call init() to run the constructor.
 
 ```java
-POIFSFileSystem = createObject( "java", "org.apache.poi.poifs.filesystem.POIFSFileSystem", "apache.poi", "3.11.0" )
-
+tellTime = createObject( "component", "appResources.components.tellTime" ).init()
+writeOutput( tellTime.getLocalTime() )
 ```
 
+Result: the local time returned by the class (depends on the class and the current time)
 
-### Additional Examples
+### Create a SOAP web service client
 
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FDISUxKzbFVci5KTSxJ9U%2FKSk0uUcjMU8hKLEtU0lEoSyyyTUaS0lBQgsqAab3SkswcPY%2FE4gzfxAIlBU0FTWuuFJzGlmeWZADNzizR0CTC6JzEvHS94JKizLx0p9K0tNQioPl6EN0gawDE8j51" target="_blank">Run Example</a>
+The className is the WSDL URL and the call returns a ready-to-use SOAP client.
 
 ```java
-dump( label="CreateObject in java", var=createObject( "java", "java.util.HashMap" ) )
-dump( label="CreateObject with init()", var=createObject( "java", "java.lang.StringBuffer" ).init() )
-
+ws = createObject( "webservice", "http://www.xmethods.net/sd/2001/TemperatureService.wsdl" )
+temp = ws.getTemp( zipcode = "55987" )
+writeOutput( "The temperature at 55987 is " & temp )
 ```
 
+Result: the temperature returned by the web service (requires network access to the WSDL)
+
+### Unsupported types throw an error
+
+Unknown types are passed to the onCreateObjectRequest event; with no listeners an exception is thrown.
 
 ```java
-dump( var=createObject( "class", "com.my.bx.class" ), expand=false )
-// but even "class" is optional for bx
-dump( var=createObject( "com.my.bx.class" ), expand=false )
-// the modern new Object() syntax is also dynamic
-dump( var=new "com.my.bx.class"(), expand=false )
-dump( var=new com.my.bx.class(), expand=false )
-myClass = "com.my.bx.class"
-dump( var=new "#myClass#"(), expand=false )
-
+try {
+    createObject( "bogus", "some.Name" )
+} catch ( any e ) {
+    writeOutput( "failed" )
+}
 ```
 
-
+Result: failed

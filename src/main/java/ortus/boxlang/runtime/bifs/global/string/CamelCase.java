@@ -39,8 +39,10 @@ public class CamelCase extends BIF {
 	}
 
 	/**
-	 * Convert a string to camelCase: the words of the string are joined, the first word is lowercase and each following word starts with an
-	 * uppercase letter.
+	 * Convert a string to camelCase. The string is split into words on underscores, hyphens and whitespace; every word is lowercased, the
+	 * first word is kept lowercase and
+	 * each following word has its first letter uppercased, and the words are joined together. Note that word boundaries inside an existing
+	 * camelCase word are not detected.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

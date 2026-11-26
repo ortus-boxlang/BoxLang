@@ -40,13 +40,32 @@ public class StringSort extends ListSort {
 	}
 
 	/**
-	 * Sorts a string and returns the result
+	 * Sorts the characters of a string and returns the result as a new string. Characters are compared as text, ascending by default.
+	 * This BIF shares its arguments with the corresponding list function: the <code>list</code> argument is the string, and the delimiter is
+	 * always overridden with an empty string, so every character is one element. Pass the string positionally, as <code>list</code> or as
+	 * <code>string</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to sort
+	 * @argument.list The string whose characters are sorted.
 	 *
+	 * @argument.sortType Ignored. It is always set to "text".
+	 *
+	 * @argument.sortOrder The sort direction: "asc" or "desc". Defaults to "asc".
+	 *
+	 * @argument.delimiter Ignored. It is always set to an empty string so that every character of the string is an element.
+	 *
+	 * @argument.includeEmptyFields Not used for strings, since there are no delimiters. Defaults to false.
+	 *
+	 * @argument.multiCharacterDelimiter Not used for strings, since there are no delimiters. Defaults to false.
+	 *
+	 * @argument.localeSensitive Whether the text sort uses locale-aware comparison. Defaults to false.
+	 *
+	 * @argument.callback An optional comparator function used instead of the built-in text sort. It receives two characters and returns a
+	 *                    negative number, zero or a positive number.
+	 *
+	 * @return The string with its characters sorted.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.containsKey( Key.string ) ) {

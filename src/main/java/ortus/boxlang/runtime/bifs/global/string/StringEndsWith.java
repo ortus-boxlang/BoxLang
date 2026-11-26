@@ -39,7 +39,7 @@ public class StringEndsWith extends BIF {
 	}
 
 	/**
-	 * Determines whether a string ends with a specified suffix.
+	 * Determines whether a string ends with a specified suffix. The comparison is case-sensitive.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -48,7 +48,7 @@ public class StringEndsWith extends BIF {
 	 *
 	 * @argument.substring The suffix to check for.
 	 *
-	 * @return True if the string ends with the specified suffix, false otherwise.
+	 * @return True if the string ends with the specified suffix, false otherwise (also false if the string is null).
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return endsWith( arguments.getAsString( Key.string ), arguments.getAsString( Key.substring ) );

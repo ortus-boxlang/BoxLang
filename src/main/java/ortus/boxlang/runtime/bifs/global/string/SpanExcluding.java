@@ -42,17 +42,18 @@ public class SpanExcluding extends BIF {
 	}
 
 	/**
-	 * Get characters from a string, from the beginning to a character that is in a specified set of characters.
-	 * The search is case-sensitive.
+	 * Get the characters of a string from the beginning up to, but not including, the first character that is in a specified set of
+	 * characters.
+	 * The search is case-sensitive. If none of the characters is found, the whole string is returned.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to extract from
+	 * @argument.string The string to extract from. Must not be empty.
 	 *
-	 * @argument.set The set of chracters to exclude from the span.
+	 * @argument.set The set of characters that end the span. Each character is matched individually. Must not be empty.
 	 *
-	 * @return A string; characters from string, from the beginning to a character that is in set.
+	 * @return The characters from the beginning of the string up to the first character that is in the set.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	input		= arguments.getAsString( Key.string );

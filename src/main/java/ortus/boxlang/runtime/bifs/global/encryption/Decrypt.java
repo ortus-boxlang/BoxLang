@@ -52,26 +52,34 @@ public class Decrypt extends BIF {
 	}
 
 	/**
-	 * Decrypts a provided encoded encrypted string using the specified algorithm and key
+	 * Decrypts a string that was encrypted and encoded by `encrypt()`, using the given key and algorithm. The encrypted text is first decoded
+	 * using the `encoding`, then decrypted. The result is returned as a string, unless the decrypted bytes are a Java-serialized object, in
+	 * which case the deserialized object is returned.
+	 *
+	 * This BIF is also registered as `DecryptBinary`, which runs exactly the same code.
+	 *
+	 * @argument.string The encrypted (and encoded) text to decrypt.
+	 *
+	 * @argument.key The Base64 string representation of the secret key used for encryption (see `generateSecretKey()` and `generatePBKDFKey()`).
+	 *               RSA algorithms instead take a Base64 RSA key (see `generateKeyPair()`).
+	 *
+	 * @argument.algorithm Optional. The algorithm (optionally with mode and padding, e.g. `AES/CBC/PKCS5Padding`) used for encryption. Defaults
+	 *                     to `AES`.
+	 *
+	 * @argument.encoding Optional. The encoding of the encrypted text: `UU`, `Hex`, `Base64` or `Base64Url`. Defaults to `UU`.
+	 *
+	 * @argument.IVorSalt Optional. The initialization vector or salt used for encryption (a string or binary). Required for feedback modes such
+	 *                    as CBC and for PBE algorithms. For feedback-mode algorithms, a string is padded or truncated to 16 bytes. If it was omitted when
+	 *                    encrypting, it must be omitted here too.
+	 *
+	 * @argument.iterations Optional. The number of iterations used by PBE algorithms. Defaults to 1000.
+	 *
+	 * @argument.precise Optional. Declared for compatibility but currently not used by the implementation. Defaults to false.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @function.DecryptBinary Decripts an encrypted and encoded binary object using the specified algorithm and key
-	 *
-	 * @argument.string The encrypted string to decrypt
-	 *
-	 * @argument.key The string representation of the secret key to use for encryption ( see generateSecretKey() )
-	 *
-	 * @argument.algorithm The algorithm to use for encryption. Default is AES
-	 *
-	 * @argument.encoding The encoding type to use for encoding the encrypted data. Default is Base64
-	 *
-	 * @argument.IVorSalt The initialization vector or salt to use for encryption.
-	 *
-	 * @argument.iterations The number of iterations to use for encryption. Default is 1000
-	 *
-	 * @argument.precise If set to true, the string and key will be validated before encryption to ensure conformity to the algorithm. Default is false
+	 * @return The decrypted string, or the deserialized object if the decrypted data was a serialized Java object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	content		= arguments.getAsString( Key.string );

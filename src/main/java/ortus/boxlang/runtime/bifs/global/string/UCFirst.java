@@ -40,16 +40,21 @@ public class UCFirst extends BIF {
 	}
 
 	/**
-	 * Transform the first letter of a string to uppercase or the first letter of each word, and optionally lowercase uppercase characters.
+	 * Transform the first letter of a string to uppercase, or the first letter of each word, and optionally lowercase words that are
+	 * completely uppercase first.
+	 * The string is split on whitespace and rejoined with single spaces, so runs of whitespace are collapsed into one space.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string The string to transform.
-	 * 
-	 * @argument.doAll Boolean flag indicating whether to transform the first letter of each word.
-	 * 
-	 * @argument.doLowerIfAllUppercase Boolean flag indicating whether to lowercase uppercase characters.
+	 *
+	 * @argument.doAll If true, the first letter of every word is uppercased instead of only the first word. Defaults to false.
+	 *
+	 * @argument.doLowerIfAllUppercase If true, words that are completely uppercase are lowercased before the first letter is uppercased.
+	 *                                 Defaults to false.
+	 *
+	 * @return The transformed string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ucFirst(

@@ -1,9 +1,19 @@
-### Register a request-scoped interceptor
+### Register a request-scoped interceptor class
+
+The class (for example MyRequestInterceptor.bx) defines methods named after the events it listens to.
 
 ```java
-boxRegisterRequestInterceptor( "myRequestInterceptor", "path.to.Interceptor" )
-writeOutput( "registered" )
-
+interceptor = new MyRequestInterceptor()
+result = boxRegisterRequestInterceptor( interceptor )
+writeOutput( result )
 ```
 
-Result: registered
+Result: true
+
+### Register a request-scoped closure
+
+```java
+boxRegisterRequestInterceptor( ( data ) => false, [ "onRequestEnd" ] )
+```
+
+Result: the closure listens to onRequestEnd for the application request only; no output

@@ -61,17 +61,20 @@ public class XMLSearch extends BIF {
 	}
 
 	/**
-	 * Get XML values according to given xPath query
+	 * Searches an XML document or node using an XPath expression. Also available as the member function {@code search()} on XML objects.
+	 * Expressions which select nodes return an array of XML nodes (empty if nothing matched). Expressions which evaluate to a
+	 * scalar, such as {@code count(...)}, {@code string(...)} or {@code boolean(...)}, return a number, string or boolean.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.XMLNode The XML node to search
-	 * 
-	 * @argument.xpath The xpath query to search for
-	 * 
-	 * @argument.params The parameters to pass to the xpath query
+	 * @argument.XMLNode The XML document or node to search
 	 *
+	 * @argument.xpath The XPath expression to evaluate. Variables can be referenced as {@code $name}.
+	 *
+	 * @argument.params A struct of values for the variables used in the XPath expression. Defaults to an empty struct.
+	 *
+	 * @return An array of matching XML nodes, or a number, string or boolean for scalar expressions.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		XML					xml				= arguments.getAsXML( Key.XMLNode );

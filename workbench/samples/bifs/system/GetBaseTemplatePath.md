@@ -1,20 +1,16 @@
-### Basic Example
-
-
-
-<a href="https://try.boxlang.io/?code=eJxLTy1xSixODUnNLchJLEkNSCzJ0NC05gIAalMIGw%3D%3D" target="_blank">Run Example</a>
+### Get the base template path
 
 ```java
-getBaseTemplatePath()
+path = getBaseTemplatePath()
+writeOutput( isSimpleValue( path ) )
 ```
 
+Result: true
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUEhPLXFKLE4NSc0tyEksSQ1ILMnQ0FTQtOYCAPrgDG0%3D" target="_blank">Run Example</a>
+### Show the path
 
 ```java
-writeDump( getBaseTemplatePath() )
+writeOutput( getBaseTemplatePath() )
 ```
 
-
+Result: the absolute file system path of the requested template, or an empty string when there is no request context (depends on your environment)

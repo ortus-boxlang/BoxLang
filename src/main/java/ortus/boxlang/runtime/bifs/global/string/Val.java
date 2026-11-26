@@ -39,13 +39,16 @@ public class Val extends BIF {
 	}
 
 	/**
-	 * Converts numeric characters and the first period found that occur at the beginning of a string to a number. A period not accompianied by at least
-	 * one numeric digit will be ignored. If no numeric digits are found at the start of the string, zero will be returned.
+	 * Converts the numeric characters at the beginning of a string to a number. A leading minus sign and the first period are allowed.
+	 * Parsing stops at the first character that cannot be part of the number. If no digits are found at the start of the string, zero is
+	 * returned.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to parse
+	 * @argument.string The string to parse.
+	 *
+	 * @return The number found at the beginning of the string, or 0 if there is none.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		var input = arguments.getAsString( Key.string );

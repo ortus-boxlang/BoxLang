@@ -42,12 +42,16 @@ public class SQLPrettify extends BIF {
 	}
 
 	/**
-	 * Prettify a SQL string
+	 * Prettify a SQL string for readability. Major SQL keywords are placed on their own line followed by an indented line, commas start a new
+	 * indented line and
+	 * parentheses are spaced. The whole statement is converted to uppercase.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.sql The string to prettify
+	 * @argument.sql The SQL string to prettify.
+	 *
+	 * @return The formatted SQL, or an empty string if the SQL is null or blank.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return StringUtil.prettySql( arguments.getAsString( Key.sql ) );

@@ -42,17 +42,18 @@ public class SpanIncluding extends BIF {
 	}
 
 	/**
-	 * Gets characters from a string, from the beginning to a character that is NOT in a specified set of characters.
+	 * Get the characters of a string from the beginning for as long as they are in a specified set of characters. The span ends at the first
+	 * character that is NOT in the set.
 	 * The search is case-sensitive.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to extract from
+	 * @argument.string The string to extract from. Must not be empty.
 	 *
-	 * @argument.set The set of chracters to exclude from the span.
+	 * @argument.set The set of characters allowed in the span. Each character is matched individually. Must not be empty.
 	 *
-	 * @return A string; characters from string, from the beginning to a character that is not in set.
+	 * @return The characters from the beginning of the string up to the first character that is not in the set.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get any characters from the set that can be found in the string.

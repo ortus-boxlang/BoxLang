@@ -57,16 +57,20 @@ public class XMLElemNew extends BIF {
 	}
 
 	/**
-	 * Creates a new XML Element which can be appended to an XML document
+	 * Creates a new XML element owned by the given XML document, which can then be appended to the document or to another element
+	 * (for example by assigning it to {@code xmlRoot} or appending it to {@code xmlChildren}). The element is not attached automatically.
+	 * For compatibility with ACF and Lucee the namespace may also be passed as the second argument, followed by the element name.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.xml The parent XML object to associate the new node to
-	 * 
-	 * @argument.childName The XML name of the new child node
-	 * 
-	 * @argument.namespace The XML namespace to attach to the new child node
+	 * @argument.XML The XML document (for example from {@code xmlNew()}) which will own the new element.
+	 *
+	 * @argument.childname The XML name of the new element.
+	 *
+	 * @argument.namespace Optional XML namespace URI to attach to the new element.
+	 *
+	 * @return The new element as an XML object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		XML		xmlObject		= arguments.getAsXML( Key.XML );

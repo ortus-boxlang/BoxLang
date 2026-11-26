@@ -40,14 +40,33 @@ public class StringSome extends ListSome {
 	}
 
 	/**
-	 * Tests whether any item in a string meets the specified callback
+	 * Tests whether at least one character of a string meets the criteria of a callback. It stops at the first character for which the
+	 * callback returns true.
+	 * This BIF shares its arguments with the corresponding list function: the <code>list</code> argument is the string, and the delimiter is
+	 * always overridden with an empty string, so every character is one element. Pass the string positionally, as <code>list</code> or as
+	 * <code>string</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string string to test
+	 * @argument.list The string to test.
 	 *
-	 * @argument.closure function closure test to execute
+	 * @argument.callback The test function. It receives the character and its 1-based index, and must return a boolean. A Java Predicate
+	 *                    receives only the character.
+	 *
+	 * @argument.delimiter Ignored. It is always set to an empty string so that every character of the string is an element.
+	 *
+	 * @argument.includeEmptyFields Not used for strings, since there are no delimiters. Defaults to false.
+	 *
+	 * @argument.multiCharacterDelimiter Not used for strings, since there are no delimiters. Defaults to false.
+	 *
+	 * @argument.parallel Whether to run the callback in parallel. Defaults to false.
+	 *
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. Ignored if parallel is false.
+	 *
+	 * @argument.virtual If true, the callback is invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return True if the callback returned true for at least one character, false otherwise (including an empty string).
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.containsKey( Key.string ) ) {

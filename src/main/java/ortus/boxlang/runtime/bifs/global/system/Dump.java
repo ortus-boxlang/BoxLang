@@ -123,6 +123,8 @@ public class Dump extends BIF {
 	 * @argument.format The format of the output to a <strong>filename</strong>. Can be "html" or "text". The default is according to the output location.
 	 *
 	 * @argument.showUDFs Show UDFs or not. Default is true. (Only in HTML output)
+	 *
+	 * @return null. The dump is written to the chosen output location.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Abort as String and empty means true <bx:dump var="" abort>
