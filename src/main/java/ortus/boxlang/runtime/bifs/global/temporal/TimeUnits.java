@@ -218,7 +218,8 @@ public class TimeUnits extends BIF {
 	 *
 	 * @argument.timezone An optional timezone which to convert the date object to
 	 *
-	 * @argument.locale An optional ISO locale string which will return the specified time unit with a locale-specific result ( e.g. month name, or starting day of week as Monday vs Sunday )
+	 * @argument.locale An optional ISO locale string which will return the specified time unit with a locale-specific result ( e.g. month name, or
+	 *                  starting day of week as Monday vs Sunday )
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

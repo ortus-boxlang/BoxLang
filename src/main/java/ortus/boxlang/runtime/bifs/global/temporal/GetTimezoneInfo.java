@@ -48,7 +48,8 @@ public class GetTimezoneInfo extends BIF {
 
 	/**
 	 * Retrieves a read-only struct of information about a timezone with the keys: DSTOffset (milliseconds), id, isDSTon, name, nameDST,
-	 * offset (raw offset in seconds), shortName, shortNameDST, timezone, utcHourOffset, utcMinuteOffset and utcTotalOffset (absolute raw offset in seconds).
+	 * offset (raw offset in seconds), shortName, shortNameDST, timezone, utcHourOffset, utcMinuteOffset and utcTotalOffset (absolute raw offset in
+	 * seconds).
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

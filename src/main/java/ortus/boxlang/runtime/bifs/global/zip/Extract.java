@@ -73,7 +73,8 @@ public class Extract extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.format The format of the archive: bzip, bzip2, gzip, tar, tar.bz, tbz, tbz2, tgz, tar.gz or zip. If omitted, it is detected from the source extension,
+	 * @argument.format The format of the archive: bzip, bzip2, gzip, tar, tar.bz, tbz, tbz2, tgz, tar.gz or zip. If omitted, it is detected from the
+	 *                  source extension,
 	 *                  and an unrecognized extension throws an exception.
 	 *
 	 * @argument.source The absolute path to the archive file to extract. A missing source throws an exception.
@@ -84,7 +85,8 @@ public class Extract extends BIF {
 	 *
 	 * @argument.recurse Whether to extract the files recursively. Default is true.
 	 *
-	 * @argument.filter A glob pattern matched against the entry path, or a Function/Lambda that receives the entry path and returns a boolean. Only matching entries are extracted.
+	 * @argument.filter A glob pattern matched against the entry path, or a Function/Lambda that receives the entry path and returns a boolean. Only
+	 *                  matching entries are extracted.
 	 *
 	 * @argument.entryPaths The exact entry paths inside the archive to extract. It can be a string or an array of strings.
 	 *

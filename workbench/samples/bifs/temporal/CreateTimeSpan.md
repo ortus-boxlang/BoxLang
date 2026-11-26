@@ -25,9 +25,9 @@ createTimespan( 0, 6, 0, 0 )
 
 Result: PT6H
 
-### Adding a date and a timestamp
+### Adding a timespan to a date
 
-Instead of using dateAdd you could add a timestamp to a date object
+A timespan can be converted to seconds and added to a date with dateAdd
 
 
 ```java

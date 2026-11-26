@@ -54,7 +54,8 @@ public class XMLParse extends BIF {
 	 *
 	 * @argument.caseSensitive Whether identifiers in the parsed document ( e.g. dot notation ) are case sensitive. Defaults to true.
 	 *
-	 * @argument.validator An optional validator to apply to the parsed XML. This can be a string containing a path or URL to an XSD schema file, or a struct of XML security settings
+	 * @argument.validator An optional validator to apply to the parsed XML. This can be a string containing a path or URL to an XSD schema file, or a
+	 *                     struct of XML security settings
 	 *
 	 * @argument.lenient Whether the XML parsing should be lenient. When passed it overrides the lenient processing setting of the validator settings.
 	 *

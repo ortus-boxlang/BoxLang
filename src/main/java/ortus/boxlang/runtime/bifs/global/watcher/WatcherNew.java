@@ -106,7 +106,8 @@ public class WatcherNew extends BIF {
 	 *
 	 * @argument.errorThreshold Consecutive listener errors before auto-stop. Defaults to 10.
 	 *
-	 * @argument.force Whether to replace an existing watcher with the same name. Defaults to false, in which case a duplicate name throws an exception.
+	 * @argument.force Whether to replace an existing watcher with the same name. Defaults to false, in which case a duplicate name throws an
+	 *                 exception.
 	 *
 	 * @return The registered {@link WatcherInstance}, in the CREATED state.
 	 *
