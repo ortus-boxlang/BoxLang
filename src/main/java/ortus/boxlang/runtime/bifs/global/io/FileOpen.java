@@ -54,8 +54,8 @@ public class FileOpen extends BIF {
 	 *
 	 * @argument.charset Optional. The character set used when reading or writing the file. Defaults to utf-8.
 	 *
-	 * @argument.seekable Optional. Whether the file can be repositioned with `fileSeek()`. If not provided, the default of the file mode is
-	 *                    used.
+	 * @argument.seekable Optional. Whether the file can be repositioned with `fileSeek()`. If not provided, files opened in a read mode are
+	 *                    seekable and files opened in write or append mode are not.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

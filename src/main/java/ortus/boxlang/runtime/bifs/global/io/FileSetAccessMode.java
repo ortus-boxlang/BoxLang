@@ -43,8 +43,8 @@ public class FileSetAccessMode extends BIF {
 	}
 
 	/**
-	 * Sets the POSIX permissions on a file or directory using a mode such as `755` or `644`. This has no effect on operating systems which do
-	 * not support POSIX permissions. Also available as the member function `setAccessMode()` on file objects.
+	 * Sets the POSIX permissions on a file or directory using a mode such as `755` or `644`. An exception is thrown if the file system does not
+	 * support POSIX permissions or the mode is not three digits. Also available as the member function `setAccessMode()` on file objects.
 	 *
 	 * @argument.file The file path or file object.
 	 *
