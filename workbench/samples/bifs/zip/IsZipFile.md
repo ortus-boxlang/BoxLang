@@ -3,7 +3,8 @@
 ```java
 zipFile = getTempDirectory() & "test.zip"
 // Create a simple zip for testing
-compress( "zip", getTempDirectory(), zipFile )
+fileWrite( getTempDirectory() & "hello.txt", "hello" )
+compress( format = "zip", source = getTempDirectory() & "hello.txt", destination = zipFile, overwrite = true )
 writeOutput( isZipFile( zipFile ) )
 
 ```

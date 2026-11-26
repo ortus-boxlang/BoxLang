@@ -54,3 +54,14 @@ writeDump( var = bigArray, top = 3 )
 ```
 
 Result: a dump showing only the first 3 array items
+
+### Use the bxDump member function
+
+Any value can be dumped with the bxDump() member function.
+
+```java
+data = [ 1, 2, 3 ]
+data.bxDump( label = "My array" )
+```
+
+Result: an HTML dump of the array headed by the label My array
