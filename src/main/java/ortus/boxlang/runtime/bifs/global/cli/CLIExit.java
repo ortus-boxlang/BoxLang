@@ -38,12 +38,14 @@ public class CLIExit extends BIF {
 	}
 
 	/**
-	 * Exits the CLI with the specified exit code.
+	 * Exits the CLI application, terminating the JVM with the specified exit code. Code after this call is not executed.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.exitCode By convention, a nonzero status code, indicates abnormal termination. Deault code is 0.
+	 * @argument.exitCode The exit code. By convention a nonzero status code indicates abnormal termination. Defaults to 0.
+	 *
+	 * @return Never returns.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		System.exit( arguments.getAsInteger( Key.exitCode ) );

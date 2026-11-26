@@ -31,12 +31,13 @@ public class CacheProviders extends BIF {
 	}
 
 	/**
-	 * Get an array of all the registered cache providers in BoxLang
+	 * Gets the names of all the cache providers registered in BoxLang. Cache providers are normally registered by modules,
+	 * so the array can be empty when no cache modules are installed.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @return An array of all the registered cache providers in BoxLang
+	 * @return An array with the names of all the registered cache providers.
 	 */
 	public Array _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the requested cache

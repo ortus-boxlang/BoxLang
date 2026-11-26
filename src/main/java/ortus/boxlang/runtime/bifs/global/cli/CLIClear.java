@@ -36,11 +36,12 @@ public class CLIClear extends BIF {
 	}
 
 	/**
-	 * Clears the CLI screen.
+	 * Clears the CLI screen. On Windows it runs the <code>cls</code> command, on other systems it prints the ANSI clear screen escape sequence.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @return Nothing (null).
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( System.getProperty( "os.name" ).contains( "Windows" ) ) {
