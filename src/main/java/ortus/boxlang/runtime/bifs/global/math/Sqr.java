@@ -41,12 +41,14 @@ public class Sqr extends BIF {
 	}
 
 	/**
-	 * Returns the square root of a number
-	 * 
+	 * Returns the square root of a number. Also available as <code>number.sqr()</code>.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
-	 * @argument.value The number to return the square root of
+	 *
+	 * @argument.value The number to calculate the square root of.
+	 *
+	 * @return The square root of the number.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return _invoke( arguments.getAsNumber( Key.value ) );

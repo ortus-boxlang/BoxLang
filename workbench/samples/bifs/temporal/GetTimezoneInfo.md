@@ -40,3 +40,30 @@ dump( GetTimeZoneInfo() )
 ```
 
 
+### Inspect a specific timezone
+
+Names are rendered with the JVM time zone names for the requested locale.
+
+```java
+info = getTimezoneInfo( "America/New_York", "en-US" )
+writeOutput( info.id & " " & info.utcHourOffset & " " & info.offset & " " & info.shortName & " " & info.shortNameDST )
+```
+
+Result: America/New_York -5 -18000 EST EDT
+
+### Offsets that are not whole hours
+
+```java
+info = getTimezoneInfo( "Asia/Kolkata", "en-US" )
+writeOutput( info.utcHourOffset & ":" & info.utcMinuteOffset & " " & info.name )
+```
+
+Result: 5:30 India Standard Time
+
+### Localized timezone name
+
+```java
+writeOutput( getTimezoneInfo( "US/Hawaii", "de-DE" ).name )
+```
+
+Result: Hawaii-Aleuten-Normalzeit

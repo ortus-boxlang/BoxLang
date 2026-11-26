@@ -201,3 +201,5 @@ try {
 ```
 
 Result: Could not create a struct with a type of [BOGUS] as it is not a known type.
+
+Result: a dump of the struct with the keys name, age and city

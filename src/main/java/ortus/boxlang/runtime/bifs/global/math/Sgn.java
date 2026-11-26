@@ -40,12 +40,14 @@ public class Sgn extends BIF {
 	}
 
 	/**
-	 * Determine the sign of a number
+	 * Determines the sign of a number. Also available as <code>number.sgn()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.number The number to determine the sign of.
+	 *
+	 * @return 1 if the number is positive, -1 if it is negative, and 0 if it is zero.
 	 */
 	public Integer _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Number number = arguments.getAsNumber( Key.number );

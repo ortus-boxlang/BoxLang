@@ -35,3 +35,42 @@ writeOutput( "<br>Month of the given date is " & d1.Part( "m", "Asia/Calcutta" )
 ```
 
 
+### Extract the year and quarter
+
+```java
+dt = createDateTime( 2024, 3, 15, 10, 30, 45 )
+writeOutput( datePart( "yyyy", dt ) & " " & datePart( "q", dt ) )
+```
+
+Result: 2024 1
+
+### Day of year and minute
+
+```java
+dt = createDateTime( 2024, 3, 15, 10, 30, 45 )
+writeOutput( datePart( "y", dt ) & " " & datePart( "n", dt ) )
+```
+
+Result: 75 30
+
+### Apply a timezone first
+
+10:30 UTC is 06:30 in New York (UTC-4), assuming the default timezone is UTC.
+
+```java
+writeOutput( datePart( "h", createDateTime( 2024, 3, 15, 10, 30, 45 ), "America/New_York" ) )
+```
+
+Result: 6
+
+### An unsupported datepart throws an error
+
+```java
+try {
+	datePart( "x", createDate( 2024, 3, 15 ) )
+} catch( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: The key [x] is not supported for the DatePart method

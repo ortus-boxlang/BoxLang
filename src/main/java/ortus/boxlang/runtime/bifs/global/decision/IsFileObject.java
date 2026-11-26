@@ -36,12 +36,14 @@ public class IsFileObject extends BIF {
 	}
 
 	/**
-	 * Determine whether the given object is a BoxLang File object.
+	 * Determines whether a value is a BoxLang File object, as returned by `fileOpen()`. Paths (strings) and other values return false.
+	 *
+	 * @argument.object The value to test.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.object Object to test.
+	 * @return True if the value is a BoxFile instance, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.get( Key.object ) instanceof BoxFile;

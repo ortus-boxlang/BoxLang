@@ -52,6 +52,7 @@ public class ArrayTranspose extends BIF {
 	 * The first element of every array becomes the first row of the result, the second elements become the second row, and so on.
 	 * An exception is thrown if any argument is not an array or the arrays have different lengths. No arguments (or empty arrays) return an
 	 * empty array.
+	 * 
 	 * <pre>
 	 * arrayTranspose(
 	 *     [ 1, 2, 3 ],

@@ -73,3 +73,32 @@ dump( dateAdd( "yyyy", 1, now() ) )
 ```
 
 
+### Add months, clamping to the end of the month
+
+Results assume the runtime default timezone is UTC.
+
+```java
+writeOutput( dateAdd( "m", 1, createDate( 2024, 1, 31 ) ) )
+```
+
+Result: {ts '2024-02-29 00:00:00'}
+
+### Subtract hours
+
+```java
+writeOutput( dateAdd( "h", -5, createDateTime( 2024, 1, 1, 3, 0, 0 ) ) )
+```
+
+Result: {ts '2023-12-31 22:00:00'}
+
+### An unknown datepart throws an error
+
+```java
+try {
+	dateAdd( "x", 1, createDate( 2024, 1, 1 ) )
+} catch( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: The datepart unit of [x] is not recognized.

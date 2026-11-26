@@ -36,12 +36,16 @@ public class IsBoolean extends BIF {
 	}
 
 	/**
-	 * Determine whether a given object is a boolean
+	 * Determines whether a value is a boolean, or can be cast to a boolean. This is true for the booleans `true`/`false`, the strings `true`, `false`, `yes`
+	 * and `no` (case-insensitive), and numbers (or numeric strings), where zero is `false` and non-zero is `true`. Null, empty strings, arrays, structs, dates
+	 * and other strings return false.
+	 *
+	 * @argument.object The value to test for boolean-ness.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.object The value to test for boolean-ness.
+	 * @return True if the value can be cast to a boolean, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object obj = arguments.get( Key.object );

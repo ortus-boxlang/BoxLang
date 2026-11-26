@@ -36,23 +36,23 @@ public class IsDefined extends BIF {
 	}
 
 	/**
-	 * Determine whether a given variable reference exists.
-	 * <p>
+	 * Determines whether a given variable reference exists and is not null.
+	 *
 	 * For example:
 	 * <ul>
-	 * <li><code>isDefined( "luis" )</code> will test for the existence of an <code>lmajano</code> variable in any accessible scope.</li>
+	 * <li><code>isDefined( "luis" )</code> will test for the existence of a <code>luis</code> variable in any accessible scope.</li>
 	 * <li><code>isDefined( "variables.foo" )</code> will test for the existence of a <code>foo</code> variable in the <code>variables</code> scope.</li>
 	 * <li><code>isDefined( "brad.age" )</code> will test for the existence of an <code>age</code> key in the <code>brad</code> struct, in any accessible
 	 * scope</li>
 	 * </ul>
-	 * </p>
+	 *
+	 * @argument.variable The variable reference to test for existence, as a string. For security reasons, only dot-notation is supported. Struct/array
+	 * bracket notation is not supported, nor is function invocation, etc.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.variable The variable reference to test for existence. For security reasons, only dot-notation is supported. Struct/array bracket
-	 *                    notation
-	 *                    is not supported, nor is function invocation, etc.
+	 * @return True if the variable reference resolves to a non-null value, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ExpressionInterpreter.getVariable( context, arguments.getAsString( Key.variable ), true ) != null;

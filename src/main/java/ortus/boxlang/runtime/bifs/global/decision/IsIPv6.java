@@ -41,12 +41,16 @@ public class IsIPv6 extends BIF {
 	}
 
 	/**
-	 * Determine whether the given hostname supports IPv6.
+	 * Determines whether a host supports IPv6. The hostname (or IP address) is resolved and the result is true if any of the resolved addresses is an IPv6
+	 * address. IPv6 literals such as `::1` therefore return true, IPv4 literals return false, and names which cannot be resolved return false.
+	 * If no hostname is passed, the local hostname of the machine is tested.
+	 *
+	 * @argument.hostname Optional. The hostname or IP address to test. Defaults to the local hostname.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.ip String representing the IP address to test.
+	 * @return True if the host resolves to at least one IPv6 address, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		try {

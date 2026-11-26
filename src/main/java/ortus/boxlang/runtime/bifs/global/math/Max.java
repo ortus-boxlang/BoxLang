@@ -42,8 +42,7 @@ public class Max extends BIF {
 	}
 
 	/**
-	 *
-	 * Return larger of two numbers
+	 * Returns the larger of two numbers. Also available as <code>number.max( number2 )</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -51,6 +50,8 @@ public class Max extends BIF {
 	 * @argument.number1 The first number
 	 *
 	 * @argument.number2 The second number
+	 *
+	 * @return The larger of the two numbers.
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Number	number1	= arguments.getAsNumber( Key.number1 );

@@ -41,14 +41,18 @@ public class IsCustomFunction extends BIF {
 	}
 
 	/**
-	 * Determine whether a given object is a custom function.
+	 * Determines whether a value is a user defined function: a named function (UDF), a closure or a lambda. With the `type` argument the check is narrowed
+	 * to just one of those kinds. Non-function values return false.
+	 *
+	 * @argument.object The value to test for custom-function-ness.
+	 *
+	 * @argument.type Optional. Narrows the check to a specific kind of function: `UDF`, `Lambda` or `Closure` (case-insensitive). If omitted or empty, any
+	 * of the three kinds matches. An unknown type throws an IllegalArgumentException.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.object The value to test for closure-ness.
-	 *
-	 * @argument.type Check for a specific type of custom function - `UDF`, `Lambda`, or `Closure`.
+	 * @return True if the value is a custom function (of the requested type), false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String type = arguments.getAsString( Key.type );

@@ -3,7 +3,7 @@
 Converts a Java Stream into a comma-delimited string.
 
 ```java
-list = streamOf( "a", "b", "c" ).toBXList()
+list = [ "a", "b", "c" ].stream().toBXList()
 writeOutput( list )
 
 ```
@@ -13,7 +13,7 @@ Result: a,b,c
 ### Use a custom delimiter
 
 ```java
-list = streamOf( "x", "y", "z" ).toBXList( "|" )
+list = [ "x", "y", "z" ].stream().toBXList( "|" )
 writeOutput( list )
 
 ```
@@ -23,8 +23,8 @@ Result: x|y|z
 ### Map then collect to list
 
 ```java
-list = [ 1, 2, 3 ].toStream()
-    .map( (x) => "item-" & x )
+list = [ 1, 2, 3 ].stream()
+    .map( ( x ) -> "item-" & x )
     .toBXList( ", " )
 writeOutput( list )
 

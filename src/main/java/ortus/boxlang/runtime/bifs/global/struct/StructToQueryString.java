@@ -46,16 +46,16 @@ public class StructToQueryString extends BIF {
 	}
 
 	/**
-	 * Converts a struct to a query string using the specified delimiter.
-	 * <p>
-	 * The default delimiter is {@code "&"}
+	 * Converts a struct to a URL query string of name=value pairs. Names and values are URL-encoded and trimmed.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct to convert
+	 * @argument.struct The struct to convert.
 	 *
-	 * @argument.delimiter The delimiter to use in the query string. Default is "&"
+	 * @argument.delimiter The delimiter placed between name=value pairs. Defaults to "&".
+	 *
+	 * @return The query string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct target = arguments.getAsStruct( Key.struct );

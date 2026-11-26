@@ -56,17 +56,15 @@ writeOutput( createTimeSpan( 0, 6, 30, 0 ).toMinutes() )
 
 Result: 390
 
-### Add a timespan to a date
+### Convert a timespan to seconds
 
 ```java
-writeOutput( dateFormat( createDate( 2024, 1, 1 ) + createTimeSpan( 2, 0, 0, 0 ), "yyyy-MM-dd" ) )
+writeOutput( createTimeSpan( 0, 0, 2, 30 ).toSeconds() )
 ```
 
-Result: 2024-01-03
+Result: 150
 
 ### Fractional days are converted to smaller units
-
-Not run against the current source: this relies on the fractional-day conversion in the BIF (0.5 days becomes 720 minutes).
 
 ```java
 writeOutput( createTimeSpan( 0.5, 0, 0, 0 ).toHours() )

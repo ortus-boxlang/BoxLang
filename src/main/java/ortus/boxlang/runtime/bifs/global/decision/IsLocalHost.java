@@ -38,12 +38,15 @@ public class IsLocalHost extends BIF {
 	}
 
 	/**
-	 * Determine whether a given string value represents a loopback IP address, like `localhost`, `127.0.0.1` or `::1`.
+	 * Determines whether a given string is a loopback address, like `localhost`, `127.0.0.1` or `::1`. The value is resolved with DNS if needed. Blank
+	 * values and values which cannot be resolved return false.
+	 *
+	 * @argument.ip The IP address or hostname to test.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.ip String representing the IP address to test.
+	 * @return True if the value resolves to a loopback address, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		try {

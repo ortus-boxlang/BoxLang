@@ -48,6 +48,7 @@ public class ArrayRange extends BIF {
 	 * The range can be given with the range syntax <code>"{start}..{end}"</code> in the from argument, or with the from and to arguments.
 	 * Negative ranges are supported.
 	 * If to is omitted it defaults to from, and if to is less than from it is set to from, so the result always has at least one element.
+	 * 
 	 * <pre>
 	 * arrayRange( "1..5" ) // [ 1, 2, 3, 4, 5 ]
 	 * arrayRange( "-2..2" ) // [ -2, -1, 0, 1, 2 ]

@@ -39,12 +39,14 @@ public class IncrementValue extends BIF {
 	}
 
 	/**
-	 * Increment the integer part of a number
+	 * Increments a number by 1 and returns the result. The original value is not modified.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
-	 * @argument.number The number to increment the integer part of.
+	 *
+	 * @argument.number The number to increment.
+	 *
+	 * @return The number plus 1.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Number number = arguments.getAsNumber( Key.number );

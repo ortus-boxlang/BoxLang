@@ -39,12 +39,15 @@ public class Asin extends BIF {
 	}
 
 	/**
-	 * Returns the arcsine (inverse sine) of a number
+	 * Returns the arcsine (inverse sine) of a number, in radians. The input must be between -1 and 1 inclusive, otherwise an
+	 *     exception is thrown. Also available as <code>number.asin()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number The number to calculate the arcsine of
+	 * @argument.number The sine value to calculate the arcsine of. Must be in the range -1 to 1.
+	 *
+	 * @return The arcsine in radians, in the range -pi/2 to pi/2.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return _invoke( arguments.getAsDouble( Key.number ) );

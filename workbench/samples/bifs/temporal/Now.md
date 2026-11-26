@@ -32,3 +32,20 @@ writeOutput( "current Datetime is " & now() )
 ```
 
 
+### Now in a specific timezone
+
+now() returns a DateTime representing the current instant, so these examples show deterministic properties rather than the changing value.
+
+```java
+writeOutput( offset( now( "Asia/Tokyo" ) ) )
+```
+
+Result: +0900
+
+### The result is a DateTime
+
+```java
+writeOutput( now().getClass().getSimpleName() )
+```
+
+Result: DateTime

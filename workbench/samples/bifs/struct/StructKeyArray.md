@@ -77,3 +77,5 @@ writeOutput( structKeyArray( s ).toList() )
 ```
 
 Result: first,second,third
+
+Result: an array of the keys COW, PIG, CAT and BIRD in that order (ordered struct literal)

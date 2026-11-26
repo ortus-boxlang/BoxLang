@@ -48,69 +48,32 @@ public class IsValid extends BIF {
 	}
 
 	/**
-	 * Validates the incoming <code>value</code> against the given
-	 * <code>type</code>. If the type is a range, the value is
-	 * validated against the range. If the type is a pattern, the value is validated
-	 * against the pattern. If the type is a
-	 * date, the value is validated against the date format. If the type is a locale
-	 * date, the value is validated against the
-	 * locale date format. If the type is a regular expression, the value is
-	 * validated against the regular expression.
-	 * <p>
-	 * <strong>
-	 * Note we expressly do not support the `eurodate` type, since date formats vary
-	 * across EU countries. For this, prefer the `LSIsDate( date, locale )`
-	 * method instead.
-	 * </strong>
-	 * <p>
-	 * <h2>Valid Types</h2>
+	 * Validates a value against a named type, using the type's own rules. Some types take extra arguments:
 	 * <ul>
-	 * <li>array</li>
-	 * <li>binary</li>
-	 * <li>boolean</li>
-	 * <li>component</li>
-	 * <li>creditcard</li>
-	 * <li>date</li>
-	 * <li>email</li>
-	 * <li>float</li>
-	 * <li>function</li>
-	 * <li>guid</li>
-	 * <li>hex</li>
-	 * <li>integer</li>
-	 * <li>numeric</li>
-	 * <li>number</li>
-	 * <li>query</li>
-	 * <li>range</li>
-	 * <li>regex</li>
-	 * <li>regular_expression</li>
-	 * <li>social_security_number</li>
-	 * <li>ssn</li>
-	 * <li>string</li>
-	 * <li>struct</li>
-	 * <li>telephone</li>
-	 * <li>time</li>
-	 * <li>time</li>
-	 * <li>url</li>
-	 * <li>usdate</li>
-	 * <li>uuid</li>
-	 * <li>variablename</li>
-	 * <li>xml</li>
-	 * <li>zipcode</li>
+	 * <li><code>range</code> checks that the value is numeric and between <code>min</code> and <code>max</code></li>
+	 * <li><code>regex</code> / <code>regular_expression</code> checks the value against <code>pattern</code> (or <code>min</code> if no pattern is given)</li>
 	 * </ul>
+	 * <strong>Note:</strong> the CFML <code>eurodate</code> type is deliberately not supported, since date formats vary across EU countries. Prefer
+	 * <code>lsIsDate( date, locale )</code> instead.
+	 * <p>
+	 * Valid types: any, array, binary, boolean, class, closure, component, creditcard, date, email, float, function, guid, hex, integer, lambda, number,
+	 * numeric, query, range, regex, regular_expression, social_security_number, ssn, string, struct, telephone, time, udf, url, usdate, uuid,
+	 * variablename, xml and zipcode. An unknown type throws an IllegalArgumentException, as does the regex type with no pattern.
+	 *
+	 * @argument.type The type to validate the value against (case-insensitive).
+	 *
+	 * @argument.value The value to validate.
+	 *
+	 * @argument.min Optional. The minimum value for the range type, or the pattern for the regex types when no pattern argument is given.
+	 *
+	 * @argument.max Optional. The maximum value for the range type.
+	 *
+	 * @argument.pattern Optional. The regular expression used by the regex and regular_expression types. Defaults to an empty string.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.type The type to validate the value against
-	 *
-	 * @argument.value Value to test for validaty on a given type
-	 *
-	 * @argument.min The minimum value for the range type or a pattern to validate
-	 *               the value against
-	 *
-	 * @argument.max The maximum value for the range type
-	 *
-	 * @argument.pattern The pattern to validate the value against
+	 * @return True if the value is valid for the type, false otherwise.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

@@ -39,12 +39,15 @@ public class Acos extends BIF {
 	}
 
 	/**
-	 * Returns the arccosine (inverse cosine) of a number
+	 * Returns the arccosine (inverse cosine) of a number, in radians. The input must be between -1 and 1 inclusive, otherwise an
+	 *     exception is thrown. Also available as <code>number.acos()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number The number to calculate the arccosine of
+	 * @argument.number The cosine value to calculate the arccosine of. Must be in the range -1 to 1.
+	 *
+	 * @return The arccosine in radians, in the range 0 to pi.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return _invoke( arguments.getAsDouble( Key.number ) );

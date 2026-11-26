@@ -52,21 +52,24 @@ public class StructToSorted extends BIF {
 	}
 
 	/**
-	 * Converts a struct to a sorted struct - using either a callback comparator or textual directives as the sort option
+	 * Creates a new sorted struct containing the entries of the given struct, which is left unmodified. The sorting is driven either by a
+	 * textual directive (sortType and sortOrder) or by a comparator function that receives two key names. If sortType is a function it is
+	 * treated as the callback.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct to sort
+	 * @argument.struct The struct to sort.
 	 *
-	 * @argument.sortType An optional sort type to apply to that type - if a callback is given in this position it will be used as that argument
+	 * @argument.sortType The sort type: text (default), textNoCase or numeric. If a function is passed here it is used as the comparator callback.
 	 *
-	 * @argument.sortOrder The sort order applicable to the sortType argument
+	 * @argument.sortOrder The sort order, asc (default) or desc.
 	 *
-	 * @argument.localeSensitive Sort based on local rules
+	 * @argument.localeSensitive Whether text sorting uses locale rules. Defaults to false.
 	 *
-	 * @argument.callback An optional callback to use as the sorting function. You can alternatively pass a Java Comparator.
+	 * @argument.callback An optional comparator function (or Java Comparator) that receives two key names. Note that the default sortType of text takes precedence if the callback is not passed in the sortType position.
 	 *
+	 * @return A new sorted struct.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct target = arguments.getAsStruct( Key.struct );

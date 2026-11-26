@@ -49,10 +49,12 @@ public class ArrayReject extends BIF {
 	 * The original array is not modified.
 	 * The callback receives three arguments: the value, the one-based index and the array. A Java Predicate may also be passed, in which case it
 	 * only receives the value.
+	 * 
 	 * <pre>
 	 * values = [ 1, 2, 3, 4 ]
 	 * values.reject( ( value ) => value % 2 == 0 ) // [ 1, 3 ]
 	 * </pre>
+	 * 
 	 * <h2>Parallel Execution</h2>
 	 * If <code>parallel</code> is true and no <code>maxThreads</code> is passed, the work runs in parallel using the common ForkJoinPool.
 	 * If <code>maxThreads</code> is passed, a new ForkJoinPool with that many threads is created for the call and destroyed afterwards, so it

@@ -13,5 +13,13 @@ writeDump( structToQueryString( someStruct ) )
 
 ```
 
-Result: firstName=John&lastName=Doe
+Result: firstName=John&lastName=Doe (the pair order is not guaranteed for a default struct)
 
+### Custom delimiter using the member function
+
+```java
+params = [ a : 1, b : 2 ]
+writeOutput( params.toQueryString( ";" ) )
+```
+
+Result: a=1;b=2

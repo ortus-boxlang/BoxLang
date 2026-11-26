@@ -40,13 +40,15 @@ public class IsXmlAttribute extends BIF {
 	}
 
 	/**
-	 * Determines whether the function parameter is an ATTRIBUTE node of an XML doc.
-	 * Will return false for values refernced through the XMLAttributes struct. Useful for the results of XMLSearch()
+	 * Determines whether a value is an ATTRIBUTE node of an XML document. This is useful for the results of `xmlSearch()`, for example
+	 * `xmlSearch( doc, "/root/@attr" )`. It returns false for values read through the `xmlAttributes` struct, as those are plain strings.
+	 *
+	 * @argument.value The value to test.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value Value to test
+	 * @return True if the value is an XML attribute node, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		CastAttempt<XML> castAttempt = XMLCaster.attempt( arguments.get( Key.value ) );

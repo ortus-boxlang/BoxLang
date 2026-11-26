@@ -35,3 +35,34 @@ writeDump( DateConvert( "utc2Local", now() ) )
 ```
 
 
+### Convert local time to UTC
+
+10:00 in New York is 14:00 UTC on this date (daylight time, UTC-4).
+
+```java
+setTimezone( "America/New_York" )
+writeOutput( dateConvert( "local2Utc", createDateTime( 2024, 3, 15, 10, 0, 0 ) ) )
+```
+
+Result: {ts '2024-03-15 14:00:00'}
+
+### Convert a UTC string to local time
+
+```java
+setTimezone( "America/New_York" )
+writeOutput( dateConvert( "utc2Local", "2024-03-15 10:00:00" ) )
+```
+
+Result: {ts '2024-03-15 06:00:00'}
+
+### An invalid conversion type throws an error
+
+```java
+try {
+	dateConvert( "bad", createDateTime( 2024, 3, 15, 10, 0, 0 ) )
+} catch( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Input [conversionType] for component [dateConvert] must be one of the following values: local2utc, utc2Local

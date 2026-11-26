@@ -44,10 +44,12 @@ public class ArrayUnique extends BIF {
 	/**
 	 * Returns a new array with duplicate elements removed. The first occurrence of each element is kept and the original order is preserved.
 	 * The original array is not modified.
+	 * 
 	 * <pre>
 	 * values = [ 1, 1, 2, 3, 3 ]
 	 * values.unique() // [ 1, 2, 3 ]
 	 * </pre>
+	 * 
 	 * Also available as the <code>unique()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.

@@ -116,4 +116,6 @@ Dump( label="Results of StructFindValue(animals, ""medium"")", var=findMediumAni
 
 ```
 
+Result: a dump of all animals, then a dump of an array with one result struct for the PIG entry (path .PIG.SIZE)
+
 

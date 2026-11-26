@@ -38,12 +38,15 @@ public class Rand extends BIF {
 	}
 
 	/**
-	 * Return a random double between 0 and 1
+	 * Returns a pseudo-random double greater than or equal to 0 and less than 1. If a seed was set with randomize() in the current
+	 *     request, the sequence is repeatable.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.algorithm The algorithm to use to generate the random number.
+	 * @argument.algorithm The name of the random number generator algorithm to use. If omitted, the default generator is used.
+	 *
+	 * @return A random number between 0 (inclusive) and 1 (exclusive).
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	algorithm	= arguments.getAsString( Key.algorithm );

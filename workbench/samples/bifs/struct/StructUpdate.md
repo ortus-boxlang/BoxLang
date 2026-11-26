@@ -16,7 +16,7 @@ writeDump( JSONSerialize( myStruct ) )
 
 ```
 
-Result: {"A":1,"B":2,"C":15,"D":4}
+Result: {"A":1,"B":2,"C":15,"D":4} (key C was updated; the key order shown may differ)
 
 ### Additional Examples
 
@@ -37,4 +37,16 @@ Dump( label="Animals with cat updated", var=animals )
 
 ```
 
+Result: the first dump shows cat as meow; the second dump shows cat as purr
 
+### Set a key that does not exist yet
+
+Unlike structInsert, structUpdate never throws for an existing key, and it also creates missing keys.
+
+```java
+s = { a : 1 }
+structUpdate( s, "b", 2 )
+writeOutput( s.b )
+```
+
+Result: 2

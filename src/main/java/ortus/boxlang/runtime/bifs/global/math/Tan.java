@@ -43,12 +43,14 @@ public class Tan extends BIF {
 	}
 
 	/**
-	 * Returns the tangent of an angle that is entered in radians.
+	 * Returns the tangent of an angle entered in radians. Also available as <code>number.tan()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.number The angle in radians to calculate the tangent of
+	 *
+	 * @return The tangent of the angle.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return _invoke( arguments.getAsNumber( Key.number ) );

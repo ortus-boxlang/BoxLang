@@ -45,16 +45,17 @@ public class InputBaseN extends BIF {
 	}
 
 	/**
-	 * Converts a string, using the base specified by radix, to an integer.
+	 * Converts a string representing a number in the given base (radix) to its decimal value. A leading "0x" prefix is removed
+	 *     before parsing. Throws an exception if the string is not a valid number in that base.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to convert to an integer.
+	 * @argument.string The string to convert. Must not be empty.
 	 *
-	 * @argument.radix Base of the number represented by string, in the range 2-36.
+	 * @argument.radix The base of the number in the string, in the range 2-36.
 	 *
-	 * @return The integer value of the string.
+	 * @return The decimal value of the string.
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	string	= arguments.getAsString( Key.string );

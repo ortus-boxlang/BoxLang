@@ -58,13 +58,17 @@ public class IsEmpty extends BIF {
 	}
 
 	/**
-	 * Determine whether a given value is empty. We check for emptiness of
-	 * anything that can be casted to: Array, Struct, Query, or String.
+	 * Determines whether a value is empty. Null is always empty. Lists, maps, sets and StringBuilders are checked directly; otherwise the value is cast
+	 * (in order) to an Array, Struct, Query and finally a String, and the emptiness of the first successful cast is returned. Values which can't be cast
+	 * to any of those return false.
+	 *
+	 * This BIF is also registered as the `structIsEmpty` and `arrayIsEmpty` BIFs, and as a member function on arrays, structs, StringBuilders, strings,
+	 * queries and sets, for example `[].isEmpty()`.
+	 *
+	 * @argument.value The value/object to check for emptiness.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 *
-	 * @argument.value The value/object to check for emptiness.
 	 *
 	 * @return True if the value is empty, false otherwise.
 	 */

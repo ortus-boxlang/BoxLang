@@ -38,12 +38,14 @@ public class IsJSON extends BIF {
 	}
 
 	/**
-	 * Evaluates whether a string is in valid JSON (JavaScript Object Notation) data interchange format.
+	 * Determines whether a value is a string containing valid JSON (JavaScript Object Notation). Values which cannot be cast to a string return false.
 	 *
-	 * @argument.var The value to test for JSON
+	 * @argument.var The value to test for JSON.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope defining the value to test.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return True if the value is a string of valid JSON, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object				oInput			= arguments.get( Key.var );

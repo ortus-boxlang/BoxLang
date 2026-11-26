@@ -36,12 +36,14 @@ public class IsStringBuilder extends BIF {
 	}
 
 	/**
-	 * Returns true if the value is a BoxLang StringBuilder instance.
+	 * Determines whether a value is a BoxLang StringBuilder, as created with `stringBuilderNew()`. Plain strings return false.
+	 *
+	 * @argument.value The value to test.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value The value to test.
+	 * @return True if the value is a BoxStringBuilder instance, false otherwise.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

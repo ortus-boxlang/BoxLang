@@ -38,12 +38,14 @@ public class IsXMLNode extends BIF {
 	}
 
 	/**
-	 * Determines whether the function parameter is a ANY node of an XML doc.
+	 * Determines whether a value is any XML node (document, element, attribute, etc) or can be parsed into one. Well-formed XML strings return true.
+	 *
+	 * @argument.value The value to test.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value Value to test
+	 * @return True if the value is, or can be cast to, an XML node; false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		CastAttempt<XML> castAttempt = XMLCaster.attempt( arguments.get( Key.value ) );

@@ -64,3 +64,32 @@ writeOutput( d1.Compare( d ) & " Date1 is earlier than date2" )
 ```
 
 
+### Compare down to the hour
+
+Date1 is earlier than date2, so the result is -1.
+
+```java
+writeOutput( dateCompare( createDateTime( 2024, 1, 1, 9, 0, 0 ), createDateTime( 2024, 1, 1, 17, 0, 0 ), "h" ) )
+```
+
+Result: -1
+
+### The same day compares equal at day precision
+
+```java
+writeOutput( dateCompare( createDateTime( 2024, 1, 1, 9, 0, 0 ), createDateTime( 2024, 1, 1, 17, 0, 0 ), "d" ) )
+```
+
+Result: 0
+
+### An unsupported datepart throws an error
+
+```java
+try {
+	dateCompare( createDate( 2024, 1, 1 ), createDate( 2024, 1, 2 ), "ww" )
+} catch( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Invalid datepart: ww

@@ -42,12 +42,15 @@ public class Ceiling extends BIF {
 	}
 
 	/**
-	 * Determines the closest integer that is greater than a specified floating point number.
+	 * Rounds a number up to the closest integer that is greater than or equal to it. Also available as
+	 *     <code>number.ceiling()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.number The number for which to find the ceiling value.
+	 *
+	 * @return The smallest integer value not less than the number.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return _invoke( arguments.getAsNumber( Key.number ) );

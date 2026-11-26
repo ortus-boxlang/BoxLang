@@ -143,4 +143,6 @@ Dump( label="Results of StructFindKey(animals, ""size"", ""all"")", var=findAnim
 
 ```
 
+Result: a dump of all animals, then a dump of the matches for the key size: an array with two result structs (COW and CAT; PIG has no size)
+
 

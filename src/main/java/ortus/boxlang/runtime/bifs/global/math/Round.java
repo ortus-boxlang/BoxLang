@@ -45,14 +45,17 @@ public class Round extends BIF {
 	}
 
 	/**
-	 * Rounds a number to the closest integer.
+	 * Rounds a number to the nearest integer, or to a number of decimal places when precision is provided. Halves are rounded up
+	 *     (away from zero for positive numbers). Also available as <code>number.round()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number The number to be rounded.
-	 * 
-	 * @argument.precision The number of decimal places to round to (default is 0).
+	 * @argument.number The number to round.
+	 *
+	 * @argument.precision The number of decimal places to round to. Defaults to 0.
+	 *
+	 * @return The rounded number.
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Number	value		= arguments.getAsNumber( Key.number );

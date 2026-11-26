@@ -54,3 +54,50 @@ echo( DateDiff( "wd", "2016-06-27 00:00:00", "2016-07-27 01:00:00" ) & "<br>" )
 ```
 
 
+### Days between two dates
+
+January has 31 days and February 2024 has 29.
+
+```java
+writeOutput( dateDiff( "d", createDate( 2024, 1, 1 ), createDate( 2024, 3, 1 ) ) )
+```
+
+Result: 60
+
+### Whole hours between two times
+
+```java
+writeOutput( dateDiff( "h", createDateTime( 2024, 1, 1, 8, 0, 0 ), createDateTime( 2024, 1, 1, 17, 30, 0 ) ) )
+```
+
+Result: 9
+
+### A later date1 gives a negative result
+
+```java
+writeOutput( dateDiff( "d", createDate( 2024, 3, 1 ), createDate( 2024, 1, 1 ) ) )
+```
+
+Result: -60
+
+### Use the member function
+
+Both w and ww count whole weeks.
+
+```java
+writeOutput( createDate( 2024, 1, 1 ).diff( "ww", createDate( 2024, 2, 1 ) ) )
+```
+
+Result: 4
+
+### An unsupported datepart throws an error
+
+```java
+try {
+	dateDiff( "zz", createDate( 2024, 1, 1 ), createDate( 2024, 3, 1 ) )
+} catch( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: The datepart [zz] is not supported for the method DateDiff or the member function Date.diff

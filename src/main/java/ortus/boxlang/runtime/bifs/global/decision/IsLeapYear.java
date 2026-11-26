@@ -38,12 +38,14 @@ public class IsLeapYear extends BIF {
 	}
 
 	/**
-	 * Determine whether a given integer value represents a leap year.
+	 * Determines whether a given year is a leap year.
+	 *
+	 * @argument.year The year to test, as a number (for example 2024).
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.year Number representing the year to test.
+	 * @return True if the year is a leap year, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return Year.isLeap( IntegerCaster.cast( true, arguments.get( Key.year ), true ) );

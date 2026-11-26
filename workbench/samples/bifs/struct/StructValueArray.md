@@ -16,7 +16,7 @@ writeDump( structValueArray( statusCodes ) )
 
 ```
 
-Result: [200, 201, 304, 400, 404]
+Result: [200, 201, 304, 400, 404] (value order is not guaranteed for a default struct)
 
 ### Additional Examples
 
@@ -33,4 +33,13 @@ writedump( structValueArray( animals ) )
 
 ```
 
+Result: an array of the four values moo, oink, meow and chirp (order not guaranteed for the default struct type)
 
+### Values of an ordered struct
+
+```java
+s = [ a : 1, b : 2, c : 3 ]
+writeOutput( s.valueArray().toList() )
+```
+
+Result: 1,2,3

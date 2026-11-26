@@ -42,8 +42,7 @@ public class Min extends BIF {
 	}
 
 	/**
-	 *
-	 * Return larger of two numbers
+	 * Returns the smaller of two numbers. Also available as <code>number.min( number2 )</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -51,6 +50,8 @@ public class Min extends BIF {
 	 * @argument.number1 The first number
 	 *
 	 * @argument.number2 The second number
+	 *
+	 * @return The smaller of the two numbers.
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Number	number1	= arguments.getAsNumber( Key.number1 );

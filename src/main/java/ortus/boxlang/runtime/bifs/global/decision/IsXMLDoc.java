@@ -38,12 +38,14 @@ public class IsXMLDoc extends BIF {
 	}
 
 	/**
-	 * Determines whether the function parameter is an Extended Markup language (XML) document object.
+	 * Determines whether a value is an XML document object (the document node returned by `xmlParse()`), as opposed to an element or a string of XML.
+	 *
+	 * @argument.value The value to test.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value Value to test
+	 * @return True if the value is an XML document node, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object object = arguments.get( Key.value );

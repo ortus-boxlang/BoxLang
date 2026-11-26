@@ -32,10 +32,12 @@ public class IsDebugMode extends BIF {
 	}
 
 	/**
-	 * Determine whether the current BoxLang instance is running in debug mode.
+	 * Determines whether the current BoxLang runtime is running in debug mode (see the `debugMode` setting or the `--debug` flag).
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return True if the runtime is in debug mode, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return context.getRuntime().inDebugMode();

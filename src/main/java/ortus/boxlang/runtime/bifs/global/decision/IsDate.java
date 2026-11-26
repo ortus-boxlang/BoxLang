@@ -50,20 +50,27 @@ public class IsDate extends BIF {
 	}
 
 	/**
-	 * Determine whether a given value is a date object or a date string.
+	 * Determines whether a value is a date object or a string which can be parsed as a date/time. Null, blank strings and plain numbers return false, as
+	 * numbers are not treated as dates in this decision context.
 	 *
-	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope for the BIF.
+	 * This BIF is also registered as `IsNumericDate`. When called by that name it instead returns true if the value can be cast to a number (a numeric
+	 * date representation) and the `locale` and `timezone` arguments are not used.
 	 *
-	 * @argument.date Value to test for date-ness
+	 * @argument.date The value to test for date-ness.
 	 *
-	 * @argument.locale Optional ISO locale string to use for parsing the date/time string.
+	 * @argument.locale Optional. ISO locale string (for example `en_US`) used to parse date strings. Defaults to the locale of the current context.
 	 *
-	 * @argument.timezone Optional timezone to use for parsing the date/time string.
+	 * @argument.timezone Optional. Timezone ID (for example `America/New_York`) used when parsing date strings. An invalid timezone throws a
+	 * BoxRuntimeException. Defaults to the timezone of the current context.
 	 *
 	 * @function.IsNumericDate Tests whether the given value is a numeric representation of a date
 	 *
 	 * @function.IsNumericDate.arguments.exclude locale,timezone
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return True if the value is a date or a parseable date string, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );

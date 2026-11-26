@@ -40,12 +40,14 @@ public class IsXMLElem extends BIF {
 	}
 
 	/**
-	 * Determines whether the function parameter is an ELEMENT node of an XML doc.
+	 * Determines whether a value is an ELEMENT node of an XML document. Strings of XML text are parsed first, so `<a/>` is an element.
+	 *
+	 * @argument.value The value to test.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value Value to test
+	 * @return True if the value is an XML element node, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		CastAttempt<XML> castAttempt = XMLCaster.attempt( arguments.get( Key.value ) );
