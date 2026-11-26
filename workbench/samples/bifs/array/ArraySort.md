@@ -68,7 +68,7 @@ Result: [{"NAME":"employeetest","AGE":"36"},{"NAME":"testemployee","AGE":"32"}]
 
 ### Script member syntax: sort array of structs by multiple keys
 
-Takes an array of structs and sorts by multiple different keys, similar to the way a query allows.
+Takes an array of structs and sorts by multiple different keys, similar to the way a query allows. Active employees come first, ordered by department and then by name. The last names are output in the sorted order.
 
 <a href="https://try.boxlang.io/?code=eJyVkl9vgjAUxZ%2FhU9zxhIkj4raXGZagsMRlukXMXpY9dFhnM2hNWzRm%2Bt2l4r%2ByLpkvhJ5z7%2F3dU0Cco9XLNJG8SKWAAN7Btn5sy3IKgXl%2F4sA9%2BE11nhIu5BDlWEnOE5tRZ6dn6EyOGK7UCZ4jLnNMT16CMiwqF6WSLHaqb1ub5i9i20REFBuISU7k7E%2FmAPFvLAn9%2Bh%2F3xsANM5KawOoGBKOXxW0ZsbcGbJd9GqBdzpYXIs1J7wzI3gzxjJiyRmhBxOWXrNLaHx0baT%2BZJxiXLrgQ0hWojfzm8bUNDQgeoFyWTN3K9MLeuP8Ww1VQVRzODVVlcSwLTnXnWmvsqCXOxkXxazgaD%2BLheBgOYggOY2v6eq3jy7rWnnma9RwmtSlHpSo938%2F3HvujyvVSlpfXiN1919GARrmu2ldvPEyt951oVUqtSQ9Ub63FLQds1GPJicRRkc9d0L%2BaMreaqysC" target="_blank">Run Example</a>
 
@@ -126,7 +126,7 @@ writeOutput( arrayOfStructs.map( ( user ) -> user.lastName ).toList() )
 
 ```
 
-Result: Sorts by active employees, then by their last name and finally by their first name
+Result: Smith,Brown,Doe,Davis,Johnson
 
 ### Default sort is a case insensitive text sort
 

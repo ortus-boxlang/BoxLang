@@ -3,7 +3,7 @@
 
 
 ```java
-writeDump( getMetadata( new Query() ) )
+writeDump( getMetadata( queryNew( "id,name", "integer,varchar" ) ) )
 
 ```
 

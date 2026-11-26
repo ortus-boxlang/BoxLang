@@ -31,7 +31,7 @@ Instead of using dateAdd you could add a timestamp to a date object
 
 
 ```java
-dateFormat( createDate( 2017, 1, 1 ) + createTimespan( 2, 0, 0, 0 ) )
+dateFormat( dateAdd( "s", createTimespan( 2, 0, 0, 0 ).toSeconds(), createDate( 2017, 1, 1 ) ) )
 
 ```
 
