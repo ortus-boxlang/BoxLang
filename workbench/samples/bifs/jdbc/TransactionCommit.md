@@ -43,3 +43,14 @@ try {
 ```
 
 Result: Transaction not started; Please place this method call inside a transaction{} block.
+
+### The transaction stays active after a commit
+
+```java
+transaction {
+	transactionCommit()
+	writeOutput( "committed, still in transaction: " & isInTransaction() )
+}
+```
+
+Result: committed, still in transaction: true

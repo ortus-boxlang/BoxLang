@@ -48,3 +48,15 @@ try {
 ```
 
 Result: Transaction not started; Please place this method call inside a transaction{} block.
+
+### Set a savepoint and roll back to it
+
+```java
+transaction {
+	transactionSetSavepoint( "beforeUpdate" )
+	transactionRollback( "beforeUpdate" )
+	writeOutput( "rolled back to beforeUpdate" )
+}
+```
+
+Result: rolled back to beforeUpdate
