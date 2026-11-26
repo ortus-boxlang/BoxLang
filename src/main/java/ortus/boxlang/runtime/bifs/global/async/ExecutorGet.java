@@ -39,7 +39,7 @@ public class ExecutorGet extends BIF {
 	}
 
 	/**
-	 * Get an executor by name. If no name is provided, the default executor is returned "io-tasks".
+	 * Gets a registered executor by name. If no name is provided, the default executor "io-tasks" is returned.
 	 * BoxLang registers 3 executors by default for you:
 	 * <ul>
 	 * <li><strong>io-tasks</strong>: For IO bound tasks, which are not scheduled and uses virtual threads</li>
@@ -50,9 +50,11 @@ public class ExecutorGet extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.name The name of the executor to get.
+	 * @argument.name The name of the executor to get. Defaults to "io-tasks".
 	 *
 	 * @throws KeyNotFoundException If the executor is not found.
+	 *
+	 * @return The BoxExecutor registered under that name.
 	 */
 	@Override
 	public BoxExecutor _invoke( IBoxContext context, ArgumentsScope arguments ) {

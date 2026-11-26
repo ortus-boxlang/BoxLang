@@ -38,12 +38,17 @@ public class ThreadTerminate extends BIF {
 	}
 
 	/**
-	 * Terminates the thread specified by the threadName parameter.
+	 * Terminates the thread with the given name. The thread is first interrupted and given a short time to stop;
+	 * if it is still alive it is forcibly stopped. The thread is then marked as completed.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.threadName The name of the thread to terminate.
+	 *
+	 * @throws BoxRuntimeException If no thread with that name exists.
+	 *
+	 * @return Nothing (null).
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

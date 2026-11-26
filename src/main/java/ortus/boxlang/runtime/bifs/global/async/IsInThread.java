@@ -30,12 +30,12 @@ public class IsInThread extends BIF {
 	}
 
 	/**
-	 * Verifies if the calling execution code is running in a thread or not.
+	 * Verifies if the calling code is running inside a thread created by <code>threadNew()</code> or the <code>bx:thread</code> component.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @return True, if the calling code is running in a thread; false, otherwise.
+	 * @return True if the calling code is running in a thread; false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return context

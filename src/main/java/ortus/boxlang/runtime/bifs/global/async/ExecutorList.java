@@ -31,10 +31,12 @@ public class ExecutorList extends BIF {
 	}
 
 	/**
-	 * Get's an array of all the executors registered in the system
+	 * Gets an array of the names of all the executors registered in the runtime.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return An array of executor names.
 	 */
 	@Override
 	public Array _invoke( IBoxContext context, ArgumentsScope arguments ) {

@@ -37,31 +37,23 @@ public class ThreadInterrupt extends BIF {
 	}
 
 	/**
-	 * Interrupt the specific thread by name or all threads managed by the thread manager.
-	 * <p>
-	 * Example:
-	 *
+	 * Interrupts the thread with the given name, or all threads managed by the current request when no name is passed.
+	 * Interrupting marks the thread as interrupted and its status as INTERRUPTED; the thread code can check this with
+	 * <code>isThreadInterrupted()</code>.
+	 * 
 	 * <pre>
-	 * ThreadInterrupt( "myThread" );
+	 * threadInterrupt( "myThread" ) // interrupt one thread
+	 * threadInterrupt() // interrupt all threads of the request
 	 * </pre>
-	 * <p>
-	 * This will interrupt the thread with the name "myThread".
-	 * <p>
-	 * Example:
-	 *
-	 * <pre>
-	 *
-	 * ThreadInterrupt();
-	 * </pre>
-	 * <p>
-	 * This will interrupt all threads managed by the thread manager.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.name The name of the thread to interrupt. If not passed, we interrupt ALL threads.
+	 * @argument.name The name of the thread to interrupt. If not passed, all threads are interrupted.
 	 *
-	 * @throws BoxRuntimeException If the thread is not found.
+	 * @throws BoxRuntimeException If a thread name is passed and no thread with that name exists.
+	 *
+	 * @return Nothing (null).
 	 */
 	@Override
 	public Thread _invoke( IBoxContext context, ArgumentsScope arguments ) {

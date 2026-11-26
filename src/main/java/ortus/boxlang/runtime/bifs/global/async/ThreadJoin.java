@@ -41,15 +41,21 @@ public class ThreadJoin extends BIF {
 	}
 
 	/**
-	 * Waits for the given thread object to finish running
+	 * Waits for the given threads to finish running. The calling code blocks until the threads complete or the timeout elapses.
+	 * If no thread name is passed, all the threads created in the request are joined.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.threadName The name of the thread to join to the main thread.
-	 *                      This can be the name of the thread or a comma-separated list of thread names.
+	 * @argument.threadName The name of the thread to join to the calling thread. This can also be a comma-separated list of thread names. If
+	 *                      empty, all threads are joined.
 	 *
-	 * @argument.timeout The maximum time in milliseconds to wait for the thread to finish running. If the thread does not finish running within this time, the join operation will be aborted.
+	 * @argument.timeout The maximum time in milliseconds to wait. Defaults to 0, which waits indefinitely. When the timeout elapses, the join is
+	 *                   abandoned without an error.
+	 *
+	 * @throws BoxRuntimeException If a thread name is passed and no thread with that name exists.
+	 *
+	 * @return Nothing (null).
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

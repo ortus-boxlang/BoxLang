@@ -40,24 +40,31 @@ public class ExecutorNew extends BIF {
 	}
 
 	/**
-	 * Creates and registers a new executor by name and type.
-	 * The return value is an BoxExecutor object that can be used to interact with the executor.
-	 *
-	 * Available types are:
-	 * - "cached" - Creates a cached thread pool executor.
-	 * - "fixed" - Creates a fixed thread pool executor.
-	 * - "fork_join" - Creates a fork join pool executor.
-	 * - "scheduled" - Creates a scheduled thread pool executor.
-	 * - "single" - Creates a single thread executor.
-	 * - "virtual" - Creates a virtual thread executor.
-	 * - "work_stealing" - Creates a work stealing thread pool executor.
+	 * Creates and registers a new executor by name and type. If an executor with that name already exists, the existing executor is returned
+	 * unchanged.
+	 * The return value is a BoxExecutor object that can be used to interact with the executor.
+	 * <p>
+	 * Available types (case insensitive) are:
+	 * <ul>
+	 * <li><code>cached</code> - Creates a cached thread pool executor.</li>
+	 * <li><code>fixed</code> - Creates a fixed thread pool executor.</li>
+	 * <li><code>fork_join</code> - Creates a fork join pool executor.</li>
+	 * <li><code>scheduled</code> - Creates a scheduled thread pool executor.</li>
+	 * <li><code>single</code> - Creates a single thread executor.</li>
+	 * <li><code>virtual</code> - Creates a virtual thread executor.</li>
+	 * <li><code>work_stealing</code> - Creates a work stealing thread pool executor.</li>
+	 * </ul>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.name The name of the executor to create if not already created
+	 * @argument.name The name of the executor to create if not already created.
 	 *
-	 * @argument.type The type of executor to create
+	 * @argument.type The type of executor to create. An invalid type throws an exception.
+	 *
+	 * @argument.maxThreads The maximum number of threads, for the types that use it. Defaults to 10.
+	 *
+	 * @return The new (or already registered) BoxExecutor.
 	 */
 	@Override
 	public BoxExecutor _invoke( IBoxContext context, ArgumentsScope arguments ) {

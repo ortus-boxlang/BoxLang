@@ -20,7 +20,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 @BoxBIF( description = "Delete an executor service from the registry" )
 public class ExecutorDelete extends BIF {
@@ -36,15 +35,15 @@ public class ExecutorDelete extends BIF {
 	}
 
 	/**
-	 * Deletes an executor from the registry by name. If the executor has not been shutdown,
-	 * it will be forcibly shutdown via shutdownNow() before removal.
+	 * Deletes an executor from the registry by name. Unknown names are ignored.
+	 * Note that deleting does not guarantee the executor's threads are stopped; use {@link ExecutorShutdown} to shut an executor down.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.name The name of the executor to delete
+	 * @argument.name The name of the executor to delete.
 	 *
-	 * @throws KeyNotFoundException If the executor is not found.
+	 * @return Always true.
 	 */
 	@Override
 	public Boolean _invoke( IBoxContext context, ArgumentsScope arguments ) {

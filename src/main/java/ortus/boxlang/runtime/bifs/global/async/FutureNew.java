@@ -41,17 +41,24 @@ public class FutureNew extends BIF {
 	}
 
 	/**
-	 * Create a new BoxFuture object.
+	 * Creates a new BoxFuture object. What you pass as the value determines the future:
+	 * <ul>
+	 * <li>Nothing: an incomplete future that you can complete later with <code>complete()</code>.</li>
+	 * <li>A function (closure/lambda): it is executed asynchronously and its result completes the future.</li>
+	 * <li>A Java CompletableFuture: it is wrapped as a BoxFuture.</li>
+	 * <li>Any other value: a future already completed with that value.</li>
+	 * </ul>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value If passed, the value to set on the BoxFuture object as completed or it can be a lambda/closure
-	 *                 that will provide the value and it will be executed asynchronously, or it can be a native Java CompletableFuture
+	 * @argument.value The value to complete the future with, a function that provides the value (executed asynchronously), or a Java
+	 *                 CompletableFuture. If omitted, an incomplete future is created.
 	 *
-	 * @argument.executor The executor to use for the BoxFuture object. By default, the BoxFuture object will use the
-	 *                    default executor (ForkJoinPool.commonPool()). This can be the name of a named executor or a
-	 *                    custom executor object.
+	 * @argument.executor The executor (name or BoxExecutor) used to run the function when the value is a function. By default the common
+	 *                    ForkJoinPool is used.
+	 *
+	 * @throws KeyNotFoundException If an executor name is passed that is not registered.
 	 *
 	 * @return The newly created BoxFuture object.
 	 */

@@ -36,16 +36,17 @@ public class ExecutorStatus extends BIF {
 	}
 
 	/**
-	 * Get a struct map of a specific executor and its stats.
-	 *
-	 * If no parameters are passed, it will return a struct map of all executors and their stats.
+	 * Gets a struct of statistics about a specific executor (name, type, thread pool sizes, task counts, uptime, health, and so on).
+	 * If no name is passed, it returns a struct of all the registered executors keyed by name, where each value is that executor's statistics.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.name The name of the executor to get.
+	 * @argument.name The name of the executor to get the status of. If omitted, the status of all executors is returned.
 	 *
 	 * @throws KeyNotFoundException If the executor is not found.
+	 *
+	 * @return A struct of executor statistics, or a struct of all executors and their statistics.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

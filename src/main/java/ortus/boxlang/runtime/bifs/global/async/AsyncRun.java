@@ -44,25 +44,29 @@ public class AsyncRun extends BIF {
 	}
 
 	/**
-	 * Executes the given code asynchronously and returns to you a BoxFuture object which inherits from CompletableFuture.
-	 * This way you can create fluent asynchronous code that can be chained and composed.
-	 *
-	 * @see https://docs.oracle.com/en%2Fjava%2Fjavase%2F22%2Fdocs%2Fapi%2F%2F/java.base/java/util/concurrent/CompletableFuture.html
+	 * Executes the given code asynchronously and returns a BoxFuture, which inherits from CompletableFuture.
+	 * This allows you to create fluent asynchronous code that can be chained and composed.
+	 * Also available as <code>RunAsync</code>.
+	 * 
+	 * <pre>
+	 * asyncRun( () -> 10 ).then( ( v ) -> v * 2 ).get() // 20
+	 * </pre>
+	 * 
+	 * @see https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CompletableFuture.html
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.callback The code to execute asynchronously, this can be a closure
-	 *                    or lambda.
+	 * @argument.callback The code to execute asynchronously. This can be a closure or lambda.
 	 *
-	 * @argument.executor The executor to use for the asynchronous execution. This
-	 *                    can be an instance of an Executor class, or the name of a
-	 *                    registered executor in the AsyncService.
+	 * @argument.executor The executor to use for the asynchronous execution. This can be the name of a registered executor, a BoxExecutor, or a
+	 *                    Java Executor. By default the common ForkJoinPool is used.
 	 *
 	 * @throws KeyNotFoundException If the executor name passed is not valid.
 	 *
-	 * @return A BoxFuture object that you can use to interact with the
-	 *         asynchronously executed code.
+	 * @throws BoxRuntimeException If the executor is not a supported type.
+	 *
+	 * @return A BoxFuture object that you can use to interact with the asynchronously executed code.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the callback

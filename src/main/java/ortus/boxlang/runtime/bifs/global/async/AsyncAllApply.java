@@ -45,29 +45,22 @@ public class AsyncAllApply extends BIF {
 	}
 
 	/**
-	 * This function can accept an array of items or a struct of items and apply a function
-	 * to each of the item's in parallel. The `mapper` argument receives the appropriate item
-	 * and must return a result.
+	 * Applies a function to every item of an array or struct in parallel and waits for all of the results.
+	 * The <code>mapper</code> receives the item and must return a result. For an array the result is an array of results in the original order.
+	 * For a struct, each item passed to the mapper has the <code>key</code> and <code>value</code> of the struct entry and the result is a
+	 * struct.
 	 * <p>
-	 * The `errorHandler` is optional and will be called if the mapper function throws an exception.
-	 * The error handler receives the exception and the item that caused it, allowing you to handle errors gracefully.
+	 * If the mapper throws an exception and an <code>errorHandler</code> was given, the handler receives the exception and its return value is
+	 * used as the result for that item.
+	 * Without an error handler, a struct describing the exception is used as the result for that item.
 	 * <p>
-	 * The result is a future that will return an array of results, or a struct of results if the input was a struct.
-	 * <p>
-	 * The `executor` argument is optional and allows you to specify a custom executor for the
-	 * asynchronous operations. If not provided, the common fork-join pool will be used.
-	 * <p>
-	 * The `timeout` and `timeUnit` arguments allow you to specify a timeout for the operation.
-	 * If the operation does not complete within the specified timeout, it will throw a TimeoutException.
-	 * The allowed time units are: `DAYS`, `HOURS`, `MINUTES`, `SECONDS`, `MILLISECONDS`, `MICROSECONDS`, `NANOSECONDS`.
-	 * <p>
-	 * Example usage:
-	 *
+	 * Unlike {@link AsyncAll} this BIF is blocking: it returns the final results directly, not a future.
+	 * If the optional <code>timeout</code> (greater than 0) elapses before all items complete, an exception is thrown.
+	 * The allowed time units are: <code>DAYS</code>, <code>HOURS</code>, <code>MINUTES</code>, <code>SECONDS</code>, <code>MILLISECONDS</code>,
+	 * <code>MICROSECONDS</code>, <code>NANOSECONDS</code>.
+	 * 
 	 * <pre>
-	 * // Array
-	 * allApply( items, ( item ) => item.getMemento() )
-	 * // Struct: The result object is a struct of `key` and `value`
-	 * allApply( data, ( item ) => item.key &amp; item.value.toString() )
+	 * squares = asyncAllApply( [ 1, 2, 3 ], ( n ) -> n * n )
 	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -77,18 +70,22 @@ public class AsyncAllApply extends BIF {
 	 *
 	 * @argument.mapper The function to apply to each item. It receives the item as an argument and must return a result.
 	 *
-	 * @argument.errorHandler Optional function to handle errors. It receives the exception and the item that caused it.
+	 * @argument.errorHandler Optional function to handle errors thrown by the mapper. It receives the exception and its return value is used as
+	 *                        the item result.
 	 *
-	 * @argument.executor Optional executor to use for the asynchronous operations. If not provided, the common fork-join pool will be used.
+	 * @argument.executor Optional executor (name or BoxExecutor object) to run the operations on. If not provided, the common ForkJoinPool is
+	 *                    used.
 	 *
-	 * @argument.timeout Optional timeout for the operation. If the operation does not complete within this time, it will throw a TimeoutException.
+	 * @argument.timeout Optional maximum time to wait for all the items to complete. Defaults to 0, which waits indefinitely.
 	 *
-	 * @argument.timeUnit Optional time unit for the timeout. Defaults to seconds. Allowed values are: `DAYS`, `HOURS`, `MINUTES`, `SECONDS`, `MILLISECONDS`, `MICROSECONDS`, `NANOSECONDS`.
-	 *
+	 * @argument.timeUnit The time unit of the timeout. Defaults to seconds. Allowed values are: DAYS, HOURS, MINUTES, SECONDS, MILLISECONDS,
+	 *                    MICROSECONDS, NANOSECONDS.
 	 *
 	 * @throws KeyNotFoundException If the executor name passed is not valid.
 	 *
-	 * @return An array or struct of the results
+	 * @throws BoxRuntimeException If the items are not an array or struct, or the timeout elapses.
+	 *
+	 * @return An array (or struct, if the items were a struct) of the results.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object		executor		= arguments.get( Key.executor );
