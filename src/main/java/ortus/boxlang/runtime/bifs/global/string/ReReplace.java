@@ -61,7 +61,7 @@ public class ReReplace extends BIF {
 	 * <ul>
 	 * <li><code>\U</code>: uppercase everything that follows until <code>\E</code></li>
 	 * <li><code>\L</code>: lowercase everything that follows until <code>\E</code></li>
-	 * <li><code>\u</code>: uppercase the next character or group</li>
+	 * <li><code>&#92;u</code>: uppercase the next character or group</li>
 	 * <li><code>\l</code>: lowercase the next character or group</li>
 	 * <li><code>\E</code>: end <code>\U</code> and <code>\L</code></li>
 	 * </ul>
