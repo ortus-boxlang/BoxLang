@@ -40,7 +40,7 @@ public class StringEndsWithNoCase extends BIF {
 	}
 
 	/**
-	 * Determines whether a string ends with a specified suffix, case-insensitive.
+	 * Determines whether a string ends with a specified suffix, ignoring case.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -49,7 +49,7 @@ public class StringEndsWithNoCase extends BIF {
 	 *
 	 * @argument.substring The suffix to check for.
 	 *
-	 * @return True if the string ends with the specified suffix (case-insensitive), false otherwise.
+	 * @return True if the string ends with the specified suffix, ignoring case, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	input	= arguments.getAsString( Key.string );

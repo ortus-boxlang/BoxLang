@@ -41,12 +41,15 @@ public class ArrayMin extends BIF {
 	}
 
 	/**
-	 * Return length of array
+	 * Returns the smallest numeric value in an array. All elements must be numeric (or castable to numbers). An empty array returns 0.
+	 * Also available as the <code>min()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to get min value from
+	 * @argument.array The array to get the minimum value from.
+	 *
+	 * @return The minimum value found in the array.
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );

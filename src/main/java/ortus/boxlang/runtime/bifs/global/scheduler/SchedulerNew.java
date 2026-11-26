@@ -43,16 +43,20 @@ public class SchedulerNew extends BIF {
 	}
 
 	/**
-	 * Create and register a new scheduler.
+	 * Create and register a new, empty scheduler in the SchedulerService.
+	 * <p>
+	 * The scheduler is registered but not started. If a scheduler with the same name already exists, a BoxRuntimeException is thrown unless
+	 * <code>force</code> is true.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.name The name of the scheduler to create.
+	 * @argument.name The name of the scheduler to create. Required and must not be empty.
 	 *
-	 * @argument.timezone The timezone for the scheduler. Defaults to the system default timezone.
+	 * @argument.timezone The timezone ID for the scheduler (for example <code>America/New_York</code>), parsed as a Java ZoneId.
+	 *                    Defaults to the system default timezone if not provided or blank.
 	 *
-	 * @argument.force Whether to replace an existing scheduler with the same name. Defaults to false.
+	 * @argument.force Whether to register the scheduler even if one with the same name already exists. Defaults to false.
 	 *
 	 * @return The newly created scheduler object.
 	 */

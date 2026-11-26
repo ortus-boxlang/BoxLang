@@ -38,14 +38,17 @@ public class IsArray extends BIF {
 	}
 
 	/**
-	 * Determine whether a value is an array
+	 * Determines whether a value is an array. Returns true for native BoxLang Arrays, native Java arrays, and any value that can be cast to an
+	 * Array (for example a java.util.List). Returns false for null and for non-array values such as strings or structs.
 	 *
 	 * @argument.value The value to test for array-ness.
 	 *
-	 * @argument.number If passed, the array dimension to test.
+	 * @argument.number Optional. The array dimension to test. Currently accepted for CFML compatibility but ignored; only array-ness is checked.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope defining the value to test.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return True if the value is, or can be cast to, an array; false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 

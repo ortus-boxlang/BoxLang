@@ -1,23 +1,19 @@
-### Show temp directory path
+### Show the temp directory path
 
-File system path where temporary files are stored
-
-<a href="https://try.boxlang.io/?code=eJxLTy0JSc0tcMksSk0uyS%2Bq1NC05gIAUi4HIg%3D%3D" target="_blank">Run Example</a>
+This is the file system path where temporary files are stored. The value depends on the operating system and the environment.
 
 ```java
-getTempDirectory();
-
+writeOutput( getTempDirectory() )
 ```
 
-Result: /var/folders/k6/hm9skhxj2dd_901z2f2mkwt00000gn/T/
+Result: an absolute path string such as /tmp/ (environment dependent)
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FBITy0JSc0tcMksSk0uyS%2Bq1NBU0LTmAgCU0glp" target="_blank">Run Example</a>
+### Write a temporary file
 
 ```java
-dump( getTempDirectory() );
-
+tempFile = getTempDirectory() & createUUID() & ".txt"
+fileWrite( tempFile, "hello" )
+writeOutput( fileExists( tempFile ) )
 ```
 
-
+Result: true

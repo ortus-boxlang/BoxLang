@@ -42,12 +42,14 @@ public class Sin extends BIF {
 	}
 
 	/**
-	 * Returns the sine of a number
+	 * Returns the sine of an angle entered in radians. Also available as <code>number.sin()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.number The number to calculate the sine of, entered in radians.
+	 *
+	 * @return The sine of the angle.
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return _invoke( arguments.getAsNumber( Key.number ) );

@@ -42,13 +42,16 @@ public class StructGet extends BIF {
 	}
 
 	/**
-	 * Retrieves the value from a struct using a path based expression
+	 * Retrieves the value found at a path expression such as "x.y.z" or "x.y.z[2]", resolving the first segment as a variable (or scope) in the
+	 * current context. The lookup is safe: if any part of the path does not exist, null is returned and nothing is created or modified.
+	 * As the member function getFromPath(), the path is resolved relative to the struct itself.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path The string path to the object requested in the struct
+	 * @argument.path The string path to the value requested, using dot (and bracket) notation.
 	 *
+	 * @return The value found at the path, or null if it cannot be resolved.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String path = arguments.getAsString( Key.path );

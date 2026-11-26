@@ -31,7 +31,19 @@ import ortus.boxlang.runtime.types.BoxLangType;
 public class CurrencyFormat extends NumberFormat {
 
 	/**
-	 * Constructor
+	 * Formats a number as a currency value using the symbol and separators of the given or current locale, for example `$1,234.50` for `en_US`. The
+	 * formatting logic is inherited from {@link NumberFormat#_invoke}. Non-numeric values throw an exception, and an empty string is treated as 0.
+	 *
+	 * This BIF is also registered as `LSCurrencyFormat` and as a member function on numbers, e.g. `(1234.5).currencyFormat()`.
+	 *
+	 * @argument.number The number to format, or an empty string which will be treated as 0.
+	 *
+	 * @argument.type Optional. How the currency symbol is displayed: `local` (the locale's symbol, the default), `international` (the ISO currency
+	 *                code, for example `USD`) or `none` (no symbol). Any other value throws an exception.
+	 *
+	 * @argument.locale Optional. The locale (a common name or ISO code) used to format the number. Defaults to the locale of the current context.
+	 *
+	 * @return The formatted currency string.
 	 */
 	public CurrencyFormat() {
 		super();

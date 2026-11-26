@@ -45,12 +45,14 @@ public class Atn extends BIF {
 	}
 
 	/**
-	 * Returns the arc tangent (inverse tangent) of a number
+	 * Returns the arctangent (inverse tangent) of a number, in radians. Also available as <code>number.atn()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.number The number to calculate the arc tangent of
+	 *
+	 * @return The arctangent in radians.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return _invoke( arguments.getAsNumber( Key.number ) );

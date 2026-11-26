@@ -40,33 +40,30 @@ public class AsyncAll extends BIF {
 	}
 
 	/**
-	 * This BIF accepts an array of futures/closures/lambdas and executes them all in parallel.
-	 * It returns a BoxFuture that will contain an array of results once all futures are completed
-	 * successfully.
+	 * Accepts an array of futures/closures/lambdas and executes them all in parallel.
+	 * It returns a BoxFuture that will contain an array of the results once all futures have completed successfully.
 	 * <p>
-	 * This means that the futures will be executed in parallel and the results will be returned in the order
-	 * that they were passed in. This also means that this operation is non-blocking and will return immediately
-	 * until you call get() on the future.
+	 * The results are returned in the order that the futures were passed in. The operation is non-blocking and returns immediately;
+	 * call <code>get()</code> on the returned future to wait for the results.
 	 * <p>
-	 * Each future can be a BoxFuture or a CompletableFuture or a BoxLang Function that will be treated as a future.
+	 * Each item can be a BoxFuture, a Java CompletableFuture, or a BoxLang function that will be treated as a future.
 	 *
 	 * <pre>
-	 * results = all( [f1, f2, f3] ).get()
-	 * all( [f1, f2, f3] ).then( (values) => logResults( values ) );
+	 * results = asyncAll( [ f1, f2, f3 ] ).get()
+	 * asyncAll( [ f1, f2, f3 ] ).then( ( values ) => logResults( values ) )
 	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.futures An array of BoxFuture objects to process in parallel
+	 * @argument.futures An array of BoxFuture objects, CompletableFutures or functions to process in parallel.
 	 *
-	 * @argument.executor The executor to use for the BoxFuture object. By default, the BoxFuture object will use the
-	 *                    default executor (ForkJoinPool.commonPool()). This can be the name of a named executor or a
-	 *                    custom executor record.
+	 * @argument.executor The executor to use. This can be the name of a registered executor or a BoxExecutor object. By default the common
+	 *                    ForkJoinPool is used. This is used to run any functions in the array.
 	 *
 	 * @throws KeyNotFoundException If the executor name passed is not valid.
 	 *
-	 * @return A future that will return the results in an array
+	 * @return A BoxFuture that will contain an array with the results of every future, in order.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array		futures			= arguments.getAsArray( Key.futures );

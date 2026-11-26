@@ -1,41 +1,69 @@
-### Convert decimal number to binary
+### Parse a binary string
 
-
-
-<a href="https://try.boxlang.io/?code=eJwrSCwqTvUrzU1KLdJQMDQwNNBRUErKzFNS0LTmAgCF7Afm" target="_blank">Run Example</a>
+With the `bin` radix the string is read as a base 2 number.
 
 ```java
-parseNumber( 1010, "bin" );
-
+writeOutput( parseNumber( "1010", "bin" ) )
 ```
 
 Result: 10
 
-### Convert decimal number to hex
-
-
-
-<a href="https://try.boxlang.io/?code=eJwrSCwqTvUrzU1KLdJQMDQwNNBRUMpIrVBS0LTmAgCGPAfy" target="_blank">Run Example</a>
+### Parse a hex string
 
 ```java
-parseNumber( 1010, "hex" );
-
+writeOutput( parseNumber( "FF", "hex" ) )
 ```
 
-Result: 4112
+Result: 255
 
-### Additional Examples
+### Parse other numeral systems
 
-<a href="https://try.boxlang.io/?code=eJzLK81NSi1SsFVQMjQwMFCy5kpNzsjXUAhILCpO9QPLaSjkgWkdBaWU1GQlBU0FTWsFfX0FkHq8qpMy8xCqLfAqzU8uQSg1NTTCqzgjtQKimAuk2sTA0owLAG2kODM%3D" target="_blank">Run Example</a>
+`oct` is base 8 and `dec` is base 10.
 
 ```java
-number = "1000";
-echo( ParseNumber( number, "dec" ) ); // 1000
-echo( ParseNumber( number, "bin" ) ); // 8
-echo( ParseNumber( number, "oct" ) ); // 512
-echo( ParseNumber( number, "hex" ) );
- // 4096
-
+writeOutput( parseNumber( "17", "oct" ) & "," & parseNumber( "12.5", "dec" ) )
 ```
 
+Result: 15,12.5
 
+### Parse a number using a locale
+
+Thousands and decimal separators depend on the locale.
+
+```java
+writeOutput( parseNumber( "1,234.56", "en_US" ) & "," & parseNumber( "1.234,56", "de_DE" ) )
+```
+
+Result: 1234.56,1234.56
+
+### Using the radix argument by name
+
+```java
+writeOutput( parseNumber( number = "ff", radix = "hex" ) )
+```
+
+Result: 255
+
+### Using the lsParseNumber alias
+
+`lsParseNumber()` is an alias of `parseNumber()`.
+
+```java
+writeOutput( lsParseNumber( "1.234,5", "de_DE" ) )
+```
+
+Result: 1234.5
+
+### A value that is not a number
+
+A string that cannot be parsed throws an exception.
+
+```java
+try {
+	parseNumber( "abc" )
+} catch ( any e ) {
+	writeOutput( "not a number" )
+}
+```
+
+Result: not a number

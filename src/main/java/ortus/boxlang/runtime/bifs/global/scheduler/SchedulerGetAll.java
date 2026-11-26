@@ -31,16 +31,14 @@ public class SchedulerGetAll extends BIF {
 	}
 
 	/**
-	 * Get a specific scheduler by name.
+	 * Get all the schedulers registered in the SchedulerService.
+	 * <p>
+	 * The result is a struct where each key is the scheduler name and each value is the scheduler object. This BIF takes no arguments.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.name The name of the scheduler to get.
-	 *
-	 * @throws IllegalArgumentException if the scheduler name is not provided.
-	 *
-	 * @return The scheduler object.
+	 * @return A struct of all registered schedulers keyed by scheduler name.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

@@ -46,20 +46,22 @@ public class ArraySet extends BIF {
 	}
 
 	/**
-	 * In a one-dimensional array, sets the elements in a specified
-	 * index range to a value. Useful for initializing an array after
-	 * a call to arrayNew.
+	 * Sets the elements in a one-based, inclusive index range of an array to a value. The array is modified in place.
+	 * If the end index is beyond the current size, the array is expanded. Useful for initializing an array after <code>ArrayNew()</code>.
+	 * Also available as the <code>set()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to modify
+	 * @argument.array The array to modify.
 	 *
-	 * @argument.start The starting index
+	 * @argument.start The one-based index of the first element to set.
 	 *
-	 * @argument.end The ending index
+	 * @argument.end The one-based index of the last element to set.
 	 *
-	 * @argument.value The value to set
+	 * @argument.value The value to set.
+	 *
+	 * @return The same array, with the range set to the value.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualObj	= arguments.getAsArray( Key.array );

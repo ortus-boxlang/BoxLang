@@ -1,26 +1,28 @@
-### Replace uppercase 'U' with lowercase 'u'
+### Replace only the first occurrence
 
-Replace in Script Syntax
-
-<a href="https://try.boxlang.io?code=eJxLTy0JS8xRsFUoSi3ISUxO1VBQcsqvyEnMS1fSUVAKBRGlSgqa1lzlRZklqS6luQUaCukQPZrWAEpOEnw%3D" target="_blank">Run Example</a>
+By default the scope is `one`, so only the first occurrence is replaced.
 
 ```java
-getVal = replace( "Boxlang", "U", "u" );
-writeDump( getVal );
+writeOutput( replace( "Hello World", "o", "0" ) )
 
 ```
 
-Result: Boxlang
+Result: Hell0 World
 
-### Replace uppercase 'O' with lowercase 'o', but only once
-
-Something similar in Tag Syntax
-
-<a href="https://try.boxlang.io?code=eJxLSEiwSaqwKk4tUUhPLQlLzDFUsFUoSi3ISUxO1VBQcsqvyEnMS1fSUVDyBxH5YJafq5KCpoIdF0hnSmlugUJZYpGtkjLUAGUlfbuEhAQA3xIaeQ%3D%3D" target="_blank">Run Example</a>
+### Replace every occurrence
 
 ```java
-<bx:set getVal1 = replace( "Boxlang", "O", "o", "ONE" ) >
-<bx:dump var="#getVal1#"/>
+writeOutput( replace( "Hello World", "o", "0", "all" ) )
+
+```
+
+Result: Hell0 W0rld
+
+### The search is case-sensitive
+
+```java
+writeOutput( replace( "Boxlang", "U", "u" ) )
+
 ```
 
 Result: Boxlang
@@ -29,59 +31,38 @@ Result: Boxlang
 
 You can pass in a callback function to the third argument of the `replace` function
 
-<a href="https://try.boxlang.io/?code=eJwtjcEKwjAMhs%2F2KX562mD4AuJheB34DLFUKdSsZAkyxHe3pbskfEm%2BP67YI6eAp3HQtDKs3GiLA2beUUg1Ck8d1i21i06rpBdGfN1JoppUr2uHgvHifk7iZllxhcSSKdS1n%2FEmBqFya4GY8tlP8MS19ueV5mXxLeMjSePdtJgOOOLq%2BA%2FPgDrf" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwtjUEKAjEMRdf2FJ%2BuZmDwBi6K2wHPEEuVQk1LJkFEvLsdOpuEx8%2F7aXYvOeJhHDVXhrUrbWlC4A8aqSbhZUDd8n4xqEp%2BYsbXnSSpSfeGdiiY3c9J2qwoLpDUCsWe%2BoAXMQid9xWJqZz9Ak%2Fc5%2FjdKayr7xVvyZpups10wtE2%2FwHnsDoa" target="_blank">Run Example</a>
 
 ```java
 
 public function upCase( Any pattern, Any position, Any orig ) {
-	return uCase( pattern );
+	return uCase( pattern )
 }
-result = replace( "A man a plan a canal.", "an", upCase, "ALL" );
-writeOutput( result );
+result = replace( "A man a plan a canal.", "an", upCase, "ALL" )
+writeOutput( result )
 
 ```
 
 Result: A mAN a plAN a cANal.
 
-### Example with start argument (Replace lowercase 'o' with uppercase 'O' from the third position)
-
-You can pass position to start searching in the string
-
-<a href="https://try.boxlang.io/?code=eJxLTy0JSi1WsFUoSi3ISUxO1VBQ8skvS1Vwzs9JcSstzszPU9JRUMoHEf4gwtHHB0QZKyloWnOVF2WWpPqXlhSUlmgopENMAgoDADjeGJA%3D" target="_blank">Run Example</a>
+### Member function
 
 ```java
-getRes = replace( "Love Boxlang", "o", "O", "ALL", "3" );
-writeOutput( getRes );
+writeOutput( "a-b-c".replace( "-", "+", "all" ) )
 
 ```
 
-Result: Love Boxlang
+Result: a+b+c
 
-### Additional Examples
-
+### Error: invalid scope
 
 ```java
-writeDump( replace( "xxabcxxabcxx", "abc", "def" ) );
-writeDump( replace( "xxabcxxabcxx", "abc", "def", "All" ) );
-writeDump( replace( "abc", "a", "b", "all" ) );
-writeDump( replace( "a.b.c.d", ".", "-", "all" ) );
-test = "camelcase CaMeLcAsE CAMELCASE";
-test2 = Replace( test, "camelcase", "CamelCase", "all" );
-writeDump( test2 );
-replacer = ( Any find, Any index, Any input ) => {
-	dump( var=arguments, label="replacement arguments" );
-	return "-#index#-";
-};
-writeDump( var=replace( "one string, two strings, three strings", "string", replacer, "all" ), label="replace with a function" );
-writeDump( var=replace( "one string, two strings, three strings", {
-	"one" : 1,
-	"two" : 2,
-	"three" : 3,
-	"string" : "txt",
-	"text" : "string"
-} ), label="replace via a struct" );
- // struct keys need to be quoted
+try {
+	replace( "abc", "a", "b", "some" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
 
 ```
 
-
+Result: Invalid replacement scope: [some]. Valid options are 'one' or 'all'.

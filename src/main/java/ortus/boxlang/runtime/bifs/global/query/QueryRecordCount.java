@@ -38,12 +38,14 @@ public class QueryRecordCount extends BIF {
 	}
 
 	/**
-	 * This function returns the number of records in a query
+	 * Returns the number of rows in a query. Also available as <code>query.recordCount()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to iterate over
+	 * @argument.query The query to count the rows of.
+	 *
+	 * @return The number of rows.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsQuery( Key.query ).size();

@@ -43,21 +43,23 @@ public class GetRuntimeSetting extends BIF {
 	}
 
 	/**
-	 * Retrieve a user-defined runtime setting. Settings are defined in the {@code runtimeSettings} struct of
-	 * {@code boxlang.json} and can be overridden (deep merged) by {@code this.runtimeSettings} in the Application descriptor.
-	 * Values support {@code ${env.X}} placeholders and {@code bxsecret:} values. The returned values are read-only.
+	 * Retrieves a user-defined runtime setting. Settings are defined in the runtimeSettings struct of boxlang.json and can be overridden
+	 * (deep merged) by this.runtimeSettings in the Application descriptor. Values support ${env.X} placeholders and bxsecret: values. The
+	 * returned values are read-only.
 	 * <p>
-	 * Use a dotted path to reach nested values, e.g. {@code features.beta}. Array elements can be reached with a 1-based index, e.g. {@code limits.1}.
+	 * Use a dotted path to reach nested values, e.g. features.beta. Array elements can be reached with a 1-based index, e.g. limits.1.
 	 * If no key is passed, the whole merged settings struct is returned.
 	 * <p>
-	 * If the key is not found and no default is provided, an exception is thrown.
+	 * If the key is not found and no default is provided, a BoxRuntimeException is thrown.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.key The name or dotted path of the setting to retrieve. Omit to retrieve all settings.
 	 *
-	 * @argument.defaultValue The default value to return if the setting is not found
+	 * @argument.defaultValue The default value to return if the setting is not found.
+	 *
+	 * @return The setting value, the default value when not found, or the whole settings struct when no key is given.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	path		= arguments.getAsString( Key.key );

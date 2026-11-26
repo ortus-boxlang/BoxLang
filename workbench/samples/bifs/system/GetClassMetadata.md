@@ -1,23 +1,20 @@
-### Get metadata for a class by name
+### Get metadata for a class by path
+
+The path is resolved like any class path, so models/Person.bx can be requested as models.Person.
 
 ```java
-class Person {
-    property name="firstName";
-    function init() { return this; }
-}
-meta = getClassMetadata( "Person" );
-writeOutput( meta.name );
-
+meta = getClassMetadata( "models.Person" )
+writeOutput( meta.name )
 ```
 
-Result: Person
+Result: the fully qualified class name, for example models.Person
 
-### Get metadata for a Java class
+### Get metadata from an instance
 
 ```java
-meta = getClassMetadata( "java.util.HashMap" );
-writeOutput( meta.type );
-
+person = new models.Person()
+meta = getClassMetadata( person )
+writeOutput( meta.type )
 ```
 
 Result: Class

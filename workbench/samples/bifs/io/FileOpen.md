@@ -5,20 +5,20 @@
 
 ```java
 // Open File
-var fileObject = fileOpen( "/path/to/file.txt" );
+var fileObject = fileOpen( "/path/to/file.txt" )
 // Perform Actions
 try {
 	// Read Line
-	writeOutput( fileReadLine( fileObject ) );
+	writeOutput( fileReadLine( fileObject ) )
 }
 // Error Handling
  catch (any ex) {
 	// Report Exception
-	writeDump( ex );
+	writeDump( ex )
 }finally {
 	// Always Close
 	// Close File
-	fileClose( fileObject );
+	fileClose( fileObject )
 }
 
 ```
@@ -28,8 +28,8 @@ try {
 
 
 ```java
-myFile = fileOpen( "filepath/filename.ext" );
-writeDump( myfile );
+myFile = fileOpen( "filepath/filename.ext" )
+writeDump( myfile )
 
 ```
 
@@ -37,11 +37,39 @@ writeDump( myfile );
 
 ```java
 // how to access the underlying resource provider info
-f = "ram://demo.txt";
-fileWrite( f, "demo" );
-dump( f.getResource().getResourceProvider().getScheme() );
+f = "ram://demo.txt"
+fileWrite( f, "demo" )
+dump( f.getResource().getResourceProvider().getScheme() )
  // ram ( i.e. the resource provider type)
 
 ```
 
+### Open a file for writing then read it back
 
+```java
+dir = createTempDirectory( prefix="docs-" )
+file = dir & "/greeting.txt"
+writer = fileOpen( file, "write" )
+fileWriteLine( writer, "Hello" )
+fileClose( writer )
+reader = fileOpen( file, "read" )
+writeOutput( fileReadLine( reader ) )
+fileClose( reader )
+directoryDelete( dir, true )
+```
+
+Result: Hello
+
+### Invalid modes throw an error
+
+```java
+dir = createTempDirectory( prefix="docs-" )
+try {
+	fileOpen( dir & "/greeting.txt", "bogus" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+directoryDelete( dir, true )
+```
+
+Result: Invalid file mode: [bogus]. Valid modes are: read, readbinary, write, append

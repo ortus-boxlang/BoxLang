@@ -2,11 +2,11 @@
 
 Sort the string.
 
-<a href="https://try.boxlang.io/?code=eJzLSS0pSS0qVrBVUIqqSs8MdlSy5iovyixJ9S8tKSgt0VAoLinKzEsPzi8CsnOgijUVNK25AFf1E6c%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLSS0pSS0qVrBVUIqqSs8MdlTiKi%2FKLEn1Ly0pKC3RUCguKcrMSw%2FOLwKyc6BqNRU0ASHyEyc%3D" target="_blank">Run Example</a>
 
 ```java
-letters = "ZzgiSA";
-writeOutput( stringSort( letters ) );
+letters = "ZzgiSA"
+writeOutput( stringSort( letters ) )
 
 ```
 
@@ -14,25 +14,19 @@ Result: ASZgiz
 
 ### Member function
 
-Sort the string.
-
-
 ```java
-letters = "ZzgiSA";
-writeOutput( letters.sort() );
+letters = "ZzgiSA"
+writeOutput( letters.stringSort() )
 
 ```
 
 Result: ASZgiz
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwrSi0uzSlRsFUoLinKzEsPzi8q0VBQ8srPyAvPTM5WUtC05iovyixJ9S8tKSgFShVB1AOFAVvME8Q%3D" target="_blank">Run Example</a>
+### Sort in descending order
 
 ```java
-result = stringSort( "JohnWick" );
-writeOutput( result );
+writeOutput( stringSort( "abc", sortOrder = "desc" ) )
 
 ```
 
-
+Result: cba

@@ -43,18 +43,19 @@ public class GenerateSecretKey extends BIF {
 	}
 
 	/**
-	 * Generates an encoded encryption key using the specified algorithm and key
-	 * size
+	 * Generates a random secret key for the given algorithm and returns it as a Base64 string, ready to be used as the `key` of `encrypt()` and
+	 * `decrypt()`.
+	 *
+	 * @argument.algorithm Optional. The algorithm to generate the key for. Defaults to AES. Valid values are: AES, ARCFOUR, Blowfish, ChaCha20,
+	 *                     DES, DESede, HmacMD5, HmacSHA1, HmacSHA224, HmacSHA256, HmacSHA384, HmacSHA512, HmacSHA3-224, HmacSHA3-256, HmacSHA3-384 and
+	 *                     HmacSHA3-512.
+	 *
+	 * @argument.keySize Optional. The size of the key in bits. If not provided, the default key size of the algorithm is used.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.algorithm The algorithm to use for generating the key. The default
-	 *                     is AES. Example values are: AES, DES, DESede, Blowfish,
-	 *                     HmacSHA1, HmacSHA256, HmacSHA384, HmacSHA512
-	 *
-	 * @argument.keySize The optional size of the key to generate. If not provided
-	 *                   the default key size for the algorithm will be used
+	 * @return The generated key as a Base64 string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		CastAttempt<Integer> keySizeAttempt = IntegerCaster.attempt( arguments.get( Key.keySize ) );

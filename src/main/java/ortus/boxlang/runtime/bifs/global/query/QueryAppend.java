@@ -40,12 +40,18 @@ public class QueryAppend extends BIF {
 	}
 
 	/**
-	 * This function clears the query
+	 * Appends all rows of the second query to the end of the first query. The first query is modified in place and returned. Values
+	 * are matched by column name; columns of query2 that do not exist in query1 are ignored and missing values become null. Also
+	 * available as <code>query.append( query2 )</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to clear
+	 * @argument.query1 The query to append to. It is modified and returned.
+	 *
+	 * @argument.query2 The query whose rows are appended. It is not modified.
+	 *
+	 * @return The first query, containing its original rows followed by the rows of the second query.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query query1 = arguments.getAsQuery( Key.query1 );

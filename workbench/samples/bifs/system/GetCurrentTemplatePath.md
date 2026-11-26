@@ -1,23 +1,24 @@
-### Basic Example
-
-
-
-<a href="https://try.boxlang.io/?code=eJxLTy1xLi0qSs0rCUnNLchJLEkNSCzJ0NC05gIAjDQJgw%3D%3D" target="_blank">Run Example</a>
+### Get the current template path
 
 ```java
-getCurrentTemplatePath();
-
+path = getCurrentTemplatePath()
+writeOutput( isSimpleValue( path ) )
 ```
 
+Result: true
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwrSS0uCUgsyVCwVUhPLXEuLSpKzSsJSc0tyEksSQVJaGhac5UXZZakupTmFmgolMDUA4UBo9oVMQ%3D%3D" target="_blank">Run Example</a>
+### Show the absolute path
 
 ```java
-testPath = getCurrentTemplatePath();
-writeDump( testPath );
-
+writeOutput( getCurrentTemplatePath() )
 ```
 
+Result: the absolute file system path of the file that contains this call (depends on your environment)
 
+### Extract only the file name
+
+```java
+writeOutput( getFileFromPath( getCurrentTemplatePath() ) )
+```
+
+Result: the file name of the calling template, for example index.bxm

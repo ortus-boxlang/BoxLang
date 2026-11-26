@@ -51,22 +51,30 @@ public class ThreadNew extends BIF {
 	}
 
 	/**
-	 * Creates a new thread of execution based on the passed closure/lambda.
+	 * Creates and starts a new thread of execution that runs the passed closure/lambda. The thread is tracked by the request thread manager,
+	 * so it can later be referenced by name with <code>threadJoin()</code>, <code>threadInterrupt()</code>, <code>threadTerminate()</code>, and
+	 * so on.
+	 *
+	 * <pre>
+	 * threadNew( () -> doWork(), {}, "worker" )
+	 * threadJoin( "worker" )
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @arguments.runnable The closure/lambda to execute in the new thread.
+	 * @argument.runnable The closure/lambda to execute in the new thread.
 	 *
-	 * @arguments.attributes A struct of data to bind into the thread's scope.
+	 * @argument.attributes A struct of data to bind into the thread's scope.
 	 *
-	 * @argument.threadName The name of the thread to track it, if not provided a default name will be generated.
+	 * @argument.name The name used to track the thread. If not provided, a random unique name is generated.
 	 *
-	 * @argument.priority The priority of the thread. Possible values are "high", "low", and "normal". Default is "normal".
+	 * @argument.priority The priority of the thread. Possible values are "high", "low" and "normal". Defaults to "normal".
 	 *
-	 * @argument.virtual If true, the thread will be a <a href="https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html">virtual thread</a>. Default is false.
+	 * @argument.virtual If true, the thread is a <a href="https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html">virtual
+	 *                   thread</a>. Defaults to false.
 	 *
-	 * @return The newly created thread object if you want to monitor it.
+	 * @return The newly created and started Java Thread object, if you want to monitor it.
 	 */
 	@Override
 	public Thread _invoke( IBoxContext context, ArgumentsScope arguments ) {

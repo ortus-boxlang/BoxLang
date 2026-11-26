@@ -49,22 +49,29 @@ public class ListReduce extends BIF {
 	}
 
 	/**
-	 * Run the provided udf over a delimited list to reduce the values to a single output
+	 * Reduce the items of a delimited list to a single value by running a callback for each item.
+	 * The callback is invoked with <code>(accumulator, value, index, list, delimiter)</code>, where index is 1-based, and its result becomes
+	 * the next accumulator.
+	 * Strict-argument functions (such as Java BiFunctions) only receive <code>(accumulator, value)</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list The delimited list to perform operations on
+	 * @argument.list The delimited list to reduce.
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array. You can alternatively pass a Java BiFunction which will only receive the ffirst 2 args.
+	 * @argument.callback The function to invoke for each item. It receives the accumulator, the item, the 1-based index, the original list and
+	 *                    the delimiter, and returns the new accumulator.
 	 *
-	 * @argument.initialValue The initial value of the reduction
+	 * @argument.initialValue The initial value of the accumulator. If omitted, the accumulator starts as null.
 	 *
-	 * @argument.delimiter string the list delimiter
+	 * @argument.delimiter The list delimiter(s). Defaults to a comma.
 	 *
-	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 * @argument.includeEmptyFields Whether empty list elements are included in the iteration. Defaults to false.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter Whether the delimiter is treated as a multi-character delimiter (the whole string) instead of a set of
+	 *                                   single-character delimiters. Defaults to true.
+	 *
+	 * @return The final value of the accumulator.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.reduce(

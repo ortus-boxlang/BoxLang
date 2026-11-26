@@ -43,7 +43,10 @@ public class ArrayAppend extends BIF {
 	}
 
 	/**
-	 * Append a value to an array
+	 * Appends a value to the end of an array. The array is modified in place.
+	 * When merge is true and the value is an array (or can be cast to one), each of its elements is appended individually; otherwise the value
+	 * is appended as a single element.
+	 * Also available as the <code>append()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -52,8 +55,10 @@ public class ArrayAppend extends BIF {
 	 *
 	 * @argument.value The element to append. Can be any type.
 	 *
-	 * @argument.merge If true, the value is assumed to be an array and the elements of the array are appended to the array. If false, the value is
-	 *                 appended as a single element.
+	 * @argument.merge If true and the value is an array, its elements are appended individually. If false (default), the value is appended as a
+	 *                 single element.
+	 *
+	 * @return The same array, with the value(s) appended.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array				actualArray	= arguments.getAsArray( Key.array );

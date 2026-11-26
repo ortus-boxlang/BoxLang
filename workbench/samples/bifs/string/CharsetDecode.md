@@ -1,36 +1,43 @@
-### Decode a string using utf-8 back into binary encoding of the string
+### Convert a string to binary
 
-Use charsetDecode to decode with utf-8
-
-<a href="https://try.boxlang.io/?code=eJxLzkgsKk4tcUlNzk9J1VBQKi4pysxLV9JRUCotSdO1UFLQtOYCAOn2CyQ%3D" target="_blank">Run Example</a>
+`charsetDecode()` converts a string into its binary (byte array) representation using the given character set.
 
 ```java
-charsetDecode( "string", "utf-8" );
+bytes = charsetDecode( "Hi", "utf-8" )
+writeOutput( binaryEncode( bytes, "hex" ) )
 
 ```
 
-Result: [B@5d9905a6
+Result: 4869
 
-### Decode a string using us-ascii back into binary encoding of the string
-
-Use charsetDecode to decode with us-ascii
-
-<a href="https://try.boxlang.io/?code=eJxLzkgsKk4tcUlNzk9J1VBQKi4pysxLV9JRUCot1k0sTs7MVFLQtOYCABNqDI4%3D" target="_blank">Run Example</a>
+### Different character sets give different bytes
 
 ```java
-charsetDecode( "string", "us-ascii" );
+utf8 = binaryEncode( charsetDecode( "é", "utf-8" ), "hex" )
+latin1 = binaryEncode( charsetDecode( "é", "iso-8859-1" ), "hex" )
+writeOutput( utf8 & " " & latin1 )
 
 ```
 
-Result: [B@8154ffd
+Result: c3a9 e9
 
-### Additional Examples
+### Member function
 
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FBwzkgsKk4tcUlNzk9J1VBQ8lRIzFVIVCguKcrMS9dT0lFQKi1J07VQUtBU0LTmAgDDLA9R" target="_blank">Run Example</a>
+The encoding defaults to `utf-8`.
 
 ```java
-dump( CharsetDecode( "I am a string.", "utf-8" ) );
+writeOutput( binaryEncode( "Hi".charsetDecode(), "hex" ) )
 
 ```
 
+Result: 4869
 
+### Round trip with charsetEncode
+
+```java
+s = charsetDecode( "string", "utf-8" )
+writeOutput( charsetEncode( s, "utf-8" ) )
+
+```
+
+Result: string

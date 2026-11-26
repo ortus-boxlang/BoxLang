@@ -43,19 +43,21 @@ public class FileCreateSymlink extends BIF {
 	}
 
 	/**
-	 * Creates a symbolic link at the given path pointing to the given target. Throws an exception if the link cannot be created, for example when the
-	 * operating system does not allow the current user to create symbolic links.
+	 * Creates a symbolic link at the given path pointing to the given target. Throws an exception if the link cannot be created, for example
+	 * when the operating system does not allow the current user to create symbolic links.
+	 *
+	 * @argument.link The path of the link to create. Missing parent directories are created.
+	 *
+	 * @argument.target The path the link points to. It is stored exactly as given, so a relative target is relative to the folder holding the
+	 *                  link.
+	 *
+	 * @argument.overwrite Optional. Whether to replace an existing file or link at the link path. Defaults to false. Directories are never
+	 *                     replaced.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.link The path of the link to create. Missing parent directories are created.
-	 *
-	 * @argument.target The path the link points to. It is stored exactly as given, so a relative target is relative to the folder holding the link.
-	 *
-	 * @argument.overwrite [false] Whether to replace an existing file or link at the link path. Directories are never replaced.
-	 *
-	 * @return The absolute path of the created link
+	 * @return The absolute path of the created link.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String linkPath = FileSystemUtil.expandPath( context, arguments.getAsString( Key.link ) ).absolutePath().toString();

@@ -43,12 +43,14 @@ public class Log extends BIF {
 	}
 
 	/**
-	 * Returns the natural logarithm of a number.
+	 * Returns the natural logarithm (base e) of a number. Also available as <code>number.log()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number The number to calculate the natural logarithm of
+	 * @argument.number The number to calculate the natural logarithm of. Should be greater than 0.
+	 *
+	 * @return The natural logarithm of the number.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Number number = arguments.getAsNumber( Key.number );

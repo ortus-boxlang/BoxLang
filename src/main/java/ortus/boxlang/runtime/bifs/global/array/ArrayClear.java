@@ -39,12 +39,15 @@ public class ArrayClear extends BIF {
 	}
 
 	/**
-	 * Clear all items from array
-	 * 
+	 * Removes all items from an array. The array is modified in place.
+	 * Also available as the <code>clear()</code> member function on arrays.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.array The array to clear.
+	 *
+	 * @return The same array, now empty.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );

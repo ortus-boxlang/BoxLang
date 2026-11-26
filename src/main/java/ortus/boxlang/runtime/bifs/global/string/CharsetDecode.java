@@ -47,14 +47,18 @@ public class CharsetDecode extends BIF {
 	}
 
 	/**
-	 * Encodes a string to a binary representation
+	 * Convert a string into its binary representation (a byte array) using the given character set.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.encoded_binary The string to encode to binary
-	 * 
-	 * @argument.encoding The charset encoding to use (default: utf-8 )
+	 * @argument.encoded_binary The string to convert to binary.
+	 *
+	 * @argument.encoding The name of the character set to use, for example "utf-8" or "iso-8859-1". Defaults to "utf-8".
+	 *
+	 * @throws java.nio.charset.UnsupportedCharsetException if the character set is not supported.
+	 *
+	 * @return A byte array with the bytes of the string in the given character set.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsString( Key.encoded_binary )

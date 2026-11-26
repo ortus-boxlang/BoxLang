@@ -41,18 +41,20 @@ public class QueryGetCell extends BIF {
 	}
 
 	/**
-	 * This function maps the query to a new query.
+	 * Returns the value of a single cell of a query. Also available as <code>query.getCell( column_name, row_number )</code>. Note
+	 * that although row_number is declared optional, omitting it causes an error, so always supply it. An out-of-range row throws an
+	 * exception.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to iterate over
+	 * @argument.query The query to read from.
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the row, the currentRow, the query.
+	 * @argument.column_name The name of the column to read.
 	 *
-	 * @argument.parallel Specifies whether the items can be executed in parallel
-	 * 
-	 * @argument.maxThreads The maximum number of threads to use when parallel = true
+	 * @argument.row_number The one-based row number of the cell.
+	 *
+	 * @return The value of the cell.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query		= arguments.getAsQuery( Key.query );

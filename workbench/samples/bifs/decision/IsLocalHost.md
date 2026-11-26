@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLLPbJT07M8cgvLtFQUDI0MtczAEJDJQVNay4AfssHNQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLLPbJT07M8cgvLtFQUDI0MtczAEJDJQVNAHBrBvA%3D" target="_blank">Run Example</a>
 
 ```java
-isLocalHost( "127.0.0.1" );
+isLocalHost( "127.0.0.1" )
 
 ```
 
@@ -15,10 +15,10 @@ Result: true
 
 Test the IPv6 Loopback address. IPv6 only has one loopback address.
 
-<a href="https://try.boxlang.io/?code=eJzLLPbJT07M8cgvLtFQULKyMlRS0LTmAgBVSwYl" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLLPbJT07M8cgvLtFQULKyMlRS0AQASQsF4A%3D%3D" target="_blank">Run Example</a>
 
 ```java
-isLocalHost( "::1" );
+isLocalHost( "::1" )
 
 ```
 
@@ -28,10 +28,10 @@ Result: true
 
 IPv4 network standards reserve the entire 127.0.0.0/8 address block for loopback networking purposes however they are not usually mapped to `localhost` by default.
 
-<a href="https://try.boxlang.io/?code=eJzLLPbJT07M8cgvLtFQUDI0MtezAEElBU1rLgB%2FhQdM" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLLPbJT07M8cgvLtFQUDI0MtezAEElBU0AcPcHBw%3D%3D" target="_blank">Run Example</a>
 
 ```java
-isLocalHost( "127.8.8.8" );
+isLocalHost( "127.8.8.8" )
 
 ```
 
@@ -41,10 +41,10 @@ Result: true
 
 Not a localhost IP.
 
-<a href="https://try.boxlang.io/?code=eJzLLPbJT07M8cgvLtFQULLQA0MlBU1rLgBwuQbq" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLLPbJT07M8cgvLtFQULLQA0MlBU0AYu8GpQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
-isLocalHost( "8.8.8.8" );
+isLocalHost( "8.8.8.8" )
 
 ```
 
@@ -54,9 +54,9 @@ Result: false
 
 
 ```java
-ip = "127.0.0.1";
+ip = "127.0.0.1"
 writeDump( islocalhost( ip ) ); // true
-writeDump( islocalhost( GetLocalHostIP() ) );
+writeDump( islocalhost( GetLocalHostIP() ) )
  // true
 
 ```

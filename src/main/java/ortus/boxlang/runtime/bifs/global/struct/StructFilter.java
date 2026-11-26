@@ -58,23 +58,30 @@ public class StructFilter extends BIF {
 	 * </ul>
 	 * <p>
 	 * <h2>Parallel Execution</h2>
-	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a ForkJoinPool with parallel streams.
-	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the filter in parallel, and destroy it after the operation is complete.
-	 * Please note that this may not be the most efficient way to filter, as it will create a new ForkJoinPool for each invocation of the BIF. You may want to consider using a shared ForkJoinPool for better performance.
+	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a
+	 * ForkJoinPool with parallel streams.
+	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the filter in parallel,
+	 * and destroy it after the operation is complete.
+	 * Please note that this may not be the most efficient way to filter, as it will create a new ForkJoinPool for each invocation of the BIF. You may
+	 * want to consider using a shared ForkJoinPool for better performance.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.struct The target struct to test
 	 *
-	 * @argument.callback The function used to filter. The function will be passed 3 arguments: the key, the value, the struct. You can alternatively pass a Java BiPredicate which will only receive the first 2 args.
+	 * @argument.callback The function used to filter. The function will be passed 3 arguments: the key, the value, the struct. You can alternatively
+	 *                    pass a Java BiPredicate which will only receive the first 2 args.
 	 *
 	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
+	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of
+	 *                      threads for the ForkJoinPool.
 	 *                      If parallel is false, this argument is ignored.
 	 *
 	 * @argument.virtual If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return A new struct containing only the entries for which the callback returned true.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object maxThreads = arguments.get( Key.maxThreads );

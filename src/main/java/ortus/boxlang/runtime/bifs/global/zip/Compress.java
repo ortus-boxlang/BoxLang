@@ -70,27 +70,34 @@ public class Compress extends BIF {
 	 * The {@code compressionLevel} argument is used to specify the compression level to use for the compression.
 	 * The default is {@code 6}, which is a good balance between speed and compression ratio.
 	 * The valid range is from {@code 0} (no compression) to {@code 9} (maximum compression).
+	 * <p>
+	 * An existing destination without {@code overwrite=true}, a missing source or an unsupported format throws an exception.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.format The format to use for the compression. If omitted, it is detected from the destination extension.
+	 * @argument.format The format to use for the compression: bzip, bzip2, gzip, tar, tar.bz, tbz, tbz2, tgz, tar.gz or zip. If omitted, it is
+	 *                  detected from the destination extension, and an unrecognized extension throws an exception.
 	 *
 	 * @argument.source The absolute path to the source file or folder to compress.
 	 *
-	 * @argument.destination The absolute path with a file name to save as the compressed file. Extension is optional.
+	 * @argument.destination The absolute path with a file name to save as the compressed file. The extension for the format is added if it is
+	 *                       missing.
 	 *
 	 * @argument.includeBaseFolder Whether to include the base folder as the root of the compressed file. Default is true.
 	 *
-	 * @argument.overwrite Whether to overwrite the destination file if it already exists. Default is false.
+	 * @argument.overwrite Whether to overwrite the destination file if it already exists. Default is false, which throws an exception if it exists.
 	 *
-	 * @argument.prefix The prefix directory to store the compressed files under. Default is empty.
+	 * @argument.prefix The prefix directory to store the compressed files under. Only applies to zip archives. If passed it must not be an empty
+	 *                  string.
 	 *
-	 * @argument.filter A regular expression to filter the files to compress or a function that receives the file name and returns a boolean.
+	 * @argument.filter A glob pattern (several patterns can be separated with a pipe) matched against the entry path inside the archive, e.g. {@code **.txt},
+	 *                  or a function that receives the entry path and returns a boolean. Only matching files are compressed.
 	 *
 	 * @argument.recurse Whether to compress the files recursively. Default is true.
 	 *
-	 * @argument.compressionLevel The compression level to use for the compression. Default is 6, which is a good balance between speed and compression ratio.
+	 * @argument.compressionLevel The compression level to use for the compression, from 0 (none) to 9 (maximum). Default is 6, which is a good
+	 *                            balance between speed and compression ratio.
 	 *
 	 * @return The absolute path to the compressed file.
 	 */

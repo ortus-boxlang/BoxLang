@@ -50,15 +50,18 @@ public class StructEvery extends BIF {
 
 	/**
 	 * Used to iterate over a struct and test whether <strong>every</strong> item meets the test callback.
-	 * The function will be passed 3 arguments: the value, the index, and the struct.
-	 * You can alternatively pass a Java Predicate which will only receive the 1st arg.
+	 * The function will be passed 3 arguments: the key, the value, and the struct.
+	 * You can alternatively pass a Java BiPredicate which will only receive the first 2 args (key and value).
 	 * The function should return true if the item meets the test, and false otherwise.
 	 * <p>
-	 * <strong>Note:</strong> This operation is a short-circuit operation, meaning it will stop iterating as soon as it finds the first item that does not meet the test condition.
+	 * <strong>Note:</strong> This operation is a short-circuit operation, meaning it will stop iterating as soon as it finds the first item that does
+	 * not meet the test condition.
 	 * <p>
 	 * <h2>Parallel Execution</h2>
-	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a ForkJoinPool with parallel streams.
-	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the filter in parallel, and destroy it after the operation is complete.
+	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a
+	 * ForkJoinPool with parallel streams.
+	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the filter in parallel,
+	 * and destroy it after the operation is complete.
 	 * This allows for efficient processing of large structs, especially when the test function is computationally expensive or the struct is large.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -66,14 +69,19 @@ public class StructEvery extends BIF {
 	 *
 	 * @argument.struct The target struct to test
 	 *
-	 * @argument.callback The function used to test. The function will be passed 3 arguments: the key, the value, the struct. You can alternatively pass a Java BiPredicate which will only receive the first 2 args.
+	 * @argument.callback The function used to test. The function will be passed 3 arguments: the key, the value, the struct. You can alternatively
+	 *                    pass a Java BiPredicate which will only receive the first 2 args.
 	 *
 	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored. If parallel is true and maxThreads is not passed, it will use the common ForkJoinPool.
+	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of
+	 *                      threads for the ForkJoinPool.
+	 *                      If parallel is false, this argument is ignored. If parallel is true and maxThreads is not passed, it will use the common
+	 *                      ForkJoinPool.
 	 * 
 	 * @argument.virtual Whether to use a virtual thread for each task when running in parallel. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return true if the callback returned true for every entry (or the struct is empty), false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 

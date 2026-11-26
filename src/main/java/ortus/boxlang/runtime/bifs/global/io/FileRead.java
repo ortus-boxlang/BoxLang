@@ -47,22 +47,21 @@ public class FileRead extends BIF {
 	}
 
 	/**
-	 * Reads the contents of a file and returns it as a string or binary object.
-	 * <p>
-	 * When called with a <b>file path</b> (string, Path, or File), the entire file is read from disk.
-	 * HTTP URLs are also supported as string paths.
-	 * When called with an <b>open BoxFile object</b> (from {@code fileOpen()}), the remaining content
-	 * is read from the current stream position to EOF. For text mode files, returns a String.
-	 * For binary mode files, returns a byte[]. The caller is responsible for closing the file object afterward.
+	 * Reads the contents of a file and returns it as a string. This BIF is also registered as `FileReadBinary`, which returns the contents as
+	 * binary data (a byte array). The file can be a path (string, Path or File), an HTTP URL, or an open file object from `fileOpen()`. With a
+	 * path the whole file is read; with an open file object the remaining content from the current position is read, or up to `buffersize`
+	 * characters if provided. A file object you pass in is not closed.
+	 *
+	 * @argument.filepath A file path or URL to read entirely, or an open file object to read the remaining content from.
+	 *
+	 * @argument.charsetOrBufferSize Optional. Either the charset to use when reading a text file, or, if it is a number, the buffer size.
+	 *
+	 * @argument.buffersize Optional. The number of bytes or characters to read. Only applies to a file object.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.filepath A file path (string, Path, File, or HTTP URL) to read entirely, or an open BoxFile object to read remaining content from.
-	 *
-	 * @argument.charsetOrBufferSize Either the charset to use when reading string files, or the buffer size.
-	 *
-	 * @argument.buffersize Number of bytes or chars to read. Only applies to a BoxFile object.
+	 * @return The file contents as a string, or as binary data for `fileReadBinary()`.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	rawFilePath			= arguments.get( Key.filepath );

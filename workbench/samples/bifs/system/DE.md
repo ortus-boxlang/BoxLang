@@ -1,23 +1,17 @@
-### Simple Example
+### Wrap a string for delayed evaluation
 
-
-
-<a href="https://try.boxlang.io/?code=eJxLSdVQUCpILUlVUtC05gIAHgIDkg%3D%3D" target="_blank">Run Example</a>
+The string is wrapped in double quotes.
 
 ```java
-de( "pete" );
-
+writeOutput( de( "pete" ) )
 ```
 
-Result: "pete"
+Result: "pete" (including the double quotes)
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwLL8osSfUvLSkoLdFQSEnVUFAqLi3OVFLQVNC05gIAmUoI1Q%3D%3D" target="_blank">Run Example</a>
+### Embedded quotes are doubled
 
 ```java
-WriteOutput( de( "susi" ) );
-
+writeOutput( de( 'say "hi"' ) )
 ```
 
-
+Result: "say ""hi"""

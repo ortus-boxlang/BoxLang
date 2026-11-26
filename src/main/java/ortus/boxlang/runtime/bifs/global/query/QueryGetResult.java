@@ -39,13 +39,15 @@ public class QueryGetResult extends BIF {
 	}
 
 	/**
-	 * Returns the metadata of a query.
+	 * Returns the metadata of a query as an unmodifiable struct containing keys such as type, recordCount, columnList,
+	 * columnMetadata (per column name, type and index), executionTime and cached. Also available as <code>query.getResult()</code>.
 	 *
-	 * 
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to get the result from
+	 * @argument.query The query to get the metadata of.
+	 *
+	 * @return A struct of query metadata.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query query = arguments.getAsQuery( Key.query );

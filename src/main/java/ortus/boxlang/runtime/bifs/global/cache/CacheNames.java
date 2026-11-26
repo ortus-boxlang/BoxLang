@@ -31,12 +31,12 @@ public class CacheNames extends BIF {
 	}
 
 	/**
-	 * Get an array of all the registered caches in BoxLang
+	 * Gets the names of all the caches registered in BoxLang.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @return An array of all the registered caches in BoxLang
+	 * @return An array with the names of all the registered caches.
 	 */
 	public Array _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the requested cache

@@ -49,29 +49,33 @@ public class CreateDateTime extends BIF {
 	}
 
 	/**
-	 * Creates a date-time object.
+	 * Creates a date-time object from its individual parts. This BIF is also available as the alias {@code createDate()}.
+	 * The {@code year}, {@code month} and {@code day} must be non-zero or an exception is thrown (so calling it with no arguments throws).
 	 *
-	 * Note that the core implementation of this BIF differs from ACF/Lucee in handling of a year value without a century. BoxLang respects that pre-first century years are valid and and will treat `createDate( 20 )` as 20 AD.
+	 * Note that the core implementation of this BIF differs from ACF/Lucee in handling of a year value without a century. BoxLang respects that pre-
+	 * first century years are valid and and will treat `createDate( 20 )` as 20 AD.
 	 * The behavior modification to emulate ACF/Lucee would require the installation of the `bx-compat` module.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.year The year of the date-time object.
+	 * @argument.year The year of the date-time object. Must not be zero. Required in practice: the default of 0 throws an exception.
 	 *
-	 * @argument.month The month of the date-time object.
+	 * @argument.month The month of the date-time object (1-12). Defaults to 1; 0 throws an exception.
 	 *
-	 * @argument.day The day of the date-time object.
+	 * @argument.day The day of the month of the date-time object. Defaults to 1; 0 throws an exception.
 	 *
-	 * @argument.hour The hour of the date-time object.
+	 * @argument.hour The hour of the date-time object (0-23). Defaults to 0.
 	 *
-	 * @argument.minute The minute of the date-time object.
+	 * @argument.minute The minute of the date-time object. Defaults to 0.
 	 *
-	 * @argument.second The second of the date-time object.
+	 * @argument.second The second of the date-time object. Defaults to 0.
 	 *
-	 * @argument.millisecond The millisecond of the date-time object.
+	 * @argument.millisecond The millisecond of the date-time object. Defaults to 0.
 	 *
 	 * @argument.timezone The timezone to apply to the date-time object. Defaults to the system default timezone.
+	 *
+	 * @return A {@link DateTime} object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId timezone = LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );

@@ -41,12 +41,14 @@ public class Floor extends BIF {
 	}
 
 	/**
-	 * Round a number down to the nearest integer
-	 * 
+	 * Rounds a number down to the closest integer that is less than or equal to it. Also available as <code>number.floor()</code>.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
-	 * @argument.number The number to round down to the nearest integer
+	 *
+	 * @argument.number The number to round down.
+	 *
+	 * @return The largest integer value not greater than the number.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return _invoke( arguments.getAsNumber( Key.number ) );

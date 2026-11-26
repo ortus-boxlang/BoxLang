@@ -40,12 +40,14 @@ public class FileDelete extends BIF {
 	}
 
 	/**
-	 * Deletes the specified file on the server. Throws an exception if the file doesn't exist.
+	 * Deletes the specified file. Throws an exception if the file doesn't exist. Open file objects are not accepted, only paths. Returns null.
+	 *
+	 * @argument.file The path of the file to delete.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file The file to delete.
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile file = arguments.getAsBoxFile( Key.file );

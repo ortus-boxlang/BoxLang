@@ -41,18 +41,21 @@ public class BitMaskClear extends BIF {
 	}
 
 	/**
-	 * Performs a bitwise mask clear operation.
+	 * Clears (sets to 0) a range of bits of a number, leaving all the other bits untouched.
+	 * The range is <code>length</code> bits wide, starting at bit <code>start</code> where bit 0 is the least significant bit.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.number 64-bit signed integer on which the mask clear operation is performed.
-	 * 
-	 * @argument.start Start bit for the clear mask (Integer in the range 0-31, inclusive).
-	 * 
-	 * @argument.length Length of bits in the clear mask (Integer in the range 0-31, inclusive).
+	 *
+	 * @argument.start Start bit for the clear mask (integer in the range 0-31, inclusive).
+	 *
+	 * @argument.length Length of bits in the clear mask (integer in the range 0-31, inclusive).
 	 *
 	 * @throws BoxRuntimeException If length or start is not in the range 0-31, inclusive.
+	 *
+	 * @return The number with the masked bits cleared.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		long	number	= arguments.getAsLong( Key.number );

@@ -38,12 +38,15 @@ public class BitNot extends BIF {
 	}
 
 	/**
-	 * Performs a bitwise logical NOT operation.
+	 * Performs a bitwise logical NOT (~) operation, inverting every bit of a 64-bit signed integer (two's complement).
+	 * For example, <code>bitNot( 0 )</code> is -1.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number Numeric value for bitwise NOT.
+	 * @argument.number Numeric value for the bitwise NOT.
+	 *
+	 * @return The bitwise complement of the number.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		long number = arguments.getAsLong( Key.number );

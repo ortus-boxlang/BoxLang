@@ -45,23 +45,27 @@ public class Throw extends BIF {
 	}
 
 	/**
-	 * Throws a developer-specified exception, which can be caught with a catch block.
+	 * Throws a developer-specified exception, which can be caught with a catch block. If only an exception object is passed (as the message or
+	 * as the object argument) and there is no message, that exception is thrown directly. Otherwise a custom exception is created, with the
+	 * object as its cause, if any. The default exception type is Custom.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.message Message that describes exception event
-	 * 
-	 * @argument.type The type of the exception
-	 * 
-	 * @argument.detail Description of the event
-	 * 
-	 * @argument.errorcode A custom error code that you supply
-	 * 
-	 * @argument.extendedinfo Additional custom error data that you supply
-	 * 
-	 * @argument.object An instance of an exception object. If there is no message provided, this object will be thrown directly. If there is a message, a
-	 *                  CustomException will be thrown and this object will be used as the cause.
+	 * @argument.message The message that describes the exception event. May also be an exception object.
+	 *
+	 * @argument.type The type of the exception. Defaults to Custom.
+	 *
+	 * @argument.detail A description of the event.
+	 *
+	 * @argument.errorcode A custom error code that you supply.
+	 *
+	 * @argument.extendedinfo Additional custom error data that you supply.
+	 *
+	 * @argument.object An instance of an exception object. If there is no message provided, this object will be thrown directly. If there is a
+	 *                  message, a CustomException will be thrown and this object will be used as the cause.
+	 *
+	 * @return Never returns normally, since an exception is always thrown.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Throwable exceptionToThrow;

@@ -21,7 +21,7 @@
 	</boxlangengines>
 </bx:xml>
 <bx:script>
-	writeOutput( isXMLDoc( example ) );
+	writeOutput( isXMLDoc( example ) )
 </bx:script>
 
 ```
@@ -44,3 +44,12 @@ Result: YES
 ```
 
 
+
+### The root element and XML strings are not documents
+
+```java
+doc = xmlParse( "<root><a/></root>" )
+writeOutput( isXmlDoc( doc ) & " " & isXmlDoc( doc.xmlRoot ) & " " & isXmlDoc( "<root/>" ) )
+```
+
+Result: true false false

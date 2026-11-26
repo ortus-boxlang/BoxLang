@@ -38,12 +38,14 @@ public class QueryColumnArray extends BIF {
 	}
 
 	/**
-	 * This function returns the column array of a query.
+	 * Returns the column names of a query as an array. Also available as <code>query.columnArray()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to get the column names from
+	 * @argument.query The query to get the column names from.
+	 *
+	 * @return An array of the column names.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsQuery( Key.query ).getColumnArray();

@@ -65,22 +65,30 @@ public class ReplaceList extends BIF {
 	}
 
 	/**
-	 * Replaces occurrences of the elements from a delimited list, in a string with corresponding elements from another delimited list.
+	 * Replaces every element of a delimited list of search values found in a string with the element at the same position of a second
+	 * delimited list.
+	 * <code>ReplaceList</code> is case-sensitive and its alias <code>ReplaceListNoCase</code> is case-insensitive. Both are also available as
+	 * string member functions.
+	 * The lists are applied in order, so a replacement can be matched again by a later search value. If the second list has fewer elements
+	 * than the first, the remaining
+	 * search values are handled by character-by-character replacement.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to operate on
+	 * @argument.string The string to operate on.
 	 *
-	 * @argument.list1 The first delimited list of search values
+	 * @argument.list1 The delimited list of values to search for.
 	 *
-	 * @argument.list2 The second delimited list of replacement values
+	 * @argument.list2 The delimited list of replacement values.
 	 *
-	 * @argument.delimiter_list1 The delimiters for list 1
+	 * @argument.delimiter_list1 The delimiter(s) of list1. Defaults to a comma.
 	 *
-	 * @argument.delimiter_list2 The delimiters for list 2
+	 * @argument.delimiter_list2 The delimiter(s) of list2. Defaults to a comma.
 	 *
-	 * @argument.includeEmptyFields Whether to include empty fields in the final result
+	 * @argument.includeEmptyFields Whether empty list elements are included. Defaults to false.
+	 *
+	 * @return The string with the replacements made.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key									bifMethodKey	= arguments.getAsKey( BIF.__functionName );

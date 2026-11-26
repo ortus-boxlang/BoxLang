@@ -2,51 +2,51 @@
 
 Uses the arrayNew function to create the new array
 
-<a href="https://try.boxlang.io/?code=eJx1jkELgkAUhM%2Furxg8KQhieRMDOwR1qIP9gYVesbSt8txlsei%2Ft4rRqcvM4c18bwz5hlmOqCEnP5JPUCCtxNA9aDmJPMeZpRl6pYnhO75L7py54NoxtvsdmKxjAzv2JJIkoG5FNulq1vWsJVLUG7xENH9qyf4PViL6ItlRJd5pArNMzRAqZYa40RpqgCet46niWVk6Odu7QD60p2NLrKRWT%2FqVw4aQ%2FACv%2B0zp" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJx1jsEKgkAQhs%2FuU%2Fx4UhDE8mpgh6AOerAXWGiKpW2VcZfFondvFaNTl28OM98%2FvyFfM8sJFeQ8G%2FIJCqRi7B%2B0bkSe48zSjIPSxPA93yX3zlxw7Rn74wFM1rGBnQYSSRKSbkU2c7Nwu7BEimqHl4iWRx3Z%2F4ci%2BiayI%2FFOE5i1Z4YglBniWmuoEZ60joPgWVlqnR1ciD11bdMRK6nVk35uKJB%2BAAnwS7g%3D" target="_blank">Run Example</a>
 
 ```java
-newArray = arrayNew( 1 );
+newArray = arrayNew( 1 )
 someArray =
 // Transpiler workaround for BIF return type
 (( arg1, arg2, arg3, arg4 ) => {
-	arraySet( arg1, arg2, arg3, arg4 );
-	return true;
-})( newArray, 1, 4, "All is well" );
-writeOutput( JSONSerialize( newArray ) );
+	arraySet( arg1, arg2, arg3, arg4 )
+	return true
+})( newArray, 1, 4, "All is well" )
+writeOutput( JSONSerialize( newArray ) )
 
 ```
 
-Result: ["All is well", "All is well", "All is well", "All is well"]
+Result: ["All is well","All is well","All is well","All is well"]
 
 ### Create the Two dimensional array
 
 Uses the arrayNew function to create the new array
 
-<a href="https://try.boxlang.io/?code=eJzLSy13LCpKrFSwVUgE0X6p5RoKRgqa1lx5UJloBUOFWDABVKPklllUXKJQlphTmqpElhoj%2FGqMkMwJTk3Oz0vBpcgIq6LyosySVP%2FSkoLSEg0Fr2B%2Fv%2BDUoszEnMyqVA0FmAEKmiD%2FAQDN5k2Q" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLSy13LCpKrFSwVUgE0X6p5RoKRgqaXHlQiWgFQ4VYMAFUouSWWVRcolCWmFOaqkSGEiO8SoyQTAlOTc7PS8GhxgibmvKizJJU%2F9KSgtISDQWvYH%2B%2F4NSizMSczKpUDQWYfgVNBU0Aqh1L6Q%3D%3D" target="_blank">Run Example</a>
 
 ```java
-newArray = arrayNew( 2 );
-newArray[ 1 ][ 1 ] = "First value";
-newArray[ 1 ][ 1 ] = "First value";
-newArray[ 1 ][ 2 ] = "First value";
-newArray[ 2 ][ 1 ] = "Second value";
-newArray[ 2 ][ 2 ] = "Second value";
-writeOutput( JSONSerialize( newArray ) );
+newArray = arrayNew( 2 )
+newArray[ 1 ][ 1 ] = "First value"
+newArray[ 1 ][ 1 ] = "First value"
+newArray[ 1 ][ 2 ] = "First value"
+newArray[ 2 ][ 1 ] = "Second value"
+newArray[ 2 ][ 2 ] = "Second value"
+writeOutput( JSONSerialize( newArray ) )
 
 ```
 
-Result: [["First value", "First value"],["Second value", "Second value"]]
+Result: [["First value","First value"],["Second value","Second value"]]
 
 ### Create unsynchronized array
 
 Uses the arrayNew function to create the new unsynchronized array
 
-<a href="https://try.boxlang.io/?code=eJzLSy13LCpKrFSwVUgE0X6p5RoKhjoKaYk5xakKmtZceVAFeokFBal5KRoKSvl5qUogmfKizJJU%2F9KSgtISDQWvYH%2B%2F4NSizMSczKpUDQWYLgVNkEoAs4AhBw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLSy13LCpKrFSwVUgE0X6p5RoKhjoKaYk5xakKmlx5UHm9xIKC1LwUDQWl%2FLxUJaBEeVFmSap%2FaUlBaYmGglewv19walFmYk5mVaqGAkyTgqaCJgA7wCBM" target="_blank">Run Example</a>
 
 ```java
-newArray = arrayNew( 1, false );
-newArray.append( "one" );
-writeOutput( JSONSerialize( newArray ) );
+newArray = arrayNew( 1, false )
+newArray.append( "one" )
+writeOutput( JSONSerialize( newArray ) )
 
 ```
 
@@ -56,53 +56,44 @@ Result: ["one"]
 
 Instead of using arrayNew you can also create an array using square brackets.
 
-<a href="https://try.boxlang.io/?code=eJzLSy13LCpKrFSwVYhW4OJUys9LVdIB0iXl%2BUpcsdZc5UWZJan%2BpSUFpSUaCl7B%2Fn7BqUWZiTmZVakaCnkwvZoKmtZcAEruFrI%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLSy13LCpKrFSwVYhW4OJUys9LVdIB0iXl%2BUpcsVzlRZklqf6lJQWlJRoKXsH%2BfsGpRZmJOZlVqRoKeTCtmgqaAAvHFjI%3D" target="_blank">Run Example</a>
 
 ```java
 newArray = [ 
 	"one",
 	"two"
-];
-writeOutput( JSONSerialize( newArray ) );
+]
+writeOutput( JSONSerialize( newArray ) )
 
 ```
 
-Result: ["one", "two"]
+Result: ["one","two"]
 
-### Create an array with data type
-When using data types on array creation, items are converted if possible, otherwise an error is thrown.
-
+### Arrays are synchronized by default
 
 ```java
-typedArray = arrayNew[ "boolean" ]( 1 );
-typedArray[ 1 ] = true;
-typedArray[ 2 ] = "true";
-typedArray[ 3 ] = 1;
-typedArray[ 4 ] = "1";
-typedArray[ 5 ] = "yes";
-typelessArray = arrayNew( 1 );
-typelessArray[ 1 ] = true;
-typelessArray[ 2 ] = "true";
-typelessArray[ 3 ] = 1;
-typelessArray[ 4 ] = "1";
-typelessArray[ 5 ] = "yes";
-writeOutput( JSONSerialize( [
-	typedArray,
-	typelessArray
-] ) );
-
+writeOutput( arrayNew().getMetadata().type & "," & arrayNew( 1, false ).getMetadata().type )
 ```
 
-Result: [[true,true,true,true,null,true],[true,"true",1,"1",null,"yes"]]
+Result: synchronized,unsynchronized
+
+### Create an empty array
+
+```java
+arr = arrayNew()
+writeOutput( arr.len() )
+```
+
+Result: 0
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLVLBVSCwqSqz0Sy3XUDBU0LTm0tdX8MwtyMlMziyBSCnk5ZcklmTm53El6iUWFKTmpWgoRMdClZZnlmQolCXmlKYWI0tzcSolKukAySQQaQzEJkAcHQskqrk4OZ39fQN8XCMUrBRKikpTuThrgeKFpalFEGcoZabopCSWpCopaHKB7UkpzS3QUEgEMQGlfTAO" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLVLBVSCwqSqz0Sy3XUDBU0OTS11fwzC3IyUzOLIHIKOTllySWZObncSXqJRYUpOalaChEx0JUlmeWZCiUJeaUphYjy3JxKiUq6QDJJBBpDMQmQBwdCySquTg5nf19A3xcIxSsFEqKSlO5OGuB4oWlqUUQRyhlpuikJJakKgGtAFmTUppboKGQqKAJAL%2FGLxg%3D" target="_blank">Run Example</a>
 
 ```java
-a = arrayNew( 1 );
+a = arrayNew( 1 )
 // Implicit array notation
-a.append( [] );
+a.append( [] )
 // with values
 a.append( [
 	"a",
@@ -114,9 +105,7 @@ a.append( [
 		COMPLEX : true
 	},
 	queryNew( "id,date" )
-] );
-dump( a );
+] )
+dump( a )
 
 ```
-
-

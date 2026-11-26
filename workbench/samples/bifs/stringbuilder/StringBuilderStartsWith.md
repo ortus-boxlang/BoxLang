@@ -3,9 +3,9 @@
 Tests whether a StringBuilder starts with a given substring.
 
 ```java
-sb = sb{'Hello BoxLang'};
-result = startsWith( sb, 'Hello' );
-writeOutput( result );
+sb = sb{'Hello BoxLang'}
+result = stringBuilderStartsWith( sb, 'Hello' )
+writeOutput( result )
 ```
 
 Result: true
@@ -13,9 +13,9 @@ Result: true
 ### Member usage
 
 ```java
-sb = sb{'Hello BoxLang'};
-result = sb.startsWith( 'Box' );
-writeOutput( result );
+sb = sb{'Hello BoxLang'}
+result = sb.startsWith( 'Box' )
+writeOutput( result )
 ```
 
 Result: false

@@ -43,12 +43,15 @@ public class SetTimezone extends BIF {
 	}
 
 	/**
-	 * Sets the timezone of the current request context
+	 * Sets the timezone of the current request. Subsequent date/time operations in the request which do not specify a timezone use it.
+	 * An invalid timezone identifier throws an exception. Use {@code clearTimezone()} to remove the override.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.timezone The string representation or three character alias of the timezone
+	 * @argument.timezone The string representation or three character alias of the timezone, e.g. "America/New_York" or "CET"
+	 *
+	 * @return Always {@code null}.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	timezone	= arguments.getAsString( Key.timezone );

@@ -34,10 +34,13 @@ public class ClearLocale extends BIF {
 	}
 
 	/**
-	 * Clears the current request-level locale.
+	 * Clears the locale of the current request so that locale-sensitive BIFs and `getLocale()` fall back to the runtime default locale
+	 * configured in `boxlang.json`. Takes no arguments and returns null.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		context.getRequestContextOrFail().setLocale( null );

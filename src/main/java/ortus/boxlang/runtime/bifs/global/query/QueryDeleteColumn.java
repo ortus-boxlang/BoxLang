@@ -37,14 +37,17 @@ public class QueryDeleteColumn extends BIF {
 	}
 
 	/**
-	 * Deletes a column within a query object.
+	 * Deletes a column from a query. The query is modified in place. An exception is thrown if the column does not exist. Also
+	 * available as <code>query.deleteColumn( column )</code>.
 	 *
-	 * @param context   The execution context.
-	 * @param arguments Arguments including query, column name, data type, and the array to populate the column with.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query object to which the column should be deleted.
-	 * 
+	 * @argument.query The query to delete the column from.
+	 *
 	 * @argument.column The name of the column to delete.
+	 *
+	 * @return The query without the deleted column.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query		= arguments.getAsQuery( Key.query );

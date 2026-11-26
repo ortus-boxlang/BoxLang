@@ -47,18 +47,21 @@ public class StructInsert extends BIF {
 	}
 
 	/**
-	 * Inserts a key/value pair in to a struct - with an optional overwrite argument
+	 * Inserts a key/value pair into a struct, in place. If the key already exists and overwrite is false, a BoxRuntimeException is thrown.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The target struct
+	 * @argument.struct The target struct. Must be modifiable.
 	 *
-	 * @argument.key The struct key
+	 * @argument.key The key to insert.
 	 *
-	 * @argument.value The value to assign for the specified key
+	 * @argument.value The value to assign to the key.
 	 *
-	 * @argument.overwrite Whether to overwrite the existing value if the key exists ( default: false )
+	 * @argument.overwrite Whether to overwrite the value if the key already exists. Defaults to false, in which case an existing key throws an
+	 *                     exception.
+	 *
+	 * @return The same struct, after the insert.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct	struct		= arguments.getAsStruct( Key.struct );

@@ -2,10 +2,10 @@
 
 Pass in a true value outputs Yes
 
-<a href="https://try.boxlang.io/?code=eJyrTC32y3fLL8pNLNFQKCkqTVXQtOYCAFcYBw4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQqEwt9st3yy%2FKTQRySopKUxU0FTQB5pAMFg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-yesNoFormat( true );
+writeOutput( yesNoFormat( true ) )
 
 ```
 
@@ -15,40 +15,29 @@ Result: Yes
 
 Pass in a false value outputs No
 
-<a href="https://try.boxlang.io/?code=eJyrTC32y3fLL8pNLNFQSEvMKU5V0LTmAgBeoAdZ" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQqEwt9st3yy%2FKTQRy0hJzilMVNBU0AfMcDGE%3D" target="_blank">Run Example</a>
 
 ```java
-yesNoFormat( false );
+writeOutput( yesNoFormat( false ) )
 
 ```
 
 Result: No
 
-### Example of empty string
-
-Pass in an empty string outputs No
-
+### Numbers and strings are cast to booleans
 
 ```java
-yesNoFormat( "" );
+writeOutput( yesNoFormat( 1 ) & " " & yesNoFormat( 0 ) & " " & yesNoFormat( "yes" ) & " " & yesNoFormat( "no" ) )
 
 ```
 
-Result: No
+Result: Yes No Yes No
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FCoTC3Oy3fLL8pNLNFQSEvMKU5V0FTQtFbQ11fwy%2BdKwVRTUlSKUBKZWoxNjQEBMwwJGaDkl69EwAwloFaIGi6YQQC0bj5j" target="_blank">Run Example</a>
+### Member function
 
 ```java
-dump( yesnoFormat( false ) ); // No
-dump( yesnoFormat( true ) ); // Yes
-dump( yesnoFormat( 0 ) ); // No
-dump( yesnoFormat( 1 ) ); // Yes
-dump( yesnoFormat( "No" ) ); // No
-dump( yesnoFormat( "Yes" ) );
- // Yes
+writeOutput( true.yesNoFormat() )
 
 ```
 
-
+Result: Yes

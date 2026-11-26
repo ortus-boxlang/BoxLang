@@ -1,12 +1,19 @@
 ### Print output without a newline
 
-```java
-print( "Hello" );
-print( " " );
-print( "World" );
-println( "" );
-writeOutput( "done" );
+Each argument is printed separated by a space, with no trailing line break.
 
+```java
+print( "Hello" )
+print( " " )
+print( "World" )
 ```
 
-Result: done
+Result: Hello World (written to the request output or the console, with no trailing line break)
+
+### Print several values at once
+
+```java
+print( "a", "b", 42 )
+```
+
+Result: a b 42

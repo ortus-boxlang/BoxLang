@@ -47,20 +47,25 @@ public class ListGetAt extends BIF {
 	}
 
 	/**
-	 * Retrieves an item from a delimited list at the specified position
+	 * Retrieves the element at a one-based position of a delimited list. Throws an exception if the position is out of bounds.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list string list to filter entries from
+	 * @argument.list The list to read from.
 	 *
-	 * @argument.position numeric the one-based index position to retrieve the value at
+	 * @argument.position The one-based position of the element to retrieve.
 	 *
-	 * @argument.delimiter string the list delimiter
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
+	 *                              to false.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *                                   single-character delimiters. Defaults to false.
+	 *
+	 * @return The element at the given position.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.getAt(

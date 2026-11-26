@@ -39,7 +39,7 @@ public class StringStartsWith extends BIF {
 	}
 
 	/**
-	 * Determines whether a string starts with a specified prefix.
+	 * Determines whether a string starts with a specified prefix. The comparison is case-sensitive.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -48,7 +48,7 @@ public class StringStartsWith extends BIF {
 	 *
 	 * @argument.substring The prefix to check for.
 	 *
-	 * @return True if the string starts with the specified prefix, false otherwise.
+	 * @return True if the string starts with the specified prefix, false otherwise (also false if the string is null).
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return startsWith( arguments.getAsString( Key.string ), arguments.getAsString( Key.substring ) );

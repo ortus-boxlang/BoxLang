@@ -60,25 +60,33 @@ public class StructEach extends BIF {
 	 *
 	 * <p>
 	 * <h2>Parallel Execution</h2>
-	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a ForkJoinPool with parallel streams.
-	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the filter in parallel, and destroy it after the operation is complete.
-	 * Please note that this may not be the most efficient way to iterate, as it will create a new ForkJoinPool for each invocation of the BIF. You may want to consider using a shared ForkJoinPool for better performance.
+	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a
+	 * ForkJoinPool with parallel streams.
+	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the filter in parallel,
+	 * and destroy it after the operation is complete.
+	 * Please note that this may not be the most efficient way to iterate, as it will create a new ForkJoinPool for each invocation of the BIF. You
+	 * may want to consider using a shared ForkJoinPool for better performance.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.struct The target struct to iterate
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the key, the value, the struct. You can alternatively pass a Java BiConsumer which will only receive the first 2 args.
+	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the key, the value, the struct. You can
+	 *                    alternatively pass a Java BiConsumer which will only receive the first 2 args.
 	 *
 	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored. If a boolean is provided it will be assigned to the virtual argument instead.
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If not passed it will use the default number of threads for
+	 *                      the ForkJoinPool.
+	 *                      If parallel is false, this argument is ignored. If a boolean is provided it will be assigned to the virtual argument
+	 *                      instead.
 	 *
 	 * @argument.ordered Whether parallel operations should execute and maintain order
 	 * 
 	 * @argument.virtual If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return null. This BIF is used for its side effects.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object maxThreads = arguments.get( Key.maxThreads );

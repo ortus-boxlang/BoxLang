@@ -35,14 +35,14 @@ public class TransactionCommit extends TransactionBIF {
 	}
 
 	/**
-	 * Commit the current transaction and persist all stored queries.
-	 *
-	 * You can continue to use the transaction after a `transactionCommit()` call, but you will not be able to roll back past (before) this
-	 * point since the changes are fully persisted to the database.
+	 * Commits the current transaction, persisting all changes made so far to the database. You can continue to use the transaction after a
+	 * `transactionCommit()` call, but you will not be able to roll back past (before) this point since the changes are fully persisted. If there
+	 * is no active transaction, an exception is thrown. Returns null.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ITransaction transaction = getTransactionForContext( context );

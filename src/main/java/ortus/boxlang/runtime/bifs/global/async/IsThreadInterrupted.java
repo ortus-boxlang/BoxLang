@@ -36,12 +36,11 @@ public class IsThreadInterrupted extends BIF {
 	}
 
 	/**
-	 * Verifies if the current thread is interrupted or not. You can also pass in a thread name to check if that thread is interrupted.
-	 * <p>
-	 * Example:
+	 * Verifies if a thread has been interrupted. Pass the name of a thread to check that thread, or an empty string to check the current thread,
+	 * which must be a thread created by <code>threadNew()</code> or <code>bx:thread</code>.
 	 *
 	 * <pre>
-	 * if ( !IsThreadInterrupted() ) {
+	 * if ( !isThreadInterrupted( "" ) ) {
 	 *     // Do work
 	 * }
 	 * </pre>
@@ -49,9 +48,11 @@ public class IsThreadInterrupted extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.name The name of the thread to check or empty for the current thread.
+	 * @argument.name The name of the thread to check, or an empty string for the current thread.
 	 *
-	 * @return True, if Interrupted, False otherwise.
+	 * @throws BoxRuntimeException If a thread name is passed and no thread with that name exists.
+	 *
+	 * @return True if interrupted, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key						threadName		= Key.of( arguments.getAsString( Key._NAME ) );

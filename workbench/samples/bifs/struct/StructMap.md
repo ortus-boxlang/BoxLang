@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxNj80KwjAQhM%2FZp1h6aqEI%2FpwsHgTxpPgA0kOoqQ21iWw3rSJ9d5Nii6dh%2BWZmdy3puzbygTv8IIjIGhXhFj8gxNJrxLLSEYgh9Yx7O7FVYOTkjCpSc3A9Bi25iZbW0QQ3AfbVmIQhAyidKVhbg418Xn7XxLg3b6zTUTpMQpIUOzLYXfGkWz5qajnGblGrd5jjxLvyDAYo9Uvd%2FDstkyv4LJ8x2l9t%2Br8Dkwx60qwOrvGeK4jZBmIsgTx4voO7Uho%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxNj80Kg0AMhM%2BbpwieFKTQn1Ohh0LpqaUPIB4Wu9aldVdiViviu3cVlZ6G8M1MEkv6pY384Al7BBFYowI8Yg9CbL0GLAsdgBhiz7i1C9uNjJxcUUFqDe6noCW30Nw6WuBhhG0xJWEAyJ3JWFuDpawe8zEhnk2H73iSBqMxSIodGWwSvOmar5pqDrHZvFU3zmHkXanvy%2FVXPf0zNZPL%2BC6rEO3cGv%2BvwAha0qwurvSWBMTqAjF1QIrRDwSaUSQ%3D" target="_blank">Run Example</a>
 
 ```java
 original = { 
@@ -18,25 +18,27 @@ original = {
 	"four" : {
 		4 : "wha"
 	}
-};
+}
 
 function mapOriginal( Any k, Any v ) {
-	return v[ ListFirst( v.keyList() ) ];
+	return v[ ListFirst( v.keyList() ) ]
 }
-fixed = structMap( original, mapOriginal );
+fixed = structMap( original, mapOriginal )
 writeDump( [
 	original,
 	fixed
-] );
+] )
 
 ```
+
+Result: original is unchanged; fixed has the same keys with the values tahi, rua, toru and wha
 
 
 ### Using Member Function
 
  
 
-<a href="https://try.boxlang.io/?code=eJw9jssKgzAQRdeZrxiyilCEPlYVC4XSVf9AXAiNNVhNGROtiP%2FeJDSuLsO5j9GkXqqv3pjjgsC47iXHMy7A2N4pN1WjOLB155iZdGQHz8hWG2pIbsFjCGqykdbaUoQnD6cmJGHNoFZf%2BXTr%2Bv9I2lUfgQKv%2FYztLsiICeYXnyZpLPU4FvhQg7krGozAMW3l7G%2BROGOZwYpJBhMpI2%2B2c2UFsNjuvgmDUHrPD8gKQ5I%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJw9jssKgzAQRdeZrxiySkCEPlYFC4XSVf9AXAQaa7BNyphoRfz3RmlcXYYz9%2BHIPI1VLyxwQmDcWc3xhBMwtovKvWoMBzZnkfnBJbZfGAW1oYb0ZjysRkch0doFSvC4wKFZnTBDbb76Ecvdf0f%2BVh%2BBAi92xDZbpUeJxXkxk%2FaBLPYl3k3nb4Y6L7DPWz0ut5DxsYIZJQxkvL6Gd4wqgaXsOGWtgwrlD4ZNQpw%3D" target="_blank">Run Example</a>
 
 ```java
 original = { 
@@ -52,34 +54,46 @@ original = {
 	"four" : {
 		4 : "wha"
 	}
-};
+}
 fixed = original.map( ( Any k, Any v ) => {
-	return v[ ListFirst( v.keyList() ) ];
-} );
+	return v[ ListFirst( v.keyList() ) ]
+} )
 writeDump( [
 	original,
 	fixed
-] );
+] )
 
 ```
+
+Result: original is unchanged; fixed has the same keys with the values tahi, rua, toru and wha
 
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxdjssKwjAQRdfmK4YspIViUXeWCNW1bvyCtB0kNI0lj5Yi%2FrvTVETcDAfuzJnrag8CnLeh9lccE%2BBamRYbDmnBXO03JcXbBU%2BEuwXPhPuCjVZ5bELXJzBIKyjJQMsKteAPq%2B7KSP1xR1%2BeQyUdgkfnmUVHkltML5IM8TqB0kzQ4pRFGKQOCCmIIzzZyqIP1swprIEfOM24ULBXBiTC%2BclfJ3rz7dTJvsfmt9EbWntPYw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxdjsEKwjAMhs%2F2KUIPssFwqDehwvSsF5%2Bg24KUdXW06cYQ392siIKX8MGffPlDQ6AgkI8NXXHKQFrjOmwl5CI0tKk43SY6Me0SnZn2YvKGsI39kMGoveKgAKtrtEo%2BvLkbp%2B3Hu7jKEmodEAgDCY%2BBFbcUXjQL0nEGlZuhw7lIMGobEXJQR3iKlUeK3i0prEEeJM%2B0IF4FsIcX%2Fwvxk2%2BhXg8Dtr86b%2FVeTYE%3D" target="_blank">Run Example</a>
 
 ```java
-sct = structNew( "linked" );
-sct.A = 1;
-sct.B = 2;
-sct.C = 3;
-writedump( var=sct, label="original struct" );
+sct = structNew( "linked" )
+sct.A = 1
+sct.B = 2
+sct.C = 3
+writedump( var=sct, label="original struct" )
 // base test
 res = StructMap( sct, ( Any key, Any value ) => {
-	return key & ":" & value;
-}, true );
-writedump( var=res, label="mapped struct" );
+	return key & ":" & value
+}, true )
+writedump( var=res, label="mapped struct" )
 
 ```
 
+Result: the mapped struct contains the values A:1, B:2 and C:3 (the true argument runs the map in parallel)
 
+### Double every value
+
+```java
+prices = { apple : 1, pear : 2 }
+doubled = prices.map( ( k, v ) -> v * 2 )
+writeOutput( doubled.apple & " " & doubled.pear )
+```
+
+Result: 2 4

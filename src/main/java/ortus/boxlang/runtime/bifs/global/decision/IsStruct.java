@@ -39,12 +39,15 @@ public class IsStruct extends BIF {
 	}
 
 	/**
-	 * Determine whether a value is a struct
+	 * Determines whether a value is a struct. This is true for BoxLang Structs and any value which can be cast to a struct, such as a Java Map.
+	 * Arrays, strings and other types return false.
 	 *
-	 * @argument.variable The value to test for structi-ness.
+	 * @argument.variable The value to test for struct-ness.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope defining the value to test.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return True if the value is, or can be cast to, a struct; false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return isStruct( arguments.get( Key.variable ) );

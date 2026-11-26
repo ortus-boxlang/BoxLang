@@ -30,12 +30,12 @@ public class CacheService extends BIF {
 	}
 
 	/**
-	 * Get access to the Box Cache services
+	 * Gets access to the BoxLang cache service, which is used to register providers and create, get, and remove caches.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @return The cache service instance
+	 * @return The cache service instance.
 	 */
 	public ortus.boxlang.runtime.services.CacheService _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return this.cacheService;

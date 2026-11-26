@@ -2,16 +2,24 @@
 
 Converting a struct to a query string using the default delimiter (&amp;)
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVqFbg4lRKyywqLvFLzE1VUrBSUPLKz8hT0gEK5yQiibrkpypx1VpzlRdllqS6lOYWaCgUgw0JyQ8sTS2qBJqYmZcOFESYrqmgac0FAIiYI08%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVqFbg4lRKyywqLvFLzE1VUrBSUPLKz8hT0gEK5yQiibrkpypx1XKVF2WWpLqU5hZoKBSDzQjJDyxNLaoEGpiZlw4URBiuqaAJACVAIs8%3D" target="_blank">Run Example</a>
 
 ```java
 someStruct = { 
 	"firstName" : "John",
 	"lastName" : "Doe"
-};
-writeDump( structToQueryString( someStruct ) );
+}
+writeDump( structToQueryString( someStruct ) )
 
 ```
 
-Result: firstName=John&lastName=Doe
+Result: firstName=John&lastName=Doe (the pair order is not guaranteed for a default struct)
 
+### Custom delimiter using the member function
+
+```java
+params = [ a : 1, b : 2 ]
+writeOutput( params.toQueryString( ";" ) )
+```
+
+Result: a=1;b=2

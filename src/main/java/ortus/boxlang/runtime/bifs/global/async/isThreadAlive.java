@@ -36,22 +36,22 @@ public class isThreadAlive extends BIF {
 	}
 
 	/**
-	 * Tests if this thread is alive. A thread is alive if it has been started and has not yet terminated.
-	 * <p>
-	 * Example:
+	 * Tests if a named thread is alive. A thread is alive if it has been started and has not yet terminated.
 	 *
 	 * <pre>
-	 * if ( isThreadAlive( "myThread " ) ) {
-	 *     // wiat
+	 * if ( isThreadAlive( "myThread" ) ) {
+	 *     // wait
 	 * }
 	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.name The name of the thread to check
+	 * @argument.name The name of the thread to check.
 	 *
-	 * @return True, if alive, False otherwise.
+	 * @throws BoxRuntimeException If no thread with that name exists.
+	 *
+	 * @return True if the thread is alive, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key						threadName		= Key.of( arguments.getAsString( Key._NAME ) );

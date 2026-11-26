@@ -36,13 +36,13 @@ public class CallStackGet extends BIF {
 	}
 
 	/**
-	 * Returns an array of structs by default of the current tag context.
-	 * Each struct contains template name, line number, and function name (if applicable).
-	 * This is a snapshot of all function calls or invocations.
+	 * Returns the current call stack as an array of structs, one per stack frame (the current tag context). Each struct describes the template,
+	 * line number and function name (if applicable) of a frame. This is a snapshot of all function calls or invocations at the time of the call.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @argument.maxFrames The maximum number of frames to return. Defaults to -1, which returns all frames.
 	 *
 	 * @return An array of structs containing the call stack.
 	 */

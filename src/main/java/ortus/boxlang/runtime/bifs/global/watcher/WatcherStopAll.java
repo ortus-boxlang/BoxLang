@@ -43,7 +43,10 @@ public class WatcherStopAll extends BIF {
 	 * Watchers remain registered after this call and can be started again later.
 	 *
 	 * @param context   The BoxContext of the caller.
-	 * @param arguments The arguments passed to the BIF. This BIF accepts a "force" argument to forcefully stop all watchers.
+	 * @param arguments The arguments passed to the BIF.
+	 *
+	 * @argument.force Whether to force an immediate stop of every watcher by interrupting the watch loops, which may cause event loss. Defaults to
+	 *                 false.
 	 *
 	 * @return {@code null}. This BIF performs side effects only.
 	 */

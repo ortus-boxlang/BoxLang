@@ -56,9 +56,11 @@ public class BoxRegisterInterceptionPoints extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.states The states to register the interception points for.
+	 * @argument.states The states to register the interception points for. Can be a single state name, a list or an array of names.
 	 *
 	 * @argument.poolname The name of the interceptor pool to register the event to. Default is "global". Available pools are "global" and "request".
+	 *
+	 * @return true once the interception points are registered.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		getTargetPool( arguments.getAsString( Key.poolname ), context )

@@ -42,25 +42,24 @@ public class ToScript extends BIF {
 	}
 
 	/**
-	 * Creates a JavaScript expression that assigns the input BoxLang value to a JavaScript variable.
-	 * This is useful for converting BoxLang values to JavaScript variables in a script.
-	 * It can convert:
-	 * <ul>
-	 * <li>Booleans</li>
-	 * <li>DateTimes</li>
-	 * <li>Numbers</li>
-	 * <li>Arrays</li>
-	 * <li>Queries</li>
-	 * <li>Strings</li>
-	 * <li>Structures</li>
-	 * </ul>
+	 * Creates a JavaScript statement that assigns a BoxLang value to a JavaScript variable. Useful to pass server side values to client side
+	 * scripts.
+	 * It can convert booleans, dates, numbers, arrays, queries, strings and structs. Dates become <code>new Date( 'iso-date' )</code>, null
+	 * becomes
+	 * <code>null</code>, an empty string becomes <code>''</code>, and all other values are converted with {@link JSONSerialize}.
+	 *
+	 * <pre>
+	 * toScript( [ 1, 2 ], "myArray" ) // myArray = [1,2];
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.cfvar The value to convert to a script line; String, DateTimes, Number, Array, Structure or Query
+	 * @argument.cfvar The value to convert to a script line: a string, date, number, array, struct, query or boolean.
 	 *
 	 * @argument.javascriptvar The name of the JavaScript variable to assign the result to.
+	 *
+	 * @return A JavaScript assignment statement ending in a semicolon.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	runtimeVar	= arguments.get( Key.cfvar );

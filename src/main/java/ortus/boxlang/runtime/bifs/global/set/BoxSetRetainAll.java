@@ -49,6 +49,8 @@ public class BoxSetRetainAll extends BIF {
 	 *
 	 * @argument.values The collection whose membership determines which elements are kept. Accepts an Array, Set,
 	 *                  list-delimited String, or any castable collection.
+	 *
+	 * @return The same Set, containing only the retained elements, for method chaining.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet	set	= arguments.getAsSet( Key.set );

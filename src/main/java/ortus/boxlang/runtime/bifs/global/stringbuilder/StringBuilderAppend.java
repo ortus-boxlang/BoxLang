@@ -48,6 +48,8 @@ public class StringBuilderAppend extends BIF {
 	 * @argument.stringBuilder The StringBuilder to append to.
 	 *
 	 * @argument.value The value to append. Coerced to string.
+	 *
+	 * @return The same StringBuilder instance, for chaining.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

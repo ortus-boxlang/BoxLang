@@ -46,16 +46,20 @@ public class QuerySetRow extends BIF {
 	}
 
 	/**
-	 * Adds or updates a row in a query based on the provided row data and position.
+	 * Sets all the values of a row from a struct or an array. If rowNumber is omitted (or less than 1) a new row is added; otherwise
+	 * the given row is overwritten. Array values are applied in column order, with missing values set to null. Also available as
+	 * <code>query.setRow()</code>.
 	 *
-	 * @param context   The execution context.
-	 * @param arguments Arguments including query, row number, and row data.
-	 * 
-	 * @argument.query The query object to which the row should be added or updated.
-	 * 
-	 * @argument.rowNumber Optional position of the row to update; if omitted or zero, a new row will be added.
-	 * 
-	 * @argument.rowData A struct or array containing data for the row.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.query The query to modify.
+	 *
+	 * @argument.rowNumber The one-based number of the row to overwrite. If omitted or zero, a new row is added. Defaults to 0.
+	 *
+	 * @argument.rowData A struct (keys matching column names) or an array (in column order) with the new row values.
+	 *
+	 * @return The modified query.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query		= arguments.getAsQuery( Key.query );

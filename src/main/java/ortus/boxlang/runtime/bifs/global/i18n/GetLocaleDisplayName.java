@@ -42,14 +42,18 @@ public class GetLocaleDisplayName extends GetLocaleInfo {
 	}
 
 	/**
-	 * Returns the {@link java.util.Locale} display name with an optional display language/locale
+	 * Returns the display name of a locale, such as `Deutsch (Deutschland)`, optionally displayed in the language of another locale.
+	 *
+	 * @argument.locale Optional. The locale to describe: either a common name (e.g. `German (Standard)`) or an ISO locale such as `de_DE`.
+	 *                  Defaults to the current locale.
+	 *
+	 * @argument.dspLocale Optional. The locale to display the name in, e.g. `fr_FR` returns `allemand (Allemagne)` for `de_DE`. Defaults to the
+	 *                     locale being described.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.locale Optional locale to target - either a common format ( "German" ), or an ISO Directive
-	 *
-	 * @argument.dspLocale Optional display language locale
+	 * @return The display name of the locale as a string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	dspLocale		= arguments.getAsString( Key.dspLocale );

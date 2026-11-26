@@ -192,7 +192,7 @@ public class TimeUnits extends BIF {
 	 *
 	 * @function.DayOfYear Returns the numeric day of the year of a date object
 	 *
-	 * @function.FirstDayOfMonth Returns the first date of the month of a date object
+	 * @function.FirstDayOfMonth Returns the day of the year (1-366) on which the month of the date object starts
 	 *
 	 * @function.Week Returns the numeric week within a year of a date object
 	 *
@@ -204,25 +204,27 @@ public class TimeUnits extends BIF {
 	 *
 	 * @function.Millisecond Returns the millisecond of a date object
 	 *
-	 * @function.Nanosecond Returns the nanosecond of adate object
+	 * @function.Nanosecond Returns the nanosecond of a date object
 	 *
-	 * @function.Offset Returns the timezone offset of a date object
+	 * @function.Offset Returns the timezone offset of a date object as a string such as +0000
 	 *
-	 * @function.GetTimezone Returns the timezone identifier of a date object
+	 * @function.GetTimezone Returns the short timezone name of a date object
 	 *
-	 * @function.GetNumericDate Returns the numeric date in days from epoch of a date object
+	 * @function.GetNumericDate Returns the numeric date in (fractional) days since the epoch of a date object, evaluated in UTC
 	 *
-	 * @function.GetTime Returns the numeric date in milliseconds from epoch of a date object
+	 * @function.GetTime Returns the numeric date in milliseconds since the epoch of a date object
 	 *
-	 * @argument.date The date object to be evaluated. If not provided the current date and time is used
+	 * @argument.date The date object or date string to be evaluated. If not provided the current date and time is used
 	 *
 	 * @argument.timezone An optional timezone which to convert the date object to
 	 *
-	 * @argument.locale An optional ISO locale string which will return the specified time unit with a locale-specific result ( e.g. month name, or starting day of week as Monday vs Sunda )
+	 * @argument.locale An optional ISO locale string which will return the specified time unit with a locale-specific result ( e.g. month name, or
+	 *                  starting day of week as Monday vs Sunday )
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @return A number for numeric units, or a string for the AsString, Offset and Timezone units.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		DateTime dateRef = null;

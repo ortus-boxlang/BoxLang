@@ -47,10 +47,15 @@ public class Insert extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.substring The string to insert.
-	 * 
-	 * @argument.originalString The original string.
-	 * 
-	 * @argument.position The position at which to insert the string.
+	 *
+	 * @argument.string The original string to insert into.
+	 *
+	 * @argument.position The zero-based index at which to insert the substring. 0 inserts at the beginning and the length of the string
+	 *                    appends at the end.
+	 *
+	 * @throws BoxRuntimeException if the position is lower than 0 or greater than the length of the string.
+	 *
+	 * @return A new string with the substring inserted.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	substring		= arguments.getAsString( Key.substring );

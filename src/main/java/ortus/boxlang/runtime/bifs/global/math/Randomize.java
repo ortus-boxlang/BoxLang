@@ -38,15 +38,18 @@ public class Randomize extends BIF {
 	}
 
 	/**
-	 * Seeds the pseudo-random number generator with an
-	 * integer number, ensuring repeatable number patterns.
+	 * Seeds the random number generator for the current request so that subsequent calls to rand() and randRange() in the request
+	 * are driven by that seed (the generator is re-seeded with it on every call). Passing the algorithm argument throws an exception
+	 * because it is not yet implemented.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.seed The number to seed the Random with
+	 * @argument.seed The number to seed the generator with. It is converted to a long.
 	 *
-	 * @argument.algorithm The algorithm to use to generate the random number.
+	 * @argument.algorithm Not yet implemented. Passing a value throws an exception.
+	 *
+	 * @return Nothing (null).
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.get( Key.algorithm ) != null ) {

@@ -34,10 +34,13 @@ public class GetFunctionCalledName extends BIF {
 	}
 
 	/**
-	 * Get the name of the function that is being called. If no function is being called, an empty string is returned.
+	 * Gets the name under which the currently executing function was called. This can differ from the declared name when the function is
+	 * called through a reference. If there is no function being executed, an empty string is returned.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return The called name of the function, or an empty string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key name = context.findClosestFunctionName();

@@ -1,27 +1,28 @@
-### Remove a string
+### Remove characters from a string
 
-
-
-<a href="https://try.boxlang.io/?code=eJwrSs3NL0t1zkgsKtZQUPJIzcnJV3B28%2FVRCM8vyklR0lEw01EwVdC05gIAIHwL%2Bw%3D%3D" target="_blank">Run Example</a>
+Removes `count` characters starting at the 1-based `start` position.
 
 ```java
-removeChars( "Hello BL World", 6, 5 );
+writeOutput( removeChars( "Hello BL World", 6, 3 ) )
 
 ```
 
 Result: Hello World
 
-### Additional Examples
-
-<a href="https://try.boxlang.io?code=eJxtjskKwjAYhO95ijGnFkprT4rFiwvUgw%2BRNr8aaJKSJl3e3iCiCB7mNMs3k1OeTkH3CRxpO9LxIdyQgNcKTZByWWWoxUgQMKolSLHkPEO5jtoiRVqhKHCee2o9Sdjg%2B%2BB3%2BLRZdK%2BkG3K4BdN6ZQ0bvMMe%2FIIu8nCwcyfMnVds%2Bn6JkfznT5lh88Kxv7z3CHsCnS9Beg%3D%3D" target="_blank">Run Example</a>
+### Remove the end of a string
 
 ```java
-writeDump( removeChars( "Hi buddy!, Have a nice day.", 10, 18 ) ); // Expected output: Hi buddy!
-// Member function
-str = "I love Boxlang";
-writeDump( str.removeChars( 1, 7 ) );
- // Expected output: Boxlang
+writeOutput( removeChars( "Hi buddy!, Have a nice day.", 10, 18 ) )
 
 ```
 
+Result: Hi buddy!
 
+### Member function
+
+```java
+writeOutput( "I love Boxlang".removeChars( 1, 7 ) )
+
+```
+
+Result: Boxlang

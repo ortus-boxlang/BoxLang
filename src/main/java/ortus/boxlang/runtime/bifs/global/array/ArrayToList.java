@@ -44,14 +44,19 @@ public class ArrayToList extends BIF {
 	}
 
 	/**
-	 * Used to iterate over an array and run the function closure for each item in the array.
+	 * Converts an array to a delimited list string by joining the elements with the delimiter.
+	 * Also available as the <code>toList()</code> and <code>join()</code> member functions on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to join together
+	 * @argument.array The array to join together.
 	 *
-	 * @argument.delimiter The character to use as a separator
+	 * @argument.delimiter The delimiter to put between the elements. Defaults to a comma.
+	 *
+	 * @argument.initialValue Declared but not used by this function.
+	 *
+	 * @return The array elements joined into a single string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = ArrayCaster.cast( arguments.get( Key.array ) );

@@ -36,14 +36,34 @@ public class StringEach extends ListEach {
 	}
 
 	/**
-	 * Iterates all the elements in a string and runs the passed callback on each character
+	 * Iterates all the characters of a string and runs the passed callback on each character.
+	 * This BIF shares its arguments with the corresponding list function: the <code>list</code> argument is the string, and the delimiter is
+	 * always overridden with an empty string, so every character is one element. Pass the string positionally or as <code>list</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to iterate
-	 * 
-	 * @argument.callback The callback to execute
+	 * @argument.list The string to iterate.
+	 *
+	 * @argument.callback The function to invoke for each character. It receives the character, its 1-based index and the original string. A
+	 *                    Java Consumer receives only the character.
+	 *
+	 * @argument.delimiter Ignored. It is always set to an empty string so that every character of the string is an element.
+	 *
+	 * @argument.includeEmptyFields Not used for strings, since there are no delimiters. Defaults to false.
+	 *
+	 * @argument.multiCharacterDelimiter Not used for strings, since there are no delimiters. Defaults to false.
+	 *
+	 * @argument.parallel Whether to run the callback in parallel. Defaults to false.
+	 *
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If omitted, the default ForkJoinPool parallelism is
+	 *                      used. Ignored if parallel is false. If a boolean is passed it is assigned to the virtual argument instead.
+	 *
+	 * @argument.ordered Whether parallel execution should maintain element order. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @argument.virtual If true, the callback is invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return Always null. The callback is executed for its side effects.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put( Key.delimiter, "" );

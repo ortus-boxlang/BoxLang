@@ -38,7 +38,7 @@ public class BoxSetMap extends BIF {
 
 	/**
 	 * Apply a transform function to every element of a Set and collect the deduplicated results into a new Set
-	 * of the same variant. The source Set is not modified. The callback receives the element value, its 1-based
+	 * of the same variant. The source Set is not modified. The callback receives the element value, its zero-based
 	 * ordinal position, and the original Set.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -47,6 +47,8 @@ public class BoxSetMap extends BIF {
 	 * @argument.set The source set to transform.
 	 *
 	 * @argument.callback Receives {@code (value, ordinal, set)} and returns the transformed value.
+	 *
+	 * @return A new Set of the same variant with the deduplicated transformed values.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return SetUtil.map( arguments.getAsSet( Key.set ), arguments.getAsFunction( Key.callback ), context );

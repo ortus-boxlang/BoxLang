@@ -2,10 +2,10 @@
 
 There will be a precision difference between running the some code on Linux or Windows
 
-<a href="https://try.boxlang.io/?code=eJzLyU%2FXUDDWM1TQtOYCABU4Aqs%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyMlP11Aw1jNU0FTQBAB3jAez" target="_blank">Run Example</a>
 
 ```java
-log( 3.1 );
+writeOutput( log( 3.1 ) )
 
 ```
 
@@ -18,4 +18,20 @@ Result: 1.131402111492791384577570144178438
 <bx:output>#log( 10 )#</bx:output>
 ```
 
+### Natural log of 1
 
+```java
+writeOutput( log( 1 ) )
+
+```
+
+Result: 0
+
+### Natural log of 10
+
+```java
+writeOutput( log( 10 ) )
+
+```
+
+Result: 2.302585092994046

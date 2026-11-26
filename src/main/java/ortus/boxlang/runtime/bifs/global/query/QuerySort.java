@@ -43,14 +43,18 @@ public class QuerySort extends BIF {
 	}
 
 	/**
-	 * Sorts array elements.
+	 * Sorts the rows of a query in place using a comparator function and returns the query. Also available as <code>query.sort(
+	 * sortFunc )</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query Query to sort
+	 * @argument.query The query to sort.
 	 *
-	 * @argument.sortFunc Sort function to use. You can alternatively pass a Java Comparator.
+	 * @argument.sortFunc The comparator function. It receives two rows as structs and returns a negative number, zero or a positive
+	 *                    number. You can alternatively pass a Java Comparator.
+	 *
+	 * @return The sorted query.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query		query		= arguments.getAsQuery( Key.query );

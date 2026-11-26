@@ -40,12 +40,15 @@ public class FileIsEOF extends BIF {
 	}
 
 	/**
-	 * Determines whether the end of the file has been reached while reading it.
+	 * Determines whether the end of the file has been reached while reading it. The file must be a file object created with `fileOpen()` in a
+	 * read mode (`read` or `readbinary`), otherwise an exception is thrown.
+	 *
+	 * @argument.file The currently open file object.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file The currently open file object
+	 * @return True if there is nothing left to read, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile file = arguments.getAsBoxFile( Key.file );

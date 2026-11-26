@@ -44,24 +44,25 @@ public class ArrayRange extends BIF {
 	}
 
 	/**
-	 * Build an array out of a range of numbers or using our range syntax: {start}..{end}
-	 * or using the from and to arguments
-	 * <p>
-	 * You can also build negative ranges
-	 * <p>
+	 * Builds an array of consecutive integers from a start value to an end value (inclusive).
+	 * The range can be given with the range syntax <code>"{start}..{end}"</code> in the from argument, or with the from and to arguments.
+	 * Negative ranges are supported.
+	 * If to is omitted it defaults to from, and if to is less than from it is set to from, so the result always has at least one element.
 	 *
 	 * <pre>
-	 * arrayRange( "1..5" )
-	 * arrayRange( "-10..5" )
-	 * arrayRange( 1, 500 )
+	 * arrayRange( "1..5" ) // [ 1, 2, 3, 4, 5 ]
+	 * arrayRange( "-2..2" ) // [ -2, -1, 0, 1, 2 ]
+	 * arrayRange( 1, 3 ) // [ 1, 2, 3 ]
 	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @arguments.from The initial index, defaults to 1 or you can use the {start}..{end} notation
+	 * @argument.from The first value of the range (defaults to 1), or a range string in the form "start..end".
 	 *
-	 * @arguments.to The last index item, or defaults to the from value
+	 * @argument.to The last value of the range. Defaults to the from value.
+	 *
+	 * @return An array of the integers in the range.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	incomingFrom	= arguments.get( Key.from );

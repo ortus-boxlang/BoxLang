@@ -52,18 +52,24 @@ public class ListGetEndings extends BIF {
 	}
 
 	/**
-	 * Returns the first or last item in a delimited list, according to the specified function name
+	 * Returns the first or last element of a delimited list, depending on the name used to call it: <code>listFirst</code> returns
+	 * the first element and <code>listLast</code> the last. Returns an empty string if the list has no elements.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list string list to filter entries from
+	 * @argument.list The list to read from.
 	 *
-	 * @argument.delimiter string the list delimiter
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
+	 *                              to false.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *                                   single-character delimiters. Defaults to false.
+	 *
+	 * @return The first or last list element, or an empty string if the list is empty.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );

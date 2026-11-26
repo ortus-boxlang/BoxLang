@@ -41,17 +41,19 @@ public class QueryReduce extends BIF {
 	}
 
 	/**
-	 * This function reduces the query to a single value.
+	 * Reduces a query to a single value by invoking the callback for each row with the running accumulator.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to iterate over
+	 * @argument.query The query to reduce.
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 4 arguments: the accumulator, the current item, the current index, and the query. You can alternatively pass a Java Predicate which will only receive the first 2
-	 *                    args.
+	 * @argument.callback The reducer function. It receives the accumulator, the row as a struct, the one-based row number, and the
+	 *                    array of row structs. You can alternatively pass a Java BiFunction, which receives only the accumulator and the row.
 	 *
-	 * @argument.initialValue The initial value to use for the reduction
+	 * @argument.initialValue The initial value of the accumulator.
+	 *
+	 * @return The final accumulated value.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.reduce(

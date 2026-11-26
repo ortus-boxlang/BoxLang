@@ -42,12 +42,15 @@ public class StructCopy extends BIF {
 	}
 
 	/**
-	 * Creates a shallow copy of a struct. Copies top-level keys, values, and arrays in the structure by value; copies nested structures by reference.
+	 * Creates a shallow copy of a struct. Top-level keys and values are copied into a new struct; nested structs are shared by reference with the
+	 * original.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct to copy
+	 * @argument.struct The struct to copy.
+	 *
+	 * @return A new struct containing the copied entries.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return DuplicationUtil.duplicateStruct( arguments.getAsStruct( Key.struct ), false, context );

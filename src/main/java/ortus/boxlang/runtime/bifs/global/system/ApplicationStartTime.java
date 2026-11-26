@@ -29,11 +29,12 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class ApplicationStartTime extends BIF {
 
 	/**
-	 * Get the start date/time of the running application
+	 * Gets the date/time at which the currently running application was started. Throws a BoxRuntimeException if there is no application context.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @return The application start time as a DateTime.
 	 */
 	public DateTime _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ApplicationBoxContext applicationContext;

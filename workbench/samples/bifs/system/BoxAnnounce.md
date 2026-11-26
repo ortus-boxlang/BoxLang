@@ -1,21 +1,26 @@
 ### Announce an interception event
 
-```java
-boxRegisterInterceptionPoints( [ "onTest" ] );
-boxAnnounce( "onTest", { message: "hello" } );
-writeOutput( "announced" );
-
-```
-
-Result: announced
-
-### Announce with data struct
+The interception point must be registered before it is announced.
 
 ```java
-boxRegisterInterceptionPoints( [ "onData" ] );
-boxAnnounce( "onData", { key: "value", count: 42 } );
-writeOutput( "done" );
-
+boxRegisterInterceptionPoints( "onTest" )
+result = boxAnnounce( "onTest", { message : "hello" } )
+writeOutput( result )
 ```
 
-Result: done
+Result: true
+
+### Announce to a listener and read the data
+
+```java
+calls = []
+boxRegisterInterceptionPoints( "onData" )
+boxRegisterInterceptor( ( data ) => {
+    calls.append( data.count )
+    return false
+}, [ "onData" ] )
+boxAnnounce( "onData", { count : 42 } )
+writeOutput( calls.toList() )
+```
+
+Result: 42

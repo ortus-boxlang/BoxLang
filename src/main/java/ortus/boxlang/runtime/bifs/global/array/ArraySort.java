@@ -52,20 +52,29 @@ public class ArraySort extends BIF {
 	}
 
 	/**
-	 * Sorts array elements.
+	 * Sorts the elements of an array in place and returns the same array.
+	 * The sort can be controlled by a type and order, or by a custom comparator function passed either as the callback argument or as the
+	 * sortType argument.
+	 * The comparator receives two elements and returns a negative number, zero, or a positive number. When a comparator is used, sortOrder is
+	 * ignored.
+	 * Also available as the <code>sort()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to sort
+	 * @argument.array The array to sort.
 	 *
-	 * @argument.sortType Options are text, numeric, or textnocase
+	 * @argument.sortType The type of sort: "text" (case sensitive), "numeric", or "textnocase" (default). A comparator function may also be
+	 *                    passed here.
 	 *
-	 * @argument.sortOrder Options are asc or desc
+	 * @argument.sortOrder The sort order: "asc" (default) or "desc". Any other value throws an exception.
 	 *
-	 * @argument.localeSensitive Sort based on local rules
+	 * @argument.localeSensitive If true, text sorting uses the locale collation rules of the current context. Defaults to false.
 	 *
-	 * @argument.callback Function to sort by
+	 * @argument.callback A comparator function used to sort the array. It receives two elements and returns a negative number, zero, or a
+	 *                    positive number.
+	 *
+	 * @return The same array, sorted.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array		array		= arguments.getAsArray( Key.array );

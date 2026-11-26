@@ -45,12 +45,14 @@ public class StructGetMetadata extends BIF {
 	}
 
 	/**
-	 * Gets Struct-specific metadata of the requested struct.
+	 * Gets the BoxLang metadata for a struct (the struct's box meta), including type information about the struct.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct from which to retrieve the metadata
+	 * @argument.struct The struct from which to retrieve the metadata.
+	 *
+	 * @return A struct of metadata about the struct.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsStruct( Key.struct ).getBoxMeta().getMeta();

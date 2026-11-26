@@ -41,12 +41,16 @@ public class ArrayGetMetadata extends BIF {
 	}
 
 	/**
-	 * Gets metadata for items of an array and indicates the array type.
+	 * Gets metadata about an array. The returned struct contains the keys <code>datatype</code> (always "any"),
+	 * <code>type</code> ("synchronized" or "unsynchronized") and <code>dimensions</code> (the number of dimensions of the array).
+	 * Also available as the <code>getMetadata()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to be inserted into
+	 * @argument.array The array to get the metadata of.
+	 *
+	 * @return A struct with the keys datatype, type and dimensions.
 	 */
 	public IStruct _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );

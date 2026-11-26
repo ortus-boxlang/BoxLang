@@ -2,11 +2,11 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVaiuteYqL8osSfUvLSkoLdFQKAbLeBa75haUVGoo5MKUaipoWnMBAGaYFCQ%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVaiu5SovyixJ9S8tKSgt0VAoBkt4FrvmFpRUaijkwlRqKmgCAC%2FLE6Q%3D" target="_blank">Run Example</a>
 
 ```java
-myStruct = {};
-writeOutput( structIsEmpty( myStruct ) );
+myStruct = {}
+writeOutput( structIsEmpty( myStruct ) )
 
 ```
 
@@ -16,14 +16,14 @@ Result: true
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLgnPLMkIycjMSy9WsFWoVuDiVMrPS1VSsFJQSsvPV9IB8kvK88H8pMQiJa5aa67yosySVP%2FSkoLSEg2FYrAhnsWuuQUllRoKuZimaipoWnMBAK9QI8s%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLgnPLMkIycjMSy9WsFWoVuDiVMrPS1VSsFJQSsvPV9IB8kvK88H8pMQiJa5arvKizJJU%2F9KSgtISDYVisBmexa65BSWVGgq5mIZqKmgCAEtJI0s%3D" target="_blank">Run Example</a>
 
 ```java
 myStructWithThings = { 
 	"one" : "foo",
 	"two" : "bar"
-};
-writeOutput( structIsEmpty( myStructWithThings ) );
+}
+writeOutput( structIsEmpty( myStructWithThings ) )
 
 ```
 
@@ -33,11 +33,11 @@ Result: false
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVaiuteYqL8osSfUvLSkoLdFQyIXK6XkWu%2BYWlFRqaCpoWnMBANb3EW0%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVaiu5SovyixJ9S8tKSgt0VDIhUrpeRa75haUVGpoKmgCAKc1EO0%3D" target="_blank">Run Example</a>
 
 ```java
-myStruct = {};
-writeOutput( myStruct.IsEmpty() );
+myStruct = {}
+writeOutput( myStruct.IsEmpty() )
 
 ```
 
@@ -45,20 +45,20 @@ Result: true
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJzT11fwy89TSM0tKKlUKC4pKk0u4UrMy8xNzClWsFWo5uJ09g9XsFJQys3PV9Lh4gzwdAfx8jPzspW4aq259PUVXJG1piUW5YL0QaSCwYKexWAlGlBjNblSkzPyNRSUbArsHKE2QXQrZBZDHAK0QUENTbcCzFWaQCklG%2F0COyUFTSy2gFyAbIUbyEXEmA92OqrhAMfTWKE%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzT11fwy89TSM0tKKlUKC4pKk0u4UrMy8xNzClWsFWo5uJ09g9XsFJQys3PV9Lh4gzwdAfx8jPzspW4arn09RVckXWmJRblgrSBZYLBYp7FYBUaUEM1uVKTM%2FI1FJRsCuwcofZANCtkFkOcATRfQQ1NtwLMTZpAKSUb%2FQI7JQVNTEtA9iPb4AZyDzHGgx2ObDYAOi9Xqw%3D%3D" target="_blank">Run Example</a>
 
 ```java
 // Non empty struct
 animals = {
 	COW : "moo",
 	PIG : "oink"
-};
+}
 // Empty struct
-farm = {};
+farm = {}
 // StructIsEmpty(animals)
-echo( "<p>Animals struct is empty: " & StructIsEmpty( animals ) & "</p>" );
+echo( "<p>Animals struct is empty: " & StructIsEmpty( animals ) & "</p>" )
 // StructIsEmpty(farm)
-echo( "<p>Farm struct is empty: " & StructIsEmpty( farm ) & "</p>" );
+echo( "<p>Farm struct is empty: " & StructIsEmpty( farm ) & "</p>" )
 
 ```
 

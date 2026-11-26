@@ -60,17 +60,21 @@ public class XMLTransform extends BIF {
 	}
 
 	/**
-	 * Get XML values according to given xPath query
+	 * Transforms XML using an XSLT stylesheet and returns the result as a string. Also available as the member function {@code transform()}
+	 * on XML objects. An invalid stylesheet or failed transformation throws an exception.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.XML The XML to transform
-	 * 
-	 * @argument.XSL The XSL to use for the transformation
-	 * 
-	 * @argument.parameters The parameters to pass to the xsl transformation
+	 * @argument.XML The XML document object or XML string to transform
 	 *
+	 * @argument.XSL The XSL stylesheet to use for the transformation, as an XML string, or the path or URL of a stylesheet file
+	 *
+	 * @argument.parameters A struct of parameters to pass to the xsl transformation. Defaults to an empty struct.
+	 *
+	 * @argument.XMLSettings Optional struct of XML parsing settings used when the XML argument is a string.
+	 *
+	 * @return The transformation result as a string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	xmlAny	= arguments.get( Key.XML );

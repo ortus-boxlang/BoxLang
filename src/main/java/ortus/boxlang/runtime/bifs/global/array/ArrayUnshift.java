@@ -41,14 +41,17 @@ public class ArrayUnshift extends BIF {
 	}
 
 	/**
-	 * This function adds one or more elements to the beginning of the original array and returns the length of the modified array.
+	 * Adds a value to the beginning of an array and returns the new size of the array. The array is modified in place.
+	 * Also available as the <code>unshift()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to add an item to
+	 * @argument.array The array to add the value to.
 	 *
-	 * @argument.object The value to add
+	 * @argument.object The value to add.
+	 *
+	 * @return The size of the array after the value was added.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualObj = arguments.getAsArray( Key.array );

@@ -2,10 +2,10 @@
 
 Returns the 2nd element in the list
 
-<a href="https://try.boxlang.io/?code=eJzLySwucU8tcSzRUFBKy8%2FXSUos0snJL0rN1cksKC7NVdJRMFLQtOYCABBIDHQ%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyMksLnFPLXEEMpXS8vN1khKLdHLyi1JzdTILiktzlXQUjBQ0FTQB%2BggRfA%3D%3D" target="_blank">Run Example</a>
 
 ```java
-listGetAt( "foo,bar,lorem,ipsum", 2 );
+writeOutput( listGetAt( "foo,bar,lorem,ipsum", 2 ) )
 
 ```
 
@@ -15,10 +15,10 @@ Result: bar
 
 Returns the 3rd element in the list using a custom delimiter
 
-<a href="https://try.boxlang.io/?code=eJzLySwucU8tcSzRUFBKy8%2FXSUosqsnJL0rN1cksKC7NrclNrSnOz00tycjMS1fSUTDWUVCqUVLQtOYCAGHmE2k%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyMksLnFPLXEEMpXS8vN1khKLanLyi1JzdTILiktza3JTa4rzc1NLMjLz0pV0FIx1FJRqlBQ0FTQBpf0YcQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
-listGetAt( "foo,bar|lorem,ipsum|me|something", 3, "|" );
+writeOutput( listGetAt( "foo,bar|lorem,ipsum|me|something", 3, "|" ) )
 
 ```
 
@@ -28,10 +28,10 @@ Result: me
 
 Returns the 4th element in the list, treating the empty element as a value
 
-<a href="https://try.boxlang.io/?code=eJzLySwucU8tcSzRUFBKy8%2FXSUos0tHJyS9KzdXJLCguzVXSUTDRUVDSAdIlRaWpCprWXAC3TA9q" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyMksLnFPLXEEMpXS8vN1khKLdHRy8otSc3UyC4pLc5V0FEx0FJR0gHRJUWmqgqaCJgDdSxRy" target="_blank">Run Example</a>
 
 ```java
-listGetAt( "foo,bar,,lorem,ipsum", 4, ",", true );
+writeOutput( listGetAt( "foo,bar,,lorem,ipsum", 4, ",", true ) )
 
 ```
 
@@ -39,15 +39,26 @@ Result: lorem
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxNzrsKwzAMBdDdX3HxkgRMNZROoUOhj6Wl0D%2BIbUENeWHLpJ9fp3TIJAkuOneJQfiZZc5Sow9JbiynsurOGGuc0QZ7A71OiZnRoGlBhBdLjmOCVeV48GA54ppHJ2EasQR5o6IKnvswFCCqJPFevuMITR2RJUfkdauW1T%2FnYa7xj%2Bw2LQ6Fpi2tVvvymdkJe0y%2F3nDqC4%2BwPHA%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxNzk0KwjAQBeB9TvHIpi0EZyGuxIVgdaMI3qBJBgz0j3RCPb6JuOhqZuAx31tjEH4mmZPU6MMiN5ZzXnVnjDXOaIO9gS5TYmI0aI4gwoslxXGBVfl48GA54ppGJ2EasQZ5o6IKnvswZCCqReI9f8cJmjoiS47Ia7UW%2FpKGucY%2FsduUOGSZNrIqcvuZ2Ql7TL%2FWcF%2FipDvw" target="_blank">Run Example</a>
 
 ```java
 writeOutput( listGetAt( "a,,b,c,", 3, ",", true ) ); // Returns b
 // Member Function with '/' delimiter
-strList = "/a//b/c//d";
-writeDump( strList.listGetAt( 5, "/", true ) );
+strList = "/a//b/c//d"
+writeDump( strList.listGetAt( 5, "/", true ) )
  // Expected output c
 
 ```
 
+### Position out of bounds
 
+```java
+try {
+	listGetAt( "a,b,c", 5 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Index [5] out of bounds for list with 3 elements.

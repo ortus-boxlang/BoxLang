@@ -21,8 +21,6 @@ import java.nio.charset.Charset;
 import org.apache.commons.lang3.SerializationException;
 import org.apache.commons.lang3.SerializationUtils;
 
-import com.fasterxml.jackson.jr.ob.JSONObjectException;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -66,21 +64,25 @@ public class Hash extends BIF {
 	}
 
 	/**
-	 * Creates an algorithmic hash of an object
+	 * Creates a hexadecimal hash (message digest) of a value. Strings are hashed using the given encoding, binary values are hashed as-is, and
+	 * any other object is serialized first. The result is a lowercase hex string.
+	 *
+	 * The special algorithm `quick` returns an insecure, fast 64-bit hash (16 hex characters). This BIF is also registered as `Hash40`, which
+	 * always uses the SHA1 algorithm, and as a member function on strings, structs, arrays, dates and sets, e.g. `"hello".hash( "SHA-256" )`.
+	 *
+	 * @argument.input The value to hash.
+	 *
+	 * @argument.algorithm Optional. A java.security.MessageDigest algorithm name (case-insensitive) such as MD5, SHA, SHA-256 or SHA-512, or
+	 *                     `quick`. Defaults to MD5. An unknown algorithm throws an exception.
+	 *
+	 * @argument.encoding Optional. The charset used to convert strings to bytes. Defaults to utf-8.
+	 *
+	 * @argument.numIterations Optional. The number of times the digest is re-applied to its own output. Defaults to 1.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @throws IOException
-	 * @throws JSONObjectException
-	 *
-	 * @argument.input The item to be hashed
-	 *
-	 * @argument.algorithm The supported {@link java.security.MessageDigest } algorithm (case-insensitive) or "quick" for an insecure 64-bit hash
-	 *
-	 * @argument.encoding Applicable to strings ( default "utf-8" )
-	 *
-	 * @argument.numIterations The number of iterations to re-digest the object ( default 1 );
+	 * @return The hash as a lowercase hexadecimal string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	hashItem			= arguments.get( Key.input );

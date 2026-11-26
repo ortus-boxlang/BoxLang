@@ -37,12 +37,16 @@ public class ContractPath extends BIF {
 	}
 
 	/**
-	 * Does the opposite of expandPath. Tries to match a given absolute path to mappings in the environment and will return a path that is contracted by the shortest matched mapping. If there are no matches, returns the absolute path it was given.
+	 * Does the opposite of `expandPath()`. Tries to match an absolute path to the mappings of the current application and returns the path
+	 * contracted by the longest matching mapping name, for example `/var/www/assets/img/logo.png` becomes `/assets/img/logo.png` for an
+	 * `/assets` mapping to `/var/www/assets`. If no mapping matches, the normalized absolute path is returned as it was given.
+	 *
+	 * @argument.path The absolute path to contract.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path The absolute path to contract.
+	 * @return The contracted path, or the normalized absolute path if no mapping matches.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String path = arguments.getAsString( Key.path );

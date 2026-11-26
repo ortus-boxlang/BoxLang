@@ -42,18 +42,27 @@ public class Cache extends BIF {
 	}
 
 	/**
-	 * The entry BIF into the BoxCache. This BIF will retrieve a named cache registered in our cache service.
-	 * If you don't pass a cache name, it will default to the {@code default} cache.
+	 * The entry BIF into BoxLang caching. It retrieves a named cache registered in the cache service. If no cache name is passed, the
+	 * <code>default</code> cache is returned. When called from an application, a cache registered for that application (using the application's
+	 * cache naming) takes precedence over a global cache of the same name. An unknown cache name throws a validation exception.
+	 * <p>
+	 * Once you have the cache instance you can use its methods (<code>set()</code>, <code>get()</code>, <code>getKeys()</code>,
+	 * <code>clearAll()</code>,
+	 * <code>lookup()</code>, and so on). Every cache adheres to the {@link ICacheProvider} interface.
 	 *
-	 * Once you have an instance to a cache, you can use the various methods to interact with the cache.
-	 * Every cache must adhere to the {@link ICacheProvider} interface.
+	 * <pre>
+	 * cache().set( "key", "value" )
+	 * cache( "myCache" ).get( "key" )
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.cacheName The cache name to retrieve the id from, defaults to {@code default}
+	 * @argument.cacheName The name of the cache to retrieve. Defaults to the "default" cache.
 	 *
-	 * @return The cache instance that was requested by name.
+	 * @throws BoxValidationException If the cache does not exist.
+	 *
+	 * @return The cache provider instance that was requested by name.
 	 */
 	public ICacheProvider _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the requested cache, validator makes sure the cache exists and the name is a key.

@@ -45,17 +45,19 @@ public class StructUpdate extends StructInsert {
 	}
 
 	/**
-	 * Updates or sets a key/value pair in to a struct
+	 * Sets a key/value pair in a struct, replacing any existing value for the key (the key is created if missing). Works like structInsert with
+	 * overwrite always true.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The target struct
+	 * @argument.struct The target struct. Must be modifiable.
 	 *
-	 * @argument.key The struct key
+	 * @argument.key The key to set.
 	 *
-	 * @argument.value The value to assign for the specified key
+	 * @argument.value The value to assign to the key.
 	 *
+	 * @return The same struct, after the update.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put( Key.overwrite, true );

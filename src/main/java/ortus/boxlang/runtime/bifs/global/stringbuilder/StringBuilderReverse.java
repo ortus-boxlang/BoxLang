@@ -45,6 +45,8 @@ public class StringBuilderReverse extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.stringBuilder The StringBuilder to reverse.
+	 *
+	 * @return The same StringBuilder instance, for chaining.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

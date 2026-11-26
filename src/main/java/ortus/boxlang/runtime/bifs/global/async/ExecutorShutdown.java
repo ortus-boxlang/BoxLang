@@ -23,7 +23,6 @@ import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 @BoxBIF( description = "Shutdown an executor service" )
 public class ExecutorShutdown extends BIF {
@@ -41,21 +40,21 @@ public class ExecutorShutdown extends BIF {
 	}
 
 	/**
-	 * Shuts down an executor by name. By default
-	 * the executors are shutdown gracefully. However, if you want to force the shutdown
-	 * you can set the force argument to true. If you want to wait for the executor to shutdown
-	 * you can set the timeout argument to the number of milliseconds to wait.
+	 * Shuts down an executor by name and removes it from the registry. By default executors are shut down gracefully:
+	 * already submitted tasks are allowed to finish, waiting up to the timeout. If you want to force the shutdown, set the force argument to
+	 * true.
+	 * Unknown names are ignored.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.name The name of the executor to shutdown
+	 * @argument.name The name of the executor to shut down.
 	 *
-	 * @argument.force Whether to force the shutdown, default is false
+	 * @argument.force Whether to force the shutdown, interrupting running tasks. Defaults to false.
 	 *
-	 * @argument.timeout The number of milliseconds to wait for the executor to shutdown
+	 * @argument.timeout The number of milliseconds to wait for a graceful shutdown to complete. Defaults to 0. Ignored when forcing.
 	 *
-	 * @throws KeyNotFoundException If the executor is not found.
+	 * @return Always true.
 	 */
 	@Override
 	public Boolean _invoke( IBoxContext context, ArgumentsScope arguments ) {

@@ -49,30 +49,41 @@ public class ArrayZip extends BIF {
 	}
 
 	/**
-	 * Returns a zipped array.
+	 * Merges two arrays of the same length together, one index at a time. Each element of the result is a two-element array
+	 * <code>[ array1Value, array2Value ]</code>. If a callback is given, it is invoked with each pair and its return value is used instead.
+	 * The callback receives four arguments: the value from array1, the value from array2, the one-based index and the result array.
+	 * An exception is thrown if the arrays do not have the same length.
+	 * <p>
+	 * <h2>Parallel Execution</h2>
+	 * If <code>parallel</code> is true and no <code>maxThreads</code> is passed, the work runs in parallel using the common ForkJoinPool.
+	 * If <code>maxThreads</code> is passed, a new ForkJoinPool with that many threads is created for the call and destroyed afterwards, so it
+	 * may be less efficient for repeated calls.
 	 *
 	 * <pre>
-	 * arrayZip( [ 1, 2 ], [ "a", "b" ] );
-	 * // [ [ 1, "a" ], [ 2, "b" ] ]
-	 *
-	 * arrayZip( [ 1, 2 ], [ 10, 20 ], ( a, b ) => a + b );
-	 * // [ 11, 22 ]
+	 * arrayZip( [ 1, 2 ], [ "a", "b" ] ) // [ [ 1, "a" ], [ 2, "b" ] ]
+	 * arrayZip( [ 1, 2 ], [ 10, 20 ], ( a, b ) -> a + b ) // [ 11, 22 ]
 	 * </pre>
+	 *
+	 * Also available as the <code>zip()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array1 The first array to zip
-	 * 
-	 * @argument.array2 The second array to zip
-	 * 
-	 * @argument.callback An optional callback function to receive the item and the current index from both zipped arrays and return a new value.
-	 * 
-	 * @argument.parallel If true, the function will be invoked in parallel using multiple threads. Defaults to false.
-	 * 
-	 * @argument.maxThreads The maximum number of threads to use when parallel is true. If not provided the common thread pool will be used. If a boolean value is passed, it will be assigned as the virtual argument.
-	 * 
-	 * @argument.virtual If true, the function will be invoked using virtual thread. Defaults to false. Ignored if parallel is false.
+	 * @argument.array1 The first array to zip.
+	 *
+	 * @argument.array2 The second array to zip. Must have the same length as array1.
+	 *
+	 * @argument.callback An optional function that receives the pair of values (and index and result array) and returns the value to use for
+	 *                    that position.
+	 *
+	 * @argument.parallel Whether to run the callback in parallel. Defaults to false.
+	 *
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If not passed, the default ForkJoinPool thread count
+	 *                      is used. Ignored if parallel is false. If a boolean is passed, it is assigned to the virtual argument instead.
+	 *
+	 * @argument.virtual If true, the function is invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return An array of two-element arrays, or an array of the callback results if a callback was given.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

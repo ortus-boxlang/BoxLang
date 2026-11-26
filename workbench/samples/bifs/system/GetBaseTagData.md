@@ -1,27 +1,33 @@
-### Retrieve parent tag thisTag scope
+### Retrieve the parent tag data
 
-Use getBaseTagData() to retrieve the execution mode of the parent CF_MAPPER custom tag.
-
-
-```java
-<bx:set tagData = getBaseTagData( "CF_MAPPER" ) >
-<!--- Find the tag's execution mode Located inside the --->
-<bx:if tagData.THISTAG.EXECUTIONMODE != "inactive" >
-template
-<bx:else>
-BODY
-</bx:if>
-```
-
-
-### Retrieve parent tag attributes
-
-Use getBaseTagData() to retrieve the attributes of the parent cf_iframe tag
-
+Inside a custom tag, find the ancestor tag cf_mapper and read its thisTag data.
 
 ```java
-variables.PARENTATTRIBUTES = getBaseTagData( "cf_iframe" ).ATTRIBUTES;
-
+tagData = getBaseTagData( "cf_mapper" )
+writeOutput( tagData.thisTag.executionMode )
 ```
 
+Result: the execution mode of the ancestor cf_mapper tag (for example start or end)
 
+### Retrieve the parent tag attributes
+
+```java
+parentAttributes = getBaseTagData( "cf_iframe" ).attributes
+writeOutput( parentAttributes.keyList() )
+```
+
+Result: the attribute names passed to the ancestor cf_iframe tag
+
+### Ancestor not found
+
+Called outside of the named custom tag, a validation exception is thrown.
+
+```java
+try {
+    getBaseTagData( "cf_mapper" )
+} catch ( any e ) {
+    writeOutput( e.message )
+}
+```
+
+Result: mapper not found

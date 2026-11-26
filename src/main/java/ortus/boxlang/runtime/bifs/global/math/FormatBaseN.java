@@ -30,16 +30,18 @@ public class FormatBaseN extends BIF {
 	}
 
 	/**
-	 * Converts a number to a string representation in the specified base.
+	 * Converts a number to its string representation in the given base (radix). Only the integer part of the number is used and
+	 * the result uses lowercase letters for digits above 9. Numbers that are not BigDecimal values are limited to their lower 32 bits, so negative
+	 * numbers appear in two's complement form. An exception is thrown if the radix is outside the range 2-36.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
-	 * @argument.number The number to convert to the specified base.
+	 *
+	 * @argument.number The number to convert.
 	 *
 	 * @argument.radix The base to convert the number to, in the range 2-36.
 	 *
-	 * @return A string representation of the number in the specified base.
+	 * @return The string representation of the number in the specified base.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Number	number	= arguments.getAsNumber( Key.number );

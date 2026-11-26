@@ -44,18 +44,21 @@ public class QuerySetCell extends BIF {
 	}
 
 	/**
-	 * Sets a cell to a value.
+	 * Sets the value of one cell of a query in place. If no row is given, the cell in the last row is set. Also available as
+	 * <code>query.setCell( column, value, row )</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to set the cell in
-	 * 
-	 * @argument.column The column name to set the cell in
-	 * 
-	 * @argument.value The value to set the cell to
-	 * 
-	 * @argument.row The row number to set the cell in. If no row number is specified, the cell on the last row is set.
+	 * @argument.query The query to modify.
+	 *
+	 * @argument.column The name of the column to set.
+	 *
+	 * @argument.value The value to store in the cell.
+	 *
+	 * @argument.row The one-based row number of the cell. Defaults to the last row.
+	 *
+	 * @return The modified query.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query		= arguments.getAsQuery( Key.query );

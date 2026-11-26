@@ -53,14 +53,18 @@ public class FileSetAttribute extends BIF {
 	}
 
 	/**
-	 * Sets a file access attribute
+	 * Sets an access attribute on a file. The attribute can be `readOnly`, `normal` (or `default`), and on Windows also `archive`, `hidden` or
+	 * `system`. Attributes which are not supported by the operating system are silently ignored, and any other attribute throws an exception.
+	 * Also available as the member function `setAttribute()` on file objects.
+	 *
+	 * @argument.file The file path or file object.
+	 *
+	 * @argument.attribute The attribute to set.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file The file path or File instance
-	 *
-	 * @argument.attribute The attribute to set true
+	 * @return Null when a path was given, or the file object when a file object was given.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile	fileObj			= arguments.getAsBoxFile( Key.file );

@@ -40,12 +40,14 @@ public class IsXMLRoot extends BIF {
 	}
 
 	/**
-	 * Determines whether the function parameter is a root element node of an XML doc.
+	 * Determines whether a value is the root element of an XML document, i.e. an element whose parent is the document node.
+	 *
+	 * @argument.value The value to test.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value Value to test
+	 * @return True if the value is the root element node of an XML document, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		CastAttempt<XML>	castAttempt	= XMLCaster.attempt( arguments.get( Key.value ) );

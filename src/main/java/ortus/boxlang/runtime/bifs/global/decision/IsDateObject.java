@@ -36,15 +36,17 @@ public class IsDateObject extends BIF {
 	}
 
 	/**
-	 * Determine whether a given value or variable reference is a date or dateTime object.
+	 * Determines whether a value is a BoxLang DateTime object.
 	 *
-	 * Note that date strings, such as `2021-01-01` and timespans returned from `createTimespan()` are NOT date objects. The former are strings and the
-	 * latter are numeric values.
+	 * Note that date strings, such as `2021-01-01`, and timespans returned from `createTimespan()` are NOT date objects. The former are strings
+	 * and the latter are numeric values.
+	 *
+	 * @argument.value The value to test for date object-ness.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value Value to test for date object-ness
+	 * @return True if the value is a DateTime instance, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.get( Key.value ) instanceof DateTime;

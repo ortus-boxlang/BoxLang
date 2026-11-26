@@ -40,12 +40,14 @@ public class Sleep extends BIF {
 	}
 
 	/**
-	 * Sleeps the current thread for the specified duration in millisecons
+	 * Sleeps the current thread for the specified duration in milliseconds. If the thread is interrupted, a BoxRuntimeException is thrown.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.duration The amount of time, in milliseconds to sleep the thread
+	 * @argument.duration The amount of time, in milliseconds, to sleep the thread.
+	 *
+	 * @return null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Long duration = arguments.getAsLong( Key.duration );

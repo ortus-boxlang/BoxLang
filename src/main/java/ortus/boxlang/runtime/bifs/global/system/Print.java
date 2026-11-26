@@ -42,12 +42,15 @@ public class Print extends BIF {
 	}
 
 	/**
-	 * Print arguments separated by spaces without a trailing line break
+	 * Prints the given arguments, separated by spaces and without a trailing line break, to the request output (or the console when there is no
+	 * request context). Non-string values are converted to their string representation.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.message The first message to print; additional arguments are printed in order
+	 * @argument.message The first message to print; additional arguments are printed in order.
+	 *
+	 * @return null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		StringJoiner output = new StringJoiner( " " ); // creates container for new output with space separator

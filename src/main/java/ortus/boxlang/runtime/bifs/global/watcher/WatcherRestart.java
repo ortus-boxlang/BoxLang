@@ -51,7 +51,7 @@ public class WatcherRestart extends BIF {
 	 *
 	 * @argument.name The unique watcher name to restart.
 	 *
-	 * @return The restarted {@link ortus.boxlang.runtime.watchers.WatcherInstance}.
+	 * @return The restarted {@link ortus.boxlang.runtime.async.watchers.WatcherInstance}.
 	 *
 	 * @throws ortus.boxlang.runtime.types.exceptions.BoxRuntimeException If no watcher with the given name is registered.
 	 */

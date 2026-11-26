@@ -36,13 +36,15 @@ public class IsBinary extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is stored as binary data.
+	 * Determines whether a value is binary data (a byte[] or a BoxLang binary value). Strings, numbers and other types return false, even if
+	 * they contain Base64-encoded text. Use `toBinary()` to convert Base64 text into binary data.
 	 *
-	 *
-	 * @argument.value The value to test
+	 * @argument.value The value to test.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope defining the value to test.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return True if the value is binary data, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ValidationUtil.isBinary( arguments.get( Key.value ) );

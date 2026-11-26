@@ -48,16 +48,20 @@ public class StructKeyTranslate extends BIF {
 	}
 
 	/**
-	 * Converts a struct with dot-notated keys in to an unflattened version
+	 * Converts a struct with dot-notated keys (such as "user.name") into nested structs, in place. Keys are only unflattened when they look
+	 * like flattened data: several dotted keys sharing the same first segment, or a single key with exactly one dot. A lone key with two or
+	 * more dots is left as-is.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct to unflatten
+	 * @argument.struct The struct to unflatten.
 	 *
-	 * @argument.deep Whether to recurse in to nested keys - default false
+	 * @argument.deep Whether to also unflatten nested structs. Defaults to false.
 	 *
-	 * @argument.retainKeys Whether to retain the original dot-notated keys - default false
+	 * @argument.retainKeys Whether to keep the original dot-notated keys alongside the new nested structs. Defaults to false.
+	 *
+	 * @return The same struct, with dotted keys expanded into nested structs.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct ref = arguments.getAsStruct( Key.struct );

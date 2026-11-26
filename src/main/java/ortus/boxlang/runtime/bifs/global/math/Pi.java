@@ -26,12 +26,12 @@ import ortus.boxlang.runtime.types.util.MathUtil;
 public class Pi extends BIF {
 
 	/**
-	 * 
-	 * Returns the mathmatical constant Pi accurate to 15 digits
-	 * 
+	 * Returns the mathematical constant pi as a high precision BigDecimal.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
+	 * @return The value of pi.
 	 */
 	public BigDecimal _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return new BigDecimal( "3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679",

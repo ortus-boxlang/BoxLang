@@ -41,16 +41,18 @@ public class DirectoryMove extends BIF {
 	}
 
 	/**
-	 * Moves a directory from one location to another
+	 * Moves (or renames) a directory from one location to another. This BIF is also registered as `DirectoryRename`. Returns null.
+	 *
+	 * @argument.oldPath The current directory path.
+	 *
+	 * @argument.newPath The new directory path.
+	 *
+	 * @argument.createPath Optional. Whether to create any missing parent directories of the new path. Defaults to true.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.oldPath The previous directory path
-	 *
-	 * @argument.newPath The new directory path
-	 *
-	 * @argument.createPath [true] Whether to create all necessary paths to the new path
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	source		= FileSystemUtil.expandPath( context, arguments.getAsString( Key.oldPath ) ).absolutePath().toString();

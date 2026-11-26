@@ -78,20 +78,25 @@ public class CreateObject extends BIF {
 	 * You can also target an explicit class from a loaded BoxLang module by using the {@code @moduleName} suffix.
 	 * Example: {@code createObject( 'class', 'class.name.path@module' )}
 	 * <p>
-	 * Modern BoxLang code can also construct BoxLang and Java classes with {@code new ClassName( args )}, by calling {@code ClassName.init( args )} on an imported
-	 * class reference, or by invoking the class reference directly as {@code ClassName( args )}. {@code createObject()} remains useful for dynamic class names,
+	 * Modern BoxLang code can also construct BoxLang and Java classes with {@code new ClassName( args )}, by calling {@code ClassName.init( args )}
+	 * on an imported
+	 * class reference, or by invoking the class reference directly as {@code ClassName( args )}. {@code createObject()} remains useful for dynamic
+	 * class names,
 	 * legacy compatibility, custom creation types, and interception-driven creation workflows.
 	 * <p>
 	 * The <strong>properties</strong> is an optional argument that can be used to pass to the object creation process according to the type.
 	 * <ul>
 	 * <li><strong>class/component</strong> - The properties are not used</li>
-	 * <li><strong>java</strong> - The properties can be a single or an array of absolute path(s) to a directory containing Jars/Classes, or absolute path(s) to specific Jars/Classes to classload</li>
+	 * <li><strong>java</strong> - The properties can be a single or an array of absolute path(s) to a directory containing Jars/Classes, or absolute
+	 * path(s) to specific Jars/Classes to classload</li>
 	 * <li><strong>webservice</strong> - The properties are not used</li>
 	 * <li><strong>{anything}</strong> - The properties can be any object that the listener can use to create the object</li>
 	 * </ul>
 	 * <p>
-	 * <strong>IMPORTANT:</strong> For class/component types, this returns a class reference and does NOT call the class constructor automatically. For an initialized
-	 * instance, call {@code init()} on the returned object, use {@code new ClassName( args )}, or invoke an imported class reference as {@code ClassName( args )}.
+	 * <strong>IMPORTANT:</strong> For class/component types, this returns a class reference and does NOT call the class constructor automatically.
+	 * For an initialized
+	 * instance, call {@code init()} on the returned object, use {@code new ClassName( args )}, or invoke an imported class reference as {@code
+	 * ClassName( args )}.
 	 * For webservice type, a fully configured SoapClient is returned ready for method invocation.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -102,6 +107,8 @@ public class CreateObject extends BIF {
 	 * @argument.className For java/class types: a fully qualified class name. For webservice type: the WSDL URL.
 	 *
 	 * @argument.properties Depending on the type, this can be used to pass additional properties to the object creation process
+	 *
+	 * @argument.externalOnly Optional. Whether to only load classes from external mappings when resolving a class (applies to class/component types).
 	 *
 	 * @argument.classLoader Optional class loader to use when loading Java classes. Only applicable for type="java".
 	 *

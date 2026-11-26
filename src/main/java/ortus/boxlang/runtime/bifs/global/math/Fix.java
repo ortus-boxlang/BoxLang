@@ -41,12 +41,15 @@ public class Fix extends BIF {
 	}
 
 	/**
-	 * Converts a real number to an integer
-	 * 
+	 * Returns the integer portion of a number by truncating toward zero: positive numbers are rounded down and negative numbers are
+	 * rounded up. Also available as <code>number.fix()</code>.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.number The number to convert to an integer
+	 *
+	 * @return The number with its fractional part removed.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Number number = arguments.getAsNumber( Key.number );

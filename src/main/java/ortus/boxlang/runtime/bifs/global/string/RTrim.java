@@ -43,14 +43,16 @@ public class RTrim extends BIF {
 
 	/**
 	 * Trim trailing whitespace from a string.
-	 * If chars is provided, each character in the string is treated as a character to trim instead of whitespace.
+	 * If chars is provided, each character in that string is treated as a character to trim from the end instead of whitespace.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to trim
+	 * @argument.string The string to trim.
 	 *
-	 * @argument.chars An optional string of characters to trim. Each character is treated individually.
+	 * @argument.chars An optional string of characters to trim from the end. Each character is treated individually. Defaults to whitespace.
+	 *
+	 * @return The string without the trailing characters.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	input	= arguments.getAsString( Key.string );

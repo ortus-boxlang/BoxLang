@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrS8zRUFAyNDIoSS0uMTQqLi4pysxLV1LQtOYCAHXFCB4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKEvM0VBQMjQyKEktLjE0Ki4uKcrMS1dS0FTQBAAjZA0m" target="_blank">Run Example</a>
 
 ```java
-val( "120test12sstring" );
+writeOutput( val( "120test12sstring" ) )
 
 ```
 
@@ -15,29 +15,38 @@ Result: 120
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrS8zRUFAqLinKzEu3tFBS0LTmAgA9cAVm" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKEvM0VBQKi4pysxLt7RQUtBU0AQAwuAKbg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-val( "string98" );
+writeOutput( val( "string98" ) )
 
 ```
 
 Result: 0
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FAIS8zRUFAyNDI2UfBNzMxTCC7RU1LQVNC0VtDXVwAJc6UgqYMp0QFLIRQaoKgCyumZmJqhmAMSQFGEUzOSNhSJ%2FLxUPBaGwC3kgtrIBQBiHjMQ" target="_blank">Run Example</a>
+### Numbers, decimals and signs
 
 ```java
-dump( Val( "1234 Main St." ) ); // 1234
-dump( Val( "Main St., 1234" ) ); // 0
-dump( Val( "123.456" ) ); // 123.456
-dump( Val( "" ) ); // 0
-dump( Val( "1" ) ); // 1
-dump( Val( "one" ) ); // 0
-dump( Val( "123T456" ) );
- // 123
+writeOutput( val( "1234 Main St." ) & "," & val( "Main St., 1234" ) & "," & val( "123.456" ) & "," & val( "-5x" ) )
 
 ```
 
+Result: 1234,0,123.456,-5
 
+### Empty strings and text return zero
+
+```java
+writeOutput( val( "" ) & "," & val( "one" ) & "," & val( "123T456" ) )
+
+```
+
+Result: 0,0,123
+
+### Member function
+
+```java
+writeOutput( "42abc".val() )
+
+```
+
+Result: 42

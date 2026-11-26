@@ -39,6 +39,18 @@ public class StringBuilderEndsWith extends BIF {
 		};
 	}
 
+	/**
+	 * Determines whether the StringBuilder buffer ends with the given suffix. The comparison is case-sensitive.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.stringBuilder The StringBuilder to inspect.
+	 *
+	 * @argument.substring The suffix to test for.
+	 *
+	 * @return true if the buffer ends with the suffix, false otherwise.
+	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxStringBuilder sb = arguments.getAsBoxStringBuilder( Key.stringBuilder );

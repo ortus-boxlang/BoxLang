@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLSU0uSs1NzSsJS8wpTdVQMFfQtOYCAFb4BsI%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQSElNLkrNTc0rCUvMKU3VUDBX0FTQBADmcAvK" target="_blank">Run Example</a>
 
 ```java
-decrementValue( 7 );
+writeOutput( decrementValue( 7 ) )
 
 ```
 
@@ -13,10 +13,10 @@ Result: 6
 
 ### Decrement 7.5
 
-<a href="https://try.boxlang.io/?code=eJxLSU0uSs1NzSsJS8wpTdVQMNczVdC05gIAZX0HJQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQSElNLkrNTc0rCUvMKU3VUDDXM1XQVNAEAP79DC0%3D" target="_blank">Run Example</a>
 
 ```java
-decrementValue( 7.5 );
+writeOutput( decrementValue( 7.5 ) )
 
 ```
 
@@ -24,11 +24,11 @@ Result: 6.5
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUEhJTS5KzU3NKwlLzClN1VAwU9BU0LRW0NdXMOUqx6NMzxSskAusUs%2BUCwB4Shib" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUEhJTS5KzU3NKwlLzClN1VAwU9BU0LRW0NdXMOUqx6NMzxSkkAusUM8UAEaGGFY%3D" target="_blank">Run Example</a>
 
 ```java
 writeDump( decrementValue( 6 ) ); // 5
-writeDump( decrementValue( 6.5 ) );
+writeDump( decrementValue( 6.5 ) )
  // 5.5
 
 ```

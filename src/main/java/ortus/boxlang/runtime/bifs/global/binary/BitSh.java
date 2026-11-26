@@ -38,16 +38,22 @@ public class BitSh extends BIF {
 	}
 
 	/**
-	 * Performs a bitwise shift-left or shift-right, no-rotation operation.
+	 * Performs a bitwise shift (no rotation) on a 32-bit integer. It is registered through two aliases:
+	 * <ul>
+	 * <li><code>bitShln( number, count )</code> shifts the bits left, filling with zeros (the result wraps as a 32-bit signed integer).</li>
+	 * <li><code>bitShrn( number, count )</code> shifts the bits right with zero fill (an unsigned shift, so negative numbers
+	 * become large positive numbers).</li>
+	 * </ul>
+	 * Calling the <code>bitSh</code> name directly does not perform a shift and returns null. The count is limited to the range 0-31.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.number 32-bit signed integer value to shift.
 	 *
-	 * @argument.count Number of bits to shift (Integer in the range 0-31, inclusive).
+	 * @argument.count Number of bits to shift. Values outside 0-31 are limited to that range.
 	 *
-	 * @return Returns the result of the bitwise shift operation.
+	 * @return The result of the bitwise shift operation as a 32-bit integer.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key	bifMethodKey	= arguments.getAsKey( BIF.__functionName );

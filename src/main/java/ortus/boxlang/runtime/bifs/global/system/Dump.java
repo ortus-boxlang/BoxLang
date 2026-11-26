@@ -89,7 +89,8 @@ public class Dump extends BIF {
 	 * 
 	 * <p>
 	 * The available <code>output</code> locations are:
-	 * - <strong>buffer</strong>: The output is written to the buffer, which is the default location. If running on a web server, the output is written to the browser.
+	 * - <strong>buffer</strong>: The output is written to the buffer, which is the default location. If running on a web server, the output is
+	 * written to the browser.
 	 * - <strong>console</strong>: The output is printed to the System console.
 	 * - <strong>Absolute File Path</strong> The output is written to a file with the specified absolute file path.
 	 * </p>
@@ -120,9 +121,12 @@ public class Dump extends BIF {
 	 *
 	 * @argument.output The output format which can be "buffer", "console", or "{absolute file path}". The default is "buffer".
 	 *
-	 * @argument.format The format of the output to a <strong>filename</strong>. Can be "html" or "text". The default is according to the output location.
+	 * @argument.format The format of the output to a <strong>filename</strong>. Can be "html" or "text". The default is according to the output
+	 *                  location.
 	 *
 	 * @argument.showUDFs Show UDFs or not. Default is true. (Only in HTML output)
+	 *
+	 * @return null. The dump is written to the chosen output location.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Abort as String and empty means true <bx:dump var="" abort>

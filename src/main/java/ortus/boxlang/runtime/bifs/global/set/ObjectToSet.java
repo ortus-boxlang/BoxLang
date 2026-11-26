@@ -57,6 +57,8 @@ public class ObjectToSet extends BIF {
 	 *                collections like Arrays.
 	 *
 	 * @argument.delimiter When {@code value} is a String, the list delimiter to split on. Defaults to {@code ","}.
+	 *
+	 * @return A Set containing the deduplicated elements of the value.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object		value		= arguments.get( Key.value );

@@ -39,12 +39,15 @@ public class ToBXArray extends BIF {
 	}
 
 	/**
-	 * Collect a Java stream into a BoxLang Array
-	 * 
+	 * Collect a Java stream into a BoxLang Array. This is a member function of Java streams, for example <code>myList.stream().toBXArray()</code>.
+	 * Object streams as well as primitive streams ( IntStream, LongStream, DoubleStream ) are supported. The stream is consumed by this call.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
-	 * @argument.stream The stream to collect.
+	 *
+	 * @argument.stream The Java stream to collect. This is the object the member function is called on.
+	 *
+	 * @return A BoxLang Array with the elements of the stream, in encounter order.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Stream<?> stream = arguments.getAsStream( Key.stream );

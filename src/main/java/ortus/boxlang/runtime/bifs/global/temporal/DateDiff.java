@@ -71,16 +71,21 @@ public class DateDiff extends BIF {
 	}
 
 	/**
-	 * Returns the numeric difference in the requested date part between two dates
+	 * Returns the number of whole units of the requested date part between two dates. The result is positive when date2 is after date1 and
+	 * negative when it is before. Also available as the member function {@code date.diff( datepart, date2 )}.
+	 * Note that {@code w} and {@code ww} both count whole weeks, while {@code wd} counts weekdays (Monday to Friday).
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.datepart The datepart code in which to express the difference (yyyy, q, m, d, y, w, ww, wd, h, n, s, l).
+	 * @argument.datepart The datepart code in which to express the difference: yyyy (years), q (quarters), m (months), d or y (days),
+	 *                    w or ww (weeks), wd (weekdays), h (hours), n (minutes), s (seconds), l (milliseconds). Any other value throws an exception.
 	 *
-	 * @argument.date1 The reference date object
+	 * @argument.date1 The reference date object or date string
 	 *
-	 * @argument.date2 The date which to compare against date1
+	 * @argument.date2 The date object or date string to compare against date1
+	 *
+	 * @return The difference as a whole number.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key			datePart	= Key.of( arguments.getAsString( Key.datepart ) );

@@ -47,24 +47,27 @@ public class ListAppend extends BIF {
 	}
 
 	/**
-	 * Appends an element to a list
+	 * Appends a value to the end of a list and returns the new list as a string. The original list is not modified. The value is
+	 * tokenized with the same delimiter rules, so a value containing delimiters is added as multiple elements (unless
+	 * includeEmptyFields is true and the delimiter is absent from the value).
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list string list to filter entries from
+	 * @argument.list The delimited list to operate on.
 	 *
-	 * @argument.value The value to append
+	 * @argument.value The value to append.
 	 *
-	 * @argument.delimiter string the list delimiter
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
+	 *                              to false.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *                                   single-character delimiters. Defaults to false.
 	 *
-	 * @argument.parallel boolean whether to execute the filter in parallel
-	 *
-	 * @argument.maxThreads number the maximum number of threads to use in the parallel filter
+	 * @return The new list with the value appended.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	originalList	= arguments.getAsString( Key.list );

@@ -4,14 +4,14 @@ Here's a simple example of using multiple savepoints within a transaction:
 
 ```java
 transaction {
-    queryExecute( "INSERT INTO vehicles (id,make) VALUES (8, 'Ford' )", {}, { datasource : "carDB" } );
-    transactionSetSavepoint( 'insert' );
+    queryExecute( "INSERT INTO vehicles (id,make) VALUES (8, 'Ford' )", {}, { datasource : "carDB" } )
+    transactionSetSavepoint( 'insert' )
 
-    queryExecute( "UPDATE developers SET name = 'Chevrolet' WHERE id=8", {}, { datasource : "carDB" } );
-    transactionSetSavepoint( 'update' );
+    queryExecute( "UPDATE developers SET name = 'Chevrolet' WHERE id=8", {}, { datasource : "carDB" } )
+    transactionSetSavepoint( 'update' )
 
     // more stuff ...
-    transactionRollback( 'insert' );
+    transactionRollback( 'insert' )
 }
 ```
 
@@ -21,20 +21,42 @@ In this example, the UPDATE will be rolled back while the INSERT statement will 
 
 This example runs multiple queries with a savepoint for each, and rolls back to the 'useradded' savepoint if the last query fails.
 
-<a href="https://try.boxlang.io/?code=eJxNjDEOgzAMRef4FBZTmNjbW5QTmMQSUZHTBoOIUO5O3YnlL%2B%2F9Nx0PLSQrBU1Z8AQ3DJhk5aK4%2FRbcDY%2BsI%2B38yUnUY2ecYuTYYf80sdq%2F%2FRMkWWcu%2BN24VHAYSMOMnqQi96bdu6%2B8LBOFt7dMgwYX92Ew1w%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxNjDEOgzAQBGv7FSsqu6LPM8ILDvskrKBzYo4oVsTfyaWi2WZmdv7ctJFslLRUwde7cUSRjZti%2F613FzyxTvTmZy2iAYNxypnzgGhet%2Fz4P5BUXbjhtXPr3iGRpgWBpIOjadfbe13XmdIjRMuPE2qqMFc%3D" target="_blank">Run Example</a>
 
 ```java
 bx:transaction {
 	// insert user
-	transactionSetSavepoint( "useradded" );
+	transactionSetSavepoint( "useradded" )
 	try {
 	}
 	// another query
 	 catch (any e) {
-		transactionRollback();
+		transactionRollback()
 	}
 }
 
 ```
 
+### Setting a savepoint outside of a transaction throws an error
 
+```java
+try {
+	transactionSetSavepoint( "beforeUpdate" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Transaction not started; Please place this method call inside a transaction{} block.
+
+### Set a savepoint and roll back to it
+
+```java
+transaction {
+	transactionSetSavepoint( "beforeUpdate" )
+	transactionRollback( "beforeUpdate" )
+	writeOutput( "rolled back to beforeUpdate" )
+}
+```
+
+Result: rolled back to beforeUpdate

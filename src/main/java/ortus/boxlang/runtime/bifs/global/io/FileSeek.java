@@ -45,14 +45,19 @@ public class FileSeek extends BIF {
 	}
 
 	/**
-	 * Moves the buffer cursor position forward the number of characters specified by the position argument
+	 * Moves the read position of a file object forward. For a file opened as text, the given number of characters are skipped from the current
+	 * position. For a binary file, the position is set to the given offset from the start of the file. The file must be a file object from
+	 * `fileOpen()` which is seekable. This BIF is also registered as `FileSkipBytes` and as the member functions `seek()` and `skipBytes()` on
+	 * file objects. Returns null.
+	 *
+	 * @argument.file The file object, as created by `fileOpen()`.
+	 *
+	 * @argument.position The number of characters to skip, or the offset to move to for binary files.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file The File instance
-	 *
-	 * @argument.position The cursor position to move forward in the file
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile file = arguments.getAsBoxFile( Key.file );

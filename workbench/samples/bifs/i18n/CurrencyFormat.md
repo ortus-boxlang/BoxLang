@@ -21,30 +21,60 @@ None: #lsCurrencyFormat( 100000, "none" )#
 
 lsCurrencyFormat returns a currency value using the specified locale.
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUMgpdi4tKkrNS650yy%2FKTSzRUDDVUVDKyU9OzFECMlLz4kODlRQ0FTStuQAOSBD2" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUMgpdi4tKkrNS650yy%2FKTSzRUDDVUVDKyU9OzFECMlLz4kODlRQ0FTQB7FcQsQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
-writeDump( lsCurrencyFormat( 5, "local", "en_US" ) );
+writeDump( lsCurrencyFormat( 5, "local", "en_US" ) )
 
 ```
+
+Result: $5.00
 
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLzM0vzStRsFUwNDCw5srJT07MSQXylFLz4kODlay5yosyS1LzS0sKSks0FHyCnUuLilLzkivd8otyE4EiiWDtOgpKYJ1KOgpQEzQVNK0V9PUVVIDG6hkYEG1MZl5JalFeYklmfh4240KDXRRINDEvPy8V0yCoIQj%2FZiXGewVQ7t%2F3%2B5caUs%2B7XgGRCqQYh%2BlXLqhnuQDEqJ0A" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLzM0vzStRsFUwNDDgyslPTsxJBXKUUvPiQ4OVuMqLMktS80tLCkpLNBR8gp1Li4pS85Ir3fKLchOBIolgzToKSmCNSjoKUAM0FTStFfT1FVSAhuoBzSXWmMy8ktSivMSSzPw8bMaFBrsokGhiXn5eKqZBUEMQ3s1KjPcKoNi77%2FcvNaSeb70CIhVIMQ7Dq1xQrwIAIMmcCg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-amount = 100;
-locale = "en_US";
+amount = 100
+locale = "en_US"
 writeoutput( LSCurrencyFormat( amount, "local", locale ) ); // $100.00
 writeoutput( LSCurrencyFormat( amount, "international", locale ) ); // USD 100.00
 writeoutput( LSCurrencyFormat( amount, "none", locale ) ); // 100.00
-locale = "ja_JP";
+locale = "ja_JP"
 writeoutput( LSCurrencyFormat( amount, "local", locale ) ); // ￥100
 writeoutput( LSCurrencyFormat( amount, "international", locale ) ); // JPY 100
-writeoutput( LSCurrencyFormat( amount, "none", locale ) );
+writeoutput( LSCurrencyFormat( amount, "none", locale ) )
  // 100
 
 ```
 
 
+
+### The type argument controls the currency symbol
+
+```java
+writeOutput( currencyFormat( 100, "local", "en_US" ) & " / " & currencyFormat( 100, "international", "en_US" ) & " / " & currencyFormat( 100, "none", "en_US" ) )
+```
+
+Result: $100.00 / USD 100.00 / 100.00
+
+### Using the member function
+
+```java
+writeOutput( (5).currencyFormat( "local", "en_US" ) )
+```
+
+Result: $5.00
+
+### Invalid types throw an error
+
+```java
+try {
+	currencyFormat( 100, "bogus", "en_US" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: The argument [type] [bogus] is not recognized as a valid currency format type.

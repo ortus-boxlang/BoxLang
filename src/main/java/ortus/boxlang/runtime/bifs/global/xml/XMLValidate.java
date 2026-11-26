@@ -67,15 +67,18 @@ public class XMLValidate extends BIF {
 	}
 
 	/**
-	 * Uses a Document Type Definition (DTD) or XML Schema to validate an XML text document or an XML document object.
-	 * Returns keys status (boolean), errors (array), fatalerrors (array) and warnings (array)
+	 * Uses an XML Schema to validate an XML text document or an XML document object. The validation outcome is returned as a struct
+	 * with the keys {@code status} (boolean), {@code errors} (array), {@code fatalErrors} (array) and {@code warning} (array).
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.xml The XML text document or XML document object to validate.
+	 * @argument.XML The XML text document or XML document object to validate.
 	 *
-	 * @argument.validator The DTD or XML Schema to use for validation. If not provided, the DTD declaration within the XML document is used.
+	 * @argument.validator The XML Schema to validate against, either the schema XML text or an http(s) URL of a schema. If not provided,
+	 *                     the code attempts DTD validation, which is not supported by the default schema factory and throws an exception.
+	 *
+	 * @return A struct describing the validation result.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object					xmlObject		= arguments.get( Key.XML );

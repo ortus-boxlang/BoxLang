@@ -39,7 +39,7 @@ public class BoxSetFilter extends BIF {
 	/**
 	 * Return a new Set containing only the elements of the source Set for which the predicate returns true. The
 	 * result is a new Set of the same variant as the source; the source is not modified. The predicate receives
-	 * the element value, its 1-based ordinal position, and the Set itself.
+	 * the element value, its zero-based ordinal position, and the Set itself.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -48,6 +48,8 @@ public class BoxSetFilter extends BIF {
 	 *
 	 * @argument.callback Predicate invoked for each element. Receives {@code (value, ordinal, set)}.
 	 *                    Elements for which this returns {@code true} are included in the result.
+	 *
+	 * @return A new Set with the elements for which the predicate returned true.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return SetUtil.filter( arguments.getAsSet( Key.set ), arguments.getAsFunction( Key.callback ), context );

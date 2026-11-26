@@ -41,15 +41,17 @@ public class ToBXList extends BIF {
 	}
 
 	/**
-	 * Collect a Java stream into a BoxLang delimited list. Each item in the stream will cast
-	 * to a string and then be joined with the delimiter.
-	 * 
+	 * Collect a Java stream into a BoxLang delimited list. Each item in the stream is cast to a string and then joined with the delimiter.
+	 * This is a member function of Java streams, for example <code>myList.stream().toBXList( "|" )</code>. The stream is consumed by this call.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
-	 * @argument.stream The stream to collect.
-	 * 
-	 * @argument.delimiter The delimiter to use.
+	 *
+	 * @argument.stream The Java stream to collect. This is the object the member function is called on.
+	 *
+	 * @argument.delimiter The delimiter to place between the items. Defaults to a comma.
+	 *
+	 * @return A string with the stream items joined by the delimiter.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Stream<?>	stream		= arguments.getAsStream( Key.stream );

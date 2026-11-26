@@ -39,12 +39,15 @@ public class QueryCurrentRow extends BIF {
 	}
 
 	/**
-	 * Returns the current row number
+	 * Returns the one-based number of the row currently being processed for the query in the calling context, for example inside a
+	 * loop or output over the query. Also available as <code>query.currentRow()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to get the current row number from
+	 * @argument.query The query to get the current row number of.
+	 *
+	 * @return The current row number (one-based).
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query query = arguments.getAsQuery( Key.query );

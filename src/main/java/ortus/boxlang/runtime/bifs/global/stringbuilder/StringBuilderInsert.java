@@ -52,6 +52,8 @@ public class StringBuilderInsert extends BIF {
 	 * @argument.position The 1-based character position at which to insert.
 	 *
 	 * @argument.value The value to insert. Coerced to string.
+	 *
+	 * @return The same StringBuilder instance, for chaining.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

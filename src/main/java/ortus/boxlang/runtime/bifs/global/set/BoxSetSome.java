@@ -40,7 +40,7 @@ public class BoxSetSome extends BIF {
 	/**
 	 * Test whether at least one element of a Set satisfies a predicate. Iteration short-circuits on the first
 	 * element for which the predicate returns true. Returns false for an empty Set. The predicate receives the
-	 * element value, its 1-based ordinal position, and the Set itself.
+	 * element value, its zero-based ordinal position, and the Set itself.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -49,6 +49,8 @@ public class BoxSetSome extends BIF {
 	 *
 	 * @argument.callback Predicate invoked for each element. Receives {@code (value, ordinal, set)}.
 	 *                    Short-circuits on the first {@code true} result.
+	 *
+	 * @return True if at least one element matches the predicate, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return SetUtil.some( arguments.getAsSet( Key.set ), arguments.getAsFunction( Key.callback ), context );

@@ -43,12 +43,14 @@ public class StructIsOrdered extends BIF {
 	}
 
 	/**
-	 * Tests whether a struct is ordered ( e.g. linked )
+	 * Tests whether a struct is ordered, meaning it maintains insertion order (a linked struct).
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct to test for a linked type
+	 * @argument.struct The struct to test.
+	 *
+	 * @return true if the struct is an ordered (linked) struct, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsStruct( Key.struct ).getType().equals( IStruct.TYPES.LINKED );

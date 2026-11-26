@@ -1,35 +1,31 @@
 ### Clear all caches
 
-Clear all caches.
-
-<a href="https://try.boxlang.io/?code=eJwrriwuSc11TkzOSHXOSU0s0tC05gIAUsYG9w%3D%3D" target="_blank">Run Example</a>
+With no argument everything is cleared.
 
 ```java
-systemCacheClear();
-
+systemCacheClear()
 ```
 
+Result: all runtime caches are cleared; no output
 
 ### Clear the template cache
 
-Clear the template cache.
-
-<a href="https://try.boxlang.io/?code=eJwrriwuSc11TkzOSHXOSU0s0lBQAvILchJLUpUUNK25AMYlCtc%3D" target="_blank">Run Example</a>
+Clears the templates cached using the bx:cache component.
 
 ```java
-systemCacheClear( "template" );
-
+systemCacheClear( "template" )
 ```
 
+Result: only the template cache is cleared; no output
 
-### Additional Examples
-
+### An invalid cache name is rejected
 
 ```java
-SystemCacheClear( [ 
-	cacheName
-] );
-
+try {
+    systemCacheClear( "bogus" )
+} catch ( any e ) {
+    writeOutput( "invalid cache name" )
+}
 ```
 
-
+Result: invalid cache name

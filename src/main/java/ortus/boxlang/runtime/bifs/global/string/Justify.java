@@ -44,14 +44,20 @@ public class Justify extends BIF {
 	}
 
 	/**
-	 * Justifies characters in a string of a specified length, either left or right.
+	 * Left or right justify a string within a field of a specified length by padding it with spaces. <code>LJustify</code> keeps the text on
+	 * the left and pads on the right, while <code>RJustify</code> keeps the text on the right and pads on the left.
+	 * Both are also available as string member functions.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string The string to justify.
 	 *
-	 * @argument.length The specified length of the resulting string.
+	 * @argument.length The length of the resulting string. If the string is already this long or longer, it is returned unchanged.
+	 *
+	 * @throws BoxRuntimeException if the length is zero or negative.
+	 *
+	 * @return The space-padded string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );

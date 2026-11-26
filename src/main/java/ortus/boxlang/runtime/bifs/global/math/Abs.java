@@ -41,12 +41,15 @@ public class Abs extends BIF {
 	}
 
 	/**
-	 * Returns the absolute value of a number
-	 * 
+	 * Returns the absolute value of a number. BigDecimal inputs keep their precision; other numbers are returned as doubles. Also
+	 * available as the member function <code>number.abs()</code>.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.value The number to return the absolute value of
+	 *
+	 * @return The absolute value of the number.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return _invoke( arguments.getAsNumber( Key.value ) );

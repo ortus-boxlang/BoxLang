@@ -35,12 +35,14 @@ public class IsNull extends BIF {
 	}
 
 	/**
-	 * Determine whether a given value or variable reference is null.
+	 * Determines whether a given value or variable reference is null.
+	 *
+	 * @argument.object The value to test for null.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.object Value to test for null.
+	 * @return True if the value is null, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.get( Key.object ) == null;

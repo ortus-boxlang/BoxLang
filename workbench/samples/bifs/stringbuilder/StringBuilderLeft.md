@@ -3,9 +3,9 @@
 Returns the leftmost characters from a StringBuilder.
 
 ```java
-sb = sb{'The quick brown fox'};
-result = sb.left( 9 );
-writeOutput( result );
+sb = sb{'The quick brown fox'}
+result = sb.left( 9 )
+writeOutput( result )
 ```
 
 Result: The quick
@@ -13,8 +13,17 @@ Result: The quick
 ### Headless usage
 
 ```java
-sb = sb{'BoxLang'};
-writeOutput( left( sb, 3 ) );
+sb = sb{'BoxLang'}
+writeOutput( left( sb, 3 ) )
+```
+
+Result: Box
+
+### Negative count omits characters from the right
+
+```java
+sb = sb{'BoxLang'}
+writeOutput( sb.left( -4 ) )
 ```
 
 Result: Box

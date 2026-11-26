@@ -40,22 +40,25 @@ public class AsyncAny extends BIF {
 	}
 
 	/**
-	 * This BIF accepts an array of futures/closures/lambdas and executes them all in parallel,
-	 * returning a BoxFuture that will contain the result of the first future that completes successfully.
+	 * Accepts an array of futures/closures/lambdas and executes them all in parallel,
+	 * returning a BoxFuture that will contain the result of the first future that completes.
+	 * The operation is non-blocking; call <code>get()</code> on the returned future to wait for the result.
+	 *
+	 * <pre>
+	 * result = asyncAny( [ () -> slowCall(), () -> fastCall() ] ).get()
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.futures An array of BoxFuture objects to process in parallel
+	 * @argument.futures An array of BoxFuture objects, CompletableFutures or functions to process in parallel.
 	 *
-	 * @argument.executor The executor to use for the asynchronous execution. This
-	 *                    can be an instance of an Executor class, or the name of a
-	 *                    registered executor in the AsyncService.
+	 * @argument.executor The executor to use. This can be the name of a registered executor or a BoxExecutor object. By default the common
+	 *                    ForkJoinPool is used. This is used to run any functions in the array.
 	 *
 	 * @throws KeyNotFoundException If the executor name passed is not valid.
 	 *
-	 * @return A BoxFuture object that you can use to interact with the
-	 *         asynchronously executed code.
+	 * @return A BoxFuture that will contain the result of the first future to complete.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array		futures			= arguments.getAsArray( Key.futures );

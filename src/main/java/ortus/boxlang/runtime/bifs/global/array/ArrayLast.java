@@ -40,14 +40,15 @@ public class ArrayLast extends BIF {
 	}
 
 	/**
-	 * Return first item in array
-	 * 
+	 * Returns the last element of an array. Throws an exception if the array is empty.
+	 * Also available as the <code>last()</code> member function on arrays.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
-	 * @argument.array The array to be searched.
-	 * 
-	 * @argument.array The array to get the last
+	 *
+	 * @argument.array The array to get the last element from.
+	 *
+	 * @return The last element of the array.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );

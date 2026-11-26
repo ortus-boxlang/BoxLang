@@ -65,16 +65,21 @@ public class DateCompare extends BIF {
 	}
 
 	/**
-	 * Compares the difference between two dates - returning 0 if equal, -1 if date2 is less than date1 and 1 if the inverse
+	 * Compares two dates, optionally only down to a given precision. Returns -1 if date1 is earlier than date2, 0 if they are equal at the
+	 * requested precision, and 1 if date1 is later than date2. Also available as the member function {@code date.compare( date2, datepart )}.
+	 * Note that for the {@code m} and {@code yyyy} dateparts the comparison is based on the number of whole months/years elapsed between the dates.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.date1 The reference date object
+	 * @argument.date1 The reference date object or date string
 	 *
-	 * @argument.date2 The date which to compare against date1
+	 * @argument.date2 The date object or date string to compare against date1
 	 *
-	 * @argument.datepart The precision to compare down to. Accepts y, yyyy, m, d, h, n, s (default).
+	 * @argument.datepart The precision to compare down to. Accepts y, yyyy, m, d, h, n, s. When omitted the dates are compared to the second.
+	 *                    Any other value throws an exception.
+	 *
+	 * @return -1, 0 or 1.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String		datePart	= arguments.getAsString( Key.datepart );

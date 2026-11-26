@@ -40,14 +40,20 @@ public class Right extends BIF {
 	}
 
 	/**
-	 * Extract the rightmost count characters from a string
+	 * Extract the rightmost characters of a string.
+	 * A negative count returns all but the first |count| characters of the string; if |count| is larger than the string, the whole string is
+	 * returned.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to extract from
+	 * @argument.string The string to extract from.
 	 *
-	 * @argument.count The number of characters to retrieve.
+	 * @argument.count The number of characters to retrieve. If it is larger than the string, the whole string is returned.
+	 *
+	 * @throws BoxRuntimeException if the count is zero.
+	 *
+	 * @return The rightmost characters of the string, or an empty string if the string is null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return right( arguments.getAsString( Key.string ), arguments.getAsInteger( Key.count ) );

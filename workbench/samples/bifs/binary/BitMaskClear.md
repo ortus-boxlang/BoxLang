@@ -1,51 +1,49 @@
-### Bitwise Mask Clear
+### Bitwise mask clear
 
-Uses the bitMaskClear function to clear (setting to 0) each of the corresponding bits
-
-<a href="https://try.boxlang.io/?code=eJxLyizxTSzOds5JTSzSUDDWUTDQUTBU0LTmAgBqAQa1" target="_blank">Run Example</a>
+Clears 1 bit starting at bit 0 of the number `3` (`11` in binary).
 
 ```java
-bitMaskClear( 3, 0, 1 );
-
+writeOutput( bitMaskClear( 3, 0, 1 ) )
 ```
 
 Result: 2
 
-### Using non zero start parameter
+### Using a non zero start parameter
 
-
-
-<a href="https://try.boxlang.io/?code=eJxLyizxTSzOds5JTSzSUDDWUTAEIgVNay4AagkGtg%3D%3D" target="_blank">Run Example</a>
+Clears the bit at position 1.
 
 ```java
-bitMaskClear( 3, 1, 1 );
-
+writeOutput( bitMaskClear( 3, 1, 1 ) )
 ```
 
 Result: 1
 
-### Using non zero mask start and length parameters
+### Using non zero start and length parameters
 
-
-
-<a href="https://try.boxlang.io/?code=eJxLyizxTSzOds5JTSzSUDA00FEw1FEwUtC05gIAcTQG5Q%3D%3D" target="_blank">Run Example</a>
+Clears 2 bits starting at bit 1 of `10` (`1010` in binary), leaving `1000`.
 
 ```java
-bitMaskClear( 10, 1, 2 );
-
+writeOutput( bitMaskClear( 10, 1, 2 ) )
 ```
 
 Result: 8
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQSMos8U0sznbOSU0s0lAwMjXVUQAhBU0FTWuucmSVSjZJRXZKGMJYDDDQUTCBGAAAOmkgBQ%3D%3D" target="_blank">Run Example</a>
+### Clear the low nibble
 
 ```java
-writeOutput( bitMaskClear( 255, 5, 5 ) );
-writeOutput( "<br>" );
-writeOutput( bitMaskClear( 255, 0, 4 ) );
-
+writeOutput( bitMaskClear( 255, 0, 4 ) )
 ```
 
+Result: 240
 
+### Start must be between 0 and 31
+
+```java
+try {
+	bitMaskClear( 255, 32, 1 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Start must be in the range 0-31, inclusive.

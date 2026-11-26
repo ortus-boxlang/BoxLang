@@ -40,14 +40,17 @@ public class ArrayPrepend extends BIF {
 	}
 
 	/**
-	 * Append a value to the start an array
+	 * Adds a value to the beginning of an array. The array is modified in place.
+	 * Also available as the <code>prepend()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to prepend to
+	 * @argument.array The array to prepend to.
 	 *
-	 * @argument.value The value to prepend
+	 * @argument.value The value to prepend.
+	 *
+	 * @return The same array, with the value added at the start.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );

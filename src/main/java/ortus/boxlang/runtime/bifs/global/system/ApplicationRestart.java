@@ -28,10 +28,13 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class ApplicationRestart extends BIF {
 
 	/**
-	 * Restarts the currently running application
+	 * Restarts the currently running application. The application is shut down and will be started again the next time it is needed.
+	 * Throws a BoxRuntimeException if there is no application context.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return true when the restart has been requested.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ApplicationBoxContext applicationContext;

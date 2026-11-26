@@ -48,16 +48,20 @@ public class DateAdd extends BIF {
 	}
 
 	/**
-	 * Modifies a date object by date part and integer time unit
+	 * Adds (or, with a negative number, subtracts) an interval to a date and returns a new DateTime. The original date is never modified.
+	 * Also available as the member function {@code date.add( datepart, number )}.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.datepart The date part to modify
-	 * 
-	 * @argument.number The number of units to modify by
-	 * 
-	 * @argument.date The date object to modify
+	 * @argument.datepart The unit to add: yyyy (year), q (quarter), m (month), y or d (day), w (weekday, skipping weekends), ww (week),
+	 *                    h (hour), n (minute), s (second), l (millisecond). An unknown value throws an exception.
+	 *
+	 * @argument.number The number of units to add. Negative values subtract. Decimal values are rounded half-up to a whole number.
+	 *
+	 * @argument.date The date or date string to add to. Numeric values are treated as fractional days since the epoch.
+	 *
+	 * @return A new {@link DateTime} object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		timezone	= LocalizationUtil.parseZoneId( null, context );

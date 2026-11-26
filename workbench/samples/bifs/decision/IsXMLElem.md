@@ -21,7 +21,7 @@
 	</boxlangengines>
 </bx:xml>
 <bx:script>
-	writeOutput( isXMLElem( example.BOXLANGENGINES ) );
+	writeOutput( isXMLElem( example.BOXLANGENGINES ) )
 </bx:script>
 
 ```
@@ -44,3 +44,12 @@ Result: YES
 ```
 
 
+
+### Documents and strings are not elements
+
+```java
+doc = xmlParse( "<root><a/></root>" )
+writeOutput( isXmlElem( doc.xmlRoot.a ) & " " & isXmlElem( doc ) & " " & isXmlElem( "<root/>" ) )
+```
+
+Result: true false false

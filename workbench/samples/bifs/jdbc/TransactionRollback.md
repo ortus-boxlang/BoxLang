@@ -4,11 +4,11 @@ This simple example shows two JDBC queries executed inside a transaction. The fi
 
 ```java
 transaction {
-    queryExecute( "INSERT INTO vehicles (id,make) VALUES (8, 'Ford' )", {}, { datasource : "carDB" } );
-    transactionCommit();
+    queryExecute( "INSERT INTO vehicles (id,make) VALUES (8, 'Ford' )", {}, { datasource : "carDB" } )
+    transactionCommit()
 
-    queryExecute( "UPDATE developers SET name = 'Chevrolet' WHERE id=8", {}, { datasource : "carDB" } );
-    transactionRollback();
+    queryExecute( "UPDATE developers SET name = 'Chevrolet' WHERE id=8", {}, { datasource : "carDB" } )
+    transactionRollback()
 }
 ```
 
@@ -20,11 +20,11 @@ Many times, you may wish to roll back only a portion of a transaction. This is p
 
 ```java
 transaction {
-    queryExecute( "INSERT INTO vehicles (id,make) VALUES (8, 'Ford' )", {}, { datasource : "carDB" } );
-    transactionSetSavepoint( 'insert' );
+    queryExecute( "INSERT INTO vehicles (id,make) VALUES (8, 'Ford' )", {}, { datasource : "carDB" } )
+    transactionSetSavepoint( 'insert' )
 
-    queryExecute( "UPDATE developers SET name = 'Chevrolet' WHERE id=8", {}, { datasource : "carDB" } );
-    transactionRollback( 'insert' );
+    queryExecute( "UPDATE developers SET name = 'Chevrolet' WHERE id=8", {}, { datasource : "carDB" } )
+    transactionRollback( 'insert' )
 }
 ```
 
@@ -34,18 +34,40 @@ Multiple savepoints can be set or referenced.
 
 In this code, any error triggered will cause transactionRollback() to run and roll back the pending transaction
 
-<a href="https://try.boxlang.io/?code=eJxLqrAqKUrMK05MLsnMz1Oo5uIsKaoEUZz6%2BgrJ%2BSmpCiX5CkWleUABJHXO%2Bbm5mSUamtZcnLUKyYklyRkKGol5lQqpmmCtSCqD8nNykhKTsyFquWq5AC39I%2Bw%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLqrAqKUrMK05MLsnMz1Oo5uIsKaoEUZz6%2BgrJ%2BSmpCiX5CkWleUABJHXO%2Bbm5mSUamlyctQrJiSXJGQoaiXmVCqmaYJ1ICoPyc3KSEpOzwUq5agHGOSNs" target="_blank">Run Example</a>
 
 ```java
 bx:transaction {
 	try {
 		// code to run
-		transactionCommit();
+		transactionCommit()
 	} catch (any e) {
-		transactionRollback();
+		transactionRollback()
 	}
 }
 
 ```
 
+### Rolling back outside of a transaction throws an error
 
+```java
+try {
+	transactionRollback()
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Transaction not started; Please place this method call inside a transaction{} block.
+
+### Roll back to a savepoint
+
+```java
+transaction {
+	transactionSetSavepoint( "start" )
+	transactionRollback( "start" )
+	writeOutput( "rolled back to savepoint" )
+}
+```
+
+Result: rolled back to savepoint

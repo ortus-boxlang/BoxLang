@@ -41,6 +41,8 @@ public class BoxSetIsEmpty extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.set The set to test.
+	 *
+	 * @return True if the Set has no elements, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsSet( Key.set ).isEmpty();

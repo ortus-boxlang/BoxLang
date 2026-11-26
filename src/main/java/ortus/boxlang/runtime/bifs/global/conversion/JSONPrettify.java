@@ -42,12 +42,15 @@ public class JSONPrettify extends BIF {
 	}
 
 	/**
-	 * Prettifies a JSON string.
+	 * Formats a JSON string with indentation and line breaks for readability. The input must be a JSON string, not a struct or array.
+	 * Also available as the <code>jsonPrettify()</code> member function on strings.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.var The JSON string to prettify.
+	 *
+	 * @return The formatted JSON string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return StringUtil.prettyJson( arguments.getAsString( Key.var ) );

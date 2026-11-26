@@ -47,6 +47,8 @@ public class BoxSetAdd extends BIF {
 	 * @argument.set The set to add the element to.
 	 *
 	 * @argument.value The value to add. Duplicates are silently ignored.
+	 *
+	 * @return The same Set, with the value added, for method chaining.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet set = arguments.getAsSet( Key.set );

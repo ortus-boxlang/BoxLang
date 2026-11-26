@@ -2,17 +2,26 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJzzCvb3C04tykzMyaxK1VBILCpKrAzJDy4pKk0u0VCIVuDiVEpU0gGSSUpcsQqaCprWXACxsA4w" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQ8Ar29wtOLcpMzMmsStVQSCwqSqwMyQ8uKSpNBspGKyglKukoKCUpKcQqaIIgAKW1E0g%3D" target="_blank">Run Example</a>
 
 ```java
-JSONSerialize( arrayToStruct( [ 
-	"a",
-	"b"
-] ) );
+writeOutput( JSONSerialize( arrayToStruct( [ "a", "b" ] ) ) )
 
 ```
 
 Result: {"1":"a","2":"b"}
+
+### Using the member function
+
+The struct keys are the one-based array positions.
+
+```java
+letters = [ "x", "y" ]
+s = letters.toStruct()
+writeOutput( s[ "1" ] & s[ "2" ] )
+```
+
+Result: xy
 
 ### Additional Examples
 
@@ -26,16 +35,15 @@ arr = [
 	"e",
 	"f",
 	"g"
-];
-dump( arrayToStruct( arr ) );
-if( listFirst( server.BOXLANG.VERSION, "." ) >= 6 ) dump( arrayToStruct( arr, true ) );
+]
+dump( arrayToStruct( arr ) )
 // member function
-dump( arr.toStruct() );
+dump( arr.toStruct() )
 
 ```
 
 
-<a href="https://try.boxlang.io/?code=eJxLLCpSsFWIVuDirObi5PRz9HVVsFJQSlTi4qzVQRVLwiKWjEUsBYtYKkiMK9aaK6U0t0BDIbGoKLEyJD%2B4pKg0uQTMVdBU0LTm0tdXyE3NTUotUkgrzUsuyczPQ2jQK4GpBysFAEnqLQ0%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLLCpSsFWIVuDirObi5PRz9HVVsFJQSlTi4qzVQRVLwiKWjEUsBYtYKkiMK5YrpTS3QEMhsagosTIkP7ikqDS5BMxV0FTQ5NLXV8hNzU1KLVJIK81LLsnMz0Oo1yuBKQeqBACh%2FyxS" target="_blank">Run Example</a>
 
 ```java
 arr = [ 
@@ -54,10 +62,10 @@ arr = [
 	{
 		NAME : "e"
 	}
-];
-dump( arrayToStruct( arr ) );
+]
+dump( arrayToStruct( arr ) )
 // member function
-dump( arr.toStruct() );
+dump( arr.toStruct() )
 
 ```
 

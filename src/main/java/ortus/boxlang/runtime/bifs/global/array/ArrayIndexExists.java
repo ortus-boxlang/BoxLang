@@ -43,14 +43,19 @@ public class ArrayIndexExists extends BIF {
 	}
 
 	/**
-	 * Returns whether there exists an item in the array at the selected index.
+	 * Checks whether an array has a non-null element at the given one-based index.
+	 * Returns false for indexes less than 1, greater than the array size, or where the element is null.
+	 * Also available as <code>ArrayIsDefined</code>, and as the <code>indexExists()</code> and <code>isDefined()</code> member functions on
+	 * arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to be searched.
+	 * @argument.array The array to check.
 	 *
-	 * @argument.index The index to check.
+	 * @argument.index The one-based index to check.
+	 *
+	 * @return True if a non-null element exists at the index, false otherwise.
 	 */
 	public Boolean _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );

@@ -40,19 +40,16 @@ public class CompareNoCase extends BIF {
 	}
 
 	/**
-	 *
-	 * Performs a case-insensitive comparison of two strings.
-	 * -1, if string1 is less than string2
-	 * 0, if string1 is equal to string2
-	 * 1, if string1 is greater than string2
+	 * Performs a case-insensitive comparison of two strings, comparing them lexicographically. Non-string arguments are cast to strings first.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string1 The first string to compare
+	 * @argument.string1 The first string to compare.
 	 *
-	 * @argument.string2 The second string to compare
+	 * @argument.string2 The second string to compare.
 	 *
+	 * @return -1 if string1 is less than string2, 0 if they are equal, 1 if string1 is greater than string2.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Integer comparison = ortus.boxlang.runtime.operators.StringCompare.invoke( StringCaster.cast( arguments.get( Key.string1 ) ),

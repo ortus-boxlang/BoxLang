@@ -62,16 +62,22 @@ public class QueryEach extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to iterate over
+	 * @argument.query The query to iterate over.
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the row, the currentRow, the query. You can alternatively pass a Java Consumer which will only receive the 1st arg.
+	 * @argument.callback The function to invoke for each row. It receives the row as a struct, the one-based row number, and the
+	 *                    query. You can alternatively pass a Java Consumer, which receives only the row.
 	 *
-	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
+	 * @argument.parallel Whether to run the callback in parallel. Defaults to false.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored. If a boolean is passed it will be used as the virtual argument
-	 * 
-	 * @argument.virtual Whether to use virtual threads when running the filter in parallel. Defaults to false. Ingored if parallel is false
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If omitted, the default ForkJoinPool
+	 *                      parallelism is used. Ignored if parallel is false. If a boolean is passed it is used as the virtual argument instead.
+	 *
+	 * @argument.ordered Accepted for consistency with other each functions but currently ignored: when running in parallel the rows
+	 *                   are always processed in order.
+	 *
+	 * @argument.virtual Whether to use virtual threads when running in parallel. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return Nothing (null). The callback is executed for its side effects.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object maxThreads = arguments.get( Key.maxThreads );

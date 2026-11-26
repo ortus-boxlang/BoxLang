@@ -40,14 +40,18 @@ public class ArrayDeleteAt extends BIF {
 	}
 
 	/**
-	 * Delete item at specified index in array
+	 * Deletes the element at the given one-based position of an array. The array is modified in place and later elements shift down.
+	 * Throws an exception if the index is less than 1 or greater than the array size.
+	 * Also available as the <code>deleteAt()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to be deleted from.
+	 * @argument.array The array to delete from.
 	 *
-	 * @argument.index The index to deleted.
+	 * @argument.index The one-based index of the element to delete.
+	 *
+	 * @return The same array, with the element removed.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );

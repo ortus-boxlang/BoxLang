@@ -60,14 +60,20 @@ public class CreateODBCDateTime extends BIF {
 	}
 
 	/**
-	 * Creates a DateTime object with the format set to ODBC Implicit format
+	 * Creates a DateTime object whose string representation uses the ODBC literal format. The format depends on the name used to invoke it:
+	 * {@code createODBCDateTime()} / {@code toODBCDateTime()} produce <code>{ts '2024-03-15 10:30:00'}</code>,
+	 * {@code createODBCDate()} / {@code toODBCDate()} produce <code>{d '2024-03-15'}</code> and
+	 * {@code createODBCTime()} / {@code toODBCTime()} produce <code>{t '10:30:00'}</code>.
+	 * The underlying date and time value is not truncated; only the output format changes.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.date The date string or object
+	 * @argument.date The date string or object to convert. Strings are parsed as a date/time; an unparseable value throws an exception.
 	 *
-	 * @argument.timezone An optional timezone to apply
+	 * @argument.timezone An optional timezone to apply when parsing the date. Defaults to the request/runtime timezone.
+	 *
+	 * @return A new {@link DateTime} with the ODBC format applied.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		DateTime dateRef = DateTimeCaster.cast(

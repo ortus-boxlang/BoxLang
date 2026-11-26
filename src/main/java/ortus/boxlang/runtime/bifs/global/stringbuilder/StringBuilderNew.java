@@ -45,7 +45,10 @@ public class StringBuilderNew extends BIF {
 	 *
 	 * @argument.value Optional initial value (String) or existing Java StringBuilder to wrap. Empty if not provided.
 	 *
-	 * @argument.capacity Optional initial capacity for newly created BoxStringBuilder instances.
+	 * @argument.capacity Optional initial capacity for newly created BoxStringBuilder instances. Ignored when wrapping an existing Java
+	 *                    StringBuilder.
+	 *
+	 * @return A BoxStringBuilder.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

@@ -48,6 +48,8 @@ public class StructValueSet extends BIF {
 	 *
 	 * @argument.type The backing variant: "default" / "hash" (HashSet), "linked" / "ordered" (LinkedHashSet,
 	 *                preserves Struct iteration order), or "sorted" / "tree" (TreeSet).
+	 *
+	 * @return A Set of the deduplicated struct values.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct		struct	= arguments.getAsStruct( Key.struct );

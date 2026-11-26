@@ -48,14 +48,19 @@ public class ParseCurrency extends BIF {
 	}
 
 	/**
-	 * Parses a currency value in to a numeric using the specified or context locale
+	 * Parses a currency string, such as `$1,234.50`, into a number using the given or current locale. Plain numeric strings are returned as
+	 * numbers. If the value cannot be parsed in the locale, an exception is thrown.
+	 *
+	 * This BIF is also registered as `LSParseCurrency`.
+	 *
+	 * @argument.string The currency string to parse.
+	 *
+	 * @argument.locale Optional. The locale to apply when parsing (a common name or ISO code). Defaults to the locale of the current context.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string the value to be parsed
-	 *
-	 * @argument.locale the optional locale to apply in parsing
+	 * @return The parsed amount as a double.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	value	= arguments.getAsString( Key.string );

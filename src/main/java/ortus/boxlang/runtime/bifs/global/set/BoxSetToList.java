@@ -50,6 +50,8 @@ public class BoxSetToList extends BIF {
 	 * @argument.set The set whose elements should be joined.
 	 *
 	 * @argument.delimiter The delimiter to place between elements. Defaults to {@code ","}.
+	 *
+	 * @return A string with the elements joined by the delimiter.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet	set			= arguments.getAsSet( Key.set );

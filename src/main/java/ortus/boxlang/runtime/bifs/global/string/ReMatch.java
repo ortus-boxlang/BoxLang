@@ -49,16 +49,18 @@ public class ReMatch extends BIF {
 	}
 
 	/**
-	 *
-	 * Uses a regular expression (RE) to search a string for a pattern.
+	 * Uses a regular expression (RE) to find every match in a string. <code>ReMatch</code> is case-sensitive and its alias
+	 * <code>ReMatchNoCase</code> is case-insensitive.
+	 * Both are also available as string member functions. Matches that are empty or only whitespace are skipped.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.reg_expression The regular expression to search for
+	 * @argument.reg_expression The regular expression to search for.
 	 *
-	 * @argument.string The string to serach in
+	 * @argument.string The string to search in.
 	 *
+	 * @return An array with every non-blank match, in order. The array is empty if nothing matches.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	reg_expression	= arguments.getAsString( Key.reg_expression );

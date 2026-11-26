@@ -43,15 +43,17 @@ public class CLIRead extends BIF {
 	}
 
 	/**
-	 * Reads a line of text from the CLI.
-	 * You can optionally provide a prompt string to display before reading the input.
+	 * Reads a line of text from the CLI standard input. You can optionally provide a prompt string that is printed before reading.
+	 * The call blocks until a line is available.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.prompt An optional prompt string to display before reading input.
 	 *
-	 * @return The line of text read from the CLI.
+	 * @throws BoxRuntimeException If there is no input to read or reading fails.
+	 *
+	 * @return The line of text read from the CLI, without the line terminator.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the prompt string.

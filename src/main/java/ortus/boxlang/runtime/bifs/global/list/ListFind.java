@@ -56,20 +56,31 @@ public class ListFind extends ArrayFind {
 	}
 
 	/**
-	 * Return int position of value in delimited list, case sensitive or case-insenstive variations
+	 * Finds the position of a value in a list. The function is registered under four names:
+	 * <ul>
+	 * <li><code>listFind</code> - case-sensitive, returns the one-based index or 0 if not found</li>
+	 * <li><code>listFindNoCase</code> - case-insensitive, returns the one-based index or 0 if not found</li>
+	 * <li><code>listContains</code> - case-sensitive substring match; returns a boolean</li>
+	 * <li><code>listContainsNoCase</code> - case-insensitive substring match; returns a boolean</li>
+	 * </ul>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.list The list to be searched.
 	 *
-	 * @argument.value The value to locate in the list or a function to filter the list
+	 * @argument.value The string value to locate in the list. For listContains and listContainsNoCase it is matched as a substring of each element.
 	 *
-	 * @argument.delimiter The list delimiter(s)
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.includeEmptyFields Whether to include empty fields in the search
+	 * @argument.includeEmptyFields Whether empty elements are counted when computing positions. Defaults to false.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *                                   single-character delimiters. Defaults to false.
+	 *
+	 * @return The one-based index of the first match (0 if none) for listFind and listFindNoCase; a boolean for listContains and
+	 *         listContainsNoCase.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

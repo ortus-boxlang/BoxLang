@@ -12,17 +12,39 @@
 
 Result: Initial Value, Initial Value, Initial Value, Initial Value, Initial Value, Initial Value
 
-### Additional Examples
+### Initialize an array
 
-<a href="https://try.boxlang.io/?code=eJzLSy13LCpKrFSwVUgE0X6p5RoKhgqa1lxgbnBqiYZCHlSNjoKhjoKJjoKSY06OQmaxQnlqTo4SSGlKaW4BQhlIRF9fITc1Nym1SCGtNC%2B5JDM%2FjwsmrVcMMhNokhHQpJzUkmKF5IzEvPRUhcwSHIYBAK6VMzo%3D" target="_blank">Run Example</a>
+Setting a range beyond the end of an empty array expands it.
 
 ```java
-newArray = arrayNew( 1 );
-arraySet( newArray, 1, 4, "All is well" );
-dump( newArray );
+arr = arrayNew( 1 )
+arr.set( 1, 3, "x" )
+writeOutput( arr.toList() )
+```
+
+Result: x,x,x
+
+### Overwrite part of an array
+
+```java
+numbers = [ 1, 2, 3, 4 ]
+arraySet( numbers, 2, 3, 0 )
+writeOutput( numbers.toList() )
+```
+
+Result: 1,0,0,4
+
+### Additional Examples
+
+<a href="https://try.boxlang.io/?code=eJzLSy13LCpKrFSwVUgE0X6p5RoKhgqaXGBecGqJhkIeVImOgqGOgomOgpJjTo5CZrFCeWpOjhJQZUppbgFCFVBAX18hNzU3KbVIIa00L7kkMz%2BPCyarVwwyEWiOEdCcnNSSYoXkjMS89FSFzBJsRgEAmbsyCQ%3D%3D" target="_blank">Run Example</a>
+
+```java
+newArray = arrayNew( 1 )
+arraySet( newArray, 1, 4, "All is well" )
+dump( newArray )
 // member function
-newArray.set( 1, 2, "lets change it" );
-dump( newArray );
+newArray.set( 1, 2, "lets change it" )
+dump( newArray )
 
 ```
 

@@ -2,7 +2,7 @@
 
 Sum one query column
 
-<a href="https://try.boxlang.io/?code=eJxtj8FqwkAQhs%2FZp%2FjZU0KX0lZ6qSj4AE2g1FMpstGJLugmncw2BMm7d6NepDkNfPN%2F8zMVByctFvgJxH1OXQpdjczYUx28aAP9a3l7sGycF9oTR%2FQFlZxVklyjGm%2FQtmmO1Goz0psa8fOrSgbzL9w4T9PCbDLfCtuuJGY3YbxERX0jmyupxR431d1LH7QLW0pxpQYpVr6HNZdRIsNiidjGJIE9LB5QPq7ei3X%2BOVeDwdN4t2MnVARpgqS4K4nLP6JPXqo%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxtj8uKwkAQRdfpr7j0KsFm8IEbIYIfMAqiKxHpaEUbnDZTqTaI%2BO%2B2j42YVcHhnnupkoOTGjn%2BA%2FFlSk0KXT6YsX%2Bn4EUb6LPl7cGycV5oTxzRCiq5qiR5RTVG0LaqjlRr86BvNeLeUCU38xWunKd2YdCar4VtUxCzazH6UVFrZEpOYo%2Bb8uOjOe3CllK8qEGKib%2FAmucpkCEfI44xSWAPiw6Kn8nvbDldqJtBN7Y27IRmQaogKT4msjvcal20" target="_blank">Run Example</a>
 
 ```java
 fruits = queryNew( "fruit,amount", "varchar,integer", [ 
@@ -18,11 +18,11 @@ fruits = queryNew( "fruit,amount", "varchar,integer", [
 		"fruit" : "strawberries",
 		"amount" : 32
 	}
-] );
+] )
 total_fruits = queryReduce( fruits, ( Any a, Any b ) => {
-	return a + b.AMOUNT;
-}, 0 );
-writeOutput( total_fruits );
+	return a + b.AMOUNT
+}, 0 )
+writeOutput( total_fruits )
 
 ```
 
@@ -53,13 +53,21 @@ people = QueryNew( "name,dob,age", "varchar,date,int", [
 		CreateDate( 1988, 1, 1 ),
 		0
 	]
-] );
-date = createDateTime( 2016, 3, 13, 17, 0, 0 );
+] )
+date = createDateTime( 2016, 3, 13, 17, 0, 0 )
 totalAge = queryreduce( people, ( Any age = 0, Any row, Any rowNumber, Any recordset ) => {
-	return age + DateDiff( "yyyy", recordset.DOB, date );
-} );
-writeDump( totalAge );
+	return age + DateDiff( "yyyy", recordset.DOB, date )
+} )
+writeDump( totalAge )
 
 ```
 
+### Member function
 
+```java
+q = queryNew( "amount", "integer", [ [ 15 ], [ 3 ], [ 32 ] ] )
+writeOutput( q.reduce( ( total, row ) -> total + row.amount, 0 ) )
+
+```
+
+Result: 50

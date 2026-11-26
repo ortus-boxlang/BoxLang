@@ -38,14 +38,15 @@ public class IsXML extends BIF {
 	}
 
 	/**
-	 * Determines whether a string is well-formed XML text. Note, this will return true if the XML contiains things like
-	 * XEE (XML External Entity) or doctype definitions, which are prohibited by your XML Settings.
+	 * Determines whether a value is well-formed XML text or an XML object. Note that this returns true for XML containing XXE (XML External
+	 * Entity) or doctype definitions, which may be prohibited by your XML settings.
+	 *
+	 * @argument.value A string containing XML document text, or an XML object.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value A string containing the XML document text.
-	 * 
+	 * @return True if the value is, or can be parsed as, XML; false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		CastAttempt<XML> castAttempt = XMLCaster.attempt( arguments.get( Key.value ) );

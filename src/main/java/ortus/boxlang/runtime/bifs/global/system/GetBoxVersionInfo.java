@@ -31,7 +31,8 @@ public class GetBoxVersionInfo extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @return A struct with the version details of the runtime: { version: "1.0.0", buildDate: "2023-01-01", codename: "Jericho", boxlangId: "hash" }
+	 * @return A struct with the version details of the runtime, for example { version: "1.0.0", buildDate: "2023-01-01", codename: "Jericho",
+	 *         boxlangId: "hash" }; the actual keys and values come from the runtime build.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return runtime.getVersionInfo();

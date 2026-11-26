@@ -48,24 +48,28 @@ public class ListInsertAt extends BIF {
 	}
 
 	/**
-	 * Filters a delimted list and returns the values from the callback test
+	 * Inserts a value at a one-based position in a list and returns the new list. Valid positions range from 1 to the number of
+	 * elements plus one (to append); other positions throw an exception.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list string list to filter entries from
+	 * @argument.list The list to insert into.
 	 *
-	 * @argument.filter function closure filter test
+	 * @argument.position The one-based position where the value is inserted.
 	 *
-	 * @argument.delimiter string the list delimiter
+	 * @argument.value The value to insert.
 	 *
-	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
+	 *                              to false.
 	 *
-	 * @argument.parallel boolean whether to execute the filter in parallel
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *                                   single-character delimiters. Defaults to false.
 	 *
-	 * @argument.maxThreads number the maximum number of threads to use in the parallel filter
+	 * @return The list with the value inserted.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.insertAt(

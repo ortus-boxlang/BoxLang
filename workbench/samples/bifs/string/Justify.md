@@ -1,39 +1,52 @@
-### Tag Example
+### Right justify a string
 
- 
-
-
-```java
-<bx:set length = 10 >
-<bx:set result = RJustify( "abc", length ) >
-<bx:output>
-    <pre>~#result#~</pre>
-</bx:output>
-```
-
-
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUMhJTErNsVVS0lEoSyyyDfIqLS7JTKvUUACJmChoKmhac5UToToxKRkoaEiqBlMkDfmlJQWlJUApm4wiOyWQcLGCLdAd1lxFqSBWEVxzMdhpqPak5mkogNSBzFPQ1wcJpJdkKGQWK5igG19QlGpXowxUrFxjow%2FioFoIchlWOw0NiLfU0IBEWw0NsFtqQbydFgStBFsHAFElmM4%3D" target="_blank">Run Example</a>
+`rJustify()` pads the string with spaces on the left so the text is aligned to the right of the field.
 
 ```java
-writeDump( label="", var=RJustify( "", 4 ) );
-writeDump( label="", var=RJustify( "abc", 1 ) );
-writeDump( label="", var=RJustify( "abc", 5 ) );
-writeoutput( "<hr>" );
-s = "";
-res = rJustify( s, 4 );
-writeDump( len( res ) ); // length is 4
-writeoutput( "<pre>|#res#|</pre><hr>" );
-s = "abc";
-res = rJustify( s, 10 );
-writeDump( len( res ) ); // length is 10
-writeoutput( "<pre>|#res#|</pre><hr>" );
-s = "10";
-res = rJustify( s, 8 );
-writeDump( len( res ) ); // length is 8
-writeoutput( "<pre>|#res#|</pre>" );
+writeOutput( "|" & rJustify( "abc", 6 ) & "|" )
 
 ```
 
+Result: |   abc|
 
+### Left justify a string
+
+`lJustify()` pads the string with spaces on the right so the text is aligned to the left of the field.
+
+```java
+writeOutput( "|" & lJustify( "abc", 6 ) & "|" )
+
+```
+
+Result: |abc   |
+
+### A string longer than the length is not changed
+
+```java
+writeOutput( rJustify( "abcdef", 3 ) )
+
+```
+
+Result: abcdef
+
+### Member functions
+
+```java
+writeOutput( "|" & "abc".lJustify( 5 ) & "|" & "abc".rJustify( 5 ) & "|" )
+
+```
+
+Result: |abc  |  abc|
+
+### Error: invalid length
+
+```java
+try {
+	rJustify( "abc", 0 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Length must be greater than 0

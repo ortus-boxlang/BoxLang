@@ -2,19 +2,19 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLzs9Ly0xXsFWoVuDidFSwUjDQ4eJ0AtFctdZc%2BQUlmfl5xSBpiKghUNYZRINki0uKSpNLHAsKUvNSNBSSwSbpKED16CikJeYUpypoWnOVF2WWpPqXlhSUlmgoeAX7%2BwWnFmUm5mRWpcJ0KWiC1AEAiAUo9A%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLzs9Ly0xXsFWoVuDidFSwUjDQ4eJ0AtFctVz5BSWZ%2BXnFIFmIoCFQ0hlEAyWLS4pKk0scCwpS81I0FJLB5ugoQLXoKKQl5hSnKmhylRdllqT6l5YUlJZoKHgF%2B%2FsFpxZlJuZkVqXCNCloKmgCANMYJ%2F4%3D" target="_blank">Run Example</a>
 
 ```java
 config = { 
 	A : 0,
 	B : 0
-};
+}
 options = {
 	B : 1,
 	C : 1
-};
-structAppend( config, options, false );
-writeOutput( JSONSerialize( config ) );
+}
+structAppend( config, options, false )
+writeOutput( JSONSerialize( config ) )
 
 ```
 
@@ -24,19 +24,19 @@ Result: {"A":0,"B":0,"C":1}
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLzs9Ly0xXsFWoVuDidFSwUjDQ4eJ0AtFctdZc%2BQUlmfl5xSBpiKghUNYZRINkk8F69RILClLzUjQUoIp1FNISc4pTFTStucqLMktS%2FUtLCkpLNBS8gv39glOLMhNzMqtSNRQgmhU0QeoAWzomUQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLzs9Ly0xXsFWoVuDidFSwUjDQ4eJ0AtFctVz5BSWZ%2BXnFIFmIoCFQ0hlEAyWTwTr1EgsKUvNSNBSganUU0hJzilMVNLnKizJLUv1LSwpKSzQUvIL9%2FYJTizITczKrUjUUIHoVNBU0AbFwJVs%3D" target="_blank">Run Example</a>
 
 ```java
 config = { 
 	A : 0,
 	B : 0
-};
+}
 options = {
 	B : 1,
 	C : 1
-};
-config.append( options, false );
-writeOutput( JSONSerialize( config ) );
+}
+config.append( options, false )
+writeOutput( JSONSerialize( config ) )
 
 ```
 
@@ -46,19 +46,19 @@ Result: {"A":0,"B":0,"C":1}
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLzs9Ly0xXsFWoVuDidFSwUjDQ4eJ0AtFctdZc%2BQUlmfl5xSBpiKghUNYZRINki0uKSpNLHAsKUvNSNBSSwSbpKMD0aFpzlRdllqT6l5YUlJZoKHgF%2B%2FsFpxZlJuZkVqXClCtogtQBAGzxJp0%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLzs9Ly0xXsFWoVuDidFSwUjDQ4eJ0AtFctVz5BSWZ%2BXnFIFmIoCFQ0hlEAyWLS4pKk0scCwpS81I0FJLB5ugowLRocpUXZZak%2BpeWFJSWaCh4Bfv7BacWZSbmZFalwlQraCpoAgDCQyWn" target="_blank">Run Example</a>
 
 ```java
 config = { 
 	A : 0,
 	B : 0
-};
+}
 options = {
 	B : 1,
 	C : 1
-};
-structAppend( config, options );
-writeOutput( JSONSerialize( config ) );
+}
+structAppend( config, options )
+writeOutput( JSONSerialize( config ) )
 
 ```
 
@@ -68,34 +68,36 @@ Result: {"A":0,"B":1,"C":1}
 
 Demonstrates how to construct a Request Context (rc) that combines the values of the form and url scopes
 
-<a href="https://try.boxlang.io/?code=eJwrSlawVaiuteYqLikqTS5xLChIzUvRUChK1lFIyy%2FKVdDEJlNalAOSKC%2FKLEn1Ly0pKC3RUPAK9vcLTi3KTMzJrEoFKVPQBKkBABt3H1k%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrSlawVaiu5SouKSpNLnEsKEjNS9FQKErWUUjLL8pV0MQiUVqUAxQvL8osSfUvLSkoLdFQ8Ar29wtOLcpMzMmsSgWpUtBU0AQAkpEeYw%3D%3D" target="_blank">Run Example</a>
 
 ```java
-rc = {};
-structAppend( rc, form );
-structAppend( rc, url );
-writeOutput( JSONSerialize( rc ) );
+rc = {}
+structAppend( rc, form )
+structAppend( rc, url )
+writeOutput( JSONSerialize( rc ) )
 
 ```
+
+Result: a struct containing the combined keys of the form and url scopes (contents depend on the current request)
 
 
 ### Polyfill for earlier versions
 
 In older Boxlang version where this function is not supported yet, you can fall back to a native java method to achieve the same behavior except that it does not have the `overwriteFlag`.
 
-<a href="https://try.boxlang.io/?code=eJxLzs9Ly0xXsFWoVuDidFSwUjDQ4eJ0AtFctdZc%2BQUlmfl5xSBpiKghUNYZRINkk8F69QpKSxxzcjQUYIo1rbnKizJLUv1LS4BSGgpewf5%2BwalFmYk5mVWpGgoQXQqaIHUAUXgj9A%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLzs9Ly0xXsFWoVuDidFSwUjDQ4eJ0AtFctVz5BSWZ%2BXnFIFmIoCFQ0hlEAyWTwTr1CkpLHHNyNBRgajW5yosyS1L9S0uAMhoKXsH%2BfsGpRZmJOZlVqRoKEE0KmgqaALH%2FIv4%3D" target="_blank">Run Example</a>
 
 ```java
 config = { 
 	A : 0,
 	B : 0
-};
+}
 options = {
 	B : 1,
 	C : 1
-};
-config.putAll( options );
-writeOutput( JSONSerialize( config ) );
+}
+config.putAll( options )
+writeOutput( JSONSerialize( config ) )
 
 ```
 
@@ -103,24 +105,26 @@ Result: {"A":0,"B":0,"C":1}
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxlj80KwjAQhM%2FmKYacKhR6V3ooFcSTQgXPa7LQYpuUNLUH8d3tn1bxtrMz2XxDpqiobBDjAbFKjxdsICtrZShWp8N%2BULYwNymeWxFFyHLbQbXOsfGg6a3YtVUdoKQrl7FMf00Z4k4unhXW45XUMXkGwXA3B0U%2FJuM0oPQkyXkkYdu9%2F07qmo2GzxlL2NsPRuZdq%2FyUCt7b8Cu7Xiosbi8Ko8pWcwNF%2FrdMMmN3hc8HF6Q16%2F9OL2AAaSU%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxdj08LgkAQxc%2Ftp3jsSUHwHngQg%2BhUYNB5cgeUdFfWNQ%2FRd89%2FaXabN%2B%2FNzG9IFxWVDSK8IHbJ%2BYY9ZGWMDMTucjoOyhT6IcVbhCHS3HTIWmtZO9A0Kg5tVXso6c5lJJOtKQM8yUazgj8sSSyTYxA0d3NO9GU8VgNIzxFfRw423Xw5rmvWCi5nrFlnFojU2TZzU8r7doOfrL%2Fwr2YvCp2VreIGGbntJ%2FHM3BUuH1yQUqz%2BH%2FoAOANn9A%3D%3D" target="_blank">Run Example</a>
 
 ```java
 animals = { 
 	COW : "moo",
 	PIG : "oink"
-};
+}
 // Show current animals
-Dump( label="Current animals", var=animals );
+Dump( label="Current animals", var=animals )
 // Create a new animal
 newAnimal = {
 	CAT : "meow"
-};
+}
 // Append the newAnimal to animals
-StructAppend( animals, newAnimal );
+StructAppend( animals, newAnimal )
 // Show animals, now includes cat
-Dump( label="Animals with cat added", var=animals );
+Dump( label="Animals with cat added", var=animals )
 
 ```
+
+Result: the first dump shows COW and PIG; the second dump shows COW, PIG and CAT
 
 

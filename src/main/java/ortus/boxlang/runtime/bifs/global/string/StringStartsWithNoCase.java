@@ -40,7 +40,7 @@ public class StringStartsWithNoCase extends BIF {
 	}
 
 	/**
-	 * Determines whether a string starts with a specified prefix, case-insensitive.
+	 * Determines whether a string starts with a specified prefix, ignoring case.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -49,7 +49,7 @@ public class StringStartsWithNoCase extends BIF {
 	 *
 	 * @argument.substring The prefix to check for.
 	 *
-	 * @return True if the string starts with the specified prefix (case-insensitive), false otherwise.
+	 * @return True if the string starts with the specified prefix, ignoring case, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	input	= arguments.getAsString( Key.string );

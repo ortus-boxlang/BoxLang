@@ -46,14 +46,25 @@ public class BinaryDecode extends BIF {
 	}
 
 	/**
-	 * Encodes binary data to a string with the specified algorithm
+	 * Decodes a string that holds encoded binary data into a binary value (a byte array).
+	 * This is the opposite of {@link BinaryEncode}. The encoding name is case insensitive.
+	 *
+	 * <pre>
+	 * bytes = binaryDecode( "F62B", "hex" )
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to decode that has binary encoded data
+	 * @argument.string The string to decode, which holds binary data in the given encoding.
 	 *
-	 * @argument.encoding The encoding type to use for decoding the binary data. Valid values are: Hex, UU, Base64, Base64Url
+	 * @argument.encoding The encoding that was used to encode the string. Valid values are: Hex, UU, Base64, Base64Url.
+	 *
+	 * @throws BoxRuntimeException      If the encoding is not valid, or the string is not a valid Base64 string.
+	 *
+	 * @throws IllegalArgumentException If the string is not valid for the Hex or Base64Url encodings.
+	 *
+	 * @return The decoded binary data as a byte array.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key		encodingKey	= Key.of( arguments.getAsString( Key.encoding ) );

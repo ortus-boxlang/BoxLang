@@ -48,18 +48,19 @@ public class FindOneOf extends BIF {
 	}
 
 	/**
-	 * Finds the first occurrence of any character in a set of characters, from a specified start position.
+	 * Finds the first occurrence of any one character from a set of characters in a string, starting at a specified position. The search is
+	 * case-sensitive.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.set The set of characters to search for the first occurrence of.
+	 * @argument.set The characters to look for. Each character in this string is matched individually.
 	 *
 	 * @argument.string The string to search in.
 	 *
-	 * @argument.start The position from which to start searching in the string. Default is 1.
+	 * @argument.start The position, 1-based, from which to start searching. Values lower than 1 are treated as 1. Defaults to 1.
 	 *
-	 * @return Returns the position of the first occurrence of the set. If the set is not found, returns zero.
+	 * @return The 1-based position of the first character found, or 0 if none of the characters are found.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	set		= arguments.getAsString( Key.set );

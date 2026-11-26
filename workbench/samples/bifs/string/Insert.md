@@ -2,12 +2,12 @@
 
 To add substring on prefix of the given string
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pysxLV7BVUFJIzigCCigkFeWXF6cWKVlzFaUWl%2BaUAOUy84ACJRoKSu75%2Bek5qUo6CsVwrToKBgqa1lzlRZklqf6lJQWlQHVQjUBhAKORIUA%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pysxLV7BVUFJIzigCCigkFeWXF6cWKXEVpRaX5pQApTLzgPwSDQUl9%2Fz89JxUJR2FYrhOHQUDBU2u8qLMklT%2F0pKCUqAyqD5NACkfIIU%3D" target="_blank">Run Example</a>
 
 ```java
-someString = " chrome browser";
-result = insert( "Google", someString, 0 );
-writeOutput( result );
+someString = " chrome browser"
+result = insert( "Google", someString, 0 )
+writeOutput( result )
 
 ```
 
@@ -17,27 +17,44 @@ Result: Google chrome browser
 
 To add substring on suffix of the given string
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pysxLV7BVUPJLLVcoKMosSyxJVcjNr8rMyUlUSMssSlWy5spJzUsvyQAqAjI0FIoR2jStucqLMktS%2FUtLCkpLNBQy84pTi4C0Ulp%2BhZIOkkodBagZmiA9ABjVKSI%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pysxLV7BVUPJLLVcoKMosSyxJVcjNr8rMyUlUSMssSlXiyknNSy%2FJAKoBMjQUihG6NLnKizJLUv1LSwpKSzQUMvOKU4uAtFJafoWSDpJCHQWoEZoKmgCC%2FChn" target="_blank">Run Example</a>
 
 ```java
-someString = "New private mozilla fire";
-length = len( someString );
-writeOutput( insert( "fox", someString, length ) );
+someString = "New private mozilla fire"
+length = len( someString )
+writeOutput( insert( "fox", someString, length ) )
 
 ```
 
 Result: New private mozilla firefox
 
-### Additional Examples
-
-<a href="https://try.boxlang.io?code=eJxVjbsOgkAQRfv5iputICFSWhA7LSz8CMDRbLIPMjMonw%2BY1cT2npxz1QQnuCtCfjFcR2%2Fxxuc5ThV8Uhar4Ia8hD49XQM1aXBEjbpD26JohdO23DgOLHjMaTSfE6nt%2BcvSxynwf17t8HvAmO%2Fsvmna28X5EFoBANkzHQ%3D%3D" target="_blank">Run Example</a>
+### Insert in the middle of a string
 
 ```java
-str = "I love ";
-writeDump( insert( "boxlang", str, 7 ) ); // I love boxlang
-// Member function
-st = "Example";
-writeDump( st.insert( " code", 7 ) );
- // Example code
+writeOutput( insert( "boxlang", "I love ", 7 ) )
 
 ```
+
+Result: I love boxlang
+
+### Member function
+
+```java
+writeOutput( "Example".insert( " code", 7 ) )
+
+```
+
+Result: Example code
+
+### Error: position out of range
+
+```java
+try {
+	insert( "x", "abc", 10 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Position must be within the range [0, 3]

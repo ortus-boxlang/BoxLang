@@ -2,10 +2,10 @@
 
 Deletes 2nd item from the list
 
-<a href="https://try.boxlang.io/?code=eJzLySwucUnNSS1JdSzRUFBKy8%2FXSUos0snJL0rN1cksKC7NVdJRMFLQtOYCAEGJDac%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyMksLnFJzUktSXUE8pTS8vN1khKLdHLyi1JzdTILiktzlXQUjBQ0FTQBOmQSrw%3D%3D" target="_blank">Run Example</a>
 
 ```java
-listDeleteAt( "foo,bar,lorem,ipsum", 2 );
+writeOutput( listDeleteAt( "foo,bar,lorem,ipsum", 2 ) )
 
 ```
 
@@ -15,10 +15,10 @@ Result: foo,lorem,ipsum
 
 Deletes 2nd item from the list using a custom delimiter
 
-<a href="https://try.boxlang.io/?code=eJzLySwucUnNSS1JdSzRUFBKy8%2FXSUosqsnJL0rN1cksKC7NrclNrSnOz00tycjMS1fSUTDSUVCqUVLQtOYCAKizFJs%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyMksLnFJzUktSXUE8pTS8vN1khKLanLyi1JzdTILiktza3JTa4rzc1NLMjLz0pV0FIx0FJRqlBQ0FTQB%2B9YZow%3D%3D" target="_blank">Run Example</a>
 
 ```java
-listDeleteAt( "foo,bar|lorem,ipsum|me|something", 2, "|" );
+writeOutput( listDeleteAt( "foo,bar|lorem,ipsum|me|something", 2, "|" ) )
 
 ```
 
@@ -26,13 +26,13 @@ Result: foo,bar|me|something
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxtjsEKgkAQhu%2F7FIMnhSEPdZMOgQlC0aUXqO0PF1Zd3Nns8VutICGYyzD%2FfP83DkZwCuKCpGSNlxIWgl3ckppt%2FwDboAEWeKmMRcK0oYyygvKc9k8HLbhRPxPo90PF%2BxHtFQNVodNi%2Bk55GQ6xg7aUnBvjOc6FpXnT%2BT7hCzVOSmVoXUqf%2FGoptp771T%2BBL3XBVC%2FKX00I" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxtjkEKwjAQRfc5xdBVC4Nd6E5cCLUgKG68QFtHG0iTkExsj29SdBEQZjPw%2F%2FtvdpLpFtgGLkFJzw0pYjrGrzijMm%2FC3iyq0y9k8txKRQXCDiqo9lDXcFosDUwPMCsD8o6IiStNPTlogx5YGi08u0vcgQMU91F6jNchj7Ty8ZkGxJysmjDZEr7xTe62TQLin8CPmRE%2FZi1OQg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 writeOutput( listDeleteAt( "I,love,boxlang,testFile", 4 ) ); // Expected output I,love,boxlang
 // Member Function
-strList = "This,is,a,the,test,file";
-writeDump( strList.listDeleteAt( 3 ) );
+strList = "This,is,a,the,test,file"
+writeDump( strList.listDeleteAt( 3 ) )
  // Expected output This,is,the,test,file
 
 ```

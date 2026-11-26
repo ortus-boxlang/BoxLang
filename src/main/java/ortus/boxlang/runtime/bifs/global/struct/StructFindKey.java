@@ -52,16 +52,20 @@ public class StructFindKey extends BIF {
 	}
 
 	/**
-	 * Searches a struct for a given key and returns an array of values
+	 * Recursively searches a struct (including structs nested inside arrays) for a key, matching case-insensitively. Returns an array of
+	 * result structs, each with the keys owner (the struct containing the key), path (dot-delimited path to the key, with a leading
+	 * dot and lower-cased) and value (the value of the key). Returns an empty array if there is no match.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct to search
+	 * @argument.struct The struct to search.
 	 *
-	 * @argument.key The key to search for
+	 * @argument.key The key to search for. May be a dot-delimited path.
 	 *
-	 * @argument.scope Either one (default), which finds the first instance or all to return all values
+	 * @argument.scope Either one (default), which returns only the first match, or all, which returns every match.
+	 *
+	 * @return An array of result structs; empty if nothing was found.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key				scopeKey		= Key.of( arguments.get( Key.scope ) );

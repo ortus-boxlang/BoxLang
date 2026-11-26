@@ -37,13 +37,17 @@ public class GetMetaData extends BIF {
 	}
 
 	/**
-	 * Gets metadata (the methods, properties, and parameters of a component) associated with an object.
-	 * This returns the <code>$bx.meta</code> object for the object.
+	 * Gets metadata associated with a value. For BoxLang types which carry metadata (classes, functions, queries, structs and so on) this
+	 * returns the <code>$bx.meta</code> struct of the value, for example the name, parameters and annotations of a function.
+	 * For any other value, such as a string or number, the Java {@link Class} of the value is returned. Java objects wrapped in a
+	 * DynamicObject are unwrapped first.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.value The object to get metadata for.
+	 *
+	 * @return A metadata struct, or the Java class of the value.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object value = arguments.get( Key.value );

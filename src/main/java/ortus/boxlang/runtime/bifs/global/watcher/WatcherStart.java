@@ -45,14 +45,14 @@ public class WatcherStart extends BIF {
 	 * Starts a registered watcher by name.
 	 *
 	 * If the watcher is already running, the underlying watcher implementation returns
-	 * the same instance without duplicating execution loops.
+	 * the same instance without duplicating execution loops. After starting, the watcher state is RUNNING.
 	 *
 	 * @param context   The BoxContext of the caller.
 	 * @param arguments The arguments passed to the BIF.
 	 *
 	 * @argument.name The unique watcher name to start.
 	 *
-	 * @return The started {@link ortus.boxlang.runtime.watchers.WatcherInstance} or the existing instance if already running.
+	 * @return The started {@link ortus.boxlang.runtime.async.watchers.WatcherInstance} or the existing instance if already running.
 	 *
 	 * @throws ortus.boxlang.runtime.types.exceptions.BoxRuntimeException If no watcher with the given name is registered.
 	 */

@@ -2,25 +2,30 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLcU4sTtVQUHJ2c8lPLlYIyk%2FOVlLQtOYCAFuQBsQ%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyHFOLE7VUFBy8nHJTy5WCMpPzlZS0FTQBAD6XgvR" target="_blank">Run Example</a>
 
 ```java
-lCase( "BLDocs Rock" );
+writeOutput( lCase( "BLDocs Rock" ) )
 
 ```
 
 Result: bldocs rock
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJxFjDEOglAQBft%2FiicVVP8AxIqGwsTSesVFNtmwZln4Hl%2BkoZ3MTM4YnCkYG7nQUxlFYgJhCZf5DRsR%2FI00muGKqmdVw8NcX5eqTTnD1visceYyQ62wY6CFU3EJvh9KjVu3oxr%2FVYOmTT91cSmi" target="_blank">Run Example</a>
+### Lowercase a variable
 
 ```java
-// create variable with a string of text
-foo = "Hello World!";
-// output variable in lower case
-writeOutput( LCase( foo ) );
+foo = "Hello World!"
+writeOutput( lCase( foo ) )
 
 ```
 
+Result: hello world!
 
+### Member function
+
+```java
+writeOutput( "ABC".lCase() )
+
+```
+
+Result: abc

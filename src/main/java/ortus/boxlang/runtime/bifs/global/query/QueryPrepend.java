@@ -40,12 +40,18 @@ public class QueryPrepend extends BIF {
 	}
 
 	/**
-	 * Adds a query to the beginning of another query
+	 * Combines two queries so that the rows of the second query come first. The rows of query1 are added after the existing rows of
+	 * query2, and query2 is the query that is modified in place and returned (query1 is not changed). Also available as
+	 * <code>query.prepend( query2 )</code>, in which case the member query is query1.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to prepend to
+	 * @argument.query1 The query whose rows are placed after the rows of query2. It is not modified.
+	 *
+	 * @argument.query2 The query that supplies the leading rows. It is modified in place and returned.
+	 *
+	 * @return The second query, containing its own rows followed by the rows of the first query.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query1	= arguments.getAsQuery( Key.query1 );

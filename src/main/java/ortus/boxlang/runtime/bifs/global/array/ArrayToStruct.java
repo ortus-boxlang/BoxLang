@@ -42,12 +42,15 @@ public class ArrayToStruct extends BIF {
 	}
 
 	/**
-	 * Transform the array to a struct, the index of the array is the key of the struct
+	 * Converts an array to a struct where the one-based index of each element is the key.
+	 * Also available as the <code>toStruct()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to convert
+	 * @argument.array The array to convert.
+	 *
+	 * @return A struct with the keys "1", "2", ... mapped to the array elements.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	array		= arguments.getAsArray( Key.array );

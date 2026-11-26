@@ -39,12 +39,16 @@ public class KebabCase extends BIF {
 	}
 
 	/**
-	 * Convert a string to kebab case
+	 * Convert a string to kebab-case: lowercase words separated by hyphens. Words are detected by underscores, hyphens, other non-alphanumeric
+	 * characters,
+	 * and camelCase or acronym boundaries.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The target string
+	 * @argument.string The string to convert.
+	 *
+	 * @return The kebab-case version of the string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return StringUtil.kebabCase( arguments.getAsString( Key.string ) );

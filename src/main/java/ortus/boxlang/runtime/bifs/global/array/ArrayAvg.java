@@ -40,12 +40,16 @@ public class ArrayAvg extends BIF {
 	}
 
 	/**
-	 * Return length of array
-	 * 
+	 * Calculates the average of the values in an array: the sum of all elements divided by the number of elements.
+	 * All elements must be numeric (or castable to numbers). An empty array throws a divide by zero exception.
+	 * Also available as the <code>avg()</code> member function on arrays.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.array The array whose elements will be averaged.
+	 *
+	 * @return The average of the array elements.
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );

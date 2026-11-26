@@ -48,14 +48,19 @@ public class ArrayFindAll extends BIF {
 	}
 
 	/**
-	 * Return an array containing the indexes of matched values
+	 * Returns an array containing the one-based indexes of every element that matches the given value.
+	 * If the value is a function, it is invoked with each element and the indexes of those for which it returns true are returned.
+	 * Matching is case sensitive for <code>ArrayFindAll</code> and the <code>findAll()</code> member function, and case insensitive for
+	 * <code>ArrayFindAllNoCase</code> and <code>findAllNoCase()</code>. If nothing matches, an empty array is returned.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.array The array to be searched.
 	 *
-	 * @argument.value The value to found.
+	 * @argument.value The value to find, or a function used as the search predicate.
+	 *
+	 * @return An array of the one-based indexes of the matching elements.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array			actualArray	= arguments.getAsArray( Key.array );

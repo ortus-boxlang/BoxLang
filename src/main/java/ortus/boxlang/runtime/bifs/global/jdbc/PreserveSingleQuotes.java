@@ -35,16 +35,20 @@ public class PreserveSingleQuotes extends BIF {
 	}
 
 	/**
-	 * Prevents from automatically escaping single quotation mark characters that are contained in a variable.
-	 * 
-	 * It is not neccesary to use this function around listQualify() when the qualifier is a single quote, or around quotedValueList()
-	 * as those automatically preserve and escape single quotes as needed when used inside a query component.
+	 * Prevents single quotation mark characters contained in a variable from being automatically escaped when the variable is used in the SQL of
+	 * a query component or `queryExecute()`. At runtime the value is returned unchanged; the query SQL processing is what looks for this
+	 * function call.
+	 *
+	 * It is not necessary to use this function around `listQualify()` when the qualifier is a single quote, or around `quotedValueList()`, as
+	 * those automatically preserve and escape single quotes as needed when used inside a query component. Prefer query parameters over this
+	 * function for any user supplied values, as it bypasses escaping and can expose your code to SQL injection.
+	 *
+	 * @argument.variable The expression that needs to have its single quotes preserved.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.variable The expression that needs to have its single quotes preserved.
-	 *
+	 * @return The value which was passed in, unchanged.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// This BIF itself doesn't do anything. It's largely a placeholder in the AST for the QueryPreserveSingleQuotesVisitor to look for.

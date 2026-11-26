@@ -39,14 +39,17 @@ public class BitAnd extends BIF {
 	}
 
 	/**
-	 * Performs a bitwise logical AND operation.
+	 * Performs a bitwise logical AND (&) operation on two 64-bit integers.
+	 * Each bit of the result is set according to the AND of the corresponding bits of the two numbers.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number1 Numeric value for bitwise AND.
-	 * 
-	 * @argument.number2 Numeric value for bitwise AND.
+	 * @argument.number1 First numeric value for the bitwise AND.
+	 *
+	 * @argument.number2 Second numeric value for the bitwise AND.
+	 *
+	 * @return The result of number1 & number2.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		long	number1	= arguments.getAsLong( Key.number1 );

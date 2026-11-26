@@ -3,9 +3,19 @@
 Returns `true` only when every element of the argument collection is present in the Set.
 
 ```java
-s = [ 1, 2, 3, 4, 5 ].toSet();
-writeOutput( s.containsAll( [ 2, 4 ] ) & "," & s.containsAll( [ 2, 9 ] ) );
+s = [ 1, 2, 3, 4, 5 ].toSet()
+writeOutput( s.containsAll( [ 2, 4 ] ) & "," & s.containsAll( [ 2, 9 ] ) )
 
 ```
 
 Result: true,false
+
+### Pass another Set or a list string
+
+```java
+s = [ "a", "b", "c" ].toSet()
+writeOutput( s.containsAll( setOf( "a", "c" ) ) & "," & s.containsAll( "a,b" ) )
+
+```
+
+Result: true,true

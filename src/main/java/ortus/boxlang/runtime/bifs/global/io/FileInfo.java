@@ -46,12 +46,18 @@ public class FileInfo extends BIF {
 	}
 
 	/**
-	 * Returns a struct of file information. Different values are returned for FileInfo and GetFileInfo
+	 * Returns a struct of information about a file or directory. This BIF is also registered as `GetFileInfo`, and as the member function
+	 * `info()` on file objects. Both forms return `name`, `path`, `size`, `type` (`file` or `directory`), `isLink`, `linkTarget` and
+	 * `lastModified`. `fileInfo()` also returns `attributes`, `mode`, `read`, `write`, `execute` and `checksum` (MD5, empty for directories).
+	 * `getFileInfo()` instead also returns `parent`, `isHidden`, `canRead`, `canWrite`, `canExecute`, `isArchive`, `isSystem`,
+	 * `isAttributesSupported`, `isModeSupported` and `isCaseSensitive`.
+	 *
+	 * @argument.file The file path or file object to retrieve information on.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.File The filepath or file object to retrieve info upon
+	 * @return A struct of file information.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile	file			= arguments.getAsBoxFile( Key.file );

@@ -39,17 +39,21 @@ public class IIF extends BIF {
 	}
 
 	/**
-	 * A boolean condition or value is passed into the first argument. If the condition is true the second argument is evaluated and returned, if false
-	 * the third argument is evaluated and returned.
+	 * Inline conditional evaluation. If the condition is true the second argument is evaluated and returned, otherwise the third argument is
+	 * evaluated
+	 * and returned. The expressions are passed as strings and evaluated as a variable or literal reference, so use de() to pass a literal string.
+	 * The ternary operator is preferred in modern code.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.condition The condition to evaluate
-	 * 
-	 * @argument.expression1 The expression to evaluate if the condition is true
-	 * 
-	 * @argument.expression2 The expression to evaluate if the condition is false
+	 * @argument.condition The boolean condition to evaluate.
+	 *
+	 * @argument.expression1 The expression to evaluate and return if the condition is true.
+	 *
+	 * @argument.expression2 The expression to evaluate and return if the condition is false.
+	 *
+	 * @return The result of evaluating the chosen expression.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsBoolean( Key.condition ) ? ExpressionInterpreter.getVariable( context, arguments.getAsString( Key.expression1 ), false )

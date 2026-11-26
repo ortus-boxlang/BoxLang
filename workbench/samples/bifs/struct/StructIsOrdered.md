@@ -1,13 +1,27 @@
 ### Check if a struct is ordered
 
-
-
-<a href="https://try.boxlang.io/?code=eJwrLikqTS7xSy3XUFDKL0pJLUpNUVLQ1Mss9odwNDStuQDtoAvv" target="_blank">Run Example</a>
-
 ```java
-structNew( "ordered" ).isOrdered();
-
+writeOutput( structNew( "ordered" ).isOrdered() )
 ```
 
 Result: true
 
+### A default struct is not ordered
+
+```java
+s = { a : 1, b : 2 }
+writeOutput( structIsOrdered( s ) )
+```
+
+Result: false
+
+### Ordered struct literal
+
+The square bracket literal with key-value pairs creates an ordered struct.
+
+```java
+s = [ a : 1, b : 2 ]
+writeOutput( structIsOrdered( s ) )
+```
+
+Result: true

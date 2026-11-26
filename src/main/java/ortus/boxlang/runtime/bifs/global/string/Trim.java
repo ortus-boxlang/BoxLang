@@ -40,14 +40,16 @@ public class Trim extends BIF {
 
 	/**
 	 * Trim whitespace from the beginning and end of a string.
-	 * If chars is provided, each character in the string is treated as a character to trim instead of whitespace.
+	 * If chars is provided, each character in that string is treated as a character to trim from both ends instead of whitespace.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to trim
+	 * @argument.string The string to trim.
 	 *
-	 * @argument.chars An optional string of characters to trim. Each character is treated individually.
+	 * @argument.chars An optional string of characters to trim. Each character is treated individually. Defaults to whitespace.
+	 *
+	 * @return The trimmed string, or an empty string if the input is null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String input = arguments.getAsString( Key.string );

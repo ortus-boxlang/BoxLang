@@ -34,10 +34,12 @@ public class GetTempDirectory extends BIF {
 	}
 
 	/**
-	 * Get the system's temporary directory.
+	 * Gets the system's temporary directory.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return The absolute path of the temporary directory, as a string.
 	 */
 	public String _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return FileSystemUtil.getTempDirectory();

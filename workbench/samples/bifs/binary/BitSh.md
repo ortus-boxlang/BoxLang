@@ -1,23 +1,37 @@
 ### Shift right by 1 bit
 
-Uses the function bitShrn to perform a bitwise shift-right operation (no-rotation)
-
-<a href="https://try.boxlang.io/?code=eJxLyiwJzijK01Aw1VEwVNC05gIAMI8EYw%3D%3D" target="_blank">Run Example</a>
+Uses `bitShrn` to perform a bitwise shift-right operation (no rotation).
 
 ```java
-bitShrn( 5, 1 );
-
+writeOutput( bitShrn( 5, 1 ) )
 ```
 
 Result: 2
 
-### Additional Examples
+### Shift left
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQSMosCfYI8tNQMDSy0FEwVdBU0LTmAgDORwm6" target="_blank">Run Example</a>
+Uses `bitShln` to perform a bitwise shift-left operation, which multiplies by powers of two.
 
 ```java
-writeOutput( bitSHRN( 128, 5 ) );
-
+writeOutput( bitShln( 5, 2 ) )
 ```
 
+Result: 20
 
+### Shift right is an unsigned shift
+
+Zeros are shifted in from the left, so negative numbers become large positive numbers.
+
+```java
+writeOutput( bitShrn( -1, 28 ) )
+```
+
+Result: 15
+
+### Shift left wraps as a 32-bit integer
+
+```java
+writeOutput( bitShln( 1, 31 ) )
+```
+
+Result: -2147483648

@@ -53,9 +53,10 @@ public class WatcherStop extends BIF {
 	 *
 	 * @argument.name The unique watcher name to stop.
 	 *
-	 * @argument.force Whether to force an immediate stop by interrupting the watch loop and closing the WatchService, which may cause event loss but allows for faster shutdown in unresponsive scenarios.
+	 * @argument.force Whether to force an immediate stop by interrupting the watch loop and closing the WatchService, which may cause event loss but
+	 *                 allows for faster shutdown in unresponsive scenarios. Defaults to false.
 	 *
-	 * @return The stopped {@link ortus.boxlang.runtime.watchers.WatcherInstance}.
+	 * @return The stopped {@link ortus.boxlang.runtime.async.watchers.WatcherInstance}.
 	 *
 	 * @throws ortus.boxlang.runtime.types.exceptions.BoxRuntimeException If no watcher with the given name is registered.
 	 */

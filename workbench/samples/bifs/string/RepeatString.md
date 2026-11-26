@@ -1,26 +1,39 @@
-### Script Syntax
-
-
-
-<a href="https://try.boxlang.io/?code=eJxLTy0JS8xRsFUoSi1ITSwJLinKzEvXUFByzs9JcSstzszPU1DSUTBW0LTmKi%2FKLEl1Kc0t0FBIh%2BgCCgIAuu4Ugg%3D%3D" target="_blank">Run Example</a>
+### Repeat a string
 
 ```java
-getVal = repeatString( "Boxlang ", 3 );
-writeDump( getVal );
+writeOutput( repeatString( "Boxlang ", 3 ) )
 
 ```
 
-Result: Expected Result: Boxlang Boxlang Boxlang
+Result: Boxlang Boxlang Boxlang 
 
-### Additional Examples
-
+### Build a separator line
 
 ```java
-writeDump( repeatString( "Hi buddy!, Have a nice day.", 2 ) );
-// Member function
-str = "I love Boxlang ";
-writeDump( str.repeatString( 3 ) );
+writeOutput( repeatString( "-", 5 ) )
 
 ```
 
+Result: -----
 
+### A count of zero returns an empty string
+
+```java
+writeOutput( "[" & repeatString( "ab", 0 ) & "]" )
+
+```
+
+Result: []
+
+### Error: negative count
+
+```java
+try {
+	repeatString( "ab", -1 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Count must be a non-negative number

@@ -2,10 +2,10 @@
 
 Use the isValid function with integer as the type.
 
-<a href="https://try.boxlang.io/?code=eJzLLA5LzMlM0VBQyswrSU1PLVLSUTAyNlXQtOYCAH0oB7s%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLLA5LzMlM0VBQyswrSU1PLVLSUTAyNlXQBABtvAd2" target="_blank">Run Example</a>
 
 ```java
-isValid( "integer", 235 );
+isValid( "integer", 235 )
 
 ```
 
@@ -15,10 +15,10 @@ Result: true
 
 Use the isValid function with email as the type.
 
-<a href="https://try.boxlang.io/?code=eJzLLA5LzMlM0VBQSs1NzMxR0lFQKi1OLXJIrUjMLchJ1UvOz1VS0LTmAgAT6QzX" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLLA5LzMlM0VBQSs1NzMxR0lFQKi1OLXJIrUjMLchJ1UvOz1VS0AQA%2BjYMkg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-isValid( "email", "user@example.com" );
+isValid( "email", "user@example.com" )
 
 ```
 

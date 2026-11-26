@@ -47,7 +47,7 @@ public class WatcherShutdownAll extends BIF {
 	 * @param context   The BoxContext of the caller.
 	 * @param arguments The arguments passed to the BIF.
 	 *
-	 * @argument.force Whether the shutdown should be treated as a forced shutdown.
+	 * @argument.force Whether the shutdown should be treated as a forced shutdown (interrupting watch loops immediately). Defaults to false.
 	 *
 	 * @return {@code null}. This BIF performs side effects only.
 	 */

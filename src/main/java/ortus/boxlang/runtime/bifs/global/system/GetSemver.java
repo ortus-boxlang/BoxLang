@@ -99,7 +99,7 @@ public class GetSemver extends BIF {
 	 *
 	 * @argument.version The version string to parse.
 	 *
-	 * @return A Semver object
+	 * @return A Semver object for the version, or a Semver builder when no version string is passed.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String version = arguments.getAsString( Key.version );

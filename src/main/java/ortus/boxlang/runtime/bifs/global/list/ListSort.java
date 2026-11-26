@@ -52,26 +52,34 @@ public class ListSort extends ArraySort {
 	}
 
 	/**
-	 * Sorts a delimited list and returns the result
+	 * Sorts a delimited list and returns the sorted list as a string. Provide either a sortType (text, textnocase or numeric) with a
+	 * sortOrder, or a comparator callback. Note that this BIF declares no default for sortType, so it should always be supplied
+	 * unless a callback is used.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list The list to sort
+	 * @argument.list The list to sort.
 	 *
-	 * @argument.sortType Options are text, numeric, or textnocase
+	 * @argument.sortType The sort type: "text", "textnocase" or "numeric". You can also pass a comparator function here.
 	 *
-	 * @argument.sortOrder Options are asc or desc
+	 * @argument.sortOrder The sort direction: "asc" (the default) or "desc".
 	 *
-	 * @argument.delimiter string the list delimiter
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
+	 *                              to false.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *                                   single-character delimiters. Defaults to false.
 	 *
-	 * @argument.localeSensitive Sort based on local rules
+	 * @argument.localeSensitive Whether to sort using locale-specific rules. Defaults to false.
 	 *
-	 * @argument.callback Optional function to use for sorting - if the sort type is a closure, it will be recognized as a callback
+	 * @argument.callback An optional comparator function that receives two elements and returns a negative number, zero or a
+	 *                    positive number. When supplied it takes precedence over sortType and sortOrder.
+	 *
+	 * @return The sorted list.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array listArray = ListUtil.asDelimitedList(

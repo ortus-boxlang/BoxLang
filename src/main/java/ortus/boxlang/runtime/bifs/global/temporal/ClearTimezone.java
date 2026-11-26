@@ -34,11 +34,13 @@ public class ClearTimezone extends BIF {
 	}
 
 	/**
-	 * Clears the current timezone in the request
+	 * Clears the timezone override that was set on the current request (for example via {@code setTimezone()}), so that date/time
+	 * operations fall back to the runtime default timezone again. This function takes no arguments.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @return Always {@code null}.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		context.getRequestContextOrFail().setTimezone( null );

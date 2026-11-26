@@ -33,11 +33,12 @@ public class GetCurrentTemplatePath extends BIF {
 	}
 
 	/**
-	 * Gets the absolute server file system path of the file that calls this function.
+	 * Gets the absolute file system path of the file that calls this function.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @return The absolute path of the calling template, or an empty string if no template can be found.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		var clostestTemplate = context.findClosestTemplate();

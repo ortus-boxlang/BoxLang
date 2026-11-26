@@ -40,17 +40,29 @@ public class StringReduceRight extends ListReduceRight {
 	}
 
 	/**
-	 * Run the provided udf over a reversed string to reduce the values to a single output
+	 * Runs a callback over all the characters of a string, from right to left, to reduce them to a single value. The string is split into
+	 * characters and the characters are processed in reverse order.
+	 * This BIF shares its arguments with the corresponding list function: the <code>list</code> argument is the string, and the delimiter is
+	 * always overridden with an empty string, so every character is one element. Pass the string positionally, as <code>list</code> or as
+	 * <code>string</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to perform operations on
+	 * @argument.list The string to reduce.
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array.
+	 * @argument.callback The function to invoke for each character. It receives the accumulator, the character and the 1-based index within
+	 *                    the reversed string. A Java BiFunction receives only the accumulator and the character.
 	 *
-	 * @argument.initialValue The initial value of the reduction
+	 * @argument.initialValue The initial value of the accumulator. If omitted, the accumulator starts as null.
 	 *
+	 * @argument.delimiter Ignored. It is always set to an empty string so that every character of the string is an element.
+	 *
+	 * @argument.includeEmptyFields Not used for strings, since there are no delimiters. Defaults to false.
+	 *
+	 * @argument.multiCharacterDelimiter Not used for strings, since there are no delimiters. Defaults to false.
+	 *
+	 * @return The final value of the accumulator.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.containsKey( Key.string ) ) {

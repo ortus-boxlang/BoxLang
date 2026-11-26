@@ -3,8 +3,8 @@
 Creates a new StringBuilder instance.
 
 ```java
-result = stringBuilderNew();
-writeOutput( result.toString() );
+result = stringBuilderNew()
+writeOutput( result.toString() )
 ```
 
 Result: (empty string)
@@ -12,8 +12,8 @@ Result: (empty string)
 ### Create a seeded StringBuilder
 
 ```java
-result = stringBuilderNew( 'hello' );
-writeOutput( result.toString() );
+result = stringBuilderNew( 'hello' )
+writeOutput( result.toString() )
 ```
 
 Result: hello
@@ -21,8 +21,8 @@ Result: hello
 ### Create an empty StringBuilder with explicit capacity
 
 ```java
-result = stringBuilderNew( capacity = 64 );
-writeOutput( result.getBuffer().capacity() );
+result = stringBuilderNew( capacity = 64 )
+writeOutput( result.getBuffer().capacity() )
 ```
 
 Result: at least 64
@@ -30,8 +30,8 @@ Result: at least 64
 ### Create a seeded StringBuilder with explicit capacity
 
 ```java
-result = stringBuilderNew( 'hello', 64 );
-writeOutput( result.toString() );
+result = stringBuilderNew( 'hello', 64 )
+writeOutput( result.toString() )
 ```
 
 Result: hello

@@ -44,18 +44,22 @@ public class DirectoryCreate extends BIF {
 	}
 
 	/**
-	 * Creates a directory
+	 * Creates a directory, including any missing parent directories by default. Throws an exception if the directory already exists, unless
+	 * `ignoreExists` is true. Returns null.
+	 *
+	 * @argument.path The directory path to create. It can be absolute or relative to the application.
+	 *
+	 * @argument.createPath Optional. Whether to create all missing parent directories. Defaults to true. When false, a missing parent causes an
+	 *                      exception.
+	 *
+	 * @argument.ignoreExists Optional. Whether to silently ignore a directory which already exists. Defaults to false.
+	 *
+	 * @argument.mode Optional. A POSIX permission string, such as `755`, to set on the new directory. Ignored if not provided.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path The directory path to create
-	 *
-	 * @argument.createPath [true] Whether to create all paths necessary to create the directory path
-	 *
-	 * @argument.ignoreExists [false] Whether to ignore if a directory already exists
-	 *
-	 * @argument.mode When provided will attempt to set the posix permissions on the directory
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	targetDirectory	= FileSystemUtil.expandPath( context, arguments.getAsString( Key.path ) ).absolutePath().toString();

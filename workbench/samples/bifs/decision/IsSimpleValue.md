@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLLA7OzC3ISQ1LzClN1VAwMVLQtOYCAFTKBoA%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLLA7OzC3ISQ1LzClN1VAwMVLQBABH1AY7" target="_blank">Run Example</a>
 
 ```java
-isSimpleValue( 42 );
+isSimpleValue( 42 )
 
 ```
 
@@ -15,10 +15,10 @@ Result: true
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLLA7OzC3ISQ1LzClN1VBQ8kjNyclXKM8vyklRUtC05gIAwFQKmg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLLA7OzC3ISQ1LzClN1VBQ8kjNyclXKM8vyklRUtAEAKsqClU%3D" target="_blank">Run Example</a>
 
 ```java
-isSimpleValue( "Hello world" );
+isSimpleValue( "Hello world" )
 
 ```
 
@@ -28,10 +28,10 @@ Result: true
 
 So it can't a be simple value
 
-<a href="https://try.boxlang.io/?code=eJzLLA7OzC3ISQ1LzClN1VAoLikqTS7xSy3X0FTQtOYCALCMCjo%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLLA7OzC3ISQ1LzClN1VAoLikqTS7xSy3X0FTQBACcIgn1" target="_blank">Run Example</a>
 
 ```java
-isSimpleValue( structNew() );
+isSimpleValue( structNew() )
 
 ```
 
@@ -41,10 +41,10 @@ Result: false
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLLA7OzC3ISQ1LzClN1VBILCpKrPRLLddQMFTQVNC05gIAwT8KJQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLLA7OzC3ISQ1LzClN1VBILCpKrPRLLddQMFTQVNAEAKz%2FCeA%3D" target="_blank">Run Example</a>
 
 ```java
-isSimpleValue( arrayNew( 1 ) );
+isSimpleValue( arrayNew( 1 ) )
 
 ```
 
@@ -52,18 +52,18 @@ Result: false
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyCwOzswtyEkNS8wpTdVQUCouKcrMS1dS0FRQU1CySSqyAzKtucrxaDE0MjYxNSNBQ3pqSUhmbmpVfl6qhiYJ%2BvLyy0lSn5VYlpicWAyUUErOSCxS0lFQcgR5jAQbS3NyIExSdEXHkqC4upYExYWlqUWVfqnlQB%2BVpBaXQDwD1AMAZpWTJw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyCwOzswtyEkNS8wpTdVQUCouKcrMS1dS0FRQU1CySSqyAzK5yvHoMDQyNjE1I159empJSGZualV%2BXqqGJvHa8vLLSVGelViWmJxYDJRQSs5ILFLSUVByBHmKePtKc3IgTBI0RccSr7a6lni1haWpRZV%2BqeVA35SkFpdAPKIJAFHfkQo%3D" target="_blank">Run Example</a>
 
 ```java
-writeOutput( isSimpleValue( "string" ) & "<br>" );
-writeOutput( isSimpleValue( 123456 ) & "<br>" );
-writeOutput( isSimpleValue( getTimezone() ) & "<br>" );
-writeOutput( isSimpleValue( now() ) & "<br>" );
-writeOutput( isSimpleValue( javacast( "char", "A" ) ) & "<br>" );
-writeOutput( isSimpleValue( nullValue() ) & "<br>" );
-writeOutput( isSimpleValue( [] ) & "<br>" );
-writeOutput( isSimpleValue( {} ) & "<br>" );
-writeOutput( isSimpleValue( queryNew( "test" ) ) );
+writeOutput( isSimpleValue( "string" ) & "<br>" )
+writeOutput( isSimpleValue( 123456 ) & "<br>" )
+writeOutput( isSimpleValue( getTimezone() ) & "<br>" )
+writeOutput( isSimpleValue( now() ) & "<br>" )
+writeOutput( isSimpleValue( javacast( "char", "A" ) ) & "<br>" )
+writeOutput( isSimpleValue( nullValue() ) & "<br>" )
+writeOutput( isSimpleValue( [] ) & "<br>" )
+writeOutput( isSimpleValue( {} ) & "<br>" )
+writeOutput( isSimpleValue( queryNew( "test" ) ) )
 
 ```
 

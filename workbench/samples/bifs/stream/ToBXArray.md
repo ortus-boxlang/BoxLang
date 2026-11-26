@@ -3,35 +3,35 @@
 Converts a Java Stream into a BoxLang Array by collecting all elements.
 
 ```java
-arr = streamOf( 10, 20, 30 ).toBXArray();
-writeOutput( arr.toString() );
+arr = [ 10, 20, 30 ].stream().toBXArray()
+writeOutput( arr.len() & " " & arr[ 1 ] )
 
 ```
 
-Result: [10, 20, 30]
+Result: 3 10
 
 ### Filter a stream then collect to Array
 
 Chain stream operations before collecting.
 
 ```java
-arr = [ 1, 2, 3, 4, 5 ].toStream()
-    .filter( (x) => x > 2 )
-    .toBXArray();
-writeOutput( arr.toString() );
+arr = [ 1, 2, 3, 4, 5 ].stream()
+    .filter( ( x ) -> x > 2 )
+    .toBXArray()
+writeOutput( arrayToList( arr ) )
 
 ```
 
-Result: [3, 4, 5]
+Result: 3,4,5
 
-### Map stream values then collect to Array
+### Collect a primitive stream
 
 ```java
-arr = [ 1, 2, 3 ].toStream()
-    .map( (x) => x * 10 )
-    .toBXArray();
-writeOutput( arr.toString() );
+import java.util.stream.IntStream
+
+arr = IntStream.range( 1, 6 ).toBXArray()
+writeOutput( arrayToList( arr ) )
 
 ```
 
-Result: [10, 20, 30]
+Result: 1,2,3,4,5

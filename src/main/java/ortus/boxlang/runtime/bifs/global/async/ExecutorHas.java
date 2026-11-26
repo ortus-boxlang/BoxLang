@@ -20,7 +20,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 @BoxBIF( description = "Check if an executor service exists" )
 public class ExecutorHas extends BIF {
@@ -36,14 +35,14 @@ public class ExecutorHas extends BIF {
 	}
 
 	/**
-	 * Verify if an executor exists
+	 * Verifies whether an executor with the given name is registered.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.name The name of the executor to verify.
 	 *
-	 * @throws KeyNotFoundException If the executor is not found.
+	 * @return True if the executor exists, false otherwise.
 	 */
 	@Override
 	public Boolean _invoke( IBoxContext context, ArgumentsScope arguments ) {

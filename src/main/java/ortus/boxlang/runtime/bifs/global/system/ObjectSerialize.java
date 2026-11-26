@@ -38,16 +38,17 @@ public class ObjectSerialize extends BIF {
 	}
 
 	/**
-	 * Serialize an object to file or convert it to binary format using Java Serialization
+	 * Serializes an object into binary form using Java serialization, optionally also saving it to a file. Throws a BoxRuntimeException if the
+	 * object is null.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.object The object to serialize
+	 * @argument.object The object to serialize.
 	 *
-	 * @argument.file The file path to save the serialized object to, if not provided, the binary representation of the object is returned
+	 * @argument.file The file path to save the serialized object to. If not provided, the object is only returned as binary.
 	 *
-	 * @return The binary representation of the object regardless of whether it was saved to a file or not
+	 * @return The binary representation of the object, whether or not it was also saved to a file.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object target = arguments.get( Key.object );

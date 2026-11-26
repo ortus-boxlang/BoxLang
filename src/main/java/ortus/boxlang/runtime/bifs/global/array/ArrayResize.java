@@ -41,17 +41,18 @@ public class ArrayResize extends BIF {
 	}
 
 	/**
-	 * Resets an array to a specified minimum number of elements.
-	 * This can improve performance, if used to size an array to its
-	 * expected maximum. For more than 500 elements, use arrayResize
-	 * immediately after using the ArrayNew BIF.
+	 * Ensures an array has at least the given number of elements by padding it with null elements. The array is modified in place.
+	 * An array that already has that many elements (or more) is left unchanged; it is never shrunk.
+	 * Also available as the <code>resize()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to resize
+	 * @argument.array The array to resize.
 	 *
-	 * @argument.size The new minimum size of the array
+	 * @argument.size The minimum number of elements the array should have.
+	 *
+	 * @return The same array, padded to at least the given size.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualObj	= arguments.getAsArray( Key.array );

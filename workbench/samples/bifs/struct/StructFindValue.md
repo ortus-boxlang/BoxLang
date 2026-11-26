@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVahW4OJ0VLBSMNLh4nQC0iZA2hlIWwBpFyBtaABkuIIYIBVuYAZXrTVXLtQIPd%2FIYFdnfz%2BX4JCgUOcQkIlAAw2B6kxBOh2NCOkAckM8PINQ9DsZwix0Auk3M4XoD0vMKU0FqoCY45aZlwIW0VCAGa2joGRopAQk8%2FNSlRQ0rbnCizJLUv1LSwpKSzQUvIL9%2FYJTizITczKrwJog5mmCFAIA3MxIbw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVahW4OJ0VLBSMNLh4nQC0iZA2hlIWwBpFyBtaABkuIIYIBVuYAZXLVcu1AQ938hgV2d%2FP5fgkKBQ5xCQgUDzDIHKTEEaHY0IaAByQzw8g1C0OxnCrHMCaTczBWsPS8wpTQUqgBjjlpmXAhbRUICZrKOgZGikBCTz81KVFDS5wosyS1L9S0sKSks0FLyC%2Ff2CU4syE3Myq8B6IMZpKmgCAFB1Rz4%3D" target="_blank">Run Example</a>
 
 ```java
 myStruct = { 
@@ -12,17 +12,17 @@ myStruct = {
 	D : 10,
 	E : 12,
 	F : 12
-};
+}
 myStruct.MYSECONDSTRUCT = {
 	A1 : 50,
 	A2 : 12
-};
+}
 myStruct.MYSECONDSTRUCT.MYTHIRDSTRUCT = {
 	B1 : 12,
 	B2 : 65
-};
-myValue = StructFindValue( myStruct, "12", "one" );
-WriteOutput( JSONSerialize( myValue ) );
+}
+myValue = StructFindValue( myStruct, "12", "one" )
+WriteOutput( JSONSerialize( myValue ) )
 
 ```
 
@@ -32,7 +32,7 @@ Result: [{"path":".E","owner":{"A":2,"B":4,"C":8,"D":10,"E":12,"F":12,"MYSECONDS
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVahW4OJ0VLBSMNLh4nQC0iZA2hlIWwBpFyBtaABkuIIYIBVuYAZXrTVXLtQIPd%2FIYFdnfz%2BX4JCgUOcQkIlAAw2B6kxBOh2NCOkAckM8PINQ9DsZwix0Auk3M4XoD0vMKU0FqoCY45aZlwIW0VCAGa2joGRopAQkE3NylBQ0rbnCizJLUv1LSwpKSzQUvIL9%2FYJTizITczKrwJog5mmCFAIA2wdIZg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVahW4OJ0VLBSMNLh4nQC0iZA2hlIWwBpFyBtaABkuIIYIBVuYAZXLVcu1AQ938hgV2d%2FP5fgkKBQ5xCQgUDzDIHKTEEaHY0IaAByQzw8g1C0OxnCrHMCaTczBWsPS8wpTQUqgBjjlpmXAhbRUICZrKOgZGikBCQTc3KUFDS5wosyS1L9S0sKSks0FLyC%2Ff2CU4syE3Myq8B6IMZpKmgCAE7LRzU%3D" target="_blank">Run Example</a>
 
 ```java
 myStruct = { 
@@ -42,17 +42,17 @@ myStruct = {
 	D : 10,
 	E : 12,
 	F : 12
-};
+}
 myStruct.MYSECONDSTRUCT = {
 	A1 : 50,
 	A2 : 12
-};
+}
 myStruct.MYSECONDSTRUCT.MYTHIRDSTRUCT = {
 	B1 : 12,
 	B2 : 65
-};
-myValue = StructFindValue( myStruct, "12", "all" );
-WriteOutput( JSONSerialize( myValue ) );
+}
+myValue = StructFindValue( myStruct, "12", "all" )
+WriteOutput( JSONSerialize( myValue ) )
 
 ```
 
@@ -62,7 +62,7 @@ Result: [{"path":".E","owner":{"A":2,"B":4,"C":8,"D":10,"E":12,"F":12,"MYSECONDS
 
 Calling the findValue member function on a struct.
 
-<a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVahW4OJ0VLBSMNLh4nQC0iZA2hlIWwBpFyBtaABkuIIYIBVuYAZXrTVXLtQIPd%2FIYFdnfz%2BX4JCgUOcQkIlAAw2B6kxBOh2NCOkAckM8PINQ9DsZwix0Auk3M4XoD0vMKU0FqoCblJaZlwIW1FBQMjRS0lFQys9LVVLQtOYKL8osSfUvLSkoLdFQ8Ar29wtOLcpMzMmsAiqFGaQJUggA0rZF7A%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVahW4OJ0VLBSMNLh4nQC0iZA2hlIWwBpFyBtaABkuIIYIBVuYAZXLVcu1AQ938hgV2d%2FP5fgkKBQ5xCQgUDzDIHKTEEaHY0IaAByQzw8g1C0OxnCrHMCaTczBWsPS8wpTQUqgBuUlpmXAhbUUFAyNFLSUVDKz0tVUtDkCi%2FKLEn1Ly0pKC3RUPAK9vcLTi3KTMzJrAKqhJmjqaAJAFK%2FRLs%3D" target="_blank">Run Example</a>
 
 ```java
 myStruct = { 
@@ -72,17 +72,17 @@ myStruct = {
 	D : 10,
 	E : 12,
 	F : 12
-};
+}
 myStruct.MYSECONDSTRUCT = {
 	A1 : 50,
 	A2 : 12
-};
+}
 myStruct.MYSECONDSTRUCT.MYTHIRDSTRUCT = {
 	B1 : 12,
 	B2 : 65
-};
-myValue = myStruct.findValue( "12", "one" );
-WriteOutput( JSONSerialize( myValue ) );
+}
+myValue = myStruct.findValue( "12", "one" )
+WriteOutput( JSONSerialize( myValue ) )
 
 ```
 
@@ -90,7 +90,7 @@ Result: [{"path":".E","owner":{"A":2,"B":4,"C":8,"D":10,"E":12,"F":12,"MYSECONDS
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxljz1vwjAQhuf4V7zyEpAisbfKEFGKMrSpmqqV2NxgqIU%2FqiQuA%2BK%2F95IYUMLmOz93z3vCKiN0gxQnsGhZfOEBJxZFr0VerujNjXM8oUaZb%2Fpai3ovOYvO1HzL11PcKXsY8UZulTdhYJl93O2X7jgaaCiP7nh2fmSLBcofdwS1IIao7Mmb3xm0%2BJY65dntgyf4E3UaKsz76WdltwFA5WwrlFV2T6D2Em6HeMgXsx2BL%2F07G%2BgUZVv7qu02fHb47CJKrlcFSR%2Bxlo3XbQNlMd01jvweQLJPDTfBxcDn4ay7fKT%2BB3b7hww%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxljztvgzAUhWf8K468BCSk7JUYEG0ihiRVqVqpmwtOatWPCnAzIP57DTiNgO0%2BvnvOuUwLxWSDBB1IkJ3e8YCOBMHxlBdPrqbKGBq7QZF%2FjL1k9YVTEvRu%2BJzvl7gR%2BnvGK14Jq%2FxBlr6u9Lm5zg4al0cOPOnJdoviy1zhJmBTUvJo1U8IyT65TGh6X9AYv6xOfIdoON4JXfk9SqNbJrTQF8dJy2HO2EzpNuTswMNYpxOdoGhrW7aDwtuAhzef%2BP%2BnyWMMWPPGyraB0FhKzQO%2FeNCZLw3u%2BjcDGvmnVvGiPxwnhhY%3D" target="_blank">Run Example</a>
 
 ```java
 animals = { 
@@ -106,14 +106,16 @@ animals = {
 		NOISE : "meow",
 		SIZE : "small"
 	}
-};
+}
 // Show all animals
-Dump( label="All animals", var=animals );
+Dump( label="All animals", var=animals )
 // Find animal containing value of 'medium'
-findMediumAnimal = StructFindValue( animals, "medium" );
+findMediumAnimal = StructFindValue( animals, "medium" )
 // Show results in findMediumAnimal
-Dump( label="Results of StructFindValue(animals, ""medium"")", var=findMediumAnimal );
+Dump( label="Results of StructFindValue(animals, ""medium"")", var=findMediumAnimal )
 
 ```
+
+Result: a dump of all animals, then a dump of an array with one result struct for the PIG entry (path .PIG.SIZE)
 
 

@@ -3,9 +3,9 @@
 Removes characters using 1-based, inclusive start and end positions.
 
 ```java
-sb = sb{'Hello World'};
-stringBuilderDelete( sb, 6, 11 );
-writeOutput( sb.toString() );
+sb = sb{'Hello World'}
+stringBuilderDelete( sb, 6, 11 )
+writeOutput( sb.toString() )
 ```
 
 Result: Hello
@@ -13,9 +13,22 @@ Result: Hello
 ### Member usage
 
 ```java
-sb = sb{'Hello World'};
-sb.delete( 6, 11 );
-writeOutput( sb.toString() );
+sb = sb{'Hello World'}
+sb.delete( 6, 11 )
+writeOutput( sb.toString() )
 ```
 
 Result: Hello
+
+### Invalid range throws an error
+
+```java
+sb = sb{'Hello'}
+try {
+    sb.delete( 3, 10 )
+} catch ( any e ) {
+    writeOutput( e.message )
+}
+```
+
+Result: Invalid delete range [3,10]. Valid range is 1..5 with end >= start.

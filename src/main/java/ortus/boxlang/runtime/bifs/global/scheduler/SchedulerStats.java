@@ -35,28 +35,34 @@ public class SchedulerStats extends BIF {
 	}
 
 	/**
-	 * Get the stats of all schedulers or a specific scheduler by name.
+	 * Get the task statistics of all schedulers or of a specific scheduler by name.
 	 * <p>
-	 * Each stats structure contains the following fields:
+	 * With a name, the result is a struct keyed by task name for that scheduler. Without a name, the result is a struct keyed by scheduler
+	 * name, where each value is that scheduler's struct of task stats. Each task stats structure contains the following fields:
 	 * <ul>
+	 * <li>name</li>
+	 * <li>group</li>
 	 * <li>created</li>
 	 * <li>lastExecutionTime</li>
 	 * <li>lastResult</li>
 	 * <li>lastRun</li>
-	 * <li>name</li>
 	 * <li>neverRun</li>
 	 * <li>nextRun</li>
 	 * <li>totalFailures</li>
 	 * <li>totalRuns</li>
 	 * <li>totalSuccess</li>
-	 * <ul>
+	 * <li>inetHost</li>
+	 * <li>localIp</li>
+	 * </ul>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.name The name of the scheduler to get stats on or if not passed for all schedulers
+	 * @argument.name The name of the scheduler to get stats on. If not passed, the stats for all schedulers are returned.
 	 *
-	 * @return A single stats or all stats data
+	 * @throws BoxRuntimeException if a name is given and no scheduler is registered with that name.
+	 *
+	 * @return A struct of task stats for one scheduler, or a struct of those structs keyed by scheduler name.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

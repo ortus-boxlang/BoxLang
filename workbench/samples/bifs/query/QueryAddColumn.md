@@ -22,32 +22,66 @@
 
 add a column to a query using member syntax
 
-<a href="https://try.boxlang.io/?code=eJxLys%2FPLlawVSgsTS2q9Est11BQykzRKcksyUlV0gGy80pS01OLdMoSi5IzEouUFDStuZJAWvQSU1Kc83NKc%2FOAOhJLSzLyi0DqYep0FKJjQWrLizJLUl1Kcws0FMDaQGIAukUlgg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLys%2FPLlawVSgsTS2q9Est11BQykzRKcksyUlV0gGy80pS01OLdMoSi5IzEouUFDS5kkA69BJTUpzzc0pz84AaEktLMvKLQMphynQUomOBSsuLMktSXUpzCzQUwLoUNAEtJSTH" target="_blank">Run Example</a>
 
 ```java
-books = queryNew( "id,title", "integer,varchar" );
-books.addColumn( "author", "varchar", [] );
-writeDump( books );
+books = queryNew( "id,title", "integer,varchar" )
+books.addColumn( "author", "varchar", [] )
+writeDump( books )
 
 ```
 
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrLKpUsFUoLE0tqvRLLddQUEpMTNRJSkpSUtC05goECTumpATlA2UKgSphYsGpJc6pOTlgQR2wHiUgZahnqIRLCchIsBIjckw2ImyyEZrJzvk5pbl5MEXJyclARTmZxSUh%2BY5FRYmVQJ8a6xnqGIN14daXkpICMjwzryQ1PbUIwwgToBEmcCPKizJLUl1KcwvAuvWc%2FX1Cff18PINDQJIAVuJqfw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrLKpUsFUoLE0tqvRLLddQUEpMTNRJSkpSUtDkCgSJOqakBOUDJQqBCqFCwaklzqk5OWAxHbAOJSBlqGeohEMFyDywCiPSjTUiaKwRqrHO%2BTmluXkwNcnJyUA1OZnFJSH5jkVFiZVALxrrGeoYgzXh1JaSkgIyOjOvJDU9tQjDBBOgCSYwE8qLMktSXUpzC8Ca9Zz9fUJ9%2FXw8g0MUNAFF0Ggn" target="_blank">Run Example</a>
 
 ```java
-qry = queryNew( "aaa,bbb" );
-QueryAddRow( qry );
-QuerySetCell( qry, "aaa", "1.1" );
-QuerySetCell( qry, "bbb", "1.2" );
-QueryAddRow( qry );
-QuerySetCell( qry, "aaa", "2.1" );
-QuerySetCell( qry, "bbb", "2.2" );
-QueryAddColumn( qry, "ccc", listToArray( "3.1,3.2" ) );
-QueryAddColumn( qry, "ddd", "integer", listToArray( "4.1,4.2" ) );
-writeDump( qry.COLUMNLIST );
+qry = queryNew( "aaa,bbb" )
+QueryAddRow( qry )
+QuerySetCell( qry, "aaa", "1.1" )
+QuerySetCell( qry, "bbb", "1.2" )
+QueryAddRow( qry )
+QuerySetCell( qry, "aaa", "2.1" )
+QuerySetCell( qry, "bbb", "2.2" )
+QueryAddColumn( qry, "ccc", listToArray( "3.1,3.2" ) )
+QueryAddColumn( qry, "ddd", "integer", listToArray( "4.1,4.2" ) )
+writeDump( qry.COLUMNLIST )
 
 ```
 
+### Add a column populated from an array
 
+```java
+q = queryNew( "id", "integer", [ [ 1 ], [ 2 ] ] )
+index = queryAddColumn( q, "name", "varchar", [ "Ann", "Bob" ] )
+writeOutput( index & ": " & queryColumnList( q ) )
+
+```
+
+Result: 2: id,name
+
+### Member function without values
+
+```java
+q = queryNew( "id", "integer", [ [ 1 ], [ 2 ] ] )
+q.addColumn( "flag" )
+writeOutput( queryColumnData( q, "flag" ).len() )
+
+```
+
+Result: 2 (each existing row gets an empty value)
+
+### Column already exists
+
+```java
+q = queryNew( "id", "integer" )
+try {
+	queryAddColumn( q, "id", "integer", [] )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Column 'id' already exists in the query.

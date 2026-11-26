@@ -43,19 +43,23 @@ public class XMLParse extends BIF {
 	}
 
 	/**
-	 * Return new array
+	 * Parses an XML string into an XML document object. If the value does not start with a {@code <} it is treated as the path or URL of a file
+	 * containing the XML. The arguments {@code XMLText} and {@code XMLString} are accepted as alternate names for the first argument.
+	 * Malformed XML throws an exception.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
-	 * @argument.XML The XML string to parse.
-	 * 
-	 * @argument.caseSensitive Whether the XML parsing should be case-sensitive.
-	 * 
-	 * @argument.validator An optional validator to apply to the parsed XML. This can be a string containing a path or URL to an XSD schema file, or a struct of XML security settings
-	 * 
-	 * @argument.lenient Whether the XML parsing should be lenient.
 	 *
+	 * @argument.XML The XML string to parse, or the path or URL of an XML file.
+	 *
+	 * @argument.caseSensitive Whether identifiers in the parsed document ( e.g. dot notation ) are case sensitive. Defaults to true.
+	 *
+	 * @argument.validator An optional validator to apply to the parsed XML. This can be a string containing a path or URL to an XSD schema file, or a
+	 *                     struct of XML security settings
+	 *
+	 * @argument.lenient Whether the XML parsing should be lenient. When passed it overrides the lenient processing setting of the validator settings.
+	 *
+	 * @return The parsed XML document.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String xml = arguments.getAsString( Key.XML );

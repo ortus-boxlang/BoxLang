@@ -15,16 +15,41 @@ Result: Apple,Goa,Banana,Graphs
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxljbEKwjAYhPc8xZGphR8zCC7FQbBCobr0CWr9hUCblOSP9vGNVienO4777oxBZ6d5ZNRL%2F1b1DFbYJ5mTFBhtlMbdeKmX7GIB3aVoqT10RGMamIlIOIombFGirJQxOPN05YBTcoNY71SU0GYae2hqMucf%2FIN1tf4d0zQX%2BBY3f6%2B7dRt5%2FOIF%2FIkJgSUFF3Hvx8jqBcsbQqE%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxljbEKwjAYhPc%2BxZGphR8zCG4OghUKrUufoNVfCaRJSf5oHt9aBQenO46777RGb6bZMuo8vLV4BiPsk8xJSlgTpXFXznVeXCyh%2BhQNtYeeaPTZDu5ORMJRFGGLClWhNTqeRg44JXcR410RJbTLHHsoaoisf%2FBvrT6PxzTNJb7Nzd%2FvbmVjgZ%2B9gNeUEFhScBG3wUZ%2BARF3Q6A%3D" target="_blank">Run Example</a>
 
 ```java
 // Simple Example
-writeoutput( listIndexExists( "Susi,LAS,,boxlang,,,test", 3 ) );
+writeoutput( listIndexExists( "Susi,LAS,,boxlang,,,test", 3 ) )
 // Member Function
-strList = ",I,,love,boxlang,,";
-writeDump( strList.listIndexExists( 6 ) );
+strList = ",I,,love,boxlang,,"
+writeDump( strList.listIndexExists( 6 ) )
  // Not exists, returns false
 
 ```
 
+### Index within the list
 
+```java
+writeOutput( listIndexExists( "a,b,c", 3 ) )
+
+```
+
+Result: true
+
+### Index past the end of the list
+
+```java
+writeOutput( listIndexExists( "a,b,c", 4 ) )
+
+```
+
+Result: false
+
+### Member function with an invalid index
+
+```java
+writeOutput( "a,b,c".listIndexExists( 0 ) )
+
+```
+
+Result: false

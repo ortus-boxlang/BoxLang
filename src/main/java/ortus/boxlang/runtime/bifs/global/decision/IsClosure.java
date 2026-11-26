@@ -36,12 +36,15 @@ public class IsClosure extends BIF {
 	}
 
 	/**
-	 * Determine whether a given object is a closure
+	 * Determines whether a value is a closure (a function defined with the `=>` or `function(){}` expression syntax that captures its enclosing
+	 * scope). Lambdas (`->`), named UDFs and non-function values return false.
+	 *
+	 * @argument.object The value to test for closure-ness.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.object The value to test for closure-ness.
+	 * @return True if the value is a Closure instance, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.get( Key.object ) instanceof Closure;

@@ -43,14 +43,17 @@ public class QueryRowData extends BIF {
 	}
 
 	/**
-	 * Returns the cells of a query row as a structure
+	 * Returns one row of a query as a struct keyed by column name. An exception is thrown if the row number is outside the query.
+	 * Also available as <code>query.rowData( rowNumber )</code> or <code>query.getRow( rowNumber )</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query object to which the row should be returned.
-	 * 
-	 * @argument.rowNumber Position of the query row to return.
+	 * @argument.query The query to read from.
+	 *
+	 * @argument.rowNumber The one-based number of the row to return.
+	 *
+	 * @return A struct containing the cells of the row.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query		= arguments.getAsQuery( Key.query );

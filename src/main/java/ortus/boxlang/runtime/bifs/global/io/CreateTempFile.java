@@ -45,18 +45,20 @@ public class CreateTempFile extends BIF {
 	}
 
 	/**
-	 * Creates a temporary file in the specified directory with the specified prefix and suffix if passed.
+	 * Creates a new empty temporary file, with a randomly generated name, and returns its absolute path. The file is not deleted automatically,
+	 * so remove it with `fileDelete()` when done. This BIF is also registered as `getTempFile`.
+	 *
+	 * @argument.directory Optional. The directory in which to create the temp file. Defaults to the system temp directory.
+	 *
+	 * @argument.prefix Optional. A prefix for the generated file name. Defaults to an empty string (no prefix).
+	 *
+	 * @argument.suffix Optional. A suffix for the generated file name, such as an extension. Defaults to an empty string, in which case `.tmp`
+	 *                  is used.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.directory The directory in which to create the temp file, we default to the system temp directory
-	 *
-	 * @argument.prefix The prefix string to be used in generating the file's name; may be empty
-	 *
-	 * @argument.suffix The suffix string to be used in generating the file's name; may be empty, in which case ".tmp" is used
-	 *
-	 * @return The path to the temp file as a string
+	 * @return The canonical path to the new file, as a string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Path	directory	= Path.of( arguments.getAsString( Key.directory ) ).toAbsolutePath();

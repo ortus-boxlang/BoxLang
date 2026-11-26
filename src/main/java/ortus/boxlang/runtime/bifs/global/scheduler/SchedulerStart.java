@@ -44,18 +44,18 @@ public class SchedulerStart extends BIF {
 	}
 
 	/**
-	 * Create, register and start a scheduler with the given instantiation class path.
+	 * Create, register and start a scheduler from a BoxLang scheduler class.
 	 * <p>
-	 * The className would be the same as instantiang the class via <code>new {className}</code>.
+	 * The className is instantiated the same way as <code>new {className}</code>, wrapped in a scheduler proxy, configured, registered and started.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.className The className to the scheduler class to be instantiated: Example: "models.myapp.MyScheduler"
+	 * @argument.className The class path of the scheduler class to instantiate. Example: "models.myapp.MyScheduler". Required and must not be empty.
 	 *
-	 * @argument.name The name of the scheduler to start, which overrides whatever is in the class.
+	 * @argument.name The name to register the scheduler under, which overrides any name set in the class. Optional.
 	 *
-	 * @argument.force If true, will force start the scheduler. Default is true
+	 * @argument.force If true, a scheduler already registered with the same name is allowed. Defaults to true.
 	 *
 	 * @return The scheduler object.
 	 */

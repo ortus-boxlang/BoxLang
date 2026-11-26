@@ -1,11 +1,21 @@
 ### Shutdown all registered file watchers
 
 ```java
-watcherNew( "w1", getTempDirectory() );
-watcherNew( "w2", getTempDirectory() );
-watcherShutdownAll();
-writeOutput( "all shutdown" );
-
+watcherNew( "w1", getTempDirectory(), ( event ) -> {} )
+watcherNew( "w2", getTempDirectory(), ( event ) -> {} )
+watcherShutdownAll()
+writeOutput( watcherList().len() )
 ```
 
-Result: all shutdown
+Result: 0
+
+### Force an immediate shutdown
+
+```java
+watcherNew( "w1", getTempDirectory(), ( event ) -> {} )
+watcherStart( "w1" )
+watcherShutdownAll( force = true )
+writeOutput( watcherExists( "w1" ) )
+```
+
+Result: false

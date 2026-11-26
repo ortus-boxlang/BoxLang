@@ -1,32 +1,30 @@
-### Simple stringReduceRight Example
+### Reduce a string from right to left
 
-Demonstrate how the function works from right to left.
-
-<a href="https://try.boxlang.io/?code=eJxFjkEKwjAQRdfmFJ8sJIXcIFTwCvUEbTPULDKUcWpbxLsbUtHVf3zeMD%2FvN5XEE1rYfhijDYZp%2FXWPCh3FZaQuTXd1yN8LD4cr75iFnr4S06YHpbgd0IugQXvBy5yEdBGuPs5VLlHMYN4e1qIJZpWk5VeeHf4rSv8BBnM1kw%3D%3D" target="_blank">Run Example</a>
+The characters are processed in reverse order, and the index is the position within the reversed string.
 
 ```java
-myString = "abcd";
-newString = stringReduceRight( myString, ( Any prev, Any next, Any idx, Any arr ) => {
-	return prev & next & idx;
-}, "" );
-writedump( newString );
+myString = "abcd"
+newString = stringReduceRight( myString, ( prev, next, idx ) -> prev & next & idx, "" )
+writeOutput( newString )
 
 ```
 
-Result: d4c3b2a1
+Result: d1c2b3a4
 
-### How Do You Do This In Boxlang?
-
-This function will be added to Boxlang in Version 6. But if you need to reverse a string now, use the `reverse()` function.
-
-<a href="https://try.boxlang.io/?code=eJzLrQwuKcrMS1ewVVBKTEpOUbLmyksth4vlQqX1ilLLUouKUzU0rbnKizJLUlNKcws0FBBKgeIA3H4ZwQ%3D%3D" target="_blank">Run Example</a>
+### Reverse a string
 
 ```java
-myString = "abcd";
-newString = myString.reverse();
-writedump( newString );
+writeOutput( stringReduceRight( "abc", ( acc, ch ) -> acc & ch, "" ) )
 
 ```
 
-Result: dcba
+Result: cba
 
+### Member function
+
+```java
+writeOutput( "12345".stringReduceRight( ( acc, num ) -> acc + num, 0 ) )
+
+```
+
+Result: 15

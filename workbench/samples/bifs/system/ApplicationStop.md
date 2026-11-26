@@ -1,14 +1,20 @@
-### Basic applicationStop usage.
+### Stop the current application
 
-Halt the application.
-
+Stops the application and returns true. Subsequent requests start the application again.
 
 ```java
-var applicationRequiresHalt = true;
-if( applicationRequiresHalt ) applicationStop();
-writeOutput( "Still Running" );
-
+result = applicationStop()
+writeOutput( result )
 ```
 
-Result: // We don't expect anything to happen after the application has been stopped.
+Result: true
 
+### Stop the application on demand
+
+```java
+if ( url.shutdown == "true" ) {
+    applicationStop()
+}
+```
+
+Result: the application is stopped when the request is made with ?shutdown=true; nothing happens otherwise

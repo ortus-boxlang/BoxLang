@@ -45,12 +45,14 @@ public class StructValueArray extends BIF {
 	}
 
 	/**
-	 * Returns an array of all values of top level keys in a struct
+	 * Returns an array of the values of all top-level keys in a struct.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The target struct from which to retrieve values
+	 * @argument.struct The struct from which to retrieve the values.
+	 *
+	 * @return An array of the struct's values. For ordered structs the values are in insertion order.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return new Array( arguments.getAsStruct( Key.struct ).values().toArray() );

@@ -1,10 +1,21 @@
-### Start a scheduler
+### Start a scheduler from a class
+
+Assumes a scheduler class exists at `models/ReportScheduler.bx`.
 
 ```java
-schedulerNew( "startSched", 2 );
-schedulerStart( "startSched" );
-writeOutput( "started" );
+sched = schedulerStart( "models.ReportScheduler" )
+writeOutput( isObject( sched ) )
 
 ```
 
-Result: started
+Result: true
+
+### Override the scheduler name
+
+```java
+sched = schedulerStart( className = "models.ReportScheduler", name = "reports" )
+writeOutput( sched.getSchedulerName() )
+
+```
+
+Result: reports

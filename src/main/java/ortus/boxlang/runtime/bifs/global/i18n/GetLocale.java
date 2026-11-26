@@ -40,11 +40,14 @@ public class GetLocale extends BIF {
 	}
 
 	/**
-	 * Retrieves the the string representation of the current locale
+	 * Returns the name of the current locale: the request locale set with `setLocale()`, or the default locale configured for the runtime. If
+	 * the locale has a well-known alias (for example `English (US)` or `German (Standard)`) the alias is returned, otherwise the locale's
+	 * display name is returned.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @return The name of the current locale as a string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the default locale or the currently set locale

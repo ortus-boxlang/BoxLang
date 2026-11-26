@@ -36,13 +36,15 @@ public class IsZipFile extends BIF {
 	}
 
 	/**
-	 * Verifies if the incoming file absolute path is a zip file or not
+	 * Verifies if the incoming file absolute path is a valid zip file or not. Missing files and files of any other type, including
+	 * other archive formats such as gzip or tar, return false rather than throwing an error.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.path The absolute path of the file to verify
 	 *
+	 * @return {@code true} if the file can be opened as a zip archive, {@code false} otherwise.
 	 */
 	public Boolean _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String path = arguments.getAsString( Key.path );

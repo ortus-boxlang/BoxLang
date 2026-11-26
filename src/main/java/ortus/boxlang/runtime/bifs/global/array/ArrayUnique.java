@@ -42,19 +42,24 @@ public class ArrayUnique extends BIF {
 	}
 
 	/**
-	 * Returns a new array with duplicate items removed.
+	 * Returns a new array with duplicate elements removed. The first occurrence of each element is kept and the original order is preserved.
+	 * The original array is not modified.
 	 *
 	 * <pre>
-	 * values = [ 1, 1, 2, 3, 3 ];
-	 * values.unique(); // [ 1, 2, 3 ]
+	 * values = [ 1, 1, 2, 3, 3 ]
+	 * values.unique() // [ 1, 2, 3 ]
 	 * </pre>
+	 *
+	 * Also available as the <code>unique()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to remove duplicate entries from
+	 * @argument.array The array to remove duplicate elements from.
 	 *
-	 * @argument.caseSensitive Whether string element comparisons are case-sensitive. Defaults to false.
+	 * @argument.caseSensitive Whether string elements are compared case sensitively. Defaults to false.
+	 *
+	 * @return A new array without duplicates.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

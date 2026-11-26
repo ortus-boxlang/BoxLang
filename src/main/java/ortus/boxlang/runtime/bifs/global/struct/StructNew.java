@@ -56,28 +56,36 @@ public class StructNew extends BIF {
 	}
 
 	/**
-	 * Creates a new struct of the specified type.
-	 * The available types are:
-	 * - casesensitive
-	 * - default
-	 * - ordered-casesensitive
-	 * - ordered
-	 * - soft
-	 * - sorted
-	 * - weak
+	 * Creates a new, empty struct of the specified type. The available types are:
+	 * <ul>
+	 * <li>default - an unordered, case-insensitive struct</li>
+	 * <li>casesensitive - an unordered, case-sensitive struct</li>
+	 * <li>ordered - maintains insertion order (linked), case-insensitive</li>
+	 * <li>ordered-casesensitive - maintains insertion order, case-sensitive</li>
+	 * <li>soft - values are softly referenced</li>
+	 * <li>weak - values are weakly referenced</li>
+	 * <li>sorted - a sorted struct</li>
+	 * </ul>
+	 * The enum names of the struct types (e.g. LINKED) are also accepted. If a sortType (or a comparator callback) is provided, a sorted struct is
+	 * created regardless of the type. The sortType must be one of text, textNoCase or numeric, combined with the sortOrder (asc or desc).
+	 * Using a noCase sortType with an ordered-casesensitive type throws a BoxRuntimeException. An unknown type also throws a BoxRuntimeException.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.type The struct type
+	 * @argument.type The struct type. Defaults to default.
 	 *
-	 * @argument.sortType An optional sort type to apply to that type
+	 * @argument.sortType An optional sort type: text, textNoCase or numeric. May also be a comparator function, in which case it is treated as the
+	 *                    callback.
 	 *
-	 * @argument.sortOrder The sort order applicable to the sortType argument
+	 * @argument.sortOrder The sort order applicable to the sortType argument: asc (default) or desc.
 	 *
-	 * @argument.localeSensitive Sort based on local rules
+	 * @argument.localeSensitive Whether text sorting should use the locale rules of the current context. Defaults to false.
 	 *
-	 * @argument.callback An optional callback to use as the sorting function. You can alternatively pass a Java Comparator.
+	 * @argument.callback An optional comparator function (or Java Comparator) used to sort the keys. It receives two key names and must return an
+	 *                    integer.
+	 *
+	 * @return A new, empty struct.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 

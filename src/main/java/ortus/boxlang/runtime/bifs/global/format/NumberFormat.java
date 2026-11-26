@@ -63,18 +63,34 @@ public class NumberFormat extends BIF {
 	}
 
 	/**
-	 * Formats a number with an optional format mask
+	 * Formats a number using an optional format mask. Without a mask the number is rounded to an integer and grouped with thousands separators.
+	 * An empty string is treated as 0 and non-numeric values throw an exception. Also available as a member function on numbers.
+	 *
+	 * Mask characters:
+	 * <ul>
+	 * <li><code>_</code> an optional digit, <code>9</code> an optional digit, <code>0</code> a digit which is padded with zeroes</li>
+	 * <li><code>.</code> the decimal point location, <code>,</code> thousands grouping</li>
+	 * <li><code>+</code> / <code>-</code> sign placeholders, <code>$</code> a currency symbol, and <code>(</code> <code>)</code> for negative
+	 * numbers</li>
+	 * <li><code>^</code> a floating decimal point; <code>L</code>, <code>C</code> and <code>R</code> as the first character left, center or
+	 * right justify</li>
+	 * </ul>
+	 * The mask may also be a named format such as <code>USD</code> (or <code>$</code>), or <code>ls$</code> for the locale currency, as
+	 * well as any {@link java.text.DecimalFormat} pattern that the character substitutions above produce.
+	 *
+	 * When called as `numberFormat()` without a `locale` the US locale is always used, as in CFML. This BIF is also registered as
+	 * `LSNumberFormat`, which uses the locale of the current context (or the `locale` argument).
+	 *
+	 * @argument.number The number to be formatted, or an empty string which will be treated as 0.
+	 *
+	 * @argument.mask Optional. The formatting mask to apply, see above.
+	 *
+	 * @argument.locale Optional. A locale string (for example `de_DE`) used to format the number.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number The number to be formatted, or an empty string which will be treated as 0.
-	 *
-	 * @argument.mask The formatting mask to apply using the {@link java.text.DecimalFormat} patterns.
-	 *
-	 * @argument.locale An optional locale string to apply to the format
-	 *
-	 * @function.currencyFormat Formats a number as a currency value
+	 * @return The formatted number as a string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object oValue = arguments.get( Key.number );

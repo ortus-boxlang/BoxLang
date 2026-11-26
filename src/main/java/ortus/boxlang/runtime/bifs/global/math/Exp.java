@@ -43,12 +43,14 @@ public class Exp extends BIF {
 	}
 
 	/**
-	 * Calculates the exponent whose base is e that represents a number.
+	 * Returns e raised to the power of the number. Also available as <code>number.exp()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number The number to calculate the exponent for.
+	 * @argument.number The exponent to raise e to.
+	 *
+	 * @return The value of e to the power of the number.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return _invoke( arguments.getAsNumber( Key.number ) );

@@ -47,14 +47,16 @@ public class FileSetLastModified extends BIF {
 	}
 
 	/**
-	 * Sets the last modified time of a file
+	 * Sets the last modified time of a file. Also available as the member function `setLastModified()` on file objects.
+	 *
+	 * @argument.file The file path or file object.
+	 *
+	 * @argument.date A date/time object or date string, or a number of milliseconds since the epoch.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file A file path or object
-	 *
-	 * @argument.date A date time object or string
+	 * @return Null when a path was given, or the file object when a file object was given.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile		file	= arguments.getAsBoxFile( Key.file );

@@ -41,13 +41,15 @@ public class ArrayReverse extends BIF {
 	}
 
 	/**
-	 * Returns an array with all of the elements reversed. The value in [0] within the input array will then exist in [n] in the output array, where n is
-	 * the amount of elements in the array minus one.
+	 * Returns a new array with the elements of the given array in reverse order. The original array is not modified.
+	 * Also available as the <code>reverse()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to reverse
+	 * @argument.array The array to reverse.
+	 *
+	 * @return A new array with the elements reversed.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return Array.of(

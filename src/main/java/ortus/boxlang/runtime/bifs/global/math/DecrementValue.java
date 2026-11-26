@@ -39,12 +39,14 @@ public class DecrementValue extends BIF {
 	}
 
 	/**
-	 * Decrement the integer part of a number
+	 * Decrements a number by 1 and returns the result. The original value is not modified.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number The number to decrement the integer part of.
+	 * @argument.number The number to decrement.
+	 *
+	 * @return The number minus 1.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Number number = arguments.getAsNumber( Key.number );

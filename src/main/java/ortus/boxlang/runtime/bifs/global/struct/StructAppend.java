@@ -47,19 +47,20 @@ public class StructAppend extends BIF {
 	}
 
 	/**
-	 * Appends the contents of a second struct to the first struct either with or
-	 * without overwrite
+	 * Appends the entries of struct2 into struct1 and returns struct1 (the target is modified in place). Both arguments accept a struct
+	 * or a struct-like value (Java Map). If struct1 is null, a new struct is used.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct1 The target struct which will be the recipient of the
-	 *                   appending
+	 * @argument.struct1 The target struct which will be the recipient of the appending.
 	 *
-	 * @argument.struct2 The struct containing the values to be appended
+	 * @argument.struct2 The struct containing the values to be appended.
 	 *
-	 * @argument.overwrite Default true. Whether to overwrite existing values found
-	 *                     in struct1 from the values in struct2
+	 * @argument.overwrite Whether to overwrite existing keys in struct1 with the values from struct2. Defaults to true. When false, only keys missing
+	 *                     from struct1 are added.
+	 *
+	 * @return The target struct (struct1) after appending.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Boolean			overwrite	= arguments.getAsBoolean( Key.overwrite );

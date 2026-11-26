@@ -41,17 +41,21 @@ public class ArrayMerge extends BIF {
 	}
 
 	/**
-	 * This function creates a new array with data from the two passed arrays. To add all the data from one array into another without creating a new
-	 * array see the built in function ArrayAppend(arr1, arr2, true).
+	 * Creates a new array containing the data of two arrays. The original arrays are not modified.
+	 * To add all the data of one array into another without creating a new array, use <code>ArrayAppend( arr1, arr2, true )</code>.
+	 * Also available as the <code>merge()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array1 The first array to merge
+	 * @argument.array1 The first array to merge.
 	 *
-	 * @argument.array2 The second array to merge
+	 * @argument.array2 The second array to merge.
 	 *
-	 * @argument.leaveIndex Set to true maintain value indexes - if two values have the same index it will keep values from array1
+	 * @argument.leaveIndex If false (default), the elements of array2 are appended after those of array1. If true, values keep their indexes:
+	 *                      the longer array is used as the base and the elements of array1 take precedence for indexes they share.
+	 *
+	 * @return A new array containing the merged data.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	arrayOne	= arguments.getAsArray( Key.array1 );

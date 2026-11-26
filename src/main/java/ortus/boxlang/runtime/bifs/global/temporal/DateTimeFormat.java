@@ -60,27 +60,33 @@ public class DateTimeFormat extends BIF {
 	}
 
 	/**
-	 * Formats a datetime, date or time
+	 * Formats a datetime, date or time as a string. This BIF is registered as {@code dateTimeFormat()}, {@code dateFormat()} and
+	 * {@code timeFormat()};
+	 * the name used determines the default mask when none is passed: {@code dd-MMM-yyyy HH:mm:ss} for dateTimeFormat, {@code dd-MMM-yy} for
+	 * dateFormat and {@code hh:mm a} for timeFormat. It is also available as the member functions {@code format()}, {@code dateFormat()},
+	 * {@code timeFormat()} and {@code dateTimeFormat()} on dates, and (except {@code format()}) on strings.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.date The date string or object
+	 * @argument.date The date object or date string to format
 	 *
-	 * @argument.mask Optional format mask, or common mask. If an explicit mask is used, it should use the mask characters specified in the
+	 * @argument.mask Optional format mask, or common mask name. If an explicit mask is used, it should use the mask characters specified in the
 	 *                [java.time.format.DateTimeFormatter](https://docs.oracle.com/en%2Fjava%2Fjavase%2F21%2Fdocs%2Fapi%2F%2F/java.base/java/time/format/DateTimeFormatter.html) class.
-	 *                If a common mask is used, the following are supported:
-	 *                - short: equivalent to "M/d/y h:mm tt"
-	 *                - medium: equivalent to "MMM d, yyyy h:mm:ss tt"
-	 *                - long: medium followed by three-letter time zone; i.e. "MMMM d, yyyy h:mm:ss tt zzz"
-	 *                - full: equivalent to "dddd, MMMM d, yyyy H:mm:ss tt zz"
-	 *                - ISO8601/ISO: equivalent to "yyyy-MM-dd'T'HH:mm:ssXXX"
+	 *                The following common masks are supported (the date, time or datetime variant is chosen from the function name used):
+	 *                - short, medium, long, full: localized styles using the java.time FormatStyle of the same name (output depends on the locale)
+	 *                - ISO: equivalent to "yyyy-MM-dd'T'HH:mm:ssXXX" (datetime)
+	 *                - ISO8601: ISO_OFFSET_DATE_TIME for datetimes, ISO_DATE for dates and ISO_TIME for times
+	 *                - ODBC: the ODBC literal formats, e.g. {ts '2024-03-15 10:30:00'}
+	 *                - javascript: the format of a JavaScript Date toString (datetime only)
 	 *                - epoch: Total seconds of a given date (Example:1567517664)
 	 *                - epochms: Total milliseconds of a given date (Example:1567517664000)
 	 *
 	 * @argument.timezone Optional specific timezone to apply to the date ( if not present in the date string )
 	 *
 	 * @argument.locale Optional ISO locale string which will be used to localize the resulting date/time string
+	 *
+	 * @return The formatted string, or a number when the mask is epoch or epochms.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		timezone		= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );

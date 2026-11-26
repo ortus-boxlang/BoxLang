@@ -43,15 +43,15 @@ public class IsObject extends BIF {
 	 * True conditions are:
 	 * <ul>
 	 * <li>Box Class instances are "objects"</li>
-	 * <li>All other classes that represent a Boxlang type are NOT "objects" (query, array, struct, XML, etc)</li>
+	 * <li>All other classes that represent a BoxLang type are NOT "objects" (query, array, struct, XML, etc)</li>
 	 * <li>These JDK classes which are used for "simple" BoxLang types are also not "objects" (String, Number, Boolean)</li>
 	 * <li>Every other Java class is an "object"</li>
 	 * </ul>
 	 *
-	 * @argument.value The value to test
+	 * @argument.value The value to test.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope defining the value to test.
+	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @return True if the value is an object, false otherwise.
 	 */

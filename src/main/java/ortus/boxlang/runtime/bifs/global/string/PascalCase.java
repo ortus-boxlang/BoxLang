@@ -39,12 +39,16 @@ public class PascalCase extends BIF {
 	}
 
 	/**
-	 * Convert a string to pascal case
+	 * Convert a string to PascalCase: every word starts with an uppercase letter and the words are joined together. Words are detected by
+	 * underscores, hyphens, other
+	 * non-alphanumeric characters, and camelCase or acronym boundaries.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The target string
+	 * @argument.string The string to convert.
+	 *
+	 * @return The PascalCase version of the string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return StringUtil.pascalCase( arguments.getAsString( Key.string ) );

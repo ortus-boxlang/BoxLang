@@ -39,13 +39,16 @@ public class XMLGetNodeType extends BIF {
 	}
 
 	/**
-	 * Get XML values according to given xPath query
+	 * Gets the type of an XML DOM node as an upper-case string, for example {@code DOCUMENT_NODE} or {@code ELEMENT_NODE}.
+	 * Spaces in the DOM node type name are replaced with underscores and {@code _NODE} is appended. Also available as the member
+	 * function {@code getNodeType()} on XML objects.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.XMLNode An XML DOM object node.
+	 * @argument.XMLNode An XML DOM object node, such as an XML document or element.
 	 *
+	 * @return The node type string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		XML xml = arguments.getAsXML( Key.XMLNode );

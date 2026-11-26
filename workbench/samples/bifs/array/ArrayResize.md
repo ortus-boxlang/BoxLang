@@ -11,9 +11,31 @@
 ```
 
 
+### Pad an array to a minimum size
+
+```java
+numbers = [ 1, 2 ]
+numbers.resize( 4 )
+writeOutput( numbers.len() )
+```
+
+Result: 4
+
+### An array is never shrunk
+
+If the array already has at least that many elements it is left unchanged.
+
+```java
+numbers = [ 1, 2, 3 ]
+arrayResize( numbers, 1 )
+writeOutput( numbers.len() )
+```
+
+Result: 3
+
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJzLK81NSi0qVrBViFbg4jTU4eI0AmJjIDbhirXmSiwqSqwMSi3OrErVUMiDqNVRMDRQ0LTmcinNLYALggT09RVyU0E8hbTSvOSSzPw8LqisXhHUCENTrDoB9AgnmQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLK81NSi0qVrBViFbg4jTU4eI0AmJjIDbhiuVKLCpKrAxKLc6sStVQyIMo1VEwNFDQ5HIpzS2AiwH5%2BvoKuakgjkJaaV5ySWZ%2BHhdUUq8IaoChKaY%2BACCdJmg%3D" target="_blank">Run Example</a>
 
 ```java
 numbers = [ 
@@ -21,12 +43,12 @@ numbers = [
 	2,
 	3,
 	4
-];
-arrayResize( numbers, 10 );
-Dump( numbers );
+]
+arrayResize( numbers, 10 )
+Dump( numbers )
 // member function
-numbers.resize( 15 );
-Dump( numbers );
+numbers.resize( 15 )
+Dump( numbers )
 
 ```
 

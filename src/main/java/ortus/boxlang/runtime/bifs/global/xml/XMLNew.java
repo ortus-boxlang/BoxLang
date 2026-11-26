@@ -42,12 +42,14 @@ public class XMLNew extends BIF {
 	}
 
 	/**
-	 * Creates a new empty XML Object
+	 * Creates a new, empty XML document object. Use {@code xmlElemNew()} to create elements and assign one to {@code xmlRoot}.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.caseSensitive Whether the identifiers in the XML document ( e.g. dot notation ) are case sensitive
+	 * @argument.caseSensitive Whether the identifiers in the XML document ( e.g. dot notation ) are case sensitive. Defaults to false.
+	 *
+	 * @return A new empty XML document.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Boolean caseSensitive = arguments.getAsBoolean( Key.caseSensitive );

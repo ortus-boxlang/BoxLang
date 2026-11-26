@@ -38,12 +38,14 @@ public class StripCR extends BIF {
 	}
 
 	/**
-	 * Deletes return characters from a string.
+	 * Deletes every carriage return character (<code>\r</code>) from a string. Line feed characters are left untouched.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string The string or variable that contains the text.
+	 *
+	 * @return The string without carriage returns.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String			inputString		= arguments.getAsString( Key.string );

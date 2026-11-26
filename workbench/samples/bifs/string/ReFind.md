@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrSnXLzEvxy3dOLE7VUFByVdJRUCpJLS5RMDQyVlRS0LTmAgC4MAkY" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKEp1y8xL8ct3TixO1VBQclXSUVAqSS0uUTA0MlZUUtBU0AQAiOsOIA%3D%3D" target="_blank">Run Example</a>
 
 ```java
-reFindNoCase( "E", "test 123!" );
+writeOutput( reFindNoCase( "E", "test 123!" ) )
 
 ```
 
@@ -15,32 +15,58 @@ Result: 2
 
 Example with all optional arguments
 
-<a href="https://try.boxlang.io/?code=eJzzCvb3C04tykzMyaxK1VAoSnXLzEvxy3dOLAbylFyVdBSUSlKLSxQMjYwVgRxDHYWSotJUoKijj4%2BSgqaCpjUXAMLsEn0%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzzCvb3C04tykzMyaxK1VAoSnXLzEvxy3dOLAbylFyVdBSUSlKLSxQMjYwVgRxDHYWSotJUoKijj4%2BSgqaCJgCd%2FBI4" target="_blank">Run Example</a>
 
 ```java
-JSONSerialize( reFindNoCase( "E", "test 123!", 1, true, "ALL" ) );
+JSONSerialize( reFindNoCase( "E", "test 123!", 1, true, "ALL" ) )
 
 ```
 
 Result: [{"len":[1],"pos":[2],"match":["e"]}]
 
-### Additional Examples
+### Find the first match
 
-<a href="https://try.boxlang.io/?code=eJyNjsFLwzAYxe%2F7Kz5z2Fo7Bs30siEj1HkSD2OCkOXwNY22uKYlyZj%2B937ZPGyCOkjII7z3fm%2FvmmDud22fwGr50NjqqSvQmwQYZjpjY3pLjVgUVcUghXQ%2B2P%2BVuI4JQQmhL0nIzWKonOnhDmKQVOfCRL%2B2i%2BNnzqc3wx2J2wvgsaFERPGvd3KY%2BW0LxgcfXGPf8jhjXRvQGKCxEEjWJOPV2BooUb9fsfnAh2g9llJdIkdyhtu%2BxpkaqSyVoLJkk6cEOSkfAx22Xj0v2Y91VCeBbY1loCRMQZ3P4nGWEOKFrjjQ%2BSn94wzDf8egc%2Fj5aGwEcgL2nWeRFW1fc4uWkg%3D%3D" target="_blank">Run Example</a>
+By default the 1-based position of the first match is returned, or 0 if there is no match.
 
 ```java
-writeDump( REFindNoCase( "a+c+", "abcaaCCdd" ) );
-writeDump( REFindNoCase( "a+c*", "AbcaAcCdd" ) );
-writeDump( REFindNoCase( "[\?&]rep = ", "report.bxm?rep = 1234&u = 5" ) );
-writeDump( REFindNoCase( "a+", "baaaA" ) );
-writeDump( REFindNoCase( ".*", "" ) );
-teststring1 = "The cat in the hat hat came back!";
-st1 = REFind( "(['[:alpha:]']+)[ ]+(\1)", teststring1, 1, "TRUE" );
-writeDump( st1[ "len" ][ 3 ] );
-teststring2 = "AAAXAAAA";
-st2 = REFind( "x", teststring2, 1, "TRUE" );
-writeDump( arrayLen( st2[ "pos" ] ) );
+writeOutput( reFind( "[0-9]+", "abc 123 def 45" ) )
 
 ```
 
+Result: 5
 
+### Start from a position
+
+```java
+writeOutput( reFind( "[0-9]+", "abc 123 def 45", 8 ) )
+
+```
+
+Result: 13
+
+### Return the position of every match
+
+```java
+writeOutput( jsonSerialize( reFind( "[0-9]+", "abc 123 def 45", 1, false, "all" ) ) )
+
+```
+
+Result: [5,13]
+
+### No match
+
+```java
+writeOutput( reFind( "[0-9]+", "abc" ) )
+
+```
+
+Result: 0
+
+### Member function
+
+```java
+writeOutput( "abc 123".reFind( "[0-9]+" ) )
+
+```
+
+Result: 5

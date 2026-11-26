@@ -52,10 +52,10 @@ public class ListMap extends ArrayMap {
 	/**
 	 * This BIF will iterate over each item in the delimited list and invoke the callback function for each item so
 	 * you can do any operation on the item and return a new value that will be set at the same index in a new list.
-	 * The callback function will be passed the item as a string, the current index (0-based), and the original list.
+	 * The callback function will be passed the item as a string, the current index (1-based), and the array of list items.
 	 * <ul>
 	 * <li>If the callback requires strict arguments, it will only receive the item as a string.</li>
-	 * <li>If the callback does not require strict arguments, it will receive the item as a string, the index (0-based), and the original list.</li>
+	 * <li>If the callback does not require strict arguments, it will receive the item as a string, the index (1-based), and the array of list items.</li>
 	 * </ul>
 	 * <h2>Parallel Execution</h2>
 	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the map will be executed in parallel using a ForkJoinPool with parallel streams.
@@ -65,22 +65,29 @@ public class ListMap extends ArrayMap {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list The delimited list to perform operations on
+	 * @argument.list The delimited list to map over.
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array. You can alternatively pass a Java Function which will only receive the 1st arg.
+	 * @argument.callback The function to invoke for each element. It receives the value, the one-based index, and the array of list
+	 *                    items, and its return value replaces the element. You can alternatively pass a Java Function, which receives only the
+	 *                    value.
 	 *
-	 * @argument.delimiter string the list delimiter
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
+	 *                              to false.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *                                   single-character delimiters. Defaults to false.
 	 *
-	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
+	 * @argument.parallel Whether to run the callback in parallel. Defaults to false.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored. If a boolean is provided it will be assigned to the virtual argument instead.
-	 * 
-	 * @argument.virtual If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If omitted, the default ForkJoinPool
+	 *                      parallelism is used. Ignored if parallel is false. If a boolean is passed it is assigned to the virtual argument instead.
+	 *
+	 * @argument.virtual If true, the callback is invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return A new list built from the callback return values, joined with the delimiter.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put(

@@ -44,10 +44,27 @@ xml_stream = "
         <heading>Your request</heading>
         <body>I got your message; all is well.</body>
       </note>
-    </notes>";
-xml_document = XmlParse( xml_stream );
-dump( XmlGetNodeType( xml_document.XMLROOT.XMLCHILDREN[ 1 ].XMLCHILDREN.last() ) );
+    </notes>"
+xml_document = XmlParse( trim( xml_stream ) )
+dump( XmlGetNodeType( xml_document.XMLROOT.XMLCHILDREN[ 1 ].XMLCHILDREN.last() ) )
 
 ```
 
 
+### Node types of a document and its root element
+
+```java
+xml = xmlParse( "<root><a/></root>" )
+writeOutput( xmlGetNodeType( xml ) & " " & xmlGetNodeType( xml.xmlRoot ) )
+```
+
+Result: DOCUMENT_NODE ELEMENT_NODE
+
+### Use the member function
+
+```java
+xml = xmlParse( "<root><a/></root>" )
+writeOutput( xml.xmlRoot.getNodeType() )
+```
+
+Result: ELEMENT_NODE

@@ -2,7 +2,7 @@
 
 Uses the arrayClear function to clear the value of an array
 
-<a href="https://try.boxlang.io/?code=eJw9js0KgkAUhdfepzi4GiGQ1mKQQdGqiKBFtBjwVoM2I9cZRKJ3Tw1bnY%2FzA6d1L16L6B45rqAoPnEZLwa9PI3niXbCbCcq6vCzjsZWMd0y6mRoHYJvgleUpjiLtm1jahZ0TiotLtgSdyco9lsI%2ByAWvm%2BYlIKWxxIJ8hXeFOnxxKZmLXOQUTQPJHBGn0Sh%2Fd9NxsIXzbM43A%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJw9jkEKwjAURNf9pxi6SkAoHqCCFSyuFBFciItAv1pak%2FCbUIp4d2ulruYx8xbTuSevRcyAHBdQkh65Shdjnh914IlKYbYTFW38VYfaNildqZdR2sfgY1CUZTiJsZ2vWxb0ThojLtoKNycodlsIhygWYfBMSsHIfQmNfIUXJeb7YdOykXmgZPYlMr21Qvf%2FqqE%2Fwlk35g%3D%3D" target="_blank">Run Example</a>
 
 ```java
 someArray = [ 
@@ -11,22 +11,22 @@ someArray = [
 	"Green",
 	"Blue",
 	"Pink"
-];
+]
 writeOutput(
 // Transpiler workaround for BIF return type
 (( arg1 ) => {
-	arrayClear( arg1 );
-	return true;
-})( someArray ) );
+	arrayClear( arg1 )
+	return true
+})( someArray ) )
 
 ```
 
-Result: Yes
+Result: true
 
 ### Clear the value of an array
 To clear the value of an array
 
-<a href="https://try.boxlang.io/?code=eJw9js0KgkAUhdfepzi4GiGQ1mKQQdGqiKBFtBjwVoM2I9cZRKJ3Tw1bnY%2FzA6d1L16L6B45rqAoPnEZLwa9PI3niXbCbCcq6vCzjsZWMd0y6mRoHYJvgleUpjiLtm1jahZ0TiotLtgSdyco9lsI%2ByAWvm%2BYlIKWxxIJ8hXeFOnxxKZmLXOQUTQPJHBGn0Sh%2Fd9NxsIXzbM43A%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJw9jkEKwjAURNf9pxi6SkAoHqCCFSyuFBFciItAv1pak%2FCbUIp4d2ulruYx8xbTuSevRcyAHBdQkh65Shdjnh914IlKYbYTFW38VYfaNildqZdR2sfgY1CUZTiJsZ2vWxb0ThojLtoKNycodlsIhygWYfBMSsHIfQmNfIUXJeb7YdOykXmgZPYlMr21Qvf%2FqqE%2Fwlk35g%3D%3D" target="_blank">Run Example</a>
 
 ```java
 someArray = [ 
@@ -35,13 +35,13 @@ someArray = [
 	"Green",
 	"Blue",
 	"Pink"
-];
+]
 writeOutput(
 // Transpiler workaround for BIF return type
 (( arg1 ) => {
-	arrayClear( arg1 );
-	return true;
-})( someArray ) );
+	arrayClear( arg1 )
+	return true
+})( someArray ) )
 
 ```
 
@@ -51,23 +51,24 @@ Result: true
 
 Uses the member function is the same as running arrayClear.
 
-<a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYhW4OI01OHiNAJiY65Ya67yosySVP%2FSkoLSEg2FPIRaPeec1MQiDU0FTWsuAJ1WE9Q%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYhW4OI01OHiNAJiY65YrjyErF5yTmpikYYmV3lRZkmqf2lJQWmJhgKygpzUPA1NBU0AAtIZxA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 numberArray = [ 
 	1,
 	2,
 	3
-];
-writeOutput( numberArray.Clear() );
+]
+numberArray.clear()
+writeOutput( numberArray.len() )
 
 ```
 
-Result: Yes
+Result: 0
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxljk0OgjAQhdfMKd5SE6Wi7AgLwzGMi6oTIaGlKVMNt7dgJEQWs3iT9%2FMphcqzFu6hLbT3esC9s6Ib29gncnDLhq30eDdSQ2qGDebGvkeGPfKUfrLEhZJsR8kx3ileTteCHsG4zRzZFlAKXRAXYuNYtlqcWim6qpa1X5qifo2OmXMiOsyEKZ3H95RbTq4Y6B%2BCjZPhW0ofQhRX2g%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxljk0OgjAQhdfMKd5SE6WibF0QjmFcVJ0ICS2kTDXc3lJjQ3Axizd5P59SqB1r4RHaQjunJ9x7K7q1rX2iBHds2MqIdysNpGFYb27sRhTYo8zpJ8%2B4UFbsKDuGO4Ur6UoPb4ZNSmyhFHovgw99c9XfXuyk4Ko71m5pCvo1OxJl5Dkkvpyq%2BR1zi8U1Aa0R2AwyfSs%2FuJJW5A%3D%3D" target="_blank">Run Example</a>
 
 ```java
 // Creates an array containing 4 elements with the numbers 1 - 4.
@@ -76,11 +77,11 @@ numbers = [
 	2,
 	3,
 	4
-];
-dump( numbers ); // outputs the array containing 1 - 4
+]
+dump( numbers ) // outputs the array containing 1 - 4
 // Clears the array leaving an array with 0 elements.
-ArrayClear( numbers );
-dump( numbers );
+ArrayClear( numbers )
+dump( numbers )
  // outputs the empty array
 
 ```

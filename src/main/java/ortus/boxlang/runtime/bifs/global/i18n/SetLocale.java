@@ -43,16 +43,15 @@ public class SetLocale extends BIF {
 	}
 
 	/**
-	 * Sets the current request-level locale.
+	 * Sets the locale for the current request, which then affects locale-sensitive BIFs such as `lsNumberFormat()`, `currencyFormat()` and
+	 * `getLocale()`. An invalid locale throws an exception.
+	 *
+	 * @argument.locale The locale to set: an ISO directive such as `de_DE`, a common name such as `German (Standard)`, or an alias.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.locale The locale ISO directive, common name or alias
-	 *
-	 * @return Returns a string representation of this Locale object, consisting of language, country, variant, script,
-	 *         and extensions as below: language + "_" + country + "_" + (variant + "_#" | "#") + script + "_" + extensions Language is always lower
-	 *         case, country is always upper case, script is always title case, and extensions are always lower case.
+	 * @return The display name of the locale which was set, for example `German (Germany)`.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Locale locale = LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );

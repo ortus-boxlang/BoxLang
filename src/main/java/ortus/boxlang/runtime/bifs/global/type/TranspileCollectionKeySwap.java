@@ -52,6 +52,8 @@ public class TranspileCollectionKeySwap extends BIF {
 	 * @argument.collection The collection to transpile
 	 *
 	 * @argument.keyMap The map of keys to swap. The key is the key to replace, the value is the key to replace it with.
+	 *
+	 * @return A new struct with the keys swapped, or the original value if it is not a struct.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object					oCollection		= arguments.get( Key.collection );

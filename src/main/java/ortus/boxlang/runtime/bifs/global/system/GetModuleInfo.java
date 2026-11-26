@@ -48,7 +48,7 @@ public class GetModuleInfo extends BIF {
 	 *
 	 * @argument.module The name of the module to get the record for.
 	 *
-	 * @return The module record for the requested module.
+	 * @return The module record for the requested module, or an empty struct if the module is not loaded.
 	 */
 	public IStruct _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key moduleName = Key.of( arguments.get( Key.module ) );

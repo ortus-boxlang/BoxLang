@@ -33,11 +33,12 @@ public class GetContextRoot extends BIF {
 	}
 
 	/**
-	 * Gets the context root. If BoxLang is not running as a servlet-based web server, this always returns "/".
+	 * Gets the web application context root. If BoxLang is not running as a servlet-based web server, this always returns "/".
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @return The context root string; currently always "/".
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return "/";

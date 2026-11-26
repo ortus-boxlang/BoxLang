@@ -1,25 +1,30 @@
-### Simple iIf Example
+### Simple iIf example
 
-
-
-<a href="https://try.boxlang.io/?code=eJzL9EzTUChOLSpLLdLzD9bzc%2FR1VbC1VVBySkzOz1PSUUhJ1VBQCirNy8vMS1cACyr4ByspaEJl%2FPJLFLDIKmhacwEAwp8Z9w%3D%3D" target="_blank">Run Example</a>
+Literal strings must be wrapped with de() so they are not evaluated as variables.
 
 ```java
-iIf( server.OS.NAME == "Bacon", de( "Running Bacon OS" ), de( "Not Running Bacon OS" ) );
+writeOutput( iIf( server.os.name == "Bacon", de( "Running Bacon OS" ), de( "Not Running Bacon OS" ) ) )
 ```
 
 Result: Not Running Bacon OS
 
-### Simple Example using Ternary Operator Instead
+### Return a variable value
 
-Instead of using iif, you should use the ternary operator
-
-<a href="https://try.boxlang.io/?code=eJzT0ChOLSpLLdLzD9bzc%2FR1VbC1VVBySkzOz1PSVLBXUAoqzcvLzEtXAAsp%2BAcrKVgpKPnllyhgSGhacwEAduEWnQ%3D%3D" target="_blank">Run Example</a>
+An expression that is not wrapped in de() is looked up as a variable.
 
 ```java
-((server.OS.NAME == "Bacon") ? "Running Bacon OS" : "Not Running Bacon OS");
+name = "Luis"
+writeOutput( iIf( true, "name", de( "anonymous" ) ) )
+```
 
+Result: Luis
+
+### Use the ternary operator instead
+
+Prefer the ternary operator: it only evaluates the branch that is used and needs no de().
+
+```java
+writeOutput( server.os.name == "Bacon" ? "Running Bacon OS" : "Not Running Bacon OS" )
 ```
 
 Result: Not Running Bacon OS
-

@@ -58,16 +58,19 @@ public class DatePart extends TimeUnits {
 	}
 
 	/**
-	 * Extracts a part from a datetime value as a numeric.
+	 * Extracts a part from a datetime value as a number.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.datepart The part of the date to extract.
+	 * @argument.datepart The part of the date to extract: yyyy (year), q (quarter), m (month), d (day of month), y (day of year),
+	 *                    w (day of week), ww (week of year), h (hour), n (minute), s (second), l (millisecond). Any other value throws an exception.
 	 *
-	 * @argument.date The date to extract the part from.
+	 * @argument.date The date or date string to extract the part from.
 	 *
 	 * @argument.timezone An optional, explicit timezone to apply to the date.
+	 *
+	 * @return The requested part as a number.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key datePart = Key.of( arguments.getAsString( Key.datepart ) );

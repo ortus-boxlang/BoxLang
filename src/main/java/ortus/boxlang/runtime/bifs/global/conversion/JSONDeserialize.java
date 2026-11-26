@@ -47,19 +47,30 @@ public class JSONDeserialize extends BIF {
 	}
 
 	/**
-	 * Converts a JSON (JavaScript Object Notation) string data representation into data, such as a structure or array.
-	 * 
-	 * JSON deserialization in BoxLang will always use ordered structs for objects which will preserve the key order of the original JSON string.
+	 * Converts a JSON (JavaScript Object Notation) string into BoxLang data such as a struct, array, string, number or boolean.
+	 * <p>
+	 * JSON objects are always deserialized into ordered structs, which preserves the key order of the original JSON string.
 	 * This is handy when reading a JSON file, modifying it, and writing it back out.
+	 * <p>
+	 * Also available as the <code>jsonDeserialize()</code> and <code>fromJSON()</code> member functions on strings.
+	 *
+	 * <pre>
+	 * data = jsonDeserialize( '{"name":"BoxLang","tags":["jvm","dynamic"]}' )
+	 * data = '[1,2,3]'.fromJSON()
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.json The JSON string to convert to data.
 	 *
-	 * @argument.strictMapping A Boolean value that specifies whether to convert the JSON strictly. If true, everything becomes structures.
+	 * @argument.strictMapping Whether to convert the JSON strictly. If true (default), every JSON object becomes a struct. If false, an object
+	 *                         that has the shape of a serialized query (a "columns" array and a "data" array, with an optional "rowCount") is
+	 *                         converted to a query.
 	 *
-	 * @argument.useCustomSerializer A string that specifies the name of a custom serializer to use. (Not used)
+	 * @argument.useCustomSerializer The name of a custom serializer to use. Not used.
+	 *
+	 * @throws BoxRuntimeException If the string is not valid JSON.
 	 *
 	 * @return The data representation of the JSON string.
 	 */

@@ -38,12 +38,14 @@ public class Now extends BIF {
 	}
 
 	/**
-	 * Returns the current DateTimeObject representing the current zoned instance
+	 * Returns a DateTime object representing the current date and time in the resolved timezone.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.timezone A timezone to use for the DateTime object, defaults to the system default
+	 *
+	 * @return The current {@link DateTime}.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return invoke( arguments.getAsString( Key.timezone ), context );

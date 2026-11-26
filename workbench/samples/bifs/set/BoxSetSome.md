@@ -3,8 +3,8 @@
 Returns `true` on the first match.
 
 ```java
-s = [ 1, 2, 3, 4 ].toSet();
-writeOutput( s.some( ( Any v ) => v > 3 ) );
+s = [ 1, 2, 3, 4 ].toSet()
+writeOutput( s.some( ( Any v ) -> v > 3 ) )
 
 ```
 
@@ -13,8 +13,8 @@ Result: true
 ### Returns false when nothing matches
 
 ```java
-s = setOf( 1, 2, 3 );
-writeOutput( s.some( ( Any v ) => v > 100 ) );
+s = setOf( 1, 2, 3 )
+writeOutput( s.some( ( Any v ) -> v > 100 ) )
 
 ```
 
@@ -25,8 +25,8 @@ Result: false
 `any` is an alias for `some`.
 
 ```java
-s = setOf( "apple", "banana", "cherry" );
-writeOutput( s.any( ( Any v ) => len( v ) > 5 ) );
+s = setOf( "apple", "banana", "cherry" )
+writeOutput( s.any( ( Any v ) => len( v ) > 5 ) )
 
 ```
 

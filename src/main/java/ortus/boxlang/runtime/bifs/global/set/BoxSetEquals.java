@@ -47,7 +47,10 @@ public class BoxSetEquals extends BIF {
 	 *
 	 * @argument.set The first set.
 	 *
-	 * @argument.otherSet The second set to compare. Accepts any value castable to a Set.
+	 * @argument.otherSet The second set to compare. Must already be a Set (a BoxLang Set or a java.util.Set);
+	 *                    use toSet() to convert an Array first.
+	 *
+	 * @return True if both Sets contain the same elements, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet	set		= arguments.getAsSet( Key.set );

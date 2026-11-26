@@ -40,12 +40,14 @@ public class Reverse extends BIF {
 	}
 
 	/**
-	 * Reverse the order of characters in a string
+	 * Reverse the order of the characters in a string.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string The string to reverse.
+	 *
+	 * @return The reversed string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return invoke( arguments.getAsString( Key.string ) );

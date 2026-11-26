@@ -42,13 +42,17 @@ public class ExpandPath extends BIF {
 	}
 
 	/**
-	 * Creates an absolute, platform-appropriate path that is equivalent to the value of 'path', appended to the base path. This function (despite its
-	 * name) can accept an absolute or relative path in the 'path' attribute.
+	 * Creates an absolute, platform-appropriate path from a relative or absolute path. Relative paths are resolved against the mappings of the
+	 * application and then the directory of the base template (the template that started the request). Symbolic links in the path are resolved
+	 * if it exists, and a trailing slash on the input is preserved. If the path is completely invalid it is returned as given.
+	 *
+	 * @argument.path The relative or absolute directory reference or filename to convert to an absolute path. Forward or backward slashes can be
+	 *                used.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path Relative or absolute directory reference or filename, to convert to an absolute path. Can include forward or backward slashes.
+	 * @return The absolute path as a string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	path				= arguments.getAsString( Key.path );

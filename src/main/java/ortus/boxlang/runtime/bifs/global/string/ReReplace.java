@@ -52,20 +52,32 @@ public class ReReplace extends BIF {
 	}
 
 	/**
-	 *
-	 * Uses a regular expression (regex) to search a string for a string pattern and replace it with another. The search is case-sensitive.
+	 * Uses a regular expression (regex) to search a string for a pattern and replace it with another string. <code>ReReplace</code> is
+	 * case-sensitive and its alias <code>ReReplaceNoCase</code> is case-insensitive.
+	 * Both are also available as string member functions. POSIX character classes are supported and the dot matches newlines.
+	 * <p>
+	 * The replacement string can contain back-references to the groups of the match using <code>\1</code>, <code>\2</code>, etc. (an out of
+	 * range group is replaced by an empty string), and these case conversion sequences:
+	 * <ul>
+	 * <li><code>\U</code>: uppercase everything that follows until <code>\E</code></li>
+	 * <li><code>\L</code>: lowercase everything that follows until <code>\E</code></li>
+	 * <li><code>&#92;u</code>: uppercase the next character or group</li>
+	 * <li><code>\l</code>: lowercase the next character or group</li>
+	 * <li><code>\E</code>: end <code>\U</code> and <code>\L</code></li>
+	 * </ul>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to search
+	 * @argument.string The string to search.
 	 *
-	 * @argument.regex The regular expression to search for
+	 * @argument.regex The regular expression to search for.
 	 *
-	 * @argument.substring The string to replace regex with
+	 * @argument.substring The string to replace each match with. It can contain back-references and case conversion sequences.
 	 *
-	 * @argument.scope The scope to search in (one, all)
+	 * @argument.scope "one" replaces only the first match. "all" replaces every match. Must be one of "one" or "all". Defaults to "one".
 	 *
+	 * @return The string with the replacements made.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	string		= arguments.getAsString( Key.string );

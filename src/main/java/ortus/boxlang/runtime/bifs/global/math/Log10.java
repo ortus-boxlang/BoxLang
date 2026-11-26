@@ -42,6 +42,16 @@ public class Log10 extends BIF {
 		};
 	}
 
+	/**
+	 * Returns the base-10 logarithm of a number. Also available as <code>number.log10()</code>.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.number The number to calculate the base-10 logarithm of. Should be greater than 0.
+	 *
+	 * @return The base-10 logarithm of the number.
+	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Number number = arguments.getAsNumber( Key.number );
 		if ( number instanceof BigDecimal bd ) {

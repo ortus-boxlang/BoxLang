@@ -34,7 +34,7 @@ public class CreateGUID extends BIF {
 	/**
 	 * Create a Globally Unique Identifier (UUID).
 	 * <p>
-	 * Returns an uppercased-but-otherwise-unmodified UUID version 4 string.
+	 * Returns an uppercased-but-otherwise-unmodified UUID version 4 string. This BIF takes no arguments.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

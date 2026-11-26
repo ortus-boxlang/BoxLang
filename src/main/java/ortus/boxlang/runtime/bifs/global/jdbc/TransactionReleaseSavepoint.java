@@ -38,13 +38,16 @@ public class TransactionReleaseSavepoint extends TransactionBIF {
 	}
 
 	/**
-	 * Releases a savepoint without committing or rolling back changes.
-	 * Savepoints created after it are also invalidated. Requires an active transaction and a JDBC driver supporting savepoint release.
+	 * Releases a savepoint in the current transaction without committing or rolling back changes. Savepoints created after it are also
+	 * invalidated, and the released savepoint can no longer be rolled back to. Requires an active transaction, otherwise an exception is thrown,
+	 * and a JDBC driver which supports releasing savepoints.
+	 *
+	 * @argument.savepoint The name of the savepoint to release, as set with `transactionSetSavepoint()`.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.savepoint Specify a savepoint name.
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ITransaction transaction = getTransactionForContext( context );

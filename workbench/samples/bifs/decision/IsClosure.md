@@ -2,13 +2,13 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrLixNLEpVsFXQUHDMq1SoUNBUsLVTqObiLEotKS3KAwpoKVRYc9Vac5UXZZakupTmFmgoZBY75%2BQXlxalaigUQ%2FRrKmhacwEAeU4XPA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrLixNLEpVsFXQUHDMq1SoUNBUsLVTqObiLEotKS3KAwpoKVRw1XKVF2WWpLqU5hZoKGQWO%2BfkF5cWpWooFEN0aypoAgAkdhaB" target="_blank">Run Example</a>
 
 ```java
 square = ( Any x ) => {
-	return x * x;
-};
-writeDump( isClosure( square ) );
+	return x * x
+}
+writeDump( isClosure( square ) )
 
 ```
 
@@ -18,14 +18,14 @@ Result: TRUE
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrLixNLEpVsFXQUHDMq1SoUNBUsLVTqObiLEotKS3KAwpoKVRYc9VacxWDVaYAlUJYGgqmCprWXOVFmSWpLqW5BRoKmcXOOfnFpSApmGJNkBIA%2BtYerg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrLixNLEpVsFXQUHDMq1SoUNBUsLVTqObiLEotKS3KAwpoKVRw1XIVg9WlABVCWBoKpgqaXOVFmSWpLqW5BRoKmcXOOfnFpSAZmFpNBU0AcdwduA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 square = ( Any x ) => {
-	return x * x;
-};
-squared = square( 5 );
-writeDump( isClosure( squared ) );
+	return x * x
+}
+squared = square( 5 )
+writeDump( isClosure( squared ) )
 
 ```
 
@@ -33,20 +33,20 @@ Result: FALSE
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxtjkEKAjEQBM%2FOK5o9JSDkASFeFH%2FgA9ZkFgIxK5PMXsS%2FKyoiuMeG6u5yDrHMTYUpIsBYhB1utBHuKhVdlD3dPZFz0MaCxFOunDBpjT3PFeZ0OFr6Rn1O%2FPUp6eVqsIwSctu%2F%2Fwwi7BZlPHMJw0digPXrsP7AqyKv6gNk50I%2B" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxtjkEKwjAURNf%2BUwxdJSDkBHHT4g08QE1%2BIRBT%2Bcl3U7y7BUUK7XLgzcxzDiHPVYUpwMNY%2BAsWOgk3lYImyvQmcg5aWRB5SoUjJi2hpbnA3IarpX%2FUdWDXjvp4GrxG8an23zODAHtGHu%2Bcffcz6GCPWd2whxpr8wMLFkEN" target="_blank">Run Example</a>
 
 ```java
 // closure
 c = () => {
-	return true;
-};
+	return true
+}
 
 // user defined function (UDF)
 function u() {
-	return true;
+	return true
 }
-dump( var=isClosure( c ), label="closure" );
-dump( var=isClosure( u ), label="user defined function" );
+dump( var=isClosure( c ), label="closure" )
+dump( var=isClosure( u ), label="user defined function" )
 
 ```
 

@@ -46,16 +46,21 @@ public class FileAppend extends BIF {
 	}
 
 	/**
-	 * Appends new contents to a file starting at the last character in the file
+	 * Appends content to the end of a file. The file can be a path or a file object from `fileOpen()`; when a path is given the file is opened,
+	 * appended to and closed for you. Returns null.
+	 *
+	 * @argument.file The file path or file object to append to.
+	 *
+	 * @argument.data The string content to append. Values which are not strings are cast to a string.
+	 *
+	 * @argument.charset Optional. The charset used to write the file. Defaults to utf-8.
+	 *
+	 * @argument.addnewline Optional. Whether to add a line separator after the data. Defaults to false.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file The file object or string file path
-	 *
-	 * @argument.data The data to append
-	 *
-	 * @argument.charset [utf-8] the default charset to open the file for writing
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile	file	= arguments.getAsBoxFile( Key.file ).openAs( BoxFile.Mode.APPEND, arguments.getAsString( Key.charset ), false );

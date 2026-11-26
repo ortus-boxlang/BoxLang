@@ -42,14 +42,15 @@ public class IsBoxSet extends BIF {
 	}
 
 	/**
-	 * Determine whether a value is a set
+	 * Determines whether a value is a Set: either a BoxLang Set (`BoxSet`, created with `setNew()`, `setOf()`, `set{}` or `array.toSet()`) or
+	 * any native `java.util.Set`. Null, arrays, structs and other types return false.
 	 *
 	 * @argument.variable The value to test for set-ness.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope defining the value to test.
+	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @return True if the value is a BoxSet or java.util.Set, false otherwise
+	 * @return True if the value is a BoxSet or java.util.Set, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return isBoxSet( arguments.get( Key.variable ) );

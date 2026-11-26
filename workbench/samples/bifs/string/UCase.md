@@ -2,25 +2,30 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrdU4sTtVQUHJ2c8lPLlYIyk%2FOVlLQtOYCAFxoBs0%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKHVOLE7VUFBy8nHJTy5WCMpPzlZS0FTQBAD7Ngva" target="_blank">Run Example</a>
 
 ```java
-uCase( "BLDocs Rock" );
+writeOutput( uCase( "BLDocs Rock" ) )
 
 ```
 
 Result: BLDOCS ROCK
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJxFjL0OwjAMBvc8xUendMoDVEwsbEyI2S0OWIrqyHUaHp%2BfhfV0dylhMSZn7GRCc2F08ScIm5usD2iG88tDVsURw5lLUdzUyv0wTCElaPPa%2FJ%2FLilYrGxbaOHQT58tPibiePijiuxoxTuENdoYprg%3D%3D" target="_blank">Run Example</a>
+### Uppercase a variable
 
 ```java
-// create variable with a string of text
-foo = "Hello World!";
-// output variable in upper case
-writeOutput( UCase( foo ) );
+foo = "Hello World!"
+writeOutput( uCase( foo ) )
 
 ```
 
+Result: HELLO WORLD!
 
+### Member function
+
+```java
+writeOutput( "abc".uCase() )
+
+```
+
+Result: ABC

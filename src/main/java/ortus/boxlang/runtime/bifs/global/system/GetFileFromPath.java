@@ -40,13 +40,14 @@ public class GetFileFromPath extends BIF {
 	}
 
 	/**
-	 * Extracts a filename from an absolute path.
+	 * Extracts the file name (including extension) from a path. Both / and \ path separators are understood.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path The absolute path to extract the filename from
+	 * @argument.path The path to extract the file name from.
 	 *
+	 * @return The file name portion of the path.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return FilenameUtils.getName( arguments.getAsString( Key.path ) );

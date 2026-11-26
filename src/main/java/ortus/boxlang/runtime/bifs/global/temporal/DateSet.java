@@ -87,6 +87,8 @@ public class DateSet extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return The modified DateTime object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		DateTime	dateRef			= DateTimeCaster.cast( arguments.get( Key.date ), true, context );

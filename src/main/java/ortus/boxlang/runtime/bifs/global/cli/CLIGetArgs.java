@@ -36,12 +36,13 @@ public class CLIGetArgs extends BIF {
 	}
 
 	/**
-	 * This method will parse the cli arguments and return a struct of the following:
+	 * Parses the command line arguments and returns a struct with the following keys:
 	 * <ul>
 	 * <li><code>options</code> - A struct of the options</li>
 	 * <li><code>positionals</code> - An array of the positional arguments</li>
 	 * </ul>
-	 *
+	 * When running a script with the <code>boxlang</code> binary, the script path is also the first positional argument.
+	 * If the runtime has no CLI options (for example when embedded), a struct with an empty options struct and positionals array is returned.
 	 * <p>
 	 * The options can be provided in the following formats:
 	 * <ul>
@@ -51,29 +52,28 @@ public class CLIGetArgs extends BIF {
 	 * <li><code>--option='value'</code> - An option with a quoted value</li>
 	 * <li><code>-o=value</code> - A shorthand option with a value</li>
 	 * <li><code>-o</code> - A shorthand boolean option</li>
-	 * <li><code>--!option</code> - A negation option</li>
+	 * <li><code>--!option</code> or <code>--no-option</code> - A negated option</li>
 	 * </ul>
-	 *
 	 * <p>
-	 * For example, the following cli arguments:
+	 * For example, the following CLI arguments:
 	 *
 	 * <pre>
 	 * --debug --!verbose --bundles=Spec -o='/path/to/file' -v my/path/template
 	 * </pre>
 	 *
-	 * <p>
-	 * Will be parsed into the following struct:
+	 * Are parsed into the following struct:
 	 *
 	 * <pre>
 	 * {
-	 * "options" :  {
-	 *    	"debug": true,
-	 *   	"verbose": false,
-	 *  	"bundles": "Spec",
-	 * 	   	"o": "/path/to/file",
-	 * 	   	"v": true
-	 * },
-	 * "positionals": [ "my/path/template" ]
+	 *     "options": {
+	 *         "debug": true,
+	 *         "verbose": false,
+	 *         "bundles": "Spec",
+	 *         "o": "/path/to/file",
+	 *         "v": true
+	 *     },
+	 *     "positionals": [ "my/path/template" ]
+	 * }
 	 * </pre>
 	 *
 	 * <h2>Some Ground Rules</h2>
@@ -88,6 +88,8 @@ public class CLIGetArgs extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return A struct with the options and positionals keys.
 	 */
 	public IStruct _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( runtime.getCliOptions() == null ) {

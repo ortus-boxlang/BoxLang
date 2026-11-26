@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLyy%2FKTSxxSixO9dNQMDTQUTBS0LTmAgBU9gYI" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLyy%2FKTSxxSixO9dNQMDTQUTBS0AQASPAFww%3D%3D" target="_blank">Run Example</a>
 
 ```java
-formatBaseN( 10, 2 );
+formatBaseN( 10, 2 )
 
 ```
 
@@ -15,10 +15,10 @@ Result: 1010
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLyy%2FKTSxxSixO9dNQMDQwMtFRMDRT0LTmAgBpOAaj" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLyy%2FKTSxxSixO9dNQMDQwMtFRMDRT0AQAW%2FwGXg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-formatBaseN( 1024, 16 );
+formatBaseN( 1024, 16 )
 
 ```
 
@@ -28,10 +28,10 @@ Result: 400
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLyy%2FKTSxxSixO9dNQMDQy1VEwNFDQtOYCAGJHBm4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLyy%2FKTSxxSixO9dNQMDQy1VEwNFDQBABVdQYp" target="_blank">Run Example</a>
 
 ```java
-formatBaseN( 125, 10 );
+formatBaseN( 125, 10 )
 
 ```
 
@@ -41,10 +41,10 @@ Result: 125
 
 Floors float to integer then formats with radix given
 
-<a href="https://try.boxlang.io/?code=eJxLyy%2FKTSxxSixO9dNQMDTQMzfVUTBS0LTmAgBpTQai" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLyy%2FKTSxxSixO9dNQMDTQMzfVUTBS0AQAXBMGXQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
-formatBaseN( 10.75, 2 );
+formatBaseN( 10.75, 2 )
 
 ```
 

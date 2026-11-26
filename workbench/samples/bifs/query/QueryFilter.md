@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJx9kVFLwzAUhZ%2BbX3HJUwthoL45KtRVYVBFRl9EZMT1bgtLk5neWorsv3vb6ZgIPuXmwHdO7onDroEU3lsM%2FSN2MUhTKer3qMiQRalYcIQbDOpDh9VWn04JyVSMXFZVC8%2BoYy8FLyL6FFE0z%2BEaLhRP5fPTHc%2FyzfudHIV5WYzKzPq2goysbqSIDuqMvPyfLHyowK%2Bh3CIsjNv84a%2FO%2BbWx9W%2F%2BAR0YB7dWr3YDKl6HbYacUxv3xhKGn61iyFwPy%2BECCaQ3wEkBqQ3uKE7GrDT9fuxUHAbDLhjCvK338dFz5m1bu1yTjmEM43qPPUMyIV%2BYhvgHWOQMxr8AcZxzkg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJx9kEFLw0AQhc%2FZXzHsKYGloN6ECLFRKESRkouIyLaZtks3u3UzMQTpf3eSaKkInnb2wffezHPYNZDCe4uhf8QuBmkqRf0BFRmyKBULjnCLQX3osN7p0yshESOWVdXSM%2BnYSsGLiD5FFC1yuIYLxVP5%2FHTHs1x5v5ejsCiLUZlb31aQkdWNFNFRnZGX%2F5OFDxX4DZQ7hKVx2z%2F81Tm%2FMbb%2BzT%2BgA%2BPg1ur1fkDFKx8zxJy6uDeWMPwcFUPmengbPpBAegMcFJDa4CZxNkal6feu4sh2XTCEeVsf4slx7m1bu1yTjmGM4mqnjiGZkS9MQ9w%2Bi5yQfAHianJh" target="_blank">Run Example</a>
 
 ```java
-news = queryNew( "id,type,title", "integer,varchar,varchar" );
+news = queryNew( "id,type,title", "integer,varchar,varchar" )
 queryAddRow( news, [
 	{
 		ID : 1,
@@ -22,11 +22,11 @@ queryAddRow( news, [
 		TYPE : "film",
 		TITLE : "Men in Black"
 	}
-] );
+] )
 books = queryFilter( news, ( Any _news ) => {
-	return _news.TYPE == "book";
-} );
-writeDump( queryColumnData( books, "title" ).toList( ", " ) );
+	return _news.TYPE == "book"
+} )
+writeDump( queryColumnData( books, "title" ).toList( ", " ) )
 
 ```
 
@@ -36,10 +36,10 @@ Result: Cloud Atlas, Lord of The Rings
 
 
 
-<a href="https://try.boxlang.io/?code=eJx9kMFKxDAQhs%2FNUww5tRAK6s2lQt16WKgiSy8iInEzuxs2TdY0tRTZd3fSiqwInjJ88M2f%2BS0OHRTw3qMfH3BIgWslwnhEEXQwyAUBG3CHXnxIv9nLn5dDtmCTVyq1dqRa2iXgmSWfLElWFVzDhaCpeXq8o5m%2FOXfgE1g19USWxvUKymBkx1lyEmfm5f9m7bwCt4Vmj7DWdvfHvzr3t9q0v%2F17tKAt3Bq5OUSVvcRrYk5sIx6SkxTQp5BCaUd4jQwyKG6AMjyG3tsZ5lNKUXx%2Fc8FOcdXgdcCqb4%2Fp3O3Smb61lQwyhSmGip0bhiwPrtZdoO4JUgbpX5DrcV4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJx9kMFKw0AQhs%2FZpxj2lMASaL0JEWLjoRBFSi4iImszbZdudutmYgjSd3eSiFQETzt88M2%2F8zvsW8jgvcMwPGAfgzS1ouGEigxZlIqBI9xjUB86bA%2F655WQiEnL63rj2XS8SsGziD5FFK0LuIaF4ql6erzjWb55f5QTWFflRFbWdzXkZHUrRXRWF%2Bbyf7P0oQa%2Fg%2BqAsDFu%2F8e%2FuvR3xja%2F%2FXt0YBzcWr09jqp44WPGmLGL8Y6UHcIQQwy5G%2BB1ZJBAdgMcEZC64GaYTiFZ9v1LceZFfTCERdec4rnXlbdd4wpNOoYphEud24UkJV%2Balrh3hpyQfAENXHAt" target="_blank">Run Example</a>
 
 ```java
-news = queryNew( "id,type,title", "integer,varchar,varchar" );
+news = queryNew( "id,type,title", "integer,varchar,varchar" )
 queryAddRow( news, [
 	{
 		ID : 1,
@@ -56,11 +56,11 @@ queryAddRow( news, [
 		TYPE : "film",
 		TITLE : "Men in Black"
 	}
-] );
+] )
 books = news.filter( ( Any _news ) => {
-	return _news.TYPE == "book";
-} );
-writeDump( queryColumnData( books, "title" ).toList( ", " ) );
+	return _news.TYPE == "book"
+} )
+writeDump( queryColumnData( books, "title" ).toList( ", " ) )
 
 ```
 
@@ -68,7 +68,7 @@ Result: Cloud Atlas, Lord of The Rings
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJy1kk1Lw0AQhs%2FZX%2FGSU1qSJj20pi0RjEXQQ6uIByk9bMyqgXx1m1iK9b87u9EikoggLhP2Y96Z2X0mpSjKVCDATS3kfiF2FsycZ8KOi8i0Yb5w%2BfDMpR3zStB%2BBWasmGGYt%2FU2MW1anUtBrjl9FoaTE8%2FGkAw95fOYsbY%2FAu7ktkU%2FGXXpL6SIWwLGnQWukqxF7%2Ftd%2BlA98Bd6tkZvxuZ1VlogGkGpidlIeSTSwGy2cFDI5CnJeYqNImmqILePZV2VdTVl6JPhAMWWJqKL7%2BOgFM6Po8mh2NOkaDvekAyeN9XW5DiAYEMrJqMOhcKrFeOuHMSzyeH7HYpQPaJb4TLXxWOSVkISnqiQOZJcq9lG7q81t5BOL3N1Rr9gg3LQhFiwcJbvIYud%2FblY1FkkZLOlFNQzjh6CU7wyQ4qqpgr3glMoaQfzZaicga44Y2%2BqIfGxiy03OLa07XYOwi8P0N3FP7X37%2BDfAasd7e8%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJy1kk1Lw0AQhs%2FZX%2FGSU1o2TXpoTQsRjEXQQ6uIByk9bM2qgXx1m1iK9b87m9UikoggLhP2Y96Z2X0mpSzKVCLETS3Vfi53DuxcZJLHxdrmsF%2BEengWiseikrRfgllLZln2bb1NbE6rcyXJNaPPwXBy4nMMydDTPp9ZK%2F4RcKe2LfrJqEt%2FoWTcEjDuLHCVZC36IOjSR%2FqBv9CzFXpsVmelA4IRlg0wjlSsZRraZgsXhUqeklyk2GiQNsV4fSzqqqyrKUOfDAdosjQRW3wfB61wfxwmhyZPk2bt%2BkMy%2BP60MZPjAEKNRjEZdSg03EYx7spBNE2OIOhQRPoR3QqPeR4ek7SSiuisC5UjyRs126j9dYMtotPLXJ%2FRD2hIDkyIAwdn%2BR6q2PHPxbzO1lKZLaWgjgn0EJ7ilVlKVjVVuJeCQkk7mC0i7QxNxTdqR3xsYUv9Yz%2Fb7uYi%2BnJ93Vr8U2%2F%2FTv0dIW%2FsyA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 people = QueryNew( "name,dob", "varchar,date", [ 
@@ -97,8 +97,8 @@ people = QueryNew( "name,dob", "varchar,date", [
 		CreateDate( 1988, 1, 1 ),
 		0
 	]
-] );
-Dump( var=people, label="people - original query" );
+] )
+Dump( var=people, label="people - original query" )
 /* Output:
  *
  * | name | dob                 |
@@ -111,9 +111,9 @@ Dump( var=people, label="people - original query" );
  */
 // filter - born in 1988
 qryPeopleBornIn1988 = people.filter( ( Any row, Any rowNumber, Any qryData ) => {
-	return Year( row.DOB ) == 1988;
-} );
-dump( var=qryPeopleBornIn1988, label="qryPeopleBornIn1988 - Born in 1988" );
+	return Year( row.DOB ) == 1988
+} )
+dump( var=qryPeopleBornIn1988, label="qryPeopleBornIn1988 - Born in 1988" )
  /* Output:
  *
  * | name | dob                 |
@@ -127,17 +127,17 @@ dump( var=qryPeopleBornIn1988, label="qryPeopleBornIn1988 - Born in 1988" );
 
 ```java
 <bx:script>
-	q = QueryNew( "name, description" );
+	q = QueryNew( "name, description" )
 	bx:loop times=3 {
 		getFunctionList().each( ( Any f ) => {
-			var fd = getFunctionData( arguments.F );
-			var r = QueryAddRow( q );
-			QuerySetCell( q, "name", fd.NAME, r );
-			QuerySetCell( q, "description", fd.DESCRIPTION, r );
-		} );
+			var fd = getFunctionData( arguments.F )
+			var r = QueryAddRow( q )
+			QuerySetCell( q, "name", fd.NAME, r )
+			QuerySetCell( q, "description", fd.DESCRIPTION, r )
+		} )
 	}
-	dump( var=q.RECORDCOUNT, label="demo data set size" );
-	s = "the";
+	dump( var=q.RECORDCOUNT, label="demo data set size" )
+	s = "the"
 </bx:script>
 
 
@@ -153,8 +153,8 @@ dump( var=qryPeopleBornIn1988, label="qryPeopleBornIn1988 - Born in 1988" );
 <bx:timer type="outline" label="query.filter() with scoped variables">
 	<bx:script>
 		q2 = q.filter( ( Any row ) => {
-			return (arguments.ROW.DESCRIPTION contains s);
-		} );
+			return (arguments.ROW.DESCRIPTION contains s)
+		} )
 	</bx:script>
 	
 </bx:timer>
@@ -163,8 +163,8 @@ dump( var=qryPeopleBornIn1988, label="qryPeopleBornIn1988 - Born in 1988" );
 <bx:timer type="outline" label="query.filter() without unscoped variables">
 	<bx:script>
 		q3 = q.filter( ( Any row ) => {
-			return (row.DESCRIPTION contains s);
-		} );
+			return (row.DESCRIPTION contains s)
+		} )
 	</bx:script>
 	
 </bx:timer>

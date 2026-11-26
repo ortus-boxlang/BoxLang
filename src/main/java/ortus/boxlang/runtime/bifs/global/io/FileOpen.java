@@ -44,18 +44,23 @@ public class FileOpen extends BIF {
 	}
 
 	/**
-	 * Opens a file for reading or writing and returns a file object for future operations
+	 * Opens a file for reading or writing and returns a file object for use with BIFs such as `fileReadLine()`, `fileWriteLine()`, `fileIsEOF()`
+	 * and `fileClose()`. Always close the file object when finished. Relative paths are resolved against the application.
+	 *
+	 * @argument.file The path of the file to open.
+	 *
+	 * @argument.mode Optional. The mode to open the file in: `read` (the default), `readbinary`, `write` or `append`. An invalid mode throws an
+	 *                exception.
+	 *
+	 * @argument.charset Optional. The character set used when reading or writing the file. Defaults to utf-8.
+	 *
+	 * @argument.seekable Optional. Whether the file can be repositioned with `fileSeek()`. If not provided, files opened in a read mode are
+	 *                    seekable and files opened in write or append mode are not.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file The file to open.
-	 *
-	 * @argument.mode The mode to open the file in. Defaults to "read".
-	 *
-	 * @argument.charset The character set to use when reading or writing the file. Defaults to "utf-8".
-	 *
-	 * @argument.seekable Whether the file should be opened as seekable. Defaults to false.
+	 * @return A file object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String filePath = arguments.getAsString( Key.file );

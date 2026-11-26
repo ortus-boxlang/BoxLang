@@ -59,7 +59,9 @@ public class WriteLog extends BIF {
 	 *               If the logger is a file appender and it doesn't exist it will create it for you.
 	 *               If the value is an absolue path, it will create a file appender for you at that location.
 	 *
-	 * @argument.file (COMPAT ONLY) Do not use anymore, use log instead. If defined, we will use this instead of log.
+	 * @argument.file (COMPAT ONLY, not a declared argument) Do not use anymore, use log instead. If passed, it is used instead of log.
+	 *
+	 * @return null.
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

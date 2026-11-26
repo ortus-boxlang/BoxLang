@@ -43,14 +43,18 @@ public class DirectoryExists extends BIF {
 	}
 
 	/**
-	 * Determines whether a directory exists
+	 * Determines whether a path exists and is a directory. Relative paths are resolved against the application. Paths which are invalid return
+	 * false.
+	 *
+	 * @argument.path The directory path to check.
+	 *
+	 * @argument.allowRealPath Optional. Whether an absolute path is allowed as the `path`. Defaults to true. When false, an absolute path throws
+	 *                         an exception.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path The directory path
-	 *
-	 * @arguments.allowRealPath Whether to allow an absolute path as the path argument
+	 * @return True if the path exists and is a directory, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	directoryPath	= arguments.getAsString( Key.path );

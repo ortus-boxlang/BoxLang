@@ -63,24 +63,30 @@ public class ListEach extends ArrayEach {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list The delimited list to perform operations on
+	 * @argument.list The delimited list to iterate over.
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array. You can alternatively pass a Java Consumer which will only receive the 1st arg.
+	 * @argument.callback The function to invoke for each element. It receives the value, the one-based index, and the original list
+	 *                    string. You can alternatively pass a Java Consumer, which receives only the value.
 	 *
-	 * @argument.delimiter string the list delimiter
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
+	 *                              to false.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *                                   single-character delimiters. Defaults to false.
 	 *
-	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
+	 * @argument.parallel Whether to run the callback in parallel. Defaults to false.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored. If a boolean is provided it will be assigned to the virtual argument instead.
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If omitted, the default ForkJoinPool
+	 *                      parallelism is used. Ignored if parallel is false. If a boolean is passed it is assigned to the virtual argument instead.
 	 *
-	 * @argument.ordered Whether parallel operations should execute and maintain order
-	 * 
-	 * @argument.virtual If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 * @argument.ordered Whether parallel execution should maintain element order. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @argument.virtual If true, the callback is invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return Nothing (null). The callback is executed for its side effects.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ParallelSettings settings = ListUtil.resolveParallelSettings( arguments );

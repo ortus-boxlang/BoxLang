@@ -47,24 +47,26 @@ public class ListPrepend extends BIF {
 	}
 
 	/**
-	 * Filters a delimted list and returns the values from the callback test
+	 * Prepends a value to the beginning of a list and returns the new list as a string. The original list is not modified. A value
+	 * containing delimiters is inserted as multiple elements.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list string list to filter entries from
+	 * @argument.list The delimited list to operate on.
 	 *
-	 * @argument.filter function closure filter test
+	 * @argument.value The value to prepend.
 	 *
-	 * @argument.delimiter string the list delimiter
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
+	 *                              to false.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *                                   single-character delimiters. Defaults to false.
 	 *
-	 * @argument.parallel boolean whether to execute the filter in parallel
-	 *
-	 * @argument.maxThreads number the maximum number of threads to use in the parallel filter
+	 * @return The new list with the value at the front.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Boolean	isMultiChar		= arguments.getAsBoolean( Key.multiCharacterDelimiter );

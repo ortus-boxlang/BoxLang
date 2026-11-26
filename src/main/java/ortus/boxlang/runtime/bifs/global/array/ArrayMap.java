@@ -44,23 +44,33 @@ public class ArrayMap extends BIF {
 	}
 
 	/**
-	 * Iterates over every entry of the array and calls the closure function to work on the element of the array. The returned value will be set at the
-	 * same index in a new array and the new array will be returned
+	 * Iterates over every element of an array, invokes the callback for each, and returns a new array containing the callback results.
+	 * The result of each call is stored at the same index in the new array. The original array is not modified.
+	 * The callback receives three arguments: the value, the one-based index and the array. A Java Function may also be passed, in which case it
+	 * only receives the value.
+	 * <p>
+	 * <h2>Parallel Execution</h2>
+	 * If <code>parallel</code> is true and no <code>maxThreads</code> is passed, the work runs in parallel using the common ForkJoinPool.
+	 * If <code>maxThreads</code> is passed, a new ForkJoinPool with that many threads is created for the call and destroyed afterwards, so it
+	 * may be less efficient for repeated calls.
+	 * Also available as the <code>map()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to reduce
+	 * @argument.array The array to transform.
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the current item, and the
-	 *                    current index, and the original array. You can alternatively pass a Java Function which will only receive the 1st arg. The function should return the value that will be set at the same index in the new array.
+	 * @argument.callback The function to invoke for each item. Its return value is stored at the same index in the new array. It receives the
+	 *                    value, the one-based index and the array. A Java Function is also accepted and only receives the value.
 	 *
-	 * @argument.parallel If true, the function will be invoked in parallel using multiple threads. Defaults to false.
+	 * @argument.parallel Whether to run the callback in parallel. Defaults to false.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when parallel is true. If not provided the common thread pool will be used. If a boolean value is passed, it will be assigned as the virtual argument.
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If not passed, the default ForkJoinPool thread count
+	 *                      is used. Ignored if parallel is false. If a boolean is passed, it is assigned to the virtual argument instead.
 	 *
-	 * @argument.virtual If true, the function will be invoked using virtual thread. Defaults to false. Ingored if parallel is false.
+	 * @argument.virtual If true, the function is invoked using virtual threads. Defaults to false. Ignored if parallel is false.
 	 *
+	 * @return A new array containing the callback results.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ParallelSettings settings = ListUtil.resolveParallelSettings( arguments );

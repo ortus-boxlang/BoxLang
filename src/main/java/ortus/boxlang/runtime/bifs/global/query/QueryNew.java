@@ -25,7 +25,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.ListUtil;
@@ -46,7 +45,7 @@ public class QueryNew extends BIF {
 	}
 
 	/**
-	 * Return new query based on the provided column list, column types, and/or row data.
+	 * Creates a new query from a column list, optional column types and optional row data.
 	 * <p>
 	 * Available column types are:
 	 * <ul>
@@ -64,21 +63,23 @@ public class QueryNew extends BIF {
 	 * <li>timestamp</li>
 	 * <li>varchar</li>
 	 * </ul>
-	 * <p>
-	 * If <code>columnTypeList</code> is empty, all columns will be of type "object".
-	 *
-	 * @See {@link QueryColumnType}
+	 * If <code>columnTypeList</code> is empty, all columns will be of type "object". If provided, it must have the same number of
+	 * entries as the column list, otherwise an exception is thrown.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.columnList The column list to be used in the query, Ex: "name, age, dob". It can also be an array of structs that will be used as the row data.
+	 * @argument.columnList The column names as a comma-delimited string (for example "name, age, dob"), or an array of column names.
+	 *                      If an array of structs is passed with no other arguments, it is used as the row data and the column names are taken from
+	 *                      the keys of the first struct.
 	 *
-	 * @argument.columnTypeList Comma-delimited list specifying column data types. If empty, all columns will be of type "object". Ex: "varchar, integer, date"
+	 * @argument.columnTypeList A comma-delimited list of column data types, one per column (for example "varchar, integer, date").
+	 *                          If empty, all columns are of type "object".
 	 *
-	 * @argument.rowData Data to populate the query. Can be a struct (with keys matching column names), an array of structs, or an array of arrays (in
-	 *                   same order as columnList). Ex: [{name: "John", age: 30}, {name: "Jane", age: 25}]
+	 * @argument.rowData Data to populate the query. Can be a struct (with keys matching column names, producing one row), an array
+	 *                   of structs, or an array of arrays (in the same order as the column list).
 	 *
+	 * @return The new query.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	rowData			= arguments.get( Key.rowData );

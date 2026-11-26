@@ -2,7 +2,7 @@
 
 This is Example1
 
-<a href="https://try.boxlang.io/?code=eJyVjzELwjAQhefkVxyZKmTRuomD4qKDoAgdSodoTxtoG3tNLPn3Nqmgq8sN3wfvvevIwxo6h%2BSPOCQgyAy6lK1qUEgQurX4QJIvRbdK0Yhy4CznjM3leMRBecFZISe2iGxrrj8sjexSoSkN4Y9YRpHputaqCZwXMFtxcnfXj5NOf0z6BE715xDwzYuv7dseyW5sAh15CbFDQhp8RtrizjXP6AJ5Ay0pSK4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJyVjzELwjAQhefkVxyZKmTRujooLjoIitChdIj2tIG2sdfEkn9vmop0dbnh%2B%2BC9dx152EDnkPwJhwQEmUGXslUNCglCtxafSPKt6F4pCigHznLO2FKGI47KC84KObFVZDtzm7E0smuFpjSEM7GOItN1rVUzcl7AgpN7uD4sOv%2Bx6Js3tV%2FGgF9cfOzQ9kh2axPoyEuIFRLSoDPSFveueUUFiw%2FSyEe4" target="_blank">Run Example</a>
 
 ```java
 qry = queryNew( "rowid,name", "integer,varchar", [ 
@@ -22,15 +22,15 @@ qry = queryNew( "rowid,name", "integer,varchar", [
 		4,
 		"William"
 	]
-] );
+] )
 rufus = QueryNew( "rowid,name", "integer,varchar", [
 	[
 		42,
 		"Rufus"
 	]
-] );
-queryInsertAt( qry, rufus, 3 );
-WriteDump( qry );
+] )
+queryInsertAt( qry, rufus, 3 )
+WriteDump( qry )
 
 ```
 
@@ -39,7 +39,7 @@ WriteDump( qry );
 
 Using the member function.
 
-<a href="https://try.boxlang.io/?code=eJyVjj0LwjAURefmVzwyVQiC1k0cFBcdBEXoUDpE%2B7SBftjXxJJ%2Fb5IKdnV5w7mX825HFjbQGSR7wiEGTu2gCtHIGrkArhqNTyTxlnQvJTmUAYsyFkUL4Q4%2FSstZlIuRLQPbtbcJSwK7ltgWLeEkWIUgVVWlZO05y2G2ZmQepneTzn9M%2BgrH9xcv%2BPk6svND0yPprY4h2AUkPklJadyb%2BhWDK3nyAWpCRlo%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJyVjjELwjAQhefmVxyZWgiC1tVBcdFBUIQOpUO0pw20jb0mlvx701Skq8sN33t89zpysIHOIrkTDjFw0oMqRSsb5AK4ag0%2BkcRb0r2S5FEOLMpZFC2FP%2FwoHWdRISa2CmynbzOWBnatUJeacBasQ5CpulayGTkrIGFkH7b3i85%2FLPr6pu%2BXUfDTdeQWh7ZHMlsTQ5ALSH2QkTK4t80rBt%2BB5AMZsEVk" target="_blank">Run Example</a>
 
 ```java
 qry = queryNew( "rowid,name", "integer,varchar", [ 
@@ -59,22 +59,22 @@ qry = queryNew( "rowid,name", "integer,varchar", [
 		4,
 		"William"
 	]
-] );
+] )
 rufus = QueryNew( "rowid,name", "integer,varchar", [
 	[
 		42,
 		"Rufus"
 	]
-] );
-qry.InsertAt( rufus, 3 );
-WriteDump( qry );
+] )
+qry.InsertAt( rufus, 3 )
+WriteDump( qry )
 
 ```
 
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJyV0LEKwjAQgOG5eYojU4UMtoqg4lBx0UGR4lQcilzbDE3ba2Lp25sSLQUXXcLxcfwcaagPYAeNQerP2PnAVVqigDRHLoA%2FU3oUKQmQSmOOZC0B5iXM83hsWsmFncI58%2B7irTdqHS4nGJdSF46DCZ%2BqQjldWWV3mG1ZQ33450GfGip3T7Aeax1JjReja6NtaY9ZRQjXoX1ULZKGDR%2FXDqasfWiGD7E0WYq0YzG8oYDFdznKNNJv4RfXX2Uy" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJyV0D0LwjAQgOE5%2BRVHphYy2CqCgkPFRQdFilPpUOT6MTRtroml%2F96WWCi46BKOh%2BPliKYhgANoizRcsfdAqKxGCVmBQoJ4ZfQsM5JQKYMF0mgJcJZwxkRsu0rIcQpXnKXyow%2FqHG4WGNeVKR0HC740pXK6HZWn4HNNQ%2FjnPXMMlTsn2M2xniqDN2taa8bQEfOGEO5T%2Bqw6JAN7MW%2BdbN16oKff8PliJTJO5fSGEtZf2Sg3SD9U3%2Bx9Y4s%3D" target="_blank">Run Example</a>
 
 ```java
 qry1 = queryNew( "name, age", "varchar, integer", [ 
@@ -94,19 +94,56 @@ qry1 = queryNew( "name, age", "varchar, integer", [
 		"John",
 		26
 	]
-] );
+] )
 qry2 = queryNew( "name, age", "varchar, integer", [
 	[
 		"Jeni",
 		19
 	]
-] );
-writeOutput( "Before QueryInsert :" );
-writeDump( qry1 );
-QueryInsertAt( qry1, qry2, 3 );
-writeOutput( "After QueryInsert :" );
-writeDump( qry1 );
+] )
+writeOutput( "Before QueryInsert :" )
+writeDump( qry1 )
+QueryInsertAt( qry1, qry2, 3 )
+writeOutput( "After QueryInsert :" )
+writeDump( qry1 )
 
 ```
 
+### Insert rows after the first row
 
+```java
+a = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+b = queryNew( "id,name", "integer,varchar", [ [ 9, "Zed" ] ] )
+queryInsertAt( a, b, 1 )
+writeOutput( arrayToList( queryColumnData( a, "name" ) ) )
+
+```
+
+Result: Ann,Zed,Bob
+
+### Member function inserting at the beginning
+
+```java
+a = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+b = queryNew( "id,name", "integer,varchar", [ [ 9, "Zed" ] ] )
+a.insertAt( b, 0 )
+writeOutput( arrayToList( a.columnData( "name" ) ) )
+
+```
+
+Result: Zed,Ann,Bob
+
+### Queries with different columns
+
+```java
+a = queryNew( "id,name" )
+b = queryNew( "id,title" )
+try {
+	queryInsertAt( a, b, 0 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Query columns do not match

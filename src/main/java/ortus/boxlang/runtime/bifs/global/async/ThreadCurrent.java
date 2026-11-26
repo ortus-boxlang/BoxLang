@@ -32,23 +32,18 @@ public class ThreadCurrent extends BIF {
 	}
 
 	/**
-	 * Returns the currently executing thread.
+	 * Returns the currently executing Java thread.
+	 *
+	 * <pre>
+	 * t = threadCurrent()
+	 * println( "Running on thread: " &amp; t.getName() )
+	 * println( "Is virtual? " &amp; t.isVirtual() )
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @return The current {@link Thread} object. This can be used to inspect thread properties such as
-	 *         {@link Thread#getName()}, {@link Thread#getId()}, {@link Thread#getState()}, or to check
-	 *         {@link Thread#isVirtual()}.
-	 *
-	 * @example
-	 *
-	 *          <pre>{@code
-	 * // Get the current thread and print its name
-	 * t = threadCurrent();
-	 * println( "Running on thread: " + t.getName() );
-	 * println( "Is virtual? " & t.isVirtual() );
-	 * }</pre>
+	 * @return The current Java Thread object. It can be used to inspect thread properties such as getName(), getId(), getState() or isVirtual().
 	 */
 	@Override
 	public Thread _invoke( IBoxContext context, ArgumentsScope arguments ) {

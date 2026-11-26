@@ -39,12 +39,15 @@ public class QueryClear extends BIF {
 	}
 
 	/**
-	 * This function clears the query
+	 * Removes all rows from a query, keeping its columns. The query is modified in place. Also available as
+	 * <code>query.clear()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to clear
+	 * @argument.query The query to clear.
+	 *
+	 * @return The same query, now with zero rows.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query query = arguments.getAsQuery( Key.query );

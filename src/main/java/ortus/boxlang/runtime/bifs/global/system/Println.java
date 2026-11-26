@@ -46,12 +46,15 @@ public class Println extends BIF {
 	}
 
 	/**
-	 * Print each argument on its own line
+	 * Prints each argument on its own line, with a trailing line break, to the request output (or the console when there is no request
+	 * context). Non-string values are converted to their string representation. With no arguments an empty line is printed.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.message The first message to print; additional arguments are printed in order
+	 * @argument.message The first message to print; additional arguments are printed in order. Defaults to an empty string.
+	 *
+	 * @return null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		StringJoiner output = new StringJoiner( System.lineSeparator() );

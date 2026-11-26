@@ -2,24 +2,43 @@
 
 This example illustrates use of the JSStringFormat function.
 
-<a href="https://try.boxlang.io/?code=eJwrLinKzEtXsFVQcsxTSK1IzC3ISVUohgiWJeaUpiqUZ5ZkKCgpFZbml6SmKCkpqJekVpSoK1lzlRdllqT6l5YUlJZoKHgFB4M1ueUX5SYC%2BVAjNBU0rbkA0lYhzQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrLinKzEtXsFVQcsxTSK1IzC3ISVUohgiWJeaUpiqUZ5ZkKCgpFZbml6SmKCkpqJekVpSoK3GVF2WWpPqXlhSUlmgoeAUHg%2FW45RflJgL5UBM0FTQBcgIhTQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
-string = "An example string value with ""quoted"" 'text'";
-writeOutput( JSStringFormat( string ) );
+string = "An example string value with ""quoted"" 'text'"
+writeOutput( JSStringFormat( string ) )
 
 ```
 
+Result: An example string value with \"quoted\" \'text\'
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwrLilSsFVQcspPUi9WSM7PzU3NK1EoTyxWUFJydvP1USjKT84uVlRSUrLmKi%2FKLEn1Ly0pKC3RUCgG6lNTULJJKrJTUtBEk%2FQKDi4pysxLd8svyk2EKtYEqQIAhTEilA%3D%3D" target="_blank">Run Example</a>
+### Quotes in a value
 
 ```java
-str = "Bob's comment was ""BL rocks!""";
-writeOutput( str & "<br>" );
-writeOutput( JSStringFormat( str ) );
+str = "Bob's comment was ""BL rocks!"""
+writeOutput( str & "<br>" )
+writeOutput( jsStringFormat( str ) )
 
 ```
 
+Result: Bob's comment was "BL rocks!"<br>Bob\'s comment was \"BL rocks!\"
 
+### Escape line breaks and backslashes
+
+```java
+str = "line1" & char( 10 ) & "C:\temp"
+writeOutput( jsStringFormat( str ) )
+
+```
+
+Result: line1\nC:\\temp
+
+### Member function
+
+```java
+str = "it's"
+writeOutput( str.jsFormat() )
+
+```
+
+Result: it\'s

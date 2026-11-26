@@ -1,9 +1,17 @@
-### Get the context root of the current request
+### Get the context root
+
+Outside of a servlet container the context root is always /.
 
 ```java
-root = getContextRoot();
-writeOutput( isString( root ) );
-
+writeOutput( getContextRoot() )
 ```
 
-Result: true
+Result: /
+
+### Build a URL from the context root
+
+```java
+writeOutput( getContextRoot() & "index.bxm" )
+```
+
+Result: /index.bxm

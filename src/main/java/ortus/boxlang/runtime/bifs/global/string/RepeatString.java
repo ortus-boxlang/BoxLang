@@ -43,8 +43,12 @@ public class RepeatString extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string The string to repeat.
-	 * 
-	 * @argument.count The number of times to repeat the string.
+	 *
+	 * @argument.count The number of times to repeat the string. A decimal value is truncated. Zero returns an empty string.
+	 *
+	 * @throws BoxRuntimeException if the count is negative.
+	 *
+	 * @return The repeated string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	input	= arguments.getAsString( Key.string );

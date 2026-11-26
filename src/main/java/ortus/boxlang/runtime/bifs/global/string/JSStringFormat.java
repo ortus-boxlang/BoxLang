@@ -38,8 +38,9 @@ public class JSStringFormat extends BIF {
 	}
 
 	/**
-	 *
-	 * Escapes special JavaScript characters, such as single quotation mark, double quotation mark, and newline
+	 * Escapes special JavaScript characters in a string so it can be safely placed inside a JavaScript string literal. Backslash, single
+	 * quote, double quote, newline, carriage return, form feed, backspace and tab are escaped with a backslash. Other characters are left
+	 * untouched.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

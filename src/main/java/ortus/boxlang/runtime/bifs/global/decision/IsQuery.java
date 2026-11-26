@@ -37,12 +37,14 @@ public class IsQuery extends BIF {
 	}
 
 	/**
-	 * Determine whether the given value is a BoxLang Query object.
+	 * Determines whether a value is a BoxLang Query object.
+	 *
+	 * @argument.value The value to test for query-ness.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value Value to test for query-ness.
+	 * @return True if the value is a Query, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return DynamicObject.unWrap( arguments.get( Key.value ) ) instanceof Query;

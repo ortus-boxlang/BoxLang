@@ -38,12 +38,14 @@ public class QueryColumnCount extends BIF {
 	}
 
 	/**
-	 * This function returns the number of columns in a query
+	 * Returns the number of columns in a query. Also available as <code>query.columnCount()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to get the column count from
+	 * @argument.query The query to count the columns of.
+	 *
+	 * @return The number of columns.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsQuery( Key.query ).getColumns().size();

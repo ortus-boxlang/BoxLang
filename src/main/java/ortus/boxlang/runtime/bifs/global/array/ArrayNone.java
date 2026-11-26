@@ -41,33 +41,33 @@ public class ArrayNone extends ArraySome {
 	}
 
 	/**
-	 * Used to iterate over an array and test whether <strong>NONE</strong> item meets the test callback.
-	 * This is the opposite of {@link ArraySome}.
-	 * <p>
-	 * The function will be passed 3 arguments: the value, the index, and the array.
-	 * You can alternatively pass a Java Predicate which will only receive the 1st arg.
-	 * The function should return true if the item meets the test, and false otherwise.
-	 * <p>
-	 * <strong>Note:</strong> This operation is a short-circuit operation, meaning it will stop iterating as soon as it finds the first item that does meet the test condition.
+	 * Iterates over an array and tests whether <strong>no</strong> element passes the test callback. This is the opposite of {@link ArraySome}.
+	 * The callback receives three arguments: the value, the one-based index and the array, and must return true if the element passes. A Java
+	 * Predicate may also be passed, in which case it only receives the value.
+	 * Iteration is short-circuited: it stops at the first element that passes the test.
 	 * <p>
 	 * <h2>Parallel Execution</h2>
-	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a ForkJoinPool with parallel streams.
-	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the filter in parallel, and destroy it after the operation is complete.
-	 * This allows for efficient processing of large arrays, especially when the test function is computationally expensive or the array is large.
+	 * If <code>parallel</code> is true and no <code>maxThreads</code> is passed, the work runs in parallel using the common ForkJoinPool.
+	 * If <code>maxThreads</code> is passed, a new ForkJoinPool with that many threads is created for the call and destroyed afterwards, so it
+	 * may be less efficient for repeated calls.
+	 * Also available as the <code>none()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to test against the callback.
+	 * @argument.array The array to test.
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array. You can alternatively pass a Java Predicate which will only receive the 1st arg.
+	 * @argument.callback The function to invoke for each item. It receives the value, the one-based index and the array. A Java Predicate is
+	 *                    also accepted and only receives the value.
 	 *
-	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
+	 * @argument.parallel Whether to run the tests in parallel. Defaults to false.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored.
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If not passed, the default ForkJoinPool thread count
+	 *                      is used. Ignored if parallel is false. If a boolean is passed, it is assigned to the virtual argument instead.
 	 *
-	 * @argument.virtual If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 * @argument.virtual If true, the function is invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return True if the callback returned false for every element (also true for an empty array), false if any element passed.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return !( Boolean ) super._invoke( context, arguments );

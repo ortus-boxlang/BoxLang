@@ -36,16 +36,28 @@ public class StringReduce extends ListReduce {
 	}
 
 	/**
-	 * Run the provided udf over all characters in a string to reduce the values to a single output
+	 * Runs a callback over all the characters of a string, from left to right, to reduce them to a single value.
+	 * This BIF shares its arguments with the corresponding list function: the <code>list</code> argument is the string, and the delimiter is
+	 * always overridden with an empty string, so every character is one element. Pass the string positionally or as <code>list</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to iterate
+	 * @argument.list The string to reduce.
 	 *
-	 * @argument.callback The callback to use for the test
+	 * @argument.callback The function to invoke for each character. It receives the accumulator, the character, the 1-based index, the
+	 *                    original string and the delimiter, and returns the new accumulator. A Java BiFunction receives only the accumulator
+	 *                    and the character.
 	 *
-	 * @argument.initialValue The initial value of the reduction
+	 * @argument.initialValue The initial value of the accumulator. If omitted, the accumulator starts as null.
+	 *
+	 * @argument.delimiter Ignored. It is always set to an empty string so that every character of the string is an element.
+	 *
+	 * @argument.includeEmptyFields Not used for strings, since there are no delimiters. Defaults to false.
+	 *
+	 * @argument.multiCharacterDelimiter Not used for strings, since there are no delimiters. Defaults to true.
+	 *
+	 * @return The final value of the accumulator.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put( Key.delimiter, "" );

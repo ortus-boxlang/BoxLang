@@ -50,14 +50,24 @@ public class ToUnmodifiable extends BIF {
 	}
 
 	/**
-	 * Convert an array, struct, query or set to its Unmodifiable counterpart.
+	 * Converts an array, struct, query or set to its unmodifiable counterpart. The result is a copy that cannot be changed;
+	 * attempting to change it throws an exception. Other types of values throw an exception.
+	 *
+	 * <pre>
+	 * frozen = [ 1, 2, 3 ].toUnmodifiable()
+	 * frozen.append( 4 ) // throws an exception
+	 * </pre>
+	 *
+	 * Also available as the <code>toUnmodifiable()</code> member function on arrays, structs, queries and sets.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.value The array, struct, query or set to convert.
 	 *
-	 * @param context   The context in which the BIF is being executed.
-	 * @param arguments The arguments passed to the BIF.
+	 * @throws BoxRuntimeException If the value is not an array, struct, query or set.
 	 *
-	 * @return The value converted to its Unmodifiable counterpart.
+	 * @return The value converted to its unmodifiable counterpart.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	inputValue	= arguments.get( Key.value );

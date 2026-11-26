@@ -2,13 +2,20 @@
 
 Checks if the fileObj is a filestream-object.
 
-
 ```java
-filePath = expandPath( "./myfile.txt" );
-fileObj = fileOpen( filePath );
-writeOutput( isFileObject( fileObj ) );
-
+filePath = getTempFile( getTempDirectory(), "isfile" )
+fileObj = fileOpen( filePath )
+writeOutput( isFileObject( fileObj ) )
+fileClose( fileObj )
+fileDelete( filePath )
 ```
 
 Result: true
 
+### A file path is not a file object
+
+```java
+writeOutput( isFileObject( "/tmp/myfile.txt" ) )
+```
+
+Result: false

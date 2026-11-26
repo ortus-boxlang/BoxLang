@@ -39,12 +39,16 @@ public class SnakeCase extends BIF {
 	}
 
 	/**
-	 * Convert a string to snake case
+	 * Convert a string to snake_case: lowercase words separated by underscores. Words are detected by hyphens, other non-alphanumeric
+	 * characters,
+	 * and camelCase or acronym boundaries. Leading and trailing underscores are removed.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The target string
+	 * @argument.string The string to convert.
+	 *
+	 * @return The snake_case version of the string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return StringUtil.snakeCase( arguments.getAsString( Key.string ) );

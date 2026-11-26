@@ -40,12 +40,12 @@ public class IsRange extends BIF {
 	}
 
 	/**
-	 * Determine whether a value is a range.
+	 * Determines whether a value is a Range, as created with the range operator (`1..5`, `1..<5`) or the Range type.
 	 *
 	 * @argument.value The value to test for range-ness.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope defining the value to test.
+	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @return True if the value is a Range, false otherwise.
 	 */

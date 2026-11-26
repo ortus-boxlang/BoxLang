@@ -42,12 +42,15 @@ public class QueryReverse extends BIF {
 	}
 
 	/**
-	 * This function reverses the query data
+	 * Returns a copy of a query with its rows in reverse order. The original query is not modified. Also available as
+	 * <code>query.reverse()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to reverse
+	 * @argument.query The query to reverse.
+	 *
+	 * @return A new query with the rows in reverse order.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query query = ( Query ) DuplicationUtil.duplicate( arguments.get( Key.query ), false, context );

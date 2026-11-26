@@ -49,12 +49,14 @@ public class Cos extends BIF {
 	}
 
 	/**
-	 * Returns the cosine of an angle entered in radians
+	 * Returns the cosine of an angle entered in radians. Also available as <code>number.cos()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.number The number to calculate the cosine of (in radians).
+	 *
+	 * @return The cosine of the angle.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return _invoke( arguments.getAsNumber( Key.number ) );

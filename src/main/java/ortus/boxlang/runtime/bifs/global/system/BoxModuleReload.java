@@ -39,12 +39,14 @@ public class BoxModuleReload extends BIF {
 	}
 
 	/**
-	 * Reload all the registered modules in the runtime or a specific module.
+	 * Reloads all registered modules in the runtime, or a single module when a name is given.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.module The name of the module to reload. If not provided, all modules are reloaded.
+	 *
+	 * @return null.
 	 */
 	public IStruct _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String moduleName = arguments.getAsString( Key.module );

@@ -41,12 +41,15 @@ public class Int extends BIF {
 	}
 
 	/**
-	 * Returns the closest integer that is smaller than the number
-	 * 
+	 * Returns the closest integer that is less than or equal to the number (it rounds down, so -1.5 becomes -2). Also available as
+	 * <code>number.int()</code>.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
-	 * @argument.number The number to calculate the closest integer for
+	 *
+	 * @argument.number The number to round down to an integer.
+	 *
+	 * @return The integer value of the number.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Number number = arguments.getAsNumber( Key.number );

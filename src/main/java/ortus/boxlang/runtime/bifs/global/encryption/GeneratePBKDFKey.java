@@ -63,22 +63,25 @@ public class GeneratePBKDFKey extends BIF {
 	}
 
 	/**
-	 * Generates an encoded encryption key using the specified algorithm and key
-	 * size
+	 * Derives a secret key from a passphrase and salt using PBKDF2 and returns it as a Base64 string, which can be used as the `key` of
+	 * `encrypt()` and `decrypt()`. The aliases `PBKDF2WithSHA1`, `PBKDF2WithSHA224`, `PBKDF2WithSHA256`, `PBKDF2WithSHA384` and
+	 * `PBKDF2WithSHA512` are mapped to their `PBKDF2WithHmacSHA*` equivalents.
+	 *
+	 * @argument.algorithm The PBKDF2 algorithm: PBKDF2WithHmacSHA1, PBKDF2WithHmacSHA224, PBKDF2WithHmacSHA256, PBKDF2WithHmacSHA384 or
+	 *                     PBKDF2WithHmacSHA512. Although declared with a default of AES, a PBKDF2 algorithm must be supplied.
+	 *
+	 * @argument.passphrase The passphrase to derive the key from.
+	 *
+	 * @argument.salt The salt, a random string, used when deriving the key. The same passphrase and salt always produce the same key.
+	 *
+	 * @argument.iterations Optional. The number of iterations. Defaults to 1000.
+	 *
+	 * @argument.keySize Optional. The size of the key in bits. Defaults to 256.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.algorithm The algorithm to use for generating the key. Algorithms supported are: PBKDF2WithHmacSHA1, PBKDF2WithHmacSHA224, PBKDF2WithHmacSHA256, PBKDF2WithHmacSHA384, PBKDF2WithHmacSHA512
-	 * 
-	 * @argument.passphrase The passphrase to use for generating the key. This is
-	 * 
-	 * @argument.salt The salt to use for generating the key. This is a random string
-	 * 
-	 * @argument.iterations The number of iterations to use for generating the key.
-	 *
-	 * @argument.keySize The optional size of the key to generate. If not provided
-	 *                   the default key size for the algorithm will be used
+	 * @return The derived key as a Base64 string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		CastAttempt<Integer>	keySizeAttempt		= IntegerCaster.attempt( arguments.get( Key.keySize ) );

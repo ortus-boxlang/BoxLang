@@ -39,12 +39,14 @@ public class StructClear extends BIF {
 	}
 
 	/**
-	 * Clear all items from struct
-	 * 
+	 * Removes all key-value pairs from a struct, in place. The struct must be modifiable.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.structure The struct to clear.
+	 *
+	 * @return The same (now empty) struct.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct actualStruct = arguments.getAsStruct( Key.structure );

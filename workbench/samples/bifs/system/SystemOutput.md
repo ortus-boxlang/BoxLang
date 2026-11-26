@@ -1,37 +1,32 @@
-### Write a string to the output stream "Hello World"
-
-
-
-<a href="https://try.boxlang.io/?code=eJwrriwuSc31Ly0pKC3RUFDySM3JyVcIzy%2FKSVFS0LTmAgC7OQpt" target="_blank">Run Example</a>
+### Write a string to the console
 
 ```java
-systemOutput( "Hello World" );
-
+systemOutput( "Hello World" )
 ```
 
+Result: Hello World is written to the console (or request output)
 
-### Write an array to the output stream
-
-
-
-<a href="https://try.boxlang.io/?code=eJwrriwuSc31Ly0pKC3RUIhW4OJUSsvPV9IB0kmJRUpcsQqa1lwA5cEKQg%3D%3D" target="_blank">Run Example</a>
+### Write with a trailing line break
 
 ```java
-systemOutput( [ 
-	"foo",
-	"bar"
-] );
-
+systemOutput( "first", true )
+systemOutput( "second", true )
 ```
 
+Result: first and second, each on its own line
 
-### Write a struct to the output stream
-
-
-
+### Write to the error stream
 
 ```java
-systemOutput({ "myKey", "myValue" });
+systemOutput( "something went wrong", true, true )
 ```
 
+Result: the message is written to standard error with a line break
 
+### Write an array
+
+```java
+systemOutput( [ "foo", "bar" ], true )
+```
+
+Result: the string representation of the array

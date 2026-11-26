@@ -38,12 +38,15 @@ public class FileClose extends BIF {
 	}
 
 	/**
-	 * Closes an on-disk or in-memory file that is open.
+	 * Closes a file object that was opened with `fileOpen()`, releasing the file handle. Always close files you open, ideally in a `finally`
+	 * block. Returns null.
+	 *
+	 * @argument.file The file object to close.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file The file to close.
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile file = arguments.getAsBoxFile( Key.file );
