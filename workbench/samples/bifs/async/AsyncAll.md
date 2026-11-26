@@ -64,8 +64,8 @@ An exception is thrown if the executor name is not registered.
 try {
 	asyncAll( [ () -> 1 ], "doesNotExist" )
 } catch ( any e ) {
-	writeOutput( e.message.left( 30 ) )
+	writeOutput( e.message.left( 38 ) )
 }
 ```
 
-Result: Executor [doesNotExist] does not
+Result: Executor [doesNotExist] does not exist

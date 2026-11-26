@@ -47,8 +47,9 @@ public class AsyncAllApply extends BIF {
 	/**
 	 * Applies a function to every item of an array or struct in parallel and waits for all of the results.
 	 * The <code>mapper</code> receives the item and must return a result. For an array the result is an array of results in the original order.
-	 * For a struct, each item passed to the mapper has the <code>key</code> and <code>value</code> of the struct entry and the result is a
-	 * struct.
+	 * For a struct, the mapper receives a struct with the <code>key</code> and <code>value</code> of each entry and must return a struct
+	 * containing a
+	 * <code>value</code> key; the result is a struct with the original keys and those values.
 	 * <p>
 	 * If the mapper throws an exception and an <code>errorHandler</code> was given, the handler receives the exception and its return value is
 	 * used as the result for that item.
@@ -61,6 +62,7 @@ public class AsyncAllApply extends BIF {
 	 * 
 	 * <pre>
 	 * squares = asyncAllApply( [ 1, 2, 3 ], ( n ) -> n * n )
+	 * doubled = asyncAllApply( { a: 10, b: 20 }, ( item ) -> { value: item.value * 2 } )
 	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -68,7 +70,8 @@ public class AsyncAllApply extends BIF {
 	 *
 	 * @argument.items The items to apply the function to. Can be an array or a struct.
 	 *
-	 * @argument.mapper The function to apply to each item. It receives the item as an argument and must return a result.
+	 * @argument.mapper The function to apply to each item. It receives the item as an argument and must return a result (a struct with a value
+	 *                  key when the items are a struct).
 	 *
 	 * @argument.errorHandler Optional function to handle errors thrown by the mapper. It receives the exception and its return value is used as
 	 *                        the item result.

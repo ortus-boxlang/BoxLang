@@ -11,10 +11,10 @@ Result: 1,4,9,16,25
 
 ### Process a struct of items
 
-When the items are a struct, the mapper receives each entry as an item with `key` and `value`, and the result is a struct.
+When the items are a struct, the mapper receives each entry as a struct with `key` and `value`, and must return a struct with a `value` key. The result is a struct with the original keys.
 
 ```java
-doubled = asyncAllApply( { a: 10, b: 20 }, ( item ) -> item.value * 2 )
+doubled = asyncAllApply( { a: 10, b: 20 }, ( item ) -> { value: item.value * 2 } )
 writeOutput( doubled.a & "," & doubled.b )
 ```
 
@@ -49,3 +49,24 @@ writeOutput( results.toList() )
 ```
 
 Result: 2,3,4
+
+### Timeout
+
+If the items do not all complete within the timeout, an exception is thrown. Here named arguments are used to pass only the timeout and its time unit.
+
+```java
+try {
+	asyncAllApply(
+		items = [ 1 ],
+		mapper = ( n ) => {
+			sleep( 1000 )
+		},
+		timeout = 100,
+		timeUnit = "milliseconds"
+	)
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Array processing timed out after 100 MILLISECONDS
