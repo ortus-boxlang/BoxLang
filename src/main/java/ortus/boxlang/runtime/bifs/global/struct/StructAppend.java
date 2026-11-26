@@ -57,7 +57,8 @@ public class StructAppend extends BIF {
 	 *
 	 * @argument.struct2 The struct containing the values to be appended.
 	 *
-	 * @argument.overwrite Whether to overwrite existing keys in struct1 with the values from struct2. Defaults to true. When false, only keys missing from struct1 are added.
+	 * @argument.overwrite Whether to overwrite existing keys in struct1 with the values from struct2. Defaults to true. When false, only keys missing
+	 *                     from struct1 are added.
 	 *
 	 * @return The target struct (struct1) after appending.
 	 */

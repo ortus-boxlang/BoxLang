@@ -75,13 +75,15 @@ public class StructNew extends BIF {
 	 *
 	 * @argument.type The struct type. Defaults to default.
 	 *
-	 * @argument.sortType An optional sort type: text, textNoCase or numeric. May also be a comparator function, in which case it is treated as the callback.
+	 * @argument.sortType An optional sort type: text, textNoCase or numeric. May also be a comparator function, in which case it is treated as the
+	 *                    callback.
 	 *
 	 * @argument.sortOrder The sort order applicable to the sortType argument: asc (default) or desc.
 	 *
 	 * @argument.localeSensitive Whether text sorting should use the locale rules of the current context. Defaults to false.
 	 *
-	 * @argument.callback An optional comparator function (or Java Comparator) used to sort the keys. It receives two key names and must return an integer.
+	 * @argument.callback An optional comparator function (or Java Comparator) used to sort the keys. It receives two key names and must return an
+	 *                    integer.
 	 *
 	 * @return A new, empty struct.
 	 */

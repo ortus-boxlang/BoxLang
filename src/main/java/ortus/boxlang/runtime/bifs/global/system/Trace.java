@@ -71,7 +71,8 @@ public class Trace extends BIF {
 	 *
 	 * @argument.type The type of the trace message. Default is "Information".
 	 *
-	 * @argument.extrainfo Any extra information to be logged with the trace message. This can be simple or a complex object. We will convert it to string for logging.
+	 * @argument.extrainfo Any extra information to be logged with the trace message. This can be simple or a complex object. We will convert it to
+	 *                     string for logging.
 	 *
 	 * @argument.abort If true, the current request will be aborted after the trace call. Default is false.
 	 *

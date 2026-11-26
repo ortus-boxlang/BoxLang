@@ -53,22 +53,27 @@ public class StructNone extends StructSome {
 	 * You can alternatively pass a Java BiPredicate which will only receive the first 2 args (key and value).
 	 * The function should return true if the item meets the test, and false otherwise.
 	 * <p>
-	 * <strong>Note:</strong> This operation is a short-circuit operation, meaning it will stop iterating as soon as it finds the first item that meets the test condition.
+	 * <strong>Note:</strong> This operation is a short-circuit operation, meaning it will stop iterating as soon as it finds the first item that
+	 * meets the test condition.
 	 * <p>
 	 * <h2>Parallel Execution</h2>
-	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the test will be executed in parallel using a ForkJoinPool with parallel streams.
-	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the test in parallel, and destroy it after the operation is complete.
+	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the test will be executed in parallel using a
+	 * ForkJoinPool with parallel streams.
+	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the test in parallel,
+	 * and destroy it after the operation is complete.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.struct The target struct to test.
 	 *
-	 * @argument.callback The function used to test. The function will be passed 3 arguments: the key, the value, the struct. You can alternatively pass a Java BiPredicate which will only receive the first 2 args.
+	 * @argument.callback The function used to test. The function will be passed 3 arguments: the key, the value, the struct. You can alternatively
+	 *                    pass a Java BiPredicate which will only receive the first 2 args.
 	 *
 	 * @argument.parallel Whether to run the test in parallel. Defaults to false. If true, the test will be run in parallel using a ForkJoinPool.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If not passed the common ForkJoinPool is used. Ignored if parallel is false. If a boolean is provided it is assigned to the virtual argument instead.
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If not passed the common ForkJoinPool is used. Ignored if
+	 *                      parallel is false. If a boolean is provided it is assigned to the virtual argument instead.
 	 *
 	 * @argument.virtual Whether to use a virtual thread for each task when running in parallel. Defaults to false. Ignored if parallel is false.
 	 *

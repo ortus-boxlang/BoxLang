@@ -44,7 +44,8 @@ public class GetClassMetadata extends BIF {
 	}
 
 	/**
-	 * Gets the metadata of a BoxLang class or interface, given an instantiation path (dot notation or a mapping-resolvable path), an absolute file system path, or an
+	 * Gets the metadata of a BoxLang class or interface, given an instantiation path (dot notation or a mapping-resolvable path), an absolute file
+	 * system path, or an
 	 * instance of a BoxLang class.
 	 *
 	 * @param context   The context in which the BIF is being invoked.

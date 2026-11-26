@@ -53,8 +53,10 @@ public class StructReduce extends BIF {
 	 *
 	 * @argument.struct The struct to reduce
 	 *
-	 * @argument.callback The function to invoke for each entry in the struct. The function will be passed 4 arguments: the accumulator, the entry key,
-	 *                    the entry value, and the original struct. If the callback requires strict arguments it only receives the first 3. The function should
+	 * @argument.callback The function to invoke for each entry in the struct. The function will be passed 4 arguments: the accumulator, the entry
+	 *                    key,
+	 *                    the entry value, and the original struct. If the callback requires strict arguments it only receives the first 3. The
+	 *                    function should
 	 *                    return the new accumulator value.
 	 *
 	 * @argument.initialValue The initial value of the accumulator. Optional; if omitted the accumulator starts as null.

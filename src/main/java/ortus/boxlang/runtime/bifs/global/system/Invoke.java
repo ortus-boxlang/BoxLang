@@ -54,7 +54,8 @@ public class Invoke extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.object Instance of a Box Class, struct or Java object, or the name of a Box Class to instantiate. If an empty string is provided, the method will be invoked within the
+	 * @argument.object Instance of a Box Class, struct or Java object, or the name of a Box Class to instantiate. If an empty string is provided, the
+	 *                  method will be invoked within the
 	 *                  same template or Box Class.
 	 *
 	 * @argument.method The name of the method to invoke

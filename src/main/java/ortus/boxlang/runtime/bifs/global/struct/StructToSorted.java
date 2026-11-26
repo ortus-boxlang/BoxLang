@@ -67,7 +67,8 @@ public class StructToSorted extends BIF {
 	 *
 	 * @argument.localeSensitive Whether text sorting uses locale rules. Defaults to false.
 	 *
-	 * @argument.callback An optional comparator function (or Java Comparator) that receives two key names. Note that the default sortType of text takes precedence if the callback is not passed in the sortType position.
+	 * @argument.callback An optional comparator function (or Java Comparator) that receives two key names. Note that the default sortType of text
+	 *                    takes precedence if the callback is not passed in the sortType position.
 	 *
 	 * @return A new sorted struct.
 	 */

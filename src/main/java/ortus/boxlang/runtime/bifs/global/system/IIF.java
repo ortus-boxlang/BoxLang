@@ -39,7 +39,8 @@ public class IIF extends BIF {
 	}
 
 	/**
-	 * Inline conditional evaluation. If the condition is true the second argument is evaluated and returned, otherwise the third argument is evaluated
+	 * Inline conditional evaluation. If the condition is true the second argument is evaluated and returned, otherwise the third argument is
+	 * evaluated
 	 * and returned. The expressions are passed as strings and evaluated as a variable or literal reference, so use de() to pass a literal string.
 	 * The ternary operator is preferred in modern code.
 	 *

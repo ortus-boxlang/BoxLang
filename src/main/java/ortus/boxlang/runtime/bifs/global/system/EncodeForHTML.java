@@ -50,7 +50,8 @@ public class EncodeForHTML extends BIF {
 	 *
 	 * @argument.string The string to encode.
 	 *
-	 * @argument.canonicalize Intended to canonicalize the string before encoding. Defaults to false. Currently the encoded output is the same either way.
+	 * @argument.canonicalize Intended to canonicalize the string before encoding. Defaults to false. Currently the encoded output is the same either
+	 *                        way.
 	 *
 	 * @return The HTML-encoded string, or null if the input is null. Also available under the alias htmlEditFormat().
 	 */

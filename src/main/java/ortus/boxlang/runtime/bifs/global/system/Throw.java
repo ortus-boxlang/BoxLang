@@ -62,7 +62,8 @@ public class Throw extends BIF {
 	 *
 	 * @argument.extendedinfo Additional custom error data that you supply.
 	 *
-	 * @argument.object An instance of an exception object. If there is no message provided, this object will be thrown directly. If there is a message, a CustomException will be thrown and this object will be used as the cause.
+	 * @argument.object An instance of an exception object. If there is no message provided, this object will be thrown directly. If there is a
+	 *                  message, a CustomException will be thrown and this object will be used as the cause.
 	 *
 	 * @return Never returns normally, since an exception is always thrown.
 	 */

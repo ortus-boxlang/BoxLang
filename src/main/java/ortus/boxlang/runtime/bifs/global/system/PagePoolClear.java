@@ -48,8 +48,10 @@ public class PagePoolClear extends BIF {
 	}
 
 	/**
-	 * This method is used to clear the Boxpiler's page pool and resolutions, as well as the DynamicInteropService's method handle cache. It can be called from the BIF or from other parts of the runtime when needed.
-	 * This is useful for scenarios where you want to free up memory or reset the state of the Boxpiler, such as during development or when dynamically loading/unloading code.
+	 * This method is used to clear the Boxpiler's page pool and resolutions, as well as the DynamicInteropService's method handle cache. It can be
+	 * called from the BIF or from other parts of the runtime when needed.
+	 * This is useful for scenarios where you want to free up memory or reset the state of the Boxpiler, such as during development or when
+	 * dynamically loading/unloading code.
 	 */
 	public static void clear() {
 		RunnableLoader.getInstance().getBoxpiler().clearPagePool();

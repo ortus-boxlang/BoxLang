@@ -42,7 +42,8 @@ public class StructCopy extends BIF {
 	}
 
 	/**
-	 * Creates a shallow copy of a struct. Top-level keys and values are copied into a new struct; nested structs are shared by reference with the original.
+	 * Creates a shallow copy of a struct. Top-level keys and values are copied into a new struct; nested structs are shared by reference with the
+	 * original.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

@@ -58,8 +58,10 @@ public class StructSort extends BIF {
 	 * <ul>
 	 * <li>Text directive: sortType is text, textNoCase or numeric, combined with sortOrder (asc or desc). Keys are sorted by their values. An
 	 * invalid combination throws a BoxRuntimeException.</li>
-	 * <li>Path: if a path is given, each value must itself be a struct and the sort is performed on the value found at that path in each nested struct.</li>
-	 * <li>Callback: a function (or Java Comparator) that receives two <strong>key names</strong> and returns a negative number, zero or a positive number.
+	 * <li>Path: if a path is given, each value must itself be a struct and the sort is performed on the value found at that path in each nested
+	 * struct.</li>
+	 * <li>Callback: a function (or Java Comparator) that receives two <strong>key names</strong> and returns a negative number, zero or a positive
+	 * number.
 	 * The callback may be passed in the sortType position.</li>
 	 * </ul>
 	 *
@@ -72,9 +74,11 @@ public class StructSort extends BIF {
 	 *
 	 * @argument.sortOrder The sort order, asc (default) or desc.
 	 *
-	 * @argument.path An optional key path used to sort by a nested value within each struct entry (e.g. "department"). When provided, sortType is used only for case sensitivity (textNoCase) and sortOrder for direction.
+	 * @argument.path An optional key path used to sort by a nested value within each struct entry (e.g. "department"). When provided, sortType is
+	 *                used only for case sensitivity (textNoCase) and sortOrder for direction.
 	 *
-	 * @argument.callback An optional comparator function used to sort the keys. It receives two key names. You can alternatively pass a Java Comparator.
+	 * @argument.callback An optional comparator function used to sort the keys. It receives two key names. You can alternatively pass a Java
+	 *                    Comparator.
 	 *
 	 * @return An array of the struct's key names in sorted order.
 	 */

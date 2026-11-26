@@ -136,15 +136,19 @@ public class SystemExecute extends BIF {
 	 *
 	 * @argument.environment A struct of environment variables to pass to the process. Merged in after the inherit decision.
 	 *
-	 * @argument.onLine An optional function called as each output line arrives, before the process exits: onLine( line, stream ), where stream is "stdout" or
-	 *                  "stderr". It runs on the calling thread. Output is still captured in the result. A stream redirected to a file gets no callbacks.
+	 * @argument.onLine An optional function called as each output line arrives, before the process exits: onLine( line, stream ), where stream is
+	 *                  "stdout" or
+	 *                  "stderr". It runs on the calling thread. Output is still captured in the result. A stream redirected to a file gets no
+	 *                  callbacks.
 	 *                  If the function throws, the process is killed and the error is rethrown.
 	 *
-	 * @argument.isCancelled An optional function polled while the process runs. When it returns true the process tree is terminated and the output captured so
+	 * @argument.isCancelled An optional function polled while the process runs. When it returns true the process tree is terminated and the output
+	 *                       captured so
 	 *                       far is returned with cancelled = true and terminated = true. A cancellation is not a timeout. Lines still queued when the
 	 *                       process is killed are not delivered to onLine, but remain in the captured output.
 	 *
-	 * @argument.mergeErrors When true, stderr is combined into stdout, so there is a single stream and every line is reported as "stdout". When false (default)
+	 * @argument.mergeErrors When true, stderr is combined into stdout, so there is a single stream and every line is reported as "stdout". When false
+	 *                       (default)
 	 *                       the streams stay separate. Cannot be combined with the error argument.
 	 *
 	 * @return A struct with the keys output, error, timeout, terminated, pid, exitCode and cancelled.

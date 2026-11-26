@@ -59,22 +59,28 @@ public class StructMap extends BIF {
 	 * <li>If the callback does not require strict arguments, it will receive the key, value, and the original struct.</li>
 	 * </ul>
 	 * <h2>Parallel Execution</h2>
-	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the map will be executed in parallel using a ForkJoinPool with parallel streams.
-	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the map in parallel, and destroy it after the operation is complete.
-	 * Please note that this may not be the most efficient way to map, as it will create a new ForkJoinPool for each invocation of the BIF. You may want to consider using a shared ForkJoinPool for better performance.
+	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the map will be executed in parallel using a
+	 * ForkJoinPool with parallel streams.
+	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the map in parallel,
+	 * and destroy it after the operation is complete.
+	 * Please note that this may not be the most efficient way to map, as it will create a new ForkJoinPool for each invocation of the BIF. You may
+	 * want to consider using a shared ForkJoinPool for better performance.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.struct The target struct to map
 	 *
-	 * @argument.callback The function used to produce the right-hand value assignment in the new struct. The function will be passed 3 arguments: the key, the value, the struct. You can alternatively pass a Java BiFunction which will only receive the
+	 * @argument.callback The function used to produce the right-hand value assignment in the new struct. The function will be passed 3 arguments: the
+	 *                    key, the value, the struct. You can alternatively pass a Java BiFunction which will only receive the
 	 *                    first 2 args.
 	 *
 	 * @argument.parallel Whether to run the map in parallel. Defaults to false. If true, the map will be run in parallel using a ForkJoinPool.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when running the map in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored. If a boolean is provided it will be assigned to the virtual argument instead.
+	 * @argument.maxThreads The maximum number of threads to use when running the map in parallel. If not passed it will use the default number of
+	 *                      threads for the ForkJoinPool.
+	 *                      If parallel is false, this argument is ignored. If a boolean is provided it will be assigned to the virtual argument
+	 *                      instead.
 	 * 
 	 * @argument.virtual If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
 	 *

@@ -58,7 +58,8 @@ public class StructInsert extends BIF {
 	 *
 	 * @argument.value The value to assign to the key.
 	 *
-	 * @argument.overwrite Whether to overwrite the value if the key already exists. Defaults to false, in which case an existing key throws an exception.
+	 * @argument.overwrite Whether to overwrite the value if the key already exists. Defaults to false, in which case an existing key throws an
+	 *                     exception.
 	 *
 	 * @return The same struct, after the insert.
 	 */

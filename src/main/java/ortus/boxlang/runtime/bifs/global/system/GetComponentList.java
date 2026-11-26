@@ -44,7 +44,8 @@ public class GetComponentList extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @return An ordered struct keyed by component name. Each value is a struct with the keys module, className, allowsBody, requiresBody, ignoreEnableOutputOnly, autoEvaluateBodyExpressions and attributes.
+	 * @return An ordered struct keyed by component name. Each value is a struct with the keys module, className, allowsBody, requiresBody,
+	 *         ignoreEnableOutputOnly, autoEvaluateBodyExpressions and attributes.
 	 */
 	public IStruct _invoke( IBoxContext context, ArgumentsScope arguments ) {
 

@@ -33,7 +33,8 @@ public class BoxAnnounceAsync extends BoxAnnounce {
 	}
 
 	/**
-	 * Announce a BoxLang event to the global system interceptor service asynchronously. By default, the event is announced to the global interception service.
+	 * Announce a BoxLang event to the global system interceptor service asynchronously. By default, the event is announced to the global interception
+	 * service.
 	 * The return value is a BoxLang CompletableFuture that will be completed when the event has been announced.
 	 * Available pools are "global" and "request".
 	 * The request pool is tied to the application listener and is only available during the request lifecycle.
