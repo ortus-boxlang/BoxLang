@@ -15,9 +15,13 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 abstract class TransactionBIF extends BIF {
 
 	/**
-	 * Appends an element to a list
+	 * Gets the transaction which is active in the given context.
 	 *
 	 * @param context The context in which the BIF is being invoked.
+	 *
+	 * @return The current transaction.
+	 *
+	 * @throws BoxRuntimeException If there is no active transaction, that is, the call is not inside a transaction block.
 	 */
 	public ITransaction getTransactionForContext( IBoxContext context ) {
 		ConnectionManager connectionManager = context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager();

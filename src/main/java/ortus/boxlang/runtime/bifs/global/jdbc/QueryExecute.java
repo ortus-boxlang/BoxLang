@@ -55,7 +55,7 @@ public class QueryExecute extends BIF {
 	/**
 	 * Execute an SQL query and returns the results.
 	 * <h2>Parameters</h2>
-	 * The <code>parameters</code> argument can be used to bind parameters to the SQL query.
+	 * The <code>params</code> argument can be used to bind parameters to the SQL query.
 	 * You can use either an array of binding parameters or a struct of named binding parameters.
 	 * The SQL must have the parameters bound using the syntax <code>?</code> for positional parameters or <code>:name</code> for named parameters.
 	 * <p>
@@ -65,6 +65,7 @@ public class QueryExecute extends BIF {
 	 * queryExecute( sql: "SELECT * FROM users WHERE id = ?", params: [ 1 ] );
 	 * queryExecute( sql: "SELECT * FROM users WHERE id = :id", params: { id: 1 } );
 	 * </pre>
+	 * 
 	 * <p>
 	 * You can also treat each named parameter to not only be a key-value pair, but also a struct with additional options:
 	 * <ul>
@@ -99,7 +100,10 @@ public class QueryExecute extends BIF {
 	 * <li><strong>maxrows:numeric</strong> - Maximum number of rows to return</li>
 	 * <li><strong>password:string</strong> - Override the datasource password for this query only. NOTE: Not all JDBC drivers support this; will fall back to unpooled connection if unsupported</li>
 	 * <li><strong>result</strong> - The name of the variable to store the results of the query</li>
-	 * <li><strong>returntype</strong> - The return type: "query", "array", "struct"</li>
+	 * <li><strong>returntype</strong> - The return type: "query" (default), "array" (an array of structs) or "struct" (a struct of structs, which
+	 * requires the <code>columnKey</code> option). An unknown type throws an exception.</li>
+	 * <li><strong>transformer</strong> - A closure, Box Class instance with a <code>transform( query, metadata )</code> method, or the name of a
+	 * transformer registered in <code>this.queryTransformers</code>, which converts the results. Takes precedence over <code>returntype</code>.</li>
 	 * <li><strong>timeout</strong> - Query timeout in seconds</li>
 	 * <li><strong>username:string</strong> - Override the datasource username for this query only. NOTE: Not all JDBC drivers support this; will fall back to unpooled connection if unsupported</li>
 	 * </ul>

@@ -38,13 +38,15 @@ public class TransactionSetSavepoint extends TransactionBIF {
 	}
 
 	/**
-	 * Sets a savepoint in the current transaction. This savepoint can then be a rollback point when executing a rollback via `transactionRollback(
-	 * "mySavepointName" )`.
+	 * Sets a named savepoint in the current transaction. The savepoint can then be used as a rollback point with `transactionRollback( "name"
+	 * )`, undoing only the changes made after the savepoint. If there is no active transaction, an exception is thrown. Returns null.
+	 *
+	 * @argument.savepoint The name of the savepoint to set.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.savepoint Specify a savepoint name.
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ITransaction transaction = getTransactionForContext( context );

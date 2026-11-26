@@ -35,10 +35,13 @@ public class IsInTransaction extends BIF {
 	}
 
 	/**
-	 * Detect whether the current context is executing within a transaction.
+	 * Determines whether the current code is executing within a transaction, that is, inside a `transaction {}` block (or `bx:transaction`).
+	 * This BIF is also registered as `IsWithinTransaction`.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return True if a transaction is active, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return context.getParentOfType( IJDBCCapableContext.class ).getConnectionManager().isInTransaction();

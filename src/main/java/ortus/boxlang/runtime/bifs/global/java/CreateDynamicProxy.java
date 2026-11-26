@@ -50,23 +50,26 @@ public class CreateDynamicProxy extends BIF {
 	}
 
 	/**
-	 * Creates a dynamic proxy of the Box Class that is passed to a Java library.
+	 * Creates a Java dynamic proxy of a Box Class so that it can be passed to Java libraries which expect an implementation of one or more Java
+	 * interfaces. Java code can then call the Box Class methods as if it were a native Java object, for example to pass a Box Class as a
+	 * `Runnable` or `Comparator`.
 	 *
-	 * Dynamic proxy lets you pass Box Classes to Java objects.
+	 * The class can be a Box Class instance, or the name of a Box Class which will be instantiated. At least one interface must be provided or
+	 * an exception is thrown.
 	 *
-	 * Java objects can work with the Box Class seamlessly as if they are native
-	 * Java objects.
+	 * @argument.class The Box Class instance to create a dynamic proxy of, or the name of a Box Class (loaded using the `bx` prefix) to
+	 *                 instantiate and proxy.
+	 *
+	 * @argument.interfaces The interfaces the dynamic proxy should implement. This can be a single class, a single string with a fully qualified
+	 *                      name, or an array of classes or fully qualified names.
+	 *
+	 * @argument.classLoader Optional. The class loader used to load the interface classes and create the proxy. Defaults to the request class
+	 *                       loader.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.class The Box Class to create a dynamic proxy of.
-	 *
-	 * @argument.interfaces The interfaces that the dynamic proxy should implement. Can be a single class, a single string fqn, or an array of class/string fqns
-	 * 
-	 * @argument.classLoader The class loader to use when loading the interface classes and creating the proxy. Defaults to the request class loader.
-	 *
-	 * @return A dynamic proxy of the Box Class.
+	 * @return A Java proxy object implementing the given interfaces, which delegates to the Box Class.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object			oClass		= arguments.get( Key._CLASS );

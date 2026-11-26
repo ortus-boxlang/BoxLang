@@ -57,7 +57,8 @@ public class IsValid extends BIF {
 	 * <strong>Note:</strong> the CFML <code>eurodate</code> type is deliberately not supported, since date formats vary across EU countries.
 	 * Prefer
 	 * <code>lsIsDate( date, locale )</code> instead.
-	 * <p> Valid types: any, array, binary, boolean, class, closure, component, creditcard, date, email, float, function, guid, hex, integer,
+	 * <p>
+	 * Valid types: any, array, binary, boolean, class, closure, component, creditcard, date, email, float, function, guid, hex, integer,
 	 * lambda, number, numeric, query, range, regex, regular_expression, social_security_number, ssn, string, struct, telephone, time, udf, url,
 	 * usdate, uuid, variablename, xml and zipcode. An unknown type throws an IllegalArgumentException, as does the regex type with no pattern.
 	 *

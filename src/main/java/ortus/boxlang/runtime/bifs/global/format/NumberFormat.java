@@ -74,7 +74,8 @@ public class NumberFormat extends BIF {
 	 * numbers</li>
 	 * <li><code>^</code> a floating decimal point; <code>L</code>, <code>C</code> and <code>R</code> as the first character left, center or
 	 * right justify</li>
-	 * </ul> The mask may also be a named format such as <code>USD</code> (or <code>$</code>), or <code>ls$</code> for the locale currency, as
+	 * </ul>
+	 * The mask may also be a named format such as <code>USD</code> (or <code>$</code>), or <code>ls$</code> for the locale currency, as
 	 * well as any {@link java.text.DecimalFormat} pattern that the character substitutions above produce.
 	 *
 	 * When called as `numberFormat()` without a `locale` the US locale is always used, as in CFML. This BIF is also registered as

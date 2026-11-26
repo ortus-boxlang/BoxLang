@@ -39,17 +39,17 @@ public class TransactionRollback extends TransactionBIF {
 	}
 
 	/**
-	 * Rollback the current transaction and discard all unpersisted queries.
-	 * 
-	 * <p>
-	 * Only the changes made since the last <code>transactionSetSavepoint()</code> or <code>transactionCommit()</code> call will be discarded.
-	 * <p>
-	 * If no transaction is found in the current context, this method will throw an exception.
+	 * Rolls back the current transaction, discarding all changes which have not been committed. Only the changes made since the last
+	 * `transactionSetSavepoint()` or `transactionCommit()` call are discarded. If a savepoint name is given, only the changes made after that
+	 * savepoint are undone. If no transaction is active, an exception is thrown. Returns null.
+	 *
+	 * @argument.savepoint Optional. The name of the savepoint, as set with `transactionSetSavepoint()`, to roll back to. If not provided, the
+	 *                     whole transaction is rolled back.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.savepoint String name of the savepoint to rollback to. If not provided, the entire transaction will be rolled back.
+	 * @return Always null.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
