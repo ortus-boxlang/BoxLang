@@ -48,4 +48,14 @@ bx:transaction {
 
 ```
 
+### Rolling back outside of a transaction throws an error
 
+```java
+try {
+	transactionRollback()
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Transaction not started; Please place this method call inside a transaction{} block.

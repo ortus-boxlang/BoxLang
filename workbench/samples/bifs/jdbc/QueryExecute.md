@@ -155,27 +155,6 @@ writedump( subUsers )
 
 Result: [ { firstname: "Han" } ]
 
-### Return Query as an Array of Structs - Boxlang 4.5
-
-Return a query object converted into an array of structs.
-
-
-```java
-users = queryNew( "firstname", "varchar", [ 
-	{
-		"firstname" : "Han"
-	}
-] )
-subUsers = queryExecute( "select * from users", {}, {
-	DBTYPE : "query",
-	RETURNTYPE : "array-of-entities"
-} )
-writedump( subUsers )
-
-```
-
-Result: [ { firstname: "Han" } ]
-
 ### Return Query as a Struct of Structs
 
 Return a query object converted into a struct of structs. (Struct key is based on the "columnkey" parameter)
@@ -245,4 +224,67 @@ dump( insertResult.GENERATEDKEY )
 
 ```
 
+### Query of queries with a named parameter
 
+```java
+users = queryNew( "id,name", "varchar,varchar", [ [ "1", "Han" ], [ "2", "Leia" ], [ "3", "Luke" ] ] )
+result = queryExecute( "SELECT name FROM users WHERE id = :id", { id: "2" }, { dbtype: "query" } )
+writeOutput( result.name )
+```
+
+Result: Leia
+
+### Positional parameters and an array return type
+
+```java
+users = queryNew( "id,name", "varchar,varchar", [ [ "1", "Han" ], [ "2", "Leia" ], [ "3", "Luke" ] ] )
+names = queryExecute(
+	"SELECT id, name FROM users WHERE id <> ? ORDER BY name DESC",
+	[ "2" ],
+	{ dbtype: "query", returnType: "array" }
+)
+writeOutput( names.len() & " " & names[ 1 ].name )
+```
+
+Result: 2 Luke
+
+### Typed list parameters
+
+```java
+users = queryNew( "id,name", "varchar,varchar", [ [ "1", "Han" ], [ "2", "Leia" ], [ "3", "Luke" ] ] )
+result = queryExecute(
+	"SELECT name FROM users WHERE id IN (:ids) ORDER BY id",
+	{ ids: { value: "1,3", type: "varchar", list: true } },
+	{ dbtype: "query" }
+)
+writeOutput( queryColumnData( result, "name" ).toList() )
+```
+
+Result: Han,Luke
+
+### Convert the results with a transformer
+
+```java
+users = queryNew( "id,name", "varchar,varchar", [ [ "1", "Han" ], [ "2", "Leia" ], [ "3", "Luke" ] ] )
+total = queryExecute(
+	"SELECT * FROM users",
+	[],
+	{ dbtype: "query", transformer: ( qry, meta ) -> qry.recordCount }
+)
+writeOutput( total )
+```
+
+Result: 3
+
+### Unknown return types throw an error
+
+```java
+users = queryNew( "id,name", "varchar,varchar", [ [ "1", "Han" ], [ "2", "Leia" ], [ "3", "Luke" ] ] )
+try {
+	queryExecute( "SELECT * FROM users", [], { dbtype: "query", returnType: "bogus" } )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Unknown return type: bogus

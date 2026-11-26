@@ -37,4 +37,14 @@ bx:transaction {
 
 ```
 
+### Setting a savepoint outside of a transaction throws an error
 
+```java
+try {
+	transactionSetSavepoint( "beforeUpdate" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Transaction not started; Please place this method call inside a transaction{} block.

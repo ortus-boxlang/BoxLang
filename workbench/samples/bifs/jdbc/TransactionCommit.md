@@ -32,4 +32,14 @@ bx:transaction {
 
 ```
 
+### Committing outside of a transaction throws an error
 
+```java
+try {
+	transactionCommit()
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Transaction not started; Please place this method call inside a transaction{} block.
