@@ -1,51 +1,49 @@
-### Bitwise Mask Set
+### Bitwise mask set
 
-Performs masking operation on each of the corresponding bits
-
-<a href="https://try.boxlang.io/?code=eJxLyizxTSzODk4t0VAw01Ew1FEwAJIKmtZcAGsZBno%3D" target="_blank">Run Example</a>
+Sets 1 bit starting at bit 0 of `6` (`110` in binary) to the value 1.
 
 ```java
-bitMaskSet( 6, 1, 0, 1 )
-
+writeOutput( bitMaskSet( 6, 1, 0, 1 ) )
 ```
 
 Result: 7
 
-### Using non zero start parameter
+### Using a non zero start parameter
 
-Bit shift the mask 2 places
-
-<a href="https://try.boxlang.io/?code=eJxLyizxTSzODk4t0VAwNNBRMNRRMAKSCprWXABx9Aan" target="_blank">Run Example</a>
+Sets the bit at position 2 of `10` (`1010` in binary) to 1.
 
 ```java
-bitMaskSet( 10, 1, 2, 1 )
-
+writeOutput( bitMaskSet( 10, 1, 2, 1 ) )
 ```
 
 Result: 14
 
-### Using non zero mask start and length parameters
+### Using non zero start and length parameters
 
-
-
-<a href="https://try.boxlang.io/?code=eJxLyizxTSzODk4t0VAwNNBRMNJRMASSCprWXABx%2FAao" target="_blank">Run Example</a>
+Writes the 2 bit value `2` (`10` in binary) at bit 1 of `10` (`1010` in binary).
 
 ```java
-bitMaskSet( 10, 2, 1, 2 )
-
+writeOutput( bitMaskSet( 10, 2, 1, 2 ) )
 ```
 
 Result: 12
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQSMos8U0szg5OBbKNTE11IAQIKWgqaFpzlSMrVrJJKrJTwhDGMMMQiA10FEwgRgAAn0IgKQ%3D%3D" target="_blank">Run Example</a>
+### Only the low bits of the mask are used
 
 ```java
-writeOutput( bitMaskSet( 255, 255, 5, 5 ) )
-writeOutput( "<br>" )
 writeOutput( bitMaskSet( 255, 15, 0, 4 ) )
-
 ```
 
+Result: 255
 
+### Start must be between 0 and 31
+
+```java
+try {
+	bitMaskSet( 1, 1, 40, 1 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Start must be in the range 0-31, inclusive.

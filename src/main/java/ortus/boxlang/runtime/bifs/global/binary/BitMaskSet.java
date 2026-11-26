@@ -42,20 +42,24 @@ public class BitMaskSet extends BIF {
 	}
 
 	/**
-	 * Performs a bitwise mask set operation.
+	 * Sets a range of bits of a number to the low bits of a value, leaving all the other bits untouched.
+	 * The range is <code>length</code> bits wide, starting at bit <code>start</code> where bit 0 is the least significant bit.
+	 * Only the lowest <code>length</code> bits of <code>mask</code> are used.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number 64-bit signed integer value for the bitwise mask set.
-	 * 
-	 * @argument.mask 64-bit signed integer value for the mask.
-	 * 
-	 * @argument.start Start bit for the set mask (Integer in the range 0-31, inclusive).
-	 * 
-	 * @argument.length Length of bits in the set mask (Integer in the range 0-31, inclusive).
+	 * @argument.number 64-bit signed integer value on which the mask set is performed.
+	 *
+	 * @argument.mask 64-bit signed integer value whose lowest length bits are written into the number.
+	 *
+	 * @argument.start Start bit for the set mask (integer in the range 0-31, inclusive).
+	 *
+	 * @argument.length Length of bits in the set mask (integer in the range 0-31, inclusive).
 	 *
 	 * @throws BoxRuntimeException If length or start is not in the range 0-31, inclusive.
+	 *
+	 * @return The number with the masked bits replaced.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		long	number	= arguments.getAsLong( Key.number );

@@ -1,65 +1,66 @@
-### Decode a string using hex back into binary encoding of the string
+### Decode a hex string into binary
 
-use binaryDecode to decode with hex
-
-<a href="https://try.boxlang.io/?code=eJxLysxLLKp0SU3OT0nVUFByMzNyUtJRUMpIrVBS0LTmAgCgUAip" target="_blank">Run Example</a>
+The result is a byte array. Here it is re-encoded as hex to show its contents.
 
 ```java
-binaryDecode( "F62B", "hex" )
-
+bytes = binaryDecode( "F62B", "hex" )
+writeOutput( bytes.len() & "," & binaryEncode( bytes, "hex" ) )
 ```
 
-Result: [B@1a0d6c79
+Result: 2,f62b
 
-### Decode a string using UNIX UUencode (UU) back into binary encoding of the string
+### Decode a Base64 string
 
-use binaryDecode to decode with UNIX UUencode (UU)
-
-<a href="https://try.boxlang.io/?code=eJxLysxLLKp0SU3OT0nVUFBSswk3DLIyi3RX0lFQCg1VUtC05gIAxowJag%3D%3D" target="_blank">Run Example</a>
+The decoded bytes are converted back to text with `charsetEncode()`.
 
 ```java
-binaryDecode( "&<W1R:6YG", "UU" )
-
+bytes = binaryDecode( "U3RyaW5n", "base64" )
+writeOutput( charsetEncode( bytes, "utf-8" ) )
 ```
 
-Result: [B@20fe6ce1
+Result: String
 
-### Decode a string using base64 back into binary encoding of the string
-
-use binaryDecode to decode with base64
-
-<a href="https://try.boxlang.io/?code=eJxLysxLLKp0SU3OT0nVUFAKNQ6qTAw3zVPSUVBKSixONTNRUtC05gIA9ccLJw%3D%3D" target="_blank">Run Example</a>
+### Decode a UNIX UUencoded string
 
 ```java
-binaryDecode( "U3RyaW5n", "base64" )
-
+bytes = binaryDecode( "&4W1R:6YG", "UU" )
+writeOutput( charsetEncode( bytes, "utf-8" ) )
 ```
 
-Result: [B@2a0e22fa
+Result: String
+
+### Decode a Base64URL string
+
+The URL safe alphabet uses `-` and `_` instead of `+` and `/`.
+
+```java
+bytes = binaryDecode( "YT9iPg", "base64url" )
+writeOutput( charsetEncode( bytes, "utf-8" ) )
+```
+
+Result: a?b>
 
 ### Create a byte array with 16 bytes
 
-Each byte in the array is set to 0
-
-<a href="https://try.boxlang.io/?code=eJxLLCpKrPRJzdNQSMrMSyyqdElNzk9J1VBQMiAAlHQUlDJSK5QUNBU0rbkA1%2FwRiA%3D%3D" target="_blank">Run Example</a>
+Each byte in the array is set to 0.
 
 ```java
-arrayLen( binaryDecode( "00000000000000000000000000000000", "hex" ) )
-
+bytes = binaryDecode( "00000000000000000000000000000000", "hex" )
+writeOutput( arrayLen( bytes ) )
 ```
 
 Result: 16
 
-### Additional Examples
+### Invalid encoding
 
-<a href="https://try.boxlang.io/?code=eJxLSixOjTczUbBVCMl3ArLNTDQUlDwVEnMVEhWKS4oy89L1lBQ0rbmSMvMSiyrjUxJLEiFqwXwNhSSofqCS1Lzk%2FJTUlHiIUqAqiBpXsDBQJcIEHQWljNQKsLkppbkFGlCVLqkQlagGwRWDlAMAIkc3%2Fg%3D%3D" target="_blank">Run Example</a>
+An unsupported encoding name throws an exception.
 
 ```java
-base_64 = ToBase64( "I am a string." )
-binary_data = ToBinary( base_64 )
-encoded_binary = BinaryEncode( binary_data, "hex" )
-dump( BinaryDecode( encoded_binary, "hex" ) )
-
+try {
+	binaryDecode( "abc", "rot13" )
+} catch ( any e ) {
+	writeOutput( e.message.left( 29 ) )
+}
 ```
 
-
+Result: The encoding argument [rot13]

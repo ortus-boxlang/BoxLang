@@ -42,14 +42,23 @@ public class BinaryEncode extends BIF {
 	}
 
 	/**
-	 * Encodes binary data to a string with the specified algorithm
+	 * Encodes binary data (a byte array) as a string using the specified encoding. This is the opposite of {@link BinaryDecode}.
+	 * Hex output is lowercase. The encoding name is case insensitive.
+	 * 
+	 * <pre>
+	 * binaryEncode( charsetDecode( "String", "utf-8" ), "hex" ) // 537472696e67
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.binary The binary data to encode
-	 * 
-	 * @argument.encoding The encoding to use
+	 * @argument.binary The binary data (byte array) to encode. Passing a non-binary value throws a cast exception.
+	 *
+	 * @argument.encoding The encoding to use. Valid values are: Hex, UU, Base64, Base64Url.
+	 *
+	 * @throws BoxRuntimeException If the encoding is not valid.
+	 *
+	 * @return The encoded string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		byte[] binaryData = ( byte[] ) arguments.get( Key.binary );

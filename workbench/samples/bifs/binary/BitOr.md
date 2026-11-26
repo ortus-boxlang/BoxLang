@@ -1,25 +1,29 @@
 ### Calculate bitwise logical OR
 
-Uses the bitOr function to perform the logical OR operation on each pair of the corresponding bits
-
-<a href="https://try.boxlang.io/?code=eJxLyizxL9JQMNVRMFbQtOYCACLPA4s%3D" target="_blank">Run Example</a>
+Each bit of the result is 1 when the corresponding bit of either number is 1. `5` is `101` and `3` is `011` in binary.
 
 ```java
-bitOr( 5, 3 )
-
+writeOutput( bitOr( 5, 3 ) )
 ```
 
 Result: 7
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQSMos8S%2FSUDDRUTA0slDQVNC05ipHlleySSqyU8IQhmozNNBRMIDoAgCeFxlj" target="_blank">Run Example</a>
+### Combine flags
 
 ```java
-writeOutput( bitOr( 4, 128 ) )
-writeOutput( "<br>" )
-writeOutput( bitOr( 10, 0 ) )
-
+READ = 1
+WRITE = 2
+writeOutput( bitOr( READ, WRITE ) )
 ```
 
+Result: 3
 
+### OR with zero
+
+Anything ORed with 0 is unchanged.
+
+```java
+writeOutput( bitOr( 10, 0 ) )
+```
+
+Result: 10

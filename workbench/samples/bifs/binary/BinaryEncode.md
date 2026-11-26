@@ -1,55 +1,55 @@
-### Encode a binary string back to a string using hex
+### Encode binary data as hex
 
-use binaryEncode to Encode with hex
-
-<a href="https://try.boxlang.io/?code=eJwrVrBVSMrMSyyqdElNzk9J1VBQMjc2NzE3MrM0czUzV9JRUMpIrVBS0LTmgihzzYMoK0aSAQCzFRMv" target="_blank">Run Example</a>
+The hex output is lowercase.
 
 ```java
-s = binaryDecode( "737472696E67", "hex" )
-binaryEncode( s, "hex" )
-
+bytes = binaryDecode( "737472696E67", "hex" )
+writeOutput( binaryEncode( bytes, "hex" ) )
 ```
 
 Result: 737472696e67
 
-### Encode a binary using UNIX UUencode (UU) back into string
+### Encode text as Base64
 
-use binaryEncode to Encode with UNIX UUencode (UU)
-
-<a href="https://try.boxlang.io/?code=eJwrVrBVSMrMSyyqdElNzk9J1VBQUrMJNwyyMot0V9JRUAoNVVLQtOaCKHHNgygpRkgAAF4VEbA%3D" target="_blank">Run Example</a>
+Text is first converted to binary with `charsetDecode()`.
 
 ```java
-s = binaryDecode( "&<W1R:6YG", "UU" )
-binaryEncode( s, "UU" )
-
+bytes = charsetDecode( "String", "utf-8" )
+writeOutput( binaryEncode( bytes, "base64" ) )
 ```
 
-Result: W1R6YA==
+Result: U3RyaW5n
 
-### Encode a binary using base64 back into a string
-
-use binaryEncode to Encode with base64
-
-<a href="https://try.boxlang.io/?code=eJwrVrBVSMrMSyyqdElNzk9J1VBQUrMJNwyyMot0V9JRUEpKLE41M1FS0LTmgihzzYMoK0aVBAAF8xRm" target="_blank">Run Example</a>
+### Encode using UNIX UUencode (UU)
 
 ```java
-s = binaryDecode( "&<W1R:6YG", "base64" )
-binaryEncode( s, "base64" )
-
+bytes = charsetDecode( "String", "utf-8" )
+writeOutput( binaryEncode( bytes, "UU" ) )
 ```
 
-Result: W1R6YA==
+Result: &4W1R:6YG
 
-### Additional Examples
+### Encode using Base64URL
 
-<a href="https://try.boxlang.io/?code=eJxLSixOjTczUbBVCMl3ArLNTDQUlDwVEnMVEhWKS4oy89L1lBQ0rbmSMvMSiyrjUxJLEiFqwXwNhSSofqCSlNLcAg0FiIRrXnJ%2BSipQGqFNR0EpI7UCaBhIrYK%2BvoKJpZGBmaGZC4g0MjA3NjcxNzKzNHM1Mzdy5QIAyXYrUA%3D%3D" target="_blank">Run Example</a>
+The URL safe alphabet uses `-` and `_` instead of `+` and `/`.
 
 ```java
-base_64 = ToBase64( "I am a string." )
-binary_data = ToBinary( base_64 )
-dump( BinaryEncode( binary_data, "hex" ) )
- // 4920616D206120737472696E672E
-
+bytes = charsetDecode( "a?b>", "utf-8" )
+writeOutput( binaryEncode( bytes, "base64url" ) )
 ```
 
+Result: YT9iPg==
 
+### The value must be binary
+
+Passing a plain string instead of a byte array throws an exception.
+
+```java
+try {
+	binaryEncode( "text", "hex" )
+} catch ( any e ) {
+	writeOutput( "not binary" )
+}
+```
+
+Result: not binary

@@ -41,18 +41,21 @@ public class BitMaskRead extends BIF {
 	}
 
 	/**
-	 * Performs a bitwise mask read operation.
+	 * Reads a range of bits of a number and returns them as a right-aligned number.
+	 * The range is <code>length</code> bits wide, starting at bit <code>start</code> where bit 0 is the least significant bit.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number 64-bit signed integer from which to read the mask.
-	 * 
-	 * @argument.start Start bit for the read mask (Integer in the range 0-31, inclusive).
-	 * 
-	 * @argument.length Length of bits in the read mask (Integer in the range 0-31, inclusive).
+	 * @argument.number 64-bit signed integer from which to read the bits.
+	 *
+	 * @argument.start Start bit for the read mask (integer in the range 0-31, inclusive).
+	 *
+	 * @argument.length Length of bits in the read mask (integer in the range 0-31, inclusive).
 	 *
 	 * @throws BoxRuntimeException If length or start is not in the range 0-31, inclusive.
+	 *
+	 * @return The value of the masked bits, shifted down so that the first masked bit is bit 0.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		long	number	= arguments.getAsLong( Key.number );

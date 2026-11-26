@@ -1,29 +1,35 @@
 ### Calculate bitwise logical AND
 
-Uses the bitAnd function to perform the logical AND operation on each pair of the corresponding bits, by multiplying them
-
-<a href="https://try.boxlang.io/?code=eJxLyixxzEvRUDDVUTBW0LTmAgAoNgPd" target="_blank">Run Example</a>
+Each bit of the result is 1 only when the corresponding bits of both numbers are 1. `5` is `101` and `3` is `011` in binary.
 
 ```java
-bitAnd( 5, 3 )
-
+writeOutput( bitAnd( 5, 3 ) )
 ```
 
 Result: 1
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJzLzCsoLQlLzClNNVSwVTC15sqECxgBBYxMgULlRZklqf6lJUAJDYWkzBLHvBQNBYQ6Qx0FZE2aCppoWpRskorslEDCmfhtMyDLLgCxcz%2FZ" target="_blank">Run Example</a>
+### Mask off the low byte of a number
 
 ```java
-inputValue1 = 5
-inputValue2 = 255
-writeOutput( bitAnd( inputValue1, inputValue2 ) )
-writeOutput( "<br>" )
-inputValue1 = 5
-inputValue2 = 0
-writeOutput( bitAnd( inputValue1, inputValue2 ) )
-
+writeOutput( bitAnd( 4660, 255 ) )
 ```
 
+Result: 52
 
+### Works with 64-bit numbers
+
+```java
+writeOutput( bitAnd( 4294967296, 4294967297 ) )
+```
+
+Result: 4294967296
+
+### AND with zero
+
+Anything ANDed with 0 is 0.
+
+```java
+writeOutput( bitAnd( 5, 0 ) )
+```
+
+Result: 0
