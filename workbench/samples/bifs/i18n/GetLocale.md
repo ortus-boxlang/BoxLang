@@ -6,12 +6,12 @@
 ```java
 writeOutput( getlocale() )
 writeOutput( " → " )
-setLocale( "de_ch" )
+setLocale( "de_CH" )
 writeOutput( getlocale() )
 
 ```
 
-Result: english (us) → german (swiss)
+Result: English (US) → German (Swiss)
 
 ### Additional Examples
 
@@ -41,3 +41,14 @@ dump( LSnumberFormat( n ) )
 ```
 
 
+
+### Set a locale by common name
+
+`setLocale()` accepts common names, aliases and ISO codes. `getLocale()` returns the alias when one exists.
+
+```java
+setLocale( "de_DE" )
+writeOutput( getLocale() )
+```
+
+Result: German (Standard)

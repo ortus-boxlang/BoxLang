@@ -28,6 +28,8 @@ writeDump( lsCurrencyFormat( 5, "local", "en_US" ) )
 
 ```
 
+Result: $5.00
+
 
 ### Additional Examples
 
@@ -48,3 +50,31 @@ writeoutput( LSCurrencyFormat( amount, "none", locale ) )
 ```
 
 
+
+### The type argument controls the currency symbol
+
+```java
+writeOutput( currencyFormat( 100, "local", "en_US" ) & " / " & currencyFormat( 100, "international", "en_US" ) & " / " & currencyFormat( 100, "none", "en_US" ) )
+```
+
+Result: $100.00 / USD 100.00 / 100.00
+
+### Using the member function
+
+```java
+writeOutput( (5).currencyFormat( "local", "en_US" ) )
+```
+
+Result: $5.00
+
+### Invalid types throw an error
+
+```java
+try {
+	currencyFormat( 100, "bogus", "en_US" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: The argument [type] [bogus] is not recognized as a valid currency format type.

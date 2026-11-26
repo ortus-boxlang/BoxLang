@@ -6,7 +6,7 @@
 ```java
 writeOutput( getLocaleDisplayName() )
 writeOutput( " → " )
-setLocale( "de_ch" )
+setLocale( "de_CH" )
 writeOutput( getLocaleDisplayName() )
 
 ```
@@ -23,3 +23,11 @@ writeDump( getLocaleDisplayName() )
 ```
 
 
+
+### Display a locale name in another language
+
+```java
+writeOutput( getLocaleDisplayName( "de_DE" ) & " / " & getLocaleDisplayName( "de_DE", "fr_FR" ) )
+```
+
+Result: Deutsch (Deutschland) / allemand (Allemagne)
