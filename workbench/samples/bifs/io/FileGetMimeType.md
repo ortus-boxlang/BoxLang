@@ -26,4 +26,29 @@ writeDump( file )
 
 ```
 
+### Get the MIME type of text and image files
 
+```java
+dir = createTempDirectory( prefix="docs-" )
+fileWrite( dir & "/notes.txt", "hello" )
+fileWrite( dir & "/logo.png", "x" )
+writeOutput( fileGetMimeType( dir & "/notes.txt" ) & " " & fileGetMimeType( dir & "/logo.png" ) )
+directoryDelete( dir, true )
+```
+
+Result: text/plain image/png
+
+### Missing files throw an error unless strict is false
+
+```java
+dir = createTempDirectory( prefix="docs-" )
+try {
+	fileGetMimeType( dir & "/missing.pdf" )
+} catch ( any e ) {
+	writeOutput( "strict: error / " )
+}
+writeOutput( fileGetMimeType( dir & "/missing.pdf", false ) )
+directoryDelete( dir, true )
+```
+
+Result: strict: error / application/pdf

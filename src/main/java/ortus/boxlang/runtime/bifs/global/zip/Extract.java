@@ -74,8 +74,7 @@ public class Extract extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.format The format of the archive: bzip, bzip2, gzip, tar, tar.bz, tbz, tbz2, tgz, tar.gz or zip. If omitted, it is detected from the
-	 *                  source extension,
-	 *                  and an unrecognized extension throws an exception.
+	 *                  source extension, and an unrecognized extension throws an exception.
 	 *
 	 * @argument.source The absolute path to the archive file to extract. A missing source throws an exception.
 	 *

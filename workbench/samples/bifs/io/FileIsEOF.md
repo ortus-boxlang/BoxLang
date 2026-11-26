@@ -52,4 +52,40 @@ try {
 
 ```
 
+### Read every line of a file
 
+```java
+dir = createTempDirectory( prefix="docs-" )
+file = dir & "/lines.txt"
+writer = fileOpen( file, "write" )
+fileWriteLine( writer, "one" )
+fileWriteLine( writer, "two" )
+fileWriteLine( writer, "three" )
+fileClose( writer )
+reader = fileOpen( file, "read" )
+lines = []
+while ( !fileIsEOF( reader ) ) {
+	lines.append( fileReadLine( reader ) )
+}
+fileClose( reader )
+writeOutput( lines.len() & ": " & lines.toList() )
+directoryDelete( dir, true )
+```
+
+Result: 3: one,two,three
+
+### A path is not accepted, only an open file object
+
+```java
+dir = createTempDirectory( prefix="docs-" )
+file = dir & "/lines.txt"
+fileWrite( file, "one" )
+try {
+	fileIsEOF( file )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+directoryDelete( dir, true )
+```
+
+Result: fileIsEOF() requires an existing file object to be passed that was created with fileOpen().

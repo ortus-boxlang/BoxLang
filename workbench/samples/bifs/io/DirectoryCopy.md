@@ -52,3 +52,48 @@ writeOutput( fileIsSymlink( dest & "/lib" ) & " " & fileExists( dest & "/lib/kee
 
 Result: false true
 
+### Copy a directory tree
+
+```java
+dir = createTempDirectory( prefix="docs-" )
+directoryCreate( dir & "/src/sub" )
+fileWrite( dir & "/src/a.txt", "a" )
+fileWrite( dir & "/src/sub/b.txt", "b" )
+directoryCopy( dir & "/src", dir & "/dst", true )
+writeOutput( directoryList( dir & "/dst", true, "name" ).sort( "text" ).toList() )
+directoryDelete( dir, true )
+```
+
+Result: a.txt,b.txt,sub
+
+### Without recurse only the top level files are copied
+
+```java
+dir = createTempDirectory( prefix="docs-" )
+directoryCreate( dir & "/src/sub" )
+fileWrite( dir & "/src/a.txt", "a" )
+fileWrite( dir & "/src/sub/b.txt", "b" )
+directoryCopy( dir & "/src", dir & "/dst" )
+writeOutput( directoryList( dir & "/dst", true, "name" ).toList() )
+directoryDelete( dir, true )
+```
+
+Result: a.txt
+
+### Existing files are not overwritten by default
+
+```java
+dir = createTempDirectory( prefix="docs-" )
+directoryCreate( dir & "/src" )
+fileWrite( dir & "/src/a.txt", "a" )
+directoryCopy( dir & "/src", dir & "/dst", true )
+try {
+	directoryCopy( dir & "/src", dir & "/dst", true )
+} catch ( any e ) {
+	writeOutput( e.message.replace( dir, "<dir>" ) )
+}
+directoryCopy( dir & "/src", dir & "/dst", true, "*", true, true )
+directoryDelete( dir, true )
+```
+
+Result: The file [<dir>/dst/a.txt] already exists.

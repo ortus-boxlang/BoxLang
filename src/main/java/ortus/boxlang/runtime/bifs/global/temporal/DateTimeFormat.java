@@ -60,8 +60,8 @@ public class DateTimeFormat extends BIF {
 	}
 
 	/**
-	 * Formats a datetime, date or time as a string. This BIF is registered as {@code dateTimeFormat()}, {@code dateFormat()} and {@code
-	 * timeFormat()};
+	 * Formats a datetime, date or time as a string. This BIF is registered as {@code dateTimeFormat()}, {@code dateFormat()} and
+	 * {@code timeFormat()};
 	 * the name used determines the default mask when none is passed: {@code dd-MMM-yyyy HH:mm:ss} for dateTimeFormat, {@code dd-MMM-yy} for
 	 * dateFormat and {@code hh:mm a} for timeFormat. It is also available as the member functions {@code format()}, {@code dateFormat()},
 	 * {@code timeFormat()} and {@code dateTimeFormat()} on dates, and (except {@code format()}) on strings.

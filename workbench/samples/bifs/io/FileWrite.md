@@ -19,4 +19,31 @@ filewrite( "filepath", "fileContent to be write" )
 
 ```
 
+### Write and read back a file
 
+```java
+dir = createTempDirectory( prefix="docs-" )
+file = dir & "/greeting.txt"
+fileWrite( file, "My Data" )
+writeOutput( fileRead( file ) )
+directoryDelete( dir, true )
+```
+
+Result: My Data
+
+### Create missing directories with createPath
+
+```java
+dir = createTempDirectory( prefix="docs-" )
+file = dir & "/reports/2024/summary.txt"
+try {
+	fileWrite( file, "summary" )
+} catch ( any e ) {
+	writeOutput( "no directory / " )
+}
+fileWrite( file, "summary", "utf-8", true )
+writeOutput( fileRead( file ) )
+directoryDelete( dir, true )
+```
+
+Result: no directory / summary

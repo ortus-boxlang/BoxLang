@@ -23,4 +23,28 @@ directoryCreate( expandPath( "images/uploads" ), true, true )
 
 ```
 
+### Create nested directories in one call
 
+```java
+dir = getTempDirectory() & "docs-nested"
+directoryCreate( dir & "/a/b/c" )
+writeOutput( directoryExists( dir & "/a/b/c" ) )
+directoryDelete( dir, true )
+```
+
+Result: true
+
+### An existing directory throws unless ignoreExists is true
+
+```java
+dir = createTempDirectory( prefix="docs-" )
+try {
+	directoryCreate( dir )
+} catch ( any e ) {
+	writeOutput( e.message.replace( dir, "<dir>" ) )
+}
+directoryCreate( dir, true, true )
+directoryDelete( dir, true )
+```
+
+Result: The directory [<dir>] already exists. Set the boolean argument ignoreExists to true to prevent this error

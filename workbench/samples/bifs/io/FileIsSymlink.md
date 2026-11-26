@@ -16,3 +16,13 @@ writeOutput( fileIsSymlink( base & "/missing" ) )
 
 Result: true,false,false
 
+### Regular files and folders are not links
+
+```java
+dir = createTempDirectory( prefix="docs-" )
+fileWrite( dir & "/a.txt", "a" )
+writeOutput( fileIsSymlink( dir & "/a.txt" ) & " " & fileIsSymlink( dir ) )
+directoryDelete( dir, true )
+```
+
+Result: false false

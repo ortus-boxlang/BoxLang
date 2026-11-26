@@ -21,4 +21,18 @@ dump( some_directory )
 
 ```
 
+### Get the directory of a file path
 
+```java
+writeOutput( getDirectoryFromPath( "/var/www/app/index.bxm" ) )
+```
+
+Result: /var/www/app/
+
+### Paths ending with a separator are unchanged, and paths without one return a slash
+
+```java
+writeOutput( getDirectoryFromPath( "/var/www/app/" ) & " " & getDirectoryFromPath( "index.bxm" ) )
+```
+
+Result: /var/www/app/ /

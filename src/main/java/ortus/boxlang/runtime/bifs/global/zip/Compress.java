@@ -77,8 +77,7 @@ public class Compress extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.format The format to use for the compression: bzip, bzip2, gzip, tar, tar.bz, tbz, tbz2, tgz, tar.gz or zip. If omitted, it is
-	 *                  detected from the destination extension,
-	 *                  and an unrecognized extension throws an exception.
+	 *                  detected from the destination extension, and an unrecognized extension throws an exception.
 	 *
 	 * @argument.source The absolute path to the source file or folder to compress.
 	 *
@@ -92,8 +91,7 @@ public class Compress extends BIF {
 	 * @argument.prefix The prefix directory to store the compressed files under. Only applies to zip archives. If passed it must not be an empty
 	 *                  string.
 	 *
-	 * @argument.filter A glob pattern (several patterns can be separated with a pipe) matched against the entry path inside the archive, e.g. {@code
-	 *                  **.txt},
+	 * @argument.filter A glob pattern (several patterns can be separated with a pipe) matched against the entry path inside the archive, e.g. {@code **.txt},
 	 *                  or a function that receives the entry path and returns a boolean. Only matching files are compressed.
 	 *
 	 * @argument.recurse Whether to compress the files recursively. Default is true.

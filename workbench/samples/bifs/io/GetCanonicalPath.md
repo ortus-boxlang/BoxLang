@@ -22,4 +22,25 @@ dump( canonical )
 
 ```
 
+### Resolve relative path elements
 
+```java
+dir = createTempDirectory( prefix="docs-" )
+fileWrite( dir & "/a.txt", "a" )
+directoryCreate( dir & "/sub" )
+canonical = getCanonicalPath( dir & "/sub/../a.txt" )
+writeOutput( canonical == getCanonicalPath( dir & "/a.txt" ) )
+directoryDelete( dir, true )
+```
+
+Result: true
+
+### Directories end with a separator and missing paths are returned as given
+
+```java
+dir = createTempDirectory( prefix="docs-" )
+writeOutput( getCanonicalPath( dir ).endsWith( "/" ) & " " & getCanonicalPath( "/no/such/path" ) )
+directoryDelete( dir, true )
+```
+
+Result: true /no/such/path

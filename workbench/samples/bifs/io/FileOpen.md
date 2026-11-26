@@ -44,4 +44,32 @@ dump( f.getResource().getResourceProvider().getScheme() )
 
 ```
 
+### Open a file for writing then read it back
 
+```java
+dir = createTempDirectory( prefix="docs-" )
+file = dir & "/greeting.txt"
+writer = fileOpen( file, "write" )
+fileWriteLine( writer, "Hello" )
+fileClose( writer )
+reader = fileOpen( file, "read" )
+writeOutput( fileReadLine( reader ) )
+fileClose( reader )
+directoryDelete( dir, true )
+```
+
+Result: Hello
+
+### Invalid modes throw an error
+
+```java
+dir = createTempDirectory( prefix="docs-" )
+try {
+	fileOpen( dir & "/greeting.txt", "bogus" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+directoryDelete( dir, true )
+```
+
+Result: Invalid file mode: [bogus]. Valid modes are: read, readbinary, write, append

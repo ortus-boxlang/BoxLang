@@ -45,4 +45,33 @@ try {
 
 ```
 
+### Read a file line by line
 
+```java
+dir = createTempDirectory( prefix="docs-" )
+file = dir & "/lines.txt"
+writer = fileOpen( file, "write" )
+fileWriteLine( writer, "alpha" )
+fileWriteLine( writer, "beta" )
+fileClose( writer )
+reader = fileOpen( file )
+writeOutput( fileReadLine( reader ) & "," & fileReadLine( reader ) )
+fileClose( reader )
+directoryDelete( dir, true )
+```
+
+Result: alpha,beta
+
+### Using the member function
+
+```java
+dir = createTempDirectory( prefix="docs-" )
+file = dir & "/lines.txt"
+fileWrite( file, "alpha" )
+reader = fileOpen( file )
+writeOutput( reader.readLine() )
+reader.close()
+directoryDelete( dir, true )
+```
+
+Result: alpha

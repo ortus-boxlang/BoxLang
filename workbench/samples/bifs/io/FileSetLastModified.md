@@ -22,4 +22,28 @@ writeDump( getfileinfo( expandPath( "./testcase.txt" ) ).LASTMODIFIED )
 
 ```
 
+### Set the last modified date from a string
 
+```java
+dir = createTempDirectory( prefix="docs-" )
+file = dir & "/a.txt"
+fileWrite( file, "a" )
+fileSetLastModified( file, "2020-01-15 10:30:00" )
+writeOutput( dateFormat( getFileInfo( file ).lastModified, "yyyy-MM-dd" ) )
+directoryDelete( dir, true )
+```
+
+Result: 2020-01-15
+
+### Set the last modified date from a date object
+
+```java
+dir = createTempDirectory( prefix="docs-" )
+file = dir & "/a.txt"
+fileWrite( file, "a" )
+fileSetLastModified( file, createDateTime( 2021, 6, 1, 8, 0, 0 ) )
+writeOutput( dateFormat( fileInfo( file ).lastModified, "yyyy-MM-dd" ) )
+directoryDelete( dir, true )
+```
+
+Result: 2021-06-01

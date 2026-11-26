@@ -20,4 +20,13 @@ dump( GetTempFile( getTempDirectory(), "demo" ) )
 
 ```
 
+### Use a prefix and suffix in a given directory
 
+```java
+dir = createTempDirectory( prefix="docs-" )
+file = createTempFile( dir, "report-", ".csv" )
+writeOutput( listLast( file, "/" ).startsWith( "report-" ) & " " & file.endsWith( ".csv" ) & " " & fileExists( file ) )
+directoryDelete( dir, true )
+```
+
+Result: true true true

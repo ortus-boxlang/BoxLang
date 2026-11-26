@@ -22,4 +22,33 @@ filesetattribute( "example.txt", "readonly" )
 
 ```
 
+### Invalid attributes throw an error
 
+```java
+dir = createTempDirectory( prefix="docs-" )
+file = dir & "/a.txt"
+fileWrite( file, "a" )
+try {
+	fileSetAttribute( file, "bogus" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+directoryDelete( dir, true )
+```
+
+Result: The attribute provided [bogus] is not valid for this method.
+
+### A file object is returned when one is passed
+
+```java
+dir = createTempDirectory( prefix="docs-" )
+file = dir & "/a.txt"
+fileWrite( file, "a" )
+fileObject = fileOpen( file )
+result = fileSetAttribute( fileObject, "normal" )
+writeOutput( isFileObject( result ) & " " & isNull( fileSetAttribute( file, "normal" ) ) )
+fileClose( fileObject )
+directoryDelete( dir, true )
+```
+
+Result: true true
