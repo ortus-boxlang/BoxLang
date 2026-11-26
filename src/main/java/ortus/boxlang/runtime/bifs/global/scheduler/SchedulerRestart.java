@@ -44,20 +44,23 @@ public class SchedulerRestart extends BIF {
 	/**
 	 * Restart a scheduler by name.
 	 * <p>
-	 * The default will do a graceful shutdown, but if the force argument is set to true,
-	 * it will force shutdown the scheduler.
+	 * The scheduler is shut down, its tasks are cleared, it is re-configured and then started again. The default is a graceful shutdown, but if
+	 * the force argument is set to true, the shutdown is forced.
 	 * <p>
-	 * If the timeout argument is set, it will wait for the specified amount of time in seconds
-	 * before forcing the shutdown. The default is 30 seconds.
+	 * The timeout is the number of seconds to wait for running tasks to finish. The default is 30 seconds.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.name The name of the scheduler to restart.
+	 * @argument.name The name of the scheduler to restart. Required and must not be empty.
 	 *
-	 * @argument.force If true, will force restart the scheduler. Default is false.
+	 * @argument.force If true, forces the shutdown part of the restart. Defaults to false.
 	 *
-	 * @argument.timeout The timeout in seconds to wait for the scheduler to restart gracefully. Default is 30 seconds.
+	 * @argument.timeout The timeout in seconds to wait for the scheduler to shut down before restarting. Defaults to 30.
+	 *
+	 * @throws IllegalArgumentException if no scheduler is registered with the given name.
+	 *
+	 * @return Always null.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

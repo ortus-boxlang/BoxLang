@@ -41,16 +41,20 @@ public class ArrayInsertAt extends BIF {
 	}
 
 	/**
-	 * Append a value to an array
+	 * Inserts a value into an array at the given one-based position. Existing elements from that position onward shift up by one.
+	 * The array is modified in place. A position of size + 1 appends the value; larger positions throw an exception.
+	 * Also available as the <code>insertAt()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to be inserted into
+	 * @argument.array The array to insert into.
 	 *
-	 * @argument.position The position to insert at
+	 * @argument.position The one-based position at which to insert the value.
 	 *
-	 * @argument.value The value to insert
+	 * @argument.value The value to insert.
+	 *
+	 * @return The same array, with the value inserted.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );

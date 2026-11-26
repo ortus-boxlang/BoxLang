@@ -38,16 +38,19 @@ public class SchedulerGet extends BIF {
 	}
 
 	/**
-	 * Get a specific scheduler by name.
+	 * Get a registered scheduler by name.
+	 * <p>
+	 * Looks up the scheduler in the SchedulerService and returns the scheduler object itself, so you can interact with it directly (register tasks,
+	 * get stats, etc.).
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.name The name of the scheduler to get.
+	 * @argument.name The name of the scheduler to get. Required and must not be empty.
 	 *
-	 * @throws IllegalArgumentException if the scheduler name is not provided.
+	 * @throws IllegalArgumentException if no scheduler is registered with the given name.
 	 *
-	 * @return The scheduler object.
+	 * @return The scheduler object registered under the given name.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

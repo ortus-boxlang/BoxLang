@@ -19,3 +19,16 @@ writeOutput( sb.toString() )
 ```
 
 Result: Hello BoxLang
+
+### Invalid range throws an error
+
+```java
+sb = sb{'Hello'}
+try {
+    sb.replace( 4, 2, "x" )
+} catch ( any e ) {
+    writeOutput( e.message )
+}
+```
+
+Result: Invalid replace range [4,2]. Valid range is 1..5 with end >= start.

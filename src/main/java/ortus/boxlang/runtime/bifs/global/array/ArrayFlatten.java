@@ -40,21 +40,22 @@ public class ArrayFlatten extends BIF {
 	}
 
 	/**
-	 * Flattens nested arrays to the specified depth. When depth is omitted, the array is flattened completely.
-	 *
+	 * Flattens nested arrays to the specified depth and returns a new array. When depth is omitted, the array is flattened completely.
 	 * <pre>
-	 * nested = [ 1, [ 2, [ 3 ] ] ];
-	 * nested.flatten(); // [ 1, 2, 3 ]
-	 * nested.flatten( 1 ); // [ 1, 2, [ 3 ] ]
+	 * nested = [ 1, [ 2, [ 3 ] ] ]
+	 * nested.flatten() // [ 1, 2, 3 ]
+	 * nested.flatten( 1 ) // [ 1, 2, [ 3 ] ]
 	 * </pre>
+	 * Also available as the <code>flatten()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.array The array to flatten.
 	 *
-	 * @argument.depth The depth to flatten. If omitted, flatten all nested arrays.
+	 * @argument.depth The number of nesting levels to flatten. If omitted, all nested arrays are flattened.
 	 *
+	 * @return A new array with the nested arrays flattened.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

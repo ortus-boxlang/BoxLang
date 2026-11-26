@@ -45,6 +45,8 @@ structEach( favs, ( Any key, Any value ) => {
 
 ```
 
+Result: prints My favorite <key> is <value> for each entry, twice (once for each approach)
+
 
 ### Using the member function
 
@@ -90,6 +92,8 @@ statusCodes.each( ( Any key, Any value, Any struct ) => {
 
 ```
 
+Result: dumps the full statusCodes struct once for each of its 5 entries
+
 
 ### Additional Examples
 
@@ -109,5 +113,7 @@ StructEach( animals, ( Any key ) => {
 } )
 
 ```
+
+Result: a pair of dumps (key and value) for each of COW, PIG and CAT
 
 

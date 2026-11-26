@@ -45,20 +45,22 @@ public class CreateTime extends BIF {
 
 	/**
 	 * Creates a time-only datetime object using the epoch date ( 1970-1-1 ) as the date reference.
+	 * If called with no arguments at all, the current date and time in the resolved timezone is returned.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @argument.hour The hour of the time (0-23). Defaults to 0.
 	 *
-	 * @argument.hour The hour of the date-time object.
+	 * @argument.minute The minute of the time. Defaults to 0.
 	 *
-	 * @argument.minute The minute of the date-time object.
+	 * @argument.second The second of the time. Defaults to 0.
 	 *
-	 * @argument.second The second of the date-time object.
-	 * 
-	 * @argument.millisecond The millisecond of the date-time object.
+	 * @argument.millisecond The millisecond of the time. Defaults to 0.
 	 *
 	 * @argument.timezone The timezone to apply to the date-time object. Defaults to the system default timezone.
+	 *
+	 * @return A {@link DateTime} object on 1970-01-01.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId timezone = LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );

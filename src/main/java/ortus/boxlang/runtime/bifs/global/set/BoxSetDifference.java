@@ -46,7 +46,10 @@ public class BoxSetDifference extends BIF {
 	 *
 	 * @argument.set The source set (A).
 	 *
-	 * @argument.otherSet The set to subtract (B). Accepts any value castable to a Set.
+	 * @argument.otherSet The set to subtract (B). Must already be a Set (a BoxLang Set or a java.util.Set);
+	 *                    use toSet() to convert an Array first.
+	 *
+	 * @return A new Set with the elements of A that are not in B.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet	set		= arguments.getAsSet( Key.set );

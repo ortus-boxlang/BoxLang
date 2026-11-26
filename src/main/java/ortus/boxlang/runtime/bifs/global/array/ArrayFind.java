@@ -53,43 +53,33 @@ public class ArrayFind extends BIF {
 	}
 
 	/**
-	 * Array finders and contains functions with and without case sensitivity.
-	 * Please note that "contain" methods return a boolean, while "find" methods return an index.
-	 * If you use a function as the value, it will be used as a search closure or lambda. The signature of the function should be:
-	 *
+	 * Searches an array for a value and returns the one-based index of the first match, or 0 if there is no match.
+	 * Strings are compared case sensitively by <code>ArrayFind</code> and <code>find()</code>, and case insensitively by the <code>NoCase</code>
+	 * variants.
+	 * <p>
+	 * The "contains" variants (<code>ArrayContains</code>, <code>ArrayContainsNoCase</code> and the <code>contains()</code> and
+	 * <code>containsNoCase()</code>
+	 * member functions) do the same search but return a boolean instead of an index.
+	 * <p>
+	 * If the value is a function, it is used as the search predicate and is invoked for each element (value, index) until it returns true:
 	 * <pre>
-	 *    ( value, index ) => {
-	 * 	  	return true; // if the value is found, else false
-	 *   }
+	 * array = [ 1, 2, 3, 4, 5 ]
+	 * index = array.find( ( value, index ) -> value == 3 )
 	 * </pre>
-	 *
-	 * Example:
-	 *
-	 * <pre>
-	 *   array = [ 1, 2, 3, 4, 5 ];
-	 *  index = array.find( ( value, index ) -> {
-	 * 		return value == 3;
-	 * } );
-	 * </pre>
-	 *
-	 * We recommend you use BoxLang lambdas ({@code ->}) for this purpose, so they only act upon the value and index without any side effects.
-	 * They will be faster and more efficient.
-	 *
-	 * @function.arrayFind This function searches the array for the specified value. Returns the index in the array of the first match, or 0 if there is
-	 *                     no match.
-	 *
-	 * @function.arrayFindNoCase This function searches the array for the specified value. Returns the index in the array of the first match, or 0 if
-	 *                           there is no match. The search is case insensitive.
+	 * We recommend BoxLang lambdas (<code>-&gt;</code>) for this purpose so the function only acts upon the value and index without side
+	 * effects.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.array The array to be searched.
 	 *
-	 * @argument.value The value to find or a closure to be used as a search function.
+	 * @argument.value The value to find, or a function to be used as the search predicate.
 	 *
-	 * @argument.substringMatch If true, the search will be a substring match. Default is false. This only works on simple values, not complex ones. For
-	 *                          that just use a function filter.
+	 * @argument.substringMatch If true, a string value matches any element containing it as a substring. Defaults to false. Only works on simple
+	 *                          values; for complex values use a function.
+	 *
+	 * @return The one-based index of the first match or 0 if not found. The contains variants return true or false instead.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Which function are we calling

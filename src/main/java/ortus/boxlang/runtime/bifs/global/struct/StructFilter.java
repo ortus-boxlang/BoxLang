@@ -75,6 +75,8 @@ public class StructFilter extends BIF {
 	 *                      If parallel is false, this argument is ignored.
 	 *
 	 * @argument.virtual If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return A new struct containing only the entries for which the callback returned true.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object maxThreads = arguments.get( Key.maxThreads );

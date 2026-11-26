@@ -79,6 +79,8 @@ public class StructEach extends BIF {
 	 * @argument.ordered Whether parallel operations should execute and maintain order
 	 * 
 	 * @argument.virtual If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return null. This BIF is used for its side effects.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object maxThreads = arguments.get( Key.maxThreads );

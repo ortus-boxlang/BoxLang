@@ -58,7 +58,7 @@ public class ListFilter extends BIF {
 	 * <li>If the callback returns true, the entry will be included in the new list.</li>
 	 * <li>If the callback returns false, the entry will be excluded from the new list.</li>
 	 * <li>If the callback requires strict arguments, it will only receive the entry as a string.</li>
-	 * <li>If the callback does not require strict arguments, it will receive the entry as a string, the index (0-based), and the original list as a string.</li>
+	 * <li>If the callback does not require strict arguments, it will receive the entry as a string, the index (1-based), and the array of list items.</li>
 	 * </ul>
 	 * <p>
 	 * <h2>Parallel Execution</h2>
@@ -69,22 +69,28 @@ public class ListFilter extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list string list to filter entries from
+	 * @argument.list The delimited list to filter.
 	 *
-	 * @argument.filter function closure filter test. You can alternatively pass a Java Predicate which will only receive the 1st arg.
+	 * @argument.filter The test function. It receives the value, the one-based index, and the array of list items, and must return a
+	 *     boolean. You can alternatively pass a Java Predicate, which receives only the value.
 	 *
-	 * @argument.delimiter string the list delimiter
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
+	 *     to false.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *     single-character delimiters. Defaults to false.
 	 *
-	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
+	 * @argument.parallel Whether to run the callback in parallel. Defaults to false.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored. If a boolean is provided it will be assigned to the virtual argument instead.
-	 * 
-	 * @argument.virtual If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If omitted, the default ForkJoinPool
+	 *     parallelism is used. Ignored if parallel is false. If a boolean is passed it is assigned to the virtual argument instead.
+	 *
+	 * @argument.virtual If true, the callback is invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return A new list containing only the elements for which the filter returned true.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 

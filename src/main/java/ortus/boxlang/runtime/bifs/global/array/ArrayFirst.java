@@ -41,14 +41,18 @@ public class ArrayFirst extends BIF {
 	}
 
 	/**
-	 * Return first item in array
+	 * Returns the first element of an array. If the array is empty, the default value is returned, or an exception is thrown if no default value
+	 * was given.
+	 * Also available as the <code>first()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to get the first item from.
+	 * @argument.array The array to get the first element from.
 	 *
 	 * @argument.defaultValue The value to return when the array is empty. If omitted, an exception is thrown for an empty array.
+	 *
+	 * @return The first element of the array, or the default value if the array is empty.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray		= arguments.getAsArray( Key.array );

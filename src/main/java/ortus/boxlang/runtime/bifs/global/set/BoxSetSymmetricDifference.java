@@ -47,7 +47,10 @@ public class BoxSetSymmetricDifference extends BIF {
 	 *
 	 * @argument.set The first set (A).
 	 *
-	 * @argument.otherSet The second set (B). Accepts any value castable to a Set.
+	 * @argument.otherSet The second set (B). Must already be a Set (a BoxLang Set or a java.util.Set);
+	 *                    use toSet() to convert an Array first.
+	 *
+	 * @return A new Set with the elements that are in exactly one of A or B.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet	set		= arguments.getAsSet( Key.set );

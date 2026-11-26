@@ -52,6 +52,8 @@ public class StringBuilderDelete extends BIF {
 	 * @argument.start The 1-based start position (inclusive).
 	 *
 	 * @argument.end The 1-based end position (inclusive).
+	 *
+	 * @return The same StringBuilder instance, for chaining.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

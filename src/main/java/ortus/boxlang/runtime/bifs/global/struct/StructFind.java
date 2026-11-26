@@ -48,16 +48,19 @@ public class StructFind extends BIF {
 	}
 
 	/**
-	 * Finds and retrieves a top-level key from a string in a struct
+	 * Finds and retrieves the value of a top-level key in a struct. If the key does not exist and no default value is provided, a
+	 * BoxRuntimeException is thrown.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct object
-	 * 
-	 * @argument.key The key to search
-	 * 
-	 * @argument.defaultValue An optional value to be returned if the struct does not contain the key
+	 * @argument.struct The struct to search.
+	 *
+	 * @argument.key The key to look up.
+	 *
+	 * @argument.defaultValue An optional value to return if the struct does not contain the key.
+	 *
+	 * @return The value stored at the key, or the default value if the key is missing.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct	struct			= arguments.getAsStruct( Key.struct );

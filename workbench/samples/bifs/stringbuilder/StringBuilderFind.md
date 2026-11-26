@@ -19,3 +19,12 @@ writeOutput( result )
 ```
 
 Result: 15
+
+### Substring not found
+
+```java
+sb = sb{'Hello BoxLang'}
+writeOutput( sb.find( "xyz" ) )
+```
+
+Result: 0

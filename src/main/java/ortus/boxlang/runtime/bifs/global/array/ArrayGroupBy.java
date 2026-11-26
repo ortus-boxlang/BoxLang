@@ -40,20 +40,25 @@ public class ArrayGroupBy extends BIF {
 	}
 
 	/**
-	 * Returns a struct of keys returned from the predicate function and values of arrays of matching rows.
-	 *
+	 * Groups the elements of an array into a struct. The callback is invoked for each element and its return value is used as the struct key;
+	 * each key maps to an array of the elements that produced it, in their original order.
+	 * The callback receives three arguments: the value, the one-based index and the array. A Java Predicate may also be passed, in which case it
+	 * only receives the value.
 	 * <pre>
-	 * values = [ 1, 2, 3, 4 ];
-	 * values.groupBy( ( value ) => value % 2 ? "odd" : "even" );
-	 * // { odd: [ 1, 3 ], even: [ 2, 4 ] }
+	 * values = [ 1, 2, 3, 4 ]
+	 * values.groupBy( ( value ) => value % 2 ? "odd" : "even" ) // { odd: [ 1, 3 ], even: [ 2, 4 ] }
 	 * </pre>
+	 * Also available as the <code>groupBy()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.array The array to group.
-	 * 
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array. You can alternatively pass a Java Predicate which will only receive the 1st arg.
+	 *
+	 * @argument.callback The function to invoke for each item. Its return value is the group key. It receives the value, the one-based index and
+	 *                    the array. A Java Predicate is also accepted and only receives the value.
+	 *
+	 * @return A struct whose keys are the callback results and whose values are arrays of the matching elements.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

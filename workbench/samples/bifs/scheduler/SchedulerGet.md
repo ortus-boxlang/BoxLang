@@ -1,10 +1,23 @@
 ### Get a registered scheduler by name
 
 ```java
-schedulerNew( "myScheduler", 2 )
+schedulerNew( "myScheduler" )
 sched = schedulerGet( "myScheduler" )
-writeOutput( sched.getName() )
+writeOutput( sched.getSchedulerName() )
 
 ```
 
 Result: myScheduler
+
+### Error: scheduler does not exist
+
+```java
+try {
+    schedulerGet( "doesNotExist" )
+} catch ( any e ) {
+    writeOutput( e.message )
+}
+
+```
+
+Result: Scheduler not found: doesNotExist

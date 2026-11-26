@@ -48,7 +48,8 @@ public class CreateTimeSpan extends BIF {
 	}
 
 	/**
-	 * Creates a timespan {@link java.time.Duration}
+	 * Creates a timespan as a {@link java.time.Duration}. A timespan can be added to or subtracted from a date, or used for timeouts
+	 * and cache durations. Fractional values (for example {@code 0.5} days) are demoted to the next smaller unit and truncated to a whole number.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -61,7 +62,9 @@ public class CreateTimeSpan extends BIF {
 	 *
 	 * @argument.seconds The number of seconds in the timespan
 	 *
-	 * @argument.milliseconds The number of milliseconds in the timespan
+	 * @argument.milliseconds The number of milliseconds in the timespan. Optional, defaults to 0.
+	 *
+	 * @return A {@link java.time.Duration}.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Check to see if any of the inbound arguments are decimals. If so, demote them if approppriate

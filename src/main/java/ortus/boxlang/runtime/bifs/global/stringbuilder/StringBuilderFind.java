@@ -41,6 +41,21 @@ public class StringBuilderFind extends BIF {
 		};
 	}
 
+	/**
+	 * Finds the 1-based position of a substring in a StringBuilder. Registered as the member functions find() and findNoCase(); the
+	 * noCase variant ignores case. A start value less than 1 is treated as 1.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.stringBuilder The StringBuilder to search.
+	 *
+	 * @argument.substring The substring to look for.
+	 *
+	 * @argument.start The 1-based position at which to begin searching. Defaults to 1.
+	 *
+	 * @return The 1-based position of the first match, or 0 if not found.
+	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxStringBuilder	sb		= arguments.getAsBoxStringBuilder( Key.stringBuilder );

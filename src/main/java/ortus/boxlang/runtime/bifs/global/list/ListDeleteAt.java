@@ -47,22 +47,26 @@ public class ListDeleteAt extends BIF {
 	}
 
 	/**
-	 * Deletes an element from a list. Returns a copy of the list, without the
-	 * specified element.
+	 * Deletes the element at a one-based position and returns a copy of the list without it. Throws an exception if the position is
+	 *     out of bounds.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.list The list to delete from.
 	 *
-	 * @argument.position The one-based index position of the element to delete.
+	 * @argument.position The one-based position of the element to delete.
 	 *
-	 * @argument.delimiter The delimiter used in the list.
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.includeEmptyFields Whether to include empty fields in the list.
+	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
+	 *     to false.
 	 *
-	 * @argument.multiCharacterDelimiter Whether the delimiter is a multi-character
-	 *                                   delimiter.
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *     single-character delimiters. Defaults to false.
+	 *
+	 * @return The list without the deleted element.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.deleteAt(

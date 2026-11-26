@@ -58,6 +58,8 @@ public class SetNew extends BIF {
 	 * @argument.caseSensitive Whether string element comparisons are case-sensitive. Defaults to false.
 	 *
 	 * @argument.isSynchronized Whether the set should be thread-safe (synchronized). Default is true.
+	 *
+	 * @return A new Set.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet.Type	type			= BoxSet.parseType( arguments.getAsString( Key.type ) );

@@ -51,18 +51,22 @@ public class ParseDateTime extends BIF {
 	}
 
 	/**
-	 * Parses a datetime string or object
+	 * Parses a datetime string or object into a DateTime. Also available as the string member functions {@code parseDateTime()} and
+	 * {@code toDateTime()}. If a format mask is given, the string must match it exactly; otherwise a number of common formats are tried.
+	 * A value which cannot be parsed throws an exception.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.date the date, datetime string or an object
 	 *
-	 * @argument.format the format mask to use in parsing
+	 * @argument.format optional format mask to use in parsing, using java.time.format.DateTimeFormatter pattern characters
 	 *
-	 * @argument.timezone the timezone to apply to the parsed datetime
+	 * @argument.timezone optional timezone to apply to the parsed datetime. Defaults to the request/runtime timezone.
 	 *
 	 * @argument.locale optional ISO locale string ( e.g. en-US, en_US, es-SA, es_ES, ru-RU, etc ) used to parse localized formats
+	 *
+	 * @return A {@link DateTime} object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	dateRef		= arguments.get( Key.date );

@@ -47,14 +47,17 @@ public class GetTimezoneInfo extends BIF {
 	}
 
 	/**
-	 * Retrieves a struct of information about the timezone
+	 * Retrieves a read-only struct of information about a timezone with the keys: DSTOffset (milliseconds), id, isDSTon, name, nameDST,
+	 * offset (raw offset in seconds), shortName, shortNameDST, timezone, utcHourOffset, utcMinuteOffset and utcTotalOffset (absolute raw offset in seconds).
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.timezone optional, a specific timezone to retrieve information on
+	 * @argument.timezone optional, a specific timezone to retrieve information on. Defaults to the request/runtime timezone.
 	 *
-	 * @argument.locale optional, a specific locale for language output of the timezone name fields
+	 * @argument.locale optional, a specific locale for language output of the timezone name fields. Defaults to the JVM default locale.
+	 *
+	 * @return An unmodifiable struct of timezone information.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		zone	= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );

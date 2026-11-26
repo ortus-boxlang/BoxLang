@@ -47,6 +47,8 @@ public class BoxSetContains extends BIF {
 	 * @argument.set The set to test.
 	 *
 	 * @argument.value The value to look for.
+	 *
+	 * @return True if the Set contains the value, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet set = arguments.getAsSet( Key.set );

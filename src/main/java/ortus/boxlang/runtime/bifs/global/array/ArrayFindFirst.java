@@ -48,29 +48,40 @@ public class ArrayFindFirst extends BIF {
 	}
 
 	/**
-	 * Return first item in array that matches the predicate function.
-	 *
+	 * Returns the first element of an array for which the predicate function returns true.
+	 * The callback receives three arguments: the value, the one-based index and the array. A Java Predicate may also be passed, in which case it
+	 * only receives the value.
+	 * If no element matches (or the array is empty) the default value is returned; if no default value was given an exception is thrown.
+	 * <p>
+	 * <h2>Parallel Execution</h2>
+	 * If <code>parallel</code> is true and no <code>maxThreads</code> is passed, the work runs in parallel using the common ForkJoinPool.
+	 * If <code>maxThreads</code> is passed, a new ForkJoinPool with that many threads is created for the call and destroyed afterwards, so it
+	 * may be less efficient for repeated calls.
 	 * <pre>
-	 * users = [ { name: "Ada" }, { name: "Grace" } ];
-	 * users.findFirst( ( user ) => user.name == "Grace" ); // { name: "Grace" }
-	 * users.findFirst( ( user ) => user.name == "Linus", "Unknown" ); // "Unknown"
+	 * users = [ { name: "Ada" }, { name: "Grace" } ]
+	 * users.findFirst( ( user ) => user.name == "Grace" ) // { name: "Grace" }
+	 * users.findFirst( ( user ) => user.name == "Linus", "Unknown" ) // "Unknown"
 	 * </pre>
+	 * Also available as the <code>findFirst()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to get the first item from.
-	 * 
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array. You can alternatively pass a Java Predicate which will only receive the 1st arg.
-	 * 
-	 * @argument.defaultValue The default value to use if the array is empty or no value is returned from the predicate function.
-	 * 
-	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
-	 * 
-	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored. If a boolean is provided it will be assigned to the virtual argument instead.
-	 * 
-	 * @argument.virtual If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 * @argument.array The array to search.
+	 *
+	 * @argument.callback The function to invoke for each item. It receives the value, the one-based index and the array. A Java Predicate is
+	 *                    also accepted and only receives the value.
+	 *
+	 * @argument.defaultValue The value to return if the array is empty or no element matches. If omitted, an exception is thrown in those cases.
+	 *
+	 * @argument.parallel Whether to run the search in parallel. Defaults to false.
+	 *
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If not passed, the default ForkJoinPool thread count
+	 *                      is used. Ignored if parallel is false. If a boolean is passed, it is assigned to the virtual argument instead.
+	 *
+	 * @argument.virtual If true, the function is invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return The first matching element, or the default value.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

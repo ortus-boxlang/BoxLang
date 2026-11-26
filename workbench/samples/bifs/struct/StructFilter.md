@@ -77,4 +77,6 @@ Dump( label="Quiet Animals", var=quietAnimals )
 
 ```
 
+Result: "Noisy Animals" dumps COW and PIG; "Quiet Animals" dumps SNAIL
+
 

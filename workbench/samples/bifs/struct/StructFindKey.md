@@ -37,7 +37,7 @@ writeOutput( JSONSerialize( myKey ) )
 
 ```
 
-Result: [{"path":".PERSON3.LASTNAME","owner":{"LASTNAME":"Harrison","FIRSTNAME":"George","ID":3},"value":"Harrison"}]
+Result: [{"path":".person3.lastname","owner":{"LASTNAME":"Harrison","FIRSTNAME":"George","ID":3},"value":"Harrison"}]
 
 ### Find all matches of a nested struct key
 
@@ -73,7 +73,7 @@ writeOutput( JSONSerialize( myKey ) )
 
 ```
 
-Result: [{"path":".PERSON3.LASTNAME","owner":{"LASTNAME":"Harrison","FIRSTNAME":"George","ID":3},"value":"Harrison"},{"path":".PERSON1.LASTNAME","owner":{"LASTNAME":"Lennon","FIRSTNAME":"John","ID":1},"value":"Lennon"},{"path":".PERSON2.LASTNAME","owner":{"LASTNAME":"McCartney","FIRSTNAME":"Paul","ID":2},"value":"McCartney"},{"path":".PERSON4.LASTNAME","owner":{"LASTNAME":"Starr","FIRSTNAME":"Ringo","ID":4},"value":"Starr"}]
+Result: [{"path":".person3.lastname","owner":{"LASTNAME":"Harrison","FIRSTNAME":"George","ID":3},"value":"Harrison"},{"path":".person1.lastname","owner":{"LASTNAME":"Lennon","FIRSTNAME":"John","ID":1},"value":"Lennon"},{"path":".person2.lastname","owner":{"LASTNAME":"McCartney","FIRSTNAME":"Paul","ID":2},"value":"McCartney"},{"path":".person4.lastname","owner":{"LASTNAME":"Starr","FIRSTNAME":"Ringo","ID":4},"value":"Starr"}]
 
 ### Find first match for a nested struct key using member function
 
@@ -114,7 +114,7 @@ writeOutput( JSONSerialize( myKey ) )
 
 ```
 
-Result: [{"path":".PERSON3.LASTNAME","owner":{"LASTNAME":"Harrison","FIRSTNAME":"George","ID":3},"value":"Harrison"}]
+Result: [{"path":".person3.lastname","owner":{"LASTNAME":"Harrison","FIRSTNAME":"George","ID":3},"value":"Harrison"}]
 
 ### Additional Examples
 

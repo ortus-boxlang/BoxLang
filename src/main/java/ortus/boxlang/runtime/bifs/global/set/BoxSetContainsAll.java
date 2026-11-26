@@ -47,6 +47,8 @@ public class BoxSetContainsAll extends BIF {
 	 * @argument.set The set to test.
 	 *
 	 * @argument.values The collection of values to check for. Accepts an Array, Set, list-delimited String, or any castable collection.
+	 *
+	 * @return True if the Set contains every element of the collection, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet	set	= arguments.getAsSet( Key.set );

@@ -46,20 +46,25 @@ public class ListIndexExists extends BIF {
 	}
 
 	/**
-	 * Checks if a list has a given index
+	 * Checks whether a one-based position exists in a list. Positions less than 1 always return false.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list string list to check for an index
+	 * @argument.list The list to check.
 	 *
-	 * @argument.index numeric The index to check for
+	 * @argument.index The one-based position to check for.
 	 *
-	 * @argument.delimiter string the list delimiter
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
+	 *     to false.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *     single-character delimiters. Defaults to false.
+	 *
+	 * @return True if the list has an element at the position, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		int index = arguments.getAsInteger( Key.index );

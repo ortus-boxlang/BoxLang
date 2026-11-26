@@ -39,6 +39,19 @@ public class StringBuilderLeft extends BIF {
 		};
 	}
 
+	/**
+	 * Returns the leftmost characters of a StringBuilder as a string, without modifying the buffer. A negative count omits that many
+	 * characters from the right. A count of zero throws a BoxRuntimeException.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.stringBuilder The StringBuilder to read from.
+	 *
+	 * @argument.count The number of characters to return. Negative values omit characters from the end.
+	 *
+	 * @return The extracted substring.
+	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxStringBuilder sb = arguments.getAsBoxStringBuilder( Key.stringBuilder );

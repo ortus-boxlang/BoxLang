@@ -44,20 +44,23 @@ public class SchedulerShutdown extends BIF {
 	/**
 	 * Shutdown a scheduler by name.
 	 * <p>
-	 * The default will do a graceful shutdown, but if the force argument is set to true,
-	 * it will force shutdown the scheduler.
+	 * The default is a graceful shutdown, but if the force argument is set to true, the scheduler is forced to shut down. A scheduler that
+	 * has not been started is left untouched. The scheduler stays registered in the SchedulerService.
 	 * <p>
-	 * If the timeout argument is set, it will wait for the specified amount of time in seconds
-	 * before forcing the shutdown. The default is 30 seconds.
+	 * The timeout is the number of seconds to wait for running tasks to finish. The default is 30 seconds.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.name The name of the scheduler to shutdown.
+	 * @argument.name The name of the scheduler to shutdown. Required and must not be empty.
 	 *
-	 * @argument.force If true, will force shutdown the scheduler. Default is false.
+	 * @argument.force If true, forces the shutdown of the scheduler. Defaults to false.
 	 *
-	 * @argument.timeout The timeout in seconds to wait for the scheduler to shutdown gracefully. Default is 30 seconds.
+	 * @argument.timeout The timeout in seconds to wait for the scheduler to shut down gracefully. Defaults to 30.
+	 *
+	 * @throws IllegalArgumentException if no scheduler is registered with the given name.
+	 *
+	 * @return Always null.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

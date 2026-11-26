@@ -39,8 +39,9 @@ public class BoxSetReduce extends BIF {
 
 	/**
 	 * Left-fold a Set with an accumulator function, reducing it to a single value. The callback receives the
-	 * current accumulator, the element value, its 1-based ordinal position, and the Set itself, and returns the
-	 * new accumulator. Iteration follows the natural order of the underlying variant.
+	 * current accumulator, the element value, its zero-based ordinal position, and the Set itself, and returns the
+	 * new accumulator (strict-argument functions receive only the accumulator and the value).
+	 * Iteration follows the natural order of the underlying variant.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -49,7 +50,9 @@ public class BoxSetReduce extends BIF {
 	 *
 	 * @argument.callback Receives {@code (accumulator, value, ordinal, set)} and returns the new accumulator.
 	 *
-	 * @argument.initialValue The starting accumulator value. If omitted, the first element is used as the initial value.
+	 * @argument.initialValue The starting accumulator value. If omitted, the accumulator starts as null.
+	 *
+	 * @return The final accumulator value, or the initial value if the Set is empty.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return SetUtil.reduce(

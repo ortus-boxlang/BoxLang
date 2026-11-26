@@ -39,4 +39,20 @@ Dump( label="Results of StructFind(animals, ""snail"", """")", var=findSnail )
 
 ```
 
+Result: the dumps show the whole struct, then "meow" for cat, then an empty string for snail
 
+### Missing key with and without a default
+
+Without a default value a missing key throws; with one, the default is returned.
+
+```java
+countries = { "USA" : "Washington D.C." }
+writeOutput( structFind( countries, "France", "unknown" ) & " " )
+try {
+    structFind( countries, "France" )
+} catch ( any e ) {
+    writeOutput( e.message )
+}
+```
+
+Result: unknown The key [France] could not be found in the struct

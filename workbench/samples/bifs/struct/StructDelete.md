@@ -14,7 +14,7 @@ writeDump( someStruct )
 
 ```
 
-Result: Struct with one key-value pair: B 2
+Result: a struct with one key-value pair: B = 2
 
 ### Remove a key from a struct using the member function
 
@@ -32,7 +32,7 @@ writeDump( someStruct )
 
 ```
 
-Result: Struct with one key-value pair: B 2
+Result: a struct with one key-value pair: B = 2
 
 ### Additional Examples
 
@@ -53,4 +53,16 @@ Dump( label="Animals with cat deleted", var=animals )
 
 ```
 
+Result: the first dump shows COW, PIG and CAT; the second dump shows only COW and PIG
 
+### Deleting a key that does not exist
+
+Removing a missing key is not an error; the struct is returned unchanged.
+
+```java
+s = { a : 1 }
+result = structDelete( s, "missing" )
+writeOutput( structCount( result ) )
+```
+
+Result: 1

@@ -47,18 +47,21 @@ public class ListAvg extends ArrayAvg {
 	}
 
 	/**
-	 * Gets the average of all values in a list
+	 * Calculates the average of the numeric values in a delimited list. Empty elements are ignored. Also available as the member
+	 *     function <code>list.listAvg()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list The list to compact
+	 * @argument.list The delimited list to operate on.
 	 *
-	 * @argument.delimiter string the list delimiter
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *     single-character delimiters. Defaults to false.
 	 *
-	 * @argument.includeEmptyFields whether to include empty fields in the average
+	 * @return The average of the list values as a number.
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put(

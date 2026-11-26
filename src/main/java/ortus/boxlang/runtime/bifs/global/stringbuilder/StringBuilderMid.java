@@ -40,6 +40,21 @@ public class StringBuilderMid extends BIF {
 		};
 	}
 
+	/**
+	 * Returns a segment from the middle of a StringBuilder as a string, without modifying the buffer, using 1-based indexing. A start
+	 * less than 1 is treated as 1; a start beyond the buffer length returns an empty string.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.stringBuilder The StringBuilder to read from.
+	 *
+	 * @argument.start The 1-based start position.
+	 *
+	 * @argument.count The number of characters to return. If omitted, returns everything from start to the end of the buffer.
+	 *
+	 * @return The extracted substring.
+	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxStringBuilder sb = arguments.getAsBoxStringBuilder( Key.stringBuilder );

@@ -53,15 +53,18 @@ public class DateConvert extends BIF {
 	}
 
 	/**
-	 * Converts local time to Coordinated Universal Time (UTC), or UTC to local time.
-	 * The function uses the daylight savings settings in the executing computer to compute daylight savings time, if required.
+	 * Converts local time to Coordinated Universal Time (UTC), or UTC to local time. "Local" is the timezone of the current request
+	 * (or the runtime default). Daylight savings rules of the timezone are applied if required.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.conversionType The conversion type. Valid values are "utc2Local" and "local2Utc".
-	 * 
-	 * @argument.date The date to convert.
+	 *
+	 * @argument.date The date or date string to convert. It is interpreted in the source zone of the conversion
+	 *                (UTC for utc2Local, local for local2Utc).
+	 *
+	 * @return A {@link DateTime} converted to the target zone.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key			conversion	= Key.of( arguments.getAsString( Key.conversionType ) );

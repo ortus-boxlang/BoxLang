@@ -45,18 +45,21 @@ public class GetToken extends BIF {
 	}
 
 	/**
-	 * Determines whether a token of the list in the delimiters parameter is present in a string.
-	 * Returns the token found at position index of the string, as a string.
-	 * If index is greater than the number of tokens in the string, returns an empty string.
+	 * Returns the token at the given one-based index of a delimited string, as a string. Empty tokens are skipped (consecutive
+	 *     delimiters count as one). If the index is greater than the number of tokens, an empty string is returned. An index of zero
+	 *     throws an exception.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string string list to filter entries from
+	 * @argument.string The delimited string to extract the token from.
 	 *
-	 * @argument.index numeric the one-based index position to retrieve the value at
+	 * @argument.index The one-based position of the token to return.
 	 *
-	 * @argument.delimiter string the list delimiter
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *     multiCharacterDelimiter is true. Defaults to a comma.
+	 *
+	 * @return The token at the given position, or an empty string if the index is past the last token.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.getAt(

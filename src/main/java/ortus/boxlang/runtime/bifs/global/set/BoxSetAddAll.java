@@ -48,6 +48,8 @@ public class BoxSetAddAll extends BIF {
 	 * @argument.set The set to add to.
 	 *
 	 * @argument.values The collection of values to add. Accepts an Array, Set, list-delimited String, or any castable collection.
+	 *
+	 * @return The same Set, with all the values added, for method chaining.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet	set	= arguments.getAsSet( Key.set );

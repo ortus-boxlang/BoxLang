@@ -18,3 +18,12 @@ writeOutput( mid( sb, 4, 4 ) )
 ```
 
 Result: Lang
+
+### Omit count to read to the end
+
+```java
+sb = sb{'The quick brown fox'}
+writeOutput( sb.mid( 11 ) )
+```
+
+Result: brown fox

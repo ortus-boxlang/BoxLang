@@ -18,3 +18,12 @@ writeOutput( right( sb, 4 ) )
 ```
 
 Result: Lang
+
+### Negative count omits characters from the left
+
+```java
+sb = sb{'BoxLang'}
+writeOutput( sb.right( -3 ) )
+```
+
+Result: Lang

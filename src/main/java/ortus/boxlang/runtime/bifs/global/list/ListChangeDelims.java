@@ -51,20 +51,24 @@ public class ListChangeDelims extends BIF {
 	}
 
 	/**
-	 * Converts the delimiters of a list to the new delimiter.
+	 * Converts the delimiters of a list to a new delimiter. Empty elements are removed unless includeEmptyFields is true.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list string list to convert the delimiters.
+	 * @argument.list The list whose delimiters should be changed.
 	 *
-	 * @argument.newDelimiter string the new list delimiter
+	 * @argument.newDelimiter The delimiter to place between the elements in the result.
 	 *
-	 * @argument.delimiter string the old list delimiter
+	 * @argument.delimiter The delimiter(s) currently used in the list. Defaults to a comma.
 	 *
-	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
+	 *     to false.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *     single-character delimiters. Defaults to false.
+	 *
+	 * @return The list rewritten using the new delimiter.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.asString(

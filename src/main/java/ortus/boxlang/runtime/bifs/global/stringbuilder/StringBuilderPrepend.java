@@ -48,6 +48,8 @@ public class StringBuilderPrepend extends BIF {
 	 * @argument.stringBuilder The StringBuilder to prepend to.
 	 *
 	 * @argument.value The value to insert at the start. Coerced to string.
+	 *
+	 * @return The same StringBuilder instance, for chaining.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

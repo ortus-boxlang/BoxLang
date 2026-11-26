@@ -43,6 +43,8 @@ public class BoxSetClear extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.set The set to clear.
+	 *
+	 * @return The same (now empty) Set, for method chaining.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet set = arguments.getAsSet( Key.set );

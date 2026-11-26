@@ -52,16 +52,20 @@ public class StructFindValue extends BIF {
 	}
 
 	/**
-	 * Searches a struct for a given value and returns an array of results
+	 * Recursively searches a struct (including structs inside arrays) for a value, using BoxLang comparison semantics. Returns an array of
+	 * result structs, each with the keys owner (the struct containing the value), path (dot-delimited path with a leading dot) and key
+	 * (the name of the key holding the value). Returns an empty array if there is no match.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct to search
+	 * @argument.struct The struct to search.
 	 *
-	 * @argument.value The value to search for
+	 * @argument.value The value to search for.
 	 *
-	 * @argument.scope Either one (default), which finds the first instance or all to return all values
+	 * @argument.scope Either one (default), which returns only the first match, or all, which returns every match.
+	 *
+	 * @return An array of result structs; empty if nothing was found.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key				scopeKey		= Key.of( arguments.getAsString( Key.scope ) );

@@ -46,4 +46,17 @@ Dump( label="Farm copied from animals before cat was added", var=farm )
 
 ```
 
+Result: the dumps show farm as COW and PIG, animals gaining CAT after the append, and farm remaining without CAT
 
+### Nested structs are shared by reference
+
+The copy is shallow, so a nested struct is the same object in both structs.
+
+```java
+original = { inner : { x : 1 } }
+duplicate = structCopy( original )
+duplicate.inner.x = 2
+writeOutput( original.inner.x )
+```
+
+Result: 2

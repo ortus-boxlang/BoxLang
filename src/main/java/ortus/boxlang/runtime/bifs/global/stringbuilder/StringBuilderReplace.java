@@ -55,6 +55,8 @@ public class StringBuilderReplace extends BIF {
 	 * @argument.end The 1-based end position (inclusive).
 	 *
 	 * @argument.value The replacement text. Coerced to string.
+	 *
+	 * @return The same StringBuilder instance, for chaining.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

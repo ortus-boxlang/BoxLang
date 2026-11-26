@@ -69,4 +69,6 @@ Dump( label="allAnimalsAreQuiet", var=allAnimalsAreQuiet )
 
 ```
 
+Result: allAnimalsAreNoisy dumps true; allAnimalsAreQuiet dumps false
+
 

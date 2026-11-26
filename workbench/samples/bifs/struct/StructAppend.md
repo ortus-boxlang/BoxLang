@@ -78,6 +78,8 @@ writeOutput( JSONSerialize( rc ) )
 
 ```
 
+Result: a struct containing the combined keys of the form and url scopes (contents depend on the current request)
+
 
 ### Polyfill for earlier versions
 
@@ -122,5 +124,7 @@ StructAppend( animals, newAnimal )
 Dump( label="Animals with cat added", var=animals )
 
 ```
+
+Result: the first dump shows COW and PIG; the second dump shows COW, PIG and CAT
 
 

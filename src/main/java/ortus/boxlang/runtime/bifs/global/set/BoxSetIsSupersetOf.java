@@ -46,7 +46,10 @@ public class BoxSetIsSupersetOf extends BIF {
 	 *
 	 * @argument.set The candidate superset (A).
 	 *
-	 * @argument.otherSet The candidate subset (B). Accepts any value castable to a Set.
+	 * @argument.otherSet The candidate subset (B). Must already be a Set (a BoxLang Set or a java.util.Set);
+	 *                    use toSet() to convert an Array first.
+	 *
+	 * @return True if every element of B is in A, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet	set		= arguments.getAsSet( Key.set );

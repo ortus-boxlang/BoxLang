@@ -47,18 +47,26 @@ public class ListRemoveDuplicates extends BIF {
 	}
 
 	/**
-	 * De-duplicates a delimited list - either case-sensitively or case-insenstively
+	 * Removes duplicate elements from a list, keeping the first occurrence of each. Comparison is case-sensitive unless ignoreCase
+	 *     is true.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list The list to deduplicate
+	 * @argument.list The list to de-duplicate.
 	 *
-	 * @argument.delimiter The delimiter of the list
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.ignoreCase Whether case should be ignored or not during deduplication - defaults to false
+	 * @argument.ignoreCase Whether case is ignored when comparing elements. Defaults to false.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
+	 *     to false.
+	 *
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *     single-character delimiters. Defaults to false.
+	 *
+	 * @return The list without duplicate elements.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.asDelimitedList(

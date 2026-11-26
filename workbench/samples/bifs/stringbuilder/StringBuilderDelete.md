@@ -19,3 +19,16 @@ writeOutput( sb.toString() )
 ```
 
 Result: Hello
+
+### Invalid range throws an error
+
+```java
+sb = sb{'Hello'}
+try {
+    sb.delete( 3, 10 )
+} catch ( any e ) {
+    writeOutput( e.message )
+}
+```
+
+Result: Invalid delete range [3,10]. Valid range is 1..5 with end >= start.

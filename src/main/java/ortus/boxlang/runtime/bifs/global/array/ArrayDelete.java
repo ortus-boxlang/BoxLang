@@ -48,16 +48,20 @@ public class ArrayDelete extends BIF {
 	}
 
 	/**
-	 * Delete first occurance of item in array case sensitive
+	 * Deletes the first (or all) occurrences of a value from an array. The array is modified in place.
+	 * <code>ArrayDelete</code> and the <code>delete()</code> member function compare case sensitively, while the <code>ArrayDeleteNoCase</code> BIF and
+	 * the <code>deleteNoCase()</code> member function ignore case. If the value is not found, the array is left unchanged.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to be deleted from.
+	 * @argument.array The array to delete from.
 	 *
-	 * @argument.value The value to deleted.
+	 * @argument.value The value to delete.
 	 *
-	 * @argument.scope Which matches to delete: "one" (default) deletes the first matching value, "all" deletes every matching value.
+	 * @argument.scope Which matches to delete: "one" (default) deletes only the first matching value, "all" deletes every matching value.
+	 *
+	 * @return The same array, with the matching value(s) removed.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray		= arguments.getAsArray( Key.array );

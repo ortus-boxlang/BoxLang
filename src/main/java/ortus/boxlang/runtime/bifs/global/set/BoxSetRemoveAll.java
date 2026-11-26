@@ -48,6 +48,8 @@ public class BoxSetRemoveAll extends BIF {
 	 * @argument.set The set to remove from.
 	 *
 	 * @argument.values The collection of values to remove. Accepts an Array, Set, list-delimited String, or any castable collection.
+	 *
+	 * @return The same Set, with the values removed, for method chaining.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet	set	= arguments.getAsSet( Key.set );

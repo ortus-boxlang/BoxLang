@@ -52,4 +52,6 @@ Dump( label="Animals after calling StructClear()", var=animals )
 
 ```
 
+Result: the first dump shows COW and PIG; the second dump shows an empty struct
+
 

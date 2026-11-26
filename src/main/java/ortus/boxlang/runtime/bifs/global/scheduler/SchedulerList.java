@@ -30,10 +30,12 @@ public class SchedulerList extends BIF {
 	}
 
 	/**
-	 * List all the schedulers registered in the system.
+	 * List the names of all the schedulers registered in the SchedulerService. This BIF takes no arguments.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return An array of strings with the names of all registered schedulers.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

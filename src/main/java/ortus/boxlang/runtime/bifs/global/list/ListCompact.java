@@ -54,16 +54,21 @@ public class ListCompact extends BIF {
 	}
 
 	/**
-	 * Compacts a list by removing empty items from the start and end of the list
+	 * Removes empty elements from the start and end of a list and returns the result as a string. Empty elements in the middle of
+	 *     the list are preserved. Also registered as the deprecated alias <code>ListTrim</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list The list to compact
+	 * @argument.list The list to compact.
 	 *
-	 * @argument.delimiter string the list delimiter
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *     single-character delimiters. Defaults to false.
+	 *
+	 * @return The list without leading or trailing empty elements.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array ref = ListUtil.asDelimitedList(

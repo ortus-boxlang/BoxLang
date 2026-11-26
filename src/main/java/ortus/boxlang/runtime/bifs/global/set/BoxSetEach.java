@@ -37,8 +37,9 @@ public class BoxSetEach extends BIF {
 	}
 
 	/**
-	 * Invoke a callback for every element of a Set. The callback receives the element value, its 1-based ordinal
-	 * position, and the Set itself; single-argument callbacks receive only the value. Iteration follows the natural
+	 * Invoke a callback for every element of a Set. The callback receives the element value, its zero-based ordinal
+	 * position, and the Set itself; strict-argument functions (such as Java method references) receive only the
+	 * value. Iteration follows the natural
 	 * order of the underlying variant. Use setMap() if you need a transformed result.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -46,8 +47,10 @@ public class BoxSetEach extends BIF {
 	 *
 	 * @argument.set The set to iterate.
 	 *
-	 * @argument.callback Invoked for each element. Receives {@code (value, ordinal, set)}; single-argument callbacks
-	 *                    receive only the value.
+	 * @argument.callback Invoked for each element. Receives {@code (value, ordinal, set)}; strict-argument functions (such
+	 *                    as Java method references) receive only the value.
+	 *
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		SetUtil.each( arguments.getAsSet( Key.set ), arguments.getAsFunction( Key.callback ), context );

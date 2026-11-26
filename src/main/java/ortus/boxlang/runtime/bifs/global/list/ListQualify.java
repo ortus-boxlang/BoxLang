@@ -57,7 +57,7 @@ public class ListQualify extends BIF {
 
 	/**
 	 * Inserts a string at the beginning and end of list elements.
-	 * 
+	 *
 	 * If this BIF is being called from inside of a query component,
 	 * and the qualifier is a single quote, any single quotes in the values will be escaped by doubling them up.
 	 * This protects against SQL Injection attacks.
@@ -65,17 +65,22 @@ public class ListQualify extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list The list to qualify.
+	 * @argument.list The list whose elements are qualified.
 	 *
-	 * @argument.qualifier The string to insert at the beginning and end of each element.
+	 * @argument.qualifier The string inserted before and after each qualified element.
 	 *
-	 * @argument.delimiter The delimiter used in the list.
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.elements The elements to qualify. If set to "char", only elements that are all alphabetic characters will be qualified.
+	 * @argument.elements Which elements to qualify: "all" (the default) or "char", which qualifies only elements made up entirely of
+	 *     letters.
 	 *
-	 * @argument.includeEmptyFields If true, empty fields will be qualified.
+	 * @argument.includeEmptyFields Whether empty elements are kept (and qualified). Defaults to false.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *     single-character delimiters. Defaults to false.
+	 *
+	 * @return The list with the qualifier wrapped around the selected elements.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	elements			= arguments.getAsString( Key.elements );

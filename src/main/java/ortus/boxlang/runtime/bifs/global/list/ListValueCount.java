@@ -58,20 +58,25 @@ public class ListValueCount extends BIF {
 	}
 
 	/**
-	 * returns a count of the number of occurrences of a value in a list
+	 * Counts how many elements of a list equal a value. <code>listValueCount</code> compares case-sensitively and
+	 *     <code>listValueCountNoCase</code> ignores case. The comparison is on whole elements, not substrings.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list The list to be searched.
+	 * @argument.list The list to search.
 	 *
-	 * @argument.value The value to locale
+	 * @argument.value The value to count.
 	 *
-	 * @argument.delimiter The list delimiter(s)
+	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
+	 *     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
-	 * @argument.includeEmptyFields Whether to include empty fields in the search
+	 * @argument.includeEmptyFields Whether empty elements are considered. Defaults to false.
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
+	 *     single-character delimiters. Defaults to false.
+	 *
+	 * @return The number of matching elements.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key					bifMethodKey	= arguments.getAsKey( BIF.__functionName );

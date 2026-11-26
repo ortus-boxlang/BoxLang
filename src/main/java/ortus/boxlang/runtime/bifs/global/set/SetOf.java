@@ -31,6 +31,8 @@ public class SetOf extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope — every positional argument becomes an element of the new set.
+	 *
+	 * @return A new default (hash) Set with the deduplicated arguments.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet s = new BoxSet();

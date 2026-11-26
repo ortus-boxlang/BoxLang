@@ -45,14 +45,16 @@ public class StructEquals extends BIF {
 	}
 
 	/**
-	 * Tests equality between two structs
+	 * Tests equality between two structs. Two structs are equal when they contain the same keys mapped to equal values.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct1 The reference struct
-	 * 
-	 * @argument.struct2 The struct to test for equality
+	 * @argument.struct1 The reference struct.
+	 *
+	 * @argument.struct2 The struct to test for equality against the reference struct.
+	 *
+	 * @return true if the structs are equal, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsStruct( Key.struct1 ).equals( arguments.getAsStruct( Key.struct2 ) );

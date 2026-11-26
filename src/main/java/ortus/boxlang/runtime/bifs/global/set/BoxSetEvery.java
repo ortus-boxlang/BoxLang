@@ -39,7 +39,7 @@ public class BoxSetEvery extends BIF {
 	/**
 	 * Test whether every element of a Set satisfies a predicate. Iteration short-circuits on the first element
 	 * for which the predicate returns false. Returns true for an empty Set (vacuous truth). The predicate receives
-	 * the element value, its 1-based ordinal position, and the Set itself.
+	 * the element value, its zero-based ordinal position, and the Set itself.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -48,6 +48,8 @@ public class BoxSetEvery extends BIF {
 	 *
 	 * @argument.callback Predicate invoked for each element. Receives {@code (value, ordinal, set)}.
 	 *                    Short-circuits on the first {@code false} result.
+	 *
+	 * @return True if every element matches the predicate (or the Set is empty), false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return SetUtil.every( arguments.getAsSet( Key.set ), arguments.getAsFunction( Key.callback ), context );

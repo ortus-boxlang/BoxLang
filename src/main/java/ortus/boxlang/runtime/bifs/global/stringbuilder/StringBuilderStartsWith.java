@@ -39,6 +39,18 @@ public class StringBuilderStartsWith extends BIF {
 		};
 	}
 
+	/**
+	 * Determines whether the StringBuilder buffer starts with the given prefix. The comparison is case-sensitive.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.stringBuilder The StringBuilder to inspect.
+	 *
+	 * @argument.substring The prefix to test for.
+	 *
+	 * @return true if the buffer starts with the prefix, false otherwise.
+	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxStringBuilder sb = arguments.getAsBoxStringBuilder( Key.stringBuilder );

@@ -56,7 +56,9 @@ public class ArrayChunk extends BIF {
 	 *
 	 * @argument.array The array to chunk.
 	 *
-	 * @argument.length The size of each chunk.
+	 * @argument.length The size of each chunk. Must be 1 or greater.
+	 *
+	 * @return A new array of arrays, each containing up to length elements of the original array.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

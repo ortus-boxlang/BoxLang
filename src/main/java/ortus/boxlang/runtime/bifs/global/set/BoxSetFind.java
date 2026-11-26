@@ -39,7 +39,7 @@ public class BoxSetFind extends BIF {
 	/**
 	 * Return the first element of a Set for which the predicate returns true, or null if no element matches.
 	 * Iteration follows the natural order of the underlying variant and stops at the first match. The predicate
-	 * receives the element value, its 1-based ordinal position, and the Set itself.
+	 * receives the element value, its zero-based ordinal position, and the Set itself.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -48,6 +48,8 @@ public class BoxSetFind extends BIF {
 	 *
 	 * @argument.callback Predicate invoked for each element. Receives {@code (value, ordinal, set)}.
 	 *                    Iteration stops at the first element for which this returns {@code true}.
+	 *
+	 * @return The first matching element, or null if no element matches.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return SetUtil.find( arguments.getAsSet( Key.set ), arguments.getAsFunction( Key.callback ), context );

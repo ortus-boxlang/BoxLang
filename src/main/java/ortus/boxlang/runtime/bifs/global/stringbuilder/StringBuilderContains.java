@@ -40,6 +40,19 @@ public class StringBuilderContains extends BIF {
 		};
 	}
 
+	/**
+	 * Determines whether a StringBuilder contains a substring. Registered as the member functions contains() and containsNoCase(); the
+	 * noCase variant ignores case. Returns true when the substring is found, false otherwise.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.stringBuilder The StringBuilder to search.
+	 *
+	 * @argument.substring The substring to look for.
+	 *
+	 * @return true if the substring exists in the buffer, false otherwise.
+	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxStringBuilder	sb		= arguments.getAsBoxStringBuilder( Key.stringBuilder );

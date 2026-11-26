@@ -47,6 +47,8 @@ public class BoxSetRemove extends BIF {
 	 * @argument.set The set to remove from.
 	 *
 	 * @argument.value The value to remove. If the value is not present, the call is a no-op.
+	 *
+	 * @return The same Set, with the value removed, for method chaining.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet set = arguments.getAsSet( Key.set );

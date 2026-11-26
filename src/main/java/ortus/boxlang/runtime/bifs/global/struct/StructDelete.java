@@ -44,16 +44,17 @@ public class StructDelete extends BIF {
 	}
 
 	/**
-	 * Deletes a key from a struct
+	 * Deletes a key from a struct, in place. The key is converted to a BoxLang Key, so the match is case-insensitive for default structs.
+	 * Deleting a key that does not exist is not an error.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct target
+	 * @argument.struct The struct to remove the key from. Must be modifiable.
 	 *
-	 * @argument.key The key to delete
+	 * @argument.key The key to delete.
 	 *
-	 * @argument.indicateNotExsists Applies only to BIFs - will return false if the key attempted for deletion does not exist
+	 * @return The same struct, after the deletion.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct	target	= arguments.getAsStruct( Key.struct );
