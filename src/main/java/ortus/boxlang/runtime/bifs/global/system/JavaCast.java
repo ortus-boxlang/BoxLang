@@ -37,7 +37,8 @@ public class JavaCast extends BIF {
 	}
 
 	/**
-	 * Cast a variable to a specified Java type
+	 * Casts a variable to a specified Java type. The type can be the name of a Java primitive (such as int, long, double, boolean) or a Java
+	 * class name. The cast is strict, so a value that cannot be converted throws an exception. A null variable returns null.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -45,6 +46,8 @@ public class JavaCast extends BIF {
 	 * @argument.type The name of a Java primitive or a Java class name.
 	 *
 	 * @argument.variable The variable, Java object, or array to cast.
+	 *
+	 * @return The value converted to the requested type, or null if the variable is null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	type		= arguments.getAsString( Key.type );

@@ -37,14 +37,15 @@ public class ObjectDeserialize extends BIF {
 	}
 
 	/**
-	 * Loads an object serialized in a binary form from a file or as binary input
+	 * Loads an object that was serialized in binary form, either from a binary value or from a file path. Throws a BoxRuntimeException if the
+	 * input is null or is neither a byte array nor a file path.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.input The binary representation of the object to load, or the file path to load the object from.
 	 *
-	 * @return The object that was loaded
+	 * @return The object that was loaded.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object target = arguments.get( Key.input );

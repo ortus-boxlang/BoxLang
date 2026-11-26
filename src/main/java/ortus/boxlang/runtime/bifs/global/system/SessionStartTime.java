@@ -39,11 +39,12 @@ public class SessionStartTime extends BIF {
 	}
 
 	/**
-	 * Provides information about the time when the current users session scope was created
+	 * Provides the time at which the current user's session scope was created. If there is no session, the start time of the request is returned.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @return The session start time as a DateTime.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		SessionBoxContext sessionContext = context.getParentOfType( SessionBoxContext.class );

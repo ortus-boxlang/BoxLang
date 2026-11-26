@@ -8,12 +8,22 @@ writeOutput( result.name )
 
 Result: Luis
 
-### Using the member function
+### URL decoding, leading question mark and empty values
 
 ```java
-result = "foo=bar&baz=qux".queryStringToStruct()
-writeOutput( result.foo & "," & result.baz )
+s = queryStringToStruct( "?name=Luis%20Majano&flag" )
+writeOutput( s.name & "|" & s.flag & "|" )
 
 ```
 
-Result: bar,qux
+Result: Luis Majano||
+
+### Custom delimiter
+
+```java
+s = queryStringToStruct( "a=1;b=2", ";" )
+writeOutput( s.a & s.b )
+
+```
+
+Result: 12

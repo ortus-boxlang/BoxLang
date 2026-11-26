@@ -146,6 +146,8 @@ public class SystemExecute extends BIF {
 	 *
 	 * @argument.mergeErrors When true, stderr is combined into stdout, so there is a single stream and every line is reported as "stdout". When false (default)
 	 *                       the streams stay separate. Cannot be combined with the error argument.
+	 *
+	 * @return A struct with the keys output, error, timeout, terminated, pid, exitCode and cancelled.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String				bin					= arguments.getAsString( Key.of( "name" ) );

@@ -65,15 +65,17 @@ public class Trace extends BIF {
 	 * @param context   The context in which the Component is being invoked
 	 * @param arguments The BIF Arguments
 	 *
-	 * @arguments.abort If true, the current request will be aborted after the trace call. Default is false.
+	 * @argument.text The text of the trace message. Required.
 	 *
-	 * @arguments.category The category of the trace message. Default is an empty string.
+	 * @argument.category The category of the trace message. Default is an empty string.
 	 *
-	 * @arguments.text The text of the trace message. Required.
+	 * @argument.type The type of the trace message. Default is "Information".
 	 *
-	 * @arguments.type The type of the trace message. Default is "Information".
+	 * @argument.extrainfo Any extra information to be logged with the trace message. This can be simple or a complex object. We will convert it to string for logging.
 	 *
-	 * @arguments.extrainfo Any extra information to be logged with the trace message. This can be simple or a complex object. We will convert it to string for logging.
+	 * @argument.abort If true, the current request will be aborted after the trace call. Default is false.
+	 *
+	 * @return null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Verify if the Tracer exists in the request context, else initialize it

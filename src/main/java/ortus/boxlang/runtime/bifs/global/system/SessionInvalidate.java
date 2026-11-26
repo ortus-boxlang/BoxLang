@@ -38,10 +38,12 @@ public class SessionInvalidate extends BIF {
 	}
 
 	/**
-	 * Clears session scope and makes the current session identifiers no longer valid.
+	 * Clears the session scope and makes the current session identifiers no longer valid.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		RequestBoxContext requestContext = context.getRequestContextOrFail();

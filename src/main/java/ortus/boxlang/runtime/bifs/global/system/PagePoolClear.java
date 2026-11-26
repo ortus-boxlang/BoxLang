@@ -34,10 +34,13 @@ public class PagePoolClear extends BIF {
 	}
 
 	/**
-	 * Clears all the compiled classes from the Boxpiler's page pool and resolutions
+	 * Clears all the compiled classes from the Boxpiler's page pool and resolutions, so templates and classes are recompiled the next time they
+	 * are used.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return true.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		clear();

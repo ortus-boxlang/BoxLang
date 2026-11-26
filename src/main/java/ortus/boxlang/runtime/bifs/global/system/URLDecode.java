@@ -47,9 +47,11 @@ public class URLDecode extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.String The URL-encoded string to decode.
+	 * @argument.string The URL-encoded string to decode.
 	 * 
 	 * @argument.charset The charset to use when decoding the string. Defaults to UTF-8.
+	 *
+	 * @return The decoded string. A plus sign is decoded as a space.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// TODO: Just stubbing this out to make TestBox work. We're going to look into transpiling this to use ESAPI's encodeForURL().

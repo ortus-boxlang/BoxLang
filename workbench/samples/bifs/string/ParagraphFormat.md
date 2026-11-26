@@ -24,3 +24,13 @@ writeOutput( result.contains( "</p>" ) )
 ```
 
 Result: true
+
+### Each line becomes a paragraph
+
+```java
+text = "One" & char( 10 ) & "Two"
+writeOutput( replace( paragraphFormat( text ), char( 10 ), "|", "all" ) )
+
+```
+
+Result: <p>One</p>|<p>Two</p>

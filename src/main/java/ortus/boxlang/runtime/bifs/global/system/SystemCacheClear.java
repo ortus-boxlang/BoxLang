@@ -98,6 +98,9 @@ public class SystemCacheClear extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @argument.cacheName The name of the cache to clear. Defaults to all. Must be one of the values listed above.
+	 *
+	 * @return null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	cacheName	= arguments.getAsString( Key.cacheName ).toLowerCase();

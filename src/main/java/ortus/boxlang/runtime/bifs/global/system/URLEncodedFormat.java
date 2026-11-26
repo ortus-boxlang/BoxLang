@@ -49,7 +49,9 @@ public class URLEncodedFormat extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.String String to encode for usage within a URL.
+	 * @argument.string String to encode for usage within a URL.
+	 *
+	 * @return The URL-encoded string (UTF-8). Letters, digits and the characters . - * _ are left as-is; spaces become %20.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String str = StringCaster.cast( arguments.get( Key.string ) );

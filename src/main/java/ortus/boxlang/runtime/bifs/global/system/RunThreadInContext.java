@@ -45,21 +45,22 @@ public class RunThreadInContext extends BIF {
 	}
 
 	/**
-	 * Executes the code in the callback with a specific parent context so a specific application name
-	 * is visible and an optional sessionID, or a specific context can be provided from another request.
-	 * If context is provided, application name and sessionID are not allowed.
+	 * Executes the callback with a specific parent context, so a specific application name (and optional session ID) is visible to it, or a
+	 * context taken from another request can be used. context and applicationName/sessionId are mutually exclusive, and one of them is
+	 * required; otherwise a BoxValidationException is thrown.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.applicationName The application name to use run the code in.
+	 * @argument.applicationName The application name to run the code in.
 	 *
-	 * @argument.sessionId The sessionID to use to run the code in (requires application name).
+	 * @argument.sessionId The session ID to run the code in (requires applicationName).
 	 *
-	 * @argument.context The context to use to run the code in. Mutually exclusive with applicationName and sessionId.
+	 * @argument.context The IBoxContext to run the code in. Mutually exclusive with applicationName and sessionId.
 	 *
 	 * @argument.callback The function to run in the new context.
 	 *
+	 * @return The value returned by the callback.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Function	callback		= arguments.getAsFunction( Key.callback );

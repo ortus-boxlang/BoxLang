@@ -27,3 +27,12 @@ writeOutput( result )
 ```
 
 Result: FooBar
+
+### Acronyms and camelCase words are detected
+
+```java
+writeOutput( pascalCase( "myHTTPServer" ) )
+
+```
+
+Result: MyHttpServer

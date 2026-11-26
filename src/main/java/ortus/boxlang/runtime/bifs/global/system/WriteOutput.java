@@ -40,12 +40,15 @@ public class WriteOutput extends BIF {
 	}
 
 	/**
-	 * Print a message with line break to the buffer
+	 * Writes the given value to the output buffer (the response when running as a web request). Non-string values are converted to their string
+	 * representation, and a null value writes nothing. Also available under the alias echo().
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.message The message to print
+	 * @argument.message The message to write.
+	 *
+	 * @return null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object obj = arguments.get( Key.message );

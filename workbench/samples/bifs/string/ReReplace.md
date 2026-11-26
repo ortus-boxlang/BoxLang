@@ -24,17 +24,40 @@ reReplaceNoCase( "123abc456", "[0-9]+([a-z]+)[0-9]+", "\1" )
 
 Result: abc
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUAhyDUotyElMTvXLd04sTtVQUKqoSExKhhJKOgpKjk7OIColNU1JQVNB05qrHJ9uZ0cnxyDXEJAO5xonEOUONsTHhxjdyYlJiUWpJSAd0Y66UbGk6vdUyMkvS1XISvXxyUwtBmnMSs3J0aisAfI0Qdzk%2FPxskAzxZnkBDagkaBIAfCJliw%3D%3D" target="_blank">Run Example</a>
+### Replace only the first match by default
 
 ```java
-writeDump( REReplaceNoCase( "xxabcxxabcxx", "ABC", "def" ) )
-writeDump( REReplaceNoCase( "CABARET", "C|B", "G", "ALL" ) )
-writeDump( REReplaceNoCase( "cabaret", "[A-Z]", "G", "ALL" ) )
-writeDump( REReplaceNoCase( "I love jeLLies", "jell(y|ies)", "cookies" ) )
-writeDump( REReplaceNoCase( "I love Jelly", "jell(y|ies)", "cookies" ) )
+writeOutput( reReplace( "a1b2", "[0-9]", "_" ) )
 
 ```
 
+Result: a_b2
 
+### Replace every match with the all scope
+
+```java
+writeOutput( reReplace( "a1b2", "[0-9]", "_", "all" ) )
+
+```
+
+Result: a_b_
+
+### Change the case of back references
+
+`\u` uppercases the next character or group, `\l` lowercases it, and `\U`, `\L` and `\E` change the case of everything up to the next `\E`.
+
+```java
+writeOutput( reReplace( "hello world", "(\w+) (\w+)", "\u\1 \u\2" ) )
+
+```
+
+Result: Hello World
+
+### Member function
+
+```java
+writeOutput( "a1b2".reReplace( "[0-9]", "_", "all" ) )
+
+```
+
+Result: a_b_

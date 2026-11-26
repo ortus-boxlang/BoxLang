@@ -28,16 +28,33 @@ writeOutput( insert( "fox", someString, length ) )
 
 Result: New private mozilla firefox
 
-### Additional Examples
-
-<a href="https://try.boxlang.io?code=eJxVjbsOgkAQRfv5iputICFSWhA7LSz8CMDRbLIPMjMonw%2BY1cT2npxz1QQnuCtCfjFcR2%2Fxxuc5ThV8Uhar4Ia8hD49XQM1aXBEjbpD26JohdO23DgOLHjMaTSfE6nt%2BcvSxynwf17t8HvAmO%2Fsvmna28X5EFoBANkzHQ%3D%3D" target="_blank">Run Example</a>
+### Insert in the middle of a string
 
 ```java
-str = "I love "
-writeDump( insert( "boxlang", str, 7 ) ); // I love boxlang
-// Member function
-st = "Example"
-writeDump( st.insert( " code", 7 ) )
- // Example code
+writeOutput( insert( "boxlang", "I love ", 7 ) )
 
 ```
+
+Result: I love boxlang
+
+### Member function
+
+```java
+writeOutput( "Example".insert( " code", 7 ) )
+
+```
+
+Result: Example code
+
+### Error: position out of range
+
+```java
+try {
+	insert( "x", "abc", 10 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Position must be within the range [0, 3]

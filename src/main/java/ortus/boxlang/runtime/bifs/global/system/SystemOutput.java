@@ -60,6 +60,8 @@ public class SystemOutput extends BIF {
 	 * @argument.addNewLine If true, a new line will be added to the output stream
 	 * 
 	 * @argument.doErrorStream If true, the object will be written to the error stream
+	 *
+	 * @return null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	obj				= arguments.get( Key.obj );

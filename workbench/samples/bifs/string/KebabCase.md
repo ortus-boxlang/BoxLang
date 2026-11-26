@@ -27,3 +27,12 @@ writeOutput( result )
 ```
 
 Result: foo-bar-baz
+
+### Mixed separators
+
+```java
+writeOutput( kebabCase( "Hello World_foo" ) )
+
+```
+
+Result: hello-world-foo

@@ -11,3 +11,22 @@ reEscape( "*.{}[]exam?ple" )
 
 Result: \*\.\{\}\[\]exam\?ple
 
+### Escape a literal for use in a regular expression
+
+```java
+writeOutput( reEscape( "foo.bar" ) )
+
+```
+
+Result: foo\.bar
+
+### Match a literal dot
+
+Without escaping, `a.b` would match `axb` at position 1.
+
+```java
+writeOutput( reFind( reEscape( "a.b" ), "axb a.b" ) )
+
+```
+
+Result: 5

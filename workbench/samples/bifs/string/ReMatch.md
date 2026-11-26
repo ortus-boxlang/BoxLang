@@ -1,23 +1,37 @@
-### reMatchNoCase Example
+### Find every match
 
-Uses a regular expression (RE) to search a string for a pattern.
+```java
+matches = reMatch( "[0-9]+", "a1b22c333" )
+writeOutput( arrayToList( matches ) )
 
-<a href="https://try.boxlang.io/?code=eJwrLinKzEtXsFVQMjQyNnFMSk5MdkxOSVGy5iovyixJdSnNLdBQKEr1TSxJzvDLd04sTtVQUIp21I2K1VbSUSiG6NZU0LTmAgBxlhaV" target="_blank">Run Example</a>
+```
+
+Result: 1,22,333
+
+### Case-insensitive matches
 
 ```java
 string = "1234AbcacAcdd"
-writeDump( reMatchNoCase( "[A-Z]+", string ) )
+writeOutput( arrayToList( reMatchNoCase( "[A-Z]+", string ) ) )
 
 ```
 
+Result: AbcacAcdd
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUAhy9U0sSc7wy3dOLE7VUFCKdtSNitVW0lFQMjRyTEpOTHZMTklRUtBU0LTmAgDzOw%2F%2B" target="_blank">Run Example</a>
+### No matches
 
 ```java
-writeDump( REMatchNoCase( "[A-Z]+", "12AbcacAcdd" ) )
+writeOutput( arrayLen( reMatch( "x", "abc" ) ) )
 
 ```
 
+Result: 0
 
+### Member function
+
+```java
+writeOutput( arrayToList( "a1b2".reMatch( "[0-9]" ) ) )
+
+```
+
+Result: 1,2
