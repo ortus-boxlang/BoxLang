@@ -42,7 +42,7 @@ Result: 5
 
 
 ```java
-aNames = array( 10412, 42, 33, 2, 999, 12769, 888 )
+aNames = [ 10412, 42, 33, 2, 999, 12769, 888 ]
 dump( arrayMedian( aNames ) )
 // member function
 dump( aNames.median() )

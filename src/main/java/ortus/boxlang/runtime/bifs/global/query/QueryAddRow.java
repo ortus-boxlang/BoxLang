@@ -42,16 +42,25 @@ public class QueryAddRow extends BIF {
 	}
 
 	/**
-	 * Return new query
+	 * Adds rows to a query, modifying it in place. The rowData argument controls what is added:
+	 * <ul>
+	 * <li>Omitted: one empty row is added</li>
+	 * <li>An integer: that many empty rows are added</li>
+	 * <li>A struct: one row is added, matching struct keys to column names</li>
+	 * <li>An array of structs or an array of arrays: one row is added per element</li>
+	 * <li>An array of simple values: one row is added, with the values in column order</li>
+	 * </ul>
+	 * Also available as <code>query.addRow()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.query The query to add the row(s) to.
 	 *
-	 * @argument.rowData Data to populate the query. Can be a struct (with keys matching column names), an array of structs, or an array of arrays (in
-	 *                   same order as columnList)
+	 * @argument.rowData The data for the new row(s): an integer number of empty rows, a struct (with keys matching column names), an
+	 *                   array of structs, an array of arrays (in column order), or an array of simple values for a single row.
 	 *
+	 * @return The row number of the last row added, which is also the new number of rows in the query.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query					query			= arguments.getAsQuery( Key.query );

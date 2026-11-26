@@ -109,4 +109,41 @@ writeDump( qry1 )
 
 ```
 
+### Insert rows after the first row
 
+```java
+a = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+b = queryNew( "id,name", "integer,varchar", [ [ 9, "Zed" ] ] )
+queryInsertAt( a, b, 1 )
+writeOutput( arrayToList( queryColumnData( a, "name" ) ) )
+
+```
+
+Result: Ann,Zed,Bob
+
+### Member function inserting at the beginning
+
+```java
+a = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+b = queryNew( "id,name", "integer,varchar", [ [ 9, "Zed" ] ] )
+a.insertAt( b, 0 )
+writeOutput( arrayToList( a.columnData( "name" ) ) )
+
+```
+
+Result: Zed,Ann,Bob
+
+### Queries with different columns
+
+```java
+a = queryNew( "id,name" )
+b = queryNew( "id,title" )
+try {
+	queryInsertAt( a, b, 0 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Query columns do not match

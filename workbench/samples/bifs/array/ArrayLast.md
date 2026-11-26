@@ -58,7 +58,7 @@ dump( names.last() )
 
 
 ```java
-names = array( "Marcus", "Sarah", "Josefine" )
+names = [ "Marcus", "Sarah", "Josefine" ]
 dump( arrayLast( names ) )
  // outputs 'Josefine'
 

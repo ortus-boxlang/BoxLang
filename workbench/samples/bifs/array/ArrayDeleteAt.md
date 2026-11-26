@@ -17,7 +17,7 @@ writeOutput( JSONSerialize( someArray ) )
 
 ```
 
-Result: ["Red", "White", "Blue", "Pink"]
+Result: ["Red","White","Blue","Pink"]
 
 ### Simple example with member function
 
@@ -38,7 +38,7 @@ writeOutput( JSONSerialize( someArray ) )
 
 ```
 
-Result: ["Red", "Green", "Blue", "Pink"]
+Result: ["Red","Green","Blue","Pink"]
 
 ### Index out of bounds
 

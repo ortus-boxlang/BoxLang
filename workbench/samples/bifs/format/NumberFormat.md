@@ -143,7 +143,7 @@ numberFormat( 123456789, "_$,9.99" )
 
 ```
 
-Result: 1,2,3,4,5,6,7,8,9.00$
+Result: $123,456,789.00
 
 ### Additional Examples
 
@@ -173,3 +173,51 @@ dump( NumberFormat( 1, "C000" ) )
 ```
 
 
+
+### Default format with no mask
+
+Without a mask the number is rounded to a whole number and grouped.
+
+```java
+writeOutput( numberFormat( 1234567.891 ) )
+```
+
+Result: 1,234,568
+
+### Group digits and keep two decimal places
+
+```java
+writeOutput( numberFormat( 1234567.891, ",.00" ) )
+```
+
+Result: 1,234,567.89
+
+### Using the member function
+
+```java
+writeOutput( (1234.567).numberFormat( ",.00" ) )
+```
+
+Result: 1,234.57
+
+### Locale aware formatting with lsNumberFormat
+
+`lsNumberFormat()` (or the `locale` argument) uses the given locale's separators.
+
+```java
+writeOutput( lsNumberFormat( 1234567.891, ",.00", "de_DE" ) )
+```
+
+Result: 1.234.567,89
+
+### Non numeric values throw an error
+
+```java
+try {
+	numberFormat( "abc" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Can't cast [abc] to a Number.

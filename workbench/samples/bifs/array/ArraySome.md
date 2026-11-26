@@ -17,7 +17,7 @@ result = arraySome( arrayList, ( Any fruit ) => {
 	return fruit.startsWith( "a" )
 } )
 // Print result
-writeOutput( (result ? "Some" : "No") & " matches  were found!" )
+writeOutput( (result ? "Some" : "No") & " matches were found!" )
 
 ```
 
@@ -42,7 +42,7 @@ result = arrayList.some( ( Any fruit ) => {
 	return fruit.endsWith( "a" )
 } )
 // Print result
-writeOutput( (result ? "Some" : "No") & " matches  were found!" )
+writeOutput( (result ? "Some" : "No") & " matches were found!" )
 
 ```
 

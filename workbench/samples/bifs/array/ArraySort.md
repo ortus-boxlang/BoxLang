@@ -122,7 +122,7 @@ arrayOfStructs.sort( ( Any user1, Any user2 ) => {
 	}
 	return user1.DEPARTMENTNAME.compare( user2.DEPARTMENTNAME )
 } )
-writeDump( arrayOfStructs )
+writeOutput( arrayOfStructs.map( ( user ) -> user.lastName ).toList() )
 
 ```
 

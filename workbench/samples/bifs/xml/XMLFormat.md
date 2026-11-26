@@ -23,3 +23,18 @@ dump( XmlFormat( string ) )
 ```
 
 
+### Escape quotes and angle brackets
+
+```java
+writeOutput( xmlFormat( "a < b & c > d" ) )
+```
+
+Result: a &lt; b &amp; c &gt; d
+
+### Use the string member function
+
+```java
+writeOutput( "<b>".xmlFormat() )
+```
+
+Result: &lt;b&gt;

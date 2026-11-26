@@ -42,18 +42,19 @@ public class QueryRowSwap extends BIF {
 	}
 
 	/**
-	 * In a query object, swap the record in the sourceRow with the record from the destinationRow.
+	 * Swaps two rows of a query in place and returns the query. An exception is thrown if either row number is out of range. Also
+	 * available as <code>query.rowSwap( source, destination )</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to swap a row with
+	 * @argument.query The query whose rows are swapped.
 	 *
-	 * @argument.source The row to swap from
+	 * @argument.source The one-based number of the first row.
 	 *
-	 * @argument.destination The row to swap to
+	 * @argument.destination The one-based number of the second row.
 	 *
-	 * @return The modified query
+	 * @return The modified query.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Integer	source		= IntegerCaster.cast( arguments.get( Key.source ) );

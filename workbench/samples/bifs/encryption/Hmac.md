@@ -38,3 +38,31 @@ writeDump( result )
 ```
 
 
+
+### Default algorithm (HmacMD5)
+
+```java
+writeOutput( hmac( "msg", "secret" ) )
+```
+
+Result: 6de3b563fd112a668aef22e8d2e08b00
+
+### Using the member function
+
+```java
+writeOutput( "msg".hmac( "secret", "HMACSHA256" ) )
+```
+
+Result: fe4f9c418f683f034f6af90d1dd5b86ac0355dd96332c59cc74598d0736107f6
+
+### Keys must be strings or binary
+
+```java
+try {
+	hmac( "msg", 12345 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Invalid key supplied to function [hmac]. Key must be a binary object or string

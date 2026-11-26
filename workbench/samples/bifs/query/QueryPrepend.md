@@ -53,4 +53,26 @@ writeDump( testQuery )
 
 ```
 
+### The second query supplies the leading rows
 
+```java
+a = queryNew( "name", "varchar", [ [ "A1" ] ] )
+b = queryNew( "name", "varchar", [ [ "B1" ] ] )
+result = queryPrepend( a, b )
+writeOutput( arrayToList( queryColumnData( result, "name" ) ) )
+
+```
+
+Result: B1,A1
+
+### Only the second query is modified
+
+```java
+a = queryNew( "name", "varchar", [ [ "A1" ] ] )
+b = queryNew( "name", "varchar", [ [ "B1" ] ] )
+a.prepend( b )
+writeOutput( queryRecordCount( a ) & "," & queryRecordCount( b ) )
+
+```
+
+Result: 1,2

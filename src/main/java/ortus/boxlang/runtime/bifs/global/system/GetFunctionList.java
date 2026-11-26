@@ -44,10 +44,12 @@ public class GetFunctionList extends BIF {
 	}
 
 	/**
-	 * Get a collection of all the registered global functions in the runtime.
+	 * Gets a collection of all the registered global functions (BIFs) in the runtime. The result is computed once and cached.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return An ordered struct keyed by function name. Each value is a struct with the keys module, namespace, isGlobal, className and arguments.
 	 */
 	public IStruct _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return getFunctionList( context );

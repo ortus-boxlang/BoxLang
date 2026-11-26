@@ -47,14 +47,19 @@ public class IsCurrency extends BIF {
 	}
 
 	/**
-	 * Determines whether a value can be parsed to numeric in the given or default locale
+	 * Determines whether a value can be parsed as a currency amount in the given or current locale. Plain numeric values such as `1234.5` are
+	 * valid, as are formatted values that include the locale's currency symbol such as `$1,234.50` for `en_US`. Anything else returns false.
+	 *
+	 * This BIF is also registered as `LSIsCurrency`.
+	 *
+	 * @argument.number The value to test.
+	 *
+	 * @argument.locale Optional. The locale to apply when parsing (a common name or ISO code). Defaults to the locale of the current context.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number The value to be parsed
-	 *
-	 * @argument.locale The locale to apply to parsing - uses the context config value if not specified
+	 * @return True if the value can be parsed as currency, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	value	= StringCaster.cast( arguments.get( Key.number ) );

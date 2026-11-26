@@ -112,4 +112,34 @@ dump( myQuery )
 
 ```
 
+### Add a row from a struct
 
+```java
+q = queryNew( "id,name" )
+row = queryAddRow( q, { id: 1, name: "Ann" } )
+writeOutput( row )
+
+```
+
+Result: 1
+
+### Add several empty rows
+
+```java
+q = queryNew( "id,name" )
+writeOutput( queryAddRow( q, 3 ) & " " & queryRecordCount( q ) )
+
+```
+
+Result: 3 3
+
+### Member function with an array of arrays
+
+```java
+q = queryNew( "id,name", "integer,varchar" )
+q.addRow( [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+writeOutput( queryRecordCount( q ) & ": " & arrayToList( q.columnData( "name" ) ) )
+
+```
+
+Result: 2: Ann,Bob

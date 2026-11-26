@@ -22,3 +22,21 @@ dump( xml_document )
 ```
 
 
+### A new document is an empty XML object
+
+```java
+doc = xmlNew()
+writeOutput( isXML( doc ) )
+```
+
+Result: true
+
+### Add a root element to the new document
+
+```java
+doc = xmlNew()
+doc.xmlRoot = xmlElemNew( doc, "notes" )
+writeOutput( doc.xmlRoot.xmlName )
+```
+
+Result: notes

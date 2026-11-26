@@ -27,3 +27,23 @@ writeOutput( result )
 ```
 
 Result: fooBarBaz
+
+### Words are split on spaces, hyphens and underscores
+
+```java
+writeOutput( camelCase( "HELLO big_WORLD-wide" ) )
+
+```
+
+Result: helloBigWorldWide
+
+### Existing camelCase words are not split
+
+Only whitespace, hyphens and underscores are treated as word separators, and every word is lowercased first.
+
+```java
+writeOutput( camelCase( "helloWorld" ) )
+
+```
+
+Result: helloworld

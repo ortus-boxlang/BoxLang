@@ -31,3 +31,21 @@ dump( ex )
 ```
 
 
+
+### Choose the key size
+
+The key is returned as a Base64 string. A 128 bit key is 24 characters, and a 256 bit key is 44 characters.
+
+```java
+writeOutput( generateSecretKey( "AES", 128 ).len() & " " & generateSecretKey( "AES", 256 ).len() )
+```
+
+Result: 24 44
+
+### Each call generates a new random key
+
+```java
+writeOutput( generateSecretKey( "AES" ) == generateSecretKey( "AES" ) )
+```
+
+Result: false

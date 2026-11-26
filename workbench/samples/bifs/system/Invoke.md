@@ -23,6 +23,8 @@ invoke( obj, "test", {
 
 ```
 
+Result: the value returned by the test() method of Test.bx
+
 
 ### Invoke a method on a webservice with one argument
 
@@ -36,6 +38,8 @@ invoke( obj, "test", {
 } )
 
 ```
+
+Result: the value returned by the web service method test (requires network access)
 
 
 ### Invoke a method on a webservice with multiple arguments
@@ -52,6 +56,8 @@ invoke( obj, "test", {
 } )
 
 ```
+
+Result: the value returned by the web service method test (requires network access)
 
 
 ### Additional Examples
@@ -78,4 +84,17 @@ invoke( obj, "test", {
 
 ```
 
+Result: the first dump shows myStruct:{"A":"First"}; the second dump shows 5
 
+### Invoke a local function with positional arguments
+
+An empty string as the object invokes a function in the current template or class. Positional arguments are passed as an array.
+
+```java
+function add( a, b ) {
+    return a + b
+}
+writeOutput( invoke( "", "add", [ 3, 2 ] ) )
+```
+
+Result: 5

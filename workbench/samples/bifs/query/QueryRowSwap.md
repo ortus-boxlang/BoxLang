@@ -85,4 +85,38 @@ dump( qry )
 
 ```
 
+### Swap the first and last rows
 
+```java
+q = queryNew( "id", "integer", [ [ 1 ], [ 2 ], [ 3 ] ] )
+queryRowSwap( q, 1, 3 )
+writeOutput( arrayToList( queryColumnData( q, "id" ) ) )
+
+```
+
+Result: 3,2,1
+
+### Member function
+
+```java
+q = queryNew( "id", "integer", [ [ 1 ], [ 2 ], [ 3 ] ] )
+q.rowSwap( 1, 2 )
+writeOutput( arrayToList( q.columnData( "id" ) ) )
+
+```
+
+Result: 2,1,3
+
+### Row out of range
+
+```java
+q = queryNew( "id", "integer", [ [ 1 ], [ 2 ], [ 3 ] ] )
+try {
+	queryRowSwap( q, 1, 9 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Row index 8 is out of bounds for query of size 3

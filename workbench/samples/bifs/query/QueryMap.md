@@ -62,4 +62,30 @@ writeDump( res )
 
 ```
 
+### Transform each row
 
+```java
+q = queryNew( "id,name", "integer,varchar", [ [ 1, "ann" ], [ 2, "bob" ] ] )
+mapped = queryMap( q, ( row ) -> {
+	row.name = row.name.ucase()
+	return row
+} )
+writeOutput( arrayToList( queryColumnData( mapped, "name" ) ) )
+
+```
+
+Result: ANN,BOB
+
+### Member function with the row number
+
+```java
+q = queryNew( "name", "varchar", [ [ "ann" ], [ "bob" ] ] )
+mapped = q.map( ( row, rowNumber ) -> {
+	row.name = rowNumber & "-" & row.name
+	return row
+} )
+writeOutput( arrayToList( mapped.columnData( "name" ) ) )
+
+```
+
+Result: 1-ann,2-bob

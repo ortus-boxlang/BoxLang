@@ -38,10 +38,13 @@ public class GetComponentList extends BIF {
 	}
 
 	/**
-	 * Get a collection of all the registered global components in the runtime.
+	 * Gets a collection of all the registered global components in the runtime. Each component name is a key of the returned struct, in
+	 * registration order.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return An ordered struct keyed by component name. Each value is a struct with the keys module, className, allowsBody, requiresBody, ignoreEnableOutputOnly, autoEvaluateBodyExpressions and attributes.
 	 */
 	public IStruct _invoke( IBoxContext context, ArgumentsScope arguments ) {
 

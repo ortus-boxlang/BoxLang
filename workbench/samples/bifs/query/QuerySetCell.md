@@ -44,4 +44,24 @@ dump( q )
 
 ```
 
+### Set a cell in a specific row
 
+```java
+q = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+querySetCell( q, "name", "Zed", 2 )
+writeOutput( arrayToList( queryColumnData( q, "name" ) ) )
+
+```
+
+Result: Ann,Zed
+
+### Member function defaults to the last row
+
+```java
+q = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+q.setCell( "name", "Yan" )
+writeOutput( arrayToList( q.columnData( "name" ) ) )
+
+```
+
+Result: Ann,Yan

@@ -56,4 +56,36 @@ writeDump( result )
 
 ```
 
+### Get the values of a column
 
+```java
+q = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+writeOutput( arrayToList( queryColumnData( q, "name" ) ) )
+
+```
+
+Result: Ann,Bob
+
+### Member function
+
+```java
+q = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+writeOutput( arrayToList( q.columnData( "id" ) ) )
+
+```
+
+Result: 1,2
+
+### Column does not exist
+
+```java
+q = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+try {
+	queryColumnData( q, "missing" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Column missing does not exist in the query.

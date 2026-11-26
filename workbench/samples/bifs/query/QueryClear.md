@@ -63,4 +63,13 @@ writeDump( qry )
 
 ```
 
+### Clear a query but keep its columns
 
+```java
+q = queryNew( "id", "integer", [ [ 1 ], [ 2 ] ] )
+queryClear( q )
+writeOutput( queryRecordCount( q ) & " rows, columns: " & queryColumnList( q ) )
+
+```
+
+Result: 0 rows, columns: id

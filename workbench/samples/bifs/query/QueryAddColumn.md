@@ -50,4 +50,38 @@ writeDump( qry.COLUMNLIST )
 
 ```
 
+### Add a column populated from an array
 
+```java
+q = queryNew( "id", "integer", [ [ 1 ], [ 2 ] ] )
+index = queryAddColumn( q, "name", "varchar", [ "Ann", "Bob" ] )
+writeOutput( index & ": " & queryColumnList( q ) )
+
+```
+
+Result: 2: id,name
+
+### Member function without values
+
+```java
+q = queryNew( "id", "integer", [ [ 1 ], [ 2 ] ] )
+q.addColumn( "flag" )
+writeOutput( queryColumnData( q, "flag" ).len() )
+
+```
+
+Result: 2 (each existing row gets an empty value)
+
+### Column already exists
+
+```java
+q = queryNew( "id", "integer" )
+try {
+	queryAddColumn( q, "id", "integer", [] )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Column 'id' already exists in the query.

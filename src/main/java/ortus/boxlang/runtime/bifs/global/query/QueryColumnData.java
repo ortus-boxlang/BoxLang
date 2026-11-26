@@ -41,14 +41,17 @@ public class QueryColumnData extends BIF {
 	}
 
 	/**
-	 * Returns the data in a query column.
+	 * Returns the values of one column of a query as an array, in row order. An exception is thrown if the column does not exist.
+	 * Also available as <code>query.columnData( columnName )</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.query The query to get the column data from.
-	 * 
-	 * @argument.columnName The name of the column to get the data from.
+	 *
+	 * @argument.columnName The name of the column to read.
+	 *
+	 * @return An array containing the value of the column in each row.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query			= arguments.getAsQuery( Key.query );

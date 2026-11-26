@@ -17,3 +17,25 @@ writeOutput( result )
 ```
 
 Result: ABC
+
+### Codes above 65535 return an empty string
+
+```java
+writeOutput( "[" & char( 70000 ) & "]" )
+
+```
+
+Result: []
+
+### Error: negative code
+
+```java
+try {
+	char( -1 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Code must be a non-negative number

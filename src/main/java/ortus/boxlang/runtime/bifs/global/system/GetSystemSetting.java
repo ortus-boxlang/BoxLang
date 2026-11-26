@@ -49,20 +49,19 @@ public class GetSystemSetting extends BIF {
 	}
 
 	/**
-	 * Retrieve a Java System property or environment value by name.
-	 * <p>
-	 * It looks at properties first then environment variables second.
-	 * <p>
-	 * Please note that the property or environment variable name is case-sensitive.
-	 * <p>
-	 * You can also pass a default value to return if the property or environment variable is not found.
+	 * Retrieves a Java system property or environment variable by name. Registered system setting providers get the first chance to resolve the
+	 * key (namespaced providers use a namespace.key form, and a default provider can handle any key). Otherwise, system properties are
+	 * checked first and environment variables second. Names are case-sensitive. If nothing is found and no default value is provided, a
+	 * BoxRuntimeException is thrown.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.key The name of the system property or environment variable to retrieve
+	 * @argument.key The name of the system property or environment variable to retrieve.
 	 *
-	 * @argument.defaultValue The default value to return if the property or environment variable is not found
+	 * @argument.defaultValue The default value to return if the property or environment variable is not found.
+	 *
+	 * @return The setting value, or the default value if it was not found.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String																	stringKey				= arguments.getAsString( Key.key );

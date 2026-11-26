@@ -16,6 +16,8 @@ writeOutput( formattedRoundedUp & "<br>" )
 
 ```
 
+Result: 123.00, 1,000,000.00, 987.15 and 456.79, each followed by a line break
+
 
 ### Additional Examples
 
@@ -28,4 +30,18 @@ writeOutput( decimalFormat( 26 ) )
 
 ```
 
+### Control the maximum number of decimal places
 
+```java
+writeOutput( decimalFormat( 456.789, 3 ) & " " & decimalFormat( 456.789, 1 ) )
+```
+
+Result: 456.789 456.8
+
+### Using the member function
+
+```java
+writeOutput( (1234.5).decimalFormat() & " " & decimalFormat( "" ) )
+```
+
+Result: 1,234.50 0.00

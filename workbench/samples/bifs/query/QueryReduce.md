@@ -62,4 +62,12 @@ writeDump( totalAge )
 
 ```
 
+### Member function
 
+```java
+q = queryNew( "amount", "integer", [ [ 15 ], [ 3 ], [ 32 ] ] )
+writeOutput( q.reduce( ( total, row ) -> total + row.amount, 0 ) )
+
+```
+
+Result: 50

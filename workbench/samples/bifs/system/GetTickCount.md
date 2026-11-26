@@ -1,39 +1,43 @@
-### Script Syntax
+### Get the current tick count
 
-Outputs the current value of the internal millisecond timer
-
-<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQSE8tCclMznbOL80r0dBU0LTmAgC%2FpQq4" target="_blank">Run Example</a>
+Outputs the current value of the internal millisecond timer. The value is a number that depends on the current time.
 
 ```java
 writeOutput( getTickCount() )
-
 ```
 
+Result: a number of milliseconds since the epoch (changes on every call)
 
 ### A simple timer
 
-Outputs the millisecond difference between a starting point and end point
-
-<a href="https://try.boxlang.io/?code=eJwrLkksKlGwVUhPLQnJTM52zi%2FNK9HQtOYqzklNLdBQMDQwMFAAcsuLMktS%2FUtLCkpLNNDUKugqFIMNASoDAPpmGRg%3D" target="_blank">Run Example</a>
+Outputs the millisecond difference between a starting point and end point.
 
 ```java
 start = getTickCount()
 sleep( 1000 )
-writeOutput( getTickCount() - start )
-
+writeOutput( getTickCount() - start >= 1000 )
 ```
 
-Result: 1000 (note: may be off by a few ms depending on the environment)
+Result: true
 
-### Additional Examples
+### Choose the unit
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUMhJTErNsVVKTy0JyUzOds4vzStR0MjNzMnJ1E9JTUsszSnRVNJRKEssskVWoqGpoGnNVY5hTF5iXj425QoQGQUc2opTk%2FPzUrBrhMpBtAIAPes99g%3D%3D" target="_blank">Run Example</a>
+Valid units are nano, milli (default) and second.
 
 ```java
-writeDump( label="getTickCount (milli/default)", var=getTickCount() )
-writeDump( label="nano", var=getTickCount( "nano" ) )
-writeDump( label="second", var=getTickCount( "second" ) )
-
+writeOutput( getTickCount( "second" ) > 0 )
 ```
 
+Result: true
 
+### Invalid unit
+
+```java
+try {
+    getTickCount( "bogus" )
+} catch ( any e ) {
+    writeOutput( e.message )
+}
+```
+
+Result: Invalid unit [bogus] for getTickCount(). Valid units are: nano, milli, second.

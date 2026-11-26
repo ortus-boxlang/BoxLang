@@ -51,3 +51,15 @@ dump( generatePBKDFKey( "PBKDF2WithHmacSHA1", "secret", "salty", 5000, 128 ) )
 ```
 
 
+
+### The same passphrase and salt always produce the same key
+
+The `PBKDF2WithSHA256` alias is the same as `PBKDF2WithHmacSHA256`. The default key size is 256 bits, which is 44 characters of Base64.
+
+```java
+a = generatePBKDFKey( "PBKDF2WithHmacSHA256", "my passphrase", "my salt" )
+b = generatePBKDFKey( "PBKDF2WithSHA256", "my passphrase", "my salt" )
+writeOutput( ( a == b ) & " " & a.len() )
+```
+
+Result: true 44

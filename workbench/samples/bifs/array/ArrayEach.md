@@ -43,7 +43,7 @@ Result: 1:a;2:b;3:c;
 
 
 ```java
-aNames = array( "Marcus", "Sarah", "Josefine" )
+aNames = [ "Marcus", "Sarah", "Josefine" ]
 arrayEach( aNames, ( Any element ) => {
 	dump( element )
 } )

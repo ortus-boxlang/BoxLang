@@ -26,13 +26,15 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 public class GetRequestClassLoader extends BIF {
 
 	/**
-	 * This will retrieve the current request's class loader according to BoxLang loading hierarchy:
+	 * Retrieves the current request's class loader according to the BoxLang loading hierarchy:
 	 * <p>
-	 * - If you defined Java settings in your `Application`, it will use the class loader hierarchy defined by those settings.
-	 * - Else it uses the Global BoxRuntime class loader.
+	 * - If Java settings were defined in the Application, the class loader hierarchy defined by those settings is used.
+	 * - Otherwise the global BoxRuntime class loader is used.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return The request's ClassLoader.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return context.getRequestContextOrFail().getRequestClassLoader();

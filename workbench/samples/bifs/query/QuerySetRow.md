@@ -97,4 +97,24 @@ writeDump( testQuery )
 
 ```
 
+### Overwrite a row using an array
 
+```java
+q = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+querySetRow( q, 2, [ 5, "Cy" ] )
+writeOutput( arrayToList( queryColumnData( q, "name" ) ) )
+
+```
+
+Result: Ann,Cy
+
+### Add a row by omitting the row number
+
+```java
+q = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+querySetRow( query: q, rowData: [ 9, "Dee" ] )
+writeOutput( queryRecordCount( q ) & ": " & arrayToList( queryColumnData( q, "name" ) ) )
+
+```
+
+Result: 3: Ann,Bob,Dee

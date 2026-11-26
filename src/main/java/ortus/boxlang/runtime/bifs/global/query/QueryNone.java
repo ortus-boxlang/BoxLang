@@ -45,11 +45,11 @@ public class QueryNone extends QuerySome {
 	 * Used to iterate over a Query and test whether <strong>NONE</strong> item meets the test callback.
 	 * This is the opposite of {@link QuerySome}.
 	 * <p>
-	 * The function will be passed 3 arguments: the value, the index, and the Query.
+	 * The function will be passed 3 arguments: the row (as a struct), the one-based row number, and the Query.
 	 * You can alternatively pass a Java Predicate which will only receive the 1st arg.
 	 * The function should return true if the item meets the test, and false otherwise.
 	 * <p>
-	 * <strong>Note:</strong> This operation is a short-circuit operation, meaning it will stop iterating as soon as it finds the first item that does not meet the test condition.
+	 * <strong>Note:</strong> This operation is a short-circuit operation, meaning it will stop iterating as soon as it finds the first item that meets the test condition.
 	 * <p>
 	 * <h2>Parallel Execution</h2>
 	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a ForkJoinPool with parallel streams.
@@ -59,16 +59,19 @@ public class QueryNone extends QuerySome {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to test against the callback.
+	 * @argument.query The query to test.
 	 *
-	 * @argument.closure The function to invoke for each item. The function will be passed 3 arguments: the row, the currentRow, the query. You can alternatively pass a Java Predicate which will only receive the 1st arg.
+	 * @argument.callback The test function. It receives the row as a struct, the one-based row number, and the query, and must
+	 *                    return a boolean. You can alternatively pass a Java Predicate, which receives only the row.
 	 *
-	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
+	 * @argument.parallel Whether to run the callback in parallel. Defaults to false.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored. If a boolean is passed it will be used as the virtual thread argument
-	 * 
-	 * @argument.virtual Whether to use virtual threads when running the filter in parallel. Defaults to false. Ignored if parallel is false.
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If omitted, the default ForkJoinPool
+	 *                      parallelism is used. Ignored if parallel is false. If a boolean is passed it is used as the virtual argument instead.
+	 *
+	 * @argument.virtual Whether to use virtual threads when running in parallel. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return True if the callback returned false for every row (also true for an empty query), false if any row passed.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return !BooleanCaster.cast( super._invoke( context, arguments ) );

@@ -32,4 +32,22 @@ writeDump( queryColumnArray( qry ) )
 
 ```
 
+### Column names as an array
 
+```java
+q = queryNew( "id,title", "integer,varchar" )
+writeOutput( arrayToList( queryColumnArray( q ), "|" ) )
+
+```
+
+Result: id|title
+
+### Member function
+
+```java
+q = queryNew( "id,title", "integer,varchar" )
+writeOutput( q.columnArray().len() )
+
+```
+
+Result: 2

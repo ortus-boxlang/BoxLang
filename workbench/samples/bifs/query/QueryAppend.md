@@ -53,4 +53,26 @@ writeDump( testQuery )
 
 ```
 
+### Append the rows of another query
 
+```java
+a = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ] ] )
+b = queryNew( "id,name", "integer,varchar", [ [ 2, "Bob" ], [ 3, "Cy" ] ] )
+queryAppend( a, b )
+writeOutput( queryRecordCount( a ) & ": " & arrayToList( queryColumnData( a, "name" ) ) )
+
+```
+
+Result: 3: Ann,Bob,Cy
+
+### Member function returns the first query
+
+```java
+a = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ] ] )
+b = queryNew( "id,name", "integer,varchar", [ [ 2, "Bob" ] ] )
+c = a.append( b )
+writeOutput( queryRecordCount( c ) & " " & queryRecordCount( b ) )
+
+```
+
+Result: 2 1 (the second query is not modified)

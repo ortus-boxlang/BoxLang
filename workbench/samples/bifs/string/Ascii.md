@@ -12,4 +12,44 @@ writeoutput( "<br>Unicode value: #x#" )
 
 ```
 
+Result: character: ₩<br>Unicode value: 8361
 
+### Get the code of a character
+
+```java
+writeOutput( ascii( "A" ) )
+
+```
+
+Result: 65
+
+### Only the first character is used
+
+```java
+writeOutput( ascii( "Hello" ) )
+
+```
+
+Result: 72
+
+### Member function
+
+```java
+writeOutput( "a".ascii() )
+
+```
+
+Result: 97
+
+### Error: empty string
+
+```java
+try {
+	ascii( "" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Input string must contain a single character

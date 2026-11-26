@@ -26,10 +26,12 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 public class GetBoxRuntime extends BIF {
 
 	/**
-	 * Get the current Box Runtime
+	 * Gets the current BoxLang runtime instance. Mostly useful for debugging and Java interop.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return The BoxRuntime singleton.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return runtime;

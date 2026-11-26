@@ -82,8 +82,8 @@ Result: apple,banana,orange,peas,peppers
 
 
 ```java
-aNames = array( 10412, 42, 33, 2, 999, 12769, 888 )
-aNames2 = array( 33, "b", "c", "d", "e", "f", "g" )
+aNames = [ 10412, 42, 33, 2, 999, 12769, 888 ]
+aNames2 = [ 33, "b", "c", "d", "e", "f", "g" ]
 dump( arrayMerge( aNames, aNames2 ) )
 // member function
 dump( aNames.merge( aNames2 ) )

@@ -82,3 +82,25 @@ bx:timer type="inline" label="1000 SHA-512s, 10 iterations each" {
 ```
 
 
+
+### Hash40 and the member function
+
+`hash40()` always uses SHA1. Strings also have a `hash()` member function.
+
+```java
+writeOutput( hash40( "something" ) & " " & "something".hash( "SHA-256" ) )
+```
+
+Result: 1af17e73721dbe0c40011b82ed4bb1a7dbe3ce29 3fc9b689459d738f8c88a3a48aa9e33542016b7a4052e001aaa536fca74813cb
+
+### Unknown algorithms throw an error
+
+```java
+try {
+	hash( "something", "NOPE" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: The algorithm [NOPE] provided is not a valid digest algorithm.

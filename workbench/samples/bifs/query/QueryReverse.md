@@ -53,4 +53,23 @@ writeDump( queryreverse( testQuery ) )
 
 ```
 
+### Reverse the rows
 
+```java
+q = queryNew( "id", "integer", [ [ 1 ], [ 2 ], [ 3 ] ] )
+writeOutput( arrayToList( queryColumnData( queryReverse( q ), "id" ) ) )
+
+```
+
+Result: 3,2,1
+
+### The original query is not modified
+
+```java
+q = queryNew( "id", "integer", [ [ 1 ], [ 2 ], [ 3 ] ] )
+reversed = q.reverse()
+writeOutput( arrayToList( q.columnData( "id" ) ) )
+
+```
+
+Result: 1,2,3

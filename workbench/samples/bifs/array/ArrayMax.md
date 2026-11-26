@@ -56,7 +56,7 @@ Result: 45
 
 
 ```java
-aNames = array( 10412, 42, 33, 2, 999, 12769, 888 )
+aNames = [ 10412, 42, 33, 2, 999, 12769, 888 ]
 dump( arrayMax( aNames ) )
 // member function
 dump( aNames.max() )

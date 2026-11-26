@@ -135,4 +135,45 @@ dump( qry )
 
 ```
 
+### Create an empty query with column types
 
+```java
+q = queryNew( "id,name", "integer,varchar" )
+writeOutput( queryColumnList( q ) & " / " & queryRecordCount( q ) )
+
+```
+
+Result: id,name / 0
+
+### Create a query from an array of structs
+
+```java
+q = queryNew( "id,name", "integer,varchar", [ { id: 1, name: "Ann" }, { id: 2, name: "Bob" } ] )
+writeOutput( queryRecordCount( q ) & " rows: " & arrayToList( queryColumnData( q, "name" ) ) )
+
+```
+
+Result: 2 rows: Ann,Bob
+
+### Column names taken from an array of structs
+
+```java
+q = queryNew( [ { a: 1, b: 2 } ] )
+writeOutput( queryRecordCount( q ) & " row, " & queryColumnCount( q ) & " columns" )
+
+```
+
+Result: 1 row, 2 columns
+
+### Column and type lists differ in length
+
+```java
+try {
+	queryNew( "a,b", "integer" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: columnList and columnTypeList must have the same number of elements

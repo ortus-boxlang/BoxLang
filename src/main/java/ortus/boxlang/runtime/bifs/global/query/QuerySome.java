@@ -46,7 +46,7 @@ public class QuerySome extends BIF {
 
 	/**
 	 * Used to iterate over a query and test whether <strong>ANY</strong> items meet the test callback.
-	 * The function will be passed 3 arguments: the row, the currentRow, and the query.
+	 * The function will be passed 3 arguments: the row (as a struct), the one-based row number, and the query.
 	 * You can alternatively pass a Java Predicate which will only receive the 1st arg.
 	 * The function should return true if the item meets the test, and false otherwise.
 	 * <p>
@@ -61,16 +61,19 @@ public class QuerySome extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to iterate over
+	 * @argument.query The query to test.
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the row, the currentRow, the query.
+	 * @argument.callback The test function. It receives the row as a struct, the one-based row number, and the query, and must
+	 *                    return a boolean. You can alternatively pass a Java Predicate, which receives only the row.
 	 *
-	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
+	 * @argument.parallel Whether to run the callback in parallel. Defaults to false.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored. If a boolean is passed it will be used as the virtual thread argument
-	 * 
-	 * @argument.virtual Whether to use virtual threads when running the filter in parallel. Defaults to false. Ignored if parallel is false.
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If omitted, the default ForkJoinPool
+	 *                      parallelism is used. Ignored if parallel is false. If a boolean is passed it is used as the virtual argument instead.
+	 *
+	 * @argument.virtual Whether to use virtual threads when running in parallel. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return True if the callback returned true for at least one row, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 

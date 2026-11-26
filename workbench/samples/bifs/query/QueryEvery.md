@@ -70,4 +70,22 @@ dump( var=valid, label="valid - age between 40 and 50" )
  /* Output: false */
 ```
 
+### Every row passes the test
 
+```java
+q = queryNew( "n", "integer", [ [ 51 ], [ 52 ], [ 60 ] ] )
+writeOutput( queryEvery( q, ( row ) -> row.n > 50 ) )
+
+```
+
+Result: true
+
+### Member function where one row fails
+
+```java
+q = queryNew( "n", "integer", [ [ 51 ], [ 52 ], [ 60 ] ] )
+writeOutput( q.every( ( row ) -> row.n > 55 ) )
+
+```
+
+Result: false

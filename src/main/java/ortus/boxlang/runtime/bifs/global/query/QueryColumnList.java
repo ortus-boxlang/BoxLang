@@ -38,12 +38,14 @@ public class QueryColumnList extends BIF {
 	}
 
 	/**
-	 * This function returns the delimited column list of a query.
+	 * Returns the column names of a query as a comma-delimited list. Also available as <code>query.columnList()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to get the column names from
+	 * @argument.query The query to get the column names from.
+	 *
+	 * @return A comma-delimited string of the column names.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsQuery( Key.query ).getColumnList();

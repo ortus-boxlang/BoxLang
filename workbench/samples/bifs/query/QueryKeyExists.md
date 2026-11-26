@@ -32,4 +32,11 @@ writeDump( queryKeyExists( myQuery, "custName" ) )
 
 ```
 
+### Column does not exist
 
+```java
+writeOutput( queryKeyExists( queryNew( "id,name" ), "age" ) )
+
+```
+
+Result: false

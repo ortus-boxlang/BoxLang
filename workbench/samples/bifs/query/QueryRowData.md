@@ -70,4 +70,37 @@ dump( QueryRowData( q, 2 ) )
 
 ```
 
+### Get a row as a struct
 
+```java
+q = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+row = queryRowData( q, 2 )
+writeOutput( row.id & ":" & row.name )
+
+```
+
+Result: 2:Bob
+
+### Member function
+
+```java
+q = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+writeOutput( q.rowData( 1 ).name )
+
+```
+
+Result: Ann
+
+### Row outside the query
+
+```java
+q = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+try {
+	queryRowData( q, 5 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Row number outside of query row range.

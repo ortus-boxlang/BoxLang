@@ -40,14 +40,16 @@ public class QueryDeleteRow extends BIF {
 	}
 
 	/**
-	 * This function deletes a row from the query
+	 * Deletes a row from a query. The query is modified in place. Also available as <code>query.deleteRow( row )</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to delete the row from
-	 * 
-	 * @argument.row The row index to delete
+	 * @argument.query The query to delete the row from.
+	 *
+	 * @argument.row The one-based number of the row to delete.
+	 *
+	 * @return The query without the deleted row.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query			= arguments.getAsQuery( Key.query );

@@ -234,4 +234,24 @@ dump( var=people, label="people - sorted by age" )
 
 ```
 
+### Sort ascending using a comparator
 
+```java
+q = queryNew( "id,name", "integer,varchar", [ [ 3, "Cy" ], [ 1, "Ann" ], [ 2, "Bob" ] ] )
+querySort( q, ( a, b ) -> a.id - b.id )
+writeOutput( arrayToList( queryColumnData( q, "name" ) ) )
+
+```
+
+Result: Ann,Bob,Cy
+
+### Member function sorting descending
+
+```java
+q = queryNew( "id,name", "integer,varchar", [ [ 3, "Cy" ], [ 1, "Ann" ], [ 2, "Bob" ] ] )
+q.sort( ( a, b ) -> b.id - a.id )
+writeOutput( arrayToList( q.columnData( "name" ) ) )
+
+```
+
+Result: Cy,Bob,Ann

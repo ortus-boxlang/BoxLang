@@ -42,9 +42,9 @@ public class GetTickCount extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.unit The time unit to return. Valid values are: nano, milli (default), second.
+	 * @argument.unit The time unit to return. Valid values are: nano (System.nanoTime), milli (default, epoch milliseconds) or second (epoch seconds).
 	 *
-	 * @return The current tick count in the specified unit.
+	 * @return The current tick count in the specified unit, as a number. An invalid unit throws a BoxRuntimeException.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String unit = arguments.getAsString( Key.unit ).trim().toLowerCase();

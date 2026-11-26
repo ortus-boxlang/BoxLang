@@ -25,9 +25,33 @@ xml_document.XMLROOT = xml_root; // set the root node of the XML document
 xml_child = XmlElemNew( xml_document, "note" ); // first child node
 xml_secondary_child = XmlElemNew( xml_document, "to" ); // child node for the first child node
 xml_child.XMLCHILDREN.append( xml_secondary_child )
-xml_root.XMLCHILDREN.append( xml_child ); // add the first child node to the XML document
+xml_document.XMLROOT.XMLCHILDREN.append( xml_child ); // add the first child node to the XML document
 dump( xml_document )
 
 ```
 
 
+### Build a document with a root and a child
+
+```java
+doc = xmlNew()
+doc.xmlRoot = xmlElemNew( doc, "notes" )
+child = xmlElemNew( doc, "note" )
+child.xmlText = "hello"
+doc.xmlRoot.xmlChildren.append( child )
+writeOutput( doc.xmlRoot.xmlChildren[ 1 ].xmlName & " " & doc.xmlRoot.xmlChildren[ 1 ].xmlText )
+```
+
+Result: note hello
+
+### Create an element with a namespace
+
+The document needs a root element before further elements are created from it.
+
+```java
+doc = xmlParse( "<root/>" )
+elem = xmlElemNew( doc, "foo", "http://example.com/ns" )
+writeOutput( elem.xmlName )
+```
+
+Result: foo

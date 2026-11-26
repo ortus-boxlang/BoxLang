@@ -27,4 +27,12 @@ writeDump( queryColumnCount( qry ) )
 
 ```
 
+### Member function
 
+```java
+q = queryNew( "a,b" )
+writeOutput( q.columnCount() )
+
+```
+
+Result: 2

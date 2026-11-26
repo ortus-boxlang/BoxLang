@@ -1,25 +1,37 @@
-### Tag Syntax
+### Case-sensitive comparison
 
-<a href="https://try.boxlang.io?code=eJxLSEjgskmqsCpOLVFIzs8tSCzKLM7PU7CFclI1FJSc8ityEvPSlXQUlJKgTAVNBTuwtpTS3AKFssQiWyVlhG5lJX07BRDgSkhIAAAqGR6x"  target="_blank">Run Example</a>
-
+Uppercase letters sort before lowercase letters, so "Boxlang" is less than "boxlang".
 
 ```java
-<bx:set comparison = compare( "Boxlang", "boxlang" ) >
-<bx:dump var="#comparison#"/>     
+writeOutput( compare( "Boxlang", "boxlang" ) )
+
 ```
 
 Result: -1
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FBwzs8tSCxK1VBQMjQwUPBNzMxTCC7RU9JRUDIzN1VwTSwuUXAsS80rTVVS0FTQtFbQ11fQNeRKQdNriqbXUMG5tCC1qCQzL18hPLESoZewVhQ%2BWB8XSKMBFwC5nC4y" target="_blank">Run Example</a>
+### Equal and greater than
 
 ```java
-dump( Compare( "100 Main St.", "675 East Avenue" ) ); // -1
-dump( Compare( "500 Main St.", "1 Cupertino Way" ) ); // 1
-dump( Compare( "500 Main St.", "500 Main St." ) )
- // 0
+writeOutput( compare( "abc", "abc" ) & " " & compare( "b", "a" ) )
 
 ```
 
+Result: 0 1
 
+### Compare strings lexicographically
+
+```java
+writeOutput( compare( "100 Main St.", "675 East Avenue" ) & " " & compare( "500 Main St.", "1 Cupertino Way" ) )
+
+```
+
+Result: -1 1
+
+### Member function
+
+```java
+writeOutput( "apple".compare( "banana" ) )
+
+```
+
+Result: -1

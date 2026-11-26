@@ -40,14 +40,16 @@ public class QueryColumnExists extends BIF {
 	}
 
 	/**
-	 * This function returns true if the column exists in the query
+	 * Checks whether a column exists in a query. Also available as <code>query.columnExists( column )</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to check for the column
-	 * 
-	 * @argument.column The column to check for
+	 * @argument.query The query to check.
+	 *
+	 * @argument.column The name of the column to look for.
+	 *
+	 * @return True if the column exists, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return QueryUtil.columnExists(

@@ -111,4 +111,37 @@ dump( var=qrySlice, label="qrySlice - from record 3, 2 records" )
  */
 ```
 
+### Take two rows starting at row 2
 
+```java
+q = queryNew( "id", "integer", [ [ 1 ], [ 2 ], [ 3 ], [ 4 ] ] )
+result = querySlice( q, 2, 2 )
+writeOutput( arrayToList( queryColumnData( result, "id" ) ) )
+
+```
+
+Result: 2,3
+
+### Member function with no length returns the remaining rows
+
+```java
+q = queryNew( "id", "integer", [ [ 1 ], [ 2 ], [ 3 ], [ 4 ] ] )
+writeOutput( arrayToList( q.slice( 3 ).columnData( "id" ) ) )
+
+```
+
+Result: 3,4
+
+### Offset outside the query
+
+```java
+q = queryNew( "id", "integer", [ [ 1 ], [ 2 ] ] )
+try {
+	querySlice( q, 9 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Offset is outside the query row range.

@@ -70,4 +70,27 @@ writeDump( qry2.COLUMNLIST )
 
 ```
 
+### Member function
 
+```java
+q = queryNew( "a,b,c" )
+q.deleteColumn( "b" )
+writeOutput( queryColumnList( q ) )
+
+```
+
+Result: a,c
+
+### Column does not exist
+
+```java
+q = queryNew( "a,b" )
+try {
+	queryDeleteColumn( q, "z" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Column 'z' does not exist in the query.

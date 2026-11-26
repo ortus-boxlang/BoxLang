@@ -1,23 +1,18 @@
 ### Check to see if a function exists
 
-Uses the member function of structKeyExists.
-
-<a href="https://try.boxlang.io/?code=eJxLTy1xK81LLsnMz%2FPJLC7R0NTLTq10rQAyizUUlIpSfRNLkjOUFDStuQBPYQ5J" target="_blank">Run Example</a>
+Uses the keyExists member function on the returned struct.
 
 ```java
-getFunctionList().keyExists( "reMatch" )
-
+writeOutput( getFunctionList().keyExists( "reMatch" ) )
 ```
 
 Result: true
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUEhPLXErzUsuyczP88ksLtHQVNC05gIAyGgLCw%3D%3D" target="_blank">Run Example</a>
+### Inspect a function entry
 
 ```java
-writeDump( getFunctionList() )
-
+entry = getFunctionList().reMatch
+writeOutput( entry.keyList() )
 ```
 
-
+Result: module,namespace,isGlobal,className,arguments (the key order may vary)

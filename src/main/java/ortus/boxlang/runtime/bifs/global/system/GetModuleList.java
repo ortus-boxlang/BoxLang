@@ -39,10 +39,12 @@ public class GetModuleList extends BIF {
 	}
 
 	/**
-	 * Get a collection of all the registered global functions in the runtime.
+	 * Gets a collection of all the modules registered in the runtime.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return A struct keyed by module name, where each value is the struct record of that module.
 	 */
 	public IStruct _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		var results = new Struct();

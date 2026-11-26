@@ -22,8 +22,37 @@ xml_stream = "
       <body>Here is the message you requested.</body>
     </note>
   "
-dump( XmlParse( xml_stream ) )
+dump( XmlParse( trim( xml_stream ) ) )
 
 ```
 
 
+### Parse a string and read an element
+
+```java
+xml = xmlParse( "<a><b>1</b></a>" )
+writeOutput( xml.xmlRoot.xmlName & " " & xml.xmlRoot.b.xmlText )
+```
+
+Result: a 1
+
+### Parse case-insensitively
+
+```java
+xml = xmlParse( "<A><B>1</B></A>", false )
+writeOutput( xml.a.b.xmlText )
+```
+
+Result: 1
+
+### Malformed XML throws an error
+
+```java
+try {
+	xmlParse( "<a><b>1</b>" )
+} catch( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Error parsing XML document

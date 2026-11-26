@@ -42,18 +42,20 @@ public class QueryInsertAt extends BIF {
 	}
 
 	/**
-	 * Inserts a query data into another query at a specific position
+	 * Inserts all rows of one query into another at a position and returns the modified first query. Both queries must have exactly
+	 * the same column names, otherwise an exception is thrown. The rows are placed after the first <code>position</code> rows of the
+	 * source query, so a position of 0 inserts at the start. Also available as <code>query.insertAt( value, position )</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The source query to insert to
+	 * @argument.query The query to insert into. It is modified in place.
 	 *
-	 * @argument.value The query that will be inserted
+	 * @argument.value The query whose rows are inserted. It must have the same columns as the first query.
 	 *
-	 * @argument.position The position where the query will be inserted
+	 * @argument.position The number of existing rows that remain before the inserted rows (0 inserts at the beginning).
 	 *
-	 * @return The modified query
+	 * @return The modified first query.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Integer	position	= IntegerCaster.cast( arguments.get( Key.position ) );

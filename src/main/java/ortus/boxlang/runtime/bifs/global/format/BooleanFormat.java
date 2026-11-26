@@ -48,12 +48,19 @@ public class BooleanFormat extends BIF {
 	}
 
 	/**
-	 * Returns the value formatted as a boolean string
+	 * Casts a value to a boolean and returns it as the string `true` or `false`. Numbers are `false` when zero and `true` otherwise, and the
+	 * strings `true`, `false`, `yes` and `no` (case-insensitive) are recognised. An empty string returns `false`. Values which cannot be cast to
+	 * a boolean throw an exception.
+	 *
+	 * This BIF is also registered as the deprecated `TrueFalseFormat` BIF and member function (scheduled for removal in 2.0), and as a member
+	 * function on numbers and strings, e.g. `(1).booleanFormat()`.
+	 *
+	 * @argument.value The value to cast as a boolean and return as a string.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value The value to cast as a boolean and return the string value
+	 * @return The string `true` or `false`.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.get( Key.value ) instanceof String castedString && castedString.isEmpty() ) {

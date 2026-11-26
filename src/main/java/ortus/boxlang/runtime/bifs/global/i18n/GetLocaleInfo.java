@@ -44,15 +44,19 @@ public class GetLocaleInfo extends BIF {
 	}
 
 	/**
-	 * Retrieves a struct containin info on a locale, with an optional display locale
+	 * Returns an unmodifiable struct describing a locale, with the keys `country` (ISO 2 letter), `language` (ISO 2 letter), `name` (for example
+	 * `Deutsch (Deutschland)`), `variant`, `display` (a struct with the `country` and `language` display names) and `iso` (a struct with the ISO
+	 * 3 letter `country` and `language` codes).
+	 *
+	 * @argument.locale Optional. The locale to describe: either a common name (e.g. `German (Standard)`) or an ISO locale such as `de_DE`.
+	 *                  Defaults to the current locale.
+	 *
+	 * @argument.dspLocale Optional. The locale in which the display names are returned. Defaults to the locale being described.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.locale Optional locale to retrieve information on - either a common format ( "German" ), or an ISO Directive
-	 *
-	 * @argument.dspLocale Optional display language locale
-	 *
+	 * @return A struct of information about the locale.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	dspLocale		= arguments.getAsString( Key.dspLocale );

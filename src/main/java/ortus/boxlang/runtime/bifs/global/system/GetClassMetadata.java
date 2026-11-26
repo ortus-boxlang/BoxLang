@@ -44,12 +44,15 @@ public class GetClassMetadata extends BIF {
 	}
 
 	/**
-	 * Get metadata about a instance or class given an instantiation path, an absolute OS filesystem path, or an instance of the object.
+	 * Gets the metadata of a BoxLang class or interface, given an instantiation path (dot notation or a mapping-resolvable path), an absolute file system path, or an
+	 * instance of a BoxLang class.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path The path to the class or interface.,or an instance of the object to get the metadata for.
+	 * @argument.path The path of the class or interface, or an instance of a class to get the metadata for.
+	 *
+	 * @return A struct of class metadata (name, type, path, functions, properties, and so on).
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object path = arguments.get( Key.path );

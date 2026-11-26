@@ -4,14 +4,14 @@ Find the positions of a given string within a provided array regardless of case.
 
 
 ```java
-var fruitArray = [ 
+fruitArray = [ 
 	"apple",
 	"banana",
 	"apple",
 	"orange",
 	"kiwi"
 ]
-var applePositions = arrayFindAllNoCase( fruitArray, "APPLE" )
+applePositions = arrayFindAllNoCase( fruitArray, "APPLE" )
 writeOutput( JSONSerialize( applePositions ) )
 
 ```

@@ -43,18 +43,23 @@ public class QueryAddColumn extends BIF {
 	}
 
 	/**
-	 * Adds a column to a query and populates its rows with the contents of a one-dimensional array.
+	 * Adds a column to a query and populates its rows from a one-dimensional array. The query is modified in place. If no array is
+	 * supplied, every existing row gets an empty string. An exception is thrown if the column already exists. The datatype argument
+	 * may also be the array itself, in which case the column type is "object". Also available as <code>query.addColumn()</code>.
 	 *
-	 * @param context   The execution context.
-	 * @param arguments Arguments including query, column name, data type, and the array to populate the column with.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query object to which the column should be added.
+	 * @argument.query The query to add the column to.
 	 *
 	 * @argument.columnName The name of the column to add.
 	 *
-	 * @argument.datatype The column data type of the new column or the array to populate the column with a generic type of anything.
+	 * @argument.datatype The column data type (for example varchar, integer, date). Defaults to "object". You can also pass the
+	 *                    array of values here as a shortcut.
 	 *
-	 * @argument.arrayName The one-dimensional array used to populate the column.
+	 * @argument.array A one-dimensional array of values used to populate the column, one value per row. Defaults to an empty array.
+	 *
+	 * @return The position (index) of the new column, which is the new column count of the query.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query		= arguments.getAsQuery( Key.query );

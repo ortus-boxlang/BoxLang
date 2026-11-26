@@ -111,3 +111,23 @@ writeDump( BooleanFormat( 0 ) )
 `trueFalseFormat()` is a deprecated alias for `booleanFormat()` and is planned for removal in the 2.0 release.
 
 
+
+### Using the member function
+
+```java
+writeOutput( (1).booleanFormat() & " " & "no".booleanFormat() )
+```
+
+Result: true false
+
+### Values which are not boolean throw an error
+
+```java
+try {
+	booleanFormat( "maybe" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: String [maybe] cannot be cast to a boolean

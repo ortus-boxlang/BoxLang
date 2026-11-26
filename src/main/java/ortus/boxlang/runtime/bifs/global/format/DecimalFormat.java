@@ -47,14 +47,20 @@ public class DecimalFormat extends BIF {
 	}
 
 	/**
-	 * Converts a number to a decimal-formatted string.
+	 * Formats a number as a decimal string using the grouping separators and decimal symbol of the current locale (for example `1,000,000.00`).
+	 * At least two decimal places are shown and the number is rounded to the maximum number of places given by `length`. An empty string is
+	 * treated as 0. Values which are not numeric throw an exception. Also available as a member function on numbers, e.g.
+	 * `(1234.5).decimalFormat()`.
+	 *
+	 * @argument.number The number to format, or an empty string which is treated as 0.
+	 *
+	 * @argument.length Optional. The maximum number of decimal places to include. Defaults to 2. At least two places are shown unless a smaller
+	 *                  length is given, so a length of 1 returns a single decimal place.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number The number to convert to decimal format.
-	 *
-	 * @argument.length The number of decimal places to include in the formatted string.
+	 * @return The formatted number as a string.
 	 */
 	public String _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Locale			locale			= ( Locale ) context.getConfig().get( Key.locale );

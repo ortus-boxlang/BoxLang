@@ -16,7 +16,7 @@ writeOutput( JSONSerialize( newArray ) )
 
 ```
 
-Result: ["All is well", "All is well", "All is well", "All is well"]
+Result: ["All is well","All is well","All is well","All is well"]
 
 ### Create the Two dimensional array
 
@@ -35,7 +35,7 @@ writeOutput( JSONSerialize( newArray ) )
 
 ```
 
-Result: [["First value", "First value"],["Second value", "Second value"]]
+Result: [["First value","First value"],["Second value","Second value"]]
 
 ### Create unsynchronized array
 
@@ -67,7 +67,7 @@ writeOutput( JSONSerialize( newArray ) )
 
 ```
 
-Result: ["one", "two"]
+Result: ["one","two"]
 
 ### Arrays are synchronized by default
 

@@ -41,15 +41,20 @@ writeOutput( findOneOf( "tHe", string_to_search, 1 ) )
 
 Result: 3
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FBwy8xL8c9L9U%2FTUFBKVNIBEgoQmASBSgqaCprWXCkYipNIUZyMWzEApfYixg%3D%3D" target="_blank">Run Example</a>
+### Characters that are not found
 
 ```java
-dump( FindOneOf( "a", "a a a a b b b b" ) )
-dump( FindOneOf( "b", "a a a a b b b b" ) )
-dump( FindOneOf( "c", "a a a a b b b b" ) )
+writeOutput( findOneOf( "c", "a a a a b b b b" ) & " " & findOneOf( "b", "a a a a b b b b" ) )
 
 ```
 
+Result: 0 9
 
+### Member function
+
+```java
+writeOutput( "The rain in Spain".findOneOf( "xyz" ) )
+
+```
+
+Result: 0

@@ -43,16 +43,19 @@ public class QuerySlice extends BIF {
 	}
 
 	/**
-	 * Returns a subset of rows from an existing query
+	 * Returns a new query containing a subset of the rows of a query. An exception is thrown if the offset or length falls outside
+	 * the query. Also available as <code>query.slice( offset, length )</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query object to which the rows should be returned.
-	 * 
-	 * @argument.offset The first row to include in the new query.
-	 * 
-	 * @argument.length The number of rows to include, defaults to all remaining rows.
+	 * @argument.query The query to take rows from.
+	 *
+	 * @argument.offset The one-based number of the first row to include.
+	 *
+	 * @argument.length The number of rows to include. Defaults to 0, which returns all remaining rows.
+	 *
+	 * @return A new query with the selected rows.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query	= arguments.getAsQuery( Key.query );

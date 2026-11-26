@@ -65,4 +65,23 @@ writeDump( myResult )
 
 ```
 
+### Read the record count and column list
 
+```java
+q = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+meta = queryGetResult( q )
+writeOutput( meta.recordCount & " rows, columns: " & meta.columnList )
+
+```
+
+Result: 2 rows, columns: id,name
+
+### Member function
+
+```java
+q = queryNew( "id,name", "integer,varchar", [ [ 1, "Ann" ], [ 2, "Bob" ] ] )
+writeOutput( q.getResult().type )
+
+```
+
+Result: Query
