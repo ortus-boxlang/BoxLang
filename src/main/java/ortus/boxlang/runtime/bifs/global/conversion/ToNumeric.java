@@ -45,14 +45,25 @@ public class ToNumeric extends BIF {
 	}
 
 	/**
-	 * Cast a value to a number.
+	 * Casts a value to a number. When a radix is given, the string is parsed as an integer in that numeral system.
+	 * Strings of 20 or more characters parsed with a radix are returned as big decimals so they do not overflow.
+	 * 
+	 * <pre>
+	 * toNumeric( "3.14" ) // 3.14
+	 * toNumeric( "FF", "hex" ) // 255
+	 * toNumeric( "101", 2 ) // 5
+	 * </pre>
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.value The value to cast.
 	 *
-	 * @argument.radix The radix to use when casting the value. Valid values are 2-36, "bin", "oct", "dec", and "hex".
+	 * @argument.radix The radix to use when casting the value. Valid values are 2-36, "bin" (2), "oct" (8), "dec" (10) and "hex" (16).
 	 *
-	 * @param context   The context in which the BIF is being executed.
-	 * @param arguments The arguments passed to the BIF.
+	 * @throws BoxCastException       If the value cannot be cast to a number.
+	 *
+	 * @throws BoxValidationException If the radix is not valid.
 	 *
 	 * @return The numeric value of the input.
 	 */

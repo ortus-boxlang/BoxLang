@@ -45,15 +45,19 @@ public class ToBase64 extends BIF {
 	}
 
 	/**
-	 * Calculates the Base64 representation of a string or binary object. The Base64 format uses printable characters, allowing binary data to be sent in
-	 * forms and e-mail, and stored in a database or file.
+	 * Calculates the Base64 representation of a string or binary object. The Base64 format uses printable characters, allowing binary data to
+	 * be sent in forms and e-mail, and stored in a database or file. A string is first converted to bytes using the given character encoding.
+	 * Also available as the <code>toBase64()</code> member function on strings.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string_or_object A string or a binary object.
 	 *
-	 * @argument.encoding The character encoding (character set) of the string, used with binary data.
+	 * @argument.encoding The character encoding (character set) used to convert a string into bytes. Defaults to UTF-8. Not used for binary
+	 *                    data.
+	 *
+	 * @return The Base64 encoded string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return EncryptionUtil.base64Encode( arguments.get( Key.string_or_object ), Charset.forName( arguments.getAsString( Key.encoding ) ) );

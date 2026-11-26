@@ -47,14 +47,24 @@ public class ToModifiable extends BIF {
 	}
 
 	/**
-	 * Convert an array, struct, query or set to its Modifiable counterpart.
+	 * Converts an unmodifiable array, struct or set to its modifiable counterpart. Values that are not unmodifiable (including modifiable values
+	 * and queries) are returned as is.
+	 * Note that the modifiable value shares its underlying data with the unmodifiable value it was created from.
+	 * 
+	 * <pre>
+	 * frozen = [ 1, 2, 3 ].toUnmodifiable()
+	 * list = frozen.toModifiable()
+	 * list.append( 4 )
+	 * </pre>
+	 * 
+	 * Also available as the <code>toModifiable()</code> member function on arrays, structs, queries and sets.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.value The array, struct, query or set to convert.
 	 *
-	 * @param context   The context in which the BIF is being executed.
-	 * @param arguments The arguments passed to the BIF.
-	 *
-	 * @return The value converted to its Modifiable counterpart. If we can't change we just return it.
+	 * @return The value converted to its modifiable counterpart, or the same value if it cannot be converted.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object inputValue = arguments.get( Key.value );

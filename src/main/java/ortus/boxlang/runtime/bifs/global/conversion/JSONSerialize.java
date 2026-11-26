@@ -66,44 +66,52 @@ public class JSONSerialize extends BIF {
 	}
 
 	/**
-	 * Converts a BoxLang variable into a JSON (JavaScript Object Notation) string according to the specified options.
-	 *
+	 * Converts a BoxLang value (struct, array, query, set, class, string, number, boolean or null) into a JSON (JavaScript Object Notation)
+	 * string.
+	 * <p>
+	 * Also available as the <code>toJSON()</code> member function on arrays, structs, queries, sets, classes, strings, numbers and booleans.
+	 * The <code>listToJSON()</code> member function on a string first splits the string as a comma-delimited list and serializes it as a JSON
+	 * array.
+	 * 
+	 * <pre>
+	 * jsonSerialize( { name: "BoxLang", tags: [ "jvm" ] } ) // {"name":"BoxLang","tags":["jvm"]}
+	 * "foo,bar,baz".listToJSON() // ["foo","bar","baz"]
+	 * </pre>
+	 * 
 	 * <h2>Query Format Options</h2>
 	 * The <code>queryFormat</code> argument determines how queries are serialized:
 	 * <ul>
-	 * <li><code>row</code> or <code>false</code>: Serializes the query as a top-level struct with two keys:
+	 * <li><code>row</code> or <code>false</code>: Serializes the query as a struct with two keys:
 	 * <code>columns</code> (an array of column names) and <code>data</code> (an array of arrays representing
 	 * each row's data).</li>
-	 * <li><code>column</code> or <code>true</code>: Serializes the query as a top-level struct with three keys:
+	 * <li><code>column</code> or <code>true</code>: Serializes the query as a struct with three keys:
 	 * <code>rowCount</code> (the number of rows), <code>columns</code> (an array of column names), and
 	 * <code>data</code> (a struct where each key is a column name and the value is an array of values for that column).</li>
 	 * <li><code>struct</code>: Serializes the query as an array of structs, where each struct represents a row of data.</li>
 	 * </ul>
-	 *
-	 * <h2>Usage</h2>
-	 *
-	 * <pre>
-	 * // Convert a query to JSON
-	 * myQuery = ...;
-	 * json = jsonSerialize( myQuery, queryFormat="row" );
-	 * // Convert a list to JSON
-	 * myList = "foo,bar,baz";
-	 * jsonList = jsonSerialize( myList );
-	 * </pre>
+	 * If queryFormat is not passed, the runtime setting <code>defaultJSONQuerySerializationFormat</code> is used, which is <code>struct</code>
+	 * when not configured.
+	 * A query column is serialized as an array of its values.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.data The variable to convert to a JSON string.
+	 * @argument.data The value to convert to a JSON string.
 	 *
-	 * @argument.queryFormat If the variable is a query, specifies whether to serialize the query by rows or by columns. Valid values are:
-	 *                       <code>row</code> same as <code>false</code>, <code>column</code> same as <code>true</code>, or <code>struct</code>. Defaults to <code>row</code>.
+	 * @argument.queryFormat How to serialize a query. Valid values are: true, false, row, column, struct. Defaults to the runtime configured
+	 *                       format, which is "struct" if not configured.
 	 *
-	 * @argument.useSecureJSONPrefix If true, the JSON string is prefixed with a secure JSON prefix. (Not implemented yet)
+	 * @argument.useSecureJSONPrefix If true, the JSON string is prefixed with a secure JSON prefix. Not implemented yet.
 	 *
-	 * @argument.useCustomSerializer If true, the JSON string is serialized using a custom serializer. (Not implemented yet)
+	 * @argument.useCustomSerializer If true, the JSON string is serialized using a custom serializer. Not implemented yet.
 	 *
 	 * @argument.pretty If true, the JSON string is formatted with indentation and line breaks for readability. Defaults to false.
+	 *
+	 * @throws BoxRuntimeException    If the value cannot be serialized.
+	 *
+	 * @throws BoxValidationException If queryFormat is not one of the valid values.
+	 *
+	 * @return The JSON string representation of the value.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// TODO useSecureJSONPrefix - Don't assume this is a boolean, Lucee accepts a charset here which ColdBox passes

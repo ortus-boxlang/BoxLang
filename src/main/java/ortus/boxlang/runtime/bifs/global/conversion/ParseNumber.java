@@ -48,16 +48,30 @@ public class ParseNumber extends BIF {
 	}
 
 	/**
-	 * Converts a string to a number in the specified numeral system
+	 * Converts a string to a number. Without a radix the string is parsed using the rules of a locale (thousands separators and decimal
+	 * separators vary by locale); with a radix it is parsed in that numeral system. Also available as <code>LSParseNumber</code>.
+	 * <p>
+	 * As a convenience, if the second argument is one of the radix names (bin, oct, dec, hex) it is treated as the radix instead of a locale:
+	 * 
+	 * <pre>
+	 * parseNumber( "1,234.56", "en_US" ) // 1234.56
+	 * parseNumber( "1.234,56", "de_DE" ) // 1234.56
+	 * parseNumber( "FF", "hex" ) // 255
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.number The string to convert to a number.
 	 *
-	 * @argument.locale The locale to use when parsing the number. If not provided, the system or application-configured locale is used.
+	 * @argument.locale The locale to use when parsing the number. If not provided, the system or application configured locale is used.
 	 *
-	 * @argument.radix The numeral system to use for conversion (e.g., "bin", "oct", "dec", "hex"). If not provided, the number is parsed as locale-sensitive
+	 * @argument.radix The numeral system to use for the conversion: "bin" (2), "oct" (8), "dec" (10, parsed as a decimal number) or "hex" (16).
+	 *                 If not provided, the number is parsed with the locale rules.
+	 *
+	 * @throws BoxRuntimeException If the string cannot be parsed with the locale, or the radix is not valid.
+	 *
+	 * @return The parsed number.
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String number = arguments.getAsString( Key.number );

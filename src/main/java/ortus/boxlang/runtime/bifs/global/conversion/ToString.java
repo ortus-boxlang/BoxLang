@@ -46,14 +46,19 @@ public class ToString extends BIF {
 	}
 
 	/**
-	 * Converts a value to a string.
+	 * Converts a value to a string. A null value becomes an empty string. Binary values are decoded using the given encoding,
+	 * and BoxLang types (arrays, structs, and so on) use their own string representation. This BIF never throws an error for a value it cannot
+	 * cast.
+	 * Also available as the <code>toString()</code> member function on strings.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value Value to convert to a string; can be a simple value such as an integer, a binary object, or an XML document object.
+	 * @argument.value The value to convert to a string. It can be a simple value such as a number, a binary object, or an XML document object.
 	 *
-	 * @argument.encoding The character encoding (character set) of the string, used with binary data.
+	 * @argument.encoding The character encoding (character set) used to decode binary data. Defaults to the runtime default.
+	 *
+	 * @return The string representation of the value.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object obj = arguments.get( Key.value );

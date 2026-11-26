@@ -45,13 +45,16 @@ public class ToBinary extends BIF {
 	}
 
 	/**
-	 * Calculates the binary representation of Base64-encoded data.
+	 * Calculates the binary representation (a byte array) of Base64 encoded data. Missing padding is added and excess padding is trimmed.
+	 * A value that is already binary is returned as is. Invalid Base64 characters throw an exception.
+	 * Also available as the <code>toBinary()</code> member function on strings.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.base64_or_object A string containing base64-encoded data.
+	 * @argument.base64_or_object A string containing Base64 encoded data, or a binary value.
 	 *
+	 * @return The decoded binary data as a byte array.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object base64_or_object = arguments.get( Key.base64_or_object );
