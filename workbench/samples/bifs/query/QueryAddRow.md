@@ -2,7 +2,7 @@
 
 Pass in row data directly to queryAddRow argument.
 
-<a href="https://try.boxlang.io/?code=eJwljLEKAjEQRGvzFctWCtvYKhbC1RbiDwQzasCLurcxHOK%2Fu%2Bd1M8N7U9AG2tGrQscD2pI4J7Fsd7B4LoYrVN5Rz7eoTKtt%2BKP7lI4Pp4vrQp%2BwcI1pQ2vxOOveuEPDSAkXRBvopLWPhcN3ummaDV3tn%2FPJNP0AXTYr0A%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwljDEKwkAQRWv3FMNUBqaxFSyE1BbiBRb3qwtm1clsliDePYPp3of3fkEb6UCfCp1PaFvinMSyPcHiXAx3qExRr4%2BoTF34m8eUzi%2BXi9dC37DximlPO3Fca1%2Fco2GmhBuijXTROsTC4ecvTbOhr8N7%2FaBuAbdaKxU%3D" target="_blank">Run Example</a>
 
 ```java
 news = queryNew( "id,title", "integer,varchar" )
@@ -19,7 +19,7 @@ writeDump( news )
 
 Pass in row data directly to queryAddRow argument.
 
-<a href="https://try.boxlang.io/?code=eJwljMEKwjAQRM%2FmK5Y9VQiCV8Vbzx6kPxCaUQM26nZjKMV%2Fd4O3mWHey6gznehdIMsZtSNO0WvSB9hbzoobxH%2BCjPcgTNujy0bsQoyXp71XtzGA6UB7b%2FEPWuMeFQtFXBF0pkHKFDK7bxNUSYq%2BTK%2BOmqtNPzgHKZw%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwljDEKwkAQRWv3FMNUCSyCrWCX2kK8wOB%2BdcGsOpnNEsS7Z8TufXjvF7SJDvSu0OWI1hHnFC3bAxydi%2BEGjbPo5S7K1IfiwVZSOj1d%2FoSN%2B0x72kXHf%2BeLBzQslHCF2ERnraMUDl%2Fvm2bDUMdXR78r6leaKSjh" target="_blank">Run Example</a>
 
 ```java
 news = queryNew( "id,title", "integer,varchar" )
@@ -36,7 +36,7 @@ writeDump( news )
 
 Using Script with the queryAddRow querySetCell functions to populate the query.
 
-<a href="https://try.boxlang.io/?code=eJydjTEKAjEURHtP8UmlkEZbsRC3XQv1AsGMGswm698fw97ejYtaCWI3DG%2FmBeSOVnRL4H6LPCXlrBYnHkoPOQjOYH03fLwYVjRbTp7o2tpdHOhQ5q9yD9nA%2B7Eta1s%2B5uor8PZUyOjJ4gQjHR04NSb8JVv8IKsRKBt%2FpRiojnEUZXaCKjXtR%2FMADRpalA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJydjTsOwjAQRHtOsXIFkhvoKRBpQwFcwMIDRDhr2Kyxcnvi8OkQEt1ofo%2BRO1rSLUH6DfKUTOOtNhpg7KBZcYLYu5PD2Ymh2WRsrrzfxqHMZf3ydtA1QniaZevLw9x8yz%2BQChk9eRzhtKO9pNbxH6TFb1INpuzChSJTHeNIydIoqtRe34wHN2FYsg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 news = queryNew( "id,title", "integer,varchar" )
@@ -55,7 +55,7 @@ writeDump( news )
 
 The example above could be simplified this way:
 
-<a href="https://try.boxlang.io/?code=eJx9jjEOwjAMRXdOYWUCKUu7IgZE1zIAF4jIByJSB9KEqLcnpWo2uliW%2Fd%2BzGamnHb0j%2FHBEWpMwWgYTLITMPQfc4eVH%2BetDeUGb7eoX3Wt9cjnNGZdUl%2FkZ4QBr50WWjZoql%2BpvplxrkDCQxg0q9HTxsVO8SE72Wix9UOwtmJKyT3JMrXM8U8mbgCZ2rwkZR1%2BrXFX%2B" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJx9jTEOwjAQBHtecXJFJDdJT4FIGwrgAxZeIMI5w8XGyu8xhKQjzem02pllpJ429IyQYY%2B0JtVaHdrgoHT%2BOeAK0S8j55sRRcXq29xae%2FC5zJnWVE3xEWEH56Y8qz6SMp%2FyX2WeqpEwkMUFJvR0ktgZXgJHd6UW5md3A6Zk3J08U%2BM9%2F6AkbUAdu8dIUPEGPvpUVw%3D%3D" target="_blank">Run Example</a>
 
 ```java
 news = queryNew( "id,title", "integer,varchar" )
@@ -73,7 +73,7 @@ writeDump( news )
 
 The example above could be simplified even more this way:
 
-<a href="https://try.boxlang.io/?code=eJxdjrEOwjAMROfkK6xMIHmBEcSA1LUMiA0xRMRAReuAmxBViH8naSfYzqd7vmNKPWzgGUmGHaUZmMZhaEJLBrPmQFcSfFk536wYmK%2F1GN06t%2Fc5zRlHOGr11kpl1MAKFlj09COfpqJEAzi6kA09HCR2lo1WH%2Fyhln9UTQzJtnfwDLX3I6FPZUCSJlAVu8dUX6wvBTs49A%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxdzTELwjAQBeA5%2BRWPTBZu0VFwELrWQdzEIZhTg21S08RQxP9ubCfd3sH77jnOAzZ4JA7jjvMCyhqKNrasqGQX%2BcqBnjqcbzooVHJqbo3Z%2B1J2RROOUrykEEUqrLGkb55flFPVnHmE4QvrOOAQUqedkuJNP2r1pxp2yLq9wzs03k9Cnsp%2BDjZynbp%2BXkf1ASqVODk%3D" target="_blank">Run Example</a>
 
 ```java
 news = queryNew( "id,title", "integer,varchar" )
@@ -94,7 +94,7 @@ writeDump( news )
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJx1jjELwjAUhOfmVxyZKhRKqaAoDgUdHCzoKg7BBAw0qb4mliL%2Bd9OK0KFO7w7u3nemO3pFHTZ49LdUbQyuZWKFURyzNRNSKnmq2%2BYXKWRvY5hvM0EeYkhTtLqqQMp5ssjZdPbMomyRsIgPb%2FHUAoJIdLC1E07XlrPLQA3%2BpiiU%2F2AnmPM%2FzBeL9luskC0DuCwOu6BH%2FMaRv7rRgHc%2FQHpzH8PYBygtXwc%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJx1zTELwjAQBeC5%2BRWPTC0USqmgKA4FHRws6CoOwQQMNKleE0sR%2F7upInSo093Be%2FeZ%2FuAV9VjjPsxKdTG4lqkVRnEkTEip5LHp2l%2BilMMZw3yLKQokK2QZOl3XIOU8WRRsOntiUT5PWcQ%2Fb%2FHQAoJI9LCNE043lrPzgIbzqih0%2F6gT5OwP%2BWTRboMl8kVwq3K%2FDfuIbx35ixv5r%2BBLb24j6w10yl4R" target="_blank">Run Example</a>
 
 ```java
 myQuery = queryNew( "id,name" )

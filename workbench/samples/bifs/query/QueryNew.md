@@ -2,7 +2,7 @@
 
 Using Script with the queryAddRow querySetCell functions to populate the query.
 
-<a href="https://try.boxlang.io/?code=eJydjTEKAjEURHtP8UmlkEZbsRC3XQv1AsGMGswm698fw97ejYtaCWI3DG%2FmBeSOVnRL4H6LPCXlrBYnHkoPOQjOYH03fLwYVjRbTp7o2tpdHOhQ5q9yD9nA%2B7Eta1s%2B5uor8PZUyOjJ4gQjHR04NSb8JVv8IKsRKBt%2FpRiojnEUZXaCKjXtR%2FMADRpalA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJydjTsOwjAQRHtOsXIFkhvoKRBpQwFcwMIDRDhr2Kyxcnvi8OkQEt1ofo%2BRO1rSLUH6DfKUTOOtNhpg7KBZcYLYu5PD2Ymh2WRsrrzfxqHMZf3ydtA1QniaZevLw9x8yz%2BQChk9eRzhtKO9pNbxH6TFb1INpuzChSJTHeNIydIoqtRe34wHN2FYsg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 news = queryNew( "id,title", "integer,varchar" )
@@ -38,7 +38,7 @@ Using BL Tags with the queryAddRow querySetCell functions to populate the query.
 
 Passes an array of structs to create a new query.
 
-<a href="https://try.boxlang.io/?code=eJxdjjELwjAUhOfkVxyZKmTRUXHrWic3cXjYpwbbtL4khiL%2Bd1OddLs7vg%2FOcw7Y4p5Yph3nCsa1NrrYsbEl%2B8gXFvsgOV1JynSAVk%2BtVMEM1ljaOX%2F5Uk3NmSe0fGaKAXtJPXmj1cv%2BWKs%2FqyGPTN0tYPBohuGj6CMWG53FRa5TP1bw89UyvQEwGzJ5" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxdjrsKwkAUROvdrxi2SmAbLQW7tLGyE4uLuepicmP24RLEf3ejlXYzwzkwwjlgiymxn3ecKxjX2ehiz8aWLJEv7O2D%2FOlKvkwHaPXUShXMYIOVXfKXL9U0nHlGx2emGLD3aSAxWr3sj7X%2Bs1oSZOpvAaOgHcePoo%2BodfYucpOGewVZntZvmuMx%2BQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
 news = queryNew( "id,title", "integer,varchar", [ 
@@ -60,7 +60,7 @@ writeDump( news )
 
 If you only need one row you can pass a single struct instead of an array into the rowData argument.
 
-<a href="https://try.boxlang.io/?code=eJwljbEKwkAQRGvvK4atIlxjq9iltvIHDjPRA3PoZi9HEP%2FdDXZvHg%2BmsM04412p64Wtg%2BQhWrYnJToX450al6S3R1JXH4SdJ4IjDtHxn%2FqSno0rBo5MNuOqdUpFwhf7U2iajX2dXh3K9ufqB%2BGSJOY%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwljbEKwkAQRGvvK4atErjGVrBLbeUPHGaMB%2BbQzZ5HkPy7K%2BneGx5MYVtwxrtS1wtbB8ljtGxPSnQuxokaP0lvj6Q%2BfREOnghOOEbHPXWTgY0rRt6ZbMFV65yKhA19aJqNQ51fHcr%2Frv8BdSIkZg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 news = queryNew( "id,title", "integer,varchar", { 
@@ -76,7 +76,7 @@ writeDump( news )
 
 Directly assigns columns and values with an array of structs.
 
-<a href="https://try.boxlang.io/?code=eJzLSy0vVrBVKCxNLar0Sy3XUIhW4OKs5uLkVMpMUVKwUjDUAbFLMktyUkFcJZfU8tRKhZTUtNTEkmKFkKLS3MQ8JS7OWh0UXUZounwT8xTKE3OyixXy8xR88%2FPBWrhiFTStucqLMktSXUpzCzQU8kBuAQoBAJfXKD0%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLSy0vVrBVKCxNLar0Sy3XUIhW4OKs5uLkVMpMUVKwUjDUAbFLMktyUkFcJZfU8tRKhZTUtNTEkmKFkKLS3MQ8JS7OWh0UXUZounwT8xTKE3OyixXy8xR88%2FPBWrhiFTS5yosyS1JdSnMLNBTyQE7RBAAhYie9" target="_blank">Run Example</a>
 
 ```java
 news = queryNew( [ 
@@ -96,7 +96,7 @@ writeDump( news )
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrSS0uCSxNLapUsFUoBNF%2BqeUaCkp5ibmpCjoKiempSjoKSmWJRckZiUVAgbzS3NSizGSgYLUCF6efo6%2BrgpVCNBcnp1JwaXGmkg6IFVpUrMTFGQtkO7rDpI0MQFJGJkBxrloFTWuulNLcAg2FErjtQKFC0h0BNBrVciMDiM3RMIcgrI1FWFtIiYXVQBOhHkfYC%2FEpyPZaHVQlMEdAVQCdUovFKQBBOmMg" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrSS0uCSxNLapUsFUoBNF%2BqeUaCkp5ibmpCjoKiempSjoKSmWJRckZiUVAgbzS3NSizGSgYLUCF6efo6%2BrgpVCNBcnp1JwaXGmkg6IFVpUrMTFGQtkO7rDpI0MQFJGJkBxrloFTa6U0twCDYUSuOWaXIWkOwFoMKrVRgYQe6NhzkBYGgu3tJAC66qB5kE9jbAV4kuQ3bU6qEpgToCqADqkFt0hAKDRYbQ%3D" target="_blank">Run Example</a>
 
 ```java
 testQuery = queryNew( "name , age", "varchar , numeric", { 

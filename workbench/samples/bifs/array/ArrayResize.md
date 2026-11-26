@@ -35,7 +35,7 @@ Result: 3
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJzLK81NSi0qVrBViFbg4jTU4eI0AmJjIDbhirXmSiwqSqwMSi3OrErVUMiDqNVRMDRQ0LTmcinNLYALggT09RVyU0E8hbTSvOSSzPw8LqisXhHUCENTrDoB9AgnmQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLK81NSi0qVrBViFbg4jTU4eI0AmJjIDbhiuVKLCpKrAxKLc6sStVQyIMo1VEwNFDQ5HIpzS2AiwH5%2BvoKuakgjkJaaV5ySWZ%2BHhdUUq8IaoChKaY%2BACCdJmg%3D" target="_blank">Run Example</a>
 
 ```java
 numbers = [ 

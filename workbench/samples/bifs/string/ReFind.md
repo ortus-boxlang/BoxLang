@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrSnXLzEvxy3dOLE7VUFByVdJRUCpJLS5RMDQyVlRS0LTmAgC4MAkY" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKEp1y8xL8ct3TixO1VBQclXSUVAqSS0uUTA0MlZUUtBU0AQAiOsOIA%3D%3D" target="_blank">Run Example</a>
 
 ```java
-reFindNoCase( "E", "test 123!" )
+writeOutput( reFindNoCase( "E", "test 123!" ) )
 
 ```
 
@@ -15,7 +15,7 @@ Result: 2
 
 Example with all optional arguments
 
-<a href="https://try.boxlang.io/?code=eJzzCvb3C04tykzMyaxK1VAoSnXLzEvxy3dOLAbylFyVdBSUSlKLSxQMjYwVgRxDHYWSotJUoKijj4%2BSgqaCpjUXAMLsEn0%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzzCvb3C04tykzMyaxK1VAoSnXLzEvxy3dOLAbylFyVdBSUSlKLSxQMjYwVgRxDHYWSotJUoKijj4%2BSgqaCJgCd%2FBI4" target="_blank">Run Example</a>
 
 ```java
 JSONSerialize( reFindNoCase( "E", "test 123!", 1, true, "ALL" ) )
@@ -47,7 +47,7 @@ Result: 13
 ### Return the position of every match
 
 ```java
-writeOutput( serializeJSON( reFind( "[0-9]+", "abc 123 def 45", 1, false, "all" ) ) )
+writeOutput( jsonSerialize( reFind( "[0-9]+", "abc 123 def 45", 1, false, "all" ) ) )
 
 ```
 

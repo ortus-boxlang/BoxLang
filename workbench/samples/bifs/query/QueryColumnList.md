@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVKATRfqnlGgpKni46eYm5qTqJ6alKCprWXOVFmSWp%2FqUlBaUlGhB1zvk5pbl5PpnFQIFcqBGaIKUAWvYbBg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVKATRfqnlGgpKni46eYm5qTqJ6alKCppc5UWZJan%2BpSUFpSUaEGXO%2BTmluXk%2BmcVAgVyoCZoKmgAPqRqG" target="_blank">Run Example</a>
 
 ```java
 myQuery = queryNew( "ID,name,age" )
@@ -16,7 +16,7 @@ Result: ID,name,age
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVKATRfqnlGgpKni46eYm5qTqJ6alKCprWXOVFmSWp%2FqUlBaUlGgq5EB16yfk5pbl5PpnFJRqaIEUAtqoY3g%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVKATRfqnlGgpKni46eYm5qTqJ6alKCppc5UWZJan%2BpSUFpSUaCrkQDXrJ%2BTmluXk%2BmcUlGpoKmgBxDxhe" target="_blank">Run Example</a>
 
 ```java
 myQuery = queryNew( "ID,name,age" )
@@ -28,7 +28,7 @@ Result: ID,name,age
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrLKpUsFUoLE0tqvRLLddQUEpMTFRS0LTmSiwqAkoAyUSIhCFUMBrIigXKKCUqQflGEH4SjG8M4ScD%2BYEgcx1TUpzzc0pz8zQUCosqdYAqk5KUdEBGg4zEriQ5ORmhpLwosyTVpTS3QAPiUIhSn8ziErByBU2QIgD8kjvh" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrLKpUsFUoLE0tqvRLLddQUEpMTFRS0ORKLCoCigPJRIi4IUQsGsiIBUooJSpBuEYQbhKUawzhJitxBYKMdExJcc7PKc3N01AoLKrUAapLSlLSARkLNA67iuTkZLiK8qLMklSX0twCDYgLISp9MotLwKoVNBU0ASlAOf8%3D" target="_blank">Run Example</a>
 
 ```java
 qry = queryNew( "aaa" )

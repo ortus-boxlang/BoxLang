@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJyN0DsLwjAQB%2FC5%2BRRHpgpB8TH5GqQgONRBN3FI9Y8VMdVrUinidzdVEaoObvf43cFdCs6Q04jODlzGuIQk91sV6yOk8qGx2IFVoXmTavalFYngKoLAK0l9aqsqfnCfyQm7DWiijQFLEdxUDXfqeJmZkhZW8%2BGbdj%2F2ZklSUsT6gG%2Fbq9sZtKEpo6ykWFNjIC68t5g7e3LW37dM8Ty3P0yYWmP5JpE7nkJKnz%2F5OccowDm2fyxovmzYqNp3vihkIg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJyF0D0LwkAMBuC59yvCTS0cih%2BTqIMIgoMOuonDtX2xRbxqvFOK%2BN%2B9Wh2qglsSnjeQZOACZxrRyYHLBa4hyTxVC32AVL40FjuwumhOMs1%2BtCER3EQQeCVpQB1V1U%2FuOzlhl4Am2hiwFMFdNXC3ideFKWllNe%2B%2Fae9jbxHHJU1Z7%2FFt%2B007hzY0Y5SVFFuKxJVzi6WzR2f9eesM9bWDYczUHsu3mLrDMaSs%2FsivFOMCPiP9H2%2B9aBhR9ACKqWLx" target="_blank">Run Example</a>
 
 ```java
 heroes = queryNew( "id,Name", "integer,varchar", [ 
@@ -33,7 +33,7 @@ writeDump( heroes.reverse() )
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrSS0uCSxNLapUsFUoBNF%2BqeUaCkp5ibmpCjoKiempSjoKSmWJRckZiUVAgbzS3NSizGSgYLUCF6efo6%2BrgpVCNBcnp1JwaXGmkg6IFVpUrMTFGQtkO7rDpI0MQFJGJkBxrloFTWuu8qLMklT%2F0pKC0hKgdSEZqRDbrWySihT07ZTgSlxKcws0FErgrsSqtSi1LLWoODUFrxlgOahKFBNB6gDfPE5x" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJx9TkEKwjAQPCevWPbUQkEpnooKBcWTFVFP4iHWxfaQUjdJi4h%2FN1UrCOJph5nZmbFk7NoRX2ECl%2B5m1AaAldIEEagzYQTYKM4LxZ6onCYuc0%2FeQIosXc4hgb0UAjfOlBh1aMcGpTh4nC56OR52UjzyvLxDKFsuLa2crZ31bduCXuXJ%2BMgwmGLvmDldB2A%2FG389MjXEhk7%2FEp7S2%2FiVB%2BEDNURNQA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 testQuery = queryNew( "name , age", "varchar , numeric", { 

@@ -13,7 +13,7 @@ Here, We created myXml by using xmlNew function. Then created root node(sampleXm
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJyryM2JT8lPLs1NzStRsFWIyM3xSy3X0LTmSinNLdBQqECWBooCAJUEEBk%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJyryM2JT8lPLs1NzStRsFWIyM3xSy3X0ORKKc0t0FCoQJbVBABnkQ%2BZ" target="_blank">Run Example</a>
 
 ```java
 xml_document = XmlNew()

@@ -2,7 +2,7 @@
 
 Check if the code is running inside a bx:thread.
 
-<a href="https://try.boxlang.io/?code=eJwrSi0sTS0u0fP0C%2FEIcnV0UbBVSEvMKU615iovyixJ9S8tKSgt0VDILPbMC8koSk1M0dBU0LTmSqqwKgFzFRKTSzLz82yVikrzlBTyEnNTbZUyoUqVFKq5OIswLUA2zJqrlqs4JzW1QEPB0MDAAGQ2isUY2oEKACLTOhQ%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrSi0sTS0u0fP0C%2FEIcnV0UbBVSEvMKU7lKi%2FKLEn1Ly0pKC3RUMgs9swLyShKTUzR0FTQ5EqqsCoB8xQSk0sy8%2FNslYpK85QU8hJzU22VMqEqlRSquTiLMI1HNourlqs4JzW1QEPB0MDAAGgyiq0YmjUB6Wg44w%3D%3D" target="_blank">Run Example</a>
 
 ```java
 request.INTHREAD = false

@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxNjkELgzAMhc%2Ftrwjx4qCXud3Ew8DLdhiM7SYeimaz0MqIdeK%2FX6sbCCGBL3nvpdVeQwEVSFFJIfYqNLxoRwNKUauVZgs92SdTu8GHFTszdHqDjwt%2BELOJVNa5dPNtJJ5D0DKvNKWA51L1IQgVoOk9vYjVR3PTaQ6ojX%2Ftcsk0jNb%2FhXdrGkrhZ6cgCxWvJjaeytG9UwgWBSarLMG4%2FAJsLDsW" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxNzr0Kg0AMAOD57ilCXBRuqe3qUHCxQ6G0mzgcmtYDT0o8K759o7YghAQ%2B8tfYYCGDErQqtVIHIwkv1tOAWlVm03TVc%2FdkanZ83Ni7obU7Pq38IGa3qK60n28j8Sx31nqlKQYsctPLHTSArg%2F0IjYfy3VrWahZ3ko00zB24T9371xNMfy2GUglpGliFygf%2FTsGWZBhtE1FCMkXWaA6IA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 data = [ 
@@ -34,7 +34,7 @@ writeDump( var="#result#" )
 
 
 
-<a href="https://try.boxlang.io/?code=eJxNzsEKgzAMBuBz%2BxQhXhyUwdxu4kHwsh0Gg93EQ9FsFqyMtE58%2B7W6g5cEvvAn6bTXUEANUtRSiJMKBW%2FakkMpGrVptmo5vJi6HZ83tsb1eseXlZ%2FEbKLKJpd2eUzESzi09jvNKeC1UmM4hArQjJ7exOqrue01B%2BriX4dcMrlp8CH4X3F0g2kphUxBFuczG0%2FVZD8phHCByRZIMA5%2FAcQ5Ag%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxNzr0KgzAQAOA5eYrjXBRCobarQ8GlHQqFbuIQ9FoDRsolVnz7ntrB5Q6%2B%2B21ttFBABVpVWqmjkYA36ymgVrXZNF%2F10r%2BY2h2fNvYudHbH55WfxOwW1bX282MknuXOmu80pYDX0gxyBw2gGyK9ic3XctNZFmqXtzLNFMY%2Bytx%2FwyH0rqEUcgO5lCd2kcrRf1KQ0QKTrT9ByH74KTgM" target="_blank">Run Example</a>
 
 ```java
 data = [ 
@@ -64,7 +64,7 @@ writeDump( var="#result#" )
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJy1kk1Lw0AURdeZX3GZVVomJlFa00pWFhcuFCmuShfTZqyBfHWSKIX%2BeN9kbMGSFhc63DBf572QQypVVplCjJdW6d2T%2BnTBC5krkZQrITeKC%2FAPqdfvUotENkqkRUNnCzBnwRyHz9s65YJW91rR9YweF%2BHkNhAIKRiYu4A5S%2FFd8KrrHn4yOsc%2FaJX0FIzPvuAxzXv4KDrl2RKDOzZr88oFfWFcdSYEMrlSWcztFh5KnW7SQmbYGkPcFPlDPLdN1TZThiEFexhnNJE1nI49yCP2hvN%2BMWw%2F45UmY9ILQgqCYNqFTgPT1XKkEx03GV3kjMaOG1%2FuR%2FZsvyg6z1F85vuoJJnZsK3ezbN0bf4ia%2B2qNlsXNwLXxldylHxAj5qPtR7edJlDq3WpE1tp13WnHD%2Bc%2F4PwPxXkfwFptMt%2F" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJy1kk1Lw0AURdeZX3GZVVomJlVa00JWFhcuFCmuShfTZKyBfHWSKIX8eN9kNGBpiwsdbpiv817IIZUqq0whwnOr9OFRfbjghcyVSMqtkDvFBfi71PGb1CKRjRJp0dDZGsxZM8fhq7ZOuaDVnVZ0vaTHxWR%2BGwhMKBiZu4A5G%2FFV8KLrE%2Fx8eo6%2F1yo5UTA7%2B4KHND%2FBh%2BExzzYYsWWbVy7oA6OqFyGQya3KIm638FDqdJcWMsPeCOJU44%2Fx1DZV2ywYxhR0MMZoImc4Hh3IIjrDeb8Ytp%2BxSpPx6AUTCoJg0YdOA9PVciQTPTefXuSMxJ6bXe5H7my%2FMDzPUXzm%2B6gkidmxvT6ssjQ2%2F5CVdlWbrYsbgWvSlQyKv8lB8lDq4VWXObSKS53YQruujXD8MP4Puv9Uj%2F8JRLTKkw%3D%3D" target="_blank">Run Example</a>
 
 ```java
 people = QueryNew( "name,dob,age", "varchar,date,int", [ 

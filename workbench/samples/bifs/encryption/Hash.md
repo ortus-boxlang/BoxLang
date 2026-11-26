@@ -2,7 +2,7 @@
 
 Returns 64 character hex result.
 
-<a href="https://try.boxlang.io/?code=eJzLSCzO0FBQKs7PTS3JyMxLV9JRUAr2cNQ1MjUDMUND3HQtlBQ0rbkAAfEKpw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLSCzO0FBQKs7PTS3JyMxLV9JRUAr2cNQ1MjUDMUND3HQtlBQ0AeyeCmI%3D" target="_blank">Run Example</a>
 
 ```java
 hash( "something", "SHA-256", "UTF-8" )
@@ -15,7 +15,7 @@ Result: 3fc9b689459d738f8c88a3a48aa9e33542016b7a4052e001aaa536fca74813cb
 
 MD5 is not recommended for use requiring security.
 
-<a href="https://try.boxlang.io/?code=eJzLSCzO0FBQKs7PTS3JyMxLV1LQtOYCAE8ZBo0%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLSCzO0FBQKs7PTS3JyMxLV1LQBABCCQZI" target="_blank">Run Example</a>
 
 ```java
 hash( "something" )
@@ -26,7 +26,7 @@ Result: 437b930db84b8079c2dd804a71936b5f
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJx1zLsOgjAYQOGdp%2FjDBIOUQqEQ4sClxsVV52IrNCmXlJLo24sa4%2BR8Tj6E4MyN4q2WOy3HzvawWKPGboHZTGK9SripuxTf2POll0vgqHFeLezBPUqtJ7hMRgu3cMQ6zN578uCz%2BOAXgBBUOCyzpsIpYSFNCA6TipZ5XjEasfjAkp944uaxEQI4aGWtlqD50AZ%2FdefF12Wekk2ntEkITVmJMWMNZjiLaR2TyHkC1LhEYQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJx1zLsOgjAYQOGdp%2FjDBINCoaUQ48ClxsVV52IrNCmXtCXRtxc1xsn5nHxRBGduFG%2B13Gg5dq4H64waOwuzmcRylXBTdym%2Bsee2l3brqXFeHOzBP0qtJ7hMRgvfE8swB%2B8ngM8RQriDKIIKxWXeVCjDLKYEo5hUtCyKitGEpQdGfuCJm8dKCOCglXNaguZDu%2F2Dey%2B8LosMrzalDcE0YyVCjDWIoTyldYqTJ8mOQ6Y%3D" target="_blank">Run Example</a>
 
 ```java
 // Variable-length strings produce fixed-length hashes.
@@ -57,7 +57,7 @@ dump( hash( input ) == hash( input, "MD5" ) )
 ```
 
 
-<a href="https://try.boxlang.io/?code=eJy1kVFPwjAQx5%2FZp7j0CQKGdmOMMWqySQ0%2BGB808bmDwhq7jXRd1Bi%2Bu900C0YS4cGX9tL73%2F%2Fud5XFvjZAAa2EUiU8l1ptUOSMx%2FCUCSjqPBUayi1IIzQ3siwqWGe82AkwNp%2FxKnM2db7vt2EfZGNH23PUVN91ZZTAAAYRWOeE4Hi2TMh0wnDgTwj2kyAOw4QFLvNumX%2BuY9g5%2BozceHhyuwy9MEkY8YIZW4ZBwNx46U4Tv%2BH5UQtKVJVF4AUQ4FpAJQyYEsi5vbHtTekl1EbXopnjvrTtjtZp%2BIuAvHk0Mm8VBGMMj6v4yiduNbIDdmoQfJ3Nwc8rJ32bN3oN5n0vKJKFkoVAoHgqFEV%2FWCD4cHrbUtvR7d%2FjyF6Ltq2NhkM7sk33TrBxtSu1NFlO0bc5OgEcOb2Dc3BerVI81MZW9gEtUn2NmtwJQHy8jy9El1zM%2BMvlPylxh%2FkJW0D9hg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJy1kEFPwjAUx8%2F0U7z0BAFDuzHGgJlsrgQPxoMmnjsorLFbSddFjeG72yFBEknUg5f2pe%2F%2Ffs3vyWrXWIgBL4VSGp60UWuMhkN4LARUTZkLA3oD0grDrdRVDauCV1sB1vULXhdo3ZS77qHsgmxp8eEctNO3p7GYQg96M3DklJJkkqV0PGIkDEaUBGmYRFHKQo%2F5Cxb8lhidiAGjNz4ZLbLIj9KUUT%2BcsCwKQ%2BYlmTdOg9bnThtxrmH5s4CyfbSyFG2CEkLgYZlcBdSrB0C%2F0iD4qphCUNYof522eQP2bSdiLCslK4FB8VyoGP%2BAwPCOOhttnJZbOZm5a3741lX9vtNx7c4Fb6622khblDE%2BwvGF9aLOHu3RiwuK%2B8a6wS7geW6usWtd0CPn2%2FgU9OifDb9R%2FtORHCU%2FANeNzuw%3D" target="_blank">Run Example</a>
 
 ```java
 input = "Hello World"

@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxlkE1Lw0AQhs%2FJrxjSgwksS1IU%2FMBDtBUqmoLtTTxskyFZyO7qfqSI%2BN%2BdpiLB3oZ35pmZ9xW%2B69Gjg1v4CGg%2FK9ynkMiGaaGQ7dD5rVSYMNK0xxYtG4StO2FZg7VUok8gu4lHtGyaF0O0%2BF3J4DWOvuIoWi3gGnJGVVU%2BL6lOSq1pJwl3y812uxrF4oKfx9E3mzDFlHk0nT5h5vzyHzOfMptwcuaKF0TEb4e391Z6XAf%2FHjyZLo9%2FnzkQA1rRIhzsgyf%2FIB3MqqB2aB%2BMVYLGe%2Bl8ObTpMbZ70welF8KLqf%2FkLz%2FIuDdPhKQZZNTIeZ6TOAOHtdGN42OMPw6cbts%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxlkE1Lw0AQhs%2FJrxjSgwksS1IUrOAh2goVjdDmJj1skyFZyO7qfqSI%2BN8dW5FgbzPvzDMz7wjfD%2BjRwS28B7QfFR5SSGTLtFDI9uh8LRUmjDTtsUPLRmGbXljWYiOVGBLI4iNZtu3GECx%2BJzJ4jaPPOIrWS7iBnFFUlc8ripNSaxpJwt1qW9fro1hc8cs4%2BmITppgyj6bXZ8ycX%2F9j5lNmG87WLHhBRLyjqw9WenwJ%2Fi14slyezr5wIEa0okP4MQ%2Be3IN0MKuC2qN9MFYJah%2Bk8%2BXYpaen3ZshKL0UXkztJ3%2Ffg4x780RImkFGhZznOYkzcNgY3TpOyTdtrG4g" target="_blank">Run Example</a>
 
 ```java
 athletes = queryNew( "id,name,bestTime", "integer,varchar,decimal" )
@@ -31,7 +31,7 @@ Result: Athlete's average best time is 12.43 seconds.
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUPDJLC5xLEvXUFAy1DHSMVZS0FTQtFbQ11dwrShITS5JTVHILy0pKC2xUjDiAor6puYmpRYpuJXmJZdk5udx5QC1B5cUKdgqKJnomOqYKVlzlSMMB8kWlxTp5UAtAZnNhdVwUy4ANGItuQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUPDJLC5xLEvXUFAy1DHSMVZS0FTQtFbQ11dwrShITS5JTVHILy0pKC2xUjDiAor6puYmpRYpuJXmJZdk5udx5QC1B5cUKdgqKJnomOqYKXGVI8wGSRaXFOnlQO0AGs2F1WhTALL2LTk%3D" target="_blank">Run Example</a>
 
 ```java
 writeDump( ListAvg( "1,2,3" ) ); // Expected output: 2

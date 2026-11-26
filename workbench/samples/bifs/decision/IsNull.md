@@ -2,7 +2,7 @@
 
 Returns true if the given object is null or the given expressions evaluates to null; Returns false is otherwise. 
 
-<a href="https://try.boxlang.io/?code=eJzLLPYrzcnRUMhKLEt0Tiwu0VBQygMKKOkoKCkpaCpoWnMBAMSRCZs%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLLPYrzcnRUMhKLEt0Tiwu0VBQygMKKOkoKCkpaCpoAgCxZQlW" target="_blank">Run Example</a>
 
 ```java
 isNull( javaCast( "null", "" ) )

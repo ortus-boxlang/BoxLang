@@ -2,7 +2,7 @@
 
 Manipulates query column
 
-<a href="https://try.boxlang.io/?code=eJxlj0FLxDAQhc%2FJr3jkIF0Iwnq09NY9LNgVoeBBPMTd6RrdpmuaGIrsf3dSZUU9Zebjvbw3jtKICm%2BR%2FLShVEDZnQ42HEhpnl2gPXn9bvz22XhGD5DiQwrBMoVrLHWev%2FS8qpoSTdhRRyaMaH3sjVNSnPQv19UfV2Mckjm8jhgcmmGYLfIRi1ImbwPVsT8WcLkqI9lFtw2Wpb053uXiBYybcPv0ggU4xnZFXi7XNaoKS4Z5a9ftzYpPVZvVPWfi4oeWUngK0buMSnmSHDV%2FzPL5bcx3vj5n%2Fi93xp8Zw2OR" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxlT8FKw0AUPO9%2BxbAHSWAp1KOQW3oomBYh4EE8rO1LXW02dbPrEqT%2F7ttYFPX03gwzb%2BY5SiMqvEXy04ZSAWX3OthwJKV5d4EO5PW78btn45l6gBQfUgiWKdxgqfP%2BpWeoako0YU8dmTCi9bE3Tklx1r9c139cjXFI5vg6YnBohmG2yEeUMnkbqI79qYDLTUspu%2Bh2wbKwN6e7XLuAcRO2Ty8owSG2KzJYrGtUFZZMZtSu29sVP6o2q3tOxNUPK4WnEL3LjDxLzpnPsniejbmE6%2B%2FEf8Uu7CeQFWIl" target="_blank">Run Example</a>
 
 ```java
 news = queryNew( "id,title", "integer,varchar", [ 
@@ -29,7 +29,7 @@ writeDump( newQuery )
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJx1UE1Lw0AQPWd%2FxWNPCQ6SCNaGUEENHgQrIp5CD2kz1YD5cJIYgvjfnZUKIukyC7Mz7828fS037RtjhceBZVrz6MPWecVUNFvKX9gS7Ecuu9dcqMh7prLutZbBeJnxPPs0dKUlzW6EtZ3q9RHFFyEh0kDgeqHxNnQgPEs3g4%2FPj%2BFvhYsZwuLogruymsEvl%2F%2FxZoMgMcKdfv7dff4%2Bb320P34QfFzVE6QZ6TdZD9WW5fDkXSNFxz0CrC7xaTwFZLDOMGx0oFublvu9ujnpUccUcJo%2BXBP%2B6joLowVBI9ZBAU4QJTqK%2B0FqR0jMl9M4SqmEoVJ5Tq5WvgF9r3EJ" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJx1kE1Lw0AQhs%2FZX%2FGypwQHSQRrc6igBg%2BCFRFPIYdtM9WA%2BXCSGIL4352VCiLtMguzO898vR233RtjhceRZV7zFMI2rmYq2w25F7YE%2B%2BFk%2B%2BqESjcwVc2gfzlMkJsgsE9jX1lS70ZYw5neEEl6ERMSNUQ%2BFpugoH3Cs%2FQH%2BPT8GH8rXB5IWBxtcFfVB%2Fjl8j9vCkRGuNfd3%2F3u964L0f3IQQhx1cyQdqJfZz3WG5b9k7etlD0PiLC6xKcJFMhhvV4otKDvmlW7nYo561HBFDjNHq4Jf8c6i5MFQS3VQhFOkGglHkZpPG%2B%2BdMBJKqXHWmfzs0bf7ONv2A%3D%3D" target="_blank">Run Example</a>
 
 ```java
 people = QueryNew( "name,dob,age", "varchar,date,int", [ 

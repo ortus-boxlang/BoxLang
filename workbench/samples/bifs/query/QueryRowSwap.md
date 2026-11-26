@@ -2,7 +2,7 @@
 
 This is Example1
 
-<a href="https://try.boxlang.io/?code=eJxNzjELwjAQBeA5%2BRVHpgq3VLuJizh1cFDBoXSI9rCBtjFna8i%2FN00Ruhy8773hHAc4gJuIw5l8BoqtNw0OuieFoMww0osYv5qfreZIFUhRSSFyjEcd7UNJUeNi22S3lmxjmVbFLhWlDisrkt1N1xndzy5r2Ozlx%2Bt3%2Fn%2FpYv015gwcB4QcoZgnns1Ip6mPvqyj%2FQAo9TLP" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxNzjELwjAQBeA5%2BRVHphZuiXZ1EScHBxUcSodoDxtoGnO2hvx7Y4vQ5eB97w0XOMEOwkScThQLUOyjbXEwjhSCssNIT2L8GH50hjPVIEUthdCYj9r7u5KiwcU2s1078q1nWhXbuTiatLJqtpvte2vcz2UDpXxH89L%2Fj84%2BXnIuIHBC0AhVXkS2Ix0ml3kZl19k1zIU" target="_blank">Run Example</a>
 
 ```java
 qry = queryNew( "rowid,name", "integer,varchar", [ 
@@ -33,7 +33,7 @@ writeDump( swap1 )
 
 Using the member function.
 
-<a href="https://try.boxlang.io/?code=eJxNzjEPgjAQBeC5%2FRWXTphcTEA242KYHFw0cSAMVS7ShFI5wab%2F3hYWlkvue294Iwc4wTgThyv5DBQ7b1octCWFoMww0ZsYf5pfneZINUhRSyFyjEed3VNJ0eBqxWL3jlzrmDbBYQkuOmysXOxh%2Bt5om1w2sDvKr9efIk3isI9bbvHNIEcoU%2BjZTFTNNtLai%2FYH6yUwnQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxNzjEPgjAQBeC5%2FRWXTpBcTEBWF%2BPE4KKJA2GocpEmlMoJNv33lrKwXHLfe8ObOMAJpoU4XMlnoNh50%2BGoLSkEZcaZ3sT40%2FzqNUdqQIpGClFgPOrsnkqKFjcrk917cp1j2gXHFNQ67KxK9jDDYLRdXbaQy6%2FXn3JdxOEQp9zim0GBUMXMs5npstgoWy3%2FAy8PL%2BI%3D" target="_blank">Run Example</a>
 
 ```java
 qry = queryNew( "rowid,name", "integer,varchar", [ 
@@ -62,7 +62,7 @@ writeDump( swap2 )
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxNzbEKwkAMBuD58hThpgpZbEfxFQR1LB1iL6hDay%2B1Hvf25iqKS%2Fjz8cMfNeMe4yKaD5Iq9PdAIw%2FiyeL4lKsovVj7G6tRi%2BBacG5Ldjx7cB19pF7l8ifNKn0R6HCzgznxNEmwuWOZOz3S2aTCqJmwJmxKKSyD0bf6A%2BuU5w0PzSxE" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxNzbEKg0AMBuD58hThJoUs1bmvUGg7ikPqBdtB68Xa496%2B0SK4hD8fP%2FxRM54xLqL5IqlA%2Fwo08iCeLI4f6UXpy9o9WY0aBNeAcyey49mDa%2Bkv1SaPg9SbdKtAiyXMiadJgq1d17XbO91NCoyaCSvC2jphGUz25v5bA8sfPNsrTg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 qry = queryNew( "id,name", "integer,varchar", [ 

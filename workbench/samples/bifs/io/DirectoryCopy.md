@@ -11,7 +11,7 @@ directoryCopy( expandPath( "./mySourceDirectory" ), expandPath( "../MyDestinatio
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLySxKTS7JL6pMzi%2Bo1FBQSoHxCxJLMpR00AUUNK25FPT1FfLzUhVQZBRK8hUS8%2FJLMlKLEBIKIBk9PT0uAG2KJCs%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLySxKTS7JL6pMzi%2Bo1FBQSoHxCxJLMpR00AUUNLkU9PUV8vNSFVAkFEryFRLz8ksyUosQEgogGT09PQAraSPm" target="_blank">Run Example</a>
 
 ```java
 directorycopy( "directorypath", "directorypath" )

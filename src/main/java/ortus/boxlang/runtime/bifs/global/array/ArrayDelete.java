@@ -49,8 +49,9 @@ public class ArrayDelete extends BIF {
 
 	/**
 	 * Deletes the first (or all) occurrences of a value from an array. The array is modified in place.
-	 * <code>ArrayDelete</code> and the <code>delete()</code> member function compare case sensitively, while the <code>ArrayDeleteNoCase</code> BIF and
-	 * the <code>deleteNoCase()</code> member function ignore case. If the value is not found, the array is left unchanged.
+	 * <code>ArrayDelete</code> and the <code>delete()</code> member function compare case sensitively, while the
+	 * <code>ArrayDeleteNoCase</code> BIF and the <code>deleteNoCase()</code> member function ignore case.
+	 * If the value is not found, the array is left unchanged.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

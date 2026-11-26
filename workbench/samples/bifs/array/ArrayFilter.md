@@ -2,7 +2,7 @@
 
 Take an array of struct items and use arrayFilter to return ones of a rating 3 and higher.
 
-<a href="https://try.boxlang.io/?code=eJxt0MEKgkAQBuCz%2BxTDnhQkKOuSKHgx6mCQ3aLDRruypKtMa2Lhu7fbIchkbj8f%2FzAjsJU6QWQ9RHAC4ryI41BhUwproKxpSk59GyLTUhU2XRJn8P%2FohSkzYzuftDUyVfz1riZtZWg9potJepOdHMvASHIOiWCPGqXmqdV3cy2zV6ey1BxdEN8%2F%2BOBConowtAIPohjMEuS6RfXJZofkuM02EEcQhGQALySd7b22VePCLt9nOUfJSvnkpvZ3qWf1G9r8Zvs%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxt0E0LgkAQBuCz%2ByuGPbkgQV%2BXQMGLUQeD7BYdNtqVJV1lWhML%2F3u7HYJU5vby8A4zEhtlYkTeQQhnIN6beB6VLqWwAcrruhA0cCFyo3Tu0hXx%2BmBEr1zbGdr5pK2Q63zUu560paXVkC4m6V21aiiXVpILkfxZoTIicfhhj%2BXu6EQVRqAP8veGAHyIdQeWlsAgjMDuQGEa1N9sdoxPu3QLUWibe2Ckda23pqx92GeHNBOoeKFewpb%2Br2TAPvHAZgU%3D" target="_blank">Run Example</a>
 
 ```java
 fruitArray = [ 
@@ -40,7 +40,7 @@ Result: [{"fruit":"apple","rating":4},{"fruit":"orange","rating":5},{"fruit":"ki
 
 This is the same example as above, but using a member function on the array instead of a standalone function.
 
-<a href="https://try.boxlang.io/?code=eJxtz0ELgkAQBeCz%2ByuGPSmIUNYlUfBS1MEgu0WHjXZlSVeZ1sTC%2F95uhw4qc3t8vOEJbKVOEVkPMVyAOB%2FiOFTYlMIGKGuaklPfhsi0VIVNV8QZ%2FAm9MWVubBeztkamiknvetZWhtZjupylD9nJsQyNJNeICPaqUWq%2Btfpp1or%2F9EDIUnN0wYVU9WBQBR7ECZh65LpF9cuCU3reZztIYggjMoAXkc423tuqceGQH7Oco2SlfHMXRu88q79fCGTe" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxtz70KwjAUBeA5eYpLpwak4N8itNBF0aGCdROHiEkJtmm5ppYqfXcTB4e03O3wcS5HYqtMish7iOEClHwoIYF0aQAbCHjTlCKYuRC5Ubpw6YqSYTaiN67t%2BXY%2BaWvkuhj1ridtZWnt08UkfahO%2BXJpJb1SyV81KiO2Dj%2FtWPlfHklVGoEhhJDqHiyqgEGcgG1HYVrUvyw6ped9toMktp0DMNq5vntbNSEc8mOWC1S8VG8RgveMAfsCf6Jj6A%3D%3D" target="_blank">Run Example</a>
 
 ```java
 fruitArray = [ 
@@ -76,7 +76,7 @@ Result: [{"fruit":"apple","rating":4},{"fruit":"orange","rating":5},{"fruit":"ki
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxtz0ELgkAQBeDz7q8YPClIUNYlUfBieOkgdooOG62ypKtMayHhf2%2BMCFZkbo%2BPN7wSe2USRDFABGfg7M0ZS%2FNTVsAeHNF1tXR8ivKkyI4Hyracjf6MXYWms916wbUodDXr2y24hlhrs80Cu6uXslVAil9CXopni8rIdFr3oGViWpiq2kh0ofxv9sGFRA9AtAEPohjoAUrTo%2F5mq19zHEEQ8hG8kN%2F6pqMK%2BwHlH8T%2BVdU%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxtz08LgkAQh%2BHz7qcYPLkgQf8ugYIXw0sHsVN02GiNJV1l2i0k%2FO6NEcGKzG14eOFXodM2RZQ9xHACzt6csaw45iXsIJBdV6sgoleRlvlhT78NZ0M0YRdp6Hy3nHEtSnOb9LYzriHW%2Bmw1w%2B76pX21JsXPvJLPFrVV2TjuQcPkODDTtVUYQvWfHEEIqemBaAMC4gSoj8o6NN%2Ff4hdOYioPIPjVNR0F%2FLz4ACnrVN8%3D" target="_blank">Run Example</a>
 
 ```java
 fruitArray = [ 
@@ -109,7 +109,7 @@ dump( favoriteFruits )
 ```
 
 
-<a href="https://try.boxlang.io/?code=eJxtz0ELgkAUBODz7q94eFIQoaxLouDF8NJB7BQdNtqVJV3ltRYS%2FvdeEYEicxs%2BBkZhr22KKAaI4QScvThjWXHMS9iBI7qulo5PVZGW%2BWFP3Yaz0Z%2BxizCUqVstuBaFqWZ72wXXEGunbL3Abvqppyokxc8RV%2BLRorYy%2B7y70zP1vxkoXVuJLriQmgEINeBBnABNo7Q9mm8X%2FDaTGMKIj%2BBF%2FNo3nQuzaerfsLhTuA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxtz08LgkAQh%2BHz7qcYPCmI0L9LoODF8NJB7BQdNtqNJXddprWQ8Ls3RQSKzO3HwwujsNM%2BRxQ9pHAEzl6csaI6lDVsIRDONTKIaaryutzvaFtzNsQTdhaWbuwWM65FYa%2BT3mbGGWLtmC1n2E0%2F9VitSPETV%2BLRovay%2BDx3p8fU%2F8tE6cZLDCGE3PZAyEAEaQZURuk7tN8t%2BSWzlJoDRPzSGRfCJBy9AR97UsI%3D" target="_blank">Run Example</a>
 
 ```java
 fruitArray = [ 

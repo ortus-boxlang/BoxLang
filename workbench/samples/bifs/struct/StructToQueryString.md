@@ -2,7 +2,7 @@
 
 Converting a struct to a query string using the default delimiter (&amp;)
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVqFbg4lRKyywqLvFLzE1VUrBSUPLKz8hT0gEK5yQiibrkpypx1VpzlRdllqS6lOYWaCgUgw0JyQ8sTS2qBJqYmZcOFESYrqmgac0FAIiYI08%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVqFbg4lRKyywqLvFLzE1VUrBSUPLKz8hT0gEK5yQiibrkpypx1XKVF2WWpLqU5hZoKBSDzQjJDyxNLaoEGpiZlw4URBiuqaAJACVAIs8%3D" target="_blank">Run Example</a>
 
 ```java
 someStruct = { 

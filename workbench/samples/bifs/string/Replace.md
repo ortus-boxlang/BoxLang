@@ -31,7 +31,7 @@ Result: Boxlang
 
 You can pass in a callback function to the third argument of the `replace` function
 
-<a href="https://try.boxlang.io/?code=eJwtjcEKwjAMhs%2F2KX562mD4AuJheB34DLFUKdSsZAkyxHe3pbskfEm%2BP67YI6eAp3HQtDKs3GiLA2beUUg1Ck8d1i21i06rpBdGfN1JoppUr2uHgvHifk7iZllxhcSSKdS1n%2FEmBqFya4GY8tlP8MS19ueV5mXxLeMjSePdtJgOOOLq%2BA%2FPgDrf" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwtjUEKAjEMRdf2FJ%2BuZmDwBi6K2wHPEEuVQk1LJkFEvLsdOpuEx8%2F7aXYvOeJhHDVXhrUrbWlC4A8aqSbhZUDd8n4xqEp%2BYsbXnSSpSfeGdiiY3c9J2qwoLpDUCsWe%2BoAXMQid9xWJqZz9Ak%2Fc5%2FjdKayr7xVvyZpups10wtE2%2FwHnsDoa" target="_blank">Run Example</a>
 
 ```java
 

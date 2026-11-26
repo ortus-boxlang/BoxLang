@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLys%2FPSU3Mc8svyk0s0VAwVNC05gIATjEGUQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLys%2FPSU3Mc8svyk0s0VAwVNAEAEGZBgw%3D" target="_blank">Run Example</a>
 
 ```java
 booleanFormat( 1 )
@@ -15,7 +15,7 @@ Result: true
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLys%2FPSU3Mc8svyk0s0VAwUNC05gIATiwGUA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLys%2FPSU3Mc8svyk0s0VAwUNAEAEGWBgs%3D" target="_blank">Run Example</a>
 
 ```java
 booleanFormat( 0 )
@@ -28,7 +28,7 @@ Result: false
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLys%2FPSU3Mc8svyk0s0VDQNVTQtOYCAFTRBn4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLys%2FPSU3Mc8svyk0s0VDQNVTQBABH3wY5" target="_blank">Run Example</a>
 
 ```java
 booleanFormat( -1 )
@@ -41,7 +41,7 @@ Result: true
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLys%2FPSU3Mc8svyk0s0VAwVdC05gIATkUGVQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLys%2FPSU3Mc8svyk0s0VAwVdAEAEGlBhA%3D" target="_blank">Run Example</a>
 
 ```java
 booleanFormat( 5 )
@@ -97,7 +97,7 @@ Result: false
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUHDKz89JTcxzyy%2FKTSzRUDA0MlbQVNC0VtDXVwgpKk3lKsep1ACskAuk0i0xpziVCwC7Nho6" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUHDKz89JTcxzyy%2FKTSzRUDA0MlbQVNC0VtDXVwgpKk3lKsep1ACkkAuk0C0xpzgVAIcRGfU%3D" target="_blank">Run Example</a>
 
 ```java
 writeDump( BooleanFormat( 123 ) ); // True

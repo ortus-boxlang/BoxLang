@@ -13,7 +13,7 @@ getToken(mystring, 3) is : #getToken( mystring, 3 )#
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwryc9OzYsvSS0uUbBVcE8tCQHxNRSUKlNzcvLLdYpSU6x08osS89JTdZJySlOtrHVyEstS81JSi3QKMvOyrayVdBSMdBSUrJQUNK25yosyS1JdSnMLNBRKEAYDJQA3yCIW" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxFzLEKgCAUBdC9r3g4GbypUWkL%2BoH2MLyEaBr2Kvr7aGo8y5ESkWfBIdTTCJk%2Ba1IPUio3V3jDpbq8gpd0wlhO7kL2qLyHHI1VTB2TMora5q5BMJzbrkn%2Bt30B1Nohlg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 token_test = GetToken( "yellow,red:,orange,blue:;,lavender,pink:;", 2, ":" )

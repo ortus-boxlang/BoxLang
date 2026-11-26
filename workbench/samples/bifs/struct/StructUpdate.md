@@ -2,7 +2,7 @@
 
 Change value of structure item
 
-<a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVahW4OJ0VLBSMNTh4nQC0kZA2hlIGwNpFyBtwlVrzVUMVh1akJJYkqqhkAvVraOglKyko2BoqqBpzVVelFmS6lKaW6Ch4BXs7xecWpSZmJNZhaRcQROkDgDFciI%2F" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVahW4OJ0VLBSMNTh4nQC0kZA2hlIGwNpFyBtwlXLVQxWHFqQkliSqqGQC9Wso6CUrKSjYGiqoMlVXpRZkupSmlugoeAV7O8XnFqUmZiTWYWkWkFTQRMASJwhhA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 myStruct = { 
@@ -20,7 +20,7 @@ Result: {"A":1,"B":2,"C":15,"D":4} (key C was updated; the key order shown may d
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxljk0LgjAcxs%2FuUzz8TwaC98KDGESnAovOSweOdJO15SH67unUyDo%2Bbz8ermTD6zsSPMGC7HDBGtRoTRELjvvdoLRUt0Fm6cmHQnfEXhsWx8gr3aFwxghlwUcU27qmDVHzq6gTypYhRXhwk0wKK085tyW3AgW3kOqDya1xhR2zcHYjUF%2FrKdT2YJoA%2FsbM7KSt4Pys%2FGUurqXfg6E4jf4%2FvgHMuF3T" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxdjj0LgzAURWfzKy5vsiC4FxzEQulkwZbOqQYM1UTSpA6l%2F73Gj1Id77vvHC5XsuXNEwneYEGW37AHtVpTxILz6eiTlurhY5ZexlLontiHxTGKWvconTFCWfDJxA6u7UI0%2FC6ahLJ1SRFe3CRzws5Lrl3FrUDJLaT6WQprXGmnLlyuEWh4GyTUDV6a%2BHHEYuylreFGqtoqV8PSf8A%2FztB24Rcuh1zd" target="_blank">Run Example</a>
 
 ```java
 animals = { 

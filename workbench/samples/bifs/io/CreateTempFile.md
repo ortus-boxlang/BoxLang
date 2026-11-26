@@ -2,7 +2,7 @@
 
 Returns path of file created
 
-<a href="https://try.boxlang.io/?code=eJxLTy0JSc0tcMvMSdVQSIdwXDKLUpNL8osqNTR1FJRKUotLQNJKCprWXACZ5g%2FZ" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLTy0JSc0tcMvMSdVQSIdwXDKLUpNL8osqNTR1FJRKUotLQNJKCpoAej4PlA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 getTempFile( getTempDirectory(), "testFile" )
@@ -13,7 +13,7 @@ Result: /private/var/folders/k6/hm9skhxj2dd_901z2f2mkwt00000gn/T/testFile1342732
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FBwTy0JSc0tcMvMSdVQSIdwXDKLUpNL8osqNTR1FJRSUnPzlRQ0FTStuQDQaBBl" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLKc0t0FBwTy0JSc0tcMvMSdVQSIdwXDKLUpNL8osqNTR1FJRSUnPzlRQ0FTQBr6gQIA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 dump( GetTempFile( getTempDirectory(), "demo" ) )

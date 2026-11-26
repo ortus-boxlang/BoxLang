@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxtkDkLAjEQhevkVwypVNJ4VB6NKHaiYiNiEdfRXdjL2cRVZP%2B7Ey9YlJAw8%2FjmDS9HcpGFEZwd0m2OZQNUdNCpSVBpLlOLJyR9MRSEhljaghR3KQRTCvrQ1r5%2B4twpk%2BcxKikqXaM6dWpvUj6%2FWLeOZWTS0x%2B3Xh3L0QShp%2BQOmgOZ3JY%2ByifS9IqBs8ixCowxsNCCI2UJPz53GSIhRAcYQo%2FD3Su%2BUkzG681i6r2fFkpWL%2BMVFi7%2BftYM7UtowGcnUyVFFicuyb36HmD5AZcLY7s%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxtkMsKwjAQRdfJVwxZWcnGx0p0I4o7UXEj4iLWqS20tY6JVaT%2F7qQ%2BoCghYXI53HASkUssjODskO5zLFugkoPOTYZK85hbPCLpq6EwNsTRFqR4SCGYUjCAjvZzjfNNmaJIUUlR6QbVbVJ7k%2FP6xXpN7EQmP%2F5p6zexAk0Ye0ruIJDZfelNPkbTG4bOIltdMMXQQhsiOmV8eO0yRkJIDjCEPrs9Kt5STMbrzWLqq%2BsKJau6d4UXl36%2Faob2FbTg82QgS0osTlxW%2BPDNB0%2B%2BpWLF" target="_blank">Run Example</a>
 
 ```java
 fruit = queryNew( "id,name", "integer,varchar", [ 
@@ -36,7 +36,7 @@ writeDump( myResult )
 
 
 
-<a href="https://try.boxlang.io/?code=eJxtkMsKwjAQRdfJVwxZVQmCj5WPjehWVNyIuIh1bAttrWNiFem%2FO%2FEFRQkTZm4Od7g5kEssjODkkG4zLANQyV7nJkOluc0tRkj6YiiMDbG0ASnuUgimFPShrX3%2FxHlSpihSVFJUukZ16tTO5Hx%2BsW4dO5LJoz9uvTpWoAljT8ktNAYyuy18lE%2Bk6RVDZ5FjnTHF0EITDnTM%2BPK5yxgJIdnDEHoc7l5xSTEZr9bzqfd%2BWihZvYyXeHap%2F6z3jlaE9qUF%2FF5SYnHisiKAL8ryAz%2BJYZM%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxtkMuqwjAQhtfJUwxZtRIELyvxbA66FRU3Ii5inV6grXVMrCJ9dyc9R6EoYYbJ8PGHLzG5zMIPnB3SfYF1ACo76tIUqDSPpcUESV8NRakhXu1AiocUgikFExhoP7c435SpqhyVFI3uUMMudTAln09s1MVOZMrkS9q4i1VootRTcg%2BhLO4rb%2FIymt8wchbZ6oI5RhZ6ENOp4Oa16xQJITvCFMbs9mi4pJj9brbLuY9uI5Rs2tw1Xlzuv%2Br%2FiX6C9m8XhLKmzOLMFVUAbzJ8AnBfYJ0%3D" target="_blank">Run Example</a>
 
 ```java
 fruit = queryNew( "id,name", "integer,varchar", [ 

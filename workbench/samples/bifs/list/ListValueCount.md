@@ -2,10 +2,10 @@
 
 Counts instances of 'foo' in the list, ignoring case
 
-<a href="https://try.boxlang.io/?code=eJzLySwuCUvMKU11zi%2FNK%2FHLd04sTtVQUErLz9dJSizSyckvSs3VcQPyMguKS3OVdMBSSgqa1lwAcZoThA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyMksLglLzClNdc4vzSvxy3dOLE7VUFBKy8%2FXSUos0snJL0rN1XED8jILiktzlXTAUkoKmgqaALq1GIw%3D" target="_blank">Run Example</a>
 
 ```java
-listValueCountNoCase( "foo,bar,lorem,Foo,ipsum", "foo" )
+writeOutput( listValueCountNoCase( "foo,bar,lorem,Foo,ipsum", "foo" ) )
 
 ```
 
@@ -15,10 +15,10 @@ Result: 2
 
 Counts instances of 'foo' in the list with a custom delimiter, ignoring case
 
-<a href="https://try.boxlang.io/?code=eJzLySwuCUvMKU11zi%2FNK%2FHLd04sTtVQUEpKLKpxy8%2BvyckvSs3VySwoLs2tyU2tScvP1ynOz00tycjMSwfxatz8%2FZV0FJSATBBVo6Sgac0FAFkAHeg%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwVxzEKwCAMQNGrBKcK3kJwrFt3C2krqBFN6JLDt07%2F%2FXdkxijchTcoefKRiqAnabyTTxM3MGcaGoi00MDqcp9StaJeRG5SRX5yu9dpiNE4MD9X1IAF%2BwEkkiLw" target="_blank">Run Example</a>
 
 ```java
-listValueCountNoCase( "bar|Foo|lorem,ipsum|me|foo,something|foo|FOO", "foo", "|" )
+writeOutput( listValueCountNoCase( "bar|Foo|lorem,ipsum|me|foo,something|foo|FOO", "foo", "|" ) )
 
 ```
 

@@ -32,7 +32,7 @@ Shows the use of getTimeZoneInfo for a known / specific timezone with German loc
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FBwTy0JycxNjcrPS%2FXMS8vX0FTQtOYCAIYsCLU%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLKc0t0FBwTy0JycxNjcrPS%2FXMS8vX0FTQBAB0zAhw" target="_blank">Run Example</a>
 
 ```java
 dump( GetTimeZoneInfo() )

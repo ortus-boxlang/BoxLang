@@ -2,7 +2,7 @@
 
 The `PBKDF2WithHmacSHA1` algorithm will work on older JVMs, or older versions of CF
 
-<a href="https://try.boxlang.io/?code=eJxLT81LLUosSQ1w8nZx806t1FBQAjONwjNLMjxyE5ODPRwNlXQUlIpTk4tSS8CsxJySSiDD1MDAQEfB0MhCQdOaCwA5uBR8" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLT81LLUosSQ1w8nZx806t1FBQAjONwjNLMjxyE5ODPRwNlXQUlIpTk4tSS8CsxJySSiDD1MDAQEfB0MhCQRMAEMoUNw%3D%3D" target="_blank">Run Example</a>
 
 ```java
 generatePBKDFKey( "PBKDF2WithHmacSHA1", "secret", "salty", 5000, 128 )
@@ -42,7 +42,7 @@ writeOutput( "<br /><b>Data After Decryption</b>: " & decryptedData )
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FBIT81LLUosSQ1w8nZx806t1FBQAjONwjNLMjxyE5ODPRwNlXQUlIpTk4tSS8CsxJySSiDD1MDAQEfB0MhCQVNB05pLQV9fIdLA17nAOdW4KsnA2c%2BrrDLCLzTcNdDWlgsACv4fBw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLKc0t0FBIT81LLUosSQ1w8nZx806t1FBQAjONwjNLMjxyE5ODPRwNlXQUlIpTk4tSS8CsxJySSiDD1MDAQEfB0MhCQVNBk0tBX18h0sDXucA51bgqycDZz6usMsIvNNw10NYWAM6AHsI%3D" target="_blank">Run Example</a>
 
 ```java
 dump( generatePBKDFKey( "PBKDF2WithHmacSHA1", "secret", "salty", 5000, 128 ) )

@@ -2,7 +2,7 @@
 
 Do all letters in the string meet the callback condition?
 
-<a href="https://try.boxlang.io/?code=eJzLSS0pSS0qVrBVUIqKSqyqUrLmSk7MyUlKTM4GimkoOOZVKmTmFShoKtjaKVRzcRallpQW5YGFbIF6QOprrbmAOqJAZgSXFGXmpbuWpRZVaijkQIzWUYAbqGnNVV6UWZLqX1pSUFqioQDRBhQFABXtKps%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLSS0pSS0qVrBVUIqKSqyqUuJKTszJSUpMzgYKaSg45lUqZOYVKGgq6NopVHNxFqWWlBblgYVsgVqAymu5gOqjQAYElxRl5qW7lqUWVWoo5EDM1VGAG6fJVV6UWZLqX1pSUFqioQDRpQkALkgpWg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 letters = "ZZazz"

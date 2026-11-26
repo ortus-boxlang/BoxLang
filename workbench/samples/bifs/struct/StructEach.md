@@ -2,7 +2,7 @@
 
 Use a function to write out the keys in a structure to the screen
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVqFbg4nRUsFIw1OHidALSRkDaGUgbc9VacxWDVbkmJmdoKBTDdekoaCg45lUqZKdW6oAZZYk5pakKmgq2dgrVXJzlRZklqf6lJQWlJRoKSt6plQpKCmogxUBSSSGzGMyFaAEKWAO5mtZctSACAOHWKZ8%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVqFbg4nRUsFIw1OHidALSRkDaGUgbc9VyFYMVuSYmZ2goFMM16ShoKDjmVSpkp1bqgBlliTmlqQqaCrZ2CtVcnOVFmSWp%2FqUlBaUlGgpK3qmVCkoKaiDFQFJJIbMYzIVoAQpYA7maXLUKmgBCnijk" target="_blank">Run Example</a>
 
 ```java
 someStruct = { 
@@ -22,7 +22,7 @@ Result: Key a is 1; Key b is 2; Key c is 3;
 
 
 
-<a href="https://try.boxlang.io/?code=eJylUE1rwkAQPWd%2FxSMHq5DivWKhtPXUkmL7B8a4MUviJuzOJkTxvze7DVYK9uJlmJn3sW82p9ZiiSNE9Jy%2BpWs8IN5UTsaJiFZp%2BuLnRh0O5BefH%2Bn6KzDIlpI3VFWxOC2EmM%2BhaS%2B3yJ3OWNU6bGpWmQQXxEORZwxMpbTgrgaZndtLzTYJjFL2IL1FS0MCNKQM6jwgmTNm4EGxNBRMRsCycRk7I%2B%2Bsl9%2F%2FSq04P7iTvKK2NoPaTvGke09NQvPDn%2BEoos7jqePG8RTxe4981CDGJGSbDJ2yYRx1C3HypxqnxySvlBXTGTrFBejvp1xQvPlw9WUy73bdS0PpSmn5n9uV25aPN5znyzfgvrLD" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJydUF1LwzAUfW5%2BxaEPs4XK3oUJou5JqUz%2FwF2XrqFdWpKblm74301jmUOYD76Em3s%2Bck5K6i1WOEFEj%2FlLvsEd4m3jZJyJaJ3nT9O9U8cjTYv3t3zzERhka8lbappYfAqxXELTQe5QOl2wanXYtKwKCa6I%2FSHPGJhqacFDCzJ7d5CabRYYtRxBeoeefAB0pAzaMiCFM8bzoFgaCiYzYNm4gp2RN3aS3%2F5IrTg%2FuJe8pr41Xm0TPOhxomZh%2BOanOIlomPDccec4Qfw6opw1iLEI2RZ%2BUjZcZ50v75sap%2Bcgz1RUSYpBcQX6%2FScXlMnbl74M5s2uW2ko3Sgt%2FzK70mx1%2F%2F9ySL8ABb6xkg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 favs = { 
@@ -52,7 +52,7 @@ Result: prints My favorite <key> is <value> for each entry, twice (once for each
 
 
 
-<a href="https://try.boxlang.io/?code=eJxFjcEKgkAQhs%2FuUwzuRUHKylOmYO4KErlkeharhaKocHcLEd%2B9dS9dhvm%2F%2BYZfyFYqkb4uXEAEAyCL7WANS9%2F3kJWWNKkoMXmhc8GqZs9InuUGrvxAw21CmpIeanqsNAvM4yRmrC6IIQEaQyT%2BRTPenq8OOJA8e7jz3jPLp30oDi5EMQzI%2BnY3yZmSbyUdsLG28HTBxsKbUwfz2AY3ROM0fh9xNO4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxFjVELgjAUhZ%2Fdr7i4lwlSVj5FCuYmSOTI9FmsBkVR4bZCxP%2Fe3Etv93znO1ypWqVl%2BroICREMgBy%2BgzUsg8BHTlqypGLU5oXJBa%2BaPad5llu4CkIDtwltSnao2bEyLLTDScx4XVBLQjQi%2Bf8zE%2B35SoBA8uzhLnrfHp%2F2oQV4EMUwIOfb3ZTgWr21IuBiY%2BGpwdbCm1MH89gFD43g%2FQBSzjQz" target="_blank">Run Example</a>
 
 ```java
 statusCodes = { 
@@ -76,7 +76,7 @@ NOT_MODIFIED => 304
 
 ### Accessing a reference to the looping struct in the callback
 
-<a href="https://try.boxlang.io/?code=eJwrLkksKS12zk9JLVawVahW4OL091awUjAyMNDh4nQOcnUMcXUB8w2BfD%2F%2FkHhffxdPN0%2BwoLGBCVDQydElPsg1MNQ1OAQoZgLWCFLo5h%2Fq5wIWMeGqteYqRlikl5qYnKGhoKHgmFepkJ1aqQNmlCXmlKZCmMUlRaXJJQqaCrZ2CtVcnOVFmSWpLqW5BRpwGWuuWhABAJnsNEM%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrLkksKS12zk9JLVawVahW4OL091awUjAyMNDh4nQOcnUMcXUB8w2BfD%2F%2FkHhffxdPN0%2BwoLGBCVDQydElPsg1MNQ1OAQoZgLWCFLo5h%2Fq5wIWMeGq5SpG2KOXmpicoaGgoeCYV6mQnVqpA2aUJeaUpkKYxSVFpcklCpoKtnYK1Vyc5UWZJakupbkFGnAZrloFTQDRIjOI" target="_blank">Run Example</a>
 
 ```java
 statusCodes = { 
@@ -97,7 +97,7 @@ Result: dumps the full statusCodes struct once for each of its 5 entries
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxdjUsLgkAUhdfOrzjMIhUk94mBmES4KDCIiBaTDCk%2BJtRJRPzv%2BUjCNhe%2Be8%2F9DsvjjKUlbLQginu8YAOaCUENopwO%2B4FEnCcDus55PHJRU9JZJKgKGVYeCyMNbNIY0ODkDRLeQIe9RUsU00QQiXrcqax4yoznVbnuUSXKTmYvDSl78NSmPm%2BogTcr7F%2FM967QrYVFLftMKnlvm1pvC%2Bv9T7t0rUDn%2F7nrK8EyeB9qu2F8AE2dWYA%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxdzcsKgkAYBeC18xSHWaSC5D4wCJMIFwUGEeFikiHFGSe8JCK%2Be16SsOWZOf93WJZIJgo4aEE093TFBlQqRS2inY%2BHIakkS4fo7i7jJ1c1JR0JyryKSo9FsQE2KRYM7LIGKW9gwtmiJZptI4hVPb7pLH9Wkmdlse6jTrR9JV8GBHtw4VCfN9TCm%2BXOr%2BZ7N5gLRC%2F6iqh4j02j9wUa%2FqlLagU6389TXwTLYtivdjA%2FsIhYig%3D%3D" target="_blank">Run Example</a>
 
 ```java
 animals = { 

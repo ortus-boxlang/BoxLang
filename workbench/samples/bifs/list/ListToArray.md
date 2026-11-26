@@ -2,7 +2,7 @@
 
 Uses the listToArray() function to retrieve a list as an array
 
-<a href="https://try.boxlang.io/?code=eJzLySwuUbBVUCpKTdFJL0pNzdPJL0rMS09VsuZKTy1xLCpKrARK5wBVheSDeRpgjoKmNVdxfm6qV7C%2FH1AeRAWnFmUm5mRWpWoowHUCVZUXZZak%2BpeWFJSWaCjAtQAlAOB7KJE%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLySwuUbBVUCpKTdFJL0pNzdPJL0rMS09V4kpPLXEsKkqsBMrmABWF5IN5GmCOgiZXcX5uqlewvx9QGkQFpxZlJuZkVqVqKMA1anKVF2WWpPqXlhSUlmgowHVoAgAqEyeb" target="_blank">Run Example</a>
 
 ```java
 list = "red,green,orange"
@@ -50,7 +50,7 @@ Result: ["boxlang", "php", " " , "java", "sql"]
 
 Uses the listToArray() function to retrieve a list as an array with multiCharacterDelimiter
 
-<a href="https://try.boxlang.io/?code=eJw9jDEOwjAMRfeewsoUJN%2Bg6sDKQIdygQhcCDIk2A6oKIcndOj09fXf%2BxzVYAB3TnyZi8b0xHzLWI3U8B7eAau%2B2PXdlWwvEpYGc3NOaW1%2BLQgOq0OYAyshmBSCXd9petBhGo9N%2BcdEEgPHL3nYzhr1kWg0FsvFPGxKG343TDPk" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJw9jDEOwjAMRfecwsqUSL4CQ1cGOpQLGMmUIENC4hSocnhCh05fT3rvSygKB7CX%2BBF6zphuCZtyUbzTQtjKS6yZWYec6dtF6f45buQ2QLDYLMKVpDCC5srgTYkPPk7jqRf%2FmTgHkrCyg%2F3Lm3cOymPVVNXBXvgfjHYxow%3D%3D" target="_blank">Run Example</a>
 
 ```java
 list = "boxlang,php,|test,java,|sql"
@@ -64,7 +64,7 @@ Result: ["boxlang,php", "test,java", "sql"]
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJzLySwuUbBVUCpKTdFJL0pNzdPJL0rMS09VsuZKTy1xLCpKrARK5wBVheSDeRpgjoKmNVdxfm6qV7C%2FH1AeRAWnFmUm5mRWpWoowHUCVZUXZZak%2BpeWFJSWaCjAtQAlAOB7KJE%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLySwuUbBVUCpKTdFJL0pNzdPJL0rMS09V4kpPLXEsKkqsBMrmABWF5IN5GmCOgiZXcX5uqlewvx9QGkQFpxZlJuZkVqVqKMA1anKVF2WWpPqXlhSUlmgowHVoAgAqEyeb" target="_blank">Run Example</a>
 
 ```java
 list = "red,green,orange"
@@ -75,7 +75,7 @@ writeOutput( someJSON )
 ```
 
 
-<a href="https://try.boxlang.io/?code=eJzLySwuUbBVUErOz0lJKy3OzM%2BzLsgosM5KLEu0Li7MUbLmSk8tcSwqSqwEqsoBKg7JB%2FM0wBwdBSVrJQVNa67i%2FNxUr2B%2FP6AiEBWcWpSZmJNZlaqhANcOVFVelFmS6l9aUlBaoqEA1wKUAAD5Lyxd" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLySwuUbBVUErKr8hJzEu3LsgosM5KLEu0Li7MUeJKTy1xLCpKrASqyAEqDMkH8zTAHB0FJWslBU2u4vzcVK9gfz%2BgGhAVnFqUmZiTWZWqoQDXrclVXpRZkupfWlJQWqKhANehCQCNnCoc" target="_blank">Run Example</a>
 
 ```java
 list = "boxlang;php;java;sql"
@@ -86,7 +86,7 @@ writeOutput( someJSON )
 ```
 
 
-<a href="https://try.boxlang.io/?code=eJw9jDEOwjAMRfeewsoUpN7AYmBloEO5QFRcMDIkOA4ITl%2FTodPX03%2F%2FC1eDPYQpy2VulfMTy60g3tM7YX1JwO5KdlBNX9fE7XNeKa7QQ8DQg2kj2GFX84OO43By9R8jKSfhH0XYTtz6KBsNzUqzCNvEiwU1ni6k" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLySwuUbBVUErKr8hJzEu3LsgosLbOSixLtC4uzFHiSk8tcSwqSqwEKskBqgzJB%2FM0wBwdBSVrJR2FkqLSVAVNruL83FSvYH8%2FoEoQFZxalJmYk1mVqqEAN0OTq7wosyTVv7SkoLREQwGuQxMAtjYsYw%3D%3D" target="_blank">Run Example</a>
 
 ```java
 list = "boxlang;php;;java;sql"
@@ -97,7 +97,7 @@ writeOutput( someJSON )
 ```
 
 
-<a href="https://try.boxlang.io/?code=eJw9jDEOwjAMRfeewsoUJN%2Bg6sDKQIdygQhcCDIk2A6oKIcndOj09fXf%2BxzVYAB3TnyZi8b0xHzLWI3U8B7eAau%2B2PXdlWwvEpYGc3NOaW1%2BLQgOq0OYAyshmBSCXd9petBhGo9N%2BcdEEgPHL3nYzhr1kWg0FsvFPGxKG343TDPk" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJw9jDEOwjAMRfecwsqUSL4CQ1cGOpQLGMmUIENC4hSocnhCh05fT3rvSygKB7CX%2BBF6zphuCZtyUbzTQtjKS6yZWYec6dtF6f45buQ2QLDYLMKVpDCC5srgTYkPPk7jqRf%2FmTgHkrCyg%2F3Lm3cOymPVVNXBXvgfjHYxow%3D%3D" target="_blank">Run Example</a>
 
 ```java
 list = "boxlang,php,|test,java,|sql"

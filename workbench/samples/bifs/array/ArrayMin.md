@@ -2,7 +2,7 @@
 
 To get the smallest numeric value of an array
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFVIBNF%2BqeUaCoYKmtZc5UWZJan%2BpSUFpSUaEDnfzDwNhWK4Dk2QKgDk7BWa" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFVIBNF%2BqeUaCoYKmlzlRZklqf6lJQWlJRoQKd%2FMPA2FYrgGTQVNAKjEFRo%3D" target="_blank">Run Example</a>
 
 ```java
 someArray = arrayNew( 1 )
@@ -16,7 +16,7 @@ Result: 0
 
 Uses the arrayMin function to get the smallest numeric value of an array
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNDLW4eI0MQUSFuZAwgjE44q15iovyixJ9S8tKSgt0VBIBGnwzczTUCiGa9dU0LTmAgAYShUj" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNDLW4eI0MQUSFuZAwgjE44rlKi%2FKLEn1Ly0pKC3RUEgEqffNzNNQKIbr1lTQBADdeBSj" target="_blank">Run Example</a>
 
 ```java
 someArray = [ 
@@ -36,7 +36,7 @@ Result: 2
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNDLW4eI0MQUSlpZAwhDE44q15iovyixJ9S8tKSgt0VAohmnS883M09BU0LTmAgCZMBL0" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNDLW4eI0MQUSlpZAwhDE44rlKi%2FKLEn1Ly0pKC3RUCiG6dHzzczT0FTQBABkKxJ0" target="_blank">Run Example</a>
 
 ```java
 someArray = [ 

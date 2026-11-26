@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxdjjELwjAQhefkVxyZWsiio%2BIgutbJTRwOe2qxveglMQTxv5vaSbf3Ht8Hjyl5WMEjkuQdpQpM19rQhZ6MLZkDXUjsE%2BV0RSnTAbR6aaUKZmABMzvmiS%2FVbClRhpbOhMHDXuKAbLR62x9r%2Fmc1yJCwv3lwDI1zX0UfoV7qNg73arq3cX0ceC2CuQIef9cj8QFbuDei" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxdjjELwjAUhOfkVxyZWsiio%2BAgutbJTRwe9qnF9qWmiaGI%2F93UTrrdHd8HJ5wGrPGI7Mc9pwKmqW1oQsvG5iyBr%2Bztk%2Fz5Rj5PR2j10kplzGCFhZ3yzOdqdpx4RM0XpjDg4GNHYrR62x9r%2BWdVJEjU3gc4QeXcV9EnlLqOXV%2FM77aujZ1svKexgEy3S5QfuLk3Ig%3D%3D" target="_blank">Run Example</a>
 
 ```java
 news = queryNew( "id,title", "integer,varchar", [ 
@@ -22,7 +22,7 @@ dump( queryColumnArray( news ) )
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrLKpUsFUILE0tqvRLLddQUEpMTFRS0LTmSiwqMgTKRMdac4FlHVNSnPNzSnPzNBQKiyp1FJSSkpR0FMCqgKrLizJLUl1KcwuAsiDVEKWORUWJlWD1CpogVQBQVSJD" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrLKpUsFUILE0tqvRLLddQUEpMTFRS0ORKLCoyBEpEx3KB5RxTUpzzc0pz8zQUCosqdRSUkpKUdBTAijS5yosyS1JdSnMLgJIgxRCVjkVFiZVg5QqaCpoAuZ8hTQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
 qry = QueryNew( "aaa" )

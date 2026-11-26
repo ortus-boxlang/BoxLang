@@ -2,10 +2,10 @@
 
 Capitalizes the first character of the first word only.
 
-<a href="https://try.boxlang.io/?code=eJwrTXbLLCou0VBQykjNyclXKM8vyklRVFLQtOYCAIPJCHg%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKE12yywqBjKUMlJzcvIVyvOLclIUlRQ0FTQBMWgNgA%3D%3D" target="_blank">Run Example</a>
 
 ```java
-ucFirst( "hello world!" )
+writeOutput( ucFirst( "hello world!" ) )
 
 ```
 

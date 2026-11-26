@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrKMpPy8xJVbBVqFbg4vRz9HVVsFJQ8srPyFPS4eL09AsOCQr1dfULAYmml2aWJBaBxP2dnUMDHEM8%2Ff1A4sWZeempRUpctdZcxSVFpcklzjmpiUUaCgVQszWtucqLMktS%2FUtLCkpLNBS8gv39glOLMhNzMqtSkZSBFAIA3vYrvA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrKMpPy8xJVbBVqFbg4vRz9HVVsFJQ8srPyFPS4eL09AsOCQr1dfULAYmml2aWJBaBxP2dnUMDHEM8%2Ff1A4sWZeempRUpctVzFJUWlySXOOamJRRoKBVCjNbnKizJLUv1LSwpKSzQUvIL9%2FYJTizITczKrUpFUKWgCADymKwE%3D" target="_blank">Run Example</a>
 
 ```java
 profile = { 
@@ -36,7 +36,7 @@ Result: An empty struct
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxljs0KwjAQhM%2FNUww5tRDoXelBIognhR48ryVqMD8lTRUR311NezB4Wr7ZnZklpy2ZAQ2eYIXcHbAAt95zwYr9dvMlr92Vs9eS1TXai7%2BjG0NQLoImL1uPti9h6KhMw2W%2B5AI3Cs1MqFKKNIoChhjGLrJpJKlEfpfaZknAfUDZPj7ywtVsoVNUAR0Zo90Z7U9q9f%2FEG64LUEQ%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxdjjsLwkAQhOvcrxiuSiCQXkghJ4iVQgrrNZx6eI%2BwuVNE%2FO%2BaR2Gslm92Z2bJG0e2R40XRKb2R6wgXQiyFNlhtx0oGH%2BT4i2qCs01PNAmZu0jaLKKTXJdDksnbWuplktZ4k5cz4RiCFFWE6OPnNoopjFKORZnY9eslPBf0K6Lz2XdenbQOWpGS9Yaf0HzE1r8v%2FABTNNPTg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 animals = { 

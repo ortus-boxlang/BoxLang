@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxljcEKwjAQRM%2FmK5btJUL%2FoPQgVtCLIB7Fw2oCFZJWt4kSv95NcvQ0s8POPJ9O0XKCHooe7UcDIqw7NZG3i%2BQXtcLDZJiwFbdzjy%2FdbBjLtSfmVNw5R%2BraqVee2RiznV30kwZfAS1gHkTRN%2FF9JBZbEcJiu0QXBFbatTpQoL96fh6if2qQlR6bWmxK%2FgOIdT5L" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxljbEKAjEQRGvzFctek4P7hSvEE7QRxFIsVhM4IYm6lyjx690kpdXMDjtvfD4myxlGqHqwHw2I0KtA3i4Sn9UK98Ew4SBu6%2B5futo412tHzLm6U4nURb0KZG3M5uGSDxp8ww%2BAhYeib%2BLbTCy2LfSK7ZJclKlabs2JIv215XdK%2FqlBGCN2rddJ%2FAM2lT0a" target="_blank">Run Example</a>
 
 ```java
 myQuery = QueryNew( "" )
@@ -23,7 +23,7 @@ Dump( var="#result#" )
 
 
 
-<a href="https://try.boxlang.io/?code=eJwtjcEKwjAQRM%2FmK5btJULxB0oPYgW9COJRPKxNoEISddso9evdJD3t7DBvxs%2FnaHmGFvI92a8GRFg3KpC3o%2FhXtcJjMExYi9q7x4%2FudhrydyDmOatLstStUe9UszVm93TRBw2%2BDNSAqRDlfoj7gVhkmZAttmN0k4wt6U2f6Y4m0guYYl30Lw3Ct1gVpMr%2BHwSjPBc%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwtjcEKwjAQRM%2FmK5btJYXiH%2FQgVtCLIB7Fw9oEKiStbhOlfr2bpKedHebN%2BOUSLS%2FQQr5n%2B9WACLUaydtZ7Jva4Gk0TNiIOrjnjx42DPk7EvOS1TVZ6q7eqWRnzH5y0Y8afKlvAFMfyv0Q9wOxyLJQK7ZzdEGm1vC2z3BHgfTKSaqL%2FqVB6BarQlRi%2FwG9djrm" target="_blank">Run Example</a>
 
 ```java
 myQuery = QueryNew( "" )
@@ -42,7 +42,7 @@ Dump( var="#result#" )
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVANN%2BqeUaCkpKCprWXHmJuanFQPFoLk6lCiBQ0gEyKoFAiSvWmqsQpNoxJcU5P6c0N09DIRdijo6CEkifEpAuSyxKzkgsAjIhJgGNLEotLs0pAZoJ1g3R6pJYkoihHaS4vCizJNWlNLdAQwGqDygIAPqQOAQ%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVANN%2BqeUaCkpKCppceYm5qcVA4WguTqUKIFDSATIqgUCJK5arEKTWMSXFOT%2BnNDdPQyEXYoqOghJImxKQLkssSs5ILAIyIQZpchWlFpfmlABNBGuG6HRJLEnE0A1UW16UWZLqUppboKEA1aYJANDrNtM%3D" target="_blank">Run Example</a>
 
 ```java
 myQuery = QueryNew( "" )

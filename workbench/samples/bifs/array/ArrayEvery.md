@@ -2,7 +2,7 @@
 
 Checks whether all items in an array are greater than 2 and outputs true because all of them fulfill the requirement.
 
-<a href="https://try.boxlang.io/?code=eJxLLCpKrFSwVYhW4OI00eHiNAViMyA254q15iovyixJ9S8tKSgt0VBIBKl0LUstqoSydRQ0FBzzKhXKEnNKUxU0FWztFKq5OItSS0qL8qCCdgpG1ly1QDlNay4AGTodsA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLLCpKrFSwVYhW4OI00eHiNAViMyA254rlKi%2FKLEn1Ly0pKC3RUEgEKXQtSy2qhLJ1FDQUHPMqFcoSc0pTFTQVbO0Uqrk4i1JLSovyoIJ2CkZctUApTQCpeBz1" target="_blank">Run Example</a>
 
 ```java
 array = [ 
@@ -23,7 +23,7 @@ Result: true
 
 Checks whether all items in an array are greater than 2 and outputs false because some of them do not fulfill the requirement.
 
-<a href="https://try.boxlang.io/?code=eJxLLCpKrFSwVYhW4OI01OHiNAJiYyA24Yq15iovyixJ9S8tKSgt0VBIBKl0LUstqoSydRQ0FBzzKhXKEnNKUxU0FWztFKq5OItSS0qL8qCCdgpG1ly1QDlNay4AFRodpA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLLCpKrFSwVYhW4OI01OHiNAJiYyA24YrlKi%2FKLEn1Ly0pKC3RUEgEKXQtSy2qhLJ1FDQUHPMqFcoSc0pTFTQVbO0Uqrk4i1JLSovyoIJ2CkZctUApTQCliBzp" target="_blank">Run Example</a>
 
 ```java
 array = [ 
@@ -42,7 +42,7 @@ Result: false
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxljkELgjAYhs%2F7fsWLJ4WhFXpJFDxUENSlY4QMWpfmlOmCEf73JhgYXR8envdtXC2MEQ4FriD2JsbO1WmHLYK9EfoZcE%2BqwwTSFbGR%2FzoXKxfGZv1vHNt%2BqWSpV%2BiWk1CqbtXd7zbzhVi%2BpHEhQlTaoZOmbzUiFCV8z8jBGj3TeGqVhX%2BU08gxGCs5MkQ53W3Thfi2PUCS4CFUL%2BkDrGE7rw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxljkELgjAYhs%2Fbr3jxpDC0Qi%2BBgocKgrp0jJCB89Kc8umCEf73JhgYXR8envdtXSWJpEOOOzh7c8au5eWAPYIjSfMMhCflaQbphrNJ%2FDo3q1bGbvtvnLthrWSpV%2FiDS62rTtd%2Btl0exOqlyIUIURqHXtHQGUTIC%2FgcqdGSWWg8p4p8PjQJjGSVQIaI17btQ3zLEUeSoJF6UB%2BQWTq5" target="_blank">Run Example</a>
 
 ```java
 my_array = [ 

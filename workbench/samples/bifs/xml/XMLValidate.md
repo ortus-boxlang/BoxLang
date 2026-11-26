@@ -2,10 +2,10 @@
 
 Validates that note.xml is valid according to the schema note.xsd. 
 
-<a href="https://try.boxlang.io/?code=eJyryM0JS8zJTEksSdVQUMooKSkottLXLy8v1ys3Lk7OyM%2FPKdZLzs%2FVr8jN0c%2FLL0nVAzKUdIhTWZyipKCpFxziGBIabM0FAPhjJN4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQqMjNCUvMyUxJLEnVUFDKKCkpKLbS1y8vL9crNy5OzsjPzynWS87P1Qeq08%2FLL0nVAzKUdIhTWZyipKCpFxziGBIarKAJADJcKeY%3D" target="_blank">Run Example</a>
 
 ```java
-xmlValidate( "https://www.w3schools.com/xml/note.xml", "https://www.w3schools.com/xml/note.xsd" ).STATUS
+writeOutput( xmlValidate( "https://www.w3schools.com/xml/note.xml", "https://www.w3schools.com/xml/note.xsd" ).STATUS )
 
 ```
 

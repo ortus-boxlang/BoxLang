@@ -2,7 +2,7 @@
 
 Deletes the first `apple` element from the array `arr`.
 
-<a href="https://try.boxlang.io/?code=eJxLLCpSsFWIVuDiVEosKMhJVdIBsvKLEvPSIcyC1MQiMMMRLMsVa82VWFSUWOmSmpNakuqX75xYnKqhABTSUYAqUdC05iovyixJdSnNLQBLgUQA9s0eFg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwtyjEKgDAQRNHanGJIZcArWIhWFqawFIstFgkEXdYE0dMraveY%2BaSKGhNMYUkksq0ebUrr8lGY9EXzvmY2pEpnx5ETD1tLO5d4pgp%2FAWcODYl9TpJTiX70w8gaKIbrS%2BHgbgDFI8k%3D" target="_blank">Run Example</a>
 
 ```java
 arr = [ 
@@ -75,7 +75,7 @@ arr = [
 ]
 writeDump( var=arr, label="Before" )
 arrayDeleteNoCase( arr, "suSi" )
-writeDump( var=arr, label="After" ); // boxlang
+writeDump( var=arr, label="After" ) // boxlang
 arrNew = [
 	"a",
 	"Ab",

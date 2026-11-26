@@ -2,7 +2,7 @@
 
 To get the largest numeric value of an array
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFVIBNF%2BqeUaCoYKmtZc5UWZJan%2BpSUFpSUaEDnfxAoNhWK4Dk2QKgDlCBWc" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFVIBNF%2BqeUaCoYKmlzlRZklqf6lJQWlJRoQKd%2FECg2FYrgGTQVNAKjcFRw%3D" target="_blank">Run Example</a>
 
 ```java
 someArray = arrayNew( 1 )
@@ -16,7 +16,7 @@ Result: 0
 
 Uses the arrayMax function to get the largest numeric value of an array
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNDLW4eI0MQUSFuZAwhDE44q15iovyixJ9S8tKSgt0VBIBGnwTazQUCiGa9dU0LTmAgAYNxUk" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNDLW4eI0MQUSFuZAwhDE44rlKi%2FKLEn1Ly0pKC3RUEgEqfdNrNBQKIbr1lTQBADdZBSk" target="_blank">Run Example</a>
 
 ```java
 someArray = [ 
@@ -36,7 +36,7 @@ Result: 87
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNDLW4eI0MQUSBkBsCOJwxVpzlRdllqT6l5YUlJZoKBTD9OjlJlZoaCpoWnMBAIh4EtQ%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNDLW4eI0MQUSBkBsCOJwxXKVF2WWpPqXlhSUlmgoFMO06OUmVmhoKmgCAFP1ElQ%3D" target="_blank">Run Example</a>
 
 ```java
 someArray = [ 

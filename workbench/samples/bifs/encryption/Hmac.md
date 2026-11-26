@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLyE1M1lBQyi1OV9JRUCpOTS5KLQGxPHwdnYM9HI1MzZQUNK25AOHlCjM%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLyE1M1lBQyi1OV9JRUCpOTS5KLQGxPHwdnYM9HI1MzZQUNAHNiQnu" target="_blank">Run Example</a>
 
 ```java
 hmac( "msg", "secret", "HMACSHA256" )
@@ -13,7 +13,7 @@ Result: fe4f9c418f683f034f6af90d1dd5b86ac0355dd96332c59cc74598d0736107f6
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJytkctqAjEUhvfzFAdXDljM5DJJkC5yG9x01foAg6Y6dC52JlJ8%2B8betKBSipBN%2FpN8%2BT%2FS%2BGEo1x7uYRQ21QBxlRD8EEaz5MXvD7nSJsMk7qdTWAxVu4aw8dD7113V%2BxU8V75eDdC19T7p%2FbCrQ7w0f1BmDM0nfAIHUjpL3voqeLtrtmP4OpnOIFI5zzlHlCAjCedC2byQmaZEUUWQzuXvl7ttqLq2rKGs110kbhrYln3Z%2BOB7GM%2Bbcvk4V1maHMdR4juOGldKTk6YV%2FoiKh0jWjlCpKEKMSa45VprhQXjjAonCkMw%2F0dvzPLzzePgNt0ZIpLKHGFnHSmKPDOCFtQ4lhkpnVNYxkipjFLlHGO44DbDKP6JypHl9oKTb5fd6pCeKC2eijuRJj%2BjKPMR%2FdljcsReMEpuovQOuK%2FlKw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJytkclqwzAURff%2BiodXMaREoyVRupAlmWy6avMBJlETUw%2BprVDy91U6JYWklBLQ6r6no3tQ68exWnu4gzRs6hHiqSD4MaTJs98fYl0YTGiazGawGOtuDWHjYfAvu3rwK3iqfbMaoe%2BafTL4cdeEeGd%2Br80E2g%2F0FA6gLHkd6uDtrt1O4HMxu4UIFSIXAjGKjKJCSG3zUuGCUc00RUWufj7cb0Pdd1UDVbPuI3HTwrYaqtYHP8Bk3lbLh7nGWXIcR4WvOP2t4vQEebktYspxWmhHqTJMI86lsKIoCk0kF5xJJ0tDifhHa8Lz873j4BrNOaKKqRwRZx0tyxwbyUpmHMdGKec0UTHSGjOmneOclMJiguJ%2F6BxZYS8Y%2BW7Zrw7pidDisbyRWfI9iirv0V8tpkfqWZ%2FkGj5v3Eni0w%3D%3D" target="_blank">Run Example</a>
 
 ```java
 message = "this is a test"

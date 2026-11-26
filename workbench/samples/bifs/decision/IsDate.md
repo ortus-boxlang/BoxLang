@@ -24,7 +24,7 @@ Result: No
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUMhJTErNsVUKzsxLz0lVyCvNTS3KTFYoS8wpTVXSAdJFtpnFfhBRl8SSVA0FQwVNBU1rrnIMIzzzSlLTU4vw6jWAAVyG%2BOWXa2hi15wHksKlD6QEn81KBob6IGSihMsE38y80mK8RugawgFOU4JLioAhideY1LTilDSoAQBonH0R" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUMhJTErNsVUKzsxLz0lVyCvNTS3KTFYoS8wpTVXSAdJFtpnFfhBRl8SSVA0FQwVNBU2ucgwTPPNKUtNTi%2FBqNYABHGb45ZdraGLXmweSwqENpAKfvUoGhvogZKKEwwDfzLzSYrwm6BrCAS5DgkuKgIGI15TUtOKUNLB%2BAFUSe6U%3D" target="_blank">Run Example</a>
 
 ```java
 writeDump( label="Single numeric value", var=isNumericDate( 1 ) )

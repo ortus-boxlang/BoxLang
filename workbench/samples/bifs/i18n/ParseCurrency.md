@@ -2,7 +2,7 @@
 
 LSParseCurrency converts a locale-specific currency string to a number.
 
-<a href="https://try.boxlang.io/?code=eJzLKQ5ILCpOdS4tKkrNS67UUFBSMTQy0DM1UFLQtOYCAKArCIo%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLKQ5ILCpOdS4tKkrNS67UUFBSMTQy0DM1UFLQBACPIQhF" target="_blank">Run Example</a>
 
 ```java
 lsParseCurrency( "$120.50" )

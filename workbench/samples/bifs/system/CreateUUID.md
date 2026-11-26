@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLLkpNLEkNDfV00dC05gIAJd4EQg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLLkpNLEkNDfV00dAEAB1kA%2F0%3D" target="_blank">Run Example</a>
 
 ```java
 createUUID()
@@ -13,7 +13,7 @@ Result: a lowercase 36-character UUID such as 3f2b8c1e-9d4a-4e6b-8a7c-5d1e2f3a4b
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FBwLkpNLEkNDfV00dBU0LTmAgBUzgZp" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLKc0t0FBwLkpNLEkNDfV00dBU0AQASAYGJA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 dump( CreateUUID() )

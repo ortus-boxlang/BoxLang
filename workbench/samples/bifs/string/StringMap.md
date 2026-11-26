@@ -2,7 +2,7 @@
 
 Map each element of the string to a new value.
 
-<a href="https://try.boxlang.io/?code=eJw1jTEKAjEQRWtzis9WE7S3CCt4ALHwBNk4rgMhhskEEfHuq6jtezxeZjPWhhFDnNKZL%2FMQXMq31pXfkLAvD0ip8Bh3eLqVsnUtSNeohNiSCP38Glv44F7B3VWMj91qN8LJVMp8iJWQv7MN%2FgP%2FCRae5Skm" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJw1jUEKwjAQRdfmFJ%2BuJui%2BqxZ6AHHhCWI6rQMhhsmEIsW7K6jb9%2BC9xGasFQO6cIszL2vnYnrUpvxhhCk%2FIbnAYxixu4OyNc2I96CEUKMI%2FfwRPbx7uU3F%2BNKsNCNcTSWv51AI6Xs64Z%2F38G%2FmjSgw" target="_blank">Run Example</a>
 
 ```java
 letters = "abcdefg"

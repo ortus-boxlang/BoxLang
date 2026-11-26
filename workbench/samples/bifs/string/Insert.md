@@ -2,7 +2,7 @@
 
 To add substring on prefix of the given string
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pysxLV7BVUFJIzigCCigkFeWXF6cWKVlzFaUWl%2BaUAOUy84ACJRoKSu75%2Bek5qUo6CsVwrToKBgqa1lzlRZklqf6lJQWlQHVQjUBhAKORIUA%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pysxLV7BVUFJIzigCCigkFeWXF6cWKXEVpRaX5pQApTLzgPwSDQUl9%2Fz89JxUJR2FYrhOHQUDBU2u8qLMklT%2F0pKCUqAyqD5NACkfIIU%3D" target="_blank">Run Example</a>
 
 ```java
 someString = " chrome browser"
@@ -17,7 +17,7 @@ Result: Google chrome browser
 
 To add substring on suffix of the given string
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pysxLV7BVUPJLLVcoKMosSyxJVcjNr8rMyUlUSMssSlWy5spJzUsvyQAqAjI0FIoR2jStucqLMktS%2FUtLCkpLNBQy84pTi4C0Ulp%2BhZIOkkodBagZmiA9ABjVKSI%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pysxLV7BVUPJLLVcoKMosSyxJVcjNr8rMyUlUSMssSlXiyknNSy%2FJAKoBMjQUihG6NLnKizJLUv1LSwpKSzQUMvOKU4uAtFJafoWSDpJCHQWoEZoKmgCC%2FChn" target="_blank">Run Example</a>
 
 ```java
 someString = "New private mozilla fire"

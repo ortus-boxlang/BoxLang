@@ -80,7 +80,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLK81NSi1yyy%2FKTSzRUDDUMzLWUVCKj9czMFBS0LTmAgChpwhp" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLK81NSi1yyy%2FKTSzRUDDUMzLWUVCKj9czMFBS0AQAkN8IJA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 numberFormat( 1.23, "__.00" )
@@ -93,7 +93,7 @@ Result: 1.23
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLK81NSi1yyy%2FKTSzRUDA0MtZRUIqP1zMwUFLQtOYCAJlbCDs%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLK81NSi1yyy%2FKTSzRUDA0MtZRUIqP1zMwUFLQBACI7wf2" target="_blank">Run Example</a>
 
 ```java
 numberFormat( 123, "__.00" )
@@ -106,7 +106,7 @@ Result: 123.00
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLK801VLBV8CvNTUotcssvyk0s0VAwNDLWUVAyAAElBU1rrrzSXCMciixBAKyovCizJNW%2FtKSgFCiZBzJWTUFJXwlIgrUDVQAAfnwdew%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLK801VLBV8CvNTUotcssvyk0s0VAwNDLWUVAyAAElBU2uvNJcIxxqLEEApKa8KLMk1b%2B0pKAUKJcHMlRNQUlfCUiCdWsCAA6%2BHMA%3D" target="_blank">Run Example</a>
 
 ```java
 num1 = NumberFormat( 123, "00000" )
@@ -121,7 +121,7 @@ Result: 00123/ 123
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLK801VLBV8CvNTUotcssvyk0s0VAw1VFQ0lZS0LTmyivNNcKQ1kXIlxdllqT6l5YUlALF80BmqSko6SsBSbBOoAoAb4AbLw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLK801VLBV8CvNTUotcssvyk0s0VAw1VFQ0lZS0OTKK801wpDVhUuXF2WWpPqXlhSUAoXzQCapKSjpKwFJsEZNAAjzGnQ%3D" target="_blank">Run Example</a>
 
 ```java
 num1 = NumberFormat( 5, "+" )
@@ -136,7 +136,7 @@ Result: +5/-5
 
 You could use dollarFormat() or lsCurrencyFormat() instead
 
-<a href="https://try.boxlang.io/?code=eJzLK81NSi1yyy%2FKTSzRUDA0MjYxNTO3sNRRUIpX0bHUs7RUUtC05gIA43AJvg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLK81NSi1yyy%2FKTSzRUDA0MjYxNTO3sNRRUIpX0bHUs7RUUtAEAM%2F%2BCXk%3D" target="_blank">Run Example</a>
 
 ```java
 numberFormat( 123456789, "_$,9.99" )
@@ -147,7 +147,7 @@ Result: $123,456,789.00
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJyFkMEOgjAMhu88RcPBQNjGhmhCPJJ4Ir7CMp0nMzAo728HMZuKW09L8%2FXb3%2BrJ3DPoJ3O%2BjsdhNOqZgWDVtiaQSsk4TyGH%2FABlObcTvcav49jFRoJPDqrX0IBRj9s%2FAwq4rUUQoBpbYYqJagaZz2IOGUsgbUUTSBahBBP8fRDuvi9gAzQWoQiI6YJQpyRwGYxRAR8Jr1Pv9h6Exo60fsTT5wCy3ff5f5HWrf0CltmjRQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJyFkMEOgjAMhu88RcPBQNjGhmhCPJJ4Ir7CMp0nMzAo7283A6LC1lPTfPn%2Btnow9wTawZyv%2FbHrjXomIFixLQnEUjLOY0ghPUCeu3Gkl%2FhlHKc4iLDloFoNFRj1uK0ZUMBtOYEHqmx5ISYKx7EZikvIULy0FYqXzA8JJvj4Cz5lZ7ABGsrP1rX0TdBJSODSGaM8NuK9pNztPwz6GlLP1zt984g2P1%2F%2FJ%2Brx4BfKLaB3" target="_blank">Run Example</a>
 
 ```java
 dump( numberFormat( 1.234, "__.00" ) ); // 1.23

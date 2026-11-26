@@ -2,10 +2,10 @@
 
 BoxLang dates are DateTime values, not instances of `java.util.Date`.
 
-<a href="https://try.boxlang.io/?code=eJzLLPbMKy5JzEtO9U%2FTUMjLL9fQ1FFQykosS9QrLcnM0XNJLElVUtC05gIAKTkNDA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyCz2zCsuScxLTvVP01DIyy%2FX0NRRUMpKLEvUKy3JzNFzSSxJVVLQVNAEAB0QEhQ%3D" target="_blank">Run Example</a>
 
 ```java
-isInstanceOf( now(), "java.util.Date" )
+writeOutput( isInstanceOf( now(), "java.util.Date" ) )
 
 ```
 

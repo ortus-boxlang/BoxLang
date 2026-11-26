@@ -2,7 +2,7 @@
 
 Generate an AES 128 bit key and then use it to encrypt and decrypt a secret.
 
-<a href="https://try.boxlang.io/?code=eJxLrVCwVaiuteZKrdDzdo0EctJT81KLEktSg1OTi1JLvFMrNRSUHF2DlRQ0wYqCXZ2DXEOA6pRK8gsUisGKlMAyrn7OQZEBIa4uQMnUvOSiyoISDQW4Dh0FiA06ENOAlFNicaqZCcxcF1eE7pRUhG64qXgNKC%2FKLEl1Kc0tAOkBCQAA8t497g%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLrVCwVaiu5Uqt0PN2jQSy01PzUosSS1KDU5OLUku8Uys1FJQcXYOVFDRBaoJdnYNcQ4DKlEryCxSKwWqUQBKufs5BkQEhri5AudS85KLKghINBbgGHQWI%2BToQs4CUU2JxqpkJ1FQXV4TmlFSEZrih%2BPSXF2WWpLqU5haAtChoAgBmjDyC" target="_blank">Run Example</a>
 
 ```java
 ex = {}
@@ -19,7 +19,7 @@ Result: a struct where DECRYPTED is `top secret`
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJzLTq1UsFVIT81LLUosSQ1OTS5KLfFOrdRQUHLy8Q938wz2UFLQtOYqSS0ucc1LLqosKAEqT4WwgIqKE9NS4%2FNLi%2BJLilJTlXQUslMrdZC0AtlJicWpZiZwQ1xSYYakpEINQTKbgAHlRZklqS6luQUQTTCzgDIAOTM%2FrQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLTq1UsFVIT81LLUosSQ1OTS5KLfFOrdRQUHLy8Q938wz2UFLQ5CpJLS5xzUsuqiwoAapOhbCAaooT01Lj80uL4kuKUlOVdBSyUyt1kHQC2UmJxalmJjAzXFJhZqSkQs1AMhq%2F%2FvKizJJUl9LcAogemFGaABcUPrc%3D" target="_blank">Run Example</a>
 
 ```java
 key = generateSecretKey( "BLOWFISH" )

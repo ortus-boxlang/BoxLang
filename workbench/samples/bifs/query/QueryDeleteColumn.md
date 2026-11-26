@@ -2,7 +2,7 @@
 
 Builds a simple query and removes the 'id' column.
 
-<a href="https://try.boxlang.io/?code=eJxdjjEPgjAQhef2V1w6QdJFR42TTCbAgJtxaOTUxtJqudqg8b9bYNLtvcv3XZ7F2MMGHgH9UGHMQOhWkiaDQqZsCS%2Fo5VP501X5dDoAZ2%2FOWMIErGAhxzzzqYoCIw7Q4hkV9bD3oVNWcPaRP9byzyqVhajMrQdnoXRuUvgR8jWfhhVokHDrTOhsBjZNHrelVwmIXhPWge6BMtg1ddWg18roF84k5CP1BWVRQ84%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxdjjEPwiAQhWf4FRemkrDoaOJkJxPboW7GgdhTiRSUHpJq%2FO%2FSdtLtvcv3XZ7D1MMaHhHDUGEqQJhWkSGLQuXsCC8Y1FOH01WHfDoAZ2%2FOWMYErGChxjzzuYoSEw7Q4hk19bAPsdNOcPZRP9byz9ppB0nbWw%2Fewc77SeFHkHzaVaJFwo23sXMFuLx4nJY%2FSZ6CIawj3SMVsG3qqsFgtDUvnEGQIL9iJUMT" target="_blank">Run Example</a>
 
 ```java
 news = queryNew( "id,title", "integer,varchar", [ 
@@ -24,7 +24,7 @@ Result: {"COLUMNS":["TITLE"],"DATA":[["Dewey defeats Truman"],["Man walks on Moo
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJyFkDFrwzAQRmfpVxw3pXAUrGwNmRIKhTQZ2k4hgy0EMTi1rUiN5NL%2FXiu%2BQlUCnd7wJPE99TYWsITeGxu35jIDLKkijQT4UVp9LC394aj2IMVeCoFlgZRYMXWBUhzoxyq2TK0yO2fL1PNk5QHuFvI6Z20a48yqbfzpfQb9OHQcpTH5i62d2XnXeTeZ%2B9Vu8%2Fa83Ty9vF7v26jyqkCRhn%2BqeFjgmMgcsqjAMZE5ZFGBYyJz%2BBVVhYembbtp1RLTRoRPKW7HKoKmPrvH2p6nRpU1pge%2Fpn9Y%2B1N348RCfgMC83jX" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJyFkDFrwzAQRmfpVxw3JXAUrGyFTAmFQpoMbaeQwRaCGpzaVqRGcsh%2Fr1xfKCqBTm94kvieehsLWELvjY1bc54BllSRRgL8Kq3%2BKC39YVJ7kGIvhcCyQBpZMXWBUhzoZhVbplaZXbBl6sVo5QHm8mfN2jTGmVXb%2BOPnDPq0M23SmPTZ1s7svOu8m8TDard5f9lunl%2Ffxts2qjwpUKThnyReFbgkMoesKHBJZA5ZUeCSyBx%2Bi6rw2LRtN41a4jgR4SLF%2FVJF0NQn91Tb01SossL03nX6hLU%2FdncOfAPnwXdr" target="_blank">Run Example</a>
 
 ```java
 qry1 = queryNew( "a,b,c", "varchar,varchar,varchar", [ 

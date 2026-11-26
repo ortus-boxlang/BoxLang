@@ -57,7 +57,7 @@ Result: 3
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwljrEOwjAMROf4KyxPrZS1Q0GdYGFB6sJSdQhgQQVJi0lUIsS%2Fk7TLDc9357OxlYgNtoElHnkukIardsYyaaSD83xj0Scju7uRhDoE1YFSda2T0tsSqF6vrKoWZh%2BZQY%2FlFs6fzXMcJ3zl%2BoZs%2Fkb4BTXL4Hkf7FSst0sQYedlTAsWF5Y5%2F4M%2FB6Itlg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLrQwsqlSwVQgsTS2q9Est11BQykzRyUvMTVXSUVDyzCtJTU8t0glLLHLOSCwCCkUrcHFGc3FyWlrqAEml4lwlLs5YHYiYqSlYLDcbJMYVq6DJlVRhlZOfX6BQCDLdVikXZJmSQjUXZ3lRZkmqS2lugQZELrm0qCg1r6QoH%2BgAsCoFTaD2WgCG0i0W" target="_blank">Run Example</a>
 
 ```java
 myQry = QueryNew( "id,name", "Integer,VarChar", [ 

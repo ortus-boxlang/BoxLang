@@ -2,10 +2,10 @@
 
 Pass in a true value outputs Yes
 
-<a href="https://try.boxlang.io/?code=eJyrTC32y3fLL8pNLNFQKCkqTVXQtOYCAFcYBw4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQqEwt9st3yy%2FKTQRySopKUxU0FTQB5pAMFg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-yesNoFormat( true )
+writeOutput( yesNoFormat( true ) )
 
 ```
 
@@ -15,22 +15,10 @@ Result: Yes
 
 Pass in a false value outputs No
 
-<a href="https://try.boxlang.io/?code=eJyrTC32y3fLL8pNLNFQSEvMKU5V0LTmAgBeoAdZ" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQqEwt9st3yy%2FKTQRy0hJzilMVNBU0AfMcDGE%3D" target="_blank">Run Example</a>
 
 ```java
-yesNoFormat( false )
-
-```
-
-Result: No
-
-### Example of empty string
-
-Pass in an empty string outputs No
-
-
-```java
-yesNoFormat( "" )
+writeOutput( yesNoFormat( false ) )
 
 ```
 

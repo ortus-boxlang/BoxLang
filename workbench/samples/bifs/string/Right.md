@@ -2,7 +2,7 @@
 
 In this example we'll use right() to return part of a string.
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKMpMzwBSSiEZqQqFpZnJ2QpJRfnleQpp%2BRUKWaW5BakpCvllqUUKJUD5nMSqSoWU%2FHQlHQULBU0FTWsuAAmGGTk%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKMpMzwBSSiEZqQqFpZnJ2QpJRfnleQpp%2BRUKWaW5BakpCvllqUUKJUD5nMSqSoWU%2FHQlHQULBU0FTQDXDxj0" target="_blank">Run Example</a>
 
 ```java
 writeOutput( right( "The quick brown fox jumped over the lazy dog", 8 ) )
@@ -15,7 +15,7 @@ Result: lazy dog
 
 In this example we'll use a negative count right() to return part of a string.
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKMpMzwBSSiEZqQqFpZnJ2QpJRfnleQpp%2BRUKWaW5BakpCvllqUUKJUD5nMSqSoWU%2FHQlHQVdYyMFTQVNay4APN0Zkw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKMpMzwBSSiEZqQqFpZnJ2QpJRfnleQpp%2BRUKWaW5BakpCvllqUUKJUD5nMSqSoWU%2FHQlHQVdYyMFTQVNAAnBGU4%3D" target="_blank">Run Example</a>
 
 ```java
 writeOutput( right( "The quick brown fox jumped over the lazy dog", -32 ) )

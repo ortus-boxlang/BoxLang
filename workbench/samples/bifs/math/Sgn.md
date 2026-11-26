@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrTs%2FTUNAzVtC05gIAEo4CgA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKE7P01DQM1bQVNAEAG%2FeB4g%3D" target="_blank">Run Example</a>
 
 ```java
-sgn( .3 )
+writeOutput( sgn( .3 ) )
 
 ```
 
@@ -15,10 +15,10 @@ Result: 1
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrTs%2FTUDBQ0LTmAgAP2gJP" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKE7P01AwUNBU0AQAaCYHVw%3D%3D" target="_blank">Run Example</a>
 
 ```java
-sgn( 0 )
+writeOutput( sgn( 0 ) )
 
 ```
 
@@ -28,10 +28,10 @@ Result: 0
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrTs%2FTUNDVM1bQtOYCABVaAq0%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKE7P01DQ1TNW0FTQBAB3rge1" target="_blank">Run Example</a>
 
 ```java
-sgn( -.3 )
+writeOutput( sgn( -.3 ) )
 
 ```
 

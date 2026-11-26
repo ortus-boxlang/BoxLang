@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrdU4sTtVQUHJ2c8lPLlYIyk%2FOVlLQtOYCAFxoBs0%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKHVOLE7VUFBy8nHJTy5WCMpPzlZS0FTQBAD7Ngva" target="_blank">Run Example</a>
 
 ```java
-uCase( "BLDocs Rock" )
+writeOutput( uCase( "BLDocs Rock" ) )
 
 ```
 

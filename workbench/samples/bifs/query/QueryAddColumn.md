@@ -22,7 +22,7 @@
 
 add a column to a query using member syntax
 
-<a href="https://try.boxlang.io/?code=eJxLys%2FPLlawVSgsTS2q9Est11BQykzRKcksyUlV0gGy80pS01OLdMoSi5IzEouUFDStuZJAWvQSU1Kc83NKc%2FOAOhJLSzLyi0DqYep0FKJjQWrLizJLUl1Kcws0FMDaQGIAukUlgg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLys%2FPLlawVSgsTS2q9Est11BQykzRKcksyUlV0gGy80pS01OLdMoSi5IzEouUFDS5kkA69BJTUpzzc0pz84AaEktLMvKLQMphynQUomOBSsuLMktSXUpzCzQUwLoUNAEtJSTH" target="_blank">Run Example</a>
 
 ```java
 books = queryNew( "id,title", "integer,varchar" )
@@ -34,7 +34,7 @@ writeDump( books )
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrLKpUsFUoLE0tqvRLLddQUEpMTNRJSkpSUtC05goECTumpATlA2UKgSphYsGpJc6pOTlgQR2wHiUgZahnqIRLCchIsBIjckw2ImyyEZrJzvk5pbl5MEXJyclARTmZxSUh%2BY5FRYmVQJ8a6xnqGIN14daXkpICMjwzryQ1PbUIwwgToBEmcCPKizJLUl1KcwvAuvWc%2FX1Cff18PINDQJIAVuJqfw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrLKpUsFUoLE0tqvRLLddQUEpMTNRJSkpSUtDkCgSJOqakBOUDJQqBCqFCwaklzqk5OWAxHbAOJSBlqGeohEMFyDywCiPSjTUiaKwRqrHO%2BTmluXkwNcnJyUA1OZnFJSH5jkVFiZVALxrrGeoYgzXh1JaSkgIyOjOvJDU9tQjDBBOgCSYwE8qLMktSXUpzC8Ca9Zz9fUJ9%2FXw8g0MUNAFF0Ggn" target="_blank">Run Example</a>
 
 ```java
 qry = queryNew( "aaa,bbb" )

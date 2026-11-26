@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrSnUtTk4sSNVQUNLSq66Njk2tSMy1L8hJVVLQtOYCAJ2GCXY%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKEp1LU5OLEjVUFDS0quujY5NrUjMtS%2FISVVS0FTQBABaMQ5%2B" target="_blank">Run Example</a>
 
 ```java
-reEscape( "*.{}[]exam?ple" )
+writeOutput( reEscape( "*.{}[]exam?ple" ) )
 
 ```
 

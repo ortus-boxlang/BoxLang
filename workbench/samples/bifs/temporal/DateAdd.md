@@ -2,7 +2,7 @@
 
 Add 30 days to August 3rd, 2014.
 
-<a href="https://try.boxlang.io/?code=eJxLSSxJdUxJ0VBQSlHSUTA20FFQstA31jcyMDRRUtC05gIAhqsG9Q%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLSSxJdUxJ0VBQSlHSUTA20FFQstA31jcyMDRRUtAEAHjLBrA%3D" target="_blank">Run Example</a>
 
 ```java
 dateAdd( "d", 30, "8/3/2014" )
@@ -15,7 +15,7 @@ Result: {ts '2014-04-07 00:00:00'}
 
 Subtract 30 days from August 3rd, 2014.
 
-<a href="https://try.boxlang.io/?code=eJxLSSxJdUxJ0VBQSlHSUdA1NtBRULLQN9Y3MjA0UVLQtOYCAI3mByI%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLSSxJdUxJ0VBQSlHSUdA1NtBRULLQN9Y3MjA0UVLQBAB%2FrAbd" target="_blank">Run Example</a>
 
 ```java
 dateAdd( "d", -30, "8/3/2014" )
@@ -28,7 +28,7 @@ Result: {ts '2014-02-06 00:00:00'}
 
 Here we're adding 8 weeks to the date August 3rd, 2014.
 
-<a href="https://try.boxlang.io/?code=eJxLSSxJdUxJ0VBQKi9X0lGw0FFQstA31jcyMDRRUtC05gIAjpQHVA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLSSxJdUxJ0VBQKi9X0lGw0FFQstA31jcyMDRRUtAEAH%2F2Bw8%3D" target="_blank">Run Example</a>
 
 ```java
 dateAdd( "ww", 8, "8/3/2014" )
@@ -41,10 +41,10 @@ Result: {ts '2014-05-03 00:00:00'}
 
 Here we're adding 1 day to the current date/time.
 
-<a href="https://try.boxlang.io/?code=eJxLLkpNLEl1AWINBSMDIyMdBUMDIFbQ1EtMSdFQUEpRAvOsuQDtZQnG" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQSC5KTSxJdQFiDQUjAyMjHQVDAyBW0NRLTEnRUFBKUQLzFDQB4TwOzg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-createDate( 2022, 10, 1 ).add( "d", 1 )
+writeOutput( createDate( 2022, 10, 1 ).add( "d", 1 ) )
 
 ```
 
@@ -52,7 +52,7 @@ Result: {ts '2022-10-02 00:00:00'}
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJyV0LsKwzAMBdA9XyEyuRDIY8jSqZ%2FiWgIbbLn4QcjfV%2B1aqGNpEVzuGTTPUCzBk3w8wEQkcGwSBeKSYV0gOO9dJhMZs0SgTanaA%2BpCA9bwUt%2Fzgahg9OMklQk4HuoGsvdh%2FsfvC1yUs8h7nxwc10JNmTvlDWysqclaYbfr6irVs2Xi5709ZohcbEsNvepJOrXQU%2BbHfQOok8Hu" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJyV0DEKwzAMBdA9pxCZUgg4yZC9R3EtgQ22XGKb4NtX6dihjqVF8PlvkFKQLcGLfDzBRCRwbA4KxDnBukBw3rtEJjImiUCbXLQH1JkGLOE9fc8n4gSjH2epzMDxnB4gO6h%2F%2Br7ATTgJvHfBwXHJ1IS5D97AxnI0VSvqdhtdpVlbJF6v7SBD5GxbaOhEK%2BmjZVaZH%2FYDNG7ARw%3D%3D" target="_blank">Run Example</a>
 
 ```java
 // the below code increments 10 milliseconds in actual date

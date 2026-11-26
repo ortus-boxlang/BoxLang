@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLLCpSsFVILCpKrAxKzEtP1VBQMtLTM1VS0LTmKi%2FKLEn1Ly0pKC0BCodkZBZDFCpkJBYrKCmoQXg%2BqXkaIJaCJlBESSE1JzU3Na%2BkWA9sBACINxyk" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLLCpSsFVILCpKrAxKzEtP1VBQMtLTM1VS0OQqL8osSfUvLSkoLQGKhmRkFkPUKWQkFisoKahBeD6peRogloImUERJITUnNTc1r6RYD2gCADghHCQ%3D" target="_blank">Run Example</a>
 
 ```java
 arr = arrayRange( "2..5" )
@@ -16,7 +16,7 @@ Result: This array has 4 elements.
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLLCpSsFVILCpKrAxKzEtP1VAw1VEwNFDQtOYqL8osSfUvLSkoLdFQUArJyCyGqFPISCxWUFJQg%2FB8UvM0QCwFTaCIkkJqTmpual5JsZ4SyAgAdvQcfw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLLCpSsFVILCpKrAxKzEtP1VAw1VEwNFDQ5CovyixJ9S8tKSgt0VBQCsnILIYoU8hILFZQUlCD8HxS8zRALAVNoIiSQmpOam5qXkmxnpKCJgAnTRv%2F" target="_blank">Run Example</a>
 
 ```java
 arr = arrayRange( 5, 10 )

@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrLizSUDA0MVHQtOYCABY1AsY%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKC4s0lAwNDFR0FTQBAB4iQfO" target="_blank">Run Example</a>
 
 ```java
-sqr( 144 )
+writeOutput( sqr( 144 ) )
 
 ```
 

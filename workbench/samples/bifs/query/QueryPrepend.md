@@ -2,7 +2,7 @@
 
 Add new query to the end of the current query using queryPrepend.
 
-<a href="https://try.boxlang.io/?code=eJydjT0LwjAQhufkVxw3VchgFQcVNycHcS9Fgj1swJzxbA3%2Be9PgB4iT6%2FN%2BPGw9XWEFl57kvqVYAJIPp71rDKcIDaDjjo4k5mbl0FpJqAKtKq3Uq4qwgHIynZuB5VkCuDm3jFrVuobRUjNF%2Fsv1QzUbl18qy%2FRR5f%2BdUCBuCshWA29%2FKkRxHa17H57pwB6jRE3t" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJydzTELwjAQBeA59yuOTA1ksIqDgpuTg7iXIsEeNmCv8WwN%2Fntj0A7i5PrevfvYdXTDDV5HkseeYoGaunA5%2BsZyqrRF7XmgM4m9Ozm1TlJUIagKlPqcalxjOV%2Bs7CvLsxToXd%2ByBlVDjQaYIv9F%2FZCWs%2FJLckyTlN8fhAJxU2BGLU68gSh%2BoO3YhXeJ5gky%2BUz3" target="_blank">Run Example</a>
 
 ```java
 names = queryNew( "empl_id,name", "integer,varchar", [ 
@@ -25,7 +25,7 @@ writeDump( names )
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJydjrEKwjAQhufkKY5MFTqU4qQ4FBRBsCjqJB1CPdoMifWaWER8d5OWYmen%2B%2Fnu%2BL%2Bz2NqjQ3rBCh5h5thFIIzUCDHICkUM4imprCV5YJxGUqWHb%2BAsz%2FYbWMCVMyZOrlUiDulCreCs8Dnbjus0Cat07jn%2FwGzJDXbnf9W%2BcFBqZevemSaDsMe7e23ET1cEXd9%2FIGzQ3CKwo9m3Tv%2Fwhx0pi2unm8lV4F%2FIalIe" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJydjrEKwjAQhufkKY6bWuhQipPgUFAEwaKok3QI9bAZEmuaWER8d6%2BVYmenO77%2F%2BL%2Fz1Pp9IPeEBdz7WVAXAVplCBJQV8IE8KFcVSvHwAZDTlcMXyBFkW9XMIezFAIPodWY9NvJtShFyXu%2BHuMs7aNsxly%2BIZaWuuO%2FZu77Go329aDM0q9vwJtbbfFnK9k21O8cNWQvEfhRzKXTN2LZOe1pGUwzOYL4A0YkUSg%3D" target="_blank">Run Example</a>
 
 ```java
 testQuery = queryNew( "name , age", "varchar , numeric", { 

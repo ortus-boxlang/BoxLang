@@ -2,7 +2,7 @@
 
 Creates a struct then removes a key
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVqFbg4nRUsFIw1OHidALSRly11lzFYFmX1JzUklQNhWK4eh0FpUQlBU1rrvKizJJUl9LcAmRZkAQA87UcEg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVqFbg4nRUsFIw1OHidALSRly1XMVgSZfUnNSSVA2FYrhyHQWlRCUFTa7yosySVJfS3AJkSQVNAI2zG1c%3D" target="_blank">Run Example</a>
 
 ```java
 someStruct = { 
@@ -20,7 +20,7 @@ Result: a struct with one key-value pair: B = 2
 
  Invoking the delete function on a struct is the same as running structDelete.
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVqFbg4nRUsFIw1OHidALSRly11lzFcBV6Kak5qSWpGgpKiUoKmtZc5UWZJakupbkFGgoIRSAJACeFGW8%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVqFbg4nRUsFIw1OHidALSRly1XMVwBXopqTmpJakaCkqJSgqaXOVFmSWpLqW5BRoKCDUKmgDK%2Bhi0" target="_blank">Run Example</a>
 
 ```java
 someStruct = { 
@@ -36,7 +36,7 @@ Result: a struct with one key-value pair: B = 2
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxljsEKgkAURdfNV1xmo4HgvnAhCtGqwKD1qC8URyfGMYno39NxCqTV43LuuxzR1a2QPSK8wDbJ6YodeKsUD9jmfDzMSdVdM8ckvlhIauTsvWdhiKxSI4pBa%2BoMxDLF0qG9%2B5AiJxnxZA15gIfQkUvY2pWUJBmCqQgNPeEVwni4adWiN3ooDMvsWWr%2BdyoAn4rcbViTH5kAKtEjJ%2BpQ2r9y7RU7g7E2la271r%2FgB5NlXFk%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxdjkELgkAQhc%2Fur3jsRQPBe%2BBBFKJTgUHnVSdWXN1Y1ySi%2F56uFthpePO%2BefNEV7dC9YjxAvPS0xV78FZrHjLvfDzMStddM8s0uTiT9MjZm0URcqlHlIMx1FmIJYllQ3sPoERBKubp1uQhHsLEq8JuDslIkSVYSWjoCb8U1sfN6Ba9NUNpWe7GggXfpBB8AvkS4Xr8jGkPKXoURB0qd1ZtWyXr%2F7G20uEr9V%2FvA%2FmhW2M%3D" target="_blank">Run Example</a>
 
 ```java
 animals = { 

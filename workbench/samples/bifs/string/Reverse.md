@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrSi1LLSpO1VBQ8kjNyclXCM8vyklRUtC05gIAevgIMw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKEotSy0qTtVQUPJIzcnJVwjPL8pJUVLQVNAEACOTDTs%3D" target="_blank">Run Example</a>
 
 ```java
-reverse( "Hello World" )
+writeOutput( reverse( "Hello World" ) )
 
 ```
 
@@ -15,10 +15,10 @@ Result: dlroW olleH
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrSi1LLSpO1VAwNDI2MTUzt7BU0LTmAgBO9QWw" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKEotSy0qTtVQMDQyNjE1M7ewVNBU0AQA43EKuA%3D%3D" target="_blank">Run Example</a>
 
 ```java
-reverse( 123456789 )
+writeOutput( reverse( 123456789 ) )
 
 ```
 

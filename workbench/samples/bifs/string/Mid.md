@@ -2,10 +2,10 @@
 
 Grabs the month out of a raw date yyyymmdd value.
 
-<a href="https://try.boxlang.io/?code=eJzLzUzRUFAyMjAwMDQ0MlLSUVAyBRFGSgqa1lwAXLcFZA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyM1M0VBQMjIwMDA0NDJS0lFQMgURRkoKmgqaABReCmw%3D" target="_blank">Run Example</a>
 
 ```java
-mid( "20001122", "5", "2" )
+writeOutput( mid( "20001122", "5", "2" ) )
 
 ```
 

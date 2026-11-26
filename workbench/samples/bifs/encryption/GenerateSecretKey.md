@@ -2,7 +2,7 @@
 
 Generate an AES key and use it to encrypt and decrypt a secret.
 
-<a href="https://try.boxlang.io/?code=eJxLrVCwVaiuteZKrdDzdo0EctJT81KLEktSg1OTi1JLvFMrNRSUHF2DlRQ0wYqCXZ2DXEOA6pRK8gsUisGKlMAyrn7OQZEBIa4uQMnUvOSiyoISDQW4Dh0FiA06ENOAlFNicaqZCcxcF1eE7pRUhG64qXgNKC%2FKLEl1Kc0tAOkBCQAA8t497g%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLrVCwVaiu5Uqt0PN2jQSy01PzUosSS1KDU5OLUku8Uys1FJQcXYOVFDRBaoJdnYNcQ4DKlEryCxSKwWqUQBKufs5BkQEhri5AudS85KLKghINBbgGHQWI%2BToQs4CUU2JxqpkJ1FQXV4TmlFSEZrih%2BPSXF2WWpLqU5haAtChoAgBmjDyC" target="_blank">Run Example</a>
 
 ```java
 ex = {}
@@ -17,7 +17,7 @@ writeDump( ex )
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLrVCwVaiuteZKrdBz9HH3B%2FKUgpxNlMACYY4%2Boa4gEVNTE0MjI4igt2skUMg9NS%2B1KLEkNTg1uSi1xDu1UkMBZoImWJmrnzNQmWteclFlQQlYEmyajgLECB005S6uIOUuqQjlQAOwKk4pzS0AKQCxAaeBNOk%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLrVCwVaiu5Uqt0HP0cfcHcpSCnE2UQPwwR59QV5CAqamJoZERWMzbNRIo4p6al1qUWJIanJpclFrinVqpoQDTrwlS5ernDFTlmpdcVFlQApYDm6WjADFBB1W1iytItUsqQjVQPza1KaW5BSB5BU0AJ%2F4zQg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 ex = {}

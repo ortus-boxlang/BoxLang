@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLyy%2FKTSwpSU3xzCtRsFVISU3OzE3McQOLaigYGhkraFor6OuDWHoGBlzlRZklqf6lJQWlQNk0ZL1qCko2SUV2SkD1XHCJ8MySjODUgsSixJL8omIs5huAAcwOHSAbhHHbhGYgVktdIHZg2mZpYa5naAq1DMLBYQ3MCKzmB%2BWX5qWkpoQWYNpgYmqmZ25hCbUCzLNU0FUoAukoVigtwGEdwkRkCwEqj4HW" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLyy%2FKTSwpSU3xzCtRsFVISU3OzE3McQOLaigYGhkraFor6OuDWHoGBlzlRZklqf6lJQWlQNk0ZL1qCko2SUV2SgqaXHDx8MySjODUgsSixJL8omIsxhuAAcwKHSAbhHFbhGYgNjtdIFZgWmZpYa5naAq1C8LBYQvMCGzGB%2BWX5qWkpoQWYFpgYmqmZ25hCbUBzLNU0FUoAukoVigtwGEbwkSEfQDbVYDg" target="_blank">Run Example</a>
 
 ```java
 formattedInt = decimalFormat( 123 ); // 123.00
@@ -21,7 +21,7 @@ Result: 123.00, 1,000,000.00, 987.15 and 456.79, each followed by a line break
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQSElNzsxNzHHLL8pNBHKVTEyVFDQV1BSUbJKK7IBMawV9fQUTUz0DA65yPPqMzIC6NK25QKqNzICqrbkAdSIdMg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQSElNzsxNzHHLL8pNBHKVTEyVFDQV1BSUbJKK7IBMawV9fQUTUz0DA65yPPqMzIC6NLlAio3MgIoBHSscsg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 writeOutput( decimalFormat( "45" ) & "<br>" ); // 45.00

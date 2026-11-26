@@ -2,10 +2,10 @@
 
 This example strips out all characters except a-z and 0-9.
 
-<a href="https://try.boxlang.io/?code=eJwrSg1KLchJTE71y3dOLE7VUFAqSS0uUTA0MlZU0lFQio5L1K0y0LWMBXFA2NHHR0lB05oLAOdQDrs%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKEoNSi3ISUxO9ct3TixO1VBQKkktLlEwNDJWVNJRUIqOS9StMtC1jAVxQNjRx0dJQVNBEwAmchPD" target="_blank">Run Example</a>
 
 ```java
-reReplaceNoCase( "test 123!", "[^a-z0-9]", "", "ALL" )
+writeOutput( reReplaceNoCase( "test 123!", "[^a-z0-9]", "", "ALL" ) )
 
 ```
 
@@ -15,10 +15,10 @@ Result: test123
 
 Uses a back reference: \1 to extract the pattern contained within the parenthesis.
 
-<a href="https://try.boxlang.io/?code=eJwrSg1KLchJTE71y3dOLE7VUFAyNDJOTEo2MTVT0lFQijbQtYzV1ohO1K2K1daE8EDiMYZKCprWXAA%2B8RAd" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKEoNSi3ISUxO9ct3TixO1VBQMjQyTkxKNjE1U9JRUIo20LWM1daITtStitXWhPBA4jGGSgqaCpoAnBwVJQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
-reReplaceNoCase( "123abc456", "[0-9]+([a-z]+)[0-9]+", "\1" )
+writeOutput( reReplaceNoCase( "123abc456", "[0-9]+([a-z]+)[0-9]+", "\1" ) )
 
 ```
 

@@ -4,7 +4,7 @@ Tests whether a StringBuilder ends with a given substring.
 
 ```java
 sb = sb{'Hello BoxLang'}
-result = endsWith( sb, 'Lang' )
+result = stringBuilderEndsWith( sb, 'Lang' )
 writeOutput( result )
 ```
 

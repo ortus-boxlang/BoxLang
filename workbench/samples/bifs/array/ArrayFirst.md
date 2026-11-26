@@ -2,7 +2,7 @@
 
 Use the member function to return the first item from an array
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNNTh4jQCYmMgNuGKteYKL8osSfUvLSkoLdFQKIap1kvLLCou0dBU0LTmAgBj2hK%2B" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNNTh4jQCYmMgNuGK5QovyixJ9S8tKSgt0VAohinWS8ssKi7R0FTQBAAv5RI%2B" target="_blank">Run Example</a>
 
 ```java
 someArray = [ 
@@ -21,7 +21,7 @@ Result: 1
 
 Return the first item from an array
 
-<a href="https://try.boxlang.io/?code=eJwrTs3MS0vNSXEsKkqsVLBViFbg4lTySi0qqlTSAbJccxIz81LBTO%2BixNzUIjDTPTW%2FKD1ViSvWmiu8KLMk1b%2B0pKC0REMhEWSIW2ZRMZBdjGKwpoKmNRcA%2Bq4hVg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrTs3MS0vNSXEsKkqsVLBViFbg4lTySi0qqlTSAbJccxIz81LBTO%2BixNzUIjDTPTW%2FKD1ViSuWK7wosyTVv7SkoLREQyERZIZbZlExkF2MYq6mgiYAnEog1g%3D%3D" target="_blank">Run Example</a>
 
 ```java
 seinfeldArray = [ 

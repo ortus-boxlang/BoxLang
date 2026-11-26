@@ -2,7 +2,7 @@
 
 To check an array element is define or not
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNNTh4jQCYmMgNgFiU65Ya67yosySVP%2FSkoLSEg2FRJBqz2KX1LTMvNQUDYVimAk6CsYKmgqa1lwAtkgXRQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNNTh4jQCYmMgNgFiU65YrvKizJJU%2F9KSgtISDYVEkGLPYpfUtMy81BQNhWKYAToKxgqaCpoAddIWxQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
 someArray = [ 
@@ -22,7 +22,7 @@ Result: true
 
 To check an array element is define or not
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNNTh4jQCYmMgNgFiU65Ya67yosySVP%2FSkoLSEg2FRJBqz2KX1LTMvNQUDYVimAk6CmYKmgqa1lwAtl0XSA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNNTh4jQCYmMgNgFiU65YrvKizJJU%2F9KSgtISDYVEkGLPYpfUtMy81BQNhWKYAToKZgqaCpoAdeEWyA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 someArray = [ 
@@ -42,7 +42,7 @@ Result: false
 
 To check an array element is define or not
 
-<a href="https://try.boxlang.io/?code=eJxzyywqLnEsKkqsVLBViFbg4jTU4eI0AmJjrlhrruLU5Py8FLg0UBYkbQiSNwQrSM7PTcrMS4WpSATRfqnlGgpGCprWXGCuY0FBal6KhgKyUh2FNIS9%2BBUiOwGosrwosyTVv7SkoLREA2KdZ7FLahpQPYZOYwVNkA4AntpGyg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxzyywqLnEsKkqsVLBViFbg4jTU4eI0AmJjrliu4tTk%2FLwUuCxQEiRrCJI2BMkn5%2BcmZealwhQkgmi%2F1HINBSMFTS4wz7GgIDUvRUMBWaWOQhrCUrzqkO3X5CovyixJ9S8tKSgt0YDY5VnskpoGVI6h0VhBU0ETAPiSRV4%3D" target="_blank">Run Example</a>
 
 ```java
 FirstArray = [ 
@@ -68,7 +68,7 @@ Result: false
 
 To check an array element is define or not
 
-<a href="https://try.boxlang.io/?code=eJxzyywqLnEsKkqsVLBViFbg4jTU4eI0AmJjrlhrruLU5Py8FLg0UBYkbQiSNwQrSM7PTcrMS4WpSATRfqnlGgpGCprWXGCuY0FBal6KhgKyUh2FNIS9%2BBUiOwGosrwosyTVv7SkoLREA2KdZ7FLahpQPYZOoBNAOgCe00bJ" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxzyywqLnEsKkqsVLBViFbg4jTU4eI0AmJjrliu4tTk%2FLwUuCxQEiRrCJI2BMkn5%2BcmZealwhQkgmi%2F1HINBSMFTS4wz7GgIDUvRUMBWaWOQhrCUrzqkO3X5CovyixJ9S8tKSgt0YDY5VnskpoGVI6hEWi%2FgiYA%2BI1FXQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
 FirstArray = [ 
@@ -103,7 +103,7 @@ Result: true,false,false
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxFjcEKwjAMhs%2FmKcJOGwwn7Dg8CF58BvGQuVSCa1eyFvHt7apYcsgHf74%2FRqOEkyq98YhXhF1F3s9ctYme8pIMI7k0GRcl9%2FjGNtFSDuE2wBStr5G2ust6ZiOOpxrN%2F0eLPTbYDNh1GDQypG3ZjqxoorsHWdyvozh7KU39Ieuw%2BYbmleEDVd85ZQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxFjcsKwkAMRdfOV4SuKhQrdO1CcOM3FBepzUiw8yCdQfx7M1Uc7iIHknNjJXM6i%2BAbTjCC2TUY40JNp%2FTkF28woddsGAT947t2SqEempuZs4stYGm7rhey7Gluwf5fdDDAXtP3kCST0enITSRgs78nDv5XUZUD16LhWGxTdIvLSh%2BBmDiq" target="_blank">Run Example</a>
 
 ```java
 fruitArray = [ 
@@ -114,7 +114,7 @@ fruitArray = [
 	"mango",
 	"kiwi"
 ]
-dump( arrayIsDefined( fruitArray, 3 ) ); // true
+dump( arrayIsDefined( fruitArray, 3 ) ) // true
 // member function
 dump( fruitArray.isDefined( 30 ) )
  // false

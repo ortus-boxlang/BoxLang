@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJyrULBVSM5ILNJQsDA2M1TQtOYqL8osSc0vLSkoLdFQUALJJSaXpBZZKShXKCuBFFQAtSQWJ2dmaihUYGqwSSqyC83LTM5PSVUoS8wpTUVoBAD1iyCj" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJyrULBVSM5ILNJQsDA2M1TQ5CovyixJzS8tKSgt0VBQAkklJpekFlkpKFcoKwHlK4AaEouTMzM1FCowlNskFdmF5mUm56ekKpQl5pSmwrQBAGQFH60%3D" target="_blank">Run Example</a>
 
 ```java
 x = char( 8361 )

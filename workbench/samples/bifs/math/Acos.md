@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLTM4v1lDQM1bQtOYCABboAt4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQSEzOL9ZQ0DNW0FTQBAB5PAfm" target="_blank">Run Example</a>
 
 ```java
-acos( .3 )
+writeOutput( acos( .3 ) )
 
 ```
 

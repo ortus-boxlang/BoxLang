@@ -14,7 +14,7 @@ Result: true
 ```java
 sql = "SELECT u.name, o.total FROM users u JOIN orders o ON u.id = o.user_id WHERE o.total > 100"
 result = sqlPrettify( sql )
-writeOutput( isString( result ) )
+writeOutput( isSimpleValue( result ) )
 
 ```
 

@@ -2,10 +2,10 @@
 
 The result could vary depending on if the server is running windows or linux.  On a windows box the result will be round to 3.1
 
-<a href="https://try.boxlang.io/?code=eJxLrSjQUDDUMzQ2NDEwMjQ0NLFU0LTmAgA9twSu" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQSK0o0FAw1DM0NjQxMDI0NDSxVNBU0AQA0jMJtg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-exp( 1.13140211149 )
+writeOutput( exp( 1.13140211149 ) )
 
 ```
 

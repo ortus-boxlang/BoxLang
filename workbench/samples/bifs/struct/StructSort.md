@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVqFbg4gxydVGwUrA01uHijHT18fEPB%2FEMgDz3IFdXPxDHhKvWmqsotbg0B6SnGKw5OL%2BoREOhGG6YjoJSXmlualFmshKQmZJanKykoGnNVV6UWZLqX1pSUApUnZOcWJyqoeAV7O8XDFSZmJNZBeRCDdYEQWsuAHqvL%2B4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVqFbg4gxydVGwUrA01uHijHT18fEPB%2FEMgDz3IFdXPxDHhKuWqyi1uDQHpKUYrDc4v6hEQ6EYbpaOglJeaW5qUWayEpCZklqcrKSgyVVelFmS6l9aUlAKVJyTnFicqqHgFezvFwxUmJiTWQXkQs3VBEEAy1MvMw%3D%3D" target="_blank">Run Example</a>
 
 ```java
 someStruct = { 
@@ -21,7 +21,7 @@ Result: ["green","red","yellow"]
 
 
 
-<a href="https://try.boxlang.io/?code=eJxljs0KwjAQhM%2FNUyw5VSiCCoIWD0VLQbQV0xcIccFCfyTZ4h%2B%2Bu4kUtZQ9LDvsNzOmqVCQbhXBCp6vkJmvMBbrLM%2BdzLwoiWEJ03nAvE18iI75Pk5zq%2FAEa9Sy5KyPJrso7ZGLAama6tIS6gEaZ0fL%2FMGzyQA%2BnO%2BmUF2uRtOWrr%2F5OIhGkw8%2FxwA44Y3qRkmD3F7SKLdOeJGaKqyJwyhkV10QZi3ZUj6U7teHrchSgbqQZfGwZxc0chOyN5rWX20%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxljssKwjAQRdfmK4asWhBBBUHBRdFSEG2L6Q%2BEOGCgL5IpvvDfTVR8MovhXubcubapUJDpFMEcLldmX3ogFllReJf1oiSGGYwmfdZbxnm0LTZxWjiHJ1ijkSVnX2SyjtIvcPoHqqZqO0LzS8bZ1iEf7Hj4x%2Bb7k9Xq8dWg7Urf3d4DRGMogHdgHzjhkepGSYvcKWmVXztspaEKa%2BIQsoPRhFlHrlEApT8NYCWyVKDRstRnJ59%2FQj83SmleAQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
 someStruct = {}

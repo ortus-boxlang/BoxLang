@@ -16,7 +16,7 @@ The createTimespan function is useful in the cachedwithin attribute of bx:query.
 
 Passing 6 hours, or a quarter of a day returns a double representing 1/4
 
-<a href="https://try.boxlang.io/?code=eJxLLkpNLEkNycxNLS5IzNNQMNBRMNMBkQYKmtZcAJu1CDY%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLLkpNLEkNycxNLS5IzNNQMNBRMNMBkQYKmgCLUwfx" target="_blank">Run Example</a>
 
 ```java
 createTimespan( 0, 6, 0, 0 )
@@ -31,7 +31,7 @@ A timespan can be converted to seconds and added to a date with dateAdd
 
 
 ```java
-dateFormat( dateAdd( "s", createTimespan( 2, 0, 0, 0 ).toSeconds(), createDate( 2017, 1, 1 ) ) )
+writeOutput( dateFormat( dateAdd( "s", createTimespan( 2, 0, 0, 0 ).toSeconds(), createDate( 2017, 1, 1 ) ) ) )
 
 ```
 
@@ -39,7 +39,7 @@ Result: 03-Jan-17
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FBILkpNLEkNycxNDS5IzNNQMNABIWMQpaCpoGnNpaCvD%2BTq5mbmlZakKpQAFRYDFXIBAD0DEdU%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLKc0t0FBILkpNLEkNycxNDS5IzNNQMNABIWMQpaCpoMmloK8P5OnmZuaVlqQqlADVFQPVAQAbYRGQ" target="_blank">Run Example</a>
 
 ```java
 dump( createTimeSpan( 0, 0, 30, 0 ) )

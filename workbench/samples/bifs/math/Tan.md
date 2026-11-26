@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrSczTUNAzVtC05gIAEl0Cew%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKEnM01DQM1bQVNAEAG%2BtB4M%3D" target="_blank">Run Example</a>
 
 ```java
-tan( .3 )
+writeOutput( tan( .3 ) )
 
 ```
 

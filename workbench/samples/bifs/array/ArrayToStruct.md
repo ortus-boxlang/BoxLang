@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJzzCvb3C04tykzMyaxK1VBILCpKrAzJDy4pKk0u0VCIVuDiVEpU0gGSSUpcsQqaCprWXACxsA4w" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQ8Ar29wtOLcpMzMmsStVQSCwqSqwMyQ8uKSpNBspGKyglKukoKCUpKcQqaIIgAKW1E0g%3D" target="_blank">Run Example</a>
 
 ```java
 writeOutput( JSONSerialize( arrayToStruct( [ "a", "b" ] ) ) )
@@ -43,7 +43,7 @@ dump( arr.toStruct() )
 ```
 
 
-<a href="https://try.boxlang.io/?code=eJxLLCpSsFWIVuDirObi5PRz9HVVsFJQSlTi4qzVQRVLwiKWjEUsBYtYKkiMK9aaK6U0t0BDIbGoKLEyJD%2B4pKg0uQTMVdBU0LTm0tdXyE3NTUotUkgrzUsuyczPQ2jQK4GpBysFAEnqLQ0%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLLCpSsFWIVuDirObi5PRz9HVVsFJQSlTi4qzVQRVLwiKWjEUsBYtYKkiMK5YrpTS3QEMhsagosTIkP7ikqDS5BMxV0FTQ5NLXV8hNzU1KLVJIK81LLsnMz0Oo1yuBKQeqBACh%2FyxS" target="_blank">Run Example</a>
 
 ```java
 arr = [ 

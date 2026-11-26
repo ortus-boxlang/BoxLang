@@ -52,7 +52,7 @@ We've example to get the particular row value from myquery using script syntax.
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrVLBVKCxNLar0Sy3XUFDKTNHJS8xNVdIBMvNKdMoSi5IzEouUFDStuQr1ElNSgvKBqkwg3OLUEufUnBywLqAGQyDCKmEERFgljIEIq4SJDqYdMGfl54EoDJtg0iXl%2BUpY7INLZxSlghgY9sIUpOWXFilBrU8pzS3QUChEMANBAQUMApfEkkSgBNgekCwAYFhZSg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrVLBVKCxNLar0Sy3XUFDKTNHJS8xNVdIBMvNKdMoSi5IzEouUFDS5CvUSU1KC8oGKTMC84tQS59ScHLAeoHJDIMImbgRE2MSNgQibuIkOhvkwB%2BXngSh0W2CyJeX5Sph2wWUzilJBDHQ7YfJp%2BaVFShCrU0pzCzQUCuGsQFDoAD3ukliSCBQH26GgCQA2VlZ8" target="_blank">Run Example</a>
 
 ```java
 q = queryNew( "id,name", "int,varchar" )

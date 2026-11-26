@@ -1,35 +1,36 @@
-### String Example
-
-Converts a String to a Base64-String.
-
-<a href="https://try.boxlang.io/?code=eJwLyXdKLE41M9FQUApJLS5RCC4pysxLV1LQtOYCAHaPB%2Fo%3D" target="_blank">Run Example</a>
+### Convert a string to Base64
 
 ```java
-ToBase64( "Test String" )
-
+writeOutput( toBase64( "Test String" ) )
 ```
 
 Result: VGVzdCBTdHJpbmc=
 
-### Binary Object Example
-
-Converts an Image Binary to a Base64-String.
-
+### Using the member function
 
 ```java
-ToBase64( ToBinary( ImageRead( "example.jpg" ) ) )
-
+writeOutput( "ToBase64".toBase64() )
 ```
 
+Result: VG9CYXNlNjQ=
 
-### Additional Examples
+### Convert a binary object to Base64
 
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FAIyXdKLE41M9FQUIIxlRQ0FTStuRT09RXC3C2dIyP8cvyyAm25AFw%2BDSQ%3D" target="_blank">Run Example</a>
+Text is converted to binary with `charsetDecode()` first.
 
 ```java
-dump( ToBase64( "ToBase64" ) )
- // VG9CYXNlNjQ=
-
+bytes = charsetDecode( "Hello", "utf-8" )
+writeOutput( toBase64( bytes ) )
 ```
 
+Result: SGVsbG8=
 
+### Specify the character encoding
+
+The encoding is used to convert the string to bytes before encoding.
+
+```java
+writeOutput( toBase64( "Hello", "utf-16" ) )
+```
+
+Result: /v8ASABlAGwAbABv

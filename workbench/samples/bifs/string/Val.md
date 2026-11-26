@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrS8zRUFAyNDIoSS0uMTQqLi4pysxLV1LQtOYCAHXFCB4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKEvM0VBQMjQyKEktLjE0Ki4uKcrMS1dS0FTQBAAjZA0m" target="_blank">Run Example</a>
 
 ```java
-val( "120test12sstring" )
+writeOutput( val( "120test12sstring" ) )
 
 ```
 
@@ -15,10 +15,10 @@ Result: 120
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrS8zRUFAqLinKzEu3tFBS0LTmAgA9cAVm" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKEvM0VBQKi4pysxLt7RQUtBU0AQAwuAKbg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-val( "string98" )
+writeOutput( val( "string98" ) )
 
 ```
 

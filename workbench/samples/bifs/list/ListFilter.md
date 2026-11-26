@@ -2,7 +2,7 @@
 
 Take list and use List Filter to return items that are 3 and higher.
 
-<a href="https://try.boxlang.io/?code=eJzLK81NSi3yySwuUbBVUDLUMdIx1jHRMdUxU7LmKskoSk31L%2FLNL0oFSuYA1bhl5pSkFmko5MF16ShoKDjmVSpklqTmKmgq2NopVHNxFqWWlBblQcTsbBWMrblqFTStucqLgCIppbkFGgrIRgNlAO%2BmKaI%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLK81NSi3yySwuUbBVUDLUMdIx1jHRMdUxU%2BIqyShKTfUv8s0vSgXK5QCVuGXmlKQWaSjkwTXpKGgoOOZVKmSWpOYqaCrY2ilUc3EWpZaUFuVBxOxsFYy5ahU0ucqLgPyU0twCDQVkgzUBMSsorA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 numberList = "1,2,3,4,5,6"
@@ -19,7 +19,7 @@ Result: A List with the values '3,4,5,6'
 
 This is the same example as above, but using a member function on the list instead of a standalone function.
 
-<a href="https://try.boxlang.io/?code=eJzLK81NSi3yySwuUbBVUDLUMdIx1jHRMdUxU7LmKskoSk31L%2FLNL0oFSubBVerlAAm3zJyS1CINBQ0Fx7xKhcyS1FwFTQVbO4VqLs6i1JLSojyImJ2tgrE1V62CpjVXeRFQJKU0t0BDAdlkoAwA1gUphA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLK81NSi3yySwuUbBVUDLUMdIx1jHRMdUxU%2BIqyShKTfUv8s0vSgXK5cEV6uUACbfMnJLUIg0FDQXHvEqFzJLUXAVNBVs7hWouzqLUktKiPIiYna2CMVetgiZXeRGQn1KaW6ChgGyuJgAYPSiO" target="_blank">Run Example</a>
 
 ```java
 numberList = "1,2,3,4,5,6"
@@ -34,7 +34,7 @@ Result: A List with the values '3,4,5,6'
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJyNj0FrwzAMhc%2Fxr9BySsGsPyB0MCi9FcYG29lb5dVgK0WRm5Wl%2F31yaNnWXnrUe096%2BtIhhl5gAfWL2%2BP45gR5fIqOZPxkRKpb40NU8Rn7HEuw5FeT1ECati008EgHwIgJSccyhM0XzGDxAN%2BmCr45m3CnVUNpqdVWr2KUzATCGVtTHc1Z8C72qhwt1KNmWzNwEFzmtGvg30tqzeewxvSODKtMHxI6MuWxVxcLWUdoZeisbJXI%2Bi6z9WGPisbYn4g0ev%2BX7JfohEObK5yJZTp6K8sFRqlX5QcTI3x6" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJyNj8FqAzEMRM%2Brr1B92gXTfEEKhZJboLTQnN1GTg22tmjlbEM2%2F157SWhDLzmOZqTRS4cYBsUlmle3p2njlGR6jo512gkRG%2FAhltkLDTnWXI2v5lGLaV622OIjH5AiJeIiqwjbb%2Bxw%2BYBHaIJvLybelaaxlphiF68R0iyMKpmgOcFFexcHgpNFM5UkjBKUnnL6avHqnw4WC1xTeifBVeYPDT1DferNxQrVM1kde6ufBcb6Pov1YU8GhIYzTEne%2F4X6hTmT8PYfyYwx37wN45qgdnc%2FPqF6Ig%3D%3D" target="_blank">Run Example</a>
 
 ```java
 mylist = "Save|Water|Plant|green"

@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLS8xNLVawVSgsTS2q9Est11BQygMKKekoKJUlFiVnJBYpKWhac4GlHVNSgvKBKvLAemCiwaklzqk5OVBhHYR%2BoEQG2Zq9UvPAejPTNBQyiwNBauF6gbCai7O8KLMk1b%2B0pKC0RAPifOf8nNLcPJfEkkQ08xQ09UryfTKLSzQ0QWbWcgEAS4NOYQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLS8xNLVawVSgsTS2q9Est11BQygMKKekoKJUlFiVnJBYpKWhygWUdU1KC8oEK8sBaoILBqSXOqTk5UFEdhG6gRAaZWr1S80A6M9M0FDKLA0FK4TqBsJqLs7wosyTVv7SkoLREA%2BJy5%2Fyc0tw8l8SSRDTjFDT1SvJ9MotLNIB6uWoBbPpM9Q%3D%3D" target="_blank">Run Example</a>
 
 ```java
 names = queryNew( "name", "varchar" )
@@ -21,7 +21,7 @@ Result: Seth,Jen
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJx9zTELwjAQBeA9v%2BKRKV0szqV7XQQddA72CoVro3cXxH%2BviQ6dnI53D75npHaJgh5%2BIOaEaxIefefaFmeyLKtiiqyEqJgNs2JNhohHJnnt3JiXe8BBTyUG2I9r0HSuhPr%2F6PUe6Rngb4n3vvSbCZO8Wfinf8HqvwHHPj0b" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJx9zTEOgzAMBdA9p%2FjKFJaiHqA7LJXaoZ0jMBKSS1rbEertG6ADE5P%2Ft6VnI7VHFFzgG2JOeCbh3ru6xp0sy6QYIishKkbDqJiSIeKTSb4n1%2BfXO6DV21ID7K9VqNyS13Wx13mlOcB3ic%2B%2BnHcPTPLOP7I3r%2Bg%2FthA8JQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
 testVar = "Hello World"

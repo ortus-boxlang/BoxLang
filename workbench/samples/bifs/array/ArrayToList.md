@@ -2,7 +2,7 @@
 
 Uses the arrayToList function with a pipe delimiter to retrieve an array as a list
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNNTh4jQCYmMgNuGKteYqBirwySwuAcongtSF5IN4GgrFMI06Cko1Sgqa1lzlRZklqf6lJQWlUGmwNqAEAIeLHbQ%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNNTh4jQCYmMgNuGK5SoGyvtkFpcApRNBykLyQTwNhWKYPh0FpRolBU2u8qLMklT%2F0pKCUqgsWJcmABv6HPk%3D" target="_blank">Run Example</a>
 
 ```java
 someArray = [ 
@@ -22,7 +22,7 @@ Result: 1|2|3|4
 
  Uses the Array member function to retrieve an array as a list
 
-<a href="https://try.boxlang.io/?code=eJwrTs3MS0vNSXEsKkqsVLBViFbg4lTySi0qqlTSAbJccxIz81LBTO%2BixNzUIjDTPTW%2FKD1ViSvWmqsYqt8ns7gEqL0Y2Ti9knyQsIamNVd5UWZJqn9pSUFpiYYCih6gJACWdipK" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrTs3MS0vNSXEsKkqsVLBViFbg4lTySi0qqlTSAbJccxIz81LBTO%2BixNzUIjDTPTW%2FKD1ViSuWqxiq3SezuASouxjZNL2SfJCwhiZXeVFmSap%2FaUlBaYmGAooWTQD6kimP" target="_blank">Run Example</a>
 
 ```java
 seinfeldArray = [ 
@@ -50,7 +50,7 @@ Result: a-b-c
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJzLSy13LCpKrFSwVYhW4OJUSlTSAZJJYDIZiZ2CxE4Fk2lKXLHWXCmluQUaCokgI0LyfTKLSzQU8mBGaipoWnPp6yvkpuYmpRYppJXmJZdk5ufpKJRnlmQoJJcWl%2BTnKhSnFiQWJZbkF0GNgunWK4Eap6SrqwQxCgC31S%2FC" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxNzDEOgzAQRNE6PsVoK5AgnICCPmW6KMVijOLCNlqvhXL7BAQSzdc086JbBxH%2BoscL5kZMzb%2FjXnvZ02W7vTOZt5lKWCrwJjzTw2etEE%2BxRm26DsGF0QnmEq36FBusXj%2BwJWsKyG5hYU1ySOf5rodGbUub9AMMKS8H" target="_blank">Run Example</a>
 
 ```java
 newArray = [ 

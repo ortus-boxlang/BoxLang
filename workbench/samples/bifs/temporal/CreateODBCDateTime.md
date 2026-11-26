@@ -13,7 +13,7 @@ Result: {t '12:12:12'}
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FBwLkpNLEn1d3FyDsnMTdVQyMsv19BUAEJrLgC6Vgm%2B" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLKc0t0FBwLkpNLEn1d3FyDsnMTdVQyMsv19BUAEIApuQJeQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
 dump( CreateODBCTime( now() ) )

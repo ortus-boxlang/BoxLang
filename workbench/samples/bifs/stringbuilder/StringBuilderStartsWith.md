@@ -4,7 +4,7 @@ Tests whether a StringBuilder starts with a given substring.
 
 ```java
 sb = sb{'Hello BoxLang'}
-result = startsWith( sb, 'Hello' )
+result = stringBuilderStartsWith( sb, 'Hello' )
 writeOutput( result )
 ```
 

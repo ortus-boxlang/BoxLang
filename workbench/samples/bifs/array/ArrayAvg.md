@@ -2,7 +2,7 @@
 
 Uses the arrayAvg function to get average value of an array
 
-<a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYhW4OI01OHiNAJiY65Ya67yosySVP%2FSkoLSEg2FRJAqx7J0DYU8JF2aCprWXADx0hU8" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYhW4OI01OHiNAJiY65YrvKizJJU%2F9KSgtISDYVEkCLHsnQNhTwkTZoKmgC3HRS8" target="_blank">Run Example</a>
 
 ```java
 numberArray = [ 
@@ -20,7 +20,7 @@ Result: 2
 
 Uses the avg member function is the same as running arrayAvg.
 
-<a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYhW4OI01OHiNAJiY65Ya67yosySVP%2FSkoLSEg2FPIRavcSydA1NBU1rLgB0WBMr" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYhW4OI01OHiNAJiY65YrvKizJJU%2F9KSgtISDYU8hFK9xLJ0DU0FTQA%2FJxKr" target="_blank">Run Example</a>
 
 ```java
 numberArray = [ 
@@ -50,7 +50,7 @@ Result: You cannot divide by zero.
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJzLK81NSi0qVrBViFbg4jTU4eI0AmJjIDbhirXmSixLD0vMKU0FyjsWFSVWOpalayjkQfVoWnO5JmfkayjAVQFFFPT1FfJLSwpKS4oVjPRMuQD2qRrz" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLK81NSi0qVrBViFbg4jTU4eI0AmJjIDbhiuVKLEsPS8wpTQVKOxYVJVY6lqVrKORBtWhyuSZn5GsowBVpcino6yvkl5YUlJYUKxjpmQIAlDoaOA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 numbers = [ 

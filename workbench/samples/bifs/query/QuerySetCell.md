@@ -33,7 +33,7 @@
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrVLBVKCxNLar0Sy3XUFDKTNHJS8xNVVLQtOYKBAk7pqQE5QNlCuEiwaklzqk5OUAhHZB6JR0FQyDCLg02C0jn54EosKKU0twCqHEAHzIjhw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrVLBVKCxNLar0Sy3XUFDKTNHJS8xNVVLQ5AoEiTqmpATlAyUKYQLBqSXOqTk5QBEdkGolHQVDIMIqCzYISOfngSiQmpTS3AKwWQBYPSJW" target="_blank">Run Example</a>
 
 ```java
 q = queryNew( "id,name" )

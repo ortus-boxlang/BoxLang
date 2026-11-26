@@ -36,7 +36,7 @@ Result: 1,0,0,4
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJzLSy13LCpKrFSwVUgE0X6p5RoKhgqa1lxgbnBqiYZCHlSNjoKhjoKJjoKSY06OQmaxQnlqTo4SSGlKaW4BQhlIRF9fITc1Nym1SCGtNC%2B5JDM%2FjwsmrVcMMhNokhHQpJzUkmKF5IzEvPRUhcwSHIYBAK6VMzo%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLSy13LCpKrFSwVUgE0X6p5RoKhgqaXGBecGqJhkIeVImOgqGOgomOgpJjTo5CZrFCeWpOjhJQZUppbgFCFVBAX18hNzU3KbVIIa00L7kkMz%2BPCyarVwwyEWiOEdCcnNSSYoXkjMS89FSFzBJsRgEAmbsyCQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
 newArray = arrayNew( 1 )

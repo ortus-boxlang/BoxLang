@@ -2,7 +2,7 @@
 
 ```java
 ip = getLocalhostIp()
-writeOutput( isString( ip ) )
+writeOutput( isSimpleValue( ip ) )
 
 ```
 

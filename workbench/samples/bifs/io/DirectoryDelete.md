@@ -12,7 +12,7 @@
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLySxKTS7JL6pMSc1JLUnVUFBygYkEJJZkKCloWnMBAP8NDKU%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLySxKTS7JL6pMSc1JLUnVUFBygYkEJJZkKCloAgDlzQxg" target="_blank">Run Example</a>
 
 ```java
 directorydelete( "DirectoryPath" )

@@ -1,7 +1,7 @@
 ### simple isArray example
 
 
-<a href="https://try.boxlang.io/?code=eJxLzs%2FJL3IsKkqsVLBViFbg4lSqTM3JyS9X0gEy04tSU%2FPArKLUFCWuWGuu8qLMklT%2F0pKC0hINhcxisEYNhWSEIZoKmtZcAGG2GiQ%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLzs%2FJL3IsKkqsVLBViFbg4lSqTM3JyS9X0gEy04tSU%2FPArKLUFCWuWK7yosySVP%2FSkoLSEg2FzGKwPg2FZIQZmgqaABfzGaQ%3D" target="_blank">Run Example</a>
 
 ```java
 colorArray = [ 
@@ -18,7 +18,7 @@ Result: yes
 ### simple isArray example
 
 
-<a href="https://try.boxlang.io/?code=eJxLzs%2FJL3IsKkqsVLBViFbg4lSqTM3JyS9X0gEy04tSU%2FPArKLUFCWuWGuu8qLMklT%2F0pKC0hINhcxisEYNhWSEIZoKmtZcAGG2GiQ%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLzs%2FJL3IsKkqsVLBViFbg4lSqTM3JyS9X0gEy04tSU%2FPArKLUFCWuWK7yosySVP%2FSkoLSEg2FzGKwPg2FZIQZmgqaABfzGaQ%3D" target="_blank">Run Example</a>
 
 ```java
 colorArray = [ 
@@ -35,7 +35,7 @@ Result: true
 ### isArray example with number
 
 
-<a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYhW4OI01OHiNAJiY65Ya67yosySVP%2FSkoLSEg2FzGKwOg2FPIQmHQVDBU0FTWsuABqtFVc%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYhW4OI01OHiNAJiY65YrvKizJJU%2F9KSgtISDYXMYrAyDYU8hB4dBUMFTQVNAN89FNc%3D" target="_blank">Run Example</a>
 
 ```java
 numberArray = [ 
@@ -52,7 +52,7 @@ Result: yes
 ### isArray example with number
 
 
-<a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYhW4OI01OHiNAJiY65Ya67yosySVP%2FSkoLSEg2FzGKwOg2FPIQmHQVDBU0FTWsuABqtFVc%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYhW4OI01OHiNAJiY65YrvKizJJU%2F9KSgtISDYXMYrAyDYU8hB4dBUMFTQVNAN89FNc%3D" target="_blank">Run Example</a>
 
 ```java
 numberArray = [ 
@@ -68,7 +68,7 @@ Result: true
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUMhJTErNsVVyzS0oqVRwLCpKrFTSUShLLLLNLAbzNBSiYxU0FTStucoxNIEV%2BKWWo%2BtIhIprKBiCtOLXrFCQX5xZkpmfZ4zbGGMFTR0Qgd0kp%2Fz8nNTEPKDmnNJUdENKikpTcWkMLinKzEvHrk8JbLsSRCsAyt1jGg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUMhJTErNsVVyzS0oqVRwLCpKrFTSUShLLLLNLAbzNBSiYxU0FTS5yjH0gOX9UsvRNSRCxTUUDEE68epVKMgvzizJzM8zxm2KsYKmDojAapBTfn5OamIeUG9OaSq6GSVFpak49AWXFGXmpWPXpgS2WwmkEwC2yGHp" target="_blank">Run Example</a>
 
 ```java
 writeDump( label="Empty Array", var=isArray( [] ) )

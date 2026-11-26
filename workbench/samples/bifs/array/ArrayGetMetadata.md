@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxFjLEKAjEQRGv3K5ZUJ4j5ALEStTnxChsRi0UXDXgxrHPI%2Fb1JLK4ZdmZnnve8MRUoS2Qxk5GqtuEDXvOFZk5Seqlb5CuFqJPrJT7ejq4r8p53ituTe4XwXSBUJO8ra6845EeJGp7o8zrsLET8U8aYlL4WoMcBaUBTWcvTuduW9g83kzbW" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxFjL0KAjEQhGv3KZZUdyDmCaxEbRSvsBGxWHTRgJcL6xxyb28Si2uG%2BWE%2B73ljKlCWyGImE1U9hA94zVdaOEnprW6ZXQpR59RLfA6ObuQ97xT3F%2FcK4YdAqEi%2BV9ReccxDqRqe4W35dRYi%2FiVjSkpfC9DTiDSiqajV%2BdJtuf0BbEM2Gw%3D%3D" target="_blank">Run Example</a>
 
 ```java
 // Create an array
@@ -24,7 +24,7 @@ Result: synchronized
 
 
 
-<a href="https://try.boxlang.io/?code=eJxFTDsKwkAQrZ1TDFtFkOwBxEq0UkyRRsRi0CEumHUZXwi5vZsVtHm8v%2Fe8NRUoS2Qxk4kKHsIbvOELLZyk9FS3yiyFqH%2FVS%2Bxejq5r8p73ituDe4XwXSA0Q97%2FvupOcczp7FfLMmksRHwbjCkpjRagpwFpQFVe6vbc7Di3P%2B5SNMU%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxFTDsKwkAQrZ1TDFslINkTWIlWiilsglgMOsQFsy7jCyG3dzeCNo%2F39563pgJliSxmMtOCh%2FAGb%2FhCKycpPdWtM0sh6l8NEvuXoyt5z3vF7cGDQvguECqQ57%2Brplccc1r8qi6L1kLEt8CYk9JkAXoakUZUy0lz7tod1x8qpjQK" target="_blank">Run Example</a>
 
 ```java
 // Create an array

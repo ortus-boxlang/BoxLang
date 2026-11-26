@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxdT8FKw0AQPe9%2BxdBcEgj9gJYKEfdQTCukoRXEw4iDXRI3YZpkFem%2FO2trGz0sM%2FPmzXtvC7TupfGwgMluT9ykcI%2BMFUpt%2FB5tmCtkW4XOVg2je5O2RI%2BdvBRW6MPdZK7poyN2WOf20AU9gZgG4gMVF5NaditsY%2BATlEIMmfuEIf0p9lRqSGBxA19aDcjgyG%2Bx7iloRjaaRcP0rBsnkZiof8bjcRoMs7Yl9xpfhRI5Yup6dhdsro8B9mw7uuvfJeGTVhJAFdlyffuwg9lvZK2O6XlltqbYmBHjz3evRPNYmmKd5flyUwptHFBI%2Bjk4fwPtEnrw" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxdT8FqwzAMPdtfIZJLAqYfUOggYz6UpR24oR2MHTQmVpPMCWoSb4z%2B%2B%2By1a7MdzJOent6TDVr30npYQLLbE7cK7pGxxoCt36ONfY1s61jZumV0b6Gs0GMfnoIV%2BriXSProiR02pT300S6RTCPxgcwlogmjFXYZ8IlSkEHhPmFUP2BP0EAOixv4kmJEBkd%2Bi81A0TK16TwdZ2ffLE8TKf7FTttZzCu6jtxrdvXJpWDqB3YXSh4D6dn2dDe8h%2BuepAjhwhTL9e3DDua%2F50pxVOeR3mqz0RPFn69ehfqx0mZdlOVyUwXZ9Logks%2BQfwNtxnlJ" target="_blank">Run Example</a>
 
 ```java
 Rainbow = "Whero, Karaka, Kowhai, Kakariki, Kikorangi, Tawatawa, Mawhero"
@@ -29,7 +29,7 @@ writeDump( [
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxljVsKwjAQRb%2FNKi75kBayg1LBBQhuYaBTCYwxTBIfiHtv2og%2F%2Fh2453JmLT4njLAUo7CLTOpuSuHCdjAP9Zmnco0d5ib2g2l0lqIk9Sg%2B5RP9DIcOx%2FDCnaSw29CHiZ8NVxk9xgPeZqeci4ZmYg%2BbavGzFv6y31idFrkIOmQ%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxljUEKAjEQBM%2FmFU0OsoF8YQUfIPiFgZ2VwBjDJKMu4t9djXjxVofqrlkttYoRnkoRjoVJ40Upn9i7m6bGk53LgLl7wXU4iinJOpNU24F%2BQsSAfV5wJTGOH0x54nvHt4yAcYeH2yg309xNbOGrd8%2F1%2F6%2F5TYUXfrY5Mw%3D%3D" target="_blank">Run Example</a>
 
 ```java
 fruits = "apple,pear,orange"

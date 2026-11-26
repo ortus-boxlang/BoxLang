@@ -2,7 +2,7 @@
 
 Creates an unordered struct.
 
-<a href="https://try.boxlang.io/?code=eJwrzcsvSkktSk1RsFWoVuDidFSwUjDU4eJ0BtLGQNoJSBtx1VpzlRdllqS6lOYWaCiUwvVoWnMBAC8kEWc%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzcsvSkktSk1RsFWoVuDidFSwUjDU4eJ0BtLGQNoJSBtx1XKVF2WWpLqU5hZoKJTCtWgCAP4GEOc%3D" target="_blank">Run Example</a>
 
 ```java
 unordered = { 
@@ -21,7 +21,7 @@ Result: a struct with the keys A, C and B (unordered)
 
 Creates an unordered struct.
 
-<a href="https://try.boxlang.io/?code=eJwrzcsvSkktSk1RsFUoLikqTS7xSy3X0LTmKoVJ6DkCpQyRBZyAAkbIAs5AAWNrrvKizJJUl9LcAg0FuJwC0CgAniYgjg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzcsvSkktSk1RsFUoLikqTS7xSy3X0OQqhYnrOQJlDJH4TkC%2BERLfGcg35iovyixJdSnNLdBQgEspaAIA8CkfXQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
 unordered = structNew()
@@ -39,7 +39,7 @@ Result: a struct with the keys A, B and C (unordered)
 
 Creates an ordered struct. Note the square brackets.
 
-<a href="https://try.boxlang.io/?code=eJzLL0pJLUpNUbBViFbg4nRUsFIw1OHidALSRkDaGUgbc8Vac5UXZZakupTmFmgo5EN1aFpzAQDI2Q9h" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLL0pJLUpNUbBViFbg4nRUsFIw1OHidALSRkDaGUgbc8VylRdllqS6lOYWaCjkQzVoAgCdbw7h" target="_blank">Run Example</a>
 
 ```java
 ordered = [ 
@@ -58,7 +58,7 @@ Result: an ordered struct with the keys A, B, C in that order
 
 Creates an ordered struct.
 
-<a href="https://try.boxlang.io/?code=eJzLL0pJLUpNUbBVKC4pKk0u8Ust11BQyoeIKiloWnNB2XqOQDWGCK4TkGuE4DoDucbWXOVFmSWpLqW5BRoKUBmQEQB8Th%2BI" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLL0pJLUpNUbBVKC4pKk0u8Ust11BQyoeIKilockGZeo5AJYZwnhOQZwTnOQN5xlzlRZklqS6luQUaClAJBU0A0DMeVw%3D%3D" target="_blank">Run Example</a>
 
 ```java
 ordered = structNew( "ordered" )
@@ -93,7 +93,7 @@ Result: an ordered struct with the keys A, B, C in that order
 
 Creates a case-sensitive struct.
 
-<a href="https://try.boxlang.io/?code=eJxLTixOLU7NK84sySxLVbBVKC4pKk0u8Ust11BQSkaWU1LQtOZCEdFzBKo3RBd0AgoaoQs6AwWNrbnKizJLUl1Kcws0FFDkQUYDAPspLu4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLTixOLU7NK84sySxLVbBVKC4pKk0u8Ust11BQSkaWU1LQ5EIR0HMEKjdEE3MCihmhiTkDxYy5yosyS1JdSnMLNBRQpBU0Af6ALb0%3D" target="_blank">Run Example</a>
 
 ```java
 casesensitive = structNew( "casesensitive" )
@@ -111,7 +111,7 @@ Result: a case-sensitive struct with the keys A, B and C
 
 Creates a case-sensitive struct.
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVKAYz%2FFLLNRSU8otSUotSU3STE4tTi1PzijNLMstSlRQ0rbmK4Vr0nIGajFFEnIAiRigijkARQ2uu8qLMklSX0twCDQWEJMg4AJpRK88%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVKAYz%2FFLLNRSU8otSUotSU3STE4tTi1PzijNLMstSlRQ0uYrhOvScgXqMkQWcgAJGyAKOQAFDrvKizJJUl9LcAg0FhJyCJgCq4iqe" target="_blank">Run Example</a>
 
 ```java
 someStruct = structNew( "ordered-casesensitive" )

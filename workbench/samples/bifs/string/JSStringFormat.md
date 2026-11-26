@@ -2,7 +2,7 @@
 
 This example illustrates use of the JSStringFormat function.
 
-<a href="https://try.boxlang.io/?code=eJwrLinKzEtXsFVQcsxTSK1IzC3ISVUohgiWJeaUpiqUZ5ZkKCgpFZbml6SmKCkpqJekVpSoK1lzlRdllqT6l5YUlJZoKHgFB4M1ueUX5SYC%2BVAjNBU0rbkA0lYhzQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrLinKzEtXsFVQcsxTSK1IzC3ISVUohgiWJeaUpiqUZ5ZkKCgpFZbml6SmKCkpqJekVpSoK3GVF2WWpPqXlhSUlmgoeAUHg%2FW45RflJgL5UBM0FTQBcgIhTQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
 string = "An example string value with ""quoted"" 'text'"

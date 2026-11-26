@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLySwucc7PLUhMLtFQUNJJTU8v1snNzMnWSSpKTUzRScvJLy3SUVLQtOYCAEI9DfM%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyMksLnHOzy1ITAZylHRS09OLdXIzc7J1kopSE1N00nLyS4t0lBQ0FTQBOxgS%2Bw%3D%3D" target="_blank">Run Example</a>
 
 ```java
-listCompact( ",eggs,milk,bread,flour," )
+writeOutput( listCompact( ",eggs,milk,bread,flour," ) )
 
 ```
 
@@ -13,7 +13,7 @@ Result: eggs,milk,bread,flour
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxVjssKwjAQRff9iiGrlhkMPnbFlS4VBb8g1tEG8iKZ2N%2B3UBG8uwuXc4%2FWcLM%2BOYZnDYPYGJopW%2BFLlVSlBWeLHKJPZpiLIqKrM0HolZkDFfNmYpNlJFLQQdc3WsOZ%2FZ3zjweTlRGGWiR6eLCzfsbnpkg%2BFYE9KERc4wa3uMMlql8cjtWnFpbh6l8Ev3cf5Ps80Q%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxVjs0KwjAQhO95iiWnll0M%2Flw96VFR8AliXW0gSUOysa9vMSA4t4Hhm88YuLmQPMOzxkHcFNWcnfClSqrSgXdFDlNIdliKJqKrt1HolZkjFftmYptlJNLQQ6%2BMgTOHO%2BcfDmYnIwy1yBTgwd6FhZ5VkXwqAnvQiLjGDW5xhy26GRxrSB203epfA79nH%2F65PBY%3D" target="_blank">Run Example</a>
 
 ```java
 // Simple function

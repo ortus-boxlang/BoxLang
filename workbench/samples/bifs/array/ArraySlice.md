@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLLCpKrFSwVYhW4OI01OHiNAJiYyA2AWJTIDYDYnMgtuCKtebKSy13hKpPBNHBOZnJqRoQto6CkY6CsYKmNVd5UWZJakppboGGAlwDUBgA%2Baoa%2Bw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLLCpKrFSwVYhW4OI01OHiNAJiYyA2AWJTIDYDYnMgtuCK5cpLLXeEKk8E0cE5mcmpGhC2joKRjoKxgiZXeVFmSap%2FaUlBaYmGglewv19walFmYk5mFVAl3ABNBU0Aztsgjg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 array = [ 
@@ -26,7 +26,7 @@ Result: [2,3,4]
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLLCpKrFSwVYhW4OI01OHiNAJiYyA2AWJTIDYDYnMgtuCKtebKSy13hKpPBNHBOZnJqRoQto6CiYKmNVd5UWZJakppboGGAlw1UBgAtbwafg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLLCpKrFSwVYhW4OI01OHiNAJiYyA2AWJTIDYDYnMgtuCK5cpLLXeEKk8E0cE5mcmpGhC2joKJgiZXeVFmSap%2FaUlBaYmGglewv19walFmYk5mFVAZXLemgiYAg84gEQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
 array = [ 
@@ -50,7 +50,7 @@ Result: [4,5,6,7,8]
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLLCpKrFSwVYhW4OI01OHiNAJiYyA2AWJTIDYDYnMgtuCKtebKSy13hKpPBNHBOZnJqRoQto6CrqmOgrGCpjVXeVFmSWpKaW6BhgJcB1AYABFyGys%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLLCpKrFSwVYhW4OI01OHiNAJiYyA2AWJTIDYDYnMgtuCK5cpLLXeEKk8E0cE5mcmpGhC2joKuqY6CsYImV3lRZkmqf2lJQWmJhoJXsL9fcGpRZmJOZhVQKdwETQVNAOlZIL4%3D" target="_blank">Run Example</a>
 
 ```java
 array = [ 
@@ -74,7 +74,7 @@ Result: [4,5,6]
 
 Calling the slice member function on an array.
 
-<a href="https://try.boxlang.io/?code=eJxLLCpKrFSwVYhW4OI01OHiNAJiYyA2AWJTIDYDYnMgtuCKtebKSy13hKpPBNF6xTmZyakaCkY6CsYKmtZc5UWZJakppbkFGgpwpUBhAFFlGN4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLLCpKrFSwVYhW4OI01OHiNAJiYyA2AWJTIDYDYnMgtuCK5cpLLXeEKk8E0XrFOZnJqRoKRjoKxgqaXOVFmSWp%2FqUlBaUlGgpewf5%2BwalFmYk5mVVAJXCtmgqaAAYoHnE%3D" target="_blank">Run Example</a>
 
 ```java
 array = [ 
@@ -115,7 +115,7 @@ Result: 2,3
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJzLSy13LCpKrFSwVYhW4OJUSlTSAZJJYDIZiZ2CxE4Fk2lKXLHWXCmluQUaCnkwUzStuTISi4Pzc1MNgSYmgsSCczKTUxFKdBQMdRRMQAohWuHKgSL6%2Bgq5qblJqUUKaaV5ySWZ%2BXkw04yApsFM0CuGmGiso2CGYY4RSAQAuEg6ow%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLSy13LCpKrFSwVYhW4OJUSlTSAZJJYDIZiZ2CxE4Fk2lKXLFcKaW5BRoKeTBDNLkyEouD83NTDYHmJYKEgnMyk1MRKnQUDHUUTIDqIBrhqjW59PUVclNzk1KLFNJK85JLMvPzYGYZAc2C6dcrhphnrKNghm6KkYImAEdhOTc%3D" target="_blank">Run Example</a>
 
 ```java
 newArray = [ 

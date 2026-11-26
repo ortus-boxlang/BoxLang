@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxVjkGrwjAQhM%2FmVywpPFooeLc1IAgePAgelHfMM8sztCZlzVpE%2FO8mqQjeZj9mZoe0dX9%2BhCU8QMzkHo2EBcjjGcnLOpIdafePGW416U5n%2Bot978eJ%2BvGsbaYbQnRva6fJdlaKZyPYxvprID6F2M8nLIGmtzWUsHJ3GAhv1vP1oHvGOqMO75O4JQYVLBU8xIwwMLnvAPyAbE1QRcwU7Tyq1hhV5GC6jZKNeNbJ1CsZq5J%2FnnQjRrIB13wZPpugetMdh4FDCXF%2BRC%2BVH1oX" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxVjsEKwjAQRM%2FmK5YUpIWCd6kBQfDgQfCgeIxm0dCalDVrEfHfTVIRvM0%2BZmaHtHUnP8ACXiAmcodGwhzk4YrkZR3JlrS7YIYbTbrVmR6x6%2FwwUj9ctc10TYjua2012dZK8RZsY%2Fs9EJ9DrOczlkDj1xpKWLon9IQP6%2Fm%2B1x1jnVGLz1E8EoMKFgpeYkIYmNx%2FAKYgGxNUETNFM4uqMUYVOZhuo%2BKKOnk6JWNTss%2BSFgPZgCu%2B9b9FUI1wy6HnUELcXn0AlxBY5g%3D%3D" target="_blank">Run Example</a>
 
 ```java
 rainbow = { 
@@ -26,7 +26,7 @@ Result: an HTML definition list (<dl>...</dl>) with one dt/dd pair per entry; th
 
  
 
-<a href="https://try.boxlang.io/?code=eJxVjsEKwjAQRM%2FmK5YUpELRu60BQfDgQfCgeIxm0dCalDWxlOK%2Fm6R68Db7mJkdktpcbAcrGIBN%2BAEVhyXw0x3J8iKQPUlzwwR3kmQtEz1j09hupLa7S53olhDN11pL0rXm7F0yr0M9jY%2FmhMpfMYcc1qaHlvClrX8eZeOxSKjGfhSvyGAGKwEDmxA6T%2BY%2FAFPglXIiC5msWgRVKSWyFIy3Erxk7yKaGsFDVfQvoi5ZR9rhxj%2Fa%2FDcNZl%2B69671LoewO6AP1rdXdA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxVjsEKwjAQRM%2FmK5YUpIVi71IDguDBQ8GD4jGaRUNrUtbEIsV%2FN0n14G32MTM7JLU52wFWMAKb8T0qDkvgxxuS5WUgDUlzxQR3kmQrEz1h19lhona4SZ3olhDN19pK0q3m7M28Du00%2FVkQKn%2FBHHJYmxf0hE9t%2FeMgO49lQi2%2BJvGMDApYCRjZjNB5Mv8BmAOvlRNZyGR1FVStlMhSMN5KhPdl9HSCh6Zor6JmA2mHG3%2Fv898wKCbYeNd7l0MYXXwA53RWQw%3D%3D" target="_blank">Run Example</a>
 
 ```java
 rainbow = { 
@@ -48,7 +48,7 @@ Result: an HTML definition list (<dl>...</dl>) with one dt/dd pair per entry; th
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJx1kNFLwzAQxp%2Bbv%2BLIg3RQ1ndrB2UUKY5N1k2Zb7E9XVjaSNpszNH%2F3STtlCq%2BfZf73eX7jtW8YqKBGC5AvPnqGW7hQjxvucry1GhaSUkD85BnL64WTL0jJV5nHh%2Bz%2B9%2B45PVhxFdYcl0NA%2FNk82c%2FytNooDF%2BhOVJF5FSVx8%2BCPaKIqaJEMB6vzSAI1PxUMEkIr3M6jdpsuSt0kW7xlIX6F9nAvAhqc%2BgsNGiDZw%2B4LkXRyY0wgTimbWnsNWqBhNVV1i3zXSd5tvFBm6A3gk%2Bo0b89B7SnWtoMbPNpeQNmhwj5ilZbNNpH9qyoQEtnPPPf1h3jm80tMutohHpgv4zauw6wOqIhCHke3ka4hEs9vIa3V3F3OgLFw2MlQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJx1kNFrgzAQxp%2FNX3HkYShIfR9TkCJDVtrRtBvrW6a3VRrNiKalK%2F7vS6LdcGNv3%2BX73eW%2B401Vc9FCDBcg3nz1DLdwIZ63XOUsM5rWUtLQPLB852rB1TtS4vXm8TG%2F%2F43LqjlM%2BBrLStdjwzzd%2FJmP8jRpaM0%2BwvKkJ6WuP3wQ%2FBVFTFMhgA%2Fr0hCOXMVjBQEZVN68SZOEdUoX3RpLXaB%2FbQnBh7Q5g8JWiy50%2BoDnQRy50AgBxIldTmGnVQMmqK6x6drZOmPbxQZugN6JKqFG%2FHgP2YsztEisuZRViybFhHlKF9tsNkS2bGRAC7Pq8x%2FWHeMbjexwqyjpw%2BEvarZ1vtUkioDt5WkMR7DYy2twd5PgCwP3i2Q%3D" target="_blank">Run Example</a>
 
 ```java
 animals = { 

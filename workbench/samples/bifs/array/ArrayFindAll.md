@@ -52,7 +52,7 @@ Result: 0
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLKyrNLHEsKkqsVLBViFbg4lRKLCjISVXSAbKyM8szwYykxDwgBDPzixLz0iHSuUBWPkIhV6w1V1piWX5RZkmqG8jUYqCJiSCT3TLzUhxzcjQU0uCW6ShANCloWnOllOYWAOVQtQLFFfT1FaKNYrkAj3gxbg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLKyrNLHEsKkqsVLBViFbg4lRKLCjISVXSAbKyM8szwYykxDwgBDPzixLz0iHSuUBWPkIhVyxXWmJZflFmSaobyNBioIGJIIPdMvNSHHNyNBTS4HbpKED0KGhypZTmFgClUHVqcino6ytEG8UCANWPMLM%3D" target="_blank">Run Example</a>
 
 ```java
 fruitArray = [ 

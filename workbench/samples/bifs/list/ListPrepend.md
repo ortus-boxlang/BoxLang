@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrTs3MS0vNSfHJLC5RsFVQcs7JL05VCEnMyU4t0gnOLy1Q8EusylSy5ipGVYjM1csBEgFFqQWpeSkaCkoBpWlplQrBGZlFJUoKmtZc5UWZJan%2BpSUFpSUaKPpAkgBktCyy" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrTs3MS0vNSfHJLC5RsFVQcs7JL05VCEnMyU4t0gnOLy1Q8EusylTiKkZVh8zVywESAUWpBal5KRoKSgGlaWmVCsEZmUUlSgqaXOVFmSWp%2FqUlBaUlGijaFDQBwS8r9w%3D%3D" target="_blank">Run Example</a>
 
 ```java
 seinfeldList = "Close Talker,Soup Nazi"
@@ -17,7 +17,7 @@ Result: "Puffy Shirt,Close Talker,Soup Nazi"
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrzs9N9cksLlGwVVAy1DXSNdY1UbLmKkaI5gCpgKLUgtS8FA0FmLiOgpKBEpDQVVLQtOYqL8osSfUvLSkoLUEoAUkAADlxHIQ%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9N9cksLlGwVVAy1DXSNdY1UeIqRgjmAKmAotSC1LwUDQWYuI6CkoESkNBVUtDkKi%2FKLEn1Ly0pKC1BqFDQBADRvxvJ" target="_blank">Run Example</a>
 
 ```java
 someList = "1-2-3-4"
@@ -32,7 +32,7 @@ Result: "0-1-2-3-4"
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrzs9N9cksLlGwVVByS03S8U0s0nEsKFKy5ipGyOQAqYCi1ILUvBQNBZi4joKSjo5XYp4SiAEkSopKUxU0rbnKizJLUv1LSwpKSxCKQRIAUHoiJw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9N9cksLlGwVVByS03S8U0s0nEsKFLiKkZI5ACpgKLUgtS8FA0FmLiOgpKOjldinhKIASRKikpTFTS5yosyS1L9S0sKSksQahU0AdM6IWw%3D" target="_blank">Run Example</a>
 
 ```java
 someList = "Feb,Mar,Apr"
@@ -47,7 +47,7 @@ Result: ",,Jan,Feb,Mar,Apr"
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrzs9N9cksLlGwVVByS03S8U0s0nEsKFKy5ipGyOQAqYCi1ILUvBQNBZi4joKSjo5XYp6OjhKICSTSEnOKUxU0rbnKizJLUv1LSwpKSxDqQRIArBoiyg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9N9cksLlGwVVByS03S8U0s0nEsKFLiKkZI5ACpgKLUgtS8FA0FmLiOgpKOjldino6OEogJJNISc4pTFTS5yosyS1L9S0sKSksQyhU0ASxPIg8%3D" target="_blank">Run Example</a>
 
 ```java
 someList = "Feb,Mar,Apr"
@@ -60,7 +60,7 @@ Result: "Jan,Feb,Mar,Apr"
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxVzU0KwjAQhuF9TjHMKoXBHKC4ELRQqCDkBNrOIpA%2Fkkn1%2BFaqC1ff5uN5jQHrQvYMl9f9s%2BpZnHBqkpto8K7KrXDmuGhA26qj6WSJfJuZiUi4ChLgGCsX4QWhg65XxsCVw4MLDC3O4lJUVcq0YXAEpHED0so%2FBfs9em4ha%2FgeD%2F%2FpwZWttOtvId86jw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxVzU0KwjAQhuF9TjHMKoXBnMCFoIVCBSEnaO0ggfyRTLTHt0VBXH2bj%2FcxBqwL2TNc1mlf9SpOODXJTTR4V%2BVWOHNcNKBt1dF4skRzWv0UH0QkXAUJcIiVi%2FCC0EGnjIErh5kL9C3exaWoqpRxq8ERkAYin578y%2BCHPbeQNXyfh3%2B8d2WT9vobVhg7jg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 // Simple Example

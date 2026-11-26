@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxtkFFLwzAUhd%2F9Fdc8SAdj1ldFpJqWBVwHa2HgW2ZSF2ja0aaM%2Beu9N0vLZMtLck%2FOd3Nz7CkztYZX%2BNGu1PZAVTQW3HT627XdKZrNgTndO7pmMHu5q%2FAgmqo9k1moIrDnfugw%2FUZLJXe%2Be3Q%2FAouPJN%2BkCYc3YEPD4BkYm8EDsC64GaHbzrib6HYjyvSKPQa7Z5dGKd38J0WxFJynOZFN6%2BCC3Xs7kko6eo%2FjVhqrs7az0kUw9fhMinK15iITKcc4qqGupygK80tsPtid7q7IQnyl8AhPcRyHDfl4Eceep%2BH1enCHARmGC6ea0DxZpTQlqqYHurrIFfV50KbAUAPZqCCHLFBcwI3HhIOj7EE6qGXvwLbKVEYrEoj3iYwN92SEnj7aVjAO6T9OltW77%2F8HrTatjw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxtkNFrgzAQxt%2F7V9zyMBRK514HY7hFaWC1oEJhb%2BkS14DRopHS%2FfW7s1E62rwc9%2BX7XS6fPaem1vAKP9qV2h6pC6aGm05%2Fu7Y7B%2BESmNO9o2sG4aLCKpqqvYCp7wKwl3HhwvS5lkrux9nBw%2BRffcRZnsQc3oANDYMXYCyER2CddzMkd51xd8ldLsrkBj15O6Fro5Ru%2FoOiWAvOk4zApnVwhR5GO1so6eg1jqU0VqdtZ6ULYB7xGRflZstFKhKOSVRDXU8pFOaX0Gywe93dgIX4SuAJnqMo8gXxaBVFhNPieju444AIw4MrzWQWbxJaEVXTA11dRYr60mtzWKiBbJSXfRAoruD2LeHgJHuQDmrZO7CtMpXRigTCxzimeQcyQk%2FfbCuYdhy%2FTZbNO47%2FA4oqq3I%3D" target="_blank">Run Example</a>
 
 ```java
 myFile = getTempFile( getTempDirectory(), "testFile" )
@@ -21,7 +21,7 @@ Result: "testFile9217639658547923751.tmp" is readable, writable and not hidden. 
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLy8xJVbBVSE8tCUnNLXAD8jRgHJfMotTkkvyiSg1NHQWllNTcfCUFTWuulNLcAg2FssQiW6A6kAbPvLR8DYU0kEFAhTmJSak5tkruCDk0XTi1oKgHABOwMQs%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLy8xJVbBVSE8tCUnNLXAD8jRgHJfMotTkkvyiSg1NHQWllNTcfCUFTa6U0twCDYWyxCJboDKQes%2B8tHwNhTSQOUB1OYlJqTm2Su4IOVRNOHUgKQcAXYowUA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 file = getTempFile( getTempDirectory(), "demo" )

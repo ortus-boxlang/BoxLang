@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrLikqTS7xTq10rcgsLinWUChOLSpLLdJRUMovVlLQtOYCANfYCy4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKC4pKk0u8U6tdK3ILC4pBgqkFpWlFukoKOUXKyloKmgCAKOPEDY%3D" target="_blank">Run Example</a>
 
 ```java
-structKeyExists( server, "os" )
+writeOutput( structKeyExists( server, "os" ) )
 
 ```
 
@@ -15,10 +15,10 @@ Result: true
 
 Calling the keyExists member function on a struct.
 
-<a href="https://try.boxlang.io/?code=eJwrTi0qSy3Sy06tdK3ILC4p1lBQyi9WUtC05gIAhJEIiw%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKE4tKkst0stOrXStyCwuKdZQUMovVlLQVNAEAC0sDZM%3D" target="_blank">Run Example</a>
 
 ```java
-server.keyExists( "os" )
+writeOutput( server.keyExists( "os" ) )
 
 ```
 
@@ -26,7 +26,7 @@ Result: true
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxdjs0KgkAUhdfOUxxmo4HgPmlRFiFBRQmth%2BGKgzoTjlEivnuOCUXczf04PxyhVS0qixV6MC853bAEr43hIfPO6d6RUbp0mKyzSSTzdLhJL1vHslDNnbMhZlGEpCBZojWwRFA5SupAL2VbC6Vh2%2BYhW6byANfpPVC3m9QA4jMkBLdaqIpjMV7PPJKFCcCzgpqx0UJg0l2dP2f80RyzgYEqSz%2BZo5m93wX%2FkTfpU0v8" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxVjkELgkAQhc%2Fur3jsRQPBe9ChLEKCihI6LzLhoO6Gu1Ei%2FfdcEyrmMh%2FvvZmnNDeqtlighwjSwwVzyMYYGYvgmG09GdaVx3SZjyKZh8dVdlp7Lkpub1K8RJIgLamo4AwsEfiKijrQk62zYA3r2nvhBF8jnMd1R91mVCOoT48Y0mrFtcRsmF4EVJQmgsxLaoeLFgqj7s%2BFUyYczMN7UG3pJ7I3k%2FVb4D%2FxBs3WS0E%3D" target="_blank">Run Example</a>
 
 ```java
 animals = { 

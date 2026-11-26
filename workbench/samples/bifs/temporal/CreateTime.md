@@ -11,7 +11,7 @@
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FBwLkpNLEkNycxN1VBQMjRS0lFQMjUHkcYGSgqaCprWXADtXgmX" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLKc0t0FBwLkpNLEkNycxN1VBQMjRS0lFQMjUHkcYGSgqaCpoA2joJUg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 dump( CreateTime( "12", "57", "30" ) )

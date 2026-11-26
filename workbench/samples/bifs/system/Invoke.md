@@ -4,7 +4,7 @@ Invokes the size method on a new HashMap object, which should return 0
 
 
 ```java
-invoke( createObject( "java", "java.util.HashMap" ), "size" )
+writeOutput( invoke( createObject( "java", "java.util.HashMap" ), "size" ) )
 
 ```
 

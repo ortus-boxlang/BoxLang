@@ -2,7 +2,7 @@
 
 In this example we'll use left() to return part of a string.
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyElNA5JKIRmpCoWlmcnZCklF%2BeV5Cmn5FQpZpbkFqSkK%2BWWpRQolQPmcxKpKhZT8dCUdBUNLBU0FTWsuAAH0GPg%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyElNA5JKIRmpCoWlmcnZCklF%2BeV5Cmn5FQpZpbkFqSkK%2BWWpRQolQPmcxKpKhZT8dCUdBUNLBU0FTQDP%2Fxiz" target="_blank">Run Example</a>
 
 ```java
 writeOutput( left( "The quick brown fox jumped over the lazy dog", 19 ) )
@@ -15,7 +15,7 @@ Result: The quick brown fox
 
 In this example we'll use a negative count to return part of a string.
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyElNA5JKIRmpCoWlmcnZCklF%2BeV5Cmn5FQpZpbkFqSkK%2BWWpRQolQPmcxKpKhZT8dCUdBV0jUwVNBU1rLgAbLBki" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyElNA5JKIRmpCoWlmcnZCklF%2BeV5Cmn5FQpZpbkFqSkK%2BWWpRQolQPmcxKpKhZT8dCUdBV0jUwVNBU0A6OMY3Q%3D%3D" target="_blank">Run Example</a>
 
 ```java
 writeOutput( left( "The quick brown fox jumped over the lazy dog", -25 ) )

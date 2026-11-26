@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLTCrWUNA10TNW0LTmAgAXlQLP" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQSEwq1lDQNdEzVtBU0AQAfu0H1w%3D%3D" target="_blank">Run Example</a>
 
 ```java
-abs( -4.3 )
+writeOutput( abs( -4.3 ) )
 
 ```
 
@@ -13,7 +13,7 @@ Result: 4.3
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLTCoOS8xRsFVITCrWUDBU0LTmSinNLdAA8UESQH4iqhI9IhTpEqUGu0kA9Lso%2BQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLTCoOS8xRsFVITCrWUDBU0ORKKc0t0ABxQeKaXImoCvQIKtElQgUWUwClEycX" target="_blank">Run Example</a>
 
 ```java
 absVal = abs( 1 )

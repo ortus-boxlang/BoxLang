@@ -2,7 +2,7 @@
 
 Uses the arrayMedian function to calculate the Median value
 
-<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNNTh4jQCYa5Ya65coGAiSNI3NSUzMU9DoRiuWtOaq7wosyTVv7SkoLREQyEXJAIARXgWXQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNNTh4jQCYa5YrlygWCJIzjc1JTMxT0OhGK5Yk6u8KLMk1b%2B0pKC0REMhV0ETAPNsFaI%3D" target="_blank">Run Example</a>
 
 ```java
 someArray = [ 

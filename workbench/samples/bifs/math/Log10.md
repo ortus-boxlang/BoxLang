@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLyU83NNBQMNYzVNC05gIAG7kDDA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyMlPNzTQUDDWM1TQVNAEAIgVCBQ%3D" target="_blank">Run Example</a>
 
 ```java
-log10( 3.1 )
+writeOutput( log10( 3.1 ) )
 
 ```
 

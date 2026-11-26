@@ -2,7 +2,7 @@
 
 Reduce the string to a single value.
 
-<a href="https://try.boxlang.io/?code=eJzLSS0pSS0qVrBVUEpMSk5JTVOy5krOyS8uLUoFimkoOOZVKmTmFRjqwFhGCpoKtnYK1VycRaklpUV5YFkFNbCUNVetNVd5UWZJqn9pSUFpiYZCcElRZl56UGpKaXKqhkIOxDIdBagNOgpKVUpA8zStuQCLXirm" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLSS0pSS0qVrBVUEpMSk5JTVPiSs7JLy4tSgUKaSg45lUqZOYVGOrAWEYKmgq6dgrVXJxFqSWlRXlgWQU1sBRXLVd5UWZJqn9pSUFpiYZCcElRZl56UGpKaXKqhkIOxCYdBaj5OgpKVUpA0zQBxvMp4A%3D%3D" target="_blank">Run Example</a>
 
 ```java
 letters = "abcdef"

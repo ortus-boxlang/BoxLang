@@ -15,7 +15,7 @@ Result: English (United States) → Deutsch (Schweiz)
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUEhPLfHJT07MSXXJLC7ISaz0S8xN1dBU0LTmAgAJfgzQ" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUEhPLfHJT07MSXXJLC7ISaz0S8xN1dBU0AQA79kMiw%3D%3D" target="_blank">Run Example</a>
 
 ```java
 writeDump( getLocaleDisplayName() )

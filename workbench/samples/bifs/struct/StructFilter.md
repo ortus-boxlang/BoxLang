@@ -2,7 +2,7 @@
 
 Take a struct of items with their rating and use structFilter to return ones of a rating 3 and higher.
 
-<a href="https://try.boxlang.io/?code=eJxVjUELgkAQhc%2FOr5ijgpeyLonCBhlSqXjpLLnGklmss4aI%2F73Z6FDM5Xvz4HuNNorKilR37THCCcERRXHc4QZXPjhbkfFxWHDIS5HtbbPmcGLOmZfMh%2FScMgYwh9BUw0MrkokVW2VP2lwoUS1J7WLzs%2Beji6Ib8SZH%2FwND1RqJHkYxTuBoSUZ332ccYRDCjF4IL6uvzf3Jtv8xLt%2FF2j2S" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxVjU0LgkAURdfOr7hLBTd9bQKFETKkUnHTWmqMIbMY3xgi%2FffeRIvibc69D85tjNVU1aS7S48IE4Qny3K%2FwRrLUHiJzPk4zDgUlcy37rPicGAumOfMu%2ByYMS7ESzT1cDeaVOq8ztiTsSdKdUvK%2BGh%2B5kL4kN2IqxrDDwx1axUCRDEm4RlF1nTfMo6cHYF4OvnZ3h7s%2Bp8K3qiqPJw%3D" target="_blank">Run Example</a>
 
 ```java
 fruitRatings = { 
@@ -25,7 +25,7 @@ Result: {apple=4,orange=5,kiwi=3}
 
 This is the same example, but using a member function on the struct instead of a standalone function.
 
-<a href="https://try.boxlang.io/?code=eJxdjcEKgkAURdfOV9ylggRlbRKFCSqkUnHTWnAmhsximjFE%2FPfeRIuItzn3XThXaqtMVRvVXZ5IMIJ5vCyPW6yxDJm34TkdhTmFouL53jUrCifignhBfMjOGWHEppjJur9rZcTOiZ1S%2FizMpGqN0D588G7AVQzhB%2Fq6tQIBkhQj87QwVnffZ5ogitmEIGYv523s7eHjb4XKN%2FmnOu8%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLKyrNLAlKLMnMSy9WsFWoVuDidAwI8HFVsFIw0eHidHL0A0IgxxDI8Q9y9HMHyZgCOb5Atj%2BQbQRke3uGewKZxly1XGmJZflFmSWpbiBzQSamIVmgl5aZU5JapKGgoeCYV6mQnVqpA2aUJeaUpipoKtjaKVRzcRallpQW5UEF7WxBxipocpWDTE0pzS3QUECzQxMA6KA5%2BQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
 fruitRatings = { 
@@ -46,7 +46,7 @@ Result: {apple=4,orange=5,kiwi=3}
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJy1kE9LxDAQxc%2FJp3j21EJx7y4Vin%2BW4rIqPYiIhyhTG5qmmqZKWfrdTeLuag8e9zIwb3i%2FmXlCy1aoHhm24Ozi9gFniNqui1LO7oqV7zqpG9%2BWm7xYeyHi05IvFijr7gtCKYgfCL8c2vcYSryQyqL8dxCl%2BBQm23VIgntFdj%2BHrYVFKxqC7mRP3NcxP5xWWjO82mupLJl4b0oRI9cjGhqRIDvHljOHLSpHo6DWoodwm9VAMGQHo%2BFAhDjgd5yEM1nFWJM%2BkJ8gzNvQkrb96c3VI54dP%2FF49oey5Gzie6FyLqdM%2FrVZCJuwKZ%2FFMHvunyyEIXwMkiwP9XhRBPw8ipMjZXEfVs2zmH3nDN8nsNCR" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJy1kE1LxDAQhs%2FJr3jtqYXi3oUKxY%2BluKxKDyLiIcrUhqappolSlv5307hdLXjdy8CbYZ7JPELLVqgeGXbg7OL2AWeI2q6LUs7uivWUOqmbKZbbvNhMDxEf%2BWqFsu6%2BIJSC%2BGHwS9e%2Bx1DihVQW5b%2BNKMWnMNk%2BIZmG12TnNmwtLFrREHQne%2BJTHfLDx0pr3Ku9lsqSieehFDFyPaChAQmyc%2Bw489ii8jQKr7XoIfxi5QiGrDMaHkSIA37PSTiTVYwN6QP5CcK8uZa07U9vrh7x7PnJhGd%2FKJyNfM6VHyI%2B%2BrsWArZhTb5QsLjsfw%2FCED6cJMtDPZ6GgF9qODmGh%2FuwZ%2BlhcVryDS9bzjk%3D" target="_blank">Run Example</a>
 
 ```java
 animals = { 

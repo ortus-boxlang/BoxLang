@@ -2,7 +2,7 @@
 
 Sets third row of query overwriting news entry
 
-<a href="https://try.boxlang.io/?code=eJxtkDFvAjEMhefLr3jK1EpZWtqlVZeKFQZAYkAdUjAQNTitkyOgiv9eH3Th2sWyrfc%2BJ4%2BpZrzgqyU5jqnewIaVK6FEsk57LrQhcXsvy60XXS1gmm%2FTNCqzeMKd6%2FqLXkc7pEpHrGhNvmTMpN15tqY5uSvXfc81Ikb18QOJMUrpH8eg5xiHg2onlMOG81%2F5Q08%2B2xJeSWJgzH2MWGs528wbbp%2FN%2BfdTKpOkAbAm4vQglPeLe1Rcj9YlI0wFIeM9iT751JGqhELDdvd54XSrHzO%2FYVg%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxtkL1uQjEMRuebp%2FiUCaQsbWGp1KVihQGQOqAOoRiIGpzi5DZFiHev%2BVm47RI50XeOYzPVjBfsW5LDhGoPNqxcCSWSdVpzoQ2J%2B%2FbysfWiTwuY5miaRmMWz3hw5%2Fqa16sdUaUDVrQmXzLm0u48W9Oc3B312KHGxKg%2BfiIxxin9Qzx1iEn40eyUcthw%2FhsfdOLzLeGVJAbGm48Raz0umHlH31yGn1GZJp2fdSFO%2B0F1N9tQbR3ZeTHCVBAylkn0xycVVQmFRu3u66pB%2Fxe3j2Cd" target="_blank">Run Example</a>
 
 ```java
 news = queryNew( "id,title", "integer,varchar", [ 
@@ -36,7 +36,7 @@ writeDump( news )
 
 Sets third row of query overwriting news entry
 
-<a href="https://try.boxlang.io/?code=eJxtkMFKQzEQRdcvX3HJqkIQtLpR3Ei37aIUuiguop22wXSik7ymRfrvTtSNTzdhMtxzGC5TzXjAe09ymlEdwYa1K6FEsk5nLrQlcQcvLzsvulrBdB%2Bm6zRmcYcr1%2BbvvH7thCqdsKYN%2BZKxkH7v2Zru7H5R1wNqSozq4ysSY5rSP8R4QMzCUbNzymHL%2BW%2F8ZhBf7AiPJDEwlj5GbPT5wswTLu4NawmXmco8aQFjBzX9iG5VNPC0ToSpIGQ8J9Fjz81RJRSa9Pu3EZqurT4ByRxfJA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxtkLFuQjEMReeXr7jKBFJUqYUuSF0QKwwIqUPVIRQDEcFpnbymqOLf69ey8Ohi2dE9R46ZasYTPlqS04LqADZsXAklknXac6Edifv08rb3ok8vMM23aRqNWUxw77r%2BL6%2BjnVGlEza0JV8yVtIePVvTnN0V9dCj5sSoPh6QGPOU%2FiFGPWIRvjS7pBx2nG%2Fj4158tSdMSWJgPPsYsdXyi5lXDA3rDe4ylWXS%2F48cVHTxPKqnp%2BlOIkwFIWOdRHc9q6JKKDRrj%2B8DdDYMfwBU%2BV5p" target="_blank">Run Example</a>
 
 ```java
 news = queryNew( "id,title", "integer,varchar", [ 
@@ -68,7 +68,7 @@ writeDump( news )
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxljz0LwjAQhufkVxyZFLL4tShuzoI6ikPQ06S0aU2vliL9716KQmun%2B%2BC5h3sJSzpUGBrYwjPWPdYTUO6mvclQaW494QODfplwtSbw6gxSvKUQTClYw0zHvsN5Ugl6d8egpGj1gJsPOZOYZgwt%2FmS59WNoOYTKzJGNlLzAdCO7GCekY85J6JdPsxrY8VWsWNH7JS2sUbKN53VwhLsqK3rHcf8BgkBNzA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxljz0LwjAQhufkVxyZLGTxaxHcnAvqKA5BT5Ni0ppeLUX6370WhdZO98FzD%2FcSlrSvMDawhWdXU6xnoNxVB%2BNRaW4D4R2jfpl4sSby6gRSvKUQTCnYwFx3fY%2FzpDIM7oZRSdHqEbcYcyYzzRRa%2FslyG6bQagyV3pHtKHmGRPYpjkiHnIPQL55mM7Dia1izYfDKo7BGyZav6%2BgId5UvBreQfABU400R" target="_blank">Run Example</a>
 
 ```java
 testQuery = queryNew( "id,name", "integer,varchar", [ 

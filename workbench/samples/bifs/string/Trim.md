@@ -2,10 +2,10 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxTslNSUFMoKcrM1VBQUgACZzeX%2FORiEEtJQRMopWSjZM0FAKIqB7c%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQULJTUlBTKCnKzAWyFYDAycclP7kYxFJS0ARKKdkAaQCHWAzE" target="_blank">Run Example</a>
 
 ```java
-">" & trim( "    BLDocs    " ) & "<"
+writeOutput( ">" & trim( "    BLDocs    " ) & "<" )
 
 ```
 

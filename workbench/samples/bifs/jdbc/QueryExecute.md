@@ -117,7 +117,7 @@ See our [caching documentation](https://boxlang.ortusbooks.com/boxlang-framework
 
 Query a local database variable without going through your database
 
-<a href="https://try.boxlang.io/?code=eJxNzLEKwkAMBuD58hQhUxWfQHERC07FQQcRh%2FNMsWCr5i5WKffu3jlIh8BPkv9Tz%2BJxiU9l%2BVTcF0h1Iz50tmWaIb2suKuVFI8IZgBjRnecI21sR2AinHCyAK%2Fn%2FRgs3%2Bw0cEI939gFnGIt9xY1PyVziGnArFe7w7bM2q9FEDPWSxP4ou2jwL%2Bb1l9gIzcU" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxNzLEKwkAMBuD58hQhUys%2BgeAiFpzEQQcRh%2FNMseC1mrtYpdy7e3WQDoEf8v%2BfBpaAS3wqy2fLfYFUNxJiaz3THOllxd2s5HhCMAMYM%2FnjAmljWwKT4IwlBL0cpl71ZqeRsxn4zi7iDGvpPOpYyuSQ8oFZr%2FbHXTVivxVBylYvTeSr%2BkeBf7b8ApCtNlk%3D" target="_blank">Run Example</a>
 
 ```java
 users = queryNew( "firstname", "varchar", [ 
@@ -137,7 +137,7 @@ writedump( subUsers )
 
 Return a query object converted into an array of structs.
 
-<a href="https://try.boxlang.io/?code=eJxNjUELgkAQhc87v2KYk4W%2FoOgSCZ0kRA8RHTYbSXCtZnczEf97a1B4GHi89%2BZ73rJY3ODTs%2FQpdxFSVYt1rTZMMdJLS3nTEuQJQQ2g1CzHFdJetwRqhDMu1mD9pZgDkzeX3nGAWm64dLjESu4G%2FVQKzGEMB2q3zY%2BHZKJ9vygGlSV5kaU%2FW4vonmCcNjqpHV%2B9eUT4nwv2B3mGPVI%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxNjcEKgkAQhs87TzHMScMnCLpEQicR0UNEh81GElqr2d1MxHdvDQoPA8P8%2F3yftywWN%2Fj0LEPGfYTUtGJdpw1TgvTSUl%2B1hPWIoEZQapHjGmmvOwI1wQljsP5cLXnpm2vvODAt37h2uMJG7gb9XArIcQoDarctD3k6w75flIAq0rIqst9Zi%2BiBYAqKXlrHF28eEf5t8QeSCTyX" target="_blank">Run Example</a>
 
 ```java
 users = queryNew( "firstname", "varchar", [ 
@@ -159,7 +159,7 @@ Result: [ { firstname: "Han" } ]
 
 Return a query object converted into a struct of structs. (Struct key is based on the "columnkey" parameter)
 
-<a href="https://try.boxlang.io/?code=eJxNjk0LgkAQhs%2B7v2LYk4WXrkWXSggqC9FDRAfTsYS0mt3NQvzvzQZ9HAaGh%2FfLaiQNY7hZpGeIjQeqzH0oStKmTitUPoPa4BHJh3tK2SklZjuQopVCsFjBEAa%2B%2B38mRmqe1kqKTu6hN5LaHpL%2FpuCBmTXIbRrPmBnoQ0GXCqwTcX7b8Ukxm8TbTeDS3i7FNVEQJ1H4wdqQzYzj0%2FUyWYWLYOswr5Kd622oNJjb6urBdwLjF4O4SLA%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxNjk0LgkAQhs%2B7v2LYk4WXrkGXSggqC9GDRAfTsYS0mt3NQvzvzQZ9HAaGh%2FfLaiQNE7hZpGeIrQeqKnwoK9KmyWpUPoPG4BHJh3tG%2BSkjZjuQopNCsFjBGEa%2B%2B38mRmqRNUqKXu5hILU9JP9FwQNza5DLNJ4xNzCEki41WCfi%2BK7nk2I%2BjdNt4MLeLsUtURAnUfjB2pDNjeOzzSpZh8sgdZhHyZ5rW6oMFra%2BevBdMHgBby5H9Q%3D%3D" target="_blank">Run Example</a>
 
 ```java
 users = queryNew( "id, firstname", "integer, varchar", [ 
@@ -181,7 +181,7 @@ Result: { 1: { id: 1, firstname: "Han" } }
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxNj09rwkAQxc87n2LYUyp70aMlh6orPagtqVVEQljMaAMxibsbbSn57m42%2BOcy7%2FHeDPwmsWQshniqSf8t6BIgT7JUYFIQtbIv9brUecoF8qywdCAt8Kz07kc9jCu3CGwLjPWFG7zKVWG5t%2BqgMw4sFl0%2F8KFRZ%2Brqi7Kk2x5ifHkFjxGRqfM7lPylXW0pQHPKQ%2F4lZ3K8xB5Oo485Jp5%2B%2FS4j2RG7o2GrjqhSWh1N%2BA9sIeUEh%2BgcW73NvqXzT4TLzadPbr8Aa6ARWFY2Kwt%2FPxnddjwQh6ZFTetjFeAzsAuv0S5fdA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxNj82LwjAQxc%2BZv2LIqS65rEehh3XN4sEv6hciUoId3UJta5Kqi%2FR%2FN03R9TLvMW8e%2FCa2ZCyGeK5I%2F03oGiCP00RgnBM1cij0utBZwgXyNLd0JC3wovT%2BV%2F0bF24R2BYY%2BxRu8DJTueXeqqNOObCdaPOuXxp1oTa%2BKku6yWGHHfAUEZkqezHJG%2B0rSwGacxbyuRzJ7wV%2B4E80HWPs4ddDGckW2JV6jTqgUml1MuEd2ETKAfbQObb6Gi2l82%2BAi83Mb56vAKuhFliUNi1y3x%2F0nzceiEPtSJPqVAb4ztt5AGPfXrk%3D" target="_blank">Run Example</a>
 
 ```java
 _test = queryNew( "_id, _need, _forWorld", "integer, varchar, varchar", [ 

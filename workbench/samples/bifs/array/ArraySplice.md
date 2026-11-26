@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLzc8ryShWsFWIVuDiVPJKzFPSAdK%2BiUXJGWCWY0FRZg6Y5VWal6rEFWvNlVmSmgvSABRzS00CCyUWFSVWBhfkZCanaijkgo3UUTDSUTDQUQCr1rTmKi8CslJKcwtgCkCCAGPBI3Y%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLzc8ryShWsFWIVuDiVPJKzFPSAdK%2BiUXJGWCWY0FRZg6Y5VWal6rEFcuVWZKaC1IPFHJLTQKJJBYVJVYGF%2BRkJqdqKOSCDdRRMNJRMNBRACvW5CovAjL8S0sKSks0FLyC%2Ff2CU4syE3Myq%2BAaFDQVNAGViyjO" target="_blank">Run Example</a>
 
 ```java
 months = [ 
@@ -25,7 +25,7 @@ Result: ["Jan","Feb","March","April","June"]
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLzc8ryShWsFWIVuDiVPJKzFPSAdK%2BiUXJGWCWY0FRZg6Y5VWal6rEFWvNlVmSmgvSABRzS00CCyUWFSVWBhfkZCanaijkgo3UUTDWUTDSUQCr1rTmKi8CslJKcwtgCkCCAGQkI3k%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLzc8ryShWsFWIVuDiVPJKzFPSAdK%2BiUXJGWCWY0FRZg6Y5VWal6rEFcuVWZKaC1IPFHJLTQKJJBYVJVYGF%2BRkJqdqKOSCDdRRMNZRMNJRACvW5CovAjL8S0sKSks0FLyC%2Ff2CU4syE3Myq%2BAaFDQVNAGWHijR" target="_blank">Run Example</a>
 
 ```java
 months = [ 
@@ -48,7 +48,7 @@ Result: ["Jan","March","Feb"]
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLzc8ryShWsFWIVuDiVPJKzFPSAdK%2BiUXJGWCWY0FRZg6Y5VWal6rEFWvNlVmSmgvSABRzS00CCyUWFSVWBhfkZCanaijkgo3UUdA11lEw0FEAK9e05iovArJSSnMLYCpAggCDJyOk" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLzc8ryShWsFWIVuDiVPJKzFPSAdK%2BiUXJGWCWY0FRZg6Y5VWal6rEFcuVWZKaC1IPFHJLTQKJJBYVJVYGF%2BRkJqdqKOSCDdRR0DXWUTDQUQCr1uQqLwIy%2FEtLCkpLNBS8gv39glOLMhNzMqvgOhQ0FTQBt1so%2FA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 months = [ 
@@ -71,7 +71,7 @@ Result: ["Jan","Feb","March","April","June"]
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLzc8ryShWsFWIVuDiVPJKzFPSAdK%2BiUXJGWCWY0FRZg6Y5VWal6rEFWvNlVmSmgvSABRzS00CCyUWFSVWBhfkZCanaijkgo3UUTDVUTDQUQCr1rTmKi8CslJKcwtgCkCCAGQqI3k%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLzc8ryShWsFWIVuDiVPJKzFPSAdK%2BiUXJGWCWY0FRZg6Y5VWal6rEFcuVWZKaC1IPFHJLTQKJJBYVJVYGF%2BRkJqdqKOSCDdRRMNVRMNBRACvW5CovAjL8S0sKSks0FLyC%2Ff2CU4syE3Myq%2BAaFDQVNAGWJCjR" target="_blank">Run Example</a>
 
 ```java
 months = [ 
@@ -94,7 +94,7 @@ Result: ["Jan","March","April","June","Feb"]
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLzc8ryShWsFWIVuDiVPJKzFPSAdK%2BiUXJGWCWY0FRZg6Y5VWal6rEFWvNlVmSmgvSABRzS00CC%2BWCTdErLsjJTE7VUDDSUTDQUQCr07TmKi8CslJKcws0FCDqQIIAiRAhWQ%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLzc8ryShWsFWIVuDiVPJKzFPSAdK%2BiUXJGWCWY0FRZg6Y5VWal6rEFcuVWZKaC1IPFHJLTQKJ5ILN0CsuyMlMTtVQMNJRMNBRACvT5CovAjL8S0sKSks0FLyC%2Ff2CU4syE3Myq4AKIfoUNBU0AZvOJrE%3D" target="_blank">Run Example</a>
 
 ```java
 months = [ 
@@ -125,7 +125,7 @@ Result: Jan,April
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxzSawsVrBViFbg4lQKLs1T0gHSvvkQOjw1BUyHZJQWFYNZbkWZYDo4sUSJK9aaK7MkNRekG6SoNLUYLOZYVJRYGVyQk5mcqqHgAjReR8FYR8FARwGsWNOaq7wIyEopzS2ASIOEALc4Iyo%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxzSawsVrBViFbg4lQKLs1T0gHSvvkQOjw1BUyHZJQWFYNZbkWZYDo4sUSJK5YrsyQ1F6QZpKY0tRgk5FhUlFgZXJCTmZyqoeACNFxHwVhHwUBHAaxWk6u8CMhIKc0tgMgqaAIAE3YiNA%3D%3D" target="_blank">Run Example</a>
 
 ```java
 Days = [ 

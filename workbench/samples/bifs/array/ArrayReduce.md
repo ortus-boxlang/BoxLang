@@ -2,7 +2,7 @@
 
 Sum each `a` element in the array
 
-<a href="https://try.boxlang.io/?code=eJxVjcEKwjAQRM%2FZr5hjikEsKIilQsC74FU8hLgHoUlDTNQi%2FXdjQYq3fTuzb23vQsevg0kGLc4g8SYhNHZYkxjVjPX2nzd1Ybo0dM%2BuXJoYzXDia7YsYWepgoT2A0Lkh5om7tixT6jQ7lFskVOOfipg8UuXuqFRYYWqoWe8JT7mFHKS%2BH4ruw8PZTLx" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxVjb0KwjAUhefcpzhjgkEsKIjQQsBdcBWHEO8gNDHERC3SdzcWpLidj%2FPnbj72%2FNrbbNHiBBJvEsJghzWJUc%2FYbP9501SmM92Lr0Wbkh2OfCmOJdy8qSFhwoCY%2BKEnxT17DhkKbYc6ljiXFKYAFj93aWjUWEHRM10zH0qOJUt8v9QHIRkx%2Bw%3D%3D" target="_blank">Run Example</a>
 
 ```java
 complexData = [ 
@@ -56,7 +56,7 @@ reduced = ArrayReduce( [
 ], ( Any carry, Any value ) => {
 	return carry + value
 }, 0 )
-dump( reduced ); // yields 10
+dump( reduced ) // yields 10
 reduced = ArrayReduce( [
 	"hello",
 	"there",

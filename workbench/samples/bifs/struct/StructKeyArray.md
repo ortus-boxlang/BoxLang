@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJwrLkksKS12zk9JLVawVahW4OL091awUjAyMNDh4nQOcnUMcXUB8w2BfD%2F%2FkHhffxdPN0%2BwoLGBCVDQydElPsg1MNQ1OAQoZgLWCFLo5h%2Fq5wIWMeGqteYqL8osSXUpzS3QUCguKSpNLvFOrXQsKkqsBPERbtBU0LTmAgBCNyiV" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrLkksKS12zk9JLVawVahW4OL091awUjAyMNDh4nQOcnUMcXUB8w2BfD%2F%2FkHhffxdPN0%2BwoLGBCVDQydElPsg1MNQ1OAQoZgLWCFLo5h%2Fq5wIWMeGq5SovyixJdSnNLdBQKC4pKk0u8U6tdCwqSqwE8RFO0FTQBADOGygV" target="_blank">Run Example</a>
 
 ```java
 statusCodes = { 
@@ -22,7 +22,7 @@ Result: [NOT_FOUND, BAD_REQUEST, CREATED, OK, NOT_MODIFIED]
 
  Retrieve a comma separated list of keys using the member function
 
-<a href="https://try.boxlang.io/?code=eJwrLkksKS12zk9JLVawVahW4OL091awUjAyMNDh4nQOcnUMcXUB8w2BfD%2F%2FkHhffxdPN0%2BwoLGBCVDQydElPsg1MNQ1OAQoZgLWCFLo5h%2Fq5wIWMeGqteYqL8osSXUpzS3QUChG2KmXnVrpWFSUWKmhqaBpzQUAJU0l%2Fg%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwrLkksKS12zk9JLVawVahW4OL091awUjAyMNDh4nQOcnUMcXUB8w2BfD%2F%2FkHhffxdPN0%2BwoLGBCVDQydElPsg1MNQ1OAQoZgLWCFLo5h%2Fq5wIWMeGq5SovyixJdSnNLdBQKEZYqZedWulYVJRYqaGpoAkAt%2Fwlfg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 statusCodes = { 
@@ -40,7 +40,7 @@ Result: [NOT_FOUND, BAD_REQUEST, CREATED, OK, NOT_MODIFIED]
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxLzMvMTcwpVrBVqFbg4nT2D1ewUlDKzc9X0uHiDPB0B%2FHyM%2FOyQVxnxxCwZGp%2BOYjr5BnkAuInZ2QWFShx1VpzpZTmFmgoBJcUlSaXeKdWOhYVJVZqKCRCbdBU0LTmAgB3qB7N" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLzMvMTcwpVrBVqFbg4nT2D1ewUlDKzc9X0uHiDPB0B%2FHyM%2FOyQVxnxxCwZGp%2BOYjr5BnkAuInZ2QWFShx1XKllOYWaCgElxSVJpd4p1Y6FhUlVmooJEIt0FTQBAAfLh5N" target="_blank">Run Example</a>
 
 ```java
 animals = { 
@@ -56,7 +56,7 @@ dump( StructKeyArray( animals ) )
 Result: an array of the four keys COW, PIG, CAT and BIRD (order not guaranteed for the default struct type)
 
 
-<a href="https://try.boxlang.io/?code=eJxLzMvMTcwpVrBViFbg4nT2D1ewUlDKzc9X0uHiDPB0B%2FHyM%2FOyQVxnxxCwZGp%2BOYjr5BnkAuInZ2QWFShxxVpzpZTmFmgoBJcUlSaXeKdWOhYVJVZqKCRCbdBU0LTmAgBmSB6N" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJxLzMvMTcwpVrBViFbg4nT2D1ewUlDKzc9X0uHiDPB0B%2FHyM%2FOyQVxnxxCwZGp%2BOYjr5BnkAuInZ2QWFShxxXKllOYWaCgElxSVJpd4p1Y6FhUlVmooJEIt0FTQBAAOjh4N" target="_blank">Run Example</a>
 
 ```java
 animals = [ 

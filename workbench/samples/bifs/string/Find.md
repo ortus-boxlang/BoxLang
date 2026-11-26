@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io?code=eJxLy8xL8ct3TixO1VBQKlbSUVBKyq%2FIScxL18svKiktTsrPzy7WS87PBcoYKGhaAwB9TA9L" target="_blank">Run Example</a>
 
 ```java
-findNoCase( "s", "boxlang.ortusbooks.com", 0 )
+writeOutput( findNoCase( "s", "boxlang.ortusbooks.com", 0 ) )
 
 ```
 

@@ -2,7 +2,7 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVKATRfqnlGgpKni46eYm5qTqJ6alKCprWXOVFmSWp%2FqUlBaUlGhB1zvk5pbl5rhWZxSXFGgq5EEN0QDqBGkBaAERdHQc%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVKATRfqnlGgpKni46eYm5qTqJ6alKCppc5UWZJan%2BpSUFpSUaEGXO%2BTmluXmuFZnFJcUaCrkQM3RAGoHqFTQB8ycchw%3D%3D" target="_blank">Run Example</a>
 
 ```java
 myQuery = queryNew( "ID,name,age" )
@@ -16,7 +16,7 @@ Result: true
 
 
 
-<a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVKATRfqnlGgpKni46eYm5qTqJ6alKCprWXOVFmSWp%2FqUlBaUlGhB1zvk5pbl5rhWZxSXFGgq5EEN0FJTSU%2FNSUouAmkDaAMdmHu8%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVKATRfqnlGgpKni46eYm5qTqJ6alKCppc5UWZJan%2BpSUFpSUaEGXO%2BTmluXmuFZnFJcUaCrkQM3QUlNJT81JSi4B6FDQBcYMebw%3D%3D" target="_blank">Run Example</a>
 
 ```java
 myQuery = queryNew( "ID,name,age" )
@@ -28,7 +28,7 @@ Result: false
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVKATRfqnlGgpKyaXFJZ4uOiDKLzE3VUlB05qrvCizJNWlNLdAA6LSOT%2BnNDfPtSKzuKRYQyEXYoyOglJiOkg9KTqQrAFpAwChpTHJ" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVKATRfqnlGgpKyaXFJZ4uOiDKLzE3VUlBk6u8KLMk1aU0t0ADotA5P6c0N8%2B1IrO4pFhDIRdiio6CUmI6SDkJGpAsUdAEAO2WMQ4%3D" target="_blank">Run Example</a>
 
 ```java
 myQuery = queryNew( "custID,custName" )
