@@ -47,7 +47,7 @@ public class ToNumeric extends BIF {
 	/**
 	 * Casts a value to a number. When a radix is given, the string is parsed as an integer in that numeral system.
 	 * Strings of 20 or more characters parsed with a radix are returned as big decimals so they do not overflow.
-	 * 
+	 *
 	 * <pre>
 	 * toNumeric( "3.14" ) // 3.14
 	 * toNumeric( "FF", "hex" ) // 255

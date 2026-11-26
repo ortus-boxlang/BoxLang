@@ -47,11 +47,11 @@ public class AsyncRun extends BIF {
 	 * Executes the given code asynchronously and returns a BoxFuture, which inherits from CompletableFuture.
 	 * This allows you to create fluent asynchronous code that can be chained and composed.
 	 * Also available as <code>RunAsync</code>.
-	 * 
+	 *
 	 * <pre>
 	 * asyncRun( () -> 10 ).then( ( v ) -> v * 2 ).get() // 20
 	 * </pre>
-	 * 
+	 *
 	 * @see https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CompletableFuture.html
 	 *
 	 * @param context   The context in which the BIF is being invoked.

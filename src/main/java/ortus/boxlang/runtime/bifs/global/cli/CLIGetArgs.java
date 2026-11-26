@@ -56,13 +56,13 @@ public class CLIGetArgs extends BIF {
 	 * </ul>
 	 * <p>
 	 * For example, the following CLI arguments:
-	 * 
+	 *
 	 * <pre>
 	 * --debug --!verbose --bundles=Spec -o='/path/to/file' -v my/path/template
 	 * </pre>
-	 * 
+	 *
 	 * Are parsed into the following struct:
-	 * 
+	 *
 	 * <pre>
 	 * {
 	 *     "options": {
@@ -75,7 +75,7 @@ public class CLIGetArgs extends BIF {
 	 *     "positionals": [ "my/path/template" ]
 	 * }
 	 * </pre>
-	 * 
+	 *
 	 * <h2>Some Ground Rules</h2>
 	 * <ul>
 	 * <li>Options are prefixed with --</li>

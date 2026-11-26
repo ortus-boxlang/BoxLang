@@ -38,7 +38,7 @@ public class IsThreadInterrupted extends BIF {
 	/**
 	 * Verifies if a thread has been interrupted. Pass the name of a thread to check that thread, or an empty string to check the current thread,
 	 * which must be a thread created by <code>threadNew()</code> or <code>bx:thread</code>.
-	 * 
+	 *
 	 * <pre>
 	 * if ( !isThreadInterrupted( "" ) ) {
 	 *     // Do work

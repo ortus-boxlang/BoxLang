@@ -48,14 +48,14 @@ public class CacheFilter extends BIF {
 	 * characters,
 	 * <code>?</code> matches a single character, and <code>[abc]</code> or <code>[!abc]</code> match character sets.
 	 * When useRegex is true a regular expression is used instead, which must match the whole key. Both filters are case insensitive.
-	 * 
+	 *
 	 * <pre>
 	 * cache().clearAll( cacheFilter( "foo*" ) )
 	 * cache().clearAll( cacheFilter( ".*foo.*", true ) )
 	 * </pre>
-	 * 
+	 *
 	 * You can also create your own filter by passing a closure/lambda that accepts a key and returns a boolean:
-	 * 
+	 *
 	 * <pre>
 	 * cache().getKeys( ( key ) -> key.getName().startsWith( "foo" ) )
 	 * </pre>

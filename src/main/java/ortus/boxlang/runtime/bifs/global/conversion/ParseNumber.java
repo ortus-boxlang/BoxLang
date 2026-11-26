@@ -52,7 +52,7 @@ public class ParseNumber extends BIF {
 	 * separators vary by locale); with a radix it is parsed in that numeral system. Also available as <code>LSParseNumber</code>.
 	 * <p>
 	 * As a convenience, if the second argument is one of the radix names (bin, oct, dec, hex) it is treated as the radix instead of a locale:
-	 * 
+	 *
 	 * <pre>
 	 * parseNumber( "1,234.56", "en_US" ) // 1234.56
 	 * parseNumber( "1.234,56", "de_DE" ) // 1234.56

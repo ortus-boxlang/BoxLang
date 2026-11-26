@@ -33,7 +33,7 @@ public class ThreadCurrent extends BIF {
 
 	/**
 	 * Returns the currently executing Java thread.
-	 * 
+	 *
 	 * <pre>
 	 * t = threadCurrent()
 	 * println( "Running on thread: " &amp; t.getName() )

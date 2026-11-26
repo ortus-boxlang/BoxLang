@@ -47,7 +47,7 @@ public class AsyncAll extends BIF {
 	 * call <code>get()</code> on the returned future to wait for the results.
 	 * <p>
 	 * Each item can be a BoxFuture, a Java CompletableFuture, or a BoxLang function that will be treated as a future.
-	 * 
+	 *
 	 * <pre>
 	 * results = asyncAll( [ f1, f2, f3 ] ).get()
 	 * asyncAll( [ f1, f2, f3 ] ).then( ( values ) => logResults( values ) )

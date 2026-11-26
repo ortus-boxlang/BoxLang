@@ -59,7 +59,7 @@ public class AsyncAllApply extends BIF {
 	 * If the optional <code>timeout</code> (greater than 0) elapses before all items complete, an exception is thrown.
 	 * The allowed time units are: <code>DAYS</code>, <code>HOURS</code>, <code>MINUTES</code>, <code>SECONDS</code>, <code>MILLISECONDS</code>,
 	 * <code>MICROSECONDS</code>, <code>NANOSECONDS</code>.
-	 * 
+	 *
 	 * <pre>
 	 * squares = asyncAllApply( [ 1, 2, 3 ], ( n ) -> n * n )
 	 * doubled = asyncAllApply( { a: 10, b: 20 }, ( item ) -> { value: item.value * 2 } )

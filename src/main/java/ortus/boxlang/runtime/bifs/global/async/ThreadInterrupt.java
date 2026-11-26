@@ -40,7 +40,7 @@ public class ThreadInterrupt extends BIF {
 	 * Interrupts the thread with the given name, or all threads managed by the current request when no name is passed.
 	 * Interrupting marks the thread as interrupted and its status as INTERRUPTED; the thread code can check this with
 	 * <code>isThreadInterrupted()</code>.
-	 * 
+	 *
 	 * <pre>
 	 * threadInterrupt( "myThread" ) // interrupt one thread
 	 * threadInterrupt() // interrupt all threads of the request

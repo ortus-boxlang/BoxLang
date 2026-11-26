@@ -52,12 +52,12 @@ public class ToUnmodifiable extends BIF {
 	/**
 	 * Converts an array, struct, query or set to its unmodifiable counterpart. The result is a copy that cannot be changed;
 	 * attempting to change it throws an exception. Other types of values throw an exception.
-	 * 
+	 *
 	 * <pre>
 	 * frozen = [ 1, 2, 3 ].toUnmodifiable()
 	 * frozen.append( 4 ) // throws an exception
 	 * </pre>
-	 * 
+	 *
 	 * Also available as the <code>toUnmodifiable()</code> member function on arrays, structs, queries and sets.
 	 *
 	 * @param context   The context in which the BIF is being invoked.

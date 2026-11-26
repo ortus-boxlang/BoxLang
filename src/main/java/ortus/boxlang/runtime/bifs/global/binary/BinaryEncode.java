@@ -44,7 +44,7 @@ public class BinaryEncode extends BIF {
 	/**
 	 * Encodes binary data (a byte array) as a string using the specified encoding. This is the opposite of {@link BinaryDecode}.
 	 * Hex output is lowercase. The encoding name is case insensitive.
-	 * 
+	 *
 	 * <pre>
 	 * binaryEncode( charsetDecode( "String", "utf-8" ), "hex" ) // 537472696e67
 	 * </pre>

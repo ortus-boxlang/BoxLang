@@ -43,7 +43,7 @@ public class AsyncAny extends BIF {
 	 * Accepts an array of futures/closures/lambdas and executes them all in parallel,
 	 * returning a BoxFuture that will contain the result of the first future that completes.
 	 * The operation is non-blocking; call <code>get()</code> on the returned future to wait for the result.
-	 * 
+	 *
 	 * <pre>
 	 * result = asyncAny( [ () -> slowCall(), () -> fastCall() ] ).get()
 	 * </pre>

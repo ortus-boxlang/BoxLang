@@ -48,7 +48,7 @@ public class BinaryDecode extends BIF {
 	/**
 	 * Decodes a string that holds encoded binary data into a binary value (a byte array).
 	 * This is the opposite of {@link BinaryEncode}. The encoding name is case insensitive.
-	 * 
+	 *
 	 * <pre>
 	 * bytes = binaryDecode( "F62B", "hex" )
 	 * </pre>

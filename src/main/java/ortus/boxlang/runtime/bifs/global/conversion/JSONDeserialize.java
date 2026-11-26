@@ -53,7 +53,7 @@ public class JSONDeserialize extends BIF {
 	 * This is handy when reading a JSON file, modifying it, and writing it back out.
 	 * <p>
 	 * Also available as the <code>jsonDeserialize()</code> and <code>fromJSON()</code> member functions on strings.
-	 * 
+	 *
 	 * <pre>
 	 * data = jsonDeserialize( '{"name":"BoxLang","tags":["jvm","dynamic"]}' )
 	 * data = '[1,2,3]'.fromJSON()

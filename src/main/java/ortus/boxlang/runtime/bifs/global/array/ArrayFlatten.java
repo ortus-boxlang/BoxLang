@@ -41,13 +41,13 @@ public class ArrayFlatten extends BIF {
 
 	/**
 	 * Flattens nested arrays to the specified depth and returns a new array. When depth is omitted, the array is flattened completely.
-	 * 
+	 *
 	 * <pre>
 	 * nested = [ 1, [ 2, [ 3 ] ] ]
 	 * nested.flatten() // [ 1, 2, 3 ]
 	 * nested.flatten( 1 ) // [ 1, 2, [ 3 ] ]
 	 * </pre>
-	 * 
+	 *
 	 * Also available as the <code>flatten()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.

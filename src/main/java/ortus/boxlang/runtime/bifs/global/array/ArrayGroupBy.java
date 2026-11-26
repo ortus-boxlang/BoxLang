@@ -44,12 +44,12 @@ public class ArrayGroupBy extends BIF {
 	 * each key maps to an array of the elements that produced it, in their original order.
 	 * The callback receives three arguments: the value, the one-based index and the array. A Java Predicate may also be passed, in which case it
 	 * only receives the value.
-	 * 
+	 *
 	 * <pre>
 	 * values = [ 1, 2, 3, 4 ]
 	 * values.groupBy( ( value ) => value % 2 ? "odd" : "even" ) // { odd: [ 1, 3 ], even: [ 2, 4 ] }
 	 * </pre>
-	 * 
+	 *
 	 * Also available as the <code>groupBy()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.

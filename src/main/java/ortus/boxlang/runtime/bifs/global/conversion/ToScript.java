@@ -47,7 +47,7 @@ public class ToScript extends BIF {
 	 * It can convert booleans, dates, numbers, arrays, queries, strings and structs. Dates become <code>new Date( 'iso-date' )</code>, null
 	 * becomes
 	 * <code>null</code>, an empty string becomes <code>''</code>, and all other values are converted with {@link JSONSerialize}.
-	 * 
+	 *
 	 * <pre>
 	 * toScript( [ 1, 2 ], "myArray" ) // myArray = [1,2];
 	 * </pre>

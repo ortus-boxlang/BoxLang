@@ -37,7 +37,7 @@ public class isThreadAlive extends BIF {
 
 	/**
 	 * Tests if a named thread is alive. A thread is alive if it has been started and has not yet terminated.
-	 * 
+	 *
 	 * <pre>
 	 * if ( isThreadAlive( "myThread" ) ) {
 	 *     // wait

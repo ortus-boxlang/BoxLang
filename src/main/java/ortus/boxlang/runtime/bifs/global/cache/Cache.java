@@ -49,7 +49,7 @@ public class Cache extends BIF {
 	 * Once you have the cache instance you can use its methods (<code>set()</code>, <code>get()</code>, <code>getKeys()</code>,
 	 * <code>clearAll()</code>,
 	 * <code>lookup()</code>, and so on). Every cache adheres to the {@link ICacheProvider} interface.
-	 * 
+	 *
 	 * <pre>
 	 * cache().set( "key", "value" )
 	 * cache( "myCache" ).get( "key" )

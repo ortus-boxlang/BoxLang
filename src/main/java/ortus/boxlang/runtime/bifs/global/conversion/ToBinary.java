@@ -83,9 +83,9 @@ public class ToBinary extends BIF {
 
 	/**
 	 * Strips excess padding from a Base64 string.
-	 * 
+	 *
 	 * @param base64 The Base64 string to process.
-	 * 
+	 *
 	 * @return The processed Base64 string without excess padding.
 	 */
 	private String stripExcessBase64Padding( String base64 ) {

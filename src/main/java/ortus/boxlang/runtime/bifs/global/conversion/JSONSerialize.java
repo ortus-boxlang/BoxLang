@@ -72,12 +72,12 @@ public class JSONSerialize extends BIF {
 	 * Also available as the <code>toJSON()</code> member function on arrays, structs, queries, sets, classes, strings, numbers and booleans.
 	 * The <code>listToJSON()</code> member function on a string first splits the string as a comma-delimited list and serializes it as a JSON
 	 * array.
-	 * 
+	 *
 	 * <pre>
 	 * jsonSerialize( { name: "BoxLang", tags: [ "jvm" ] } ) // {"name":"BoxLang","tags":["jvm"]}
 	 * "foo,bar,baz".listToJSON() // ["foo","bar","baz"]
 	 * </pre>
-	 * 
+	 *
 	 * <h2>Query Format Options</h2>
 	 * The <code>queryFormat</code> argument determines how queries are serialized:
 	 * <ul>

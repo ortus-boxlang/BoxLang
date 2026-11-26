@@ -54,7 +54,7 @@ public class ThreadNew extends BIF {
 	 * Creates and starts a new thread of execution that runs the passed closure/lambda. The thread is tracked by the request thread manager,
 	 * so it can later be referenced by name with <code>threadJoin()</code>, <code>threadInterrupt()</code>, <code>threadTerminate()</code>, and
 	 * so on.
-	 * 
+	 *
 	 * <pre>
 	 * threadNew( () -> doWork(), {}, "worker" )
 	 * threadJoin( "worker" )
@@ -65,7 +65,7 @@ public class ThreadNew extends BIF {
 	 *
 	 * @argument.runnable The closure/lambda to execute in the new thread.
 	 *
-	 * @argument.attributes A struct of data to bind into the thread's attributes scope.
+	 * @argument.attributes A struct of data to bind into the thread's scope.
 	 *
 	 * @argument.name The name used to track the thread. If not provided, a random unique name is generated.
 	 *

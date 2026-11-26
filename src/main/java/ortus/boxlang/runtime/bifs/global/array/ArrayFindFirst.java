@@ -57,13 +57,13 @@ public class ArrayFindFirst extends BIF {
 	 * If <code>parallel</code> is true and no <code>maxThreads</code> is passed, the work runs in parallel using the common ForkJoinPool.
 	 * If <code>maxThreads</code> is passed, a new ForkJoinPool with that many threads is created for the call and destroyed afterwards, so it
 	 * may be less efficient for repeated calls.
-	 * 
+	 *
 	 * <pre>
 	 * users = [ { name: "Ada" }, { name: "Grace" } ]
 	 * users.findFirst( ( user ) => user.name == "Grace" ) // { name: "Grace" }
 	 * users.findFirst( ( user ) => user.name == "Linus", "Unknown" ) // "Unknown"
 	 * </pre>
-	 * 
+	 *
 	 * Also available as the <code>findFirst()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.

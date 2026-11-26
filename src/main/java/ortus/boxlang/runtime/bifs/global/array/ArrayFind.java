@@ -62,12 +62,12 @@ public class ArrayFind extends BIF {
 	 * member functions) do the same search but return a boolean instead of an index.
 	 * <p>
 	 * If the value is a function, it is used as the search predicate and is invoked for each element (value, index) until it returns true:
-	 * 
+	 *
 	 * <pre>
 	 * array = [ 1, 2, 3, 4, 5 ]
 	 * index = array.find( ( value, index ) -> value == 3 )
 	 * </pre>
-	 * 
+	 *
 	 * We recommend BoxLang lambdas (<code>-&gt;</code>) for this purpose so the function only acts upon the value and index without side
 	 * effects.
 	 *

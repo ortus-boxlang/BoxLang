@@ -53,12 +53,12 @@ public class ArrayFlatMap extends BIF {
 	 * If <code>parallel</code> is true and no <code>maxThreads</code> is passed, the work runs in parallel using the common ForkJoinPool.
 	 * If <code>maxThreads</code> is passed, a new ForkJoinPool with that many threads is created for the call and destroyed afterwards, so it
 	 * may be less efficient for repeated calls.
-	 * 
+	 *
 	 * <pre>
 	 * values = [ 1, 2, 3 ]
 	 * values.flatMap( ( value ) => [ value, value * 10 ] ) // [ 1, 10, 2, 20, 3, 30 ]
 	 * </pre>
-	 * 
+	 *
 	 * Also available as the <code>flatMap()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
