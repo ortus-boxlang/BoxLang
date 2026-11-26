@@ -43,23 +43,24 @@ public class FileWrite extends BIF {
 	}
 
 	/**
-	 * Writes the contents of a string or binary data to a file.
-	 * <p>
-	 * When called with a <b>file path</b> (string, Path, or File), the file is created/overwritten on disk.
-	 * When called with an <b>open BoxFile object</b> (from {@code fileOpen()}), the data is written through
-	 * the file's existing stream, respecting the current mode (write or append) and position.
-	 * The caller is responsible for closing the file object afterward.
+	 * Writes a string or binary data to a file. With a path, the file is created, or overwritten if it exists. With an open file object from
+	 * `fileOpen()`, the data is written through the file's stream, respecting its mode and position; the file object is not closed. Returns
+	 * null.
+	 *
+	 * @argument.file A file path (string, Path or File) to create or overwrite, or an open file object to write through.
+	 *
+	 * @argument.data The string or binary (byte array) content to write. Other values are cast to a string.
+	 *
+	 * @argument.charset Optional. The charset used to write string data. Defaults to the runtime default (utf-8). Only applies to path-based
+	 *                   writes.
+	 *
+	 * @argument.createPath Optional. Whether to create any missing parent directories. Defaults to false, in which case a missing directory
+	 *                      throws an exception. Only applies to path-based writes.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file A file path (string, Path, File) to create/overwrite, or an open BoxFile object to write through its stream.
-	 *
-	 * @argument.data The string or binary byte array of the file content.
-	 *
-	 * @argument.charset The charset encoding (ignored for binary data). Only applies to path-based writes.
-	 *
-	 * @argument.createPath When true, ensures all directories to the file destination are created. Only applies to path-based writes.
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile	file		= arguments.getAsBoxFile( Key.file );

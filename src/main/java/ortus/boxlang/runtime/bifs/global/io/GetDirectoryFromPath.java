@@ -35,12 +35,16 @@ public class GetDirectoryFromPath extends BIF {
 	}
 
 	/**
-	 * Retrieves the directory parent of a path
+	 * Extracts the directory part of a path, including the trailing separator, using simple string parsing: everything up to the last `/` or
+	 * `\`. A path which already ends in a separator is returned unchanged, and a path with no separator returns `/`. The path does not need to
+	 * exist.
+	 *
+	 * @argument.path The path to extract the directory from.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path The path to extract the parent directory from
+	 * @return The directory portion of the path as a string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Note: I can't trust the Path object as it won't treat a drive root as a folder, and returns

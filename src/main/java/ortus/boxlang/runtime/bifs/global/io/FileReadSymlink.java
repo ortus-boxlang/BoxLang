@@ -45,14 +45,15 @@ public class FileReadSymlink extends BIF {
 	/**
 	 * Returns the target a symbolic link points to. Throws an exception if the path is not a symbolic link.
 	 *
+	 * @argument.path The symbolic link to read.
+	 *
+	 * @argument.resolve Optional. Defaults to false, which returns the target exactly as stored in the link. When true, it is returned as a
+	 *                   normalized absolute path.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path The symbolic link to read
-	 *
-	 * @argument.resolve [false] When false, the target is returned exactly as stored in the link. When true, it is returned as a normalized absolute path.
-	 *
-	 * @return The target of the link
+	 * @return The target of the link as a string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String path = arguments.getAsString( Key.path );

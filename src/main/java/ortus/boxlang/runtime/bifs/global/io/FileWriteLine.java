@@ -42,14 +42,18 @@ public class FileWriteLine extends BIF {
 	}
 
 	/**
-	 * Writes a line of data to a file
+	 * Writes a line of text, followed by a line separator, to the end of a file. The file can be a file object from `fileOpen()`, which is
+	 * returned so the call can be chained and which you must close yourself, or a path, in which case the file is opened, appended to and closed
+	 * for you. Also available as the member function `writeLine()` on file objects.
+	 *
+	 * @argument.file An open file object or the path of a file.
+	 *
+	 * @argument.data The line of text to write.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file An existing file object or a path to a file
-	 *
-	 * @argument.data The line of data to be written
+	 * @return Null when a path was given, or the file object when a file object was given.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile file = arguments.getAsBoxFile( Key.file ).openAs( BoxFile.Mode.APPEND );

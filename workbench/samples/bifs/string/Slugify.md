@@ -1,28 +1,54 @@
 ### Convert a string to a URL-friendly slug
 
 ```java
-result = slugify( "Hello World! This is a Test." )
-writeOutput( result )
+writeOutput( slugify( "My Blog Post Title" ) )
 
 ```
 
-Result: hello-world-this-is-a-test
+Result: my-blog-post-title
 
-### Handle special characters
+### Accents are removed
 
 ```java
-result = slugify( "Café & Restaurant — New York" )
-writeOutput( result )
+writeOutput( slugify( "This is ä ü test ß" ) )
 
 ```
 
-Result: cafe-restaurant-new-york
+Result: this-is-a-u-test-ss
 
-### Using the member function
+### Other characters become hyphens
+
+Every character that is not a-z or 0-9 is replaced with a hyphen, and consecutive hyphens are not collapsed.
 
 ```java
-result = "My Blog Post Title".slugify()
-writeOutput( result )
+writeOutput( slugify( "Hello, World!" ) )
+
+```
+
+Result: hello--world-
+
+### Limit the length of the slug
+
+```java
+writeOutput( slugify( "This is a   test", 10 ) )
+
+```
+
+Result: this-is-a-
+
+### Allow additional characters
+
+```java
+writeOutput( slugify( "snake_case name", 0, "_" ) )
+
+```
+
+Result: snake_case-name
+
+### Member function
+
+```java
+writeOutput( "My Blog Post Title".slugify() )
 
 ```
 

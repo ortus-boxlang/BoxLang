@@ -45,14 +45,18 @@ public class FileExists extends BIF {
 	}
 
 	/**
-	 * Determines whether a file exists
+	 * Determines whether a path exists and is a file (a directory returns false). Relative paths are resolved against the application. Open file
+	 * objects are not accepted.
+	 *
+	 * @argument.source The file path to check.
+	 *
+	 * @argument.allowRealPath Optional. Whether an absolute path is allowed as the `source`. Defaults to true. When false, an absolute path
+	 *                         throws an exception.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.source The file path
-	 *
-	 * @arguments.allowRealPath Whether to allow an absolute path as the path argument
+	 * @return True if the path exists and is a file, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	rawSource		= arguments.get( Key.source );

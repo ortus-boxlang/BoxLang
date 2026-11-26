@@ -47,14 +47,17 @@ public class FileGetMimeType extends BIF {
 	}
 
 	/**
-	 * Gets the MIME type for the file path/file object you have specified.
+	 * Gets the MIME type of a file, using the file name and contents. If no type can be determined, `application/octet-stream` is returned.
+	 *
+	 * @argument.file The file path or file object to get the MIME type for. With `strict` set to false this may also be a URL.
+	 *
+	 * @argument.strict Optional. Defaults to true. When true, an exception is thrown if the file does not exist, is empty, or is a URL. When
+	 *                  false, the MIME type is determined from the name alone, even for files which do not exist.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file The file path or file object to get the MIME type for.
-	 *
-	 * @argument.strict If true, throws an exception if the file does not exist or is empty. If false, returns "application/octet-stream" for non-existent or empty files.
+	 * @return The MIME type as a string, for example `text/plain`.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	rawFile	= arguments.get( Key.file );

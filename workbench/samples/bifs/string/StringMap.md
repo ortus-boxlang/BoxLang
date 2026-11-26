@@ -15,33 +15,20 @@ writeOutput( StringMap( letters, closure ) )
 
 Result: hijklmn
 
-### Member function
-
-Map each element of the string to a new value.
-
+### Use the index of each character
 
 ```java
-letters = "abcdefg"
-closure = ( Any inp ) => {
-	return char( ascii( inp ) + 7 )
-}
-writeOutput( letters.map( closure ) )
+writeOutput( stringMap( "abc", ( ch, i ) -> ch & i ) )
 
 ```
 
-Result: hijklmn
+Result: a1b2c3
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJzLrQwuKcrMS1ewVVDySM3JyVcIzy%2FKSVGy5krOyS8uLUoFSmgoOOZVKpQl5ihoKtjaKVRzcRallpQW5SlogMTUFJQSlTStuWqtucqLMktSXUpzCzQUIKb6JgKZuVArdBRgRmoqANUDADxKJig%3D" target="_blank">Run Example</a>
+### Uppercase every other character
 
 ```java
-myString = "Hello World"
-closure = ( Any val ) => {
-	return (val & "a")
-}
-writeDump( StringMap( myString, closure ) )
+writeOutput( stringMap( "abcdef", ( ch, i ) => i % 2 == 0 ? uCase( ch ) : ch ) )
 
 ```
 
-
+Result: aBcDeF

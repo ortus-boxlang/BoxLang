@@ -24,14 +24,20 @@ reverse( 123456789 )
 
 Result: 987654321
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUMhJTErNsVUKSi1LLSpOVUhUKC4pysxLV9JRKEsssi2CCGsoKCUmJacoKWgqaFpzlePUnZpbUFIJ1JhTmophAFQzADrDKH0%3D" target="_blank">Run Example</a>
+### Reverse an empty string
 
 ```java
-writeDump( label="Reverse a string", var=reverse( "abcd" ) )
-writeDump( label="Reverse empty value", var=reverse( "" ) )
+writeOutput( "[" & reverse( "" ) & "]" )
 
 ```
 
+Result: []
 
+### Member function
+
+```java
+writeOutput( "abc".reverse() )
+
+```
+
+Result: cba

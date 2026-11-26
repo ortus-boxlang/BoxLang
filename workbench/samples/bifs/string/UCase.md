@@ -11,16 +11,21 @@ uCase( "BLDocs Rock" )
 
 Result: BLDOCS ROCK
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJxFjL0OwjAMBvc8xUendMoDVEwsbEyI2S0OWIrqyHUaHp%2BfhfV0dylhMSZn7GRCc2F08ScIm5usD2iG88tDVsURw5lLUdzUyv0wTCElaPPa%2FJ%2FLilYrGxbaOHQT58tPibiePijiuxoxTuENdoYprg%3D%3D" target="_blank">Run Example</a>
+### Uppercase a variable
 
 ```java
-// create variable with a string of text
 foo = "Hello World!"
-// output variable in upper case
-writeOutput( UCase( foo ) )
+writeOutput( uCase( foo ) )
 
 ```
 
+Result: HELLO WORLD!
 
+### Member function
+
+```java
+writeOutput( "abc".uCase() )
+
+```
+
+Result: ABC

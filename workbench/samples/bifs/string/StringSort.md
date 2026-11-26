@@ -14,25 +14,19 @@ Result: ASZgiz
 
 ### Member function
 
-Sort the string.
-
-
 ```java
 letters = "ZzgiSA"
-writeOutput( letters.sort() )
+writeOutput( letters.stringSort() )
 
 ```
 
 Result: ASZgiz
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwrSi0uzSlRsFUoLinKzEsPzi8q0VBQ8srPyAvPTM5WUtC05iovyixJ9S8tKSgFShVB1AOFAVvME8Q%3D" target="_blank">Run Example</a>
+### Sort in descending order
 
 ```java
-result = stringSort( "JohnWick" )
-writeOutput( result )
+writeOutput( stringSort( "abc", sortOrder = "desc" ) )
 
 ```
 
-
+Result: cba

@@ -13,34 +13,49 @@ Result: Hello world!
 
 ### Capitalize all the words in string
 
-Using the optional doAll parameter capitalizes the first character of all words. Word separators are: whitespace, period, parenthesis, or dash.
+Using the optional `doAll` argument capitalizes the first character of every whitespace separated word.
 
 ```java
-ucFirst( "boxlang.ortusbooks.com is your (everyone's) resource for BX-related documentation!", true )
+writeOutput( ucFirst( "boxlang.ortusbooks.com is your (everyone's) resource for BX-related documentation!", true ) )
 
 ```
 
-Result: boxlang.ortusbooks.com Is Your (everyone's) Resource For BX-related Documentation!
+Result: Boxlang.ortusbooks.com Is Your (everyone's) Resource For BX-related Documentation!
 
 ### Handling of strings in all uppercase
 
-Using the optional doLowerIfAllUppercase parameter allows for intelligent capitalization of words in all caps.
-
+Using the optional `doLowerIfAllUppercase` argument lowercases words that are completely uppercase before capitalizing them.
 
 ```java
-ucFirst( "boxlang.ortusbooks.com YOUR (EVERYONE'S) RESOURCE FOR BX-related DOCUMENTATION!", true, true )
+writeOutput( ucFirst( "boxlang.ortusbooks.com YOUR (EVERYONE'S) RESOURCE FOR BX-related DOCUMENTATION!", true, true ) )
 
 ```
 
-Result: boxlang.ortusbooks.com Your (everyone's) Resource For BX-related Documentation!
+Result: Boxlang.ortusbooks.com Your (everyone's) Resource For BX-related Documentation!
 
-### Additional Examples
+### Lowercase uppercase words without capitalizing every word
 
 ```java
-string = "submitting bugs and feature requests via our online system"
-dump( UcFirst( string, false, false ) )
-dump( UcFirst( string, true, false ) )
+writeOutput( ucFirst( "HELLO WORLD", false, true ) )
 
 ```
 
+Result: Hello world
 
+### Whitespace is collapsed
+
+```java
+writeOutput( ucFirst( "hello    world", true ) )
+
+```
+
+Result: Hello World
+
+### Member function
+
+```java
+writeOutput( "box lang".ucFirst() )
+
+```
+
+Result: Box lang

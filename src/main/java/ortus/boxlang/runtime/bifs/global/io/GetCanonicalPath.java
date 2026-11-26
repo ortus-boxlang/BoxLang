@@ -42,12 +42,15 @@ public class GetCanonicalPath extends BIF {
 	}
 
 	/**
-	 * Returns the canonical path of a file, resolving all relative path elements and symlinks
+	 * Returns the canonical path of a file or directory: an absolute path with relative elements (`.` and `..`) and symbolic links resolved.
+	 * Directories have a trailing path separator. If the path does not exist, it is returned as given.
+	 *
+	 * @argument.path The file or directory path.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path The file or directory path string
+	 * @return The canonical path as a string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String path = arguments.getAsString( Key.path );

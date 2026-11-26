@@ -36,19 +36,20 @@ yesNoFormat( "" )
 
 Result: No
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJxLKc0t0FCoTC3Oy3fLL8pNLNFQSEvMKU5V0FTQtFbQ11fwy%2BdKwVRTUlSKUBKZWoxNjQEBMwwJGaDkl69EwAwloFaIGi6YQQC0bj5j" target="_blank">Run Example</a>
+### Numbers and strings are cast to booleans
 
 ```java
-dump( yesnoFormat( false ) ); // No
-dump( yesnoFormat( true ) ); // Yes
-dump( yesnoFormat( 0 ) ); // No
-dump( yesnoFormat( 1 ) ); // Yes
-dump( yesnoFormat( "No" ) ); // No
-dump( yesnoFormat( "Yes" ) )
- // Yes
+writeOutput( yesNoFormat( 1 ) & " " & yesNoFormat( 0 ) & " " & yesNoFormat( "yes" ) & " " & yesNoFormat( "no" ) )
 
 ```
 
+Result: Yes No Yes No
 
+### Member function
+
+```java
+writeOutput( true.yesNoFormat() )
+
+```
+
+Result: Yes

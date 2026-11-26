@@ -46,25 +46,31 @@ public class DirectoryCopy extends BIF {
 	}
 
 	/**
-	 * Copies a directory from one location to another
+	 * Copies a directory and its contents to a new location. The source can be absolute or relative to the application, and an existing
+	 * destination is merged into. Symbolic links inside the source are copied as links unless `followLinks` is true. Throws an exception if a
+	 * file already exists at the destination and `overwrite` is false. Returns null.
+	 *
+	 * @argument.source The source directory.
+	 *
+	 * @argument.destination The destination directory.
+	 *
+	 * @argument.recurse Optional. Whether to copy sub-directories and their contents. Defaults to false, which copies only the files directly in
+	 *                   the source.
+	 *
+	 * @argument.filter Optional. Which items to copy: a glob pattern such as `*.txt` (use `|` to separate multiple patterns), or a
+	 *                  closure/lambda which receives the path of each item and returns a boolean. Defaults to `*` (everything).
+	 *
+	 * @argument.createPath Optional. Whether to create any missing parent directories of the destination. Defaults to true.
+	 *
+	 * @argument.overwrite Optional. Whether to overwrite existing files at the destination. Defaults to false.
+	 *
+	 * @argument.followLinks Optional. Whether to follow symbolic links. When false (the default) a link inside the source is copied as a link.
+	 *                       When true, the content the link points to is copied instead.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.source The source directory
-	 *
-	 * @argument.destination The destination directory
-	 *
-	 * @argument.recurse whether to recurse in to sub-directories and create paths
-	 *
-	 * @argument.filter A file or directory filter to pass
-	 *
-	 * @argument.createPath whether to create any nested paths required to the new directory
-	 *
-	 * @argument.overwrite whether to overwrite existing files at the destination
-	 *
-	 * @argument.followLinks whether to follow symbolic links. When false, a link inside the source is copied as a link. When true, the
-	 *                       content the link points to is copied instead.
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	sourcePath		= arguments.getAsString( Key.source );

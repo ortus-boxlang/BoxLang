@@ -40,21 +40,22 @@ public class DirectoryDelete extends BIF {
 	}
 
 	/**
-	 * Deletes a directory
+	 * Deletes a directory. A non-empty directory can only be deleted when `recursive` is true, otherwise an exception is thrown. Returns null.
+	 *
+	 * @argument.path The path of the directory to delete. It can be absolute or relative to the application.
+	 *
+	 * @argument.recursive Optional. Whether to delete the directory contents too. Defaults to false; if false and the directory is not empty an
+	 *                     exception is thrown.
+	 *
+	 * @argument.followLinks Optional. Whether to follow symbolic links found inside the directory when deleting recursively. When false (the
+	 *                       default) links are removed as links and the folders they point to are never touched. When true, the contents of those folders are
+	 *                       deleted too, except for a link that leads back into the directory being deleted or to a folder above it, which is removed as a link. A
+	 *                       symbolic link given as the path only has the link removed, whatever the value of followLinks.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path the path of the directory to delete
-	 *
-	 * @argument.recursive [default:false] whether to recursively delete the directory.
-	 *                     If falls and the directory is not empty, with throw a runtime exception
-	 *
-	 * @argument.followLinks [default:false] whether to follow symbolic links found inside the directory when deleting recursively. When false, links are
-	 *                       removed as links and the folders they point to are never touched. When true, the contents of those folders are deleted too,
-	 *                       except for a link that leads back into the directory being deleted or to a folder above it, which is removed as a link.
-	 *                       A symbolic link given as the path only has the link removed, whatever the value of followLinks.
-	 *
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String directoryPath = arguments.getAsString( Key.path );

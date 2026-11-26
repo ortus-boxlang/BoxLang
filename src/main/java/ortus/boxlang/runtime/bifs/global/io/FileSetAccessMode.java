@@ -43,14 +43,17 @@ public class FileSetAccessMode extends BIF {
 	}
 
 	/**
-	 * Sets the Posix permissions on a file
+	 * Sets the POSIX permissions on a file or directory using a mode such as `755` or `644`. This has no effect on operating systems which do
+	 * not support POSIX permissions. Also available as the member function `setAccessMode()` on file objects.
+	 *
+	 * @argument.file The file path or file object.
+	 *
+	 * @argument.mode The three-digit permission designation, for example `644`.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file A file path or object
-	 *
-	 * @argument.mode The three-digit permission designations for the file or directory
+	 * @return Null when a path was given, or the file object when a file object was given.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile file = arguments.getAsBoxFile( Key.file );

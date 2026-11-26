@@ -41,12 +41,15 @@ public class FileReadLine extends BIF {
 	}
 
 	/**
-	 * Returns the next line from the file object stream
+	 * Reads and returns the next line from an open file object, without the line terminator. Returns null at the end of the file. This BIF is
+	 * also available as the member function `readLine()` on file objects.
+	 *
+	 * @argument.file The currently open file object.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file The currently open file object
+	 * @return The next line of the file as a string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile file = arguments.getAsBoxFile( Key.file ).openAs( BoxFile.Mode.READ );

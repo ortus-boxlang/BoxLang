@@ -6,41 +6,31 @@ Are any of the characters in the string greater than our condition?
 
 ```java
 instring = "abcdefg"
-callback = ( Any inp ) => {
+callback = ( Any inp ) -> {
 	return inp > "f"
 }
 writeoutput( StringSome( instring, callback ) )
 
 ```
 
-Result: YES
+Result: true
 
 ### Member function
 
-Are any of the characters in the string greater than our condition?
-
-
 ```java
 instring = "abcdefg"
-callback = ( Any inp ) => {
-	return inp > "f"
-}
-writeoutput( instring.some( callback ) )
+callback = ( inp ) -> inp > "f"
+writeOutput( instring.stringSome( callback ) )
 
 ```
 
-Result: YES
+Result: true
 
-### Additional Examples
-
-<a href="https://try.boxlang.io?code=eJzLrQwuKcrMS1ewVVBKyq%2FIScxLV7LmSk7MyUlKTM4GimooOOZVKlQoaCrY2gEpO6C6RCVra67yosySVJfS3AINBYgJwfm5qRoKuVDzdBTgZmgqaCJMjDfEbmYVSWYCTQGZCgDNVDqs" target="_blank">Run Example</a>
+### No character matches
 
 ```java
-myString = "boxlang"
-callback = ( Any x ) => x >= "a";
-writeDump( StringSome( myString, callback ) )
-callback_1 = ( Any x ) => x >= "z";
-writeDump( StringSome( myString, callback_1 ) )
+writeOutput( stringSome( "boxlang", ( ch ) -> ch >= "z" ) )
 
 ```
 
+Result: false

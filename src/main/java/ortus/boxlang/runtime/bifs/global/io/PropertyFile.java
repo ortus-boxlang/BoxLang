@@ -36,15 +36,17 @@ public class PropertyFile extends BIF {
 	}
 
 	/**
-	 * Get a fluent PropertyFile object that can be used to read or write properties to a loaded property file or a new one.
-	 * If the path is not specified, it will return a blank property file object you can use to write properties to a new file.
+	 * Gets a fluent PropertyFile object for reading and writing Java `.properties` files. If a path to an existing file is given, the file is
+	 * loaded. If the path does not exist yet, it is stored so `store()` writes to it. If no path is given a blank object is returned. Use
+	 * `get()`, `set()`, `exists()`, `remove()`, `getAsStruct()` and `store()` on the returned object. Comments and blank lines in a loaded file
+	 * are preserved.
+	 *
+	 * @argument.path Optional. The path of the property file to load, or the path where the property file will be stored.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path The path to the property file to load or the path where the property file will be stored at
-	 *
-	 * @return A fluent PropertyFile object that can be used to read or write properties.
+	 * @return A PropertyFile object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Note: I can't trust the Path object as it won't treat a drive root as a folder, and returns

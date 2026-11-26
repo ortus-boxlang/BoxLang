@@ -40,15 +40,15 @@ public class FileIsSymlink extends BIF {
 	}
 
 	/**
-	 * Determines whether a path is a symbolic link. A link whose target does not exist (a dangling link) is still a link. A path that does not exist
-	 * returns false.
+	 * Determines whether a path is a symbolic link. A link whose target does not exist (a dangling link) is still a link. A path that does not
+	 * exist returns false.
+	 *
+	 * @argument.path The path to test.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path The path to test
-	 *
-	 * @return true if the path is a symbolic link
+	 * @return True if the path is a symbolic link, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String path = arguments.getAsString( Key.path );

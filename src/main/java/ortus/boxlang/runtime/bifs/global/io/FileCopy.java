@@ -48,22 +48,25 @@ public class FileCopy extends BIF {
 	}
 
 	/**
-	 * Copies a file from one location to another. The destionation can be a file or a directory.
-	 * If the destination is a directory, the source file name will be appended to the destination.
+	 * Copies a file to a new location. The destination can be a file or a directory; if it is a directory the source file name is used. Open
+	 * file objects are not accepted, only paths. Returns null.
+	 *
+	 * @argument.source The path of the file to copy.
+	 *
+	 * @argument.destination The destination file path, or a directory in which to place the copy.
+	 *
+	 * @argument.createPath Optional. Whether to create any missing parent directories of the destination. Defaults to true.
+	 *
+	 * @argument.overwrite Optional. Whether to overwrite the destination if it exists. Defaults to true. When false and the destination exists,
+	 *                     an exception is thrown.
+	 *
+	 * @argument.accept Optional. A comma-separated list of file extensions to accept, which overrides the runtime security settings which
+	 *                  disallow some extensions.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.source The source file
-	 *
-	 * @argument.destination A destionation file or directory, if it's a directory, the suorce file name will be appended
-	 *
-	 * @argument.createPath [ true ] whether to create any nested paths required to the new file
-	 *
-	 * @argument.overwrite Whether to overwrite the destination file if it exists. Defaults to true.
-	 *
-	 * @argument.accept A comma separated list of file extensions to accept - which will override runtime security settings
-	 *
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile	sourceFile	= arguments.getAsBoxFile( Key.source );

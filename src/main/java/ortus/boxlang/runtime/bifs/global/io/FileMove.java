@@ -47,20 +47,22 @@ public class FileMove extends BIF {
 	}
 
 	/**
-	 * Moves file from source to destination. The destination can be a file or a directory. If the destination is a directory, the
-	 * file will be moved to that directory with the same name as the source file.
+	 * Moves (or renames) a file. The destination can be a file or a directory; if it is a directory the file is moved into it with the same
+	 * name. Open file objects are not accepted, only paths. Returns null.
+	 *
+	 * @argument.source The path of the file to move.
+	 *
+	 * @argument.destination The destination file path, or a directory to move the file into.
+	 *
+	 * @argument.overwrite Optional. Whether to overwrite the destination if it exists. Defaults to true.
+	 *
+	 * @argument.accept Optional. A comma-separated list of file extensions to accept, which overrides the runtime security settings which
+	 *                  disallow some extensions.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.source The source file path.
-	 *
-	 * @argument.destination The destination file path or directory path.
-	 * 
-	 * @argument.overwrite Whether to overwrite the destination file if it exists. Defaults to true.
-	 * 
-	 * @argument.accept A comma separated list of file extensions to accept - which will override runtime security settings
-	 * 
+	 * @return Always null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile	sourceFile	= arguments.getAsBoxFile( Key.source );

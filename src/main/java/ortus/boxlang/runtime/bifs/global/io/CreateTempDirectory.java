@@ -43,16 +43,18 @@ public class CreateTempDirectory extends BIF {
 	}
 
 	/**
-	 * Creates a temporary directory in the specified directory with the specified prefix if passed.
+	 * Creates a new empty temporary directory, with a randomly generated name, and returns its absolute path. The directory is not deleted
+	 * automatically, so remove it with `directoryDelete()` when done.
+	 *
+	 * @argument.directory Optional. The directory in which to create the temp directory. Defaults to the system temp directory. Note this is the
+	 *                     first positional argument, so pass the prefix by name: `createTempDirectory( prefix="app-" )`.
+	 *
+	 * @argument.prefix Optional. A prefix for the generated directory name. Defaults to an empty string (no prefix).
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.directory The directory in which to create the temp directory, we default to the system temp directory
-	 *
-	 * @argument.prefix The prefix string to be used in generating the directory's name; may be empty
-	 *
-	 * @return The path to the directory as a string
+	 * @return The canonical path to the new directory, as a string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Path	directory	= Path.of( arguments.getAsString( Key.directory ) ).toAbsolutePath();
