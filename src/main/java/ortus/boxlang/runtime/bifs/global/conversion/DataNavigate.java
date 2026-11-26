@@ -40,27 +40,24 @@ public class DataNavigate extends BIF {
 	}
 
 	/**
-	 * Constructs a fluent data navigator based on different types of data.
+	 * Constructs a fluent data navigator based on different types of data. Use the navigator to safely walk nested data with dot paths,
+	 * array indices, and JSONPath-style expressions, extract typed values, and provide defaults without null checks.
 	 * <p>
 	 * Available Input Types:
 	 * <ul>
 	 * <li>String: A JSON string</li>
-	 * <li>File Path: A path to a JSON file as a string</li>
-	 * <li>File Path: A path to a JSON file as a Java Path</li>
-	 * <li>Struct: A structure</li>
+	 * <li>String: A file path to a JSON file</li>
+	 * <li>Path: A Java Path to a JSON file</li>
+	 * <li>Struct: A BoxLang structure</li>
 	 * <li>Map: A Java map</li>
 	 * </ul>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.json The JSON string to convert to data.
+	 * @argument.data The data to navigate: a JSON string, a path to a JSON file, a Java Path, a struct, or a map.
 	 *
-	 * @argument.strictMapping A Boolean value that specifies whether to convert the JSON strictly. If true, everything becomes structures.
-	 *
-	 * @argument.useCustomSerializer A string that specifies the name of a custom serializer to use. (Not used)
-	 *
-	 * @return The data representation of the JSON string.
+	 * @return A fluent navigator over the data. Use methods such as from(), get(), getOrDefault(), has(), and query() to navigate it.
 	 */
 	public Navigator _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// JSON string, Struct, Maps, File paths, More!
