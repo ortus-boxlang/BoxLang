@@ -10,14 +10,14 @@ writeOutput( s.size() )
 
 Result: 3
 
-### All values must be the same conceptual type after normalization
+### Numbers and strings are normalized
 
-Numerically equal values are treated as duplicates even when passed as different literals.
+Numerically equal values are duplicates even when passed as different literals, and strings are compared case-insensitively. A number and a string are never equal.
 
 ```java
-s = setOf( 1, 1.0, "1" )
+s = setOf( 1, 1.0, "a", "A", "1" )
 writeOutput( s.size() )
 
 ```
 
-Result: 1
+Result: 3

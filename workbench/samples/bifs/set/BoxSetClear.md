@@ -12,3 +12,16 @@ writeOutput( before & "," & after )
 ```
 
 Result: false,true
+
+### Clear is chainable
+
+`clear()` returns the same Set, so you can add new values right away.
+
+```java
+s = [ 1, 2, 3 ].toSet()
+s.clear().add( "x" )
+writeOutput( s.size() )
+
+```
+
+Result: 1

@@ -55,4 +55,13 @@ echo( animalList )
 
 ```
 
+Result: a comma-delimited list of the four keys COW, PIG, CAT and BIRD (order not guaranteed for the default struct type)
 
+### Keys of an ordered struct
+
+```java
+s = [ a : 1, b : 2, c : 3 ]
+writeOutput( structKeyList( s, "-" ) )
+```
+
+Result: a-b-c

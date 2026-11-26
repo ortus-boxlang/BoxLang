@@ -46,12 +46,17 @@ public class ArrayMedian extends BIF {
 	}
 
 	/**
-	 * Return the median value of an array. Will only work on arrays that contain only numeric values.
+	 * Returns the median of the numeric values in an array. The array is sorted numerically on a copy (the original is not modified).
+	 * For an odd number of elements the middle value is returned; for an even number, the average of the two middle values is returned.
+	 * All elements must be numeric (or castable to numbers).
+	 * Also available as the <code>median()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to get median value from
+	 * @argument.array The array to get the median value from.
+	 *
+	 * @return The median value of the array.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array			actualArray	= arguments.getAsArray( Key.array );

@@ -45,7 +45,7 @@ public class CreateTime extends BIF {
 
 	/**
 	 * Creates a time-only datetime object using the epoch date ( 1970-1-1 ) as the date reference.
-	 * If called with no arguments at all, the current date and time in the resolved timezone is returned.
+	 * All arguments are optional and default to 0, so calling it with no arguments returns midnight on the epoch date.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

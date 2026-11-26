@@ -41,12 +41,15 @@ public class ArraySum extends BIF {
 	}
 
 	/**
-	 * Returns the sum of all values in an array
+	 * Returns the sum of all the values in an array. All elements must be numeric (or castable to numbers). An empty array returns 0.
+	 * Also available as the <code>sum()</code> member function on arrays.
 	 *
-	 * @param context
-	 * @param arguments Argument scope defining the array.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to sum the values of.
+	 * @argument.array The array whose values will be summed.
+	 *
+	 * @return The sum of the array values.
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );
@@ -54,9 +57,11 @@ public class ArraySum extends BIF {
 	}
 
 	/**
-	 * Return length of array
+	 * Returns the sum of all the values in an array.
 	 *
 	 * @param array the array
+	 *
+	 * @return The sum of the array values, or 0 for an empty array.
 	 */
 	public static Number _invoke( Array array ) {
 		Number accumulator = 0;

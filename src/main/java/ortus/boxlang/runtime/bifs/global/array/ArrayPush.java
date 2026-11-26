@@ -40,14 +40,17 @@ public class ArrayPush extends BIF {
 	}
 
 	/**
-	 * Adds an element or an object to the end of an array, then returns the size of the modified array.
+	 * Adds a value to the end of an array and returns the new size of the array. The array is modified in place.
+	 * Also available as the <code>push()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to which the element should be appended.
+	 * @argument.array The array to add the element to.
 	 *
-	 * @argument.value The element to append. Can be any type.
+	 * @argument.value The element to add. Can be any type.
+	 *
+	 * @return The size of the array after the element was added.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );

@@ -40,7 +40,7 @@ public class BoxSetEach extends BIF {
 	 * Invoke a callback for every element of a Set. The callback receives the element value, its zero-based ordinal
 	 * position, and the Set itself; strict-argument functions (such as Java method references) receive only the
 	 * value. Iteration follows the natural
-	 * order of the underlying variant. Use setMap() if you need a transformed result.
+	 * order of the underlying variant. Use map() if you need a transformed result.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

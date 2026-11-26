@@ -55,4 +55,16 @@ Dump( label="Animals with cat added", var=animals )
 
 ```
 
+Result: the first dump shows COW and PIG; the second dump shows COW, PIG and CAT
 
+### Overwrite an existing key
+
+With overwrite set to true, an existing key is replaced instead of throwing.
+
+```java
+map = { hair : "brown" }
+structInsert( map, "hair", "red", true )
+writeOutput( map.hair )
+```
+
+Result: red

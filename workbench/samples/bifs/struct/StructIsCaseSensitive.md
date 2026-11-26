@@ -13,7 +13,7 @@ writeOutPut( StructIsCaseSensitive( myStruct1 ) )
 
 ```
 
-Result: YES
+Result: true
 
 ### Member Function with Explicit CaseSensitive
 
@@ -30,7 +30,7 @@ writeOutPut( myStruct1.isCaseSensitive() )
 
 ```
 
-Result: YES
+Result: true
 
 ### Full Function with Implicit Struct Creation and Default Case Sensitivity
 
@@ -48,5 +48,5 @@ writeOutPut( StructIsCaseSensitive( myStruct4 ) )
 
 ```
 
-Result: NO
+Result: false
 

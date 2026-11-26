@@ -41,16 +41,20 @@ public class ArraySwap extends BIF {
 	}
 
 	/**
-	 * Swaps array values of an array at specified positions. This function is more efficient than multiple assignment statements
+	 * Swaps the values at two one-based positions of an array. The array is modified in place.
+	 * Throws an exception if either position is outside of the array.
+	 * Also available as the <code>swap()</code> member function on arrays.
 	 *
-	 * @param context
-	 * @param arguments Argument scope defining the array.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.array The array containing the elements to swap.
 	 *
-	 * @arguments.position1 The first position to swap
+	 * @argument.position1 The first one-based position to swap.
 	 *
-	 * @arguments.position2 The second position to swap
+	 * @argument.position2 The second one-based position to swap.
+	 *
+	 * @return The same array, with the two values swapped.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );

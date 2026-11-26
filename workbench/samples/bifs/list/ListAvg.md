@@ -42,4 +42,20 @@ writeDump( liststr.listAvg() )
 
 ```
 
+### Average of a list
 
+```java
+writeOutput( listAvg( "10,20,30" ) )
+
+```
+
+Result: 20
+
+### Member function with a decimal result
+
+```java
+writeOutput( "1,2,3,4".listAvg() )
+
+```
+
+Result: 2.5

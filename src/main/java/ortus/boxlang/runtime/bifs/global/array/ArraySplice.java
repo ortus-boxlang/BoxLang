@@ -43,19 +43,24 @@ public class ArraySplice extends BIF {
 	}
 
 	/**
-	 * Modifies an array by removing elements and adding new elements. It starts from the index, removes as many elements as specified by
-	 * elementCountForRemoval, and puts the replacements starting from index position.
+	 * Removes and/or inserts elements in an array at a given position. The array is modified in place.
+	 * Starting at the one-based index, elementCountForRemoval elements are removed, and then the replacements (if any) are inserted at that
+	 * position.
+	 * A negative index counts from the end of the array. Note that the array itself is returned, not the removed elements.
+	 * Also available as the <code>splice()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to splice
+	 * @argument.array The array to splice.
 	 *
-	 * @argument.index The initial position to remove or insert from
+	 * @argument.index The one-based position to start removing or inserting at. Negative values count from the end of the array.
 	 *
-	 * @argument.elementCountForRemoval The number of elemetns to remove
+	 * @argument.elementCountForRemoval The number of elements to remove, starting at index. Defaults to 0.
 	 *
-	 * @argument.replacements An array of elements to insert
+	 * @argument.replacements An array of elements to insert at the index position. Optional.
+	 *
+	 * @return The same array, after the removals and insertions.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	arr			= arguments.getAsArray( Key.array );

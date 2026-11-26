@@ -38,7 +38,7 @@ public class BoxSetReject extends BIF {
 
 	/**
 	 * Return a new Set containing only the elements of the source Set for which the predicate returns false
-	 * (the inverse of setFilter). The result is a new Set of the same variant as the source; the source is not
+	 * (the inverse of filter()). The result is a new Set of the same variant as the source; the source is not
 	 * modified. The predicate receives the element value, its zero-based ordinal position, and the Set itself.
 	 *
 	 * @param context   The context in which the BIF is being invoked.

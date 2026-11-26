@@ -53,6 +53,8 @@ dump( StructKeyArray( animals ) )
 
 ```
 
+Result: an array of the four keys COW, PIG, CAT and BIRD (order not guaranteed for the default struct type)
+
 
 <a href="https://try.boxlang.io/?code=eJxLzMvMTcwpVrBViFbg4nT2D1ewUlDKzc9X0uHiDPB0B%2FHyM%2FOyQVxnxxCwZGp%2BOYjr5BnkAuInZ2QWFShxxVpzpZTmFmgoBJcUlSaXeKdWOhYVJVZqKCRCbdBU0LTmAgBmSB6N" target="_blank">Run Example</a>
 
@@ -67,4 +69,11 @@ dump( StructKeyArray( animals ) )
 
 ```
 
+### Keys of an ordered struct
 
+```java
+s = [ first : 1, second : 2, third : 3 ]
+writeOutput( structKeyArray( s ).toList() )
+```
+
+Result: first,second,third

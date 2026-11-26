@@ -14,3 +14,23 @@ writeOutput( getTimezoneInfo().TIMEZONE )
 
 Result: CET→ Etc/UTC
 
+### Set a timezone for the request
+
+Timezone examples assume the runtime default timezone is UTC.
+
+```java
+setTimezone( "America/New_York" )
+writeOutput( getTimezoneInfo().timezone )
+```
+
+Result: America/New_York
+
+### Clear it to return to the default
+
+```java
+setTimezone( "America/New_York" )
+clearTimezone()
+writeOutput( getTimezoneInfo().timezone == "America/New_York" )
+```
+
+Result: false

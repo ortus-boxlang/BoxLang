@@ -14,6 +14,8 @@ writeDump( unordered )
 
 ```
 
+Result: a struct with the keys A, C and B (unordered)
+
 
 ### New struct using function
 
@@ -29,6 +31,8 @@ unordered.C = 3
 writeDump( unordered )
 
 ```
+
+Result: a struct with the keys A, B and C (unordered)
 
 
 ### New ordered struct using literal notation
@@ -47,6 +51,8 @@ writeDump( ordered )
 
 ```
 
+Result: an ordered struct with the keys A, B, C in that order
+
 
 ### New ordered struct using function
 
@@ -63,6 +69,8 @@ writeDump( ordered )
 
 ```
 
+Result: an ordered struct with the keys A, B, C in that order
+
 
 ### New ordered struct using literal notation
 
@@ -77,6 +85,8 @@ ordered.C = 3
 writeDump( ordered )
 
 ```
+
+Result: an ordered struct with the keys A, B, C in that order
 
 
 ### New case-sensitive struct using function
@@ -94,22 +104,7 @@ writeDump( casesensitive )
 
 ```
 
-
-### New case-sensitive struct using literal notation
-
-Creates a case-sensitive struct.
-
-
-```java
-casesensitive = $
-{
-	A : 1,
-	B : 2,
-	C : 3
-}
-writeDump( casesensitive )
-
-```
+Result: a case-sensitive struct with the keys A, B and C
 
 
 ### New ordered and case-sensitive struct using function
@@ -127,22 +122,7 @@ writeDump( someStruct )
 
 ```
 
-
-### New ordered and case-sensitive struct using literal notation
-
-Creates an ordered and case-sensitive struct.
-
-
-```java
-someStruct = $
-[
-	C : 3,
-	B : 2,
-	A : 1
-]
-writeDump( someStruct )
-
-```
+Result: an ordered, case-sensitive struct with the keys C, B, A in that order
 
 
 ### Additional Examples
@@ -182,6 +162,8 @@ dump( st )
 
 ```
 
+Result: dumps of the soft, weak and linked structs (all empty), followed by dumps of the other values; the last two dumps show ordered structs with keys C, B, A
+
 
 
 ```java
@@ -194,4 +176,28 @@ dump( st )
 <bx:dump var="#st#">
 ```
 
+### Sorted struct with a sort type
 
+Passing a sort type creates a sorted struct, so keys come back in sorted order.
+
+```java
+s = structNew( "sorted", "text", "asc" )
+s.banana = 1
+s.apple = 2
+s.cherry = 3
+writeOutput( structKeyList( s ) )
+```
+
+Result: apple,banana,cherry
+
+### Unknown struct type
+
+```java
+try {
+    structNew( "bogus" )
+} catch ( any e ) {
+    writeOutput( e.message )
+}
+```
+
+Result: Could not create a struct with a type of [BOGUS] as it is not a known type.

@@ -43,16 +43,24 @@ public class ArraySlice extends BIF {
 	}
 
 	/**
-	 * Extracts a sub array from an existing array.
+	 * Extracts a portion of an array and returns it as a new array. The original array is not modified.
+	 * Indexes are one-based. A negative start counts from the end of the array (-1 is the last element). A length of 0 (default) returns
+	 * everything from
+	 * start to the end of the array, and a negative length stops that many elements before the end of the array. Elements beyond the end of the
+	 * array are ignored.
+	 * Also available as <code>ArrayMid</code>, and as the <code>slice()</code> and <code>mid()</code> member functions on arrays.
 	 *
-	 * @param context
-	 * @param arguments Argument scope defining the array.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.array The array to slice.
 	 *
-	 * @argument.start The position to start the slice from. Negative values count from the end of the array.
+	 * @argument.start The one-based position to start the slice from. Negative values count from the end of the array. Defaults to 1.
 	 *
-	 * @argument.length The number of elements to return. 0 (default) returns all elements from start to the end of the array.
+	 * @argument.length The number of elements to return. 0 (default) returns all elements from start to the end of the array. A negative value
+	 *                  leaves out that many elements from the end.
+	 *
+	 * @return A new array containing the extracted elements.
 	 */
 	public Array _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );

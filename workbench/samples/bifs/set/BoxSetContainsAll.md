@@ -9,3 +9,13 @@ writeOutput( s.containsAll( [ 2, 4 ] ) & "," & s.containsAll( [ 2, 9 ] ) )
 ```
 
 Result: true,false
+
+### Pass another Set or a list string
+
+```java
+s = [ "a", "b", "c" ].toSet()
+writeOutput( s.containsAll( setOf( "a", "c" ) ) & "," & s.containsAll( "a,b" ) )
+
+```
+
+Result: true,true

@@ -4,7 +4,7 @@ The callback receives an accumulator and the current value. The third argument i
 
 ```java
 s = [ 1, 2, 3, 4, 5 ].toSet()
-total = s.reduce( ( Any acc, Any v ) => acc + v, 0 )
+total = s.reduce( ( Any acc, Any v ) -> acc + v, 0 )
 writeOutput( total )
 
 ```
@@ -21,3 +21,13 @@ writeOutput( result )
 ```
 
 Result: apple,banana,cherry
+
+### An empty Set returns the initial value
+
+```java
+s = setNew()
+writeOutput( s.reduce( ( Any acc, Any v ) -> acc + v, 100 ) )
+
+```
+
+Result: 100

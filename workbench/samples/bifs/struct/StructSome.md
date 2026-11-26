@@ -66,4 +66,6 @@ dump( result )
 
 ```
 
+Result: dumps true (key 1 is ACTIVE); the callback may stop iterating after the first match
+
 

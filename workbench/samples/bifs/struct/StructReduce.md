@@ -19,6 +19,8 @@ writeOutput( ui )
 
 ```
 
+Result: an HTML definition list (<dl>...</dl>) with one dt/dd pair per entry; the entry order is not guaranteed for a default struct
+
 
 ### Using Member Function
 
@@ -40,6 +42,8 @@ writeDump( rainbow )
 writeOutput( ui )
 
 ```
+
+Result: an HTML definition list (<dl>...</dl>) with one dt/dd pair per entry; the entry order is not guaranteed for a default struct
 
 
 ### Additional Examples
@@ -70,4 +74,14 @@ echo( animalInfo )
 
 ```
 
+Result: an HTML unordered list with a nested list of Noise and Size for each of COW, PIG and CAT
 
+### Sum the values of a struct
+
+```java
+totals = { a : 1, b : 2, c : 3 }
+sum = structReduce( totals, ( acc, k, v ) -> acc + v, 0 )
+writeOutput( sum )
+```
+
+Result: 6

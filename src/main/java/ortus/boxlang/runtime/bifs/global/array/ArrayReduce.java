@@ -41,17 +41,23 @@ public class ArrayReduce extends BIF {
 	}
 
 	/**
-	 * Run the provided udf over the array to reduce the values to a single output
+	 * Reduces an array to a single value by invoking the callback for each element from left to right.
+	 * The callback receives four arguments: the accumulator, the current value, the one-based index and the array, and must return the new
+	 * accumulator value.
+	 * A Java BiFunction may also be passed, in which case it only receives the accumulator and the value.
+	 * Also available as the <code>reduce()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to reduce
+	 * @argument.array The array to reduce.
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the accumulator, the current item, and the
-	 *                    current index. You can alternatively pass a Java BiFunction which will only receive the first 2 args. The function should return the new accumulator value.
+	 * @argument.callback The function to invoke for each item. It receives the accumulator, the current value, the one-based index and the
+	 *                    array, and returns the new accumulator.
 	 *
-	 * @argument.initialValue The initial value of the accumulator
+	 * @argument.initialValue The initial value of the accumulator. If omitted, the accumulator starts as null.
+	 *
+	 * @return The final accumulator value.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 

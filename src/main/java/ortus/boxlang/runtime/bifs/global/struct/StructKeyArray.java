@@ -40,14 +40,14 @@ public class StructKeyArray extends BIF {
 	}
 
 	/**
-	 * Get keys of a struct as an array
+	 * Returns the keys of a struct as an array of strings.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.structure The struct whose keys are returned.
 	 *
-	 * @return An array containing the keys of the structure.
+	 * @return An array containing the keys of the struct. For ordered structs the keys are in insertion order.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct struct = arguments.getAsStruct( Key.structure );

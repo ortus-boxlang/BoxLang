@@ -21,4 +21,39 @@ writeDump( token_test )
 
 ```
 
+### Get a token by position
 
+```java
+writeOutput( getToken( "one,two,three", 2 ) )
+
+```
+
+Result: two
+
+### Use a custom delimiter
+
+```java
+writeOutput( getToken( "a:b:c", 3, ":" ) )
+
+```
+
+Result: c
+
+### Member function
+
+```java
+writeOutput( "red,green,blue".getToken( 3 ) )
+
+```
+
+Result: blue
+
+### Index past the last token
+
+```java
+result = getToken( "one,two,three", 5 )
+writeOutput( "[" & result & "]" )
+
+```
+
+Result: [] (an empty string is returned)

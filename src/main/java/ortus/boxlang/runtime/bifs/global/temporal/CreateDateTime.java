@@ -50,8 +50,7 @@ public class CreateDateTime extends BIF {
 
 	/**
 	 * Creates a date-time object from its individual parts. This BIF is also available as the alias {@code createDate()}.
-	 * If called with no arguments at all, the current date and time in the resolved timezone is returned.
-	 * Otherwise, {@code year}, {@code month} and {@code day} must be non-zero or an exception is thrown.
+	 * The {@code year}, {@code month} and {@code day} must be non-zero or an exception is thrown (so calling it with no arguments throws).
 	 *
 	 * Note that the core implementation of this BIF differs from ACF/Lucee in handling of a year value without a century. BoxLang respects that pre-first century years are valid and and will treat `createDate( 20 )` as 20 AD.
 	 * The behavior modification to emulate ACF/Lucee would require the installation of the `bx-compat` module.
@@ -59,11 +58,11 @@ public class CreateDateTime extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.year The year of the date-time object. Must not be zero. Defaults to 0 (which is only valid when no arguments are passed).
+	 * @argument.year The year of the date-time object. Must not be zero. Required in practice: the default of 0 throws an exception.
 	 *
-	 * @argument.month The month of the date-time object (1-12). Defaults to 1.
+	 * @argument.month The month of the date-time object (1-12). Defaults to 1; 0 throws an exception.
 	 *
-	 * @argument.day The day of the month of the date-time object. Defaults to 1.
+	 * @argument.day The day of the month of the date-time object. Defaults to 1; 0 throws an exception.
 	 *
 	 * @argument.hour The hour of the date-time object (0-23). Defaults to 0.
 	 *

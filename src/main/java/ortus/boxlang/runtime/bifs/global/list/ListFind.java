@@ -63,15 +63,13 @@ public class ListFind extends ArrayFind {
 	 * <li><code>listContains</code> - case-sensitive substring match; returns a boolean</li>
 	 * <li><code>listContainsNoCase</code> - case-insensitive substring match; returns a boolean</li>
 	 * </ul>
-	 * The value may also be a function (predicate) that is tested against each element, in which case the index of the first match
-	 *     is returned.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.list The list to be searched.
 	 *
-	 * @argument.value The value to locate in the list, or a predicate function used to test each element.
+	 * @argument.value The string value to locate in the list. For listContains and listContainsNoCase it is matched as a substring of each element.
 	 *
 	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
 	 *     multiCharacterDelimiter is true. Defaults to a comma.

@@ -27,7 +27,7 @@ public class SetOf extends BIF {
 	/**
 	 * Build a default (hash-backed) Set from positional arguments, silently deduplicating as it goes.
 	 * Internal runtime slots (arguments prefixed with {@code __} or the argumentCollection key) are automatically
-	 * skipped. Equivalent to calling setNew() followed by setAdd() for each value.
+	 * skipped. Equivalent to calling setNew() followed by add() for each value.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope — every positional argument becomes an element of the new set.

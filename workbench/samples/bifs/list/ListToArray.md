@@ -107,4 +107,20 @@ writeOutput( someJSON )
 
 ```
 
+### Convert a list to an array
 
+```java
+writeOutput( listToArray( "a,b,c" ).len() )
+
+```
+
+Result: 3
+
+### Member function including empty fields
+
+```java
+writeOutput( "a,,b".listToArray( ",", true ).len() )
+
+```
+
+Result: 3 (without includeEmptyFields the result has 2 items)

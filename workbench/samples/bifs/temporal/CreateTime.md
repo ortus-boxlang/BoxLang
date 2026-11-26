@@ -19,3 +19,20 @@ dump( CreateTime( "12", "57", "30" ) )
 ```
 
 
+### Create a time
+
+The date part is always the Unix epoch date, 1970-01-01.
+
+```java
+writeOutput( createTime( 14, 5, 9 ) )
+```
+
+Result: {ts '1970-01-01 14:05:09'}
+
+### Minutes, seconds and milliseconds are optional
+
+```java
+writeOutput( dateTimeFormat( createTime( 9 ), "HH:mm:ss" ) )
+```
+
+Result: 09:00:00

@@ -44,43 +44,37 @@ public class ArrayReject extends BIF {
 	}
 
 	/**
-	 * Filters an array and returns a new array containing the result.
-	 * This is the inverse of {@code ArrayFilter}.
-	 *
+	 * Filters an array and returns a new array containing only the elements for which the callback returns false. This is the inverse of {@link
+	 * ArrayFilter}.
+	 * The original array is not modified.
+	 * The callback receives three arguments: the value, the one-based index and the array. A Java Predicate may also be passed, in which case it
+	 * only receives the value.
 	 * <pre>
-	 * values = [ 1, 2, 3, 4 ];
-	 * values.reject( ( value ) => value % 2 == 0 ); // [ 1, 3 ]
+	 * values = [ 1, 2, 3, 4 ]
+	 * values.reject( ( value ) => value % 2 == 0 ) // [ 1, 3 ]
 	 * </pre>
-	 * 
-	 * This BIF will invoke the callback function for each item in the array, passing the item, its index, and the array itself.
-	 * <ul>
-	 * <li>If the callback returns false, the item will be included in the new array.</li>
-	 * <li>If the callback returns true, the item will be excluded from the new array.</li>
-	 * <li>If the callback requires strict arguments, it will only receive the item and its index.</li>
-	 * <li>If the callback does not require strict arguments, it will receive the item, its index, and the array itself.</li>
-	 * </ul>
-	 *
 	 * <h2>Parallel Execution</h2>
-	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a ForkJoinPool with parallel streams.
-	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the filter in parallel, and destroy it after the operation is complete.
-	 * Please note that this may not be the most efficient way to filter, as it will create a new ForkJoinPool for each invocation of the BIF. You may want to consider using a shared ForkJoinPool for better performance.
+	 * If <code>parallel</code> is true and no <code>maxThreads</code> is passed, the work runs in parallel using the common ForkJoinPool.
+	 * If <code>maxThreads</code> is passed, a new ForkJoinPool with that many threads is created for the call and destroyed afterwards, so it
+	 * may be less efficient for repeated calls.
+	 * Also available as the <code>reject()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to filter entries from
+	 * @argument.array The array to filter.
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array. You can alternatively pass a Java Predicate which will only receive the 1st arg.
+	 * @argument.callback The function to invoke for each item. It receives the value, the one-based index and the array. A Java Predicate is
+	 *                    also accepted and only receives the value.
 	 *
-	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
+	 * @argument.parallel Whether to run the filter in parallel. Defaults to false.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored. If a boolean is provided it will be assigned to the virtual argument instead.
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If not passed, the default ForkJoinPool thread count
+	 *                      is used. Ignored if parallel is false. If a boolean is passed, it is assigned to the virtual argument instead.
 	 *
-	 * @argument.virtual If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 * @argument.virtual If true, the function is invoked using virtual threads. Defaults to false. Ignored if parallel is false.
 	 *
-	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope for the BIF.
+	 * @return A new array containing the elements for which the callback returned false.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

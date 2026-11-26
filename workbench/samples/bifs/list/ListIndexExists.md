@@ -27,4 +27,29 @@ writeDump( strList.listIndexExists( 6 ) )
 
 ```
 
+### Index within the list
 
+```java
+writeOutput( listIndexExists( "a,b,c", 3 ) )
+
+```
+
+Result: true
+
+### Index past the end of the list
+
+```java
+writeOutput( listIndexExists( "a,b,c", 4 ) )
+
+```
+
+Result: false
+
+### Member function with an invalid index
+
+```java
+writeOutput( "a,b,c".listIndexExists( 0 ) )
+
+```
+
+Result: false

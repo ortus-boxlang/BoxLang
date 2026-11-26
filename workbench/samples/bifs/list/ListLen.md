@@ -49,4 +49,20 @@ writeDump( listLen( "susi,,LAS,,." ) )
 
 ```
 
+### Count items, ignoring empty fields
 
+```java
+writeOutput( listLen( "a,b,,c" ) )
+
+```
+
+Result: 3
+
+### Member function including empty fields
+
+```java
+writeOutput( "a,b,,c".listLen( ",", true ) )
+
+```
+
+Result: 4

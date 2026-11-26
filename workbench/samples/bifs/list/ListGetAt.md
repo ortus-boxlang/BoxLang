@@ -50,4 +50,15 @@ writeDump( strList.listGetAt( 5, "/", true ) )
 
 ```
 
+### Position out of bounds
 
+```java
+try {
+	listGetAt( "a,b,c", 5 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Index [5] out of bounds for list with 3 elements.

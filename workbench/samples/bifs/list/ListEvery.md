@@ -47,3 +47,11 @@ ListEvery( fruits, ( Any value, Any index, Any list ) => {
 
 Result: true
 
+### Member function
+
+```java
+writeOutput( "2,4,6".listEvery( ( value ) -> value > 1 ) )
+
+```
+
+Result: true

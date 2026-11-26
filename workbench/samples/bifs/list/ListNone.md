@@ -17,3 +17,21 @@ writeOutput( result )
 ```
 
 Result: false
+
+### No item matches the test
+
+```java
+writeOutput( listNone( "1,2,3", ( value ) -> value > 5 ) )
+
+```
+
+Result: true
+
+### Member function where an item matches
+
+```java
+writeOutput( "1,2,3".listNone( ( value ) -> value == 2 ) )
+
+```
+
+Result: false

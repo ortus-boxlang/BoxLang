@@ -39,12 +39,15 @@ public class ArrayIsEmpty extends BIF {
 	}
 
 	/**
-	 * Determines whether an array contains data.
+	 * Determines whether an array is empty (has no elements).
+	 * Also available as the <code>isEmpty()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.array The array to test.
+	 *
+	 * @return True if the array has no elements, false otherwise.
 	 */
 	public Boolean _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );

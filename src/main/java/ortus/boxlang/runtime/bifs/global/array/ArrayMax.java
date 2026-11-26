@@ -41,12 +41,16 @@ public class ArrayMax extends BIF {
 	}
 
 	/**
-	 * Get the max value from an array
+	 * Returns the largest numeric value in an array. All elements must be numeric (or castable to numbers).
+	 * Note that the comparison starts from 0, so an empty array, or an array containing only negative numbers, returns 0.
+	 * Also available as the <code>max()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to get max value from
+	 * @argument.array The array to get the maximum value from.
+	 *
+	 * @return The maximum value found in the array.
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );

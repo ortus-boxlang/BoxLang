@@ -48,3 +48,28 @@ dump( createTimeSpan( 0, 0, 30, 0 ) )
 ```
 
 
+### A timespan is a Duration
+
+```java
+writeOutput( createTimeSpan( 0, 6, 30, 0 ).toMinutes() )
+```
+
+Result: 390
+
+### Add a timespan to a date
+
+```java
+writeOutput( dateFormat( createDate( 2024, 1, 1 ) + createTimeSpan( 2, 0, 0, 0 ), "yyyy-MM-dd" ) )
+```
+
+Result: 2024-01-03
+
+### Fractional days are converted to smaller units
+
+Not run against the current source: this relies on the fractional-day conversion in the BIF (0.5 days becomes 720 minutes).
+
+```java
+writeOutput( createTimeSpan( 0.5, 0, 0, 0 ).toHours() )
+```
+
+Result: 12

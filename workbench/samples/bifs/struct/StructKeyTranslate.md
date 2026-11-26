@@ -1,22 +1,21 @@
-### Translate struct keys using a mapping
+### Expand dot-notated keys
+
+The struct is modified in place and also returned.
 
 ```java
-data = { first_name: "Luis", last_name: "Majano" }
-mapping = { first_name: "firstName", last_name: "lastName" }
-result = structKeyTranslate( data, mapping )
-writeOutput( result.containsKey( "firstName" ) )
-
+data = { "user.name" : "Luis", "user.age" : 30 }
+structKeyTranslate( data )
+writeOutput( data.user.name & " " & data.user.age & " " & structKeyExists( data, "user.name" ) )
 ```
 
-Result: true
+Result: Luis 30 false
 
-### Using the member function
+### Retain the original keys using the member function
 
 ```java
-data = { usr_name: "admin" }
-result = data.keyTranslate( { usr_name: "username" } )
-writeOutput( result.username )
-
+data = { "user.name" : "Luis", "user.age" : 30 }
+data.keyTranslate( false, true )
+writeOutput( data.user.name & " " & structKeyExists( data, "user.name" ) )
 ```
 
-Result: admin
+Result: Luis true

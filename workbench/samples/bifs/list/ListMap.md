@@ -41,4 +41,29 @@ writedump( fruitsPlural )
 
 ```
 
+### Transform each item
 
+```java
+writeOutput( listMap( "a,b,c", ( value ) -> value.ucase() ) )
+
+```
+
+Result: A,B,C
+
+### Use the index
+
+```java
+writeOutput( listMap( "a,b,c", ( value, index ) -> index & ":" & value ) )
+
+```
+
+Result: 1:a,2:b,3:c
+
+### Member function
+
+```java
+writeOutput( "1,2,3".listMap( ( value ) -> value * 2 ) )
+
+```
+
+Result: 2,4,6

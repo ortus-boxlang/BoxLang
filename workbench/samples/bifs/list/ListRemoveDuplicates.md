@@ -38,4 +38,20 @@ writeoutput( lst )
 
 ```
 
+### Case-sensitive de-duplication
 
+```java
+writeOutput( listRemoveDuplicates( "a,b,a,A" ) )
+
+```
+
+Result: a,b,A
+
+### Member function ignoring case
+
+```java
+writeOutput( "a,b,A,a".listRemoveDuplicates( ",", true ) )
+
+```
+
+Result: a,b

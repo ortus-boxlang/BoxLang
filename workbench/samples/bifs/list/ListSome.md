@@ -36,4 +36,20 @@ writeDump( res )
 
 ```
 
+### Member function with a match
 
+```java
+writeOutput( "a,b,c".listSome( ( value ) -> value == "b" ) )
+
+```
+
+Result: true
+
+### No item matches
+
+```java
+writeOutput( listSome( "a,b,c", ( value ) -> value == "z" ) )
+
+```
+
+Result: false

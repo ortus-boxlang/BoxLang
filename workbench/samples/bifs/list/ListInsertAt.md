@@ -36,4 +36,11 @@ writeDump( strList.listInsertAt( 3, "c", "@" ) )
 
 ```
 
+### Insert at the end of the list
 
+```java
+writeOutput( listInsertAt( "a,b,c", 4, "d" ) )
+
+```
+
+Result: a,b,c,d

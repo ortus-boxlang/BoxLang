@@ -43,14 +43,19 @@ public class ToBXStruct extends BIF {
 	}
 
 	/**
-	 * Collect a Java stream into a BoxLang Struct. Must be a stream of Map.Entry instances.
-	 * 
+	 * Collect a Java stream into a BoxLang Struct. The stream must be a stream of <code>Map.Entry</code> instances, for example
+	 * <code>myStruct.entrySet().stream().toBXStruct()</code>. If the same key appears more than once, the last value wins. A stream of
+	 * anything else fails when it is collected. The stream is consumed by this call.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
-	 * @argument.stream The stream to collect.
-	 * 
-	 * @argument.type The type of struct to create.
+	 *
+	 * @argument.stream The Java stream of Map.Entry instances to collect. This is the object the member function is called on.
+	 *
+	 * @argument.type The type of struct to create: "default", "ordered" (insertion order), "sorted", "casesensitive", "ordered-casesensitive", "soft" or
+	 *                "weak". Defaults to "default". An unknown type throws a BoxRuntimeException.
+	 *
+	 * @return A BoxLang Struct of the requested type with the entries of the stream.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		@SuppressWarnings( "unchecked" )

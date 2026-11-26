@@ -61,9 +61,12 @@ public class ToBXQuery extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.stream The stream that will be collected into a Query.
+	 * @argument.stream The Java stream of structs that will be collected into a Query. Each struct becomes a row, and values are cast to the
+	 *                  column types of the template.
 	 *
-	 * @argument.query The query template that defines the structure of the resulting Query.
+	 * @argument.query The query template that defines the columns and column types of the resulting Query. Its rows are not copied.
+	 *
+	 * @return A new Query with the columns of the template and one row per struct in the stream.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		@SuppressWarnings( "unchecked" )

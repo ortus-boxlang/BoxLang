@@ -42,15 +42,18 @@ public class ArrayShift extends BIF {
 	}
 
 	/**
-	 * Removes the first element from an array and returns the removed element. This method changes the length of the array. If used on an empty array, an
-	 * exception will be thrown.
+	 * Removes the first element from an array and returns it. The array is modified in place and the remaining elements shift down.
+	 * If the array is empty, the default value is returned, or an exception is thrown if no default value was given.
+	 * Also available as the <code>shift()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to shift
+	 * @argument.array The array to remove the first element from.
 	 *
 	 * @argument.defaultValue The value to return when the array is empty. If omitted, an exception is thrown for an empty array.
+	 *
+	 * @return The removed element, or the default value if the array is empty.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualObj		= arguments.getAsArray( Key.array );

@@ -40,16 +40,16 @@ public class StructKeyList extends BIF {
 	}
 
 	/**
-	 * Get keys of a struct as a string list
+	 * Returns the keys of a struct as a delimited string.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.structure The struct whose keys are returned.
 	 *
-	 * @argument.delimiter The delimiter to use between the keys in the returned list. Defaults to a comma.
+	 * @argument.delimiter The delimiter to place between the keys. Defaults to a comma.
 	 *
-	 * @return A string containing the keys of the structure, delimited by the specified delimiter (or a default delimiter comma if not provided).
+	 * @return A string of the keys joined by the delimiter. For ordered structs the keys are in insertion order.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct struct = arguments.getAsStruct( Key.structure );

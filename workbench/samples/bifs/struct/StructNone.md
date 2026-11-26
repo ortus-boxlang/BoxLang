@@ -4,7 +4,7 @@ Returns `true` when the callback returns `false` for every entry.
 
 ```java
 data = { a: 1, b: 2, c: 3 }
-writeOutput( data.none( ( k, v ) => v > 100 ) )
+writeOutput( data.none( ( k, v ) -> v > 100 ) )
 
 ```
 
@@ -14,7 +14,7 @@ Result: true
 
 ```java
 data = { x: 1, y: 50, z: 100 }
-writeOutput( data.none( ( k, v ) => v > 10 ) )
+writeOutput( data.none( ( k, v ) -> v > 10 ) )
 
 ```
 

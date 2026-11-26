@@ -24,4 +24,20 @@ writeDump( strLst.listCompact( "+" ) )
 
 ```
 
+### Member function
 
+```java
+writeOutput( ",,x,y,,".listCompact() )
+
+```
+
+Result: x,y
+
+### Nothing to compact
+
+```java
+writeOutput( listCompact( "a,b,c" ) )
+
+```
+
+Result: a,b,c

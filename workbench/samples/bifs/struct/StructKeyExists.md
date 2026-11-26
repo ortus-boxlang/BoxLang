@@ -45,4 +45,13 @@ if( StructKeyExists( animals, "snail" ) ) {
 
 ```
 
+Result: No snail exists in 'animals'
 
+### Keys are case-insensitive
+
+```java
+user = { Name : "Luis" }
+writeOutput( structKeyExists( user, "name" ) & " " & user.keyExists( "age" ) )
+```
+
+Result: true false

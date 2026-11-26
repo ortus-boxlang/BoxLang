@@ -37,4 +37,20 @@ writeDump( ListValueCount( list2, "boxlang", "@" ) )
 
 ```
 
+### Case-sensitive count
 
+```java
+writeOutput( listValueCount( "a,b,a,A", "a" ) )
+
+```
+
+Result: 2
+
+### Case-insensitive member function
+
+```java
+writeOutput( "a,b,a,A".listValueCountNoCase( "a" ) )
+
+```
+
+Result: 3

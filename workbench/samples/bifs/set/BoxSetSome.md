@@ -4,7 +4,7 @@ Returns `true` on the first match.
 
 ```java
 s = [ 1, 2, 3, 4 ].toSet()
-writeOutput( s.some( ( Any v ) => v > 3 ) )
+writeOutput( s.some( ( Any v ) -> v > 3 ) )
 
 ```
 
@@ -14,7 +14,7 @@ Result: true
 
 ```java
 s = setOf( 1, 2, 3 )
-writeOutput( s.some( ( Any v ) => v > 100 ) )
+writeOutput( s.some( ( Any v ) -> v > 100 ) )
 
 ```
 

@@ -45,14 +45,18 @@ public class StructKeyExists extends BIF {
 	}
 
 	/**
-	 * Tests whether a key exists in a struct and returns a boolean value
+	 * Tests whether a key exists in a struct. The key is matched using BoxLang's case-insensitive Key semantics for default structs. A key that
+	 * exists but whose value is null is treated as not defined when null support is disabled. Also registered as the member function
+	 * keyExists() on XML objects.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct to test
+	 * @argument.struct The struct to test.
 	 *
-	 * @argument.key The key within the struct to test for existence
+	 * @argument.key The key within the struct to test for existence.
+	 *
+	 * @return true if the key exists (and is defined), false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key		keyKey	= Key.of( arguments.get( Key.key ) );

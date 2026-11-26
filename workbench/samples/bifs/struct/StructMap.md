@@ -31,6 +31,8 @@ writeDump( [
 
 ```
 
+Result: original is unchanged; fixed has the same keys with the values tahi, rua, toru and wha
+
 
 ### Using Member Function
 
@@ -63,6 +65,8 @@ writeDump( [
 
 ```
 
+Result: original is unchanged; fixed has the same keys with the values tahi, rua, toru and wha
+
 
 ### Additional Examples
 
@@ -82,4 +86,14 @@ writedump( var=res, label="mapped struct" )
 
 ```
 
+Result: the mapped struct contains the values A:1, B:2 and C:3 (the true argument runs the map in parallel)
 
+### Double every value
+
+```java
+prices = { apple : 1, pear : 2 }
+doubled = prices.map( ( k, v ) -> v * 2 )
+writeOutput( doubled.apple & " " & doubled.pear )
+```
+
+Result: 2 4

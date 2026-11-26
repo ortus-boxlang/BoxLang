@@ -37,14 +37,17 @@ public class ArrayNew extends BIF {
 	}
 
 	/**
-	 * Create a new array.
+	 * Creates a new, empty array. There is no member function form of this BIF.
+	 * When more than one dimension is requested, nested arrays are created automatically as elements are accessed by index.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.dimensions The dimension of the array to create (currently only 1 is supported).
+	 * @argument.dimensions The number of dimensions of the array to create. Defaults to 1.
 	 *
-	 * @argument.isSynchronized Whether the array should be thread-safe (synchronized). Default is false.
+	 * @argument.isSynchronized Whether the array should be thread-safe (synchronized). Defaults to true.
+	 *
+	 * @return A new empty array.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return new Array(

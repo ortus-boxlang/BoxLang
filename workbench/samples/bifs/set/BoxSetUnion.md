@@ -22,13 +22,29 @@ writeOutput( result.size() )
 
 Result: 5
 
-### Union with an Array (right-hand operand is accepted as-is)
+### Union with an Array
+
+The second argument must already be a Set, so convert an Array with `toSet()` first.
 
 ```java
 s = setOf( 1, 2, 3 )
-u = s.union( [ 3, 4, 5 ] )
+u = s.union( [ 3, 4, 5 ].toSet() )
 writeOutput( u.size() )
 
 ```
 
 Result: 5
+
+### Error: the argument is not a Set
+
+```java
+s = setOf( 1, 2, 3 )
+try {
+    s.union( [ 3, 4, 5 ] )
+} catch ( any e ) {
+    writeOutput( "not a set" )
+}
+
+```
+
+Result: not a set

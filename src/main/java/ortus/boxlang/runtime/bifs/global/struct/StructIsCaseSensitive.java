@@ -44,12 +44,14 @@ public class StructIsCaseSensitive extends BIF {
 	}
 
 	/**
-	 * Returns whether the give struct is case sensitive
+	 * Returns whether the given struct is case sensitive. Structs are case-insensitive by default; only structs created as casesensitive return true.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct to test for type
+	 * @argument.struct The struct to test.
+	 *
+	 * @return true if the struct is case sensitive, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsStruct( Key.struct ).isCaseSensitive();

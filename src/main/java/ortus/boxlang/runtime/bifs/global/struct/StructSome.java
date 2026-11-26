@@ -74,6 +74,8 @@ public class StructSome extends BIF {
 	 *                      If parallel is false, this argument is ignored. If parallel is true and maxThreads is not passed, it will use the common ForkJoinPool.
 	 * 
 	 * @argument.virtual Whether to use a virtual thread for each task when running in parallel. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @return true if the callback returned true for at least one entry, false otherwise (including for an empty struct).
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object maxThreads = arguments.get( Key.maxThreads );

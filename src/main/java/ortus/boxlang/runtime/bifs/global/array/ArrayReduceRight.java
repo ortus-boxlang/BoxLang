@@ -43,18 +43,22 @@ public class ArrayReduceRight extends BIF {
 	}
 
 	/**
-	 * This function iterates over every element of the array and calls the closure to work on that element. It will reduce the array to a single value,
-	 * from the right to the left, and return it.
+	 * Reduces an array to a single value by invoking the callback for each element from right to left (last to first).
+	 * The callback receives four arguments: the accumulator, the current value, the one-based index and the array, and must return the new
+	 * accumulator value.
+	 * Also available as the <code>reduceRight()</code> member function on arrays.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to reduce
+	 * @argument.array The array to reduce.
 	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the accumulator, the current item, and the
-	 *                    current index. You can alternatively pass a Java BiFunction which will only receive the first 2 args. The function should return the new accumulator value.
+	 * @argument.callback The function to invoke for each item. It receives the accumulator, the current value, the one-based index and the
+	 *                    array, and returns the new accumulator.
 	 *
-	 * @argument.initialValue The initial value of the accumulator
+	 * @argument.initialValue The initial value of the accumulator. If omitted, the accumulator starts as null.
+	 *
+	 * @return The final accumulator value.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array		actualArray	= ArrayCaster.cast( arguments.get( Key.array ) );
