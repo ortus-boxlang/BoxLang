@@ -43,6 +43,7 @@ public class QueryStringToStruct extends BIF {
 	 * is ordered, so keys keep their order in the query string.
 	 * <p>
 	 * Example:
+	 * 
 	 * <pre>
 	 * queryStringToStruct( "foo=bar&amp;baz=qux" )
 	 * </pre>

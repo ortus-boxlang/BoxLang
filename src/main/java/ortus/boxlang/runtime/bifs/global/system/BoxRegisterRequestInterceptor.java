@@ -32,14 +32,18 @@ public class BoxRegisterRequestInterceptor extends BoxRegisterInterceptor {
 	}
 
 	/**
-	 * Registers a request interceptor that can listen to application listener request runtime events.
+	 * Registers a request interceptor with the application listener's interceptor pool, so it only listens to events for the application
+	 * request lifecycle. Behaves like boxRegisterInterceptor() otherwise: the interceptor can be a BoxLang class, a Java object, or a
+	 * closure/lambda (which needs at least one state).
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.interceptor This can be a class or a closure/lambda that will listen to global events
+	 * @argument.interceptor A BoxLang class, a Java object, or a closure/lambda that will listen to request events.
 	 *
-	 * @argument.states An array of events to listen to along side the points discovered in the incoming interceptor
+	 * @argument.states An array of events to listen to alongside the points discovered in the incoming interceptor. Required for closures/lambdas.
+	 *
+	 * @return true once the interceptor is registered.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

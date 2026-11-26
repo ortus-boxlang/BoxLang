@@ -37,11 +37,13 @@ public class GetBaseTagList extends BIF {
 	}
 
 	/**
-	 * A comma-delimited list of ancestor tag names as a string.
+	 * Returns the names of the ancestor tags of the current tag as a comma-delimited string. Custom tags are prefixed by their file type
+	 * (for example bx_ or cf_).
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @return A comma-delimited string of ancestor tag names; empty when there are none.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return Arrays

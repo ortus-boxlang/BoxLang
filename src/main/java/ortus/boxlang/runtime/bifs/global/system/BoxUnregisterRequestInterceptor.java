@@ -32,14 +32,16 @@ public class BoxUnregisterRequestInterceptor extends BoxUnregisterInterceptor {
 	}
 
 	/**
-	 * UnRegisters a global interceptor from all or specific states
+	 * Unregisters a request interceptor from the application listener's interceptor pool, from all of its states or only the given states.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.interceptor The reference to the interceptor to unregister
+	 * @argument.interceptor The reference to the interceptor to unregister.
 	 *
-	 * @argument.states An array of events to unregister to along side the points discovered in the incoming interceptor. If not passed, all states
+	 * @argument.states An array of events to unregister from. If not passed, the interceptor is unregistered from all states.
+	 *
+	 * @return true.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		this.interceptorTarget = context.getRequestContextOrFail()

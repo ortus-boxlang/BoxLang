@@ -67,6 +67,8 @@ public class BoxAnnounce extends BIF {
 	 * @argument.data The data struct to send with the event
 	 *
 	 * @argument.poolname The name of the interceptor pool to announce the event to. Default is "global". Available pools are "global" and "request".
+	 *
+	 * @return true after the event has been announced to all listeners.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		getTargetPool( arguments.getAsString( Key.poolname ), context )

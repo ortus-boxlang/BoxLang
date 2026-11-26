@@ -39,6 +39,8 @@ public class CreateGUID extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * This BIF takes no arguments.
+	 *
 	 * @return A GUID (Microsoft-y UUID) string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

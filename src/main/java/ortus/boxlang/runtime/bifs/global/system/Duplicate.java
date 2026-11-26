@@ -47,14 +47,16 @@ public class Duplicate extends BIF {
 	}
 
 	/**
-	 * Duplicates an object - either shallow or deep
+	 * Duplicates an object, either deeply (default) or shallowly. Also available as a member function on arrays, structs, dates, queries and sets.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.object Any object to duplicate
+	 * @argument.object Any object to duplicate.
 	 *
-	 * @argument.deep Whether to deep copy the object or make a shallow copy (e.g. only the top level keys in a struct)
+	 * @argument.deep Whether to deep copy the object or make a shallow copy (e.g. only the top-level keys in a struct). Defaults to true.
+	 *
+	 * @return The copy of the object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return DuplicationUtil.duplicate( arguments.get( Key.object ), arguments.getAsBoolean( Key.deep ), context );

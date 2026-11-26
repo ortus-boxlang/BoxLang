@@ -48,9 +48,11 @@ public class EncodeForHTML extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.String The string to encode.
+	 * @argument.string The string to encode.
 	 *
-	 * @argument.canonicalize If set to true, canonicalization happens before encoding. If set to false, the given input string will just be encoded.
+	 * @argument.canonicalize Intended to canonicalize the string before encoding. Defaults to false. Currently the encoded output is the same either way.
+	 *
+	 * @return The HTML-encoded string, or null if the input is null. Also available under the alias htmlEditFormat().
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String str = arguments.getAsString( Key.string );

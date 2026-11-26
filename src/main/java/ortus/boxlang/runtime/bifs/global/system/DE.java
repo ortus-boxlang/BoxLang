@@ -43,6 +43,8 @@ public class DE extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string The string to delay evaluation of.
+	 *
+	 * @return The string wrapped in double quotes, with any embedded double quotes doubled.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String string = arguments.getAsString( Key.string );

@@ -67,7 +67,7 @@ public class BoxAST extends BIF {
 	 * <pre>
 	 * // Parse source code and return as struct (default)
 	 * ast = boxAST( source = "x = 1 + 2" );
-	 * println( ast.ASTType ); // Outputs: BoxAssignment
+	 * println( ast.ASTType ); // Outputs the type of the root node of the parsed code
 	 *
 	 * // Parse source code and return as JSON
 	 * json = boxAST( source = "function add(a, b) { return a + b; }", returnType = "json" );

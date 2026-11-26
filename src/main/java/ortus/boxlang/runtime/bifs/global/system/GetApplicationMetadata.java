@@ -37,12 +37,13 @@ public class GetApplicationMetadata extends BIF {
 	}
 
 	/**
-	 * Print a message with line break to the console
+	 * Returns a struct containing the settings of the current application, as defined by the Application class or descriptor (for example
+	 * name, sessionTimeout and sessionManagement). The invokeImplicitAccessor setting is always present and defaults to true if it was not set.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.message The message to print
+	 * @return A struct of application settings.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct settings = new Struct();

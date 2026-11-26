@@ -34,11 +34,13 @@ public class DebugBoxContexts extends BIF {
 	}
 
 	/**
-	 * A debug BIF that returns an array of information showing the current context hierarchy
+	 * A debug BIF that returns an array of structs describing the current context hierarchy, from the outermost context to the current one.
+	 * Each struct has the keys name, templates, function, isInClass and declaringContext.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @return An array of structs, one per context in the hierarchy.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array		var	= new Array();

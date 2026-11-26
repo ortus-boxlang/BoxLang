@@ -28,10 +28,13 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class ApplicationStop extends BIF {
 
 	/**
-	 * Stops the currently running application
+	 * Stops the currently running application, shutting it down and removing it from the application service. Throws a BoxRuntimeException if
+	 * there is no application context.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return true when the application has been stopped.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ApplicationBoxContext applicationContext;

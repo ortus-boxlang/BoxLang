@@ -35,11 +35,12 @@ public class GetBaseTemplatePath extends BIF {
 	}
 
 	/**
-	 * Gets the absolute server file system path of the requested file.
+	 * Gets the absolute file system path of the base (originally requested) template.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @return The absolute path, or an empty string if there is no request context or base template.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		RequestBoxContext requestContext = context.getRequestContext();

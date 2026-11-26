@@ -43,11 +43,18 @@ public class GetBaseTagData extends BIF {
 	}
 
 	/**
-	 * Used within a custom tag. Finds calling (ancestor) tag by name and accesses its data.
+	 * Used within a custom tag. Finds a calling (ancestor) custom tag by name and returns its data. If the tag name contains an underscore, the
+	 * prefix before the first underscore (such as cf_ or bx_) is ignored. Throws a BoxValidationException if the tag is not found or if
+	 * ancestorLevels exceeds the number of matching ancestors.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @argument.tagName The name of the ancestor tag, such as cf_mapper. Cannot be empty.
+	 *
+	 * @argument.ancestorLevels Which matching ancestor to return: 1 (default) is the closest, 2 the next one up, and so on. Minimum 1.
+	 *
+	 * @return A struct with the keys caller, thisTag, thisComponent and attributes of the ancestor tag.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	tagName			= arguments.getAsString( Key.tagName );

@@ -32,4 +32,4 @@ try {
 }
 ```
 
-Result: All arrays passed in to arrayTranspose must be the sa
+Result: All arrays passed in to arrayTranspose must be the same

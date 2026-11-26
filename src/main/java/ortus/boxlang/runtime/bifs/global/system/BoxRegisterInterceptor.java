@@ -49,15 +49,18 @@ public class BoxRegisterInterceptor extends BIF {
 	}
 
 	/**
-	 * Registers a global interceptor that can listen to global runtime events.
+	 * Registers a global interceptor that can listen to global runtime events. The interceptor can be a BoxLang class, a Java object, or a
+	 * closure/lambda. A closure/lambda must be given at least one state to listen to, otherwise a BoxRuntimeException is thrown. Any other
+	 * type of interceptor throws a BoxRuntimeException.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.interceptor This can be a class or a closure/lambda that will listen to global events
+	 * @argument.interceptor A BoxLang class, a Java object, or a closure/lambda that will listen to global events.
 	 *
-	 * @argument.states An array of events to listen to along side the points discovered in the incoming interceptor
+	 * @argument.states An array of events to listen to alongside the points discovered in the incoming interceptor. Required for closures/lambdas.
 	 *
+	 * @return true once the interceptor is registered.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	interceptor	= arguments.get( Key.interceptor );
