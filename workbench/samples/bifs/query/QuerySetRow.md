@@ -22,12 +22,12 @@ news = queryNew( "id,title", "integer,varchar", [
 		"id" : 4,
 		"title" : "The Berlin Wall falls"
 	}
-] );
+] )
 querySetRow( news, 3, {
 	"id" : 5,
 	"title" : "The internet is born"
-} );
-writeDump( news );
+} )
+writeDump( news )
 
 ```
 
@@ -56,12 +56,12 @@ news = queryNew( "id,title", "integer,varchar", [
 		"id" : 4,
 		"title" : "The Berlin Wall falls"
 	}
-] );
+] )
 news.setRow( 3, {
 	"id" : 5,
 	"title" : "The internet is born"
-} );
-writeDump( news );
+} )
+writeDump( news )
 
 ```
 
@@ -88,12 +88,12 @@ testQuery = queryNew( "id,name", "integer,varchar", [
 		"id" : 4,
 		"name" : "smith"
 	}
-] );
+] )
 querySetRow( testQuery, 3, {
 	"id" : 5,
 	"name" : "alpha"
-} );
-writeDump( testQuery );
+} )
+writeDump( testQuery )
 
 ```
 

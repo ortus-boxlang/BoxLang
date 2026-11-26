@@ -11,8 +11,8 @@ statusCodes = {
 	NOT_MODIFIED : 304,
 	BAD_REQUEST : 400,
 	NOT_FOUND : 404
-};
-writeDump( structValueArray( statusCodes ) );
+}
+writeDump( structValueArray( statusCodes ) )
 
 ```
 
@@ -28,8 +28,8 @@ animals = {
 	PIG : "oink",
 	CAT : "meow",
 	BIRD : "chirp"
-};
-writedump( structValueArray( animals ) );
+}
+writedump( structValueArray( animals ) )
 
 ```
 

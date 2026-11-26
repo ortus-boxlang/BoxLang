@@ -43,8 +43,8 @@ We've example to get the particular row value from myquery using script syntax.
 			"Mieko and the Fifth Treasure",
 			"Eleanor Coerr"
 		]
-	] );
-	writeDump( myQuery.getRow( 3 ) );
+	] )
+	writeDump( myQuery.getRow( 3 ) )
 </bx:script>
 
 ```
@@ -55,18 +55,18 @@ We've example to get the particular row value from myquery using script syntax.
 <a href="https://try.boxlang.io/?code=eJwrVLBVKCxNLar0Sy3XUFDKTNHJS8xNVdIBMvNKdMoSi5IzEouUFDStuQr1ElNSgvKBqkwg3OLUEufUnBywLqAGQyDCKmEERFgljIEIq4SJDqYdMGfl54EoDJtg0iXl%2BUpY7INLZxSlghgY9sIUpOWXFilBrU8pzS3QUChEMANBAQUMApfEkkSgBNgekCwAYFhZSg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-q = queryNew( "id,name", "int,varchar" );
-q.addRow( 4 );
-q.setCell( "id", 1, 1 );
-q.setCell( "id", 2, 2 );
-q.setCell( "id", 3, 3 );
-q.setCell( "id", 4, 4 );
-q.setCell( "name", "one", 1 );
-q.setCell( "name", "two", 2 );
-q.setCell( "name", "three", 3 );
-q.setCell( "name", "four", 4 );
-dump( q );
-dump( QueryRowData( q, 2 ) );
+q = queryNew( "id,name", "int,varchar" )
+q.addRow( 4 )
+q.setCell( "id", 1, 1 )
+q.setCell( "id", 2, 2 )
+q.setCell( "id", 3, 3 )
+q.setCell( "id", 4, 4 )
+q.setCell( "name", "one", 1 )
+q.setCell( "name", "two", 2 )
+q.setCell( "name", "three", 3 )
+q.setCell( "name", "four", 4 )
+dump( q )
+dump( QueryRowData( q, 2 ) )
 
 ```
 

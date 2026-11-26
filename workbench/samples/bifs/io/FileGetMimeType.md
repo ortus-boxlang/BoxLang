@@ -5,12 +5,12 @@ Assume that you have a file named test.pdf in temp directory and test.txt in the
 
 ```java
 <bx:script>
-	mimeTypes = "";
-	mimeTypes = listAppend( mimeTypes, fileGetMimeType( expandPath( "/folder1/test.pdf" ) ) );
-	mimeTypes = listAppend( mimeTypes, fileGetMimeType( expandPath( "/folder1/test.pdf" ), false ) );
-	mimeTypes = listAppend( mimeTypes, fileGetMimeType( expandPath( "/folder1/test.txt" ) ) );
-	mimeTypes = listAppend( mimeTypes, fileGetMimeType( expandPath( "/folder1/test.txt" ), false ) );
-	writeOutput( mimeTypes );
+	mimeTypes = ""
+	mimeTypes = listAppend( mimeTypes, fileGetMimeType( expandPath( "/folder1/test.pdf" ) ) )
+	mimeTypes = listAppend( mimeTypes, fileGetMimeType( expandPath( "/folder1/test.pdf" ), false ) )
+	mimeTypes = listAppend( mimeTypes, fileGetMimeType( expandPath( "/folder1/test.txt" ) ) )
+	mimeTypes = listAppend( mimeTypes, fileGetMimeType( expandPath( "/folder1/test.txt" ), false ) )
+	writeOutput( mimeTypes )
 </bx:script>
 
 ```
@@ -21,8 +21,8 @@ Result: application/pdf,application/pdf,text/plain,text/plain
 
 
 ```java
-file = filegetmimetype( filepath / filename.EXT );
-writeDump( file );
+file = filegetmimetype( filepath / filename.EXT )
+writeDump( file )
 
 ```
 

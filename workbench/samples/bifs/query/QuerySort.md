@@ -27,13 +27,13 @@ exampleQuery = queryNew( "id,createdDate", "integer,timestamp", [
 		ID : 5,
 		CREATEDDATE : dateAdd( "d", randRange( -100, 100 ), now() )
 	}
-] );
+] )
 // sort it
 querySort( exampleQuery, ( Any rowA, Any rowB ) => {
-	return dateCompare( rowA.CREATEDDATE, rowB.CREATEDDATE );
-} );
+	return dateCompare( rowA.CREATEDDATE, rowB.CREATEDDATE )
+} )
 // dump it
-writeDump( exampleQuery );
+writeDump( exampleQuery )
 
 ```
 
@@ -67,13 +67,13 @@ exampleQuery = queryNew( "id,createdDate", "integer,timestamp", [
 		ID : 5,
 		CREATEDDATE : dateAdd( "d", randRange( -100, 100 ), now() )
 	}
-] );
+] )
 // sort it
 exampleQuery.sort( ( Any rowA, Any rowB ) => {
-	return -(dateCompare( rowA.CREATEDDATE, rowB.CREATEDDATE ));
-} );
+	return -(dateCompare( rowA.CREATEDDATE, rowB.CREATEDDATE ))
+} )
 // dump it
-writeDump( exampleQuery );
+writeDump( exampleQuery )
 
 ```
 
@@ -107,13 +107,13 @@ exampleQuery = queryNew( "id,description", "integer,varchar", [
 		ID : 5,
 		DESCRIPTION : "snake"
 	}
-] );
+] )
 // sort it
 exampleQuery.sort( ( Any rowA, Any rowB ) => {
-	return compare( rowA.DESCRIPTION, rowB.DESCRIPTION );
-} );
+	return compare( rowA.DESCRIPTION, rowB.DESCRIPTION )
+} )
 // dump it
-writeDump( exampleQuery );
+writeDump( exampleQuery )
 
 ```
 
@@ -147,13 +147,13 @@ exampleQuery = queryNew( "id,description", "integer,varchar", [
 		ID : 5,
 		DESCRIPTION : "snake"
 	}
-] );
+] )
 // sort it
 querySort( exampleQuery, ( Any rowA, Any rowB ) => {
-	return -(compare( rowA.DESCRIPTION, rowB.DESCRIPTION ));
-} );
+	return -(compare( rowA.DESCRIPTION, rowB.DESCRIPTION ))
+} )
 // dump it
-writeDump( exampleQuery );
+writeDump( exampleQuery )
 
 ```
 
@@ -187,13 +187,13 @@ exampleQuery = queryNew( "id,description", "integer,varchar", [
 		ID : 2,
 		DESCRIPTION : "snake"
 	}
-] );
+] )
 // sort it
 querySort( exampleQuery, ( Any rowA, Any rowB ) => {
-	return val( rowA.ID ) < val( rowB.ID ) ? -1 : val( rowA.ID ) == val( rowB.ID ) ? 0 : 1;
-} );
+	return val( rowA.ID ) < val( rowB.ID ) ? -1 : val( rowA.ID ) == val( rowB.ID ) ? 0 : 1
+} )
 // dump it
-writeDump( exampleQuery );
+writeDump( exampleQuery )
 
 ```
 
@@ -223,14 +223,14 @@ people = QueryNew( "name,dob,age", "varchar,date,int", [
 		CreateDate( 1988, 1, 1 ),
 		30
 	]
-] );
-Dump( var=people, label="people - original query" );
-QuerySort( people, "name", "asc" );
-dump( var=people, label="people - sorted by name" );
+] )
+Dump( var=people, label="people - original query" )
+QuerySort( people, "name", "asc" )
+dump( var=people, label="people - sorted by name" )
 QuerySort( people, ( Any row1, Any row2 ) => {
-	return compare( arguments.ROW1.AGE, arguments.ROW2.AGE );
-} );
-dump( var=people, label="people - sorted by age" );
+	return compare( arguments.ROW1.AGE, arguments.ROW2.AGE )
+} )
+dump( var=people, label="people - sorted by age" )
 
 ```
 

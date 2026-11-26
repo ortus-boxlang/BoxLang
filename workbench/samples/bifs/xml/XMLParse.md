@@ -21,8 +21,8 @@ xml_stream = "
       <heading>Reminder</heading>
       <body>Here is the message you requested.</body>
     </note>
-  ";
-dump( XmlParse( xml_stream ) );
+  "
+dump( XmlParse( xml_stream ) )
 
 ```
 

@@ -1,8 +1,8 @@
 ### Get information about a loaded module
 
 ```java
-info = getModuleInfo( "bx-compat-cfml" );
-writeOutput( isStruct( info ) ? "found" : "not found" );
+info = getModuleInfo( "bx-compat-cfml" )
+writeOutput( isStruct( info ) ? "found" : "not found" )
 
 ```
 

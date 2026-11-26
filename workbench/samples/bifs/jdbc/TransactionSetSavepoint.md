@@ -4,14 +4,14 @@ Here's a simple example of using multiple savepoints within a transaction:
 
 ```java
 transaction {
-    queryExecute( "INSERT INTO vehicles (id,make) VALUES (8, 'Ford' )", {}, { datasource : "carDB" } );
-    transactionSetSavepoint( 'insert' );
+    queryExecute( "INSERT INTO vehicles (id,make) VALUES (8, 'Ford' )", {}, { datasource : "carDB" } )
+    transactionSetSavepoint( 'insert' )
 
-    queryExecute( "UPDATE developers SET name = 'Chevrolet' WHERE id=8", {}, { datasource : "carDB" } );
-    transactionSetSavepoint( 'update' );
+    queryExecute( "UPDATE developers SET name = 'Chevrolet' WHERE id=8", {}, { datasource : "carDB" } )
+    transactionSetSavepoint( 'update' )
 
     // more stuff ...
-    transactionRollback( 'insert' );
+    transactionRollback( 'insert' )
 }
 ```
 
@@ -26,12 +26,12 @@ This example runs multiple queries with a savepoint for each, and rolls back to 
 ```java
 bx:transaction {
 	// insert user
-	transactionSetSavepoint( "useradded" );
+	transactionSetSavepoint( "useradded" )
 	try {
 	}
 	// another query
 	 catch (any e) {
-		transactionRollback();
+		transactionRollback()
 	}
 }
 

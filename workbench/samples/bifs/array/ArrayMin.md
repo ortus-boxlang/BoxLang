@@ -5,8 +5,8 @@ To get the smallest numeric value of an array
 <a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFVIBNF%2BqeUaCoYKmtZc5UWZJan%2BpSUFpSUaEDnfzDwNhWK4Dk2QKgDk7BWa" target="_blank">Run Example</a>
 
 ```java
-someArray = arrayNew( 1 );
-writeOutput( arrayMin( someArray ) );
+someArray = arrayNew( 1 )
+writeOutput( arrayMin( someArray ) )
 
 ```
 
@@ -25,8 +25,8 @@ someArray = [
 	87,
 	2,
 	4
-];
-writeOutput( arrayMin( someArray ) );
+]
+writeOutput( arrayMin( someArray ) )
 
 ```
 
@@ -45,8 +45,8 @@ someArray = [
 	99,
 	1,
 	4
-];
-writeOutput( someArray.Min() );
+]
+writeOutput( someArray.Min() )
 
 ```
 
@@ -56,10 +56,10 @@ Result: 1
 
 
 ```java
-aNames = array( 10412, 42, 33, 2, 999, 12769, 888 );
-dump( arrayMin( aNames ) );
+aNames = array( 10412, 42, 33, 2, 999, 12769, 888 )
+dump( arrayMin( aNames ) )
 // member function
-dump( aNames.min() );
+dump( aNames.min() )
 
 ```
 

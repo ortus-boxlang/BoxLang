@@ -5,8 +5,8 @@
 
 ```java
 <bx:script>
-	date = IsDateObject( now() );
-	writeOutput( "Can string be converted to a date/time value : " & date );
+	date = IsDateObject( now() )
+	writeOutput( "Can string be converted to a date/time value : " & date )
 </bx:script>
 
 ```

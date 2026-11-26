@@ -5,7 +5,7 @@ In this example we'll use left() to return part of a string.
 <a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyElNA5JKIRmpCoWlmcnZCklF%2BeV5Cmn5FQpZpbkFqSkK%2BWWpRQolQPmcxKpKhZT8dCUdBUNLBU0FTWsuAAH0GPg%3D" target="_blank">Run Example</a>
 
 ```java
-writeOutput( left( "The quick brown fox jumped over the lazy dog", 19 ) );
+writeOutput( left( "The quick brown fox jumped over the lazy dog", 19 ) )
 
 ```
 
@@ -18,7 +18,7 @@ In this example we'll use a negative count to return part of a string.
 <a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyElNA5JKIRmpCoWlmcnZCklF%2BeV5Cmn5FQpZpbkFqSkK%2BWWpRQolQPmcxKpKhZT8dCUdBV0jUwVNBU1rLgAbLBki" target="_blank">Run Example</a>
 
 ```java
-writeOutput( left( "The quick brown fox jumped over the lazy dog", -25 ) );
+writeOutput( left( "The quick brown fox jumped over the lazy dog", -25 ) )
 
 ```
 
@@ -33,7 +33,7 @@ In this example we'll use left() in a function to help us to capitalize the firs
 ```java
 
 public string function capitalize( required string text ) {
-	return uCase( left( arguments.TEXT, 1 ) ) & right( arguments.TEXT, len( arguments.TEXT ) - 1 );
+	return uCase( left( arguments.TEXT, 1 ) ) & right( arguments.TEXT, len( arguments.TEXT ) - 1 )
 }
 
 ```
@@ -46,7 +46,7 @@ In this example we'll use left() to test the first five characters of a request 
 
 ```java
 if( listFindNoCase( "super,great,coder,rulez", left( rc.ANSWER, 5 ) ) ) {
-	writeOutput( "You are an awesome developer!" );
+	writeOutput( "You are an awesome developer!" )
 }
 
 ```
@@ -61,7 +61,7 @@ if( listFindNoCase( "super,great,coder,rulez", left( rc.ANSWER, 5 ) ) ) {
 ```java
 
 public string function capitalize( required string text ) {
-	return arguments.TEXT.left( 1 ).ucase() & arguments.TEXT.right( arguments.TEXT.len() - 1 );
+	return arguments.TEXT.left( 1 ).ucase() & arguments.TEXT.right( arguments.TEXT.len() - 1 )
 }
 
 ```
@@ -73,7 +73,7 @@ public string function capitalize( required string text ) {
 
 ```java
 dump( left( "abcd", 3 ) ); // abc
-dump( left( "Peter", -1 ) );
+dump( left( "Peter", -1 ) )
  // Pete
 
 ```

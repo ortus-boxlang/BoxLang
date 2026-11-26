@@ -5,7 +5,7 @@ Use the throw function to throw a custom application exception.
 
 ```java
 <bx:script>
-	throw( type="MyCustomError", message="A custom error has been thrown!" );
+	throw( type="MyCustomError", message="A custom error has been thrown!" )
 </bx:script>
 
 ```
@@ -18,7 +18,7 @@ Use the throw function to throw a custom exception when the http response is inv
 
 ```java
 if( !isJSON( httpResponse.FILECONTENT ) ) {
-	throw( type="InvalidHTTPResponse", message="The http response was not valid JSON" );
+	throw( type="InvalidHTTPResponse", message="The http response was not valid JSON" )
 }
 
 ```
@@ -30,24 +30,24 @@ if( !isJSON( httpResponse.FILECONTENT ) ) {
 ```java
 // thrown as a statement example
 try {
-	throw "thrown";
+	throw "thrown"
 } catch ( e) {
-	dump( var=bxcatch, label="single argument keyword" );
+	dump( var=bxcatch, label="single argument keyword" )
 }
 
 try {
-	throw message = "thrown";
-	detail = "deets";
-	errorCode = "403";
-	type = "Test";
+	throw message = "thrown"
+	detail = "deets"
+	errorCode = "403"
+	type = "Test"
 } catch ( e) {
-	dump( var=bxcatch, label="additional arguments are ignored" );
+	dump( var=bxcatch, label="additional arguments are ignored" )
 }
 // use this syntax instead
 try {
-	throw( message="thrown", detail="deets", errorCode="403", type="Test" );
+	throw( message="thrown", detail="deets", errorCode="403", type="Test" )
 } catch ( e) {
-	dump( var=bxcatch, label="script throw with arguments" );
+	dump( var=bxcatch, label="script throw with arguments" )
 }
 
 ```

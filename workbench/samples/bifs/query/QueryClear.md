@@ -22,11 +22,11 @@ heroes = queryNew( "id,Name", "integer,varchar", [
 		"id" : 4,
 		"Name" : "Jean Grey"
 	}
-] );
-writeOutput( "Query with records<br />" );
-writeDump( heroes );
-writeOutput( "The same query, but cleared<br />" );
-writeDump( heroes.clear() );
+] )
+writeOutput( "Query with records<br />" )
+writeDump( heroes )
+writeOutput( "The same query, but cleared<br />" )
+writeDump( heroes.clear() )
 
 ```
 
@@ -54,12 +54,12 @@ qry = queryNew( "name, age", "varchar, integer", [
 		"John",
 		26
 	]
-] );
-writeOutput( "Before QueryClear :" );
-writeDump( qry );
-result = queryClear( qry );
-writeOutput( "After QueryClear :" );
-writeDump( qry );
+] )
+writeOutput( "Before QueryClear :" )
+writeDump( qry )
+result = queryClear( qry )
+writeOutput( "After QueryClear :" )
+writeDump( qry )
 
 ```
 

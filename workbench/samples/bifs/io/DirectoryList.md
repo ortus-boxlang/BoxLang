@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJxLLCpKrPRP88lPTsxxy8xJLVawVUjJLEpNLskvqvTJLC7RUEitKEjMSwlILMnQUFDS01dS0NRRSEvMKU7VUVDKS8xNBQpYcwEAo5oXPg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-arrayOfLocalFiles = directoryList( expandPath( "./" ), false, "name" );
+arrayOfLocalFiles = directoryList( expandPath( "./" ), false, "name" )
 
 ```
 
@@ -18,7 +18,7 @@ Result: [.DS_Store, .ortus, Application.bx, MyDestinationDirectory, Page.bx, ass
 <a href="https://try.boxlang.io/?code=eJwrLE0tqvRPc8vMSS1WsFVIySxKTS7JL6r0ySwu0VBIrShIzEsJSCzJ0FBQ0tNXUtDUUUhLzClO1VFQKgTpVAIyQNglsSTVJ7G4xDc%2FJTMtMzVFwcU12Bmo3JoLAELdHpE%3D" target="_blank">Run Example</a>
 
 ```java
-queryOfFiles = directoryList( expandPath( "./" ), false, "query", "", "DateLastModified DESC" );
+queryOfFiles = directoryList( expandPath( "./" ), false, "query", "", "DateLastModified DESC" )
 
 ```
 
@@ -29,7 +29,7 @@ Including sub-directories and as an array containing full paths
 <a href="https://try.boxlang.io/?code=eJxLLCpKrPRPC0nNLXDLzEktVrBVSMksSk0uyS%2Bq9MksLtFQUNLTV9JRKCkqTVXQtOYCAKoOD88%3D" target="_blank">Run Example</a>
 
 ```java
-arrayOfTempFiles = directoryList( "./", true );
+arrayOfTempFiles = directoryList( "./", true )
 
 ```
 
@@ -42,8 +42,8 @@ Pass a closure instead of a string as `filter` param
 
 ```java
 arrayOfFilteredFiles = directoryList( ".", false, "name", ( Any path ) => {
-	return ListFindNoCase( "Application.bx,robots.txt,server.json,favicon.ico,.htaccess,README.md", path );
-} );
+	return ListFindNoCase( "Application.bx,robots.txt,server.json,favicon.ico,.htaccess,README.md", path )
+} )
 
 ```
 
@@ -55,8 +55,8 @@ Result: []
 
 ```java
 directoryList( "/var/data", false, "path", ( Any path ) => {
-	return arguments.PATH.hasSuffix( ".log" );
-} );
+	return arguments.PATH.hasSuffix( ".log" )
+} )
 
 ```
 
@@ -67,21 +67,21 @@ Result: []
 A recursive listing does not descend into symbolic links by default. Pass `followLinks=true` to list what the links point to. A link given as the `path` itself is always resolved.
 
 ```java
-base = getTempDirectory() & "linkDemo";
-directoryCreate( base & "/releases/v2" );
-fileWrite( base & "/releases/v2/app.txt", "app" );
-fileCreateSymlink( base & "/current", base & "/releases/v2" );
+base = getTempDirectory() & "linkDemo"
+directoryCreate( base & "/releases/v2" )
+fileWrite( base & "/releases/v2/app.txt", "app" )
+fileCreateSymlink( base & "/current", base & "/releases/v2" )
 
-names = directoryList( path=base, recurse=true, listInfo="name" );
-writeOutput( names.len() & " " & names.toList() );
+names = directoryList( path=base, recurse=true, listInfo="name" )
+writeOutput( names.len() & " " & names.toList() )
 
 ```
 
 Result: 4 current,releases,v2,app.txt
 
 ```java
-names = directoryList( path=base, recurse=true, listInfo="name", followLinks=true );
-writeOutput( names.len() & " " & names.toList() );
+names = directoryList( path=base, recurse=true, listInfo="name", followLinks=true )
+writeOutput( names.len() & " " & names.toList() )
 
 ```
 
@@ -92,9 +92,9 @@ Result: 5 current,app.txt,releases,v2,app.txt
 The query returned by `listInfo="query"` has the `isLink` and `linkTarget` columns. `linkTarget` is an empty string for items that are not links.
 
 ```java
-q = directoryList( base, false, "query" );
+q = directoryList( base, false, "query" )
 for ( row in q ) {
-	writeOutput( row.name & " isLink=" & row.isLink & " target=" & row.linkTarget.listLast( "/" ) & "; " );
+	writeOutput( row.name & " isLink=" & row.isLink & " target=" & row.linkTarget.listLast( "/" ) & "; " )
 }
 
 ```
@@ -106,8 +106,8 @@ Result: current isLink=true target=v2; releases isLink=false target=;
 `type` keeps its values of `all`, `file` and `dir`. To list only links, use a `filter` closure with `fileIsSymlink()`.
 
 ```java
-links = directoryList( path=base, listInfo="name", filter=( path ) => fileIsSymlink( path ) );
-writeOutput( links.toList() );
+links = directoryList( path=base, listInfo="name", filter=( path ) => fileIsSymlink( path ) )
+writeOutput( links.toList() )
 
 ```
 

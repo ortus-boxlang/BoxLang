@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJzLzCvRUDDUs1DQtOYCABWgArk%3D" target="_blank">Run Example</a>
 
 ```java
-int( 1.8 );
+int( 1.8 )
 
 ```
 
@@ -18,7 +18,7 @@ Result: 1
 ```java
 writeDump( int( 7.0 ) ); // 7
 writeDump( int( 6.9 ) ); // 6
-writeDump( int( -2.9 ) );
+writeDump( int( -2.9 ) )
  // -3
 
 ```

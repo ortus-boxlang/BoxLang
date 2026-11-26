@@ -4,7 +4,7 @@ Uses expandPath to grab a file in current directory.
 
 
 ```java
-binaryContent = fileReadBinary( expandPath( "./file.pdf" ) );
+binaryContent = fileReadBinary( expandPath( "./file.pdf" ) )
 
 ```
 
@@ -13,7 +13,7 @@ binaryContent = fileReadBinary( expandPath( "./file.pdf" ) );
 
 
 ```java
-binaryContent = fileReadBinary( expandPath( "./image.jpg" ) );
+binaryContent = fileReadBinary( expandPath( "./image.jpg" ) )
 
 ```
 

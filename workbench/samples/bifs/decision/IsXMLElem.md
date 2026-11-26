@@ -21,7 +21,7 @@
 	</boxlangengines>
 </bx:xml>
 <bx:script>
-	writeOutput( isXMLElem( example.BOXLANGENGINES ) );
+	writeOutput( isXMLElem( example.BOXLANGENGINES ) )
 </bx:script>
 
 ```

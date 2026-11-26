@@ -5,7 +5,7 @@ Find the difference between two dates.
 <a href="https://try.boxlang.io/?code=eJxLSSxJdclMS9NQUEpR0lFQMjIwNNY1MNQ1NEXmGZkqKWhacwEA%2FP0JhQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
-dateDiff( "d", "2013-01-15", "2013-01-25" );
+dateDiff( "d", "2013-01-15", "2013-01-25" )
 
 ```
 
@@ -18,9 +18,9 @@ Calculates a persons age based on a variable birthDate which contains a date. Us
 <a href="https://try.boxlang.io/?code=eJxLyiwqyXBJLElVsFVILkoFMkAcDQVDS3MjHQVTHQUjAwVNa67EdJCCFJB0ZlqahoJSJRAo6SgkwbTrKOTll2togtSWF2WWpOaXlhSUlmgogDQCxQBb5x9R" target="_blank">Run Example</a>
 
 ```java
-birthDate = createDate( 1972, 5, 20 );
-age = dateDiff( "yyyy", birthDate, now() );
-writeoutput( age );
+birthDate = createDate( 1972, 5, 20 )
+age = dateDiff( "yyyy", birthDate, now() )
+writeoutput( age )
 
 ```
 
@@ -31,9 +31,9 @@ writeoutput( age );
 <a href="https://try.boxlang.io/?code=eJw9jEsKg0AQRPeeonA1wiTiOrgICa6EnEHSLQ6EnjDTjdf3g7oqePWqlLO%2BB2W0kDi76lFQGMeD0BpPIoeSSo%2FGQ0979eYUlD%2Bmf1N3FfdtffjXUbXpqGvoFDISqyXJaBAFvX2ZPQYh3Hbwij%2FqLIcoxQLZ7DCY" target="_blank">Run Example</a>
 
 ```java
-testDate = now();
-diffDate = dateAdd( "d", 1, testDate );
-writeOutput( testDate.diff( "d", diffDate ) );
+testDate = now()
+diffDate = dateAdd( "d", 1, testDate )
+writeOutput( testDate.diff( "d", diffDate ) )
 ```
 
 
@@ -48,7 +48,7 @@ echo( DateDiff( "d", "2016-06-27", "2016-06-26" ) & "<br>" ); // -1
 echo( DateDiff( "h", "2016-06-27 00:00:00", "2016-06-27 01:00:00" ) & "<br>" ); // 1
 echo( DateDiff( "h", "2016-06-27 00:00:00", "2016-06-27 00:00:00" ) & "<br>" ); // 0
 echo( DateDiff( "h", "2016-06-27 01:00:00", "2016-06-27 00:00:00" ) & "<br>" ); // -1
-echo( DateDiff( "wd", "2016-06-27 00:00:00", "2016-07-27 01:00:00" ) & "<br>" );
+echo( DateDiff( "wd", "2016-06-27 00:00:00", "2016-07-27 01:00:00" ) & "<br>" )
  // 22
 
 ```

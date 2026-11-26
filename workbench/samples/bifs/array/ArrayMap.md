@@ -15,11 +15,11 @@ complexData = [
 	{
 		A : 51
 	}
-];
+]
 newArray = arrayMap( complexData, ( Any item ) => {
-	return item.A;
-} );
-writeDump( newArray );
+	return item.A
+} )
+writeDump( newArray )
 
 ```
 
@@ -34,21 +34,21 @@ aNames = [
 	"Marcus",
 	"Sarah",
 	"Josefine"
-];
-dump( aNames );
+]
+dump( aNames )
 newNames1 = arrayMap( aNames, ( Any item, Any index, Any arr ) => {
 	return {
 		"name" : item
-	};
-} );
-dump( newNames1 );
+	}
+} )
+dump( newNames1 )
 // member function
 newNames2 = aNames.map( ( Any item, Any index, Any arr ) => {
 	return {
 		"name" : item
-	};
-} );
-dump( newNames2 );
+	}
+} )
+dump( newNames2 )
 
 ```
 

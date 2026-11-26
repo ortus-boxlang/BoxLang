@@ -5,7 +5,7 @@ Returns true if variable is a Boxlang structure or is a Java object that impleme
 <a href="https://try.boxlang.io/?code=eJzLLA4uKSpNLtFQKAbTfqnlGpoKmtZcAHq5CFg%3D" target="_blank">Run Example</a>
 
 ```java
-isStruct( structNew() );
+isStruct( structNew() )
 
 ```
 
@@ -18,7 +18,7 @@ Returns false is the object in the variable parameter is a user-defined function
 <a href="https://try.boxlang.io/?code=eJzLLA4uKSpNLtFQSCwqSqz0Sy3XUDBU0FTQtOYCAIeoCEM%3D" target="_blank">Run Example</a>
 
 ```java
-isStruct( arrayNew( 1 ) );
+isStruct( arrayNew( 1 ) )
 
 ```
 
@@ -29,8 +29,8 @@ Result: false
 <a href="https://try.boxlang.io/?code=eJwrLilSsFUoLikqTS7xSy3X0LTmKi%2FKLEn1Ly0pKC3RUMgsDgbLaYDUKGgqAOUB1fIRGQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
-str = structNew();
-writeOutput( isStruct( str ) );
+str = structNew()
+writeOutput( isStruct( str ) )
 
 ```
 

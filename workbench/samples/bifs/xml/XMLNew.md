@@ -16,8 +16,8 @@ Here, We created myXml by using xmlNew function. Then created root node(sampleXm
 <a href="https://try.boxlang.io/?code=eJyryM2JT8lPLs1NzStRsFWIyM3xSy3X0LTmSinNLdBQqECWBooCAJUEEBk%3D" target="_blank">Run Example</a>
 
 ```java
-xml_document = XmlNew();
-dump( xml_document );
+xml_document = XmlNew()
+dump( xml_document )
 
 ```
 

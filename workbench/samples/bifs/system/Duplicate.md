@@ -9,12 +9,12 @@ In comparison `myOtherNewStruct` is a copy so if you change `myOtherNewStruct`, 
 myStruct = { 
 	"foo" : "Lorem ipsum",
 	"bar" : "baz"
-};
-myNewStruct = myStruct;
-myOtherNewStruct = duplicate( myStruct );
-myNewStruct.FOO = "ahmet sun";
-myOtherNewStruct.FOO = "dolor sit";
-writeOutput( myStruct.FOO & " → " & myNewStruct.FOO & " → " & myOtherNewStruct.FOO );
+}
+myNewStruct = myStruct
+myOtherNewStruct = duplicate( myStruct )
+myNewStruct.FOO = "ahmet sun"
+myOtherNewStruct.FOO = "dolor sit"
+writeOutput( myStruct.FOO & " → " & myNewStruct.FOO & " → " & myOtherNewStruct.FOO )
 
 ```
 
@@ -28,13 +28,13 @@ Result: ahmet sun → ahmet sun → dolor sit
 person = { 
 	FIRST : "Babe",
 	LAST : "Ruth"
-};
+}
 dump( person ); // Babe Ruth
-clone = duplicate( person );
+clone = duplicate( person )
 dump( clone ); // Babe Ruth
-person.LAST = "Smith";
+person.LAST = "Smith"
 dump( person ); // Babe Smith
-dump( clone );
+dump( clone )
  // Babe Ruth
 
 ```

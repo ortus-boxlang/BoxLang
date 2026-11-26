@@ -3,9 +3,9 @@
 Trims leading and trailing whitespace in place and returns the same instance.
 
 ```java
-sb = sb{'  hello  '};
-stringBuilderTrim( sb );
-writeOutput( sb.toString() );
+sb = sb{'  hello  '}
+stringBuilderTrim( sb )
+writeOutput( sb.toString() )
 ```
 
 Result: hello
@@ -13,9 +13,9 @@ Result: hello
 ### Member usage
 
 ```java
-sb = sb{'  hello  '};
-sb.trim();
-writeOutput( sb.toString() );
+sb = sb{'  hello  '}
+sb.trim()
+writeOutput( sb.toString() )
 ```
 
 Result: hello

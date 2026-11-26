@@ -5,8 +5,8 @@
 <a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVKATRfqnlGgpKni46eYm5qTqJ6alKCprWXOVFmSWp%2FqUlBaUlGhB1zvk5pbl5rhWZxSXFGgq5EEN0QDqBGkBaAERdHQc%3D" target="_blank">Run Example</a>
 
 ```java
-myQuery = queryNew( "ID,name,age" );
-writeOutput( queryColumnExists( myQuery, "ID" ) );
+myQuery = queryNew( "ID,name,age" )
+writeOutput( queryColumnExists( myQuery, "ID" ) )
 
 ```
 
@@ -19,8 +19,8 @@ Result: true
 <a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVKATRfqnlGgpKni46eYm5qTqJ6alKCprWXOVFmSWp%2FqUlBaUlGhB1zvk5pbl5rhWZxSXFGgq5EEN0FJTSU%2FNSUouAmkDaAMdmHu8%3D" target="_blank">Run Example</a>
 
 ```java
-myQuery = queryNew( "ID,name,age" );
-writeOutput( queryColumnExists( myQuery, "gender" ) );
+myQuery = queryNew( "ID,name,age" )
+writeOutput( queryColumnExists( myQuery, "gender" ) )
 
 ```
 
@@ -31,9 +31,9 @@ Result: false
 <a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVKATRfqnlGgpKyaXFJZ4uOiDKLzE3VUlB05qrvCizJNWlNLdAA6LSOT%2BnNDfPtSKzuKRYQyEXYoyOglJiOkg9KTqQrAFpAwChpTHJ" target="_blank">Run Example</a>
 
 ```java
-myQuery = queryNew( "custID,custName" );
-writeDump( queryColumnExists( myQuery, "age" ) );
-writeDump( queryColumnExists( myQuery, "custName" ) );
+myQuery = queryNew( "custID,custName" )
+writeDump( queryColumnExists( myQuery, "age" ) )
+writeDump( queryColumnExists( myQuery, "custName" ) )
 
 ```
 

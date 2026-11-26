@@ -5,7 +5,7 @@ The result could vary depending on if the server is running windows or linux.  O
 <a href="https://try.boxlang.io/?code=eJxLrSjQUDDUMzQ2NDEwMjQ0NLFU0LTmAgA9twSu" target="_blank">Run Example</a>
 
 ```java
-exp( 1.13140211149 );
+exp( 1.13140211149 )
 
 ```
 

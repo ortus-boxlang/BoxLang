@@ -5,9 +5,9 @@ Inserts paragraph tags around blocks of text separated by line breaks.
 ```java
 text = "First paragraph.
 
-Second paragraph.";
-result = paragraphFormat( text );
-writeOutput( result.contains( "<p>" ) );
+Second paragraph."
+result = paragraphFormat( text )
+writeOutput( result.contains( "<p>" ) )
 
 ```
 
@@ -18,8 +18,8 @@ Result: true
 ```java
 result = "Line one.
 
-Line two.".paragraphFormat();
-writeOutput( result.contains( "</p>" ) );
+Line two.".paragraphFormat()
+writeOutput( result.contains( "</p>" ) )
 
 ```
 

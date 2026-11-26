@@ -3,7 +3,7 @@
 SQL only example. Assumes that a default datasource has been specified (by setting the variable `this.datasource` in Application.bx).
 
 ```java
-qryResult = queryExecute("SELECT * FROM Employees");
+qryResult = queryExecute("SELECT * FROM Employees")
 ```
 
 ### Using Named Placeholders
@@ -17,7 +17,7 @@ qryResult = queryExecute(
     country="USA", 
     empid=1
   }
-);
+)
 ```
 
 ### Using Positional Placeholders
@@ -31,7 +31,7 @@ qryResult = queryExecute(
     1,
     "USA"
   ]
-);
+)
 ```
 
 ### Return Type Options
@@ -39,7 +39,7 @@ qryResult = queryExecute(
 By default, `queryExecute()` will return a [query object](../../types/query) with the results of the SQL statement. To return results as an array of structs, you can specify the `returnType: "array"`:
 
 ```java
-queryExecute("SELECT * FROM Employees", [], { returnType: "array" });
+queryExecute("SELECT * FROM Employees", [], { returnType: "array" })
 ```
 
 ```json
@@ -62,7 +62,7 @@ queryExecute("SELECT * FROM Employees", [], { returnType: "array" });
 You can also return results as a key-value struct by specifying the `returnType` and `columnKey` options:
 
 ```java
-queryExecute("SELECT * FROM Employees", [], { returnType: "struct", columnKey: "empid" });
+queryExecute("SELECT * FROM Employees", [], { returnType: "struct", columnKey: "empid" })
 ```
 
 ```json
@@ -94,7 +94,7 @@ qryResult = queryExecute(
     "cache": true,
     "cacheTimeout": createTimespan( 0, 0, 0, 2 )
   }
-);
+)
 ```
 
 This will mark the query for cache eviction after 2 seconds. You can also use `cacheLastAccessTimeout` to specify a timeout based on the last access time of the query:
@@ -107,7 +107,7 @@ qryResult = queryExecute(
     "cache": true,
     "cacheLastAccessTimeout": createTimespan( 0, 0, 0, 2 )
   }
-);
+)
 ```
 
 See our [caching documentation](https://boxlang.ortusbooks.com/boxlang-framework/caching) for more information on caching.
@@ -124,11 +124,11 @@ users = queryNew( "firstname", "varchar", [
 	{
 		"firstname" : "Han"
 	}
-] );
+] )
 subUsers = queryExecute( "select * from users", {}, {
 	DBTYPE : "query"
-} );
-writedump( subUsers );
+} )
+writedump( subUsers )
 
 ```
 
@@ -144,12 +144,12 @@ users = queryNew( "firstname", "varchar", [
 	{
 		"firstname" : "Han"
 	}
-] );
+] )
 subUsers = queryExecute( "select * from users", {}, {
 	DBTYPE : "query",
 	RETURNTYPE : "array"
-} );
-writedump( subUsers );
+} )
+writedump( subUsers )
 
 ```
 
@@ -165,12 +165,12 @@ users = queryNew( "firstname", "varchar", [
 	{
 		"firstname" : "Han"
 	}
-] );
+] )
 subUsers = queryExecute( "select * from users", {}, {
 	DBTYPE : "query",
 	RETURNTYPE : "array-of-entities"
-} );
-writedump( subUsers );
+} )
+writedump( subUsers )
 
 ```
 
@@ -188,13 +188,13 @@ users = queryNew( "id, firstname", "integer, varchar", [
 		"id" : 1,
 		"firstname" : "Han"
 	}
-] );
+] )
 subUsers = queryExecute( "select * from users", {}, {
 	DBTYPE : "query",
 	RETURNTYPE : "struct",
 	COLUMNKEY : "id"
-} );
-writedump( subUsers );
+} )
+writedump( subUsers )
 
 ```
 
@@ -216,7 +216,7 @@ _test = queryNew( "_id, _need, _forWorld", "integer, varchar, varchar", [
 		"save",
 		"water"
 	]
-] );
+] )
 queryResult = queryExecute( sql="SELECT * FROM _test WHERE _need = :need", params={
 	NEED : {
 		VALUE : "plant",
@@ -224,8 +224,8 @@ queryResult = queryExecute( sql="SELECT * FROM _test WHERE _need = :need", param
 	}
 }, options={
 	DBTYPE : "query"
-} );
-dump( queryResult );
+} )
+dump( queryResult )
 
 ```
 
@@ -240,8 +240,8 @@ queryExecute( sql="insert into user (name) values (:name)", params={
 }, options={
 	DBTYPE : "query",
 	RESULT : "insertResult"
-} );
-dump( insertResult.GENERATEDKEY );
+} )
+dump( insertResult.GENERATEDKEY )
 
 ```
 

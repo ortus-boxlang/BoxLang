@@ -5,7 +5,7 @@ Find item in a list and return the index.
 <a href="https://try.boxlang.io/?code=eJzLySwuccvMS%2FHLd04sTtVQUEosKMhJ1ckvSsxLT9VJSswDQiUdBSWIgJKCpjUXANhmEOQ%3D" target="_blank">Run Example</a>
 
 ```java
-listFindNoCase( "apple,orange,banana", "orange" );
+listFindNoCase( "apple,orange,banana", "orange" )
 
 ```
 
@@ -18,7 +18,7 @@ Find item in a pipe delimited list and return the index.
 <a href="https://try.boxlang.io/?code=eJzLySwuccvMS%2FHLd04sTtVQUEosKMhJrckvSsxLT61JSswDQiUdBSWIAIhVo6Sgac0FAEQ%2FEpA%3D" target="_blank">Run Example</a>
 
 ```java
-listFindNoCase( "apple|orange|banana", "orange", "|" );
+listFindNoCase( "apple|orange|banana", "orange", "|" )
 
 ```
 
@@ -31,8 +31,8 @@ listFindNoCase as a member function
 <a href="https://try.boxlang.io/?code=eJxLKyrNLClWsFVQSiwoyEmtyS9KzEtPrUlKzANCJWuu8qLMklT%2F0pKC0hINhTSwYr2czOISt8y8FL9858TiVA0FJf8gRz93VyUdBaUaJQVNBU1rLgBz2hz7" target="_blank">Run Example</a>
 
 ```java
-fruits = "apple|orange|banana";
-writeOutput( fruits.listFindNoCase( "ORANGE", "|" ) );
+fruits = "apple|orange|banana"
+writeOutput( fruits.listFindNoCase( "ORANGE", "|" ) )
 
 ```
 
@@ -45,8 +45,8 @@ Result: 2
 ```java
 writeOutput( listFindNoCase( "I,love,boxlang,testFile", "BOXLANG" ) ); // Expected output 3
 // Member Function with @ delimiter
-strList = "I@am@boxlang@dev";
-writeDump( strList.listFindNoCase( "Dev", "@" ) );
+strList = "I@am@boxlang@dev"
+writeDump( strList.listFindNoCase( "Dev", "@" ) )
  // Expected output 4
 
 ```

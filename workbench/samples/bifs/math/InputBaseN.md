@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJzLzCsoLXFKLE7101BQMjQwNFDSUTBS0LTmAgBlkwZU" target="_blank">Run Example</a>
 
 ```java
-inputBaseN( "1010", 2 );
+inputBaseN( "1010", 2 )
 
 ```
 
@@ -18,7 +18,7 @@ Result: 10
 <a href="https://try.boxlang.io/?code=eJzLzCsoLXFKLE7101BQMnZzU9JRMDRT0LTmAgBnZwaG" target="_blank">Run Example</a>
 
 ```java
-inputBaseN( "3FF", 16 );
+inputBaseN( "3FF", 16 )
 
 ```
 
@@ -31,7 +31,7 @@ Result: 1023
 <a href="https://try.boxlang.io/?code=eJzLzCsoLXFKLE7101BQMjQyVdJRMDRQ0LTmAgBlqwZZ" target="_blank">Run Example</a>
 
 ```java
-inputBaseN( "125", 10 );
+inputBaseN( "125", 10 )
 
 ```
 
@@ -44,7 +44,7 @@ Result: 125
 <a href="https://try.boxlang.io/?code=eJzLzCsoLXFKLE7101AwNDA00FEwUtC05gIAWYMGEA%3D%3D" target="_blank">Run Example</a>
 
 ```java
-inputBaseN( 1010, 2 );
+inputBaseN( 1010, 2 )
 
 ```
 
@@ -57,7 +57,7 @@ Result: 10
 ```java
 writeDump( InputBaseN( "100100", 2 ) ); // 36 Binary to decimal format
 writeDump( InputBaseN( "545", 8 ) ); // 357 Decimal to Octal format
-writeDump( InputBaseN( "A", 16 ) );
+writeDump( InputBaseN( "A", 16 ) )
  // 10 Hexadecimal to decimal
 
 ```

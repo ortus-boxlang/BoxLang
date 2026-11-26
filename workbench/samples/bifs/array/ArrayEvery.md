@@ -10,10 +10,10 @@ array = [
 	5,
 	6,
 	7
-];
+]
 writeOutput( arrayEvery( array, ( Any value ) => {
-	return value > 2;
-} ) );
+	return value > 2
+} ) )
 
 ```
 
@@ -31,10 +31,10 @@ array = [
 	2,
 	3,
 	4
-];
+]
 writeOutput( arrayEvery( array, ( Any value ) => {
-	return value > 2;
-} ) );
+	return value > 2
+} ) )
 
 ```
 
@@ -58,11 +58,11 @@ my_array = [
 		NAME : "Jose",
 		AGE : 54
 	}
-];
+]
 all_old = my_array.every( ( Any person ) => {
-	return person.AGE >= 40;
-}, true, 5 );
-dump( all_old );
+	return person.AGE >= 40
+}, true, 5 )
+dump( all_old )
  // false
 
 ```

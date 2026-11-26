@@ -1,9 +1,9 @@
 ### Restart the current application
 
 ```java
-startTime = applicationStartTime();
-applicationRestart();
-writeOutput( "restarted" );
+startTime = applicationStartTime()
+applicationRestart()
+writeOutput( "restarted" )
 
 ```
 

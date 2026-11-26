@@ -12,17 +12,17 @@ myStruct = {
 	D : 10,
 	E : 12,
 	F : 12
-};
+}
 myStruct.MYSECONDSTRUCT = {
 	A1 : 50,
 	A2 : 12
-};
+}
 myStruct.MYSECONDSTRUCT.MYTHIRDSTRUCT = {
 	B1 : 12,
 	B2 : 65
-};
-myValue = StructFindValue( myStruct, "12", "one" );
-WriteOutput( JSONSerialize( myValue ) );
+}
+myValue = StructFindValue( myStruct, "12", "one" )
+WriteOutput( JSONSerialize( myValue ) )
 
 ```
 
@@ -42,17 +42,17 @@ myStruct = {
 	D : 10,
 	E : 12,
 	F : 12
-};
+}
 myStruct.MYSECONDSTRUCT = {
 	A1 : 50,
 	A2 : 12
-};
+}
 myStruct.MYSECONDSTRUCT.MYTHIRDSTRUCT = {
 	B1 : 12,
 	B2 : 65
-};
-myValue = StructFindValue( myStruct, "12", "all" );
-WriteOutput( JSONSerialize( myValue ) );
+}
+myValue = StructFindValue( myStruct, "12", "all" )
+WriteOutput( JSONSerialize( myValue ) )
 
 ```
 
@@ -72,17 +72,17 @@ myStruct = {
 	D : 10,
 	E : 12,
 	F : 12
-};
+}
 myStruct.MYSECONDSTRUCT = {
 	A1 : 50,
 	A2 : 12
-};
+}
 myStruct.MYSECONDSTRUCT.MYTHIRDSTRUCT = {
 	B1 : 12,
 	B2 : 65
-};
-myValue = myStruct.findValue( "12", "one" );
-WriteOutput( JSONSerialize( myValue ) );
+}
+myValue = myStruct.findValue( "12", "one" )
+WriteOutput( JSONSerialize( myValue ) )
 
 ```
 
@@ -106,13 +106,13 @@ animals = {
 		NOISE : "meow",
 		SIZE : "small"
 	}
-};
+}
 // Show all animals
-Dump( label="All animals", var=animals );
+Dump( label="All animals", var=animals )
 // Find animal containing value of 'medium'
-findMediumAnimal = StructFindValue( animals, "medium" );
+findMediumAnimal = StructFindValue( animals, "medium" )
 // Show results in findMediumAnimal
-Dump( label="Results of StructFindValue(animals, ""medium"")", var=findMediumAnimal );
+Dump( label="Results of StructFindValue(animals, ""medium"")", var=findMediumAnimal )
 
 ```
 

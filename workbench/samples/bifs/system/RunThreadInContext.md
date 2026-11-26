@@ -2,9 +2,9 @@
 
 ```java
 result = runThreadInContext( () => {
-    return "executed in context";
-} );
-writeOutput( result );
+    return "executed in context"
+} )
+writeOutput( result )
 
 ```
 

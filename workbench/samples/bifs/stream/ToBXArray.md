@@ -3,8 +3,8 @@
 Converts a Java Stream into a BoxLang Array by collecting all elements.
 
 ```java
-arr = streamOf( 10, 20, 30 ).toBXArray();
-writeOutput( arr.toString() );
+arr = streamOf( 10, 20, 30 ).toBXArray()
+writeOutput( arr.toString() )
 
 ```
 
@@ -17,8 +17,8 @@ Chain stream operations before collecting.
 ```java
 arr = [ 1, 2, 3, 4, 5 ].toStream()
     .filter( (x) => x > 2 )
-    .toBXArray();
-writeOutput( arr.toString() );
+    .toBXArray()
+writeOutput( arr.toString() )
 
 ```
 
@@ -29,8 +29,8 @@ Result: [3, 4, 5]
 ```java
 arr = [ 1, 2, 3 ].toStream()
     .map( (x) => x * 10 )
-    .toBXArray();
-writeOutput( arr.toString() );
+    .toBXArray()
+writeOutput( arr.toString() )
 
 ```
 

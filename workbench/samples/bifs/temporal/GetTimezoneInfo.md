@@ -24,7 +24,7 @@ Shows the use of getTimeZoneInfo for a known / specific timezone with German loc
 
 ```java
 <bx:script>
-	var tz = getTimeZoneInfo( "US/Hawaii", "de-DE" );
+	var tz = getTimeZoneInfo( "US/Hawaii", "de-DE" )
 </bx:script>
 
 ```
@@ -35,7 +35,7 @@ Shows the use of getTimeZoneInfo for a known / specific timezone with German loc
 <a href="https://try.boxlang.io/?code=eJxLKc0t0FBwTy0JycxNjcrPS%2FXMS8vX0FTQtOYCAIYsCLU%3D" target="_blank">Run Example</a>
 
 ```java
-dump( GetTimeZoneInfo() );
+dump( GetTimeZoneInfo() )
 
 ```
 

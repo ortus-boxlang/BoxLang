@@ -9,10 +9,10 @@ someStruct = {
 	A : 1,
 	B : 2,
 	C : 3
-};
+}
 structEach( someStruct, ( Any key, Any value ) => {
-	writeOutput( "Key " & key & " is " & value & "; " );
-} );
+	writeOutput( "Key " & key & " is " & value & "; " )
+} )
 
 ```
 
@@ -29,19 +29,19 @@ favs = {
 	COLOR : "blue",
 	FOOD : "pizza",
 	SPORT : "basketball"
-};
+}
 
 // named function
 // notice that the function takes two arguments, the key and value pair of the current iteration of the structure's key-value pairs
 function getFavorites( Any key, Any value ) {
-	writeOutput( "My favorite " & key & " is " & value );
+	writeOutput( "My favorite " & key & " is " & value )
 }
 // run structEach() with a named function
-structEach( favs, getFavorites );
+structEach( favs, getFavorites )
 // run structEach() with an inline function
 structEach( favs, ( Any key, Any value ) => {
-	writeOutput( "My favorite " & key & " is " & value );
-} );
+	writeOutput( "My favorite " & key & " is " & value )
+} )
 
 ```
 
@@ -59,10 +59,10 @@ statusCodes = {
 	NOT_MODIFIED : 304,
 	BAD_REQUEST : 400,
 	NOT_FOUND : 404
-};
+}
 statusCodes.each( ( Any key, Any value ) => {
-	writeOutput( "#key# => #value#<br />" );
-} );
+	writeOutput( "#key# => #value#<br />" )
+} )
 
 ```
 
@@ -83,10 +83,10 @@ statusCodes = {
 	NOT_MODIFIED : 304,
 	BAD_REQUEST : 400,
 	NOT_FOUND : 404
-};
+}
 statusCodes.each( ( Any key, Any value, Any struct ) => {
-	writeDump( struct );
-} );
+	writeDump( struct )
+} )
 
 ```
 
@@ -100,13 +100,13 @@ animals = {
 	COW : "moo",
 	PIG : "oink",
 	CAT : "meow"
-};
+}
 StructEach( animals, ( Any key ) => {
 	// Show key 'arguments.key'
-	Dump( label="Key", var=arguments.KEY );
+	Dump( label="Key", var=arguments.KEY )
 	// Show key's value 'animals[arguments.key]'
-	Dump( label=arguments.KEY & "'s value", var=animals[ arguments.KEY ] );
-} );
+	Dump( label=arguments.KEY & "'s value", var=animals[ arguments.KEY ] )
+} )
 
 ```
 

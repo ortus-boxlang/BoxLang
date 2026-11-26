@@ -22,9 +22,9 @@ qry = queryNew( "rowid,name", "integer,varchar", [
 		4,
 		"William"
 	]
-] );
-swap1 = queryRowSwap( qry, 1, 4 );
-writeDump( swap1 );
+] )
+swap1 = queryRowSwap( qry, 1, 4 )
+writeDump( swap1 )
 
 ```
 
@@ -53,9 +53,9 @@ qry = queryNew( "rowid,name", "integer,varchar", [
 		4,
 		"William"
 	]
-] );
-swap2 = qry.rowSwap( 1, 4 );
-writeDump( swap2 );
+] )
+swap2 = qry.rowSwap( 1, 4 )
+writeDump( swap2 )
 
 ```
 
@@ -78,10 +78,10 @@ qry = queryNew( "id,name", "integer,varchar", [
 		3,
 		"c"
 	]
-] );
-swapped = QueryRowSwap( qry, 2, 3 );
-dump( swapped );
-dump( qry );
+] )
+swapped = QueryRowSwap( qry, 2, 3 )
+dump( swapped )
+dump( qry )
 
 ```
 

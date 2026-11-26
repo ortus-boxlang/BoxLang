@@ -1,8 +1,8 @@
 ### Clear the CLI console screen
 
 ```java
-cliClear();
-writeOutput( "cleared" );
+cliClear()
+writeOutput( "cleared" )
 
 ```
 

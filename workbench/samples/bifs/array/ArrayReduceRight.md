@@ -10,11 +10,11 @@ myArray = [
 	"b",
 	"c",
 	"d"
-];
+]
 newArray = arrayReduceRight( myArray, ( Any prev, Any next, Any idx, Any arr ) => {
-	return prev & next & idx;
-}, "" );
-writedump( newArray );
+	return prev & next & idx
+}, "" )
+writedump( newArray )
 
 ```
 

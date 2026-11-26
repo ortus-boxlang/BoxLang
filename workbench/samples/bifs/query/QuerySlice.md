@@ -22,10 +22,10 @@ data = [
 		4,
 		"Terri"
 	]
-];
-myQuery = QueryNew( "ID,name", "integer,varchar", data );
-result = QuerySlice( myQuery, 2, 2 );
-writeDump( var="#result#" );
+]
+myQuery = QueryNew( "ID,name", "integer,varchar", data )
+result = QuerySlice( myQuery, 2, 2 )
+writeDump( var="#result#" )
 
 ```
 
@@ -54,10 +54,10 @@ data = [
 		4,
 		"Terri"
 	]
-];
-myQuery = QueryNew( "ID,name", "integer,varchar", data );
-result = myQuery.slice( 2, 2 );
-writeDump( var="#result#" );
+]
+myQuery = QueryNew( "ID,name", "integer,varchar", data )
+result = myQuery.slice( 2, 2 )
+writeDump( var="#result#" )
 
 ```
 
@@ -88,8 +88,8 @@ people = QueryNew( "name,dob,age", "varchar,date,int", [
 		CreateDate( 1988, 1, 1 ),
 		0
 	]
-] );
-Dump( var=people, label="people - original query" );
+] )
+Dump( var=people, label="people - original query" )
 /* Output:
  *
  * | name | dob                 | age |
@@ -101,8 +101,8 @@ Dump( var=people, label="people - original query" );
  *
  */
 // paging
-qrySlice = people.slice( 3, 2 );
-dump( var=qrySlice, label="qrySlice - from record 3, 2 records" );
+qrySlice = people.slice( 3, 2 )
+dump( var=qrySlice, label="qrySlice - from record 3, 2 records" )
  /* Output:
  * | name | dob                 | age |
  * ------------------------------------

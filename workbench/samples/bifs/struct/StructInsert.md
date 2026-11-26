@@ -8,9 +8,9 @@ Inserts a new key/value into the structure
 map = { 
 	"hair" : "brown",
 	"eyes" : "green"
-};
-structInsert( map, "lips", "red" );
-writeOutput( structKeyList( map ) );
+}
+structInsert( map, "lips", "red" )
+writeOutput( structKeyList( map ) )
 
 ```
 
@@ -26,11 +26,11 @@ Throws exception when you try to add a duplicate key, when allowoverwrite parame
 map = { 
 	"hair" : "brown",
 	"eyes" : "green"
-};
+}
 try {
-	structInsert( map, "hair", "red", false );
+	structInsert( map, "hair", "red", false )
 } catch (any ex) {
-	writeOutput( "error!" );
+	writeOutput( "error!" )
 }
 
 ```
@@ -45,13 +45,13 @@ Result: error!
 animals = { 
 	COW : "moo",
 	PIG : "oink"
-};
+}
 // Show current animals
-Dump( label="Current animals", var=animals );
+Dump( label="Current animals", var=animals )
 // Insert cat into animals
-StructInsert( animals, "cat", "meow" );
+StructInsert( animals, "cat", "meow" )
 // Show animals, now includes cat
-Dump( label="Animals with cat added", var=animals );
+Dump( label="Animals with cat added", var=animals )
 
 ```
 

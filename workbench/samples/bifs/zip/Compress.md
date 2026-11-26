@@ -4,7 +4,7 @@ Compress the file "example.txt" to a zip-file.
 
 
 ```java
-compress( "zip", "example.txt", "output.zip" );
+compress( "zip", "example.txt", "output.zip" )
 
 ```
 
@@ -15,7 +15,7 @@ Compress the "example-directory" to a zip-file.
 
 
 ```java
-compress( "zip", "example-directory", "output.zip" );
+compress( "zip", "example-directory", "output.zip" )
 
 ```
 
@@ -27,8 +27,8 @@ compress( "zip", "example-directory", "output.zip" );
 Use `tar` for a raw TAR archive and `tgz` for a gzip-compressed TAR archive.
 
 ```java
-compress( format="tar", source="example-directory", destination="output.tar" );
-compress( format="tgz", source="example-directory", destination="output.tgz" );
+compress( format="tar", source="example-directory", destination="output.tar" )
+compress( format="tgz", source="example-directory", destination="output.tgz" )
 ```
 
 When `format` is omitted, it is detected from the destination extension. An unrecognized extension requires an explicit `format`.

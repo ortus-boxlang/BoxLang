@@ -1,8 +1,8 @@
 ### Print output with a trailing newline
 
 ```java
-println( "Hello, World!" );
-writeOutput( "done" );
+println( "Hello, World!" )
+writeOutput( "done" )
 
 ```
 

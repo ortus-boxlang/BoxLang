@@ -1,8 +1,8 @@
 ### Create a new file watcher
 
 ```java
-w = watcherNew( "myWatcher", getTempDirectory() );
-writeOutput( w.getName() );
+w = watcherNew( "myWatcher", getTempDirectory() )
+writeOutput( w.getName() )
 
 ```
 
@@ -12,9 +12,9 @@ Result: myWatcher
 
 ```java
 w = watcherNew( "callbackWatcher", getTempDirectory(), ( event ) => {
-    println( event.type() & " on " & event.path() );
-} );
-writeOutput( isObject( w ) );
+    println( event.type() & " on " & event.path() )
+} )
+writeOutput( isObject( w ) )
 
 ```
 

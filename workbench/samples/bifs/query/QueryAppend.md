@@ -10,15 +10,15 @@ names = queryNew( "empl_id,name", "integer,varchar", [
 		"empl_id" : 1239,
 		"name" : "John"
 	]
-] );
+] )
 newnames = queryNew( "empl_id,name", "integer,varchar", [
 	[
 		"empl_id" : 1501,
 		"name" : "Jane"
 	]
-] );
-queryAppend( names, newnames );
-writeDump( names );
+] )
+queryAppend( names, newnames )
+writeDump( names )
 
 ```
 
@@ -37,7 +37,7 @@ testQuery = queryNew( "name , age", "varchar , numeric", {
 		20,
 		24
 	]
-} );
+} )
 newTestQuery = queryNew( "name , age", "varchar , numeric", [
 	[
 		"Smith",
@@ -47,9 +47,9 @@ newTestQuery = queryNew( "name , age", "varchar , numeric", [
 		"John",
 		24
 	]
-] );
-queryAppend( testQuery, newTestQuery );
-writeDump( testQuery );
+] )
+queryAppend( testQuery, newTestQuery )
+writeDump( testQuery )
 
 ```
 

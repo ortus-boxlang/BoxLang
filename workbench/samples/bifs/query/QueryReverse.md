@@ -22,11 +22,11 @@ heroes = queryNew( "id,Name", "integer,varchar", [
 		"id" : 4,
 		"Name" : "Jean Grey"
 	}
-] );
-writeOutput( "The query:<br />" );
-writeDump( heroes );
-writeOutput( "The reversed query:<br />" );
-writeDump( heroes.reverse() );
+] )
+writeOutput( "The query:<br />" )
+writeDump( heroes )
+writeOutput( "The reversed query:<br />" )
+writeDump( heroes.reverse() )
 
 ```
 
@@ -45,11 +45,11 @@ testQuery = queryNew( "name , age", "varchar , numeric", {
 		20,
 		24
 	]
-} );
-writeOutput( "The query:<br />" );
-writeDump( testQuery );
-writeOutput( "The reversed query:<br />" );
-writeDump( queryreverse( testQuery ) );
+} )
+writeOutput( "The query:<br />" )
+writeDump( testQuery )
+writeOutput( "The reversed query:<br />" )
+writeDump( queryreverse( testQuery ) )
 
 ```
 

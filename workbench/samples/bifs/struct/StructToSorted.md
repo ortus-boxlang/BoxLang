@@ -14,16 +14,16 @@ someStruct = {
 	"seis" : 6,
 	"nueve" : 9,
 	"doce" : 12
-};
+}
 
 function sortByNumericValuesDescending( Any value1, Any value2, Any key1, Any key2 ) {
 	if( value1 > value2 ) {
-		return -1;
+		return -1
 	}
-	return 1;
+	return 1
 }
-sortedStruct = StructToSorted( someStruct, sortByNumericValuesDescending );
-writedump( sortedStruct );
+sortedStruct = StructToSorted( someStruct, sortByNumericValuesDescending )
+writedump( sortedStruct )
 
 ```
 
@@ -45,16 +45,16 @@ someStruct = {
 	"seis" : 6,
 	"nueve" : 9,
 	"doce" : 12
-};
+}
 
 function sortByNumericValuesDescending( Any value1, Any value2, Any key1, Any key2 ) {
 	if( value1 > value2 ) {
-		return -1;
+		return -1
 	}
-	return 1;
+	return 1
 }
-sortedStruct = someStruct.ToSorted( sortByNumericValuesDescending );
-writedump( sortedStruct );
+sortedStruct = someStruct.ToSorted( sortByNumericValuesDescending )
+writedump( sortedStruct )
 
 ```
 
@@ -75,13 +75,13 @@ someStruct = {
 	"seis" : 6,
 	"nueve" : 9,
 	"doce" : 12
-};
+}
 
 function sortByKeyName( Any value1, Any value2, Any key1, Any key2 ) {
-	return compareNoCase( key1, key2 );
+	return compareNoCase( key1, key2 )
 }
-sortedStruct = someStruct.ToSorted( sortByKeyName );
-writedump( sortedStruct );
+sortedStruct = someStruct.ToSorted( sortByKeyName )
+writedump( sortedStruct )
 
 ```
 
@@ -103,9 +103,9 @@ someStruct = {
 	"seis" : 6,
 	"nueve" : 9,
 	"doce" : 12
-};
-sortedStruct = someStruct.ToSorted( "text", "asc", false );
-writedump( sortedStruct );
+}
+sortedStruct = someStruct.ToSorted( "text", "asc", false )
+writedump( sortedStruct )
 
 ```
 
@@ -133,9 +133,9 @@ myNestedStruct = {
 		"price" : 4,
 		"quantity" : 12
 	}
-};
-writeDump( var=myNestedStruct, label="Before sorting" );
-writeDUmp( var=StructToSorted( myNestedStruct, "textNoCase", "desc", true ), label="After sorting" );
+}
+writeDump( var=myNestedStruct, label="Before sorting" )
+writeDUmp( var=StructToSorted( myNestedStruct, "textNoCase", "desc", true ), label="After sorting" )
 
 ```
 
@@ -143,17 +143,17 @@ writeDUmp( var=StructToSorted( myNestedStruct, "textNoCase", "desc", true ), lab
 <a href="https://try.boxlang.io/?code=eJxdj0FvgkAUhM%2FyKyacILGQXfWEmGDszXih9g74MKQsmMduDTH9711CkOhtvsmbyTzVn4zKgzViuBs3ctTIq4HlzHLg1cxiYGG5yK3ykDQ9frPakFjOWo76h3rxVBI%2B4h0ezqIqPWR8NYoa3QXfyfH8KbB9tyTCEFVAAS7UFc7Cxpm04QYiskR1R5PxYZ2%2FyLlzpelg1M2zKzgeBy9RZznVsbunsmVC17KumqsLfwqcp0Cq2RT6q03tCV08TAX2U%2F9Zk5Sa%2BKXlH2GmY9A%3D" target="_blank">Run Example</a>
 
 ```java
-myNumb.4 = "5";
-myNumb.3 = "2";
-myNumb.2 = "3";
-myNumb.1 = "1";
+myNumb.4 = "5"
+myNumb.3 = "2"
+myNumb.2 = "3"
+myNumb.1 = "1"
 cb = ( Any value1, Any value2, Any key1, Any key2 ) => {
 	if( arguments.VALUE1 < arguments.VALUE2 // i.e. desc
-	 ) return 1;
-	 else return -1;
-};
-writeDump( var=myNumb, label="Before sorting" );
-writeDUmp( var=StructToSorted( myNumb, cb ), label="After sorting" );
+	 ) return 1
+	 else return -1
+}
+writeDump( var=myNumb, label="Before sorting" )
+writeDUmp( var=StructToSorted( myNumb, cb ), label="After sorting" )
 
 ```
 

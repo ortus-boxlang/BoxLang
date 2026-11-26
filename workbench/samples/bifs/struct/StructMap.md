@@ -18,16 +18,16 @@ original = {
 	"four" : {
 		4 : "wha"
 	}
-};
+}
 
 function mapOriginal( Any k, Any v ) {
-	return v[ ListFirst( v.keyList() ) ];
+	return v[ ListFirst( v.keyList() ) ]
 }
-fixed = structMap( original, mapOriginal );
+fixed = structMap( original, mapOriginal )
 writeDump( [
 	original,
 	fixed
-] );
+] )
 
 ```
 
@@ -52,14 +52,14 @@ original = {
 	"four" : {
 		4 : "wha"
 	}
-};
+}
 fixed = original.map( ( Any k, Any v ) => {
-	return v[ ListFirst( v.keyList() ) ];
-} );
+	return v[ ListFirst( v.keyList() ) ]
+} )
 writeDump( [
 	original,
 	fixed
-] );
+] )
 
 ```
 
@@ -69,16 +69,16 @@ writeDump( [
 <a href="https://try.boxlang.io/?code=eJxdjssKwjAQRdfmK4YspIViUXeWCNW1bvyCtB0kNI0lj5Yi%2FrvTVETcDAfuzJnrag8CnLeh9lccE%2BBamRYbDmnBXO03JcXbBU%2BEuwXPhPuCjVZ5bELXJzBIKyjJQMsKteAPq%2B7KSP1xR1%2BeQyUdgkfnmUVHkltML5IM8TqB0kzQ4pRFGKQOCCmIIzzZyqIP1swprIEfOM24ULBXBiTC%2BclfJ3rz7dTJvsfmt9EbWntPYw%3D%3D" target="_blank">Run Example</a>
 
 ```java
-sct = structNew( "linked" );
-sct.A = 1;
-sct.B = 2;
-sct.C = 3;
-writedump( var=sct, label="original struct" );
+sct = structNew( "linked" )
+sct.A = 1
+sct.B = 2
+sct.C = 3
+writedump( var=sct, label="original struct" )
 // base test
 res = StructMap( sct, ( Any key, Any value ) => {
-	return key & ":" & value;
-}, true );
-writedump( var=res, label="mapped struct" );
+	return key & ":" & value
+}, true )
+writedump( var=res, label="mapped struct" )
 
 ```
 

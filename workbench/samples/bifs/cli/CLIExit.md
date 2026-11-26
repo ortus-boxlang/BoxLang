@@ -2,8 +2,8 @@
 
 ```java
 // This will exit the current CLI session
-// cliExit();
-writeOutput( "would exit" );
+// cliExit()
+writeOutput( "would exit" )
 
 ```
 

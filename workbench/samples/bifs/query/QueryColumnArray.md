@@ -14,8 +14,8 @@ news = queryNew( "id,title", "integer,varchar", [
 		"id" : 2,
 		"title" : "Man walks on Moon"
 	}
-] );
-dump( queryColumnArray( news ) );
+] )
+dump( queryColumnArray( news ) )
 
 ```
 
@@ -25,10 +25,10 @@ dump( queryColumnArray( news ) );
 <a href="https://try.boxlang.io/?code=eJwrLKpUsFUILE0tqvRLLddQUEpMTFRS0LTmSiwqMgTKRMdac4FlHVNSnPNzSnPzNBQKiyp1FJSSkpR0FMCqgKrLizJLUl1KcwuAsiDVEKWORUWJlWD1CpogVQBQVSJD" target="_blank">Run Example</a>
 
 ```java
-qry = QueryNew( "aaa" );
-arr1 = [];
-QueryAddColumn( qry, "bb", arr1 );
-writeDump( queryColumnArray( qry ) );
+qry = QueryNew( "aaa" )
+arr1 = []
+QueryAddColumn( qry, "bb", arr1 )
+writeDump( queryColumnArray( qry ) )
 
 ```
 

@@ -21,12 +21,12 @@ numbers = [
 	2,
 	3,
 	4
-];
-arrayResize( numbers, 10 );
-Dump( numbers );
+]
+arrayResize( numbers, 10 )
+Dump( numbers )
 // member function
-numbers.resize( 15 );
-Dump( numbers );
+numbers.resize( 15 )
+Dump( numbers )
 
 ```
 

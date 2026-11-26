@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJwrriwuSc31Ly0pKC3RUFDySM3JyVcIzy%2FKSVFS0LTmAgC7OQpt" target="_blank">Run Example</a>
 
 ```java
-systemOutput( "Hello World" );
+systemOutput( "Hello World" )
 
 ```
 
@@ -20,7 +20,7 @@ systemOutput( "Hello World" );
 systemOutput( [ 
 	"foo",
 	"bar"
-] );
+] )
 
 ```
 
@@ -31,7 +31,7 @@ systemOutput( [
 
 
 ```java
-systemOutput({ "myKey", "myValue" });
+systemOutput({ "myKey", "myValue" })
 ```
 
 

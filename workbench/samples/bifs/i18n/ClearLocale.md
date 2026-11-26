@@ -1,9 +1,9 @@
 ### Clear the current locale setting
 
 ```java
-setLocale( "en_US" );
-clearLocale();
-writeOutput( "locale cleared" );
+setLocale( "en_US" )
+clearLocale()
+writeOutput( "locale cleared" )
 
 ```
 

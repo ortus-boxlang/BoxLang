@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJxTslNSUFMoKcrM1VBQUgACZzeX%2FORiEEtJQRMopWSjZM0FAKIqB7c%3D" target="_blank">Run Example</a>
 
 ```java
-">" & trim( "    BLDocs    " ) & "<";
+">" & trim( "    BLDocs    " ) & "<"
 
 ```
 
@@ -17,11 +17,11 @@ Result: >BLDocs<
 
 ```java
 // create variable with a string of text that has leading and trailing spaces
-foo = " Hello World!  ";
+foo = " Hello World!  "
 // output variable
-writeDump( "-" & foo & "-" );
+writeDump( "-" & foo & "-" )
 // output variable without leading and trailing spaces
-writeDump( "-" & Trim( foo ) & "-" );
+writeDump( "-" & Trim( foo ) & "-" )
 
 ```
 

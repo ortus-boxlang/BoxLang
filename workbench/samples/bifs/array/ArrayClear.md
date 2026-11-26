@@ -11,13 +11,13 @@ someArray = [
 	"Green",
 	"Blue",
 	"Pink"
-];
+]
 writeOutput(
 // Transpiler workaround for BIF return type
 (( arg1 ) => {
-	arrayClear( arg1 );
-	return true;
-})( someArray ) );
+	arrayClear( arg1 )
+	return true
+})( someArray ) )
 
 ```
 
@@ -35,13 +35,13 @@ someArray = [
 	"Green",
 	"Blue",
 	"Pink"
-];
+]
 writeOutput(
 // Transpiler workaround for BIF return type
 (( arg1 ) => {
-	arrayClear( arg1 );
-	return true;
-})( someArray ) );
+	arrayClear( arg1 )
+	return true
+})( someArray ) )
 
 ```
 
@@ -58,8 +58,8 @@ numberArray = [
 	1,
 	2,
 	3
-];
-writeOutput( numberArray.Clear() );
+]
+writeOutput( numberArray.Clear() )
 
 ```
 
@@ -76,11 +76,11 @@ numbers = [
 	2,
 	3,
 	4
-];
+]
 dump( numbers ); // outputs the array containing 1 - 4
 // Clears the array leaving an array with 0 elements.
-ArrayClear( numbers );
-dump( numbers );
+ArrayClear( numbers )
+dump( numbers )
  // outputs the empty array
 
 ```

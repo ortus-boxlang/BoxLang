@@ -9,8 +9,8 @@ x = {
 	Y : {
 		Z : 8
 	}
-};
-writeDump( structGet( "x.y.z" ) );
+}
+writeDump( structGet( "x.y.z" ) )
 
 ```
 
@@ -27,9 +27,9 @@ x = {
 	Y : {
 		Z : 8
 	}
-};
-writeDump( structGet( "x.a.b" ) );
-writeDump( x );
+}
+writeDump( structGet( "x.a.b" ) )
+writeDump( x )
 
 ```
 
@@ -49,9 +49,9 @@ x = {
 			3
 		]
 	}
-};
-writeDump( structGet( "x.y.z[2]" ) );
-writeDump( x );
+}
+writeDump( structGet( "x.y.z[2]" ) )
+writeDump( x )
 
 ```
 
@@ -69,17 +69,17 @@ animals = {
 			DRINK : true
 		}
 	}
-};
+}
 // Show all animals
-Dump( label="All animals", var=animals );
+Dump( label="All animals", var=animals )
 // Get cat activities in animals
-getCatActivities = StructGet( "animals.cat.activities" );
+getCatActivities = StructGet( "animals.cat.activities" )
 // Show results of getCatActivities
-Dump( label="Results of StructGet(""animals.cat.activities"")", var=getCatActivities );
+Dump( label="Results of StructGet(""animals.cat.activities"")", var=getCatActivities )
 // If the path does not exist, result returns an empty structure.
-findDog = StructGet( "animals.dog" );
+findDog = StructGet( "animals.dog" )
 // Show results of findDog
-Dump( label="Results of StructGet(""animals.dog"")", var=findDog );
+Dump( label="Results of StructGet(""animals.dog"")", var=findDog )
 
 ```
 

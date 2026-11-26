@@ -18,8 +18,8 @@ example = "<boxlangengines>
  <engine>
   <name>Open BlueDragon</name>
  </engine>
-</boxlangengines>";
-writeOutput( isXml( example ) );
+</boxlangengines>"
+writeOutput( isXml( example ) )
 
 ```
 
@@ -37,8 +37,8 @@ example1 = "<boxlangengines>
   <name>Adobe ColdFusion</name>
  </engine>
  <engine>
-  <name>Boxlang</name>";
-writeOutput( isXml( example1 ) );
+  <name>Boxlang</name>"
+writeOutput( isXml( example1 ) )
 
 ```
 
@@ -62,8 +62,8 @@ globalVar = "<Earth>
  <required>
   <name>Humanity</name>
  </required>
-</Earth>";
-writeOutput( isXml( globalVar ) );
+</Earth>"
+writeOutput( isXml( globalVar ) )
 
 ```
 

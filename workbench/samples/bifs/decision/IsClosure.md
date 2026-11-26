@@ -6,9 +6,9 @@
 
 ```java
 square = ( Any x ) => {
-	return x * x;
-};
-writeDump( isClosure( square ) );
+	return x * x
+}
+writeDump( isClosure( square ) )
 
 ```
 
@@ -22,10 +22,10 @@ Result: TRUE
 
 ```java
 square = ( Any x ) => {
-	return x * x;
-};
-squared = square( 5 );
-writeDump( isClosure( squared ) );
+	return x * x
+}
+squared = square( 5 )
+writeDump( isClosure( squared ) )
 
 ```
 
@@ -38,15 +38,15 @@ Result: FALSE
 ```java
 // closure
 c = () => {
-	return true;
-};
+	return true
+}
 
 // user defined function (UDF)
 function u() {
-	return true;
+	return true
 }
-dump( var=isClosure( c ), label="closure" );
-dump( var=isClosure( u ), label="user defined function" );
+dump( var=isClosure( c ), label="closure" )
+dump( var=isClosure( u ), label="user defined function" )
 
 ```
 

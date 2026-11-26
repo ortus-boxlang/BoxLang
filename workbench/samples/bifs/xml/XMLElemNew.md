@@ -20,13 +20,13 @@ Here, we've created myXml with root and child nodes using xmlelemnew().
 
 ```java
 xml_document = XmlNew(); // new XML document to populate
-xml_root = XmlElemNew( xml_document, "notes" );
+xml_root = XmlElemNew( xml_document, "notes" )
 xml_document.XMLROOT = xml_root; // set the root node of the XML document
 xml_child = XmlElemNew( xml_document, "note" ); // first child node
 xml_secondary_child = XmlElemNew( xml_document, "to" ); // child node for the first child node
-xml_child.XMLCHILDREN.append( xml_secondary_child );
+xml_child.XMLCHILDREN.append( xml_secondary_child )
 xml_root.XMLCHILDREN.append( xml_child ); // add the first child node to the XML document
-dump( xml_document );
+dump( xml_document )
 
 ```
 

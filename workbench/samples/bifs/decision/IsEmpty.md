@@ -5,8 +5,8 @@
 <a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVaiuteYqL8osSfUvLSkoLdFQKAbLeBa75haUVGoo5MKUaipoWnMBAGaYFCQ%3D" target="_blank">Run Example</a>
 
 ```java
-myStruct = {};
-writeOutput( structIsEmpty( myStruct ) );
+myStruct = {}
+writeOutput( structIsEmpty( myStruct ) )
 
 ```
 
@@ -22,8 +22,8 @@ Result: true
 myStructWithThings = { 
 	"one" : "foo",
 	"two" : "bar"
-};
-writeOutput( structIsEmpty( myStructWithThings ) );
+}
+writeOutput( structIsEmpty( myStructWithThings ) )
 
 ```
 
@@ -36,8 +36,8 @@ Result: false
 <a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVaiuteYqL8osSfUvLSkoLdFQyIXK6XkWu%2BYWlFRqaCpoWnMBANb3EW0%3D" target="_blank">Run Example</a>
 
 ```java
-myStruct = {};
-writeOutput( myStruct.IsEmpty() );
+myStruct = {}
+writeOutput( myStruct.IsEmpty() )
 
 ```
 
@@ -52,13 +52,13 @@ Result: true
 animals = {
 	COW : "moo",
 	PIG : "oink"
-};
+}
 // Empty struct
-farm = {};
+farm = {}
 // StructIsEmpty(animals)
-echo( "<p>Animals struct is empty: " & StructIsEmpty( animals ) & "</p>" );
+echo( "<p>Animals struct is empty: " & StructIsEmpty( animals ) & "</p>" )
 // StructIsEmpty(farm)
-echo( "<p>Farm struct is empty: " & StructIsEmpty( farm ) & "</p>" );
+echo( "<p>Farm struct is empty: " & StructIsEmpty( farm ) & "</p>" )
 
 ```
 

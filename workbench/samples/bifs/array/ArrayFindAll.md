@@ -10,9 +10,9 @@ var fruitArray = [
 	"apple",
 	"orange",
 	"kiwi"
-];
-var applePositions = arrayFindAllNoCase( fruitArray, "APPLE" );
-writeDump( applePositions );
+]
+var applePositions = arrayFindAllNoCase( fruitArray, "APPLE" )
+writeDump( applePositions )
 
 ```
 
@@ -30,9 +30,9 @@ fruitArray = [
 	"orange",
 	"mango",
 	"kiwi"
-];
-favoriteFruits = arrayFindAll( fruitArray, "kiwi" );
-dump( favoriteFruits );
+]
+favoriteFruits = arrayFindAll( fruitArray, "kiwi" )
+dump( favoriteFruits )
  // [2]
 
 ```

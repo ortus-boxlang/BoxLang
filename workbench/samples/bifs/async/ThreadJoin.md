@@ -2,11 +2,11 @@
 
 ```java
 future = asyncRun( () => {
-    sleep( 100 );
-    return "finished";
-} );
-threadJoin( future.getThread() );
-writeOutput( future.isDone() );
+    sleep( 100 )
+    return "finished"
+} )
+threadJoin( future.getThread() )
+writeOutput( future.isDone() )
 
 ```
 
@@ -16,11 +16,11 @@ Result: true
 
 ```java
 future = asyncRun( () => {
-    sleep( 50 );
-    return "done";
-} );
-threadJoin( future.getThread(), 1000 );
-writeOutput( future.get() );
+    sleep( 50 )
+    return "done"
+} )
+threadJoin( future.getThread(), 1000 )
+writeOutput( future.get() )
 
 ```
 

@@ -1,8 +1,8 @@
 ### Invalidate the current session
 
 ```java
-sessionInvalidate();
-writeOutput( "session invalidated" );
+sessionInvalidate()
+writeOutput( "session invalidated" )
 
 ```
 

@@ -9,9 +9,9 @@ someStruct = {
 	RED : 93,
 	YELLOW : 90,
 	GREEN : 94
-};
-result = structSort( someStruct, "numeric", "desc" );
-writeOutput( lcase( JSONSerialize( result ) ) );
+}
+result = structSort( someStruct, "numeric", "desc" )
+writeOutput( lcase( JSONSerialize( result ) ) )
 
 ```
 
@@ -24,21 +24,21 @@ Result: ["green", "red", "yellow"]
 <a href="https://try.boxlang.io/?code=eJxljs0KwjAQhM%2FNUyw5VSiCCoIWD0VLQbQV0xcIccFCfyTZ4h%2B%2Bu4kUtZQ9LDvsNzOmqVCQbhXBCp6vkJmvMBbrLM%2BdzLwoiWEJ03nAvE18iI75Pk5zq%2FAEa9Sy5KyPJrso7ZGLAama6tIS6gEaZ0fL%2FMGzyQA%2BnO%2BmUF2uRtOWrr%2F5OIhGkw8%2FxwA44Y3qRkmD3F7SKLdOeJGaKqyJwyhkV10QZi3ZUj6U7teHrchSgbqQZfGwZxc0chOyN5rWX20%3D" target="_blank">Run Example</a>
 
 ```java
-someStruct = {};
+someStruct = {}
 someStruct.SCOTT = {
 	AGE : 26,
 	DEPARTMENT : "General"
-};
+}
 someStruct.GLAN = {
 	AGE : 29,
 	DEPARTMENT : "computer"
-};
+}
 someStruct.GEORGE = {
 	AGE : 31,
 	DEPARTMENT : "Physical"
-};
-result = structSort( someStruct, "textnocase", "asc", "department" );
-writeOutput( lcase( JSONSerialize( result ) ) );
+}
+result = structSort( someStruct, "textnocase", "asc", "department" )
+writeOutput( lcase( JSONSerialize( result ) ) )
 
 ```
 
@@ -54,12 +54,12 @@ birthdays = {
 	"Jim" : "1982/12/5",
 	"Anne" : "1968/9/13",
 	"Thomas" : "1975/3/28"
-};
+}
 sorted = structSort( birthdays, ( Any e1, Any e2 ) => {
-	return dateCompare( e1, e2 );
-} );
+	return dateCompare( e1, e2 )
+} )
 for( birthday in sorted ) {
-	writeOutput( birthday & " (" & dateDiff( "yyyy", birthdays[ birthday ], now() ) & "), " );
+	writeOutput( birthday & " (" & dateDiff( "yyyy", birthdays[ birthday ], now() ) & "), " )
 }
 
 ```
@@ -81,11 +81,11 @@ animals = {
 	CAT : {
 		TOTAL : 3
 	}
-};
+}
 // Show current animals
-Dump( label="Current animals", var=animals );
+Dump( label="Current animals", var=animals )
 // Show animals sorted by total
-Dump( label="Animals sorted by total", var=StructSort( animals, "numeric", "asc", "total" ) );
+Dump( label="Animals sorted by total", var=StructSort( animals, "numeric", "asc", "total" ) )
 
 ```
 
@@ -99,14 +99,14 @@ myStruct = {
 	C : "Berlin",
 	D : "New York",
 	E : "Dublin"
-};
+}
 
 // define callaback function
 function callback( Any e1, Any e2 ) {
-	return compare( arguments.E1, arguments.E2 );
+	return compare( arguments.E1, arguments.E2 )
 }
-writeDump( var=myStruct, label="Before sorting" );
-writeDump( var=StructSort( myStruct, callback ), label="After sorting" );
+writeDump( var=myStruct, label="Before sorting" )
+writeDump( var=StructSort( myStruct, callback ), label="After sorting" )
 
 ```
 

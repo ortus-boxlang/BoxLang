@@ -16,7 +16,7 @@ Result: The minimum of 4 and 9 is 4.
 <a href="https://try.boxlang.io/?code=eJxLTc7I11DIzczTUDDUUTBV0FTQtOYCAEIwBP0%3D" target="_blank">Run Example</a>
 
 ```java
-echo( min( 1, 5 ) );
+echo( min( 1, 5 ) )
 
 ```
 

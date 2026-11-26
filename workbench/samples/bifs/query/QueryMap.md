@@ -14,15 +14,15 @@ news = queryNew( "id,title", "integer,varchar", [
 		"id" : 2,
 		"title" : "Man walks on Moon"
 	}
-] );
-writeDump( news );
+] )
+writeDump( news )
 
 function mapQuery( any Obj ) {
-	if( Obj.ID == 1 ) Obj.TITLE = "NEW: " & Obj.TITLE;
-	return Obj;
+	if( Obj.ID == 1 ) Obj.TITLE = "NEW: " & Obj.TITLE
+	return Obj
 }
-newQuery = QueryMap( news, mapQuery );
-writeDump( newQuery );
+newQuery = QueryMap( news, mapQuery )
+writeDump( newQuery )
 
 ```
 
@@ -53,12 +53,12 @@ people = QueryNew( "name,dob,age", "varchar,date,int", [
 		CreateDate( 1988, 1, 1 ),
 		0
 	]
-] );
+] )
 res = queryMap( people, ( Any row, Any rowNumber, Any recordset ) => {
-	row[ "age" ] = DateDiff( "yyyy", row.DOB, CreateDate( 2016, 6, 9 ) ) + 1;
-	return row;
-} );
-writeDump( res );
+	row[ "age" ] = DateDiff( "yyyy", row.DOB, CreateDate( 2016, 6, 9 ) ) + 1
+	return row
+} )
+writeDump( res )
 
 ```
 

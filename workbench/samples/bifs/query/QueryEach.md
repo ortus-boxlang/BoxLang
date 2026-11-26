@@ -12,19 +12,19 @@
 			"id" : 2,
 			"title" : "Man walks on Moon"
 		}
-	] );
+	] )
 
 	function newsRow( Any row ) {
-		writeOutput( "<tr>" );
-		writeOutput( "<td>#row.ID#</td>" );
-		writeOutput( "<td>#row.TITLE#</td>" );
-		writeOutput( "</tr>" );
+		writeOutput( "<tr>" )
+		writeOutput( "<td>#row.ID#</td>" )
+		writeOutput( "<td>#row.TITLE#</td>" )
+		writeOutput( "</tr>" )
 	}
 </bx:script>
 
 <table>
     <bx:script>
-	queryEach( news, newsRow );
+	queryEach( news, newsRow )
 </bx:script>
 
 </table>
@@ -46,13 +46,13 @@ Result: 1 Dewey defeats Truman
 			"id" : 2,
 			"title" : "Man walks on Moon"
 		}
-	] );
+	] )
 
 	function newsRow( Any row ) {
-		writeOutput( "<tr>" );
-		writeOutput( "<td>#row.ID#</td>" );
-		writeOutput( "<td>#row.TITLE#</td>" );
-		writeOutput( "</tr>" );
+		writeOutput( "<tr>" )
+		writeOutput( "<td>#row.ID#</td>" )
+		writeOutput( "<td>#row.TITLE#</td>" )
+		writeOutput( "</tr>" )
 	}
 </bx:script>
 
@@ -89,8 +89,8 @@ people = QueryNew( "name,dob,age", "varchar,date,int", [
 		CreateDate( 1988, 1, 1 ),
 		0
 	]
-] );
-Dump( var=people, label="people - original query" );
+] )
+Dump( var=people, label="people - original query" )
 /* Output:
  *
  * | name | dob                 | age |
@@ -102,9 +102,9 @@ Dump( var=people, label="people - original query" );
  *
  */
 people.each( ( Any row, Any rowNumber, Any recordset ) => {
-	recordset.AGE[ rowNumber ] = DateDiff( "yyyy", row.DOB, Now() );
-} );
-Dump( var=people, label="people - with calculated age" );
+	recordset.AGE[ rowNumber ] = DateDiff( "yyyy", row.DOB, Now() )
+} )
+Dump( var=people, label="people - with calculated age" )
  /* Output:
  *
  * | name | dob                 | age |

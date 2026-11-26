@@ -8,9 +8,9 @@ Creates a struct then removes a key
 someStruct = { 
 	A : 1,
 	B : 2
-};
-structDelete( someStruct, "a" );
-writeDump( someStruct );
+}
+structDelete( someStruct, "a" )
+writeDump( someStruct )
 
 ```
 
@@ -26,9 +26,9 @@ Result: Struct with one key-value pair: B 2
 someStruct = { 
 	A : 1,
 	B : 2
-};
-someStruct.delete( "a" );
-writeDump( someStruct );
+}
+someStruct.delete( "a" )
+writeDump( someStruct )
 
 ```
 
@@ -43,13 +43,13 @@ animals = {
 	COW : "moo",
 	PIG : "oink",
 	CAT : "meow"
-};
+}
 // Show current animals
-Dump( label="Current animals", var=animals );
+Dump( label="Current animals", var=animals )
 // Delete the key 'cat' from struct
-StructDelete( animals, "cat" );
+StructDelete( animals, "cat" )
 // Show animals, cat has been deleted
-Dump( label="Animals with cat deleted", var=animals );
+Dump( label="Animals with cat deleted", var=animals )
 
 ```
 

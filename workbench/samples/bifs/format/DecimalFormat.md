@@ -6,13 +6,13 @@
 
 ```java
 formattedInt = decimalFormat( 123 ); // 123.00
-writeOutput( formattedInt & "<br>" );
+writeOutput( formattedInt & "<br>" )
 formattedWithSeparators = decimalFormat( 1000000 ); // 1,000,000.00
-writeOutput( formattedWithSeparators & "<br>" );
+writeOutput( formattedWithSeparators & "<br>" )
 formattedDecimal = decimalFormat( 987.15 ); // 987.15
-writeOutput( formattedDecimal & "<br>" );
+writeOutput( formattedDecimal & "<br>" )
 formattedRoundedUp = decimalFormat( 456.789 ); // 456.79 - rounds up
-writeOutput( formattedRoundedUp & "<br>" );
+writeOutput( formattedRoundedUp & "<br>" )
 
 ```
 
@@ -23,8 +23,8 @@ writeOutput( formattedRoundedUp & "<br>" );
 
 ```java
 writeOutput( decimalFormat( "45" ) & "<br>" ); // 45.00
-writeOutput( decimalFormat( 26 ) );
- // 26.00;
+writeOutput( decimalFormat( 26 ) )
+ // 26.00
 
 ```
 

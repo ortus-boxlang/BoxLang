@@ -4,10 +4,10 @@ Obtaining files within an archive folder and then removing them if they are olde
 
 
 ```java
-var existingFiles = directoryList( expandPath( "/archive/" ), false, "query" );
+var existingFiles = directoryList( expandPath( "/archive/" ), false, "query" )
 for( file in existingFiles ) {
 	if( dateDiff( "h", file.DATELASTMODIFIED, now() ) > 1 ) {
-		fileDelete( file.DIRECTORY & "\" & file.NAME );
+		fileDelete( file.DIRECTORY & "\" & file.NAME )
 	}
 }
 
@@ -19,7 +19,7 @@ Result: All files within the archive directory older than one hour will be delet
 
 
 ```java
-fileDelete( "my/path/to/file.md" );
+fileDelete( "my/path/to/file.md" )
 
 ```
 

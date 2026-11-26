@@ -16,11 +16,11 @@ Here,we've example to check whether the 75 is exists or not in myquery mark colu
 			"Ravi",
 			80
 		]
-	] );
+	] )
 	result = querySome( myQuery, ( Any details ) => {
-		return details.MARK == 75;
-	} );
-	writeOutput( (result ? "Some" : "No") & " matches  Record found!" );
+		return details.MARK == 75
+	} )
+	writeOutput( (result ? "Some" : "No") & " matches  Record found!" )
 </bx:script>
 
 ```
@@ -45,11 +45,11 @@ Here,we've example to check whether the 85 is exists or not in myquery mark colu
 			"Ravi",
 			80
 		]
-	] );
+	] )
 	result = myQuery.Some( ( Any details ) => {
-		return details.MARK == 85;
-	} );
-	writeOutput( (result ? "Some" : "No") & " matches  Record found!" );
+		return details.MARK == 85
+	} )
+	writeOutput( (result ? "Some" : "No") & " matches  Record found!" )
 </bx:script>
 
 ```
@@ -82,11 +82,11 @@ people = QueryNew( "name,dob,age", "varchar,date,int", [
 		CreateDate( 1988, 1, 1 ),
 		0
 	]
-] );
+] )
 valid = querySome( people, ( Any row, Any rowNumber, Any qryData ) => {
-	return ((DateDiff( "yyyy", row.DOB, Now() ) > 0) && (DateDiff( "yyyy", row.DOB, Now() ) <= 100));
-} );
-writeDump( valid );
+	return ((DateDiff( "yyyy", row.DOB, Now() ) > 0) && (DateDiff( "yyyy", row.DOB, Now() ) <= 100))
+} )
+writeDump( valid )
 
 ```
 

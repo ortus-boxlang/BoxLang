@@ -5,7 +5,7 @@ Pass in a true value outputs Yes
 <a href="https://try.boxlang.io/?code=eJyrTC32y3fLL8pNLNFQKCkqTVXQtOYCAFcYBw4%3D" target="_blank">Run Example</a>
 
 ```java
-yesNoFormat( true );
+yesNoFormat( true )
 
 ```
 
@@ -18,7 +18,7 @@ Pass in a false value outputs No
 <a href="https://try.boxlang.io/?code=eJyrTC32y3fLL8pNLNFQSEvMKU5V0LTmAgBeoAdZ" target="_blank">Run Example</a>
 
 ```java
-yesNoFormat( false );
+yesNoFormat( false )
 
 ```
 
@@ -30,7 +30,7 @@ Pass in an empty string outputs No
 
 
 ```java
-yesNoFormat( "" );
+yesNoFormat( "" )
 
 ```
 
@@ -46,7 +46,7 @@ dump( yesnoFormat( true ) ); // Yes
 dump( yesnoFormat( 0 ) ); // No
 dump( yesnoFormat( 1 ) ); // Yes
 dump( yesnoFormat( "No" ) ); // No
-dump( yesnoFormat( "Yes" ) );
+dump( yesnoFormat( "Yes" ) )
  // Yes
 
 ```

@@ -44,9 +44,9 @@ xml_stream = "
         <heading>Your request</heading>
         <body>I got your message; all is well.</body>
       </note>
-    </notes>";
-xml_document = XmlParse( xml_stream );
-dump( XmlGetNodeType( xml_document.XMLROOT.XMLCHILDREN[ 1 ].XMLCHILDREN.last() ) );
+    </notes>"
+xml_document = XmlParse( xml_stream )
+dump( XmlGetNodeType( xml_document.XMLROOT.XMLCHILDREN[ 1 ].XMLCHILDREN.last() ) )
 
 ```
 

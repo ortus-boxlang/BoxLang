@@ -9,9 +9,9 @@ someArray = [
 	1,
 	2,
 	2
-];
-m = arrayMedian( someArray );
-writeOutput( m );
+]
+m = arrayMedian( someArray )
+writeOutput( m )
 
 ```
 
@@ -21,10 +21,10 @@ Result: 2
 
 
 ```java
-aNames = array( 10412, 42, 33, 2, 999, 12769, 888 );
-dump( arrayMedian( aNames ) );
+aNames = array( 10412, 42, 33, 2, 999, 12769, 888 )
+dump( arrayMedian( aNames ) )
 // member function
-dump( aNames.median() );
+dump( aNames.median() )
 
 ```
 

@@ -5,7 +5,7 @@ Changes the delimiters in the list
 <a href="https://try.boxlang.io/?code=eJzLySwucc5IzEtPdUnNycwt1lBQSsvP10lKLNLJyS9KzdXJLCguzVXSUVCqUVLQtOYCAKkAD9E%3D" target="_blank">Run Example</a>
 
 ```java
-listChangeDelims( "foo,bar,lorem,ipsum", "|" );
+listChangeDelims( "foo,bar,lorem,ipsum", "|" )
 
 ```
 
@@ -18,7 +18,7 @@ Changes the delimiters in the list using a custom delimiter
 <a href="https://try.boxlang.io/?code=eJzLySwucc5IzEtPdUnNycwt1lBQSsvP10lKLKrJyS9KzdXJLCguza3JTa0pzs9NLcnIzEtX0lFQqgMRNUoKmtZcADvdFsc%3D" target="_blank">Run Example</a>
 
 ```java
-listChangeDelims( "foo,bar|lorem,ipsum|me|something", "~", "|" );
+listChangeDelims( "foo,bar|lorem,ipsum|me|something", "~", "|" )
 
 ```
 
@@ -30,10 +30,10 @@ Result: foo,bar~lorem,ipsum~me~something
 
 ```java
 // Simple function
-writeOutput( ListChangeDelims( "Plant,green,save,earth", "@" ) );
+writeOutput( ListChangeDelims( "Plant,green,save,earth", "@" ) )
 // Member function with custom delimiter
-strLst = "1+2+3+4";
-writeDump( strLst.listChangeDelims( "/", "+" ) );
+strLst = "1+2+3+4"
+writeDump( strLst.listChangeDelims( "/", "+" ) )
 
 ```
 

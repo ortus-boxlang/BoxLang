@@ -8,12 +8,12 @@
 config1 = { 
 	A : 0,
 	B : 0
-};
+}
 config2 = {
 	A : 0,
 	B : 1
-};
-writeOutput( structEquals( config1, config2 ) );
+}
+writeOutput( structEquals( config1, config2 ) )
 
 ```
 

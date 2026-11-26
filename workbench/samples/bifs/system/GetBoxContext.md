@@ -1,8 +1,8 @@
 ### Get the current BoxLang context
 
 ```java
-ctx = getBoxContext();
-writeOutput( isObject( ctx ) );
+ctx = getBoxContext()
+writeOutput( isObject( ctx ) )
 
 ```
 

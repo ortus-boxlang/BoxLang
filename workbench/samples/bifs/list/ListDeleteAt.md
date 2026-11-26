@@ -5,7 +5,7 @@ Deletes 2nd item from the list
 <a href="https://try.boxlang.io/?code=eJzLySwucUnNSS1JdSzRUFBKy8%2FXSUos0snJL0rN1cksKC7NVdJRMFLQtOYCAEGJDac%3D" target="_blank">Run Example</a>
 
 ```java
-listDeleteAt( "foo,bar,lorem,ipsum", 2 );
+listDeleteAt( "foo,bar,lorem,ipsum", 2 )
 
 ```
 
@@ -18,7 +18,7 @@ Deletes 2nd item from the list using a custom delimiter
 <a href="https://try.boxlang.io/?code=eJzLySwucUnNSS1JdSzRUFBKy8%2FXSUosqsnJL0rN1cksKC7NrclNrSnOz00tycjMS1fSUTDSUVCqUVLQtOYCAKizFJs%3D" target="_blank">Run Example</a>
 
 ```java
-listDeleteAt( "foo,bar|lorem,ipsum|me|something", 2, "|" );
+listDeleteAt( "foo,bar|lorem,ipsum|me|something", 2, "|" )
 
 ```
 
@@ -31,8 +31,8 @@ Result: foo,bar|me|something
 ```java
 writeOutput( listDeleteAt( "I,love,boxlang,testFile", 4 ) ); // Expected output I,love,boxlang
 // Member Function
-strList = "This,is,a,the,test,file";
-writeDump( strList.listDeleteAt( 3 ) );
+strList = "This,is,a,the,test,file"
+writeDump( strList.listDeleteAt( 3 ) )
  // Expected output This,is,the,test,file
 
 ```

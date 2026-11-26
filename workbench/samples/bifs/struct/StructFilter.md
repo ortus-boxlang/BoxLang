@@ -11,11 +11,11 @@ fruitRatings = {
 	ORANGE : 5,
 	MANGO : 2,
 	KIWI : 3
-};
+}
 favoriteFruits = structFilter( fruitRatings, ( Any key, Any value ) => {
-	return value >= 3;
-} );
-writedump( favoriteFruits );
+	return value >= 3
+} )
+writedump( favoriteFruits )
 
 ```
 
@@ -34,11 +34,11 @@ fruitRatings = {
 	ORANGE : 5,
 	MANGO : 2,
 	KIWI : 3
-};
+}
 favoriteFruits = fruitRatings.filter( ( Any key, Any value ) => {
-	return value >= 3;
-} );
-writedump( favoriteFruits );
+	return value >= 3
+} )
+writedump( favoriteFruits )
 
 ```
 
@@ -53,27 +53,27 @@ animals = {
 	COW : "moo",
 	PIG : "oink",
 	SNAIL : ""
-};
+}
 // Show all animals
-Dump( label="All animals", var=animals );
+Dump( label="All animals", var=animals )
 // Get animals that make noise
 noisyAnimals = StructFilter( animals, ( Any key ) => {
 	// If the key has a value return true (noisy animal)
 	if( Len( animals[ arguments.KEY ] ) ) {
-		return true;
+		return true
 	}
-	return false;
-} );
-Dump( label="Noisy Animals", var=noisyAnimals );
+	return false
+} )
+Dump( label="Noisy Animals", var=noisyAnimals )
 // Get animals that are quiet
 quietAnimals = StructFilter( animals, ( Any key ) => {
 	// If the key has a value return true (quiet animal)
 	if( !Len( animals[ arguments.KEY ] ) ) {
-		return true;
+		return true
 	}
-	return false;
-} );
-Dump( label="Quiet Animals", var=quietAnimals );
+	return false
+} )
+Dump( label="Quiet Animals", var=quietAnimals )
 
 ```
 

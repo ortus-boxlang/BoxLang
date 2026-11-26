@@ -10,8 +10,8 @@ someArray = [
 	2,
 	3,
 	4
-];
-WriteOutput( someArray.first() );
+]
+WriteOutput( someArray.first() )
 
 ```
 
@@ -29,8 +29,8 @@ seinfeldArray = [
 	"Elaine",
 	"Kramer",
 	"George"
-];
-WriteOutput( arrayFirst( seinfeldArray ) );
+]
+WriteOutput( arrayFirst( seinfeldArray ) )
 
 ```
 
@@ -40,9 +40,9 @@ Result: "Jerry"
 
 
 ```java
-aNames = array( "Marcus", "Sarah", "Josefine" );
-dump( var=aNames, label="aNames - original array" );
-dump( var=arrayFirst( aNames ), label="first element of array aNames" );
+aNames = array( "Marcus", "Sarah", "Josefine" )
+dump( var=aNames, label="aNames - original array" )
+dump( var=arrayFirst( aNames ), label="first element of array aNames" )
 
 ```
 

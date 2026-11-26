@@ -22,12 +22,12 @@ fruit = queryNew( "id,name", "integer,varchar", [
 		"id" : 4,
 		"name" : "peach"
 	}
-] );
+] )
 myQuery = queryExecute( "select * from fruit where id < 4", {}, {
 	DBTYPE : "query"
-} );
-myResult = queryGetResult( myQuery );
-writeDump( myResult );
+} )
+myResult = queryGetResult( myQuery )
+writeDump( myResult )
 
 ```
 
@@ -56,12 +56,12 @@ fruit = queryNew( "id,name", "integer,varchar", [
 		"id" : 4,
 		"name" : "peach"
 	}
-] );
+] )
 myQuery = queryExecute( "select * from fruit where id < 4", {}, {
 	DBTYPE : "query"
-} );
-myResult = myQuery.getResult();
-writeDump( myResult );
+} )
+myResult = myQuery.getResult()
+writeDump( myResult )
 
 ```
 

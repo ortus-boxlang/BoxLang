@@ -11,9 +11,9 @@ someArray = [
 	-99,
 	46,
 	50
-];
-arraySort( someArray, "numeric", "desc" );
-writeOutput( JSONSerialize( someArray ) );
+]
+arraySort( someArray, "numeric", "desc" )
+writeOutput( JSONSerialize( someArray ) )
 
 ```
 
@@ -32,9 +32,9 @@ someArray = [
 	"adobe",
 	"Boxlang",
 	"RAILO"
-];
-someArray.sort( "text", "desc" );
-writeOutput( JSONSerialize( someArray ) );
+]
+someArray.sort( "text", "desc" )
+writeOutput( JSONSerialize( someArray ) )
 
 ```
 
@@ -56,11 +56,11 @@ someArray = [
 		NAME : "employeetest",
 		AGE : "36"
 	}
-];
+]
 arraySort( someArray, ( Any e1, Any e2 ) => {
-	return compare( e1.NAME, e2.NAME );
-} );
-writeOutput( JSONSerialize( someArray ) );
+	return compare( e1.NAME, e2.NAME )
+} )
+writeOutput( JSONSerialize( someArray ) )
 
 ```
 
@@ -109,20 +109,20 @@ arrayOfStructs = [
 		"departmentName" : "Marketing",
 		"active" : 0
 	}
-];
+]
 arrayOfStructs.sort( ( Any user1, Any user2 ) => {
 	if( user1.ACTIVE != user2.ACTIVE ) {
-		return user2.ACTIVE - user1.ACTIVE;
+		return user2.ACTIVE - user1.ACTIVE
 	}
 	if( user1.DEPARTMENTNAME == user2.DEPARTMENTNAME || user1.ACTIVE == 0 ) {
 		if( user1.LASTNAME == user2.LASTNAME ) {
-			return user1.FIRSTNAME.compare( user2.FIRSTNAME );
+			return user1.FIRSTNAME.compare( user2.FIRSTNAME )
 		}
-		return user1.LASTNAME.compare( user2.LASTNAME );
+		return user1.LASTNAME.compare( user2.LASTNAME )
 	}
-	return user1.DEPARTMENTNAME.compare( user2.DEPARTMENTNAME );
-} );
-writeDump( arrayOfStructs );
+	return user1.DEPARTMENTNAME.compare( user2.DEPARTMENTNAME )
+} )
+writeDump( arrayOfStructs )
 
 ```
 
@@ -139,12 +139,12 @@ SomeArray = [
 	"adobe",
 	"Boxlang",
 	"BOXLANG"
-];
-arraySort( SomeArray, "text", "desc" );
-dump( SomeArray );
+]
+arraySort( SomeArray, "text", "desc" )
+dump( SomeArray )
 // member function
-SomeArray.sort( "text", "desc" );
-dump( SomeArray );
+SomeArray.sort( "text", "desc" )
+dump( SomeArray )
 SomeArray = [
 	{
 		NAME : "testemployee",
@@ -154,16 +154,16 @@ SomeArray = [
 		NAME : "employeetest",
 		AGE : "36"
 	}
-];
+]
 arraySort( SomeArray, ( Any e1, Any e2 ) => {
-	return compare( e1.NAME, e2.NAME );
-} );
-dump( SomeArray );
+	return compare( e1.NAME, e2.NAME )
+} )
+dump( SomeArray )
 // member function with closure
 SomeArray.sort( ( Any e1, Any e2 ) => {
-	return compare( e1.NAME, e2.NAME );
-} );
-dump( SomeArray );
+	return compare( e1.NAME, e2.NAME )
+} )
+dump( SomeArray )
 
 ```
 

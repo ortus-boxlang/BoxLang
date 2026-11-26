@@ -9,11 +9,11 @@ Here we have simple example about structsome function.
 		"Name" : "Raja",
 		"age" : 20,
 		"mark" : 80
-	};
+	}
 	result = structSome( struct, ( Any key, Any value ) => {
-		return key == "Name";
-	} );
-	writeOutput( (result ? "" : "No") & " Key Exists." );
+		return key == "Name"
+	} )
+	writeOutput( (result ? "" : "No") & " Key Exists." )
 </bx:script>
 
 ```
@@ -31,11 +31,11 @@ Here we have simple example about structsome as member function.
 		"Name" : "Raja",
 		"age" : 20,
 		"mark" : 80
-	};
+	}
 	result = struct.some( ( Any key, Any value ) => {
-		return key == "average";
-	} );
-	writeOutput( (result ? "" : "No") & " Key Exists." );
+		return key == "average"
+	} )
+	writeOutput( (result ? "" : "No") & " Key Exists." )
 </bx:script>
 
 ```
@@ -57,12 +57,12 @@ st = {
 	3 : {
 		ACTIVE : false
 	}
-};
+}
 result = structSome( st, ( Any key, Any value ) => {
-	dump( var=value, label=key );
-	return value.ACTIVE;
-} );
-dump( result );
+	dump( var=value, label=key )
+	return value.ACTIVE
+} )
+dump( result )
 
 ```
 

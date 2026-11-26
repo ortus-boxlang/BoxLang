@@ -8,11 +8,11 @@ var struct = {
 	"Name" : "Dhar",
 	"Age" : "20",
 	"Country" : "US"
-};
+}
 structevery( struct, ( Any key, Any value ) => {
-	writeOutput( key & ":" & value & " " );
-	return true;
-} );
+	writeOutput( key & ":" & value & " " )
+	return true
+} )
 
 ```
 
@@ -28,11 +28,11 @@ var struct = {
 	"Name" : "Dhar",
 	"Age" : "20",
 	"Country" : "US"
-};
+}
 struct.every( ( Any key, Any value ) => {
-	writeOutput( key & ":" & value & " " );
-	return false;
-} );
+	writeOutput( key & ":" & value & " " )
+	return false
+} )
 
 ```
 
@@ -47,25 +47,25 @@ animals = {
 	COW : "moo",
 	PIG : "oink",
 	CAT : "meow"
-};
+}
 // Use StructEvery() to iterate over keys in struct. Closure returns true/false.
 allAnimalsAreNoisy = StructEvery( animals, ( Any key ) => {
 	// If the key has a value return true (noisy animal)
 	if( Len( animals[ arguments.KEY ] ) ) {
-		return true;
+		return true
 	}
-	return false;
-} );
-Dump( label="allAnimalsAreNoisy", var=allAnimalsAreNoisy );
+	return false
+} )
+Dump( label="allAnimalsAreNoisy", var=allAnimalsAreNoisy )
 // Use StructEvery() to iterate over keys in struct. Closure returns true/false.
 allAnimalsAreQuiet = StructEvery( animals, ( Any key ) => {
 	// If the key is blank return true (quiet animal)
 	if( !Len( animals[ arguments.KEY ] ) ) {
-		return true;
+		return true
 	}
-	return false;
-} );
-Dump( label="allAnimalsAreQuiet", var=allAnimalsAreQuiet );
+	return false
+} )
+Dump( label="allAnimalsAreQuiet", var=allAnimalsAreQuiet )
 
 ```
 

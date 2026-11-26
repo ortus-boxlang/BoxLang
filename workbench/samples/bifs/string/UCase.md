@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJwrdU4sTtVQUHJ2c8lPLlYIyk%2FOVlLQtOYCAFxoBs0%3D" target="_blank">Run Example</a>
 
 ```java
-uCase( "BLDocs Rock" );
+uCase( "BLDocs Rock" )
 
 ```
 
@@ -17,9 +17,9 @@ Result: BLDOCS ROCK
 
 ```java
 // create variable with a string of text
-foo = "Hello World!";
+foo = "Hello World!"
 // output variable in upper case
-writeOutput( UCase( foo ) );
+writeOutput( UCase( foo ) )
 
 ```
 

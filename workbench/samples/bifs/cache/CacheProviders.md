@@ -1,8 +1,8 @@
 ### Get all available cache providers
 
 ```java
-providers = cacheProviders();
-writeOutput( isArray( providers ) );
+providers = cacheProviders()
+writeOutput( isArray( providers ) )
 
 ```
 

@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJzLySwucc7PLUhMLtFQUNJJTU8v1snNzMnWSSpKTUzRScvJLy3SUVLQtOYCAEI9DfM%3D" target="_blank">Run Example</a>
 
 ```java
-listCompact( ",eggs,milk,bread,flour," );
+listCompact( ",eggs,milk,bread,flour," )
 
 ```
 
@@ -17,10 +17,10 @@ Result: eggs,milk,bread,flour
 
 ```java
 // Simple function
-writeOutput( listCompact( ",,,Plant,green,save,earth,," ) );
+writeOutput( listCompact( ",,,Plant,green,save,earth,," ) )
 // Member function with custom delimiter
-strLst = "+++1+2+3+4+++++++";
-writeDump( strLst.listCompact( "+" ) );
+strLst = "+++1+2+3+4+++++++"
+writeDump( strLst.listCompact( "+" ) )
 
 ```
 

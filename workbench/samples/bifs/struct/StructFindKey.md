@@ -31,9 +31,9 @@ Beatles = {
 		FIRSTNAME : "Ringo",
 		LASTNAME : "Starr"
 	}
-};
-myKey = structFindKey( Beatles, "lastName", "one" );
-writeOutput( JSONSerialize( myKey ) );
+}
+myKey = structFindKey( Beatles, "lastName", "one" )
+writeOutput( JSONSerialize( myKey ) )
 
 ```
 
@@ -67,9 +67,9 @@ Beatles = {
 		FIRSTNAME : "Ringo",
 		LASTNAME : "Starr"
 	}
-};
-myKey = structFindKey( Beatles, "lastName", "all" );
-writeOutput( JSONSerialize( myKey ) );
+}
+myKey = structFindKey( Beatles, "lastName", "all" )
+writeOutput( JSONSerialize( myKey ) )
 
 ```
 
@@ -108,9 +108,9 @@ Beatles = {
 		FIRSTNAME : "Ringo",
 		LASTNAME : "Starr"
 	}
-};
-myKey = Beatles.findKey( "lastName", "one" );
-writeOutput( JSONSerialize( myKey ) );
+}
+myKey = Beatles.findKey( "lastName", "one" )
+writeOutput( JSONSerialize( myKey ) )
 
 ```
 
@@ -133,13 +133,13 @@ animals = {
 		NOISE : "meow",
 		SIZE : "small"
 	}
-};
+}
 // Show all animals
-Dump( label="All animals", var=animals );
+Dump( label="All animals", var=animals )
 // Find "all" animal(s) containing key of 'size'
-findAnimalsWithSize = StructFindKey( animals, "size", "all" );
+findAnimalsWithSize = StructFindKey( animals, "size", "all" )
 // Show results in findAnimalsWithSize
-Dump( label="Results of StructFindKey(animals, ""size"", ""all"")", var=findAnimalsWithSize );
+Dump( label="Results of StructFindKey(animals, ""size"", ""all"")", var=findAnimalsWithSize )
 
 ```
 

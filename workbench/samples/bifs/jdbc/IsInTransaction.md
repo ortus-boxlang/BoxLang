@@ -1,7 +1,7 @@
 ### Check if within a database transaction
 
 ```java
-writeOutput( isBoolean( isInTransaction() ) );
+writeOutput( isBoolean( isInTransaction() ) )
 
 ```
 

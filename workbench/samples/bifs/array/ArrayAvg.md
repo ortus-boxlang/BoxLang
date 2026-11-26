@@ -9,8 +9,8 @@ numberArray = [
 	1,
 	2,
 	3
-];
-writeOutput( arrayAvg( numberArray ) );
+]
+writeOutput( arrayAvg( numberArray ) )
 
 ```
 
@@ -27,8 +27,8 @@ numberArray = [
 	1,
 	2,
 	3
-];
-writeOutput( numberArray.avg() );
+]
+writeOutput( numberArray.avg() )
 
 ```
 
@@ -44,9 +44,9 @@ numbers = [
 	2,
 	3,
 	4
-];
-avgValue = ArrayAvg( numbers );
-Echo( avgValue );
+]
+avgValue = ArrayAvg( numbers )
+Echo( avgValue )
  // outputs 2.5
 
 ```

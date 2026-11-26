@@ -9,9 +9,9 @@ someArray = [
 	1,
 	2,
 	3
-];
-arrayAppend( someArray, 4 );
-writeOutput( JSONSerialize( someArray ) );
+]
+arrayAppend( someArray, 4 )
+writeOutput( JSONSerialize( someArray ) )
 
 ```
 
@@ -28,9 +28,9 @@ someArray = [
 	1,
 	2,
 	3
-];
-someArray.append( 4 );
-writeOutput( JSONSerialize( someArray ) );
+]
+someArray.append( 4 )
+writeOutput( JSONSerialize( someArray ) )
 
 ```
 
@@ -47,13 +47,13 @@ someArray = [
 	1,
 	2,
 	3
-];
+]
 ArrayAppend( someArray, [
 	4,
 	5,
 	6
-], true );
-writeDump( JSONSerialize( someArray ) );
+], true )
+writeDump( JSONSerialize( someArray ) )
 
 ```
 
@@ -69,37 +69,37 @@ numbers = [
 	2,
 	3,
 	4
-];
-ArrayAppend( numbers, 5 );
+]
+ArrayAppend( numbers, 5 )
 Dump( numbers ); // Outputs [ 1, 2, 3, 4, 5 ]
 numbers = [
 	1,
 	2,
 	3,
 	4
-];
+]
 moreNumbers = [
 	5,
 	6,
 	7,
 	8
-];
-ArrayAppend( numbers, moreNumbers );
+]
+ArrayAppend( numbers, moreNumbers )
 Dump( numbers ); // Outputs [ 1, 2, 3, 4, [ 5, 6, 7, 8 ] ]
 numbers = [
 	1,
 	2,
 	3,
 	4
-];
+]
 moreNumbers = [
 	5,
 	6,
 	7,
 	8
-];
-ArrayAppend( numbers, moreNumbers, true );
-Dump( numbers );
+]
+ArrayAppend( numbers, moreNumbers, true )
+Dump( numbers )
  // Outputs [ 1, 2, 3, 4, 5, 6, 7, 8 ]
 
 ```

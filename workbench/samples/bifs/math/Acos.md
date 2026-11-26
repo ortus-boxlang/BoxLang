@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJxLTM4v1lDQM1bQtOYCABboAt4%3D" target="_blank">Run Example</a>
 
 ```java
-acos( .3 );
+acos( .3 )
 
 ```
 

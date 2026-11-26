@@ -5,7 +5,7 @@ The key must be generated using the generateSecretKey("AES") function.
 <a href="https://try.boxlang.io/?code=eJxLzUsuqiwo0VBQKskvUChOTS5KLVHSUVAKDym0qIpMjkpLDA8r881Lzkz3KCwPtLUFyTm6BoMop8TiVDMTJQVNay4APgQVPg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-encrypt( "top secret", "WTq8zYcZfaWVvMncigHqwQ==", "AES", "Base64" );
+encrypt( "top secret", "WTq8zYcZfaWVvMncigHqwQ==", "AES", "Base64" )
 
 ```
 
@@ -19,10 +19,10 @@ By default encrypt() uses the Electronic Code Book (ECB) mode for encryption.
 <a href="https://try.boxlang.io/?code=eJzLLU5XsFVQSkksSVQoyVdIzUsuqiwoUbLmyk6tBEqkp%2BalFiWWpAanJhellninVmooKDm6BispaFpzAdX6gnVDNWko5Ban6ygANeqAFek7OznrB3g7B5sGJKakZOalKwHFPVwjwJrLizJLUv1LSwpKgfqgJgGFAcD1LEQ%3D" target="_blank">Run Example</a>
 
 ```java
-msg = "data to encrypt";
-key = generateSecretKey( "AES" );
-encMsg = encrypt( msg, key, "AES/CBC/PKCS5Padding", "HEX" );
-writeOutput( encMsg );
+msg = "data to encrypt"
+key = generateSecretKey( "AES" )
+encMsg = encrypt( msg, key, "AES/CBC/PKCS5Padding", "HEX" )
+writeOutput( encMsg )
 
 ```
 
@@ -31,10 +31,10 @@ writeOutput( encMsg );
 
 
 ```java
-msg = "data to encrypt";
-key = generateSecretKey( "AES" );
-encMsg = encrypt( msg, key, "AES/GCM/NoPadding", "Base64" );
-writeOutput( encMsg );
+msg = "data to encrypt"
+key = generateSecretKey( "AES" )
+encMsg = encrypt( msg, key, "AES/GCM/NoPadding", "Base64" )
+writeOutput( encMsg )
 
 ```
 
@@ -44,9 +44,9 @@ writeOutput( encMsg );
 <a href="https://try.boxlang.io/?code=eJzLTq1UsFVIT81LLUosSQ1OTS5KLfFOrdRQUHJ0DVZS0LTmKkktLnHNSy6qLCgBqkyFsIDyxYlpqfmlRSVFqalKOgrZqZU6ED1AKimxONXMBKy7vCizJNWlNLdAQwHZIKAMAKC9J0k%3D" target="_blank">Run Example</a>
 
 ```java
-key = generateSecretKey( "AES" );
-testEncrypt = encrypt( "safeourtree", key, "AES", "base64" );
-writeDump( testEncrypt );
+key = generateSecretKey( "AES" )
+testEncrypt = encrypt( "safeourtree", key, "AES", "base64" )
+writeDump( testEncrypt )
 
 ```
 

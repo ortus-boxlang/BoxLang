@@ -1,8 +1,8 @@
 ### Get the session start time
 
 ```java
-startTime = sessionStartTime();
-writeOutput( isDate( startTime ) );
+startTime = sessionStartTime()
+writeOutput( isDate( startTime ) )
 
 ```
 

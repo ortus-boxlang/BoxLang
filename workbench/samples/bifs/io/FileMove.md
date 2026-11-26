@@ -4,7 +4,7 @@
 
 
 ```java
-fileMove( sourcefile, destinationfile );
+fileMove( sourcefile, destinationfile )
 
 ```
 
@@ -13,7 +13,7 @@ fileMove( sourcefile, destinationfile );
 
 
 ```java
-filemove( sourceFilePath, destinationFilePath );
+filemove( sourceFilePath, destinationFilePath )
 
 ```
 

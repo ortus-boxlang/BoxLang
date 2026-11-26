@@ -5,20 +5,20 @@
 
 ```java
 // Open File
-var fileObject = fileOpen( "/path/to/file.txt" );
+var fileObject = fileOpen( "/path/to/file.txt" )
 // Perform Actions
 try {
 	// Read Line
-	writeOutput( fileReadLine( fileObject ) );
+	writeOutput( fileReadLine( fileObject ) )
 }
 // Error Handling
  catch (any ex) {
 	// Report Exception
-	writeDump( ex );
+	writeDump( ex )
 }finally {
 	// Always Close
 	// Close File
-	fileClose( fileObject );
+	fileClose( fileObject )
 }
 
 ```
@@ -28,9 +28,9 @@ try {
 
 
 ```java
-testFile = fileopen("filepath"),"write");
-filewriteline(testfile,"I am the example of fileclose");
-fileclose(testfile);
+testFile = fileopen("filepath"),"write")
+filewriteline(testfile,"I am the example of fileclose")
+fileclose(testfile)
 ```
 
 

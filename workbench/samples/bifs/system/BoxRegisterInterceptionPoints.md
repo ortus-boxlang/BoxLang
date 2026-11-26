@@ -1,8 +1,8 @@
 ### Register interception points globally
 
 ```java
-boxRegisterInterceptionPoints( [ "onApplicationStart", "onRequestStart" ] );
-writeOutput( "registered" );
+boxRegisterInterceptionPoints( [ "onApplicationStart", "onRequestStart" ] )
+writeOutput( "registered" )
 
 ```
 

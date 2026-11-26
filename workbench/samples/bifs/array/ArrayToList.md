@@ -10,9 +10,9 @@ someArray = [
 	2,
 	3,
 	4
-];
-someList = arrayToList( someArray, "|" );
-writeOutput( someList );
+]
+someList = arrayToList( someArray, "|" )
+writeOutput( someList )
 
 ```
 
@@ -30,9 +30,9 @@ seinfeldArray = [
 	"Elaine",
 	"Kramer",
 	"George"
-];
-seinfeldList = seinfeldArray.toList();
-writeOutput( seinfeldList );
+]
+seinfeldList = seinfeldArray.toList()
+writeOutput( seinfeldList )
 
 ```
 
@@ -52,10 +52,10 @@ newArray = [
 	"b",
 	"e",
 	"f"
-];
-dump( arrayToList( newArray ) );
+]
+dump( arrayToList( newArray ) )
 // member function, with custom separator
-dump( newArray.toList( "--" ) );
+dump( newArray.toList( "--" ) )
 
 ```
 

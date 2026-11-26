@@ -1,8 +1,8 @@
 ### Unregister a request-scoped interceptor
 
 ```java
-boxUnregisterRequestInterceptor( "myRequestInterceptor" );
-writeOutput( "unregistered" );
+boxUnregisterRequestInterceptor( "myRequestInterceptor" )
+writeOutput( "unregistered" )
 
 ```
 

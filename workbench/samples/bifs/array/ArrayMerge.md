@@ -9,16 +9,16 @@ fruit = [
 	"apple",
 	"banana",
 	"orange"
-];
+]
 veggies = [
 	"tomato",
 	"carrot",
 	"corn",
 	"peas",
 	"peppers"
-];
-healthyFoods = arrayMerge( fruit, veggies );
-writeOutput( arrayToList( healthyFoods ) );
+]
+healthyFoods = arrayMerge( fruit, veggies )
+writeOutput( arrayToList( healthyFoods ) )
 
 ```
 
@@ -35,16 +35,16 @@ fruit = [
 	"apple",
 	"banana",
 	"orange"
-];
+]
 veggies = [
 	"tomato",
 	"carrot",
 	"corn",
 	"peas",
 	"peppers"
-];
-healthyFoods = fruit.merge( veggies );
-writeOutput( arrayToList( healthyFoods ) );
+]
+healthyFoods = fruit.merge( veggies )
+writeOutput( arrayToList( healthyFoods ) )
 
 ```
 
@@ -63,16 +63,16 @@ fruit = [
 	"apple",
 	"banana",
 	"orange"
-];
+]
 veggies = [
 	"tomato",
 	"carrot",
 	"corn",
 	"peas",
 	"peppers"
-];
-healthyFoods = arrayMerge( fruit, veggies, true );
-writeOutput( arrayToList( healthyFoods ) );
+]
+healthyFoods = arrayMerge( fruit, veggies, true )
+writeOutput( arrayToList( healthyFoods ) )
 
 ```
 
@@ -82,12 +82,12 @@ Result: apple,banana,orange,peas,peppers
 
 
 ```java
-aNames = array( 10412, 42, 33, 2, 999, 12769, 888 );
-aNames2 = array( 33, "b", "c", "d", "e", "f", "g" );
-dump( arrayMerge( aNames, aNames2 ) );
+aNames = array( 10412, 42, 33, 2, 999, 12769, 888 )
+aNames2 = array( 33, "b", "c", "d", "e", "f", "g" )
+dump( arrayMerge( aNames, aNames2 ) )
 // member function
-dump( aNames.merge( aNames2 ) );
-dump( aNames.merge( aNames2, true ) );
+dump( aNames.merge( aNames2 ) )
+dump( aNames.merge( aNames2, true ) )
 
 ```
 

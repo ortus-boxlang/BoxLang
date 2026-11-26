@@ -10,12 +10,12 @@ months = [
 	"March",
 	"April",
 	"June"
-];
+]
 item = [
 	"Feb"
-];
-arraySplice( months, 2, 0, item );
-writedump( months );
+]
+arraySplice( months, 2, 0, item )
+writedump( months )
 
 ```
 
@@ -33,12 +33,12 @@ months = [
 	"March",
 	"April",
 	"June"
-];
+]
 item = [
 	"Feb"
-];
-arraySplice( months, 3, 2, item );
-writedump( months );
+]
+arraySplice( months, 3, 2, item )
+writedump( months )
 
 ```
 
@@ -56,12 +56,12 @@ months = [
 	"March",
 	"April",
 	"June"
-];
+]
 item = [
 	"Feb"
-];
-arraySplice( months, -3, 0, item );
-writedump( months );
+]
+arraySplice( months, -3, 0, item )
+writedump( months )
 
 ```
 
@@ -79,12 +79,12 @@ months = [
 	"March",
 	"April",
 	"June"
-];
+]
 item = [
 	"Feb"
-];
-arraySplice( months, 5, 0, item );
-writedump( months );
+]
+arraySplice( months, 5, 0, item )
+writedump( months )
 
 ```
 
@@ -102,12 +102,12 @@ months = [
 	"March",
 	"April",
 	"June"
-];
+]
 item = [
 	"Feb"
-];
-months.splice( 2, 0, item );
-writedump( months );
+]
+months.splice( 2, 0, item )
+writedump( months )
 
 ```
 
@@ -125,12 +125,12 @@ Days = [
 	"Thurs",
 	"Fri",
 	"Sat"
-];
+]
 item = [
 	"Tues"
-];
-ArraySplice( Days, 3, 0, item );
-writedump( Days );
+]
+ArraySplice( Days, 3, 0, item )
+writedump( Days )
 
 ```
 

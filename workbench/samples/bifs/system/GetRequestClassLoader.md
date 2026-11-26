@@ -1,8 +1,8 @@
 ### Get the request class loader
 
 ```java
-loader = getRequestClassLoader();
-writeOutput( isObject( loader ) );
+loader = getRequestClassLoader()
+writeOutput( isObject( loader ) )
 
 ```
 

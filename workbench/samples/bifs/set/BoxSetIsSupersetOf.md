@@ -3,9 +3,9 @@
 The inverse of `isSubsetOf`.
 
 ```java
-a = setOf( 1, 2, 3 );
-b = setOf( 1, 2 );
-writeOutput( a.isSupersetOf( b ) );
+a = setOf( 1, 2, 3 )
+b = setOf( 1, 2 )
+writeOutput( a.isSupersetOf( b ) )
 
 ```
 
@@ -14,9 +14,9 @@ Result: true
 ### Returns false when the other Set has extra elements
 
 ```java
-a = setOf( 1, 2 );
-b = setOf( 1, 2, 3 );
-writeOutput( a.isSupersetOf( b ) );
+a = setOf( 1, 2 )
+b = setOf( 1, 2, 3 )
+writeOutput( a.isSupersetOf( b ) )
 
 ```
 

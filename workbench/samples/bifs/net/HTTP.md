@@ -1,8 +1,8 @@
 ### Make an HTTP request
 
 ```java
-result = http( method: "GET", url: "https://httpbin.org/get" );
-writeOutput( result.statusCode );
+result = http( method: "GET", url: "https://httpbin.org/get" )
+writeOutput( result.statusCode )
 
 ```
 
@@ -11,8 +11,8 @@ Result: 200
 ### POST with body
 
 ```java
-result = http( method: "POST", url: "https://httpbin.org/post", body: "hello" );
-writeOutput( result.statusCode );
+result = http( method: "POST", url: "https://httpbin.org/post", body: "hello" )
+writeOutput( result.statusCode )
 
 ```
 
@@ -23,13 +23,13 @@ Result: 200
 `onBinaryChunk` receives the raw bytes of a streaming response exactly as they are read from the network. There is no text decoding and no line splitting, so audio, images and other binary bodies arrive intact.
 
 ```java
-total = 0;
+total = 0
 result = http( "https://example.com/audio.mp3" )
 	.onBinaryChunk( ( bytes, info ) => {
-		total += arrayLen( bytes );
+		total += arrayLen( bytes )
 	} )
-	.send();
-writeOutput( "Received " & result.totalBytes & " bytes in " & result.chunkCount & " chunks, matches: " & ( total == result.totalBytes ) );
+	.send()
+writeOutput( "Received " & result.totalBytes & " bytes in " & result.chunkCount & " chunks, matches: " & ( total == result.totalBytes ) )
 
 ```
 
@@ -43,11 +43,11 @@ The callback receives `(bytes, info)`. `info` has `chunkNumber` (1-based), `tota
 http( "https://example.com/audio.mp3" )
 	.onBinaryChunk( ( bytes, info ) => {
 		if ( info.chunkNumber == 1 ) {
-			writeOutput( "Content-Type: " & info.headers[ "Content-Type" ] & "<br>" );
+			writeOutput( "Content-Type: " & info.headers[ "Content-Type" ] & "<br>" )
 		}
-		writeOutput( "chunk " & info.chunkNumber & ": " & arrayLen( bytes ) & " bytes, " & info.totalBytes & " so far<br>" );
+		writeOutput( "chunk " & info.chunkNumber & ": " & arrayLen( bytes ) & " bytes, " & info.totalBytes & " so far<br>" )
 	} )
-	.send();
+	.send()
 
 ```
 
@@ -65,18 +65,18 @@ chunk 2: 2048 bytes, 4096 so far
 The body is not accumulated in memory when `onBinaryChunk` is used, so you can write a large download straight to disk. Close the stream in a `finally` block.
 
 ```java
-target = getTempDirectory() & "download.bin";
-out = createObject( "java", "java.io.FileOutputStream" ).init( target );
+target = getTempDirectory() & "download.bin"
+out = createObject( "java", "java.io.FileOutputStream" ).init( target )
 try {
 	http( "https://example.com/audio.mp3" )
 		.onBinaryChunk( ( bytes, info ) => {
-			out.write( bytes );
+			out.write( bytes )
 		} )
-		.send();
+		.send()
 } finally {
-	out.close();
+	out.close()
 }
-writeOutput( fileInfo( target ).size );
+writeOutput( fileInfo( target ).size )
 
 ```
 
@@ -87,18 +87,18 @@ Result: 40960
 Headers, bodies and the HTTP method work exactly like any other request. Here a provider generates audio and each block is forwarded to a client as soon as it arrives. `timeout` is an idle timeout while streaming, so a long stream is never cut off as long as data keeps arriving.
 
 ```java
-sent = 0;
+sent = 0
 result = http( "https://api.example.com/v1/speech" )
 	.post()
 	.header( "Authorization", "Bearer " & apiKey )
 	.jsonBody( '{"text":"Hello from BoxLang","format":"mp3"}' )
 	.timeout( 30 )
 	.onBinaryChunk( ( bytes, info ) => {
-		sent += arrayLen( bytes );
+		sent += arrayLen( bytes )
 		// Forward the bytes to your own client here
 	} )
-	.send();
-writeOutput( "Sent " & sent & " bytes, status " & result.statusCode );
+	.send()
+writeOutput( "Sent " & sent & " bytes, status " & result.statusCode )
 
 ```
 
@@ -112,10 +112,10 @@ Return an explicit `false` to stop. The connection is closed immediately, so the
 result = http( "https://example.com/audio.mp3" )
 	.onBinaryChunk( ( bytes, info ) => {
 		// Stop once we have at least 5000 bytes
-		return info.totalBytes < 5000;
+		return info.totalBytes < 5000
 	} )
-	.send();
-writeOutput( "completed: " & result.streamCompleted & ", chunks: " & result.chunkCount & ", status: " & result.statusCode );
+	.send()
+writeOutput( "completed: " & result.streamCompleted & ", chunks: " & result.chunkCount & ", status: " & result.statusCode )
 
 ```
 
@@ -131,10 +131,10 @@ result = http( "https://api.example.com/v1/speech" )
 		// Not called for a 401
 	} )
 	.onError( ( error, httpResult ) => {
-		writeOutput( "error: " & error.message & "<br>" );
+		writeOutput( "error: " & error.message & "<br>" )
 	} )
-	.send();
-writeOutput( "status: " & result.statusCode & ", body: " & result.fileContent );
+	.send()
+writeOutput( "status: " & result.statusCode & ", body: " & result.fileContent )
 
 ```
 
@@ -153,13 +153,13 @@ While streaming, `timeout` is the longest wait for the response headers or betwe
 result = http( "https://example.com/slow-stream" )
 	.timeout( 10 )
 	.onBinaryChunk( ( bytes, info ) => {
-		writeOutput( "got " & arrayLen( bytes ) & " bytes<br>" );
+		writeOutput( "got " & arrayLen( bytes ) & " bytes<br>" )
 	} )
 	.onError( ( error, httpResult ) => {
-		writeOutput( "error: " & error.message & "<br>" );
+		writeOutput( "error: " & error.message & "<br>" )
 	} )
-	.send();
-writeOutput( "status: " & result.statusCode & ", completed: " & result.streamCompleted );
+	.send()
+writeOutput( "status: " & result.statusCode & ", completed: " & result.streamCompleted )
 
 ```
 
@@ -179,9 +179,9 @@ status: 408, completed: false
 http( "https://example.com/audio.mp3" )
 	.onBinaryChunk( ( bytes, info ) => {} )
 	.onComplete( ( httpResult ) => {
-		writeOutput( "done: " & httpResult.totalBytes & " bytes" );
+		writeOutput( "done: " & httpResult.totalBytes & " bytes" )
 	} )
-	.send();
+	.send()
 
 ```
 
@@ -197,12 +197,12 @@ result = http( "https://api.example.com/events" )
 	.timeout( 30 )
 	.onChunk( ( event ) => {
 		if ( event.data == "[DONE]" ) {
-			return false;
+			return false
 		}
-		writeOutput( "event: " & event.data & "<br>" );
+		writeOutput( "event: " & event.data & "<br>" )
 	} )
-	.send();
-writeOutput( "completed: " & result.streamCompleted );
+	.send()
+writeOutput( "completed: " & result.streamCompleted )
 
 ```
 

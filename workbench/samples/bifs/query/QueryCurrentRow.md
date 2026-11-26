@@ -43,10 +43,10 @@ Here we've example to get the currentRow number from query using script syntax.
 			4,
 			"Mieko and the Fifth Treasure"
 		]
-	] );
+	] )
 	bx:loop query="myQuery" {
 		if( title == "Mieko and the Fifth Treasure" ) {
-			writeOutput( myQuery.currentRow() );
+			writeOutput( myQuery.currentRow() )
 		}
 	}
 </bx:script>
@@ -69,9 +69,9 @@ myQry = QueryNew( "id,name", "Integer,VarChar", [
 		55,
 		"mk"
 	]
-] );
+] )
 bx:loop query="myQry" {
-	writeDump( querycurrentrow( myQry ) );
+	writeDump( querycurrentrow( myQry ) )
 }
 
 ```

@@ -13,9 +13,9 @@ news = queryNew( "id,title", "integer,varchar", [
 		"id" : 2,
 		"title" : "Man walks on Moon"
 	}
-] );
-queryDeleteRow( news );
-writeOutput( news[ "title" ][ 1 ] );
+] )
+queryDeleteRow( news )
+writeOutput( news[ "title" ][ 1 ] )
 
 ```
 
@@ -37,9 +37,9 @@ news = queryNew( "id,title", "integer,varchar", [
 		"id" : 2,
 		"title" : "Man walks on Moon"
 	}
-] );
-queryDeleteRow( news, 1 );
-writeOutput( news[ "title" ][ 1 ] );
+] )
+queryDeleteRow( news, 1 )
+writeOutput( news[ "title" ][ 1 ] )
 
 ```
 
@@ -66,9 +66,9 @@ qry1 = queryNew( "a,b,c", "varchar,varchar,varchar", [
 		"b3",
 		"c3"
 	]
-] );
-queryDeleteRow( qry1, 2 );
-writeDump( queryColumnData( qry1, "a" ).toList() );
+] )
+queryDeleteRow( qry1, 2 )
+writeDump( queryColumnData( qry1, "a" ).toList() )
 qry2 = queryNew( "a,b,c", "varchar,varchar,varchar", [
 	[
 		"a1",
@@ -85,11 +85,11 @@ qry2 = queryNew( "a,b,c", "varchar,varchar,varchar", [
 		"b3",
 		"c3"
 	]
-] );
+] )
 for( i = 3; i >= 1; i-- ) {
-	queryDeleteRow( qry2, i );
+	queryDeleteRow( qry2, i )
 }
-writeDump( qry2.RECORDCOUNT );
+writeDump( qry2.RECORDCOUNT )
 
 ```
 

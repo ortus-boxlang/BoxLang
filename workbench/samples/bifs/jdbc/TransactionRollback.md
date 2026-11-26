@@ -4,11 +4,11 @@ This simple example shows two JDBC queries executed inside a transaction. The fi
 
 ```java
 transaction {
-    queryExecute( "INSERT INTO vehicles (id,make) VALUES (8, 'Ford' )", {}, { datasource : "carDB" } );
-    transactionCommit();
+    queryExecute( "INSERT INTO vehicles (id,make) VALUES (8, 'Ford' )", {}, { datasource : "carDB" } )
+    transactionCommit()
 
-    queryExecute( "UPDATE developers SET name = 'Chevrolet' WHERE id=8", {}, { datasource : "carDB" } );
-    transactionRollback();
+    queryExecute( "UPDATE developers SET name = 'Chevrolet' WHERE id=8", {}, { datasource : "carDB" } )
+    transactionRollback()
 }
 ```
 
@@ -20,11 +20,11 @@ Many times, you may wish to roll back only a portion of a transaction. This is p
 
 ```java
 transaction {
-    queryExecute( "INSERT INTO vehicles (id,make) VALUES (8, 'Ford' )", {}, { datasource : "carDB" } );
-    transactionSetSavepoint( 'insert' );
+    queryExecute( "INSERT INTO vehicles (id,make) VALUES (8, 'Ford' )", {}, { datasource : "carDB" } )
+    transactionSetSavepoint( 'insert' )
 
-    queryExecute( "UPDATE developers SET name = 'Chevrolet' WHERE id=8", {}, { datasource : "carDB" } );
-    transactionRollback( 'insert' );
+    queryExecute( "UPDATE developers SET name = 'Chevrolet' WHERE id=8", {}, { datasource : "carDB" } )
+    transactionRollback( 'insert' )
 }
 ```
 
@@ -40,9 +40,9 @@ In this code, any error triggered will cause transactionRollback() to run and ro
 bx:transaction {
 	try {
 		// code to run
-		transactionCommit();
+		transactionCommit()
 	} catch (any e) {
-		transactionRollback();
+		transactionRollback()
 	}
 }
 

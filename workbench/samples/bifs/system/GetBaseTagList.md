@@ -1,8 +1,8 @@
 ### Get the list of base tags in the call stack
 
 ```java
-tags = getBaseTagList();
-writeOutput( isArray( tags ) );
+tags = getBaseTagList()
+writeOutput( isArray( tags ) )
 
 ```
 

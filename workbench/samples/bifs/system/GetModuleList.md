@@ -1,8 +1,8 @@
 ### Get the list of loaded modules
 
 ```java
-modules = getModuleList();
-writeOutput( isStruct( modules ) );
+modules = getModuleList()
+writeOutput( isStruct( modules ) )
 
 ```
 

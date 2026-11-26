@@ -1,8 +1,8 @@
 ### Get the list of registered components
 
 ```java
-components = getComponentList();
-writeOutput( isArray( components ) );
+components = getComponentList()
+writeOutput( isArray( components ) )
 
 ```
 

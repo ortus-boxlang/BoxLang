@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJxLys%2FPSU3Mc8svyk0s0VAwVNC05gIATjEGUQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
-booleanFormat( 1 );
+booleanFormat( 1 )
 
 ```
 
@@ -18,7 +18,7 @@ Result: true
 <a href="https://try.boxlang.io/?code=eJxLys%2FPSU3Mc8svyk0s0VAwUNC05gIATiwGUA%3D%3D" target="_blank">Run Example</a>
 
 ```java
-booleanFormat( 0 );
+booleanFormat( 0 )
 
 ```
 
@@ -31,7 +31,7 @@ Result: false
 <a href="https://try.boxlang.io/?code=eJxLys%2FPSU3Mc8svyk0s0VDQNVTQtOYCAFTRBn4%3D" target="_blank">Run Example</a>
 
 ```java
-booleanFormat( -1 );
+booleanFormat( -1 )
 
 ```
 
@@ -44,7 +44,7 @@ Result: true
 <a href="https://try.boxlang.io/?code=eJxLys%2FPSU3Mc8svyk0s0VAwVdC05gIATkUGVQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
-booleanFormat( 5 );
+booleanFormat( 5 )
 
 ```
 
@@ -53,7 +53,7 @@ Result: true
 ### String representation of true is interpreted as true
 
 ```java
-booleanFormat( "true" );
+booleanFormat( "true" )
 
 ```
 
@@ -62,7 +62,7 @@ Result: true
 ### String representation of false is interpreted as false
 
 ```java
-booleanFormat( "false" );
+booleanFormat( "false" )
 
 ```
 
@@ -71,7 +71,7 @@ Result: false
 ### YES is recognized as synonym for true
 
 ```java
-booleanFormat( "YES" );
+booleanFormat( "YES" )
 
 ```
 
@@ -80,7 +80,7 @@ Result: true
 ### NO is recognized as synonym for false
 
 ```java
-booleanFormat( "NO" );
+booleanFormat( "NO" )
 
 ```
 
@@ -89,7 +89,7 @@ Result: false
 ### An empty string results in false
 
 ```java
-booleanFormat( "" );
+booleanFormat( "" )
 
 ```
 
@@ -101,7 +101,7 @@ Result: false
 
 ```java
 writeDump( BooleanFormat( 123 ) ); // True
-writeDump( BooleanFormat( 0 ) );
+writeDump( BooleanFormat( 0 ) )
  // False
 
 ```

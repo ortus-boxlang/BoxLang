@@ -16,7 +16,7 @@ Result: {t '12:12:12'}
 <a href="https://try.boxlang.io/?code=eJxLKc0t0FBwLkpNLEn1d3FyDsnMTdVQyMsv19BUAEJrLgC6Vgm%2B" target="_blank">Run Example</a>
 
 ```java
-dump( CreateODBCTime( now() ) );
+dump( CreateODBCTime( now() ) )
 
 ```
 

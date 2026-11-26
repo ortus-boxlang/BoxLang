@@ -21,11 +21,11 @@ The following example calls the Randomize function to seed the random number gen
 
 ```java
 <bx:script>
-	bytes = [];
-	bytecount = 32;
-	arrayResize( bytes, byteCount );
+	bytes = []
+	bytecount = 32
+	arrayResize( bytes, byteCount )
 	for( i = 1; i <= byteCount; i++ ) {
-		bytes[ i ] = randRange( -128, 127, "SHA1PRNG" );
+		bytes[ i ] = randRange( -128, 127, "SHA1PRNG" )
 	}
 </bx:script>
  
@@ -37,8 +37,8 @@ The following example calls the Randomize function to seed the random number gen
 
 
 ```java
-writeDump( randRange( 25, 125, "bxmX_COMPAT" ) );
-writeDump( randRange( 100, 500, "SHA1PRNG" ) );
+writeDump( randRange( 25, 125, "bxmX_COMPAT" ) )
+writeDump( randRange( 100, 500, "SHA1PRNG" ) )
 
 ```
 

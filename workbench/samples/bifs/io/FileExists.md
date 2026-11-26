@@ -4,9 +4,9 @@
 
 
 ```java
-var myFile = "/path/to/the/file.jpg";
+var myFile = "/path/to/the/file.jpg"
 if( fileExists( expandPath( myFile ) ) ) {
-	writeOutput( myFile & "exists!" );
+	writeOutput( myFile & "exists!" )
 }
 
 ```
@@ -16,9 +16,9 @@ if( fileExists( expandPath( myFile ) ) ) {
 
 
 ```java
-var filePath = "path/to/my/file.md";
-if( fileExists( filePath ) ) echo;
-"it exists";
+var filePath = "path/to/my/file.md"
+if( fileExists( filePath ) ) echo
+"it exists"
 
 ```
 

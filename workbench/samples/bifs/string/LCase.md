@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJzLcU4sTtVQUHJ2c8lPLlYIyk%2FOVlLQtOYCAFuQBsQ%3D" target="_blank">Run Example</a>
 
 ```java
-lCase( "BLDocs Rock" );
+lCase( "BLDocs Rock" )
 
 ```
 
@@ -17,9 +17,9 @@ Result: bldocs rock
 
 ```java
 // create variable with a string of text
-foo = "Hello World!";
+foo = "Hello World!"
 // output variable in lower case
-writeOutput( LCase( foo ) );
+writeOutput( LCase( foo ) )
 
 ```
 

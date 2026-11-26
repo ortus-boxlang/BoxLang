@@ -11,8 +11,8 @@ statusCodes = {
 	NOT_MODIFIED : 304,
 	BAD_REQUEST : 400,
 	NOT_FOUND : 404
-};
-writeDump( structKeyArray( statusCodes ) );
+}
+writeDump( structKeyArray( statusCodes ) )
 
 ```
 
@@ -31,8 +31,8 @@ statusCodes = {
 	NOT_MODIFIED : 304,
 	BAD_REQUEST : 400,
 	NOT_FOUND : 404
-};
-writeDump( statusCodes.keyArray() );
+}
+writeDump( statusCodes.keyArray() )
 
 ```
 
@@ -48,8 +48,8 @@ animals = {
 	PIG : "oink",
 	CAT : "meow",
 	BIRD : "chirp"
-};
-dump( StructKeyArray( animals ) );
+}
+dump( StructKeyArray( animals ) )
 
 ```
 
@@ -62,8 +62,8 @@ animals = [
 	PIG : "oink",
 	CAT : "meow",
 	BIRD : "chirp"
-];
-dump( StructKeyArray( animals ) );
+]
+dump( StructKeyArray( animals ) )
 
 ```
 

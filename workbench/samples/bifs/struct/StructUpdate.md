@@ -10,9 +10,9 @@ myStruct = {
 	B : 2,
 	C : 3,
 	D : 4
-};
-structUpdate( myStruct, "c", 15 );
-writeDump( JSONSerialize( myStruct ) );
+}
+structUpdate( myStruct, "c", 15 )
+writeDump( JSONSerialize( myStruct ) )
 
 ```
 
@@ -27,13 +27,13 @@ animals = {
 	COW : "moo",
 	PIG : "oink",
 	CAT : "meow"
-};
+}
 // Show current animals
-Dump( label="Current animals", var=animals );
+Dump( label="Current animals", var=animals )
 // Update cat in animals
-StructUpdate( animals, "cat", "purr" );
+StructUpdate( animals, "cat", "purr" )
 // Show animals with updated cat in animals
-Dump( label="Animals with cat updated", var=animals );
+Dump( label="Animals with cat updated", var=animals )
 
 ```
 

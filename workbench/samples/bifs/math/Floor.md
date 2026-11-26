@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJxLy8nPL9JQMNEzUNC05gIAIN4Diw%3D%3D" target="_blank">Run Example</a>
 
 ```java
-floor( 4.0 );
+floor( 4.0 )
 
 ```
 
@@ -18,7 +18,7 @@ Result: 4
 <a href="https://try.boxlang.io/?code=eJxLy8nPL9JQMNEzVtC05gIAIO0Djg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-floor( 4.3 );
+floor( 4.3 )
 
 ```
 
@@ -31,7 +31,7 @@ Result: 4
 <a href="https://try.boxlang.io/?code=eJxLy8nPL9JQMNEzV9C05gIAIQEDkg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-floor( 4.7 );
+floor( 4.7 )
 
 ```
 
@@ -44,7 +44,7 @@ Result: 4
 <a href="https://try.boxlang.io/?code=eJxLy8nPL9JQ0DXRM1bQtOYCACTAA7s%3D" target="_blank">Run Example</a>
 
 ```java
-floor( -4.3 );
+floor( -4.3 )
 
 ```
 
@@ -58,7 +58,7 @@ Result: -5
 dump( floor( 2.0 ) ); // 2
 dump( floor( 7.2 ) ); // 7
 dump( floor( 4.9 ) ); // 4
-dump( floor( -5.7 ) );
+dump( floor( -5.7 ) )
  // -6
 
 ```

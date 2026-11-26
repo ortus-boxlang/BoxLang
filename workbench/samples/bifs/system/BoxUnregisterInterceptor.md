@@ -1,9 +1,9 @@
 ### Unregister a global interceptor
 
 ```java
-boxRegisterInterceptor( "tempInterceptor", "path.to.Temp" );
-boxUnregisterInterceptor( "tempInterceptor" );
-writeOutput( "unregistered" );
+boxRegisterInterceptor( "tempInterceptor", "path.to.Temp" )
+boxUnregisterInterceptor( "tempInterceptor" )
+writeOutput( "unregistered" )
 
 ```
 

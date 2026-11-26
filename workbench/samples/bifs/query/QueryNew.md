@@ -5,14 +5,14 @@ Using Script with the queryAddRow querySetCell functions to populate the query.
 <a href="https://try.boxlang.io/?code=eJydjTEKAjEURHtP8UmlkEZbsRC3XQv1AsGMGswm698fw97ejYtaCWI3DG%2FmBeSOVnRL4H6LPCXlrBYnHkoPOQjOYH03fLwYVjRbTp7o2tpdHOhQ5q9yD9nA%2B7Eta1s%2B5uor8PZUyOjJ4gQjHR04NSb8JVv8IKsRKBt%2FpRiojnEUZXaCKjXtR%2FMADRpalA%3D%3D" target="_blank">Run Example</a>
 
 ```java
-news = queryNew( "id,title", "integer,varchar" );
-queryAddRow( news );
-querySetCell( news, "id", "1" );
-querySetCell( news, "title", "Dewey defeats Truman" );
-queryAddRow( news );
-querySetCell( news, "id", "2" );
-querySetCell( news, "title", "Men walk on Moon" );
-writeDump( news );
+news = queryNew( "id,title", "integer,varchar" )
+queryAddRow( news )
+querySetCell( news, "id", "1" )
+querySetCell( news, "title", "Dewey defeats Truman" )
+queryAddRow( news )
+querySetCell( news, "id", "2" )
+querySetCell( news, "title", "Men walk on Moon" )
+writeDump( news )
 
 ```
 
@@ -50,8 +50,8 @@ news = queryNew( "id,title", "integer,varchar", [
 		"id" : 2,
 		"title" : "Man walks on Moon"
 	}
-] );
-writeDump( news );
+] )
+writeDump( news )
 
 ```
 
@@ -66,8 +66,8 @@ If you only need one row you can pass a single struct instead of an array into t
 news = queryNew( "id,title", "integer,varchar", { 
 	"id" : 1,
 	"title" : "Dewey defeats Truman"
-} );
-writeDump( news );
+} )
+writeDump( news )
 
 ```
 
@@ -88,8 +88,8 @@ news = queryNew( [
 		"id" : 2,
 		"title" : "Man walks on Moon"
 	}
-] );
-writeDump( news );
+] )
+writeDump( news )
 
 ```
 
@@ -108,8 +108,8 @@ testQuery = queryNew( "name , age", "varchar , numeric", {
 		20,
 		24
 	]
-} );
-dump( testQuery );
+} )
+dump( testQuery )
 qry = queryNew( "name , age", "varchar , numeric", [
 	[
 		"Susi",
@@ -119,8 +119,8 @@ qry = queryNew( "name , age", "varchar , numeric", [
 		"Urs",
 		24
 	]
-] );
-dump( qry );
+] )
+dump( qry )
 qry = queryNew( "name , age", "varchar , numeric", [
 	{
 		NAME : "Susi",
@@ -130,8 +130,8 @@ qry = queryNew( "name , age", "varchar , numeric", [
 		NAME : "Urs",
 		AGE : 24
 	}
-] );
-dump( qry );
+] )
+dump( qry )
 
 ```
 

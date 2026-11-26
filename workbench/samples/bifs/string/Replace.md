@@ -5,8 +5,8 @@ Replace in Script Syntax
 <a href="https://try.boxlang.io?code=eJxLTy0JS8xRsFUoSi3ISUxO1VBQcsqvyEnMS1fSUVAKBRGlSgqa1lzlRZklqS6luQUaCukQPZrWAEpOEnw%3D" target="_blank">Run Example</a>
 
 ```java
-getVal = replace( "Boxlang", "U", "u" );
-writeDump( getVal );
+getVal = replace( "Boxlang", "U", "u" )
+writeDump( getVal )
 
 ```
 
@@ -34,10 +34,10 @@ You can pass in a callback function to the third argument of the `replace` funct
 ```java
 
 public function upCase( Any pattern, Any position, Any orig ) {
-	return uCase( pattern );
+	return uCase( pattern )
 }
-result = replace( "A man a plan a canal.", "an", upCase, "ALL" );
-writeOutput( result );
+result = replace( "A man a plan a canal.", "an", upCase, "ALL" )
+writeOutput( result )
 
 ```
 
@@ -50,8 +50,8 @@ You can pass position to start searching in the string
 <a href="https://try.boxlang.io/?code=eJxLTy0JSi1WsFUoSi3ISUxO1VBQ8skvS1Vwzs9JcSstzszPU9JRUMoHEf4gwtHHB0QZKyloWnOVF2WWpPqXlhSUlmgopENMAgoDADjeGJA%3D" target="_blank">Run Example</a>
 
 ```java
-getRes = replace( "Love Boxlang", "o", "O", "ALL", "3" );
-writeOutput( getRes );
+getRes = replace( "Love Boxlang", "o", "O", "ALL", "3" )
+writeOutput( getRes )
 
 ```
 
@@ -61,25 +61,25 @@ Result: Love Boxlang
 
 
 ```java
-writeDump( replace( "xxabcxxabcxx", "abc", "def" ) );
-writeDump( replace( "xxabcxxabcxx", "abc", "def", "All" ) );
-writeDump( replace( "abc", "a", "b", "all" ) );
-writeDump( replace( "a.b.c.d", ".", "-", "all" ) );
-test = "camelcase CaMeLcAsE CAMELCASE";
-test2 = Replace( test, "camelcase", "CamelCase", "all" );
-writeDump( test2 );
+writeDump( replace( "xxabcxxabcxx", "abc", "def" ) )
+writeDump( replace( "xxabcxxabcxx", "abc", "def", "All" ) )
+writeDump( replace( "abc", "a", "b", "all" ) )
+writeDump( replace( "a.b.c.d", ".", "-", "all" ) )
+test = "camelcase CaMeLcAsE CAMELCASE"
+test2 = Replace( test, "camelcase", "CamelCase", "all" )
+writeDump( test2 )
 replacer = ( Any find, Any index, Any input ) => {
-	dump( var=arguments, label="replacement arguments" );
-	return "-#index#-";
-};
-writeDump( var=replace( "one string, two strings, three strings", "string", replacer, "all" ), label="replace with a function" );
+	dump( var=arguments, label="replacement arguments" )
+	return "-#index#-"
+}
+writeDump( var=replace( "one string, two strings, three strings", "string", replacer, "all" ), label="replace with a function" )
 writeDump( var=replace( "one string, two strings, three strings", {
 	"one" : 1,
 	"two" : 2,
 	"three" : 3,
 	"string" : "txt",
 	"text" : "string"
-} ), label="replace via a struct" );
+} ), label="replace via a struct" )
  // struct keys need to be quoted
 
 ```

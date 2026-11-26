@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJwrS8zRUFAyNDIoSS0uMTQqLi4pysxLV1LQtOYCAHXFCB4%3D" target="_blank">Run Example</a>
 
 ```java
-val( "120test12sstring" );
+val( "120test12sstring" )
 
 ```
 
@@ -18,7 +18,7 @@ Result: 120
 <a href="https://try.boxlang.io/?code=eJwrS8zRUFAqLinKzEu3tFBS0LTmAgA9cAVm" target="_blank">Run Example</a>
 
 ```java
-val( "string98" );
+val( "string98" )
 
 ```
 
@@ -35,7 +35,7 @@ dump( Val( "123.456" ) ); // 123.456
 dump( Val( "" ) ); // 0
 dump( Val( "1" ) ); // 1
 dump( Val( "one" ) ); // 0
-dump( Val( "123T456" ) );
+dump( Val( "123T456" ) )
  // 123
 
 ```

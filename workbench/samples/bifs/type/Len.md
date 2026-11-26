@@ -10,8 +10,8 @@ user = {
 	FIRSTNAME : "Han",
 	LASTNAME : "Solo",
 	MOVIE : "Star Wars"
-};
-writeDump( structCount( user ) );
+}
+writeDump( structCount( user ) )
 
 ```
 
@@ -29,8 +29,8 @@ user = {
 	FIRSTNAME : "Han",
 	LASTNAME : "Solo",
 	MOVIE : "Star Wars"
-};
-writeDump( user.count() );
+}
+writeDump( user.count() )
 
 ```
 
@@ -44,9 +44,9 @@ Result: 4
 animals = { 
 	COW : "moo",
 	PIG : "oink"
-};
-animalCount = animals.count();
-echo( "There are " & animalCount & " animal(s) in the 'animals' struct" );
+}
+animalCount = animals.count()
+echo( "There are " & animalCount & " animal(s) in the 'animals' struct" )
 
 ```
 
@@ -57,9 +57,9 @@ echo( "There are " & animalCount & " animal(s) in the 'animals' struct" );
 animals = { 
 	COW : "moo",
 	PIG : "oink"
-};
-animalCount = StructCount( animals );
-echo( "There are " & animalCount & " animal(s) in the 'animals' struct" );
+}
+animalCount = StructCount( animals )
+echo( "There are " & animalCount & " animal(s) in the 'animals' struct" )
 
 ```
 

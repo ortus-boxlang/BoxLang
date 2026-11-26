@@ -4,7 +4,7 @@ Extract a zip-file and save the data in the "output-directory".
 
 
 ```java
-extract( "zip", "test.zip", "output-directory" );
+extract( "zip", "test.zip", "output-directory" )
 
 ```
 
@@ -15,7 +15,7 @@ Extract all zip-files, which are stored in the "multiple-directory" and save the
 
 
 ```java
-extract( "zip", "multiple-directory", "output-directory" );
+extract( "zip", "multiple-directory", "output-directory" )
 
 ```
 
@@ -24,7 +24,7 @@ extract( "zip", "multiple-directory", "output-directory" );
 
 
 ```java
-extract( "zip", "D:\test.zip", "D:\zipresult" );
+extract( "zip", "D:\test.zip", "D:\zipresult" )
 
 ```
 
@@ -33,8 +33,8 @@ extract( "zip", "D:\test.zip", "D:\zipresult" );
 Use `tar` for a raw TAR archive and `tgz` for a gzip-compressed TAR archive.
 
 ```java
-extract( format="tar", source="archive.tar", destination="output-directory" );
-extract( format="tgz", source="archive.tgz", destination="output-directory" );
+extract( format="tar", source="archive.tar", destination="output-directory" )
+extract( format="tgz", source="archive.tgz", destination="output-directory" )
 ```
 
 When `format` is omitted, it is detected from the source extension. An unrecognized extension requires an explicit `format`.

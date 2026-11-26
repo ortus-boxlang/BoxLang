@@ -9,9 +9,9 @@ myArray = [
 	1,
 	2,
 	3
-];
-myArrayReversed = arrayReverse( myArray );
-writeOutput( JSONSerialize( myArrayReversed ) );
+]
+myArrayReversed = arrayReverse( myArray )
+writeOutput( JSONSerialize( myArrayReversed ) )
 
 ```
 
@@ -28,8 +28,8 @@ myArray = [
 	1,
 	2,
 	3
-];
-writeOutput( JSONSerialize( myArray.reverse() ) );
+]
+writeOutput( JSONSerialize( myArray.reverse() ) )
 
 ```
 
@@ -41,8 +41,8 @@ Reverse an Array using array slice syntax adding in Boxlang 2018
 
 
 ```java
-myArray = [1,2,3]; 
-writeOutput( serializeJSON( myArray[::-1] ) );
+myArray = [1,2,3]
+writeOutput( serializeJSON( myArray[::-1] ) )
 ```
 
 Result: [3,2,1]
@@ -57,12 +57,12 @@ numbers = [
 	2,
 	3,
 	4
-];
-arrayReverse( numbers );
+]
+arrayReverse( numbers )
 Dump( numbers ); // [4,3,2,1]
 // member function
-reversed = numbers.reverse();
-Dump( reversed );
+reversed = numbers.reverse()
+Dump( reversed )
 
 ```
 

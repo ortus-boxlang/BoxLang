@@ -9,10 +9,10 @@ Find out if every value in the query is greater than 50
 		51,
 		52,
 		535
-	] );
+	] )
 	allGT50 = queryEvery( ( Any row ) => {
-		return row.FOO > 50;
-	} );
+		return row.FOO > 50
+	} )
 </bx:script>
 
 ```
@@ -45,8 +45,8 @@ people = QueryNew( "name,dob,age", "varchar,date,int", [
 		CreateDate( 1988, 1, 1 ),
 		0
 	]
-] );
-Dump( var=people, label="people - original query" );
+] )
+Dump( var=people, label="people - original query" )
 /* Output:
  *
  * | name | dob                 | age |
@@ -58,15 +58,15 @@ Dump( var=people, label="people - original query" );
  */
 // data validation - age between 0 and 120
 valid = people.every( ( Any row, Any rowNumber, Any qryData ) => {
-	return ((DateDiff( "yyyy", row.DOB, Now() ) > 0) && (DateDiff( "yyyy", row.DOB, Now() ) <= 100));
-} );
-dump( var=valid, label="valid - age between 0 and 120" );
+	return ((DateDiff( "yyyy", row.DOB, Now() ) > 0) && (DateDiff( "yyyy", row.DOB, Now() ) <= 100))
+} )
+dump( var=valid, label="valid - age between 0 and 120" )
 /* Output: true */
 // data validation - age between 40 and 50
 valid = people.every( ( Any row, Any rowNumber, Any qryData ) => {
-	return ((DateDiff( "yyyy", row.DOB, Now() ) > 40) && (DateDiff( "yyyy", row.DOB, Now() ) <= 50));
-} );
-dump( var=valid, label="valid - age between 40 and 50" );
+	return ((DateDiff( "yyyy", row.DOB, Now() ) > 40) && (DateDiff( "yyyy", row.DOB, Now() ) <= 50))
+} )
+dump( var=valid, label="valid - age between 40 and 50" )
  /* Output: false */
 ```
 

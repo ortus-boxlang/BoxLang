@@ -10,9 +10,9 @@ arr = [
 	"orange",
 	"pear",
 	"Apple"
-];
-arrayDeleteNoCase( arr, "Apple" );
-writeDump( arr );
+]
+arrayDeleteNoCase( arr, "Apple" )
+writeDump( arr )
 
 ```
 
@@ -26,9 +26,9 @@ Result: ['orange','pear','Apple']
 arr = [ 
 	"boxlang",
 	"SUSI"
-];
-writeDump( var=arr, label="Before" );
-arrayDeleteNoCase( arr, "suSi" );
+]
+writeDump( var=arr, label="Before" )
+arrayDeleteNoCase( arr, "suSi" )
 writeDump( var=arr, label="After" ); // boxlang
 arrNew = [
 	"a",
@@ -36,10 +36,10 @@ arrNew = [
 	"c",
 	"A",
 	"a"
-];
-writeDump( var=arrNew, label="Before" );
-arrayDeleteNoCase( arrNew, "a", "all" );
-writeDump( var=arrNew, label="After" );
+]
+writeDump( var=arrNew, label="Before" )
+arrayDeleteNoCase( arrNew, "a", "all" )
+writeDump( var=arrNew, label="After" )
 
 ```
 

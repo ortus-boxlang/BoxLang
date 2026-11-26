@@ -19,13 +19,13 @@ XPath extracts 'name' property from every user given in the XML collection
     </users>
 </bx:savecontent>
 <bx:script>
-	xml = XMLParse( xmlstring );
-	result = xmlSearch( xml, "users//name" );
-	userlist = "";
+	xml = XMLParse( xmlstring )
+	result = xmlSearch( xml, "users//name" )
+	userlist = ""
 	for( i = 1; i <= ArrayLen( result ); i++ ) {
-		userlist = ListAppend( userlist, result[ i ].XMLTEXT );
+		userlist = ListAppend( userlist, result[ i ].XMLTEXT )
 	}
-	writeOutput( userlist );
+	writeOutput( userlist )
 </bx:script>
 
 ```
@@ -51,9 +51,9 @@ xml_stream = "
 					<heading>Your request</heading>
 					<body>I got your message; all is well.</body>
 				</note>
-			</notes>";
-xml_document = XmlParse( xml_stream );
-dump( XmlSearch( xml_document, "/notes/note[last()]/body" ) );
+			</notes>"
+xml_document = XmlParse( xml_stream )
+dump( XmlSearch( xml_document, "/notes/note[last()]/body" ) )
  // I got your message; all is well.
 
 ```

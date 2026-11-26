@@ -10,8 +10,8 @@ numberArray = [
 	99,
 	27,
 	72
-];
-writeOutput( arraySum( numberArray ) );
+]
+writeOutput( arraySum( numberArray ) )
 
 ```
 
@@ -24,8 +24,8 @@ To get sum of values in an empty array
 <a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYiOteYqL8osSfUvLSkoLdFQSARJBJfmaijkISnUVNC05gIAa%2F4UAg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-numberArray = [];
-writeOutput( arraySum( numberArray ) );
+numberArray = []
+writeOutput( arraySum( numberArray ) )
 
 ```
 
@@ -43,8 +43,8 @@ numberArray = [
 	99,
 	27,
 	72
-];
-writeOutput( numberArray.sum() );
+]
+writeOutput( numberArray.sum() )
 
 ```
 
@@ -60,10 +60,10 @@ numberArray = [
 	99,
 	27,
 	72
-];
-dump( arraySum( numberArray ) );
+]
+dump( arraySum( numberArray ) )
 // member function
-dump( numberArray.sum() );
+dump( numberArray.sum() )
 
 ```
 

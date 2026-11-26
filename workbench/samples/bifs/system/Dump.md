@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUChOLSpLLVLQtOYCAFhRBy8%3D" target="_blank">Run Example</a>
 
 ```java
-writeDump( server );
+writeDump( server )
 
 ```
 
@@ -16,7 +16,7 @@ writeDump( server );
 
 ```java
 // You can dump any thing here. Easy to see the content of complex data type
-writeDump( var=getTimeZoneInfo(), label="Tag label" );
+writeDump( var=getTimeZoneInfo(), label="Tag label" )
 
 ```
 
@@ -28,7 +28,7 @@ Prevents dumping deeply nested structures by limiting how many levels are recurs
 level with no recursion, `2` recurses once, etc.
 
 ```java
-writeDump( var=complexObject, depth=3 );
+writeDump( var=complexObject, depth=3 )
 
 ```
 
@@ -38,7 +38,7 @@ Limits how many keys, array elements, or query rows are shown per level, indepen
 recursion depth. Same 1-based semantics as `depth`.
 
 ```java
-writeDump( var=bigArray, maxRows=10 );
+writeDump( var=bigArray, maxRows=10 )
 
 ```
 
@@ -49,7 +49,7 @@ still accepted and, when `maxRows` is not also passed, its value is used as `max
 deprecation warning is logged when it's used.
 
 ```java
-writeDump( var=bigArray, top=10 );
+writeDump( var=bigArray, top=10 )
 
 ```
 

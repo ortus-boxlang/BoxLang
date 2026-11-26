@@ -39,8 +39,8 @@ Here we've the example to get particular column(title) value in script syntax
 			4,
 			"Mieko and the Fifth Treasure"
 		]
-	] );
-	writeOutput( myQuery.getCell( "title", 2 ) );
+	] )
+	writeOutput( myQuery.getCell( "title", 2 ) )
 </bx:script>
 
 ```

@@ -11,8 +11,8 @@ statusCodes = {
 	NOT_MODIFIED : 304,
 	BAD_REQUEST : 400,
 	NOT_FOUND : 404
-};
-writeDump( structKeyList( statusCodes, " | " ) );
+}
+writeDump( structKeyList( statusCodes, " | " ) )
 
 ```
 
@@ -31,8 +31,8 @@ statusCodes = {
 	NOT_MODIFIED : 304,
 	BAD_REQUEST : 400,
 	NOT_FOUND : 404
-};
-writeDump( statusCodes.keyList() );
+}
+writeDump( statusCodes.keyList() )
 
 ```
 
@@ -48,10 +48,10 @@ animals = {
 	PIG : "oink",
 	CAT : "meow",
 	BIRD : "chirp"
-};
+}
 // StructKeyList(animals)
-animalList = StructKeyList( animals );
-echo( animalList );
+animalList = StructKeyList( animals )
+echo( animalList )
 
 ```
 

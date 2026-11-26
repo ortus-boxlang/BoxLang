@@ -4,9 +4,9 @@
 
 
 ```java
-myfile = fileOpen( "c:\temp\test1.txt", "write" );
-fileWriteLine( myfile, "This line is new." );
-fileClose( myfile );
+myfile = fileOpen( "c:\temp\test1.txt", "write" )
+fileWriteLine( myfile, "This line is new." )
+fileClose( myfile )
 
 ```
 
@@ -15,9 +15,9 @@ fileClose( myfile );
 
 
 ```java
-openFile = fileopen( filepath, "read" );
-readfromfile = filereadline( openfile );
-filewriteline( filepath, readfromfile );
+openFile = fileopen( filepath, "read" )
+readfromfile = filereadline( openfile )
+filewriteline( filepath, readfromfile )
 
 ```
 

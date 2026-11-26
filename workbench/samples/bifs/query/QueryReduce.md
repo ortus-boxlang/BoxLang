@@ -18,11 +18,11 @@ fruits = queryNew( "fruit,amount", "varchar,integer", [
 		"fruit" : "strawberries",
 		"amount" : 32
 	}
-] );
+] )
 total_fruits = queryReduce( fruits, ( Any a, Any b ) => {
-	return a + b.AMOUNT;
-}, 0 );
-writeOutput( total_fruits );
+	return a + b.AMOUNT
+}, 0 )
+writeOutput( total_fruits )
 
 ```
 
@@ -53,12 +53,12 @@ people = QueryNew( "name,dob,age", "varchar,date,int", [
 		CreateDate( 1988, 1, 1 ),
 		0
 	]
-] );
-date = createDateTime( 2016, 3, 13, 17, 0, 0 );
+] )
+date = createDateTime( 2016, 3, 13, 17, 0, 0 )
 totalAge = queryreduce( people, ( Any age = 0, Any row, Any rowNumber, Any recordset ) => {
-	return age + DateDiff( "yyyy", recordset.DOB, date );
-} );
-writeDump( totalAge );
+	return age + DateDiff( "yyyy", recordset.DOB, date )
+} )
+writeDump( totalAge )
 
 ```
 

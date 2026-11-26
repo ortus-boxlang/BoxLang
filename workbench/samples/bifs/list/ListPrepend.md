@@ -5,9 +5,9 @@
 <a href="https://try.boxlang.io/?code=eJwrTs3MS0vNSfHJLC5RsFVQcs7JL05VCEnMyU4t0gnOLy1Q8EusylSy5ipGVYjM1csBEgFFqQWpeSkaCkoBpWlplQrBGZlFJUoKmtZc5UWZJan%2BpSUFpSUaKPpAkgBktCyy" target="_blank">Run Example</a>
 
 ```java
-seinfeldList = "Close Talker,Soup Nazi";
-seinfeldList = seinfeldList.listPrepend( "Puffy Shirt" );
-writeOutput( seinfeldList );
+seinfeldList = "Close Talker,Soup Nazi"
+seinfeldList = seinfeldList.listPrepend( "Puffy Shirt" )
+writeOutput( seinfeldList )
 
 ```
 
@@ -20,9 +20,9 @@ Result: "Puffy Shirt,Close Talker,Soup Nazi"
 <a href="https://try.boxlang.io/?code=eJwrzs9N9cksLlGwVVAy1DXSNdY1UbLmKkaI5gCpgKLUgtS8FA0FmLiOgpKBEpDQVVLQtOYqL8osSfUvLSkoLUEoAUkAADlxHIQ%3D" target="_blank">Run Example</a>
 
 ```java
-someList = "1-2-3-4";
-someList = listPrepend( someList, "0", "-" );
-writeOutput( someList );
+someList = "1-2-3-4"
+someList = listPrepend( someList, "0", "-" )
+writeOutput( someList )
 
 ```
 
@@ -35,9 +35,9 @@ Result: "0-1-2-3-4"
 <a href="https://try.boxlang.io/?code=eJwrzs9N9cksLlGwVVByS03S8U0s0nEsKFKy5ipGyOQAqYCi1ILUvBQNBZi4joKSjo5XYp4SiAEkSopKUxU0rbnKizJLUv1LSwpKSxCKQRIAUHoiJw%3D%3D" target="_blank">Run Example</a>
 
 ```java
-someList = "Feb,Mar,Apr";
-someList = listPrepend( someList, ",,Jan", ",", true );
-writeOutput( someList );
+someList = "Feb,Mar,Apr"
+someList = listPrepend( someList, ",,Jan", ",", true )
+writeOutput( someList )
 
 ```
 
@@ -50,9 +50,9 @@ Result: ",,Jan,Feb,Mar,Apr"
 <a href="https://try.boxlang.io/?code=eJwrzs9N9cksLlGwVVByS03S8U0s0nEsKFKy5ipGyOQAqYCi1ILUvBQNBZi4joKSjo5XYp6OjhKICSTSEnOKUxU0rbnKizJLUv1LSwpKSxDqQRIArBoiyg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-someList = "Feb,Mar,Apr";
-someList = listPrepend( someList, ",,Jan,,", ",", false );
-writeOutput( someList );
+someList = "Feb,Mar,Apr"
+someList = listPrepend( someList, ",,Jan,,", ",", false )
+writeOutput( someList )
 
 ```
 
@@ -64,10 +64,10 @@ Result: "Jan,Feb,Mar,Apr"
 
 ```java
 // Simple Example
-writeoutput( listPrepend( "Susi,LAS,,boxlang,,,test", "Inserted" ) );
+writeoutput( listPrepend( "Susi,LAS,,boxlang,,,test", "Inserted" ) )
 // Member Function
-strList = ",I,,love,boxlang,,";
-writeDump( strList.listPrepend( "First" ) );
+strList = ",I,,love,boxlang,,"
+writeDump( strList.listPrepend( "First" ) )
 
 ```
 

@@ -5,7 +5,7 @@ In this example we'll use right() to return part of a string.
 <a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKMpMzwBSSiEZqQqFpZnJ2QpJRfnleQpp%2BRUKWaW5BakpCvllqUUKJUD5nMSqSoWU%2FHQlHQULBU0FTWsuAAmGGTk%3D" target="_blank">Run Example</a>
 
 ```java
-writeOutput( right( "The quick brown fox jumped over the lazy dog", 8 ) );
+writeOutput( right( "The quick brown fox jumped over the lazy dog", 8 ) )
 
 ```
 
@@ -18,7 +18,7 @@ In this example we'll use a negative count right() to return part of a string.
 <a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQKMpMzwBSSiEZqQqFpZnJ2QpJRfnleQpp%2BRUKWaW5BakpCvllqUUKJUD5nMSqSoWU%2FHQlHQVdYyMFTQVNay4APN0Zkw%3D%3D" target="_blank">Run Example</a>
 
 ```java
-writeOutput( right( "The quick brown fox jumped over the lazy dog", -32 ) );
+writeOutput( right( "The quick brown fox jumped over the lazy dog", -32 ) )
 
 ```
 
@@ -33,7 +33,7 @@ In this example we'll use right() in a function to help us to capitalize the las
 ```java
 
 public string function capitalizeLast( required string text ) {
-	return left( arguments.TEXT, len( arguments.TEXT ) - 1 ) & uCase( right( arguments.TEXT, 1 ) );
+	return left( arguments.TEXT, len( arguments.TEXT ) - 1 ) & uCase( right( arguments.TEXT, 1 ) )
 }
 
 ```
@@ -46,7 +46,7 @@ In this example we'll use right() to test the last five characters of a request 
 
 ```java
 if( listFindNoCase( "super,great,coder,rulez", right( rc.ANSWER, 5 ) ) ) {
-	writeOutput( "You are an awesome developer!" );
+	writeOutput( "You are an awesome developer!" )
 }
 
 ```
@@ -61,7 +61,7 @@ if( listFindNoCase( "super,great,coder,rulez", right( rc.ANSWER, 5 ) ) ) {
 ```java
 
 public string function capitalizeLast( required string text ) {
-	return arguments.TEXT.left( arguments.TEXT.len() - 1 ) & arguments.TEXT.right( 1 ).ucase();
+	return arguments.TEXT.left( arguments.TEXT.len() - 1 ) & arguments.TEXT.right( 1 ).ucase()
 }
 
 ```
@@ -75,8 +75,8 @@ public string function capitalizeLast( required string text ) {
 // simple Function
 writeDump( right( "I love boxlang", 5 ) ); // boxlang
 // Member function
-str = "Save trees, save life on the earth.";
-writeDump( str.right( 23 ) );
+str = "Save trees, save life on the earth."
+writeDump( str.right( 23 ) )
  // save life on the earth.
 
 ```

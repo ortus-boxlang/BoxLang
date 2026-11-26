@@ -4,7 +4,7 @@
 
 
 ```java
-fileCopy( sourceFile, destinationFile );
+fileCopy( sourceFile, destinationFile )
 
 ```
 
@@ -13,7 +13,7 @@ fileCopy( sourceFile, destinationFile );
 
 
 ```java
-fileCopy( "path/to/my/file.md", "new/location/for/file.md" );
+fileCopy( "path/to/my/file.md", "new/location/for/file.md" )
 
 ```
 

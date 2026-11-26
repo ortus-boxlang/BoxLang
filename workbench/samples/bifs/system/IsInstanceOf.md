@@ -5,7 +5,7 @@ Dates in BL are instances of the java class: `java.util.Date`
 <a href="https://try.boxlang.io/?code=eJzLLPbMKy5JzEtO9U%2FTUMjLL9fQ1FFQykosS9QrLcnM0XNJLElVUtC05gIAKTkNDA%3D%3D" target="_blank">Run Example</a>
 
 ```java
-isInstanceOf( now(), "java.util.Date" );
+isInstanceOf( now(), "java.util.Date" )
 
 ```
 
@@ -18,7 +18,7 @@ Result: false
 ```java
 writeDump( isInstanceOf( {}, "java.util.Map" ) ); // true
 writeDump( isInstanceOf( "Boxlang", "java.util.Map" ) ); // false
-writeDump( isInstanceOf( "Boxlang", "java.lang.String" ) );
+writeDump( isInstanceOf( "Boxlang", "java.lang.String" ) )
  // true
 
 ```

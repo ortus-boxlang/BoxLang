@@ -5,7 +5,7 @@ Capitalizes the first character of the first word only.
 <a href="https://try.boxlang.io/?code=eJwrTXbLLCou0VBQykjNyclXKM8vyklRVFLQtOYCAIPJCHg%3D" target="_blank">Run Example</a>
 
 ```java
-ucFirst( "hello world!" );
+ucFirst( "hello world!" )
 
 ```
 
@@ -16,7 +16,7 @@ Result: Hello world!
 Using the optional doAll parameter capitalizes the first character of all words. Word separators are: whitespace, period, parenthesis, or dash.
 
 ```java
-ucFirst( "boxlang.ortusbooks.com is your (everyone's) resource for BX-related documentation!", true );
+ucFirst( "boxlang.ortusbooks.com is your (everyone's) resource for BX-related documentation!", true )
 
 ```
 
@@ -28,7 +28,7 @@ Using the optional doLowerIfAllUppercase parameter allows for intelligent capita
 
 
 ```java
-ucFirst( "boxlang.ortusbooks.com YOUR (EVERYONE'S) RESOURCE FOR BX-related DOCUMENTATION!", true, true );
+ucFirst( "boxlang.ortusbooks.com YOUR (EVERYONE'S) RESOURCE FOR BX-related DOCUMENTATION!", true, true )
 
 ```
 
@@ -37,9 +37,9 @@ Result: boxlang.ortusbooks.com Your (everyone's) Resource For BX-related Documen
 ### Additional Examples
 
 ```java
-string = "submitting bugs and feature requests via our online system";
-dump( UcFirst( string, false, false ) );
-dump( UcFirst( string, true, false ) );
+string = "submitting bugs and feature requests via our online system"
+dump( UcFirst( string, false, false ) )
+dump( UcFirst( string, true, false ) )
 
 ```
 

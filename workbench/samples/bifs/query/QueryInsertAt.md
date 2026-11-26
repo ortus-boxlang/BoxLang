@@ -22,15 +22,15 @@ qry = queryNew( "rowid,name", "integer,varchar", [
 		4,
 		"William"
 	]
-] );
+] )
 rufus = QueryNew( "rowid,name", "integer,varchar", [
 	[
 		42,
 		"Rufus"
 	]
-] );
-queryInsertAt( qry, rufus, 3 );
-WriteDump( qry );
+] )
+queryInsertAt( qry, rufus, 3 )
+WriteDump( qry )
 
 ```
 
@@ -59,15 +59,15 @@ qry = queryNew( "rowid,name", "integer,varchar", [
 		4,
 		"William"
 	]
-] );
+] )
 rufus = QueryNew( "rowid,name", "integer,varchar", [
 	[
 		42,
 		"Rufus"
 	]
-] );
-qry.InsertAt( rufus, 3 );
-WriteDump( qry );
+] )
+qry.InsertAt( rufus, 3 )
+WriteDump( qry )
 
 ```
 
@@ -94,18 +94,18 @@ qry1 = queryNew( "name, age", "varchar, integer", [
 		"John",
 		26
 	]
-] );
+] )
 qry2 = queryNew( "name, age", "varchar, integer", [
 	[
 		"Jeni",
 		19
 	]
-] );
-writeOutput( "Before QueryInsert :" );
-writeDump( qry1 );
-QueryInsertAt( qry1, qry2, 3 );
-writeOutput( "After QueryInsert :" );
-writeDump( qry1 );
+] )
+writeOutput( "Before QueryInsert :" )
+writeDump( qry1 )
+QueryInsertAt( qry1, qry2, 3 )
+writeOutput( "After QueryInsert :" )
+writeDump( qry1 )
 
 ```
 

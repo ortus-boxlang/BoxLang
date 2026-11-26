@@ -9,9 +9,9 @@ someArray = [
 	"first",
 	"second",
 	"third"
-];
-lastOne = arrayLast( someArray );
-writeOutput( lastOne );
+]
+lastOne = arrayLast( someArray )
+writeOutput( lastOne )
 
 ```
 
@@ -26,8 +26,8 @@ names = [
 	"Marcus",
 	"Sarah",
 	"Josefine"
-];
-dump( names.last() );
+]
+dump( names.last() )
  // outputs 'Josefine'
 
 ```
@@ -35,8 +35,8 @@ dump( names.last() );
 
 
 ```java
-names = array( "Marcus", "Sarah", "Josefine" );
-dump( arrayLast( names ) );
+names = array( "Marcus", "Sarah", "Josefine" )
+dump( arrayLast( names ) )
  // outputs 'Josefine'
 
 ```

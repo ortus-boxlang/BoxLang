@@ -5,8 +5,8 @@
 
 ```java
 <bx:script>
-	NewFile = fileOpen( expandPath( "." ) & "	est.txt", "write", "", true );
-	fileSeek( NewFile, 5 );
+	NewFile = fileOpen( expandPath( "." ) & "	est.txt", "write", "", true )
+	fileSeek( NewFile, 5 )
 </bx:script>
    
 ```

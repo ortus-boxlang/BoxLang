@@ -5,20 +5,20 @@
 
 ```java
 // Open File
-var fileObject = fileOpen( "/path/to/file.txt" );
+var fileObject = fileOpen( "/path/to/file.txt" )
 // Perform Actions
 try {
 	// Read Line
-	writeOutput( fileReadLine( fileObject ) );
+	writeOutput( fileReadLine( fileObject ) )
 }
 // Error Handling
  catch (any ex) {
 	// Report Exception
-	writeDump( ex );
+	writeDump( ex )
 }finally {
 	// Always Close
 	// Close File
-	fileClose( fileObject );
+	fileClose( fileObject )
 }
 
 ```
@@ -29,18 +29,18 @@ try {
 
 ```java
 // Example reads lines of file one at a time into an array
-filePath = "/path/to/file.txt";
-openFile = fileopen( filePath, "read" );
-lines = [];
+filePath = "/path/to/file.txt"
+openFile = fileopen( filePath, "read" )
+lines = []
 // IMPORTANT: must close file, use try/catch/finally to do so
 try {
 	while (!fileIsEoF( openFile )) {
-		arrayAppend( lines, fileReadLine( openFile ) );
+		arrayAppend( lines, fileReadLine( openFile ) )
 	}
 } catch (any e) {
-	rethrow;
+	rethrow
 }finally {
-	fileClose( openFile );
+	fileClose( openFile )
 }
 
 ```

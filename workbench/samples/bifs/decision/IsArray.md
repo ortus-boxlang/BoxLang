@@ -8,8 +8,8 @@ colorArray = [
 	"yellow",
 	"green",
 	"red"
-];
-writeOutput( isArray( colorArray ) );
+]
+writeOutput( isArray( colorArray ) )
 
 ```
 
@@ -25,8 +25,8 @@ colorArray = [
 	"yellow",
 	"green",
 	"red"
-];
-writeOutput( isArray( colorArray ) );
+]
+writeOutput( isArray( colorArray ) )
 
 ```
 
@@ -42,8 +42,8 @@ numberArray = [
 	1,
 	2,
 	3
-];
-writeOutput( isArray( numberArray, 1 ) );
+]
+writeOutput( isArray( numberArray, 1 ) )
 
 ```
 
@@ -59,8 +59,8 @@ numberArray = [
 	1,
 	2,
 	3
-];
-writeOutput( isArray( numberArray, 1 ) );
+]
+writeOutput( isArray( numberArray, 1 ) )
 
 ```
 
@@ -71,11 +71,11 @@ Result: true
 <a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUMhJTErNsVVyzS0oqVRwLCpKrFTSUShLLLLNLAbzNBSiYxU0FTStucoxNIEV%2BKWWo%2BtIhIprKBiCtOLXrFCQX5xZkpmfZ4zbGGMFTR0Qgd0kp%2Fz8nNTEPKDmnNJUdENKikpTcWkMLinKzEvHrk8JbLsSRCsAyt1jGg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-writeDump( label="Empty Array", var=isArray( [] ) );
-writeDump( label="ArrayNew", var=isArray( arrayNew( 1 ) ) );
-writeDump( label="ArrayNew position3", var=isArray( arrayNew( 3 ), 3 ) );
-writeDump( label="Boolean value", var=isArray( true ) );
-writeDump( label="String value", var=isArray( "array" ) );
+writeDump( label="Empty Array", var=isArray( [] ) )
+writeDump( label="ArrayNew", var=isArray( arrayNew( 1 ) ) )
+writeDump( label="ArrayNew position3", var=isArray( arrayNew( 3 ), 3 ) )
+writeDump( label="Boolean value", var=isArray( true ) )
+writeDump( label="String value", var=isArray( "array" ) )
 
 ```
 

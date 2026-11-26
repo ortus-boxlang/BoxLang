@@ -6,9 +6,9 @@
 
 ```java
 future = runAsync( () => {
-	return "Hello World!";
-} );
-writeOutput( future.get() );
+	return "Hello World!"
+} )
+writeOutput( future.get() )
 
 ```
 
@@ -22,12 +22,12 @@ Result: Hello World!
 
 ```java
 future = runAsync( () => {
-	return 5;
+	return 5
 } ).then( ( Any input ) => {
-	return input + 2;
-} );
+	return input + 2
+} )
 result = future.get( 3 ); // 3 is timeout(in ms)
-writeOutput( result );
+writeOutput( result )
 
 ```
 
@@ -40,13 +40,13 @@ Result: 5
 
 ```java
 future = runAsync( () => {
-	return 5;
+	return 5
 } ).then( ( Any input ) => {
-	return input + 2;
+	return input + 2
 } ).error( () => {
-	return "Error occurred.";
-} );
-writeOutput( future.get() );
+	return "Error occurred."
+} )
+writeOutput( future.get() )
 
 ```
 
@@ -58,13 +58,13 @@ Result: 7
 
 ```java
 future = runAsync( () => {
-	return 10;
+	return 10
 } ).then( ( Any input ) => {
-	return input + 20;
-} );
-dump( future );
+	return input + 20
+} )
+dump( future )
 result = future.get( 10 ); // 10 is timeout(in ms)
-writeOutput( result );
+writeOutput( result )
  // output is 30
 
 ```

@@ -1,7 +1,7 @@
 ### Check if debug mode is enabled
 
 ```java
-writeOutput( isBoolean( isDebugMode() ) );
+writeOutput( isBoolean( isDebugMode() ) )
 
 ```
 

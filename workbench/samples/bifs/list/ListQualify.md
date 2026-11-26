@@ -5,8 +5,8 @@ To insert a string or character before and after the list elements.
 <a href="https://try.boxlang.io/?code=eJzLySwuUbBVUErOz0lJKy3OzM%2BzKkrMzMm3MjQxscopTU5NtTIxU7LmKi%2FKLEn1Ly0pKC3RUMgBagosTczJTKuEcHQUlGqUgISVkoKmgqY1FwAAjRtV" target="_blank">Run Example</a>
 
 ```java
-list = "boxlang:railo:144:boxlang:46";
-writeOutput( listQualify( list, "|", ":" ) );
+list = "boxlang:railo:144:boxlang:46"
+writeOutput( listQualify( list, "|", ":" ) )
 
 ```
 
@@ -19,8 +19,8 @@ To insert a string or character before and after the alphabet list elements only
 <a href="https://try.boxlang.io/?code=eJzLySwuUbBVUErOz0lJKy3OzM%2BzKkrMzMm3MjQxscopTU5NtTIxU7LmKi%2FKLEn1Ly0pKC3RUMgBagosTczJTKuEcHQUlGqUgIQViHD2cAxSUtBU0LTmAgDllR0D" target="_blank">Run Example</a>
 
 ```java
-list = "boxlang:railo:144:boxlang:46";
-writeOutput( listQualify( list, "|", ":", "CHAR" ) );
+list = "boxlang:railo:144:boxlang:46"
+writeOutput( listQualify( list, "|", ":", "CHAR" ) )
 
 ```
 
@@ -33,8 +33,8 @@ If includeEmptyFields is true, empty value add in list elements.
 <a href="https://try.boxlang.io/?code=eJzLySwuUbBVUErOz0lJKy3OzM%2BzKkrMzMm3MjQxsbLKKU1OTbWyMjFTsuYqL8osSfUvLSkoLdFQyAFqCyxNzMlMq4RwdBSUapSAhBWIcPZwDALSJUWlqQqaCprWXADWtx%2BD" target="_blank">Run Example</a>
 
 ```java
-list = "boxlang:railo:144::boxlang::46";
-writeOutput( listQualify( list, "|", ":", "CHAR", true ) );
+list = "boxlang:railo:144::boxlang::46"
+writeOutput( listQualify( list, "|", ":", "CHAR", true ) )
 
 ```
 
@@ -46,10 +46,10 @@ Result: |boxlang|:|railo|:144:||:|boxlang|:||:46
 
 ```java
 // Simple function with different delimiter(/)
-writeOutput( listQualify( "string/Boxlang/susi/LAS", "^", "/" ) & "<br><br>" );
+writeOutput( listQualify( "string/Boxlang/susi/LAS", "^", "/" ) & "<br><br>" )
 // Member function
-strList = "Boxlang,Boxlang,LAS,SUSI";
-writeDump( strlist.listQualify( "|" ) );
+strList = "Boxlang,Boxlang,LAS,SUSI"
+writeDump( strlist.listQualify( "|" ) )
 
 ```
 

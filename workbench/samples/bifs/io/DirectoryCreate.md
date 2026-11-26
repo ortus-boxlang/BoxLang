@@ -6,7 +6,7 @@ Checking if a directory called 'icons' exists and then creating the directory if
 
 ```java
 if( !directoryExists( expandPath( "/assets/img/icons" ) ) ) {
-	directoryCreate( "assets/img/icons" );
+	directoryCreate( "assets/img/icons" )
 }
 
 ```
@@ -19,7 +19,7 @@ Result: The directory 'icons' will be created under the img folder.
 
 ```java
 // This will create parent directory when not exist
-directoryCreate( expandPath( "images/uploads" ), true, true );
+directoryCreate( expandPath( "images/uploads" ), true, true )
 
 ```
 

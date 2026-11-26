@@ -5,7 +5,7 @@ Validates that note.xml is valid according to the schema note.xsd.
 <a href="https://try.boxlang.io/?code=eJyryM0JS8zJTEksSdVQUMooKSkottLXLy8v1ys3Lk7OyM%2FPKdZLzs%2FVr8jN0c%2FLL0nVAzKUdIhTWZyipKCpFxziGBIabM0FAPhjJN4%3D" target="_blank">Run Example</a>
 
 ```java
-xmlValidate( "https://www.w3schools.com/xml/note.xml", "https://www.w3schools.com/xml/note.xsd" ).STATUS;
+xmlValidate( "https://www.w3schools.com/xml/note.xml", "https://www.w3schools.com/xml/note.xsd" ).STATUS
 
 ```
 
@@ -29,7 +29,7 @@ validator = "
 				</xs:complexType>
 			</xs:element>
 		</xs:schema>
-		";
+		"
 xml_stream = "
 			<?xml version=""1.0"" encoding=""UTF-8""?>
 			<note>
@@ -37,9 +37,9 @@ xml_stream = "
 				<from>Bob</from>
 				<heading>Reminder</heading>
 				<body>Here is the message you requested.</body>
-			</note>";
-xml_document = XmlParse( xml_stream );
-dump( xmlValidate( xml_document, validator ) );
+			</note>"
+xml_document = XmlParse( xml_stream )
+dump( xmlValidate( xml_document, validator ) )
 
 ```
 

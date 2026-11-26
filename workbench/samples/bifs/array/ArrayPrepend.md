@@ -9,9 +9,9 @@ someArray = [
 	3,
 	2,
 	1
-];
-arrayPrepend( someArray, 4 );
-writeDump( someArray );
+]
+arrayPrepend( someArray, 4 )
+writeDump( someArray )
 
 ```
 
@@ -29,9 +29,9 @@ doctorArray = [
 	"Tennant",
 	"Smith",
 	"Capaldi"
-];
-doctorArray.prepend( "Hurt" );
-writeDump( doctorArray );
+]
+doctorArray.prepend( "Hurt" )
+writeDump( doctorArray )
 
 ```
 
@@ -46,17 +46,17 @@ someArray = [
 	3,
 	2,
 	1
-];
-arrayPrepend( someArray, 4 );
-dump( someArray );
+]
+arrayPrepend( someArray, 4 )
+dump( someArray )
 // member function
 doctorWhoArray = [
 	"Whittaker",
 	"Tennant",
 	"Baker"
-];
-doctorWhoArray.prepend( "Hurt" );
-dump( doctorWhoArray );
+]
+doctorWhoArray.prepend( "Hurt" )
+dump( doctorWhoArray )
 
 ```
 

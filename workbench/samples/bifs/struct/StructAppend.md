@@ -8,13 +8,13 @@
 config = { 
 	A : 0,
 	B : 0
-};
+}
 options = {
 	B : 1,
 	C : 1
-};
-structAppend( config, options, false );
-writeOutput( JSONSerialize( config ) );
+}
+structAppend( config, options, false )
+writeOutput( JSONSerialize( config ) )
 
 ```
 
@@ -30,13 +30,13 @@ Result: {"A":0,"B":0,"C":1}
 config = { 
 	A : 0,
 	B : 0
-};
+}
 options = {
 	B : 1,
 	C : 1
-};
-config.append( options, false );
-writeOutput( JSONSerialize( config ) );
+}
+config.append( options, false )
+writeOutput( JSONSerialize( config ) )
 
 ```
 
@@ -52,13 +52,13 @@ Result: {"A":0,"B":0,"C":1}
 config = { 
 	A : 0,
 	B : 0
-};
+}
 options = {
 	B : 1,
 	C : 1
-};
-structAppend( config, options );
-writeOutput( JSONSerialize( config ) );
+}
+structAppend( config, options )
+writeOutput( JSONSerialize( config ) )
 
 ```
 
@@ -71,10 +71,10 @@ Demonstrates how to construct a Request Context (rc) that combines the values of
 <a href="https://try.boxlang.io/?code=eJwrSlawVaiuteYqLikqTS5xLChIzUvRUChK1lFIyy%2FKVdDEJlNalAOSKC%2FKLEn1Ly0pKC3RUPAK9vcLTi3KTMzJrEoFKVPQBKkBABt3H1k%3D" target="_blank">Run Example</a>
 
 ```java
-rc = {};
-structAppend( rc, form );
-structAppend( rc, url );
-writeOutput( JSONSerialize( rc ) );
+rc = {}
+structAppend( rc, form )
+structAppend( rc, url )
+writeOutput( JSONSerialize( rc ) )
 
 ```
 
@@ -89,13 +89,13 @@ In older Boxlang version where this function is not supported yet, you can fall 
 config = { 
 	A : 0,
 	B : 0
-};
+}
 options = {
 	B : 1,
 	C : 1
-};
-config.putAll( options );
-writeOutput( JSONSerialize( config ) );
+}
+config.putAll( options )
+writeOutput( JSONSerialize( config ) )
 
 ```
 
@@ -109,17 +109,17 @@ Result: {"A":0,"B":0,"C":1}
 animals = { 
 	COW : "moo",
 	PIG : "oink"
-};
+}
 // Show current animals
-Dump( label="Current animals", var=animals );
+Dump( label="Current animals", var=animals )
 // Create a new animal
 newAnimal = {
 	CAT : "meow"
-};
+}
 // Append the newAnimal to animals
-StructAppend( animals, newAnimal );
+StructAppend( animals, newAnimal )
 // Show animals, now includes cat
-Dump( label="Animals with cat added", var=animals );
+Dump( label="Animals with cat added", var=animals )
 
 ```
 

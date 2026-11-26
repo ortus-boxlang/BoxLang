@@ -10,11 +10,11 @@ arrayList = [
 	"apple",
 	"pineapple",
 	"mango"
-];
+]
 // Fetch meta data
-data = arrayGetMetadata( arrayList );
+data = arrayGetMetadata( arrayList )
 // Print array type
-writeOutput( data.TYPE );
+writeOutput( data.TYPE )
 
 ```
 
@@ -32,11 +32,11 @@ arrayList = [
 	"apple",
 	"pineapple",
 	"mango"
-];
+]
 // Fetch meta data
-data = arrayList.getMetadata();
+data = arrayList.getMetadata()
 // Print array type
-writeOutput( data.TYPE );
+writeOutput( data.TYPE )
 
 ```
 
@@ -48,8 +48,8 @@ Return struct has a new key called `dimensions` and can also have a defined data
 
 
 ```java
-arr = arrayNew[ "String" ]( 1 );
-writeOutput( JSONSerialize( arr.getMetadata() ) );
+arr = arrayNew[ "String" ]( 1 )
+writeOutput( JSONSerialize( arr.getMetadata() ) )
 
 ```
 

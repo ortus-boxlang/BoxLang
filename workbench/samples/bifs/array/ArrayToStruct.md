@@ -8,7 +8,7 @@
 JSONSerialize( arrayToStruct( [ 
 	"a",
 	"b"
-] ) );
+] ) )
 
 ```
 
@@ -26,11 +26,11 @@ arr = [
 	"e",
 	"f",
 	"g"
-];
-dump( arrayToStruct( arr ) );
-if( listFirst( server.BOXLANG.VERSION, "." ) >= 6 ) dump( arrayToStruct( arr, true ) );
+]
+dump( arrayToStruct( arr ) )
+if( listFirst( server.BOXLANG.VERSION, "." ) >= 6 ) dump( arrayToStruct( arr, true ) )
 // member function
-dump( arr.toStruct() );
+dump( arr.toStruct() )
 
 ```
 
@@ -54,10 +54,10 @@ arr = [
 	{
 		NAME : "e"
 	}
-];
-dump( arrayToStruct( arr ) );
+]
+dump( arrayToStruct( arr ) )
 // member function
-dump( arr.toStruct() );
+dump( arr.toStruct() )
 
 ```
 

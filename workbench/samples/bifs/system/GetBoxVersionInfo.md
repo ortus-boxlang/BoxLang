@@ -1,7 +1,7 @@
 ### Basic Example
 
 ```java
-getBoxVersionInfo();
+getBoxVersionInfo()
 ```
 
 This returns a struct with version information:
@@ -23,11 +23,11 @@ This returns a struct with version information:
 If you need to conditionally execute code based on the BoxLang version, we suggest using `val()` to extract the major/minor version number from the `version` field for use in conditionals:
 
 ```java
-majorMinor = val( getBoxVersionInfo().version );
+majorMinor = val( getBoxVersionInfo().version )
 if( majorMinor >= "1.13" ) {
-    print( "This code is running on Box version 1.13 or later." );
+    print( "This code is running on Box version 1.13 or later." )
 } else {
-    print( "This code is running on Box version earlier than 1.13." );
+    print( "This code is running on Box version earlier than 1.13." )
 }
 ```
 

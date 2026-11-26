@@ -5,8 +5,8 @@ Trims each item in the list.
 <a href="https://try.boxlang.io/?code=eJxLrUjMLchJ9cksLlGwVVDKSM3JyddRKM8vyklR0CnJyCzWUcgsVkjUUdBJhahUsuYqL8osSfUvLSkoLdFQyAHq9CxJzQ0pyszVUIAqAgkqaCpoWnMBAFBFINo%3D" target="_blank">Run Example</a>
 
 ```java
-exampleList = "hello, world ,this, is a, ,example";
-writeOutput( listItemTrim( examplelist ) );
+exampleList = "hello, world ,this, is a, ,example"
+writeOutput( listItemTrim( examplelist ) )
 
 ```
 
@@ -19,9 +19,9 @@ Trims each item in the list.
 <a href="https://try.boxlang.io/?code=eJxLrUjMLchJ9cksLlGwVVDKSM3JyddRKM8vyklR0CnJyCzWUcgsVkjUUdBJhahUsuZKRdGDxNPLARKeJam5IUWZuRqa1lzlRZklqf6lJQWlJRowhSA1CkA5ADH%2BKpo%3D" target="_blank">Run Example</a>
 
 ```java
-exampleList = "hello, world ,this, is a, ,example";
-exampleList = exampleList.listItemTrim();
-writeOutput( examplelist );
+exampleList = "hello, world ,this, is a, ,example"
+exampleList = exampleList.listItemTrim()
+writeOutput( examplelist )
 
 ```
 
@@ -34,8 +34,8 @@ Trims each item in the list and keep empty items.
 <a href="https://try.boxlang.io/?code=eJwty8EJgDAQRNG7VQw5RZgOxAIEwYsNCC64sEFJNmj5Knr9vC%2FXkg6TUYujR9jEbCfOPdsK%2BqaF0IKFACmfDV1zZnWZqh%2FVI%2Bx5B5c0Z00RP3ojERgIz1XQou2aG%2F08I%2B4%3D" target="_blank">Run Example</a>
 
 ```java
-exampleList = "hello, world ,this, is a,  ,,example";
-writeOutput( listItemTrim( examplelist, ",", true ) );
+exampleList = "hello, world ,this, is a,  ,,example"
+writeOutput( listItemTrim( examplelist, ",", true ) )
 
 ```
 
@@ -47,10 +47,10 @@ Result: hello,world,this,is a,,,example
 
 ```java
 // Simple Example
-writeoutput( listItemTrim( "Susi , LAS  ,,boxlang,,,test,," ) );
+writeoutput( listItemTrim( "Susi , LAS  ,,boxlang,,,test,," ) )
 // Member Function
-strList = ",I,      , love,boxlang  ,,";
-writeDump( strList.listItemTrim() );
+strList = ",I,      , love,boxlang  ,,"
+writeDump( strList.listItemTrim() )
 
 ```
 

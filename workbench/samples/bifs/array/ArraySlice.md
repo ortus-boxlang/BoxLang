@@ -14,9 +14,9 @@ array = [
 	6,
 	7,
 	8
-];
-newArray = arraySlice( array, 2, 3 );
-writedump( newArray );
+]
+newArray = arraySlice( array, 2, 3 )
+writedump( newArray )
 
 ```
 
@@ -38,9 +38,9 @@ array = [
 	6,
 	7,
 	8
-];
-newArray = arraySlice( array, 4 );
-writedump( newArray );
+]
+newArray = arraySlice( array, 4 )
+writedump( newArray )
 
 ```
 
@@ -62,9 +62,9 @@ array = [
 	6,
 	7,
 	8
-];
-newArray = arraySlice( array, -5, 3 );
-writedump( newArray );
+]
+newArray = arraySlice( array, -5, 3 )
+writedump( newArray )
 
 ```
 
@@ -86,9 +86,9 @@ array = [
 	6,
 	7,
 	8
-];
-newArray = array.slice( 2, 3 );
-writedump( newArray );
+]
+newArray = array.slice( 2, 3 )
+writedump( newArray )
 
 ```
 
@@ -108,13 +108,13 @@ newArray = [
 	"b",
 	"e",
 	"f"
-];
-dump( newArray );
-hasSome1 = arraySlice( newArray, 1, 4 );
-dump( hasSome1 );
+]
+dump( newArray )
+hasSome1 = arraySlice( newArray, 1, 4 )
+dump( hasSome1 )
 // member function
-hasSome2 = newArray.slice( 3, 6 );
-dump( hasSome2 );
+hasSome2 = newArray.slice( 3, 6 )
+dump( hasSome2 )
 
 ```
 

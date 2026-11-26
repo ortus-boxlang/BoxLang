@@ -15,11 +15,11 @@ complexData = [
 	{
 		A : 51
 	}
-];
+]
 sum = arrayReduce( complexData, ( Any prev, Any element ) => {
-	return prev + element.A;
-}, 0 );
-writeOutput( sum );
+	return prev + element.A
+}, 0 )
+writeOutput( sum )
 
 ```
 
@@ -36,17 +36,17 @@ reduced = ArrayReduce( [
 	3,
 	4
 ], ( Any carry, Any value ) => {
-	return carry + value;
-}, 0 );
+	return carry + value
+}, 0 )
 dump( reduced ); // yields 10
 reduced = ArrayReduce( [
 	"hello",
 	"there",
 	"boxlang"
 ], ( Any carry, Any value ) => {
-	return carry & " " & value;
-}, "" );
-dump( reduced );
+	return carry & " " & value
+}, "" )
+dump( reduced )
  // yields 'hello there boxlang'
 
 ```

@@ -1,11 +1,11 @@
 ### Print output without a newline
 
 ```java
-print( "Hello" );
-print( " " );
-print( "World" );
-println( "" );
-writeOutput( "done" );
+print( "Hello" )
+print( " " )
+print( "World" )
+println( "" )
+writeOutput( "done" )
 
 ```
 

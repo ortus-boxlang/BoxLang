@@ -5,10 +5,10 @@ Outputs the current date/time, sleeps for 5 seconds, then outputs the current da
 
 ```java
 <bx:script>
-	writeOutput( now() );
-	writeOutput( "<br />" );
-	sleep( 5000 );
-	writeOutput( now() );
+	writeOutput( now() )
+	writeOutput( "<br />" )
+	sleep( 5000 )
+	writeOutput( now() )
 </bx:script>
 
 ```
@@ -20,12 +20,12 @@ Outputs the current date/time, sleeps for 5 seconds, then outputs the current da
 
 ```java
 bx:timer label="Sleep for 1 second" type="inline" {
-	sleep( 1000 );
+	sleep( 1000 )
 }
 // Sleep for 1 second: 1000ms
-writeOutput( "<br>" );
+writeOutput( "<br>" )
 bx:timer label="Sleep for 2.5 seconds" type="inline" {
-	sleep( 2500 );
+	sleep( 2500 )
 }
  // Sleep for 2.5 seconds: 2500ms
 

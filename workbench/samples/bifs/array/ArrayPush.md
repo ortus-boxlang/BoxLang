@@ -9,9 +9,9 @@ arr = [
 	1,
 	2,
 	3
-];
-arrayPush( array=arr, value=42 );
-writeOutput( "This array has " & arrayLen( arr ) & " elements." );
+]
+arrayPush( array=arr, value=42 )
+writeOutput( "This array has " & arrayLen( arr ) & " elements." )
 
 ```
 
@@ -28,9 +28,9 @@ arr = [
 	1,
 	2,
 	3
-];
-al = arr.push( 42 );
-writeOutput( "This array has " & al & " elements." );
+]
+al = arr.push( 42 )
+writeOutput( "This array has " & al & " elements." )
 
 ```
 
@@ -55,11 +55,11 @@ arr = [
 			A : 3
 		}
 	]
-];
+]
 al = arr.push( [
 	42
-] );
-writeOutput( "This array has " & al & " elements." );
+] )
+writeOutput( "This array has " & al & " elements." )
 
 ```
 
@@ -75,15 +75,15 @@ numbers = [
 	2,
 	3,
 	4
-];
+]
 Dump( ArrayPush( numbers, 0 ) ); // Outputs 5
 moreNumbers = [
 	5,
 	6,
 	7,
 	8
-];
-Dump( ArrayPush( moreNumbers, 4 ) );
+]
+Dump( ArrayPush( moreNumbers, 4 ) )
  // Outputs 5
 
 ```

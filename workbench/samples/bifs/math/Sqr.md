@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJwrLizSUDA0MVHQtOYCABY1AsY%3D" target="_blank">Run Example</a>
 
 ```java
-sqr( 144 );
+sqr( 144 )
 
 ```
 

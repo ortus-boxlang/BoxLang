@@ -9,9 +9,9 @@ arr = [
 	1,
 	2,
 	3
-];
-newArrLen = arrayUnshift( arr, 0 );
-writeOutput( newArrLen );
+]
+newArrLen = arrayUnshift( arr, 0 )
+writeOutput( newArrLen )
 
 ```
 
@@ -28,9 +28,9 @@ arr = [
 	1,
 	2,
 	3
-];
-newArrLen = arr.unshift( 0 );
-writeOutput( newArrLen );
+]
+newArrLen = arr.unshift( 0 )
+writeOutput( newArrLen )
 
 ```
 
@@ -46,15 +46,15 @@ numbers = [
 	2,
 	3,
 	4
-];
+]
 Dump( ArrayUnShift( numbers, 0 ) ); // Outputs 5
 moreNumbers = [
 	5,
 	6,
 	7,
 	8
-];
-Dump( ArrayUnShift( moreNumbers, 4 ) );
+]
+Dump( ArrayUnShift( moreNumbers, 4 ) )
  // Outputs 5
 
 ```

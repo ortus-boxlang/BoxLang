@@ -7,9 +7,9 @@ Here we've example to check the given variable is user defined function or not.
 ```java
 
 function myfunc() {
-	return 1;
+	return 1
 }
-writeDump( isCustomFunction( myfunc ) );
+writeDump( isCustomFunction( myfunc ) )
 
 ```
 
@@ -22,8 +22,8 @@ Here we've example to check the given variable is user defined function or not.
 <a href="https://try.boxlang.io/?code=eJzLrUwrzUtWsFVQMlKy5iovyixJdSnNLdBQyCx2Li0uyc91A0qXZObnaSjkQpRqKmhacwEABtYSIg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-myfunc = "2";
-writeDump( isCustomFunction( myfunc ) );
+myfunc = "2"
+writeDump( isCustomFunction( myfunc ) )
 
 ```
 
@@ -34,15 +34,15 @@ Result: NO
 <a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUMgsdi4tLsnPdSvNSy7JzM%2FTUChKTcwJdXFT0FTQtOYqx6eyoqICoqoktbgEKKxgC9NszRUB5BgS0A%2FTRtimCIgarjSoCMweDU2Fai7OotSS0qI8kHW1SEqArtNQcMyrVCjLz0xRACms5QIAOE1SOA%3D%3D" target="_blank">Run Example</a>
 
 ```java
-writeDump( isCustomFunction( realUDF ) );
-writeDump( isCustomFunction( xxx ) );
-testFun = realUDF;
-X = 1;
-writeDump( isCustomFunction( testFun ) );
-writeDump( isCustomFunction( X ) );
+writeDump( isCustomFunction( realUDF ) )
+writeDump( isCustomFunction( xxx ) )
+testFun = realUDF
+X = 1
+writeDump( isCustomFunction( testFun ) )
+writeDump( isCustomFunction( X ) )
 
 function realUDF() {
-	return 1;
+	return 1
 }
 
 function xxx( Any void ) {

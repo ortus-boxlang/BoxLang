@@ -4,9 +4,9 @@ Halt the application.
 
 
 ```java
-var applicationRequiresHalt = true;
-if( applicationRequiresHalt ) applicationStop();
-writeOutput( "Still Running" );
+var applicationRequiresHalt = true
+if( applicationRequiresHalt ) applicationStop()
+writeOutput( "Still Running" )
 
 ```
 

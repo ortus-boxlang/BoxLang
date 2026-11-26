@@ -10,9 +10,9 @@ superiorArray = [
 	"Green Goblin",
 	"Doctor Octopus",
 	"Venom"
-];
-arraySwap( superiorArray, 1, 3 );
-writeDump( superiorArray );
+]
+arraySwap( superiorArray, 1, 3 )
+writeDump( superiorArray )
 
 ```
 
@@ -28,9 +28,9 @@ superiorArray = [
 	"Green Goblin",
 	"Doctor Octopus",
 	"Venom"
-];
-superiorArray.swap( 1, 3 );
-writeDump( superiorArray );
+]
+superiorArray.swap( 1, 3 )
+writeDump( superiorArray )
 
 ```
 
@@ -46,12 +46,12 @@ superiorArray = [
 	"Green Goblin",
 	"Doctor Octopus",
 	"Venom"
-];
-arraySwap( superiorArray, 1, 3 );
-dump( superiorArray );
+]
+arraySwap( superiorArray, 1, 3 )
+dump( superiorArray )
 // member function
-superiorArray.swap( 1, 3 );
-dump( superiorArray );
+superiorArray.swap( 1, 3 )
+dump( superiorArray )
 
 ```
 

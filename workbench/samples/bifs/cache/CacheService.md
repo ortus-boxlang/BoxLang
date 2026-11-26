@@ -1,8 +1,8 @@
 ### Get the cache service instance
 
 ```java
-service = cacheService();
-writeOutput( isObject( service ) );
+service = cacheService()
+writeOutput( isObject( service ) )
 
 ```
 

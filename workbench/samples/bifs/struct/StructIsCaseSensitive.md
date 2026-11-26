@@ -5,11 +5,11 @@ Show when the struct is explicitly set to casesensitive.
 <a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLjFUsFWAsPxSyzUUlJITi1OLU%2FOKM0syy1KVFDStuXJhKvVcfVx9QeqVUnNcc%2F3zUpXQJY3Akj6puSXl%2FhiSxhCdQMmMolSQ3vKizJJU%2F9KSgNISDagbPIudgfYHw%2BzXUIAboaAJcgsAgzY7%2Bw%3D%3D" target="_blank">Run Example</a>
 
 ```java
-myStruct1 = StructNew( "casesensitive" );
-myStruct1.ELEM1 = "elEmOne";
-myStruct1.ELEM2 = "eLemtwO";
-myStruct1.ELEM3 = "elemthree";
-writeOutPut( StructIsCaseSensitive( myStruct1 ) );
+myStruct1 = StructNew( "casesensitive" )
+myStruct1.ELEM1 = "elEmOne"
+myStruct1.ELEM2 = "eLemtwO"
+myStruct1.ELEM3 = "elemthree"
+writeOutPut( StructIsCaseSensitive( myStruct1 ) )
 
 ```
 
@@ -22,11 +22,11 @@ Show when the struct is explicitly set to casesensitive.
 <a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLjFUsFWAsPxSyzUUlJITi1OLU%2FOKM0syy1KVFDStuXJhKvVcfVx9QeqVUnNcc%2F3zUpXQJY3Akj6puSXl%2FhiSxhCdQMmMolSQ3vKizJJU%2F9KSgNISDQWE2sxiZ6AbgmFu0NAEOQIA3Ng5hA%3D%3D" target="_blank">Run Example</a>
 
 ```java
-myStruct1 = StructNew( "casesensitive" );
-myStruct1.ELEM1 = "elEmOne";
-myStruct1.ELEM2 = "eLemtwO";
-myStruct1.ELEM3 = "elemthree";
-writeOutPut( myStruct1.isCaseSensitive() );
+myStruct1 = StructNew( "casesensitive" )
+myStruct1.ELEM1 = "elEmOne"
+myStruct1.ELEM2 = "eLemtwO"
+myStruct1.ELEM3 = "elemthree"
+writeOutPut( myStruct1.isCaseSensitive() )
 
 ```
 
@@ -43,8 +43,8 @@ myStruct4 = {
 	"elem1" : "elEmOne",
 	"elEm2" : "eLemtwO",
 	"elem3" : "elemthree"
-};
-writeOutPut( StructIsCaseSensitive( myStruct4 ) );
+}
+writeOutPut( StructIsCaseSensitive( myStruct4 ) )
 
 ```
 

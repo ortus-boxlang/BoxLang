@@ -2,11 +2,11 @@
 
 ```java
 future = asyncRun( () => {
-    sleep( 10000 );
-    return "never reached";
-} );
-threadTerminate( future.getThread() );
-writeOutput( "terminated" );
+    sleep( 10000 )
+    return "never reached"
+} )
+threadTerminate( future.getThread() )
+writeOutput( "terminated" )
 
 ```
 

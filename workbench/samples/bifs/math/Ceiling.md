@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJxLTs3MycxL11Aw1DNU0LTmAgAsVARC" target="_blank">Run Example</a>
 
 ```java
-ceiling( 1.1 );
+ceiling( 1.1 )
 
 ```
 
@@ -18,7 +18,7 @@ When ceiling an integer the result is equal to the value passed
 <a href="https://try.boxlang.io/?code=eJxLTs3MycxL11AwVNC05gIAI6ED4w%3D%3D" target="_blank">Run Example</a>
 
 ```java
-ceiling( 1 );
+ceiling( 1 )
 
 ```
 

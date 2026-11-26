@@ -5,10 +5,10 @@ Using a semicolon delimiter.
 <a href="https://try.boxlang.io/?code=eJzLySwuUbBVUEq0TrJOVrLmygHyXROTMzQUQCwdBQ0Fx7xKhdSc1NzUPCAXxMnMS0mtgDBBahQ0FWztFKq5OMuLMktS%2FUtLCkpLNBSUlMHKlK2UoXqVrZUUNK25anUUlCAsACwvJJM%3D" target="_blank">Run Example</a>
 
 ```java
-list = "a;b;c";
+list = "a;b;c"
 listEach( list, ( Any element, Any index, Any list ) => {
-	writeOutput( "#index#:#element#;" );
-}, ";" );
+	writeOutput( "#index#:#element#;" )
+}, ";" )
 
 ```
 
@@ -21,10 +21,10 @@ List Loop list.listEach()
 <a href="https://try.boxlang.io/?code=eJzLySwuUbBVUEq0TrJOVrLmygHy9UCEa2JyhoaChoJjXqVCak5qbmpeiQ6Yk5mXkloBYYLUKWgq2NopVHNxlhdllqT6l5YUlJZoKCgpg5UpWylD9SpbKyloWnPV6igoQVgAGaQkdQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
-list = "a;b;c";
+list = "a;b;c"
 list.listEach( ( Any element, Any index, Any list ) => {
-	writeOutput( "#index#:#element#;" );
-}, ";" );
+	writeOutput( "#index#:#element#;" )
+}, ";" )
 
 ```
 
@@ -41,13 +41,13 @@ empArray = [
 	"john",
 	"pete",
 	"bob"
-];
-listS = "'john', 'pete', 'bob'";
-arrayEach( empArray, xclosure );
-listEach( listS, xclosure );
+]
+listS = "'john', 'pete', 'bob'"
+arrayEach( empArray, xclosure )
+listEach( listS, xclosure )
 
 function xclosure( Any empname, Any index ) {
-	writeOutput( empName & " at index: " & index );
+	writeOutput( empName & " at index: " & index )
 }
 
 ```
@@ -61,12 +61,12 @@ Example 2
 <a href="https://try.boxlang.io/?code=eJxFTksKwjAUXJtTDFlIhJzA4qq4qygW3McQ0wc1LckLUsS7mxTB3fyYGUu8dJQYB8gLMad7jn7QuJrRUQUnMk%2FS6EzCzXmTZCPEIwfLNAXMkQK3pUKh54I9bCHY4S02r0jszpnnzAqyzTG6wKu%2Fh8T2l2zER4xl%2F2jsoFatvtH%2F5hr5AiovNyw%3D" target="_blank">Run Example</a>
 
 ```java
-cityList = "Pittsburgh, Raleigh, Miami, Las Vegas";
+cityList = "Pittsburgh, Raleigh, Miami, Las Vegas"
 
 function printCity( String city ) {
-	writeOutput( "Current city: " & city );
+	writeOutput( "Current city: " & city )
 }
-listEach( cityList, printCity );
+listEach( cityList, printCity )
 
 ```
 
@@ -77,16 +77,16 @@ Result: Current city: PittsburghCurrent city: RaleighCurrent city: MiamiCurrent 
 <a href="https://try.boxlang.io/?code=eJy1j0sKwjAURcd2FZd0Ummwc2sLDnSk6Bb6edpAmkr6ahVx7%2Fan4gKchBvePQeuVjUjgjjqxLA8WyIj6%2BRKkhLLhQgd3RU2SVZ46JOEh7W5gzSV1AHDR5mcbmPsO5gjivFwZq1VTIeGLw17EO5Qc5fuxLrhKrWxwDx0nv0TBNhTmZLFqTEZq8qgVVwga2quSuSkVdn5rPOr7SUTt524j7dmuxvnVYZ8biufi26heF8W33F%2FmSUh%2FCG9AMg6c50%3D" target="_blank">Run Example</a>
 
 ```java
-list = "Plant,green,save,earth";
+list = "Plant,green,save,earth"
 listEach( list, ( Any element, Any index, Any list ) => {
-	writeOutput( "#index#:#element#;<br>" );
-} );
+	writeOutput( "#index#:#element#;<br>" )
+} )
 // Member function with custom delimiter
-writeOutput( "<br>Member Function<br>" );
-strLst = "one+two+three";
+writeOutput( "<br>Member Function<br>" )
+strLst = "one+two+three"
 strLst.listEach( ( Any element, Any index, Any list ) => {
-	writeOutput( "#index#:#element#;<br>" );
-}, "+" );
+	writeOutput( "#index#:#element#;<br>" )
+}, "+" )
 
 ```
 

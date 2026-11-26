@@ -16,7 +16,7 @@ Result: The maximum of 4 and 9 is 9.
 <a href="https://try.boxlang.io/?code=eJxLTc7I11DITazQUDAx1bM00VEwNtEzMFXQVNC05lLQ11fILy0pKC0phshyAQAdHguH" target="_blank">Run Example</a>
 
 ```java
-echo( max( 45.94, 34.05 ) );
+echo( max( 45.94, 34.05 ) )
  // outputs 45.94
 
 ```

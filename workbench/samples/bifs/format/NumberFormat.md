@@ -83,7 +83,7 @@
 <a href="https://try.boxlang.io/?code=eJzLK81NSi1yyy%2FKTSzRUDDUMzLWUVCKj9czMFBS0LTmAgChpwhp" target="_blank">Run Example</a>
 
 ```java
-numberFormat( 1.23, "__.00" );
+numberFormat( 1.23, "__.00" )
 
 ```
 
@@ -96,7 +96,7 @@ Result: 1.23
 <a href="https://try.boxlang.io/?code=eJzLK81NSi1yyy%2FKTSzRUDA0MtZRUIqP1zMwUFLQtOYCAJlbCDs%3D" target="_blank">Run Example</a>
 
 ```java
-numberFormat( 123, "__.00" );
+numberFormat( 123, "__.00" )
 
 ```
 
@@ -109,9 +109,9 @@ Result: 123.00
 <a href="https://try.boxlang.io/?code=eJzLK801VLBV8CvNTUotcssvyk0s0VAwNDLWUVAyAAElBU1rrrzSXCMciixBAKyovCizJNW%2FtKSgFCiZBzJWTUFJXwlIgrUDVQAAfnwdew%3D%3D" target="_blank">Run Example</a>
 
 ```java
-num1 = NumberFormat( 123, "00000" );
-num2 = NumberFormat( 123, "99999" );
-writeOutput( num1 & "/" & num2 );
+num1 = NumberFormat( 123, "00000" )
+num2 = NumberFormat( 123, "99999" )
+writeOutput( num1 & "/" & num2 )
 
 ```
 
@@ -124,9 +124,9 @@ Result: 00123/ 123
 <a href="https://try.boxlang.io/?code=eJzLK801VLBV8CvNTUotcssvyk0s0VAw1VFQ0lZS0LTmyivNNcKQ1kXIlxdllqT6l5YUlALF80BmqSko6SsBSbBOoAoAb4AbLw%3D%3D" target="_blank">Run Example</a>
 
 ```java
-num1 = NumberFormat( 5, "+" );
-num2 = NumberFormat( -5, "+" );
-writeOutput( num1 & "/" & num2 );
+num1 = NumberFormat( 5, "+" )
+num2 = NumberFormat( -5, "+" )
+writeOutput( num1 & "/" & num2 )
 
 ```
 
@@ -139,7 +139,7 @@ You could use dollarFormat() or lsCurrencyFormat() instead
 <a href="https://try.boxlang.io/?code=eJzLK81NSi1yyy%2FKTSzRUDA0MjYxNTO3sNRRUIpX0bHUs7RUUtC05gIA43AJvg%3D%3D" target="_blank">Run Example</a>
 
 ```java
-numberFormat( 123456789, "_$,9.99" );
+numberFormat( 123456789, "_$,9.99" )
 
 ```
 
@@ -153,22 +153,22 @@ Result: 1,2,3,4,5,6,7,8,9.00$
 dump( numberFormat( 1.234, "__.00" ) ); // 1.23
 dump( numberFormat( 1234, "__.00" ) ); // 1234.00
 // 0 and 9 mask
-dump( numberFormat( 123, "00000" ) );
-dump( numberFormat( 123, "99999" ) );
-dump( numberFormat( 123.12, "99.99999" ) );
+dump( numberFormat( 123, "00000" ) )
+dump( numberFormat( 123, "99999" ) )
+dump( numberFormat( 123.12, "99.99999" ) )
 // _ mask
-dump( numberFormat( 123, "_____" ) );
-dump( numberFormat( 123, "_.___" ) );
-dump( numberFormat( 11.10, "__.000" ) );
+dump( numberFormat( 123, "_____" ) )
+dump( numberFormat( 123, "_.___" ) )
+dump( numberFormat( 11.10, "__.000" ) )
 // + & - mask
-dump( numberFormat( 123, "+" ) );
-dump( numberFormat( -123, "-" ) );
+dump( numberFormat( 123, "+" ) )
+dump( numberFormat( -123, "-" ) )
 // , comma
-dump( numberFormat( 123, "," ) );
-dump( numberFormat( 123456, "," ) );
+dump( numberFormat( 123, "," ) )
+dump( numberFormat( 123456, "," ) )
 // L,C mask
-dump( NumberFormat( 1, "L999" ) );
-dump( NumberFormat( 1, "C000" ) );
+dump( NumberFormat( 1, "L999" ) )
+dump( NumberFormat( 1, "C000" ) )
 
 ```
 

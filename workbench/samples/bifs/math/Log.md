@@ -5,7 +5,7 @@ There will be a precision difference between running the some code on Linux or W
 <a href="https://try.boxlang.io/?code=eJzLyU%2FXUDDWM1TQtOYCABU4Aqs%3D" target="_blank">Run Example</a>
 
 ```java
-log( 3.1 );
+log( 3.1 )
 
 ```
 

@@ -2,9 +2,9 @@
 
 ```java
 transaction {
-    queryExecute( "CREATE TABLE IF NOT EXISTS test (id INT)" );
+    queryExecute( "CREATE TABLE IF NOT EXISTS test (id INT)" )
 }
-writeOutput( "transaction complete" );
+writeOutput( "transaction complete" )
 
 ```
 

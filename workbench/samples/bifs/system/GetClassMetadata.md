@@ -5,8 +5,8 @@ class Person {
     property name="firstName";
     function init() { return this; }
 }
-meta = getClassMetadata( "Person" );
-writeOutput( meta.name );
+meta = getClassMetadata( "Person" )
+writeOutput( meta.name )
 
 ```
 
@@ -15,8 +15,8 @@ Result: Person
 ### Get metadata for a Java class
 
 ```java
-meta = getClassMetadata( "java.util.HashMap" );
-writeOutput( meta.type );
+meta = getClassMetadata( "java.util.HashMap" )
+writeOutput( meta.type )
 
 ```
 

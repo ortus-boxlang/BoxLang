@@ -14,8 +14,8 @@
 
 
 ```java
-reNamedirectory = "directoryPath";
-directoryRename( reNamedirectory, "newname" );
+reNamedirectory = "directoryPath"
+directoryRename( reNamedirectory, "newname" )
 
 ```
 

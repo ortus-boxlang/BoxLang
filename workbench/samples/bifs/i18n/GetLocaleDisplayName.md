@@ -4,10 +4,10 @@
 
 
 ```java
-writeOutput( getLocaleDisplayName() );
-writeOutput( " → " );
-setLocale( "de_ch" );
-writeOutput( getLocaleDisplayName() );
+writeOutput( getLocaleDisplayName() )
+writeOutput( " → " )
+setLocale( "de_ch" )
+writeOutput( getLocaleDisplayName() )
 
 ```
 
@@ -18,7 +18,7 @@ Result: English (United States) → Deutsch (Schweiz)
 <a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUEhPLfHJT07MSXXJLC7ISaz0S8xN1dBU0LTmAgAJfgzQ" target="_blank">Run Example</a>
 
 ```java
-writeDump( getLocaleDisplayName() );
+writeDump( getLocaleDisplayName() )
 
 ```
 

@@ -26,11 +26,11 @@ fruitArray = [
 		"fruit" : "kiwi",
 		"rating" : 3
 	}
-];
+]
 favoriteFruits = arrayFilter( fruitArray, ( Any item ) => {
-	return item.RATING >= 3;
-} );
-writedump( JSONSerialize( favoriteFruits ) );
+	return item.RATING >= 3
+} )
+writedump( JSONSerialize( favoriteFruits ) )
 
 ```
 
@@ -64,11 +64,11 @@ fruitArray = [
 		"fruit" : "kiwi",
 		"rating" : 3
 	}
-];
+]
 favoriteFruits = fruitArray.filter( ( Any item ) => {
-	return item.RATING >= 3;
-} );
-writedump( JSONSerialize( favoriteFruits ) );
+	return item.RATING >= 3
+} )
+writedump( JSONSerialize( favoriteFruits ) )
 
 ```
 
@@ -100,11 +100,11 @@ fruitArray = [
 		FRUIT : "kiwi",
 		RATING : 3
 	}
-];
+]
 favoriteFruits = arrayFilter( fruitArray, ( Any item ) => {
-	return item.RATING >= 3;
-} );
-dump( favoriteFruits );
+	return item.RATING >= 3
+} )
+dump( favoriteFruits )
 
 ```
 
@@ -133,11 +133,11 @@ fruitArray = [
 		FRUIT : "kiwi",
 		RATING : 3
 	}
-];
+]
 favoriteFruits = fruitArray.filter( ( Any item ) => {
-	return item.RATING >= 3;
-} );
-dump( favoriteFruits );
+	return item.RATING >= 3
+} )
+dump( favoriteFruits )
 
 ```
 

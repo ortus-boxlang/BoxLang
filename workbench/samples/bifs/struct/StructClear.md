@@ -9,9 +9,9 @@ profile = {
 	NAME : "John",
 	INSTRUMENT : "guitar",
 	OCCUPATION : "singer"
-};
-structClear( profile );
-writeOutput( JSONSerialize( profile ) );
+}
+structClear( profile )
+writeOutput( JSONSerialize( profile ) )
 
 ```
 
@@ -42,13 +42,13 @@ Result: An empty struct
 animals = { 
 	COW : "moo",
 	PIG : "oink"
-};
+}
 // Show current animals
-Dump( label="Current animals", var=animals );
+Dump( label="Current animals", var=animals )
 // Clear struct
-structClear( animals );
+structClear( animals )
 // Show animals, now empty
-Dump( label="Animals after calling StructClear()", var=animals );
+Dump( label="Animals after calling StructClear()", var=animals )
 
 ```
 

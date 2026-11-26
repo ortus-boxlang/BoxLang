@@ -7,13 +7,13 @@ Show results of calling a function directly versus by reference
 ```java
 
 void function actualFunctionName() {
-	writeOutput( "actualFunctionName() was called as: #getFunctionCalledName()#<br>" );
+	writeOutput( "actualFunctionName() was called as: #getFunctionCalledName()#<br>" )
 }
-writeOutput( "<hr><h4>Calling actualFunctionName()</h4>" );
-actualFunctionName();
-writeOutput( "<hr><h4>Calling actualFunctionName() via reference</h4>" );
-referenceToFunction = actualFunctionName;
-referenceToFunction();
+writeOutput( "<hr><h4>Calling actualFunctionName()</h4>" )
+actualFunctionName()
+writeOutput( "<hr><h4>Calling actualFunctionName() via reference</h4>" )
+referenceToFunction = actualFunctionName
+referenceToFunction()
 
 ```
 
@@ -27,27 +27,27 @@ Example of using getFunctionCalledName to create dynamic getters and setters
 //callednamedemo.bx
 component
 {
-    variables.x1 = 1;
-    variables.y1 = 2;
+    variables.x1 = 1
+    variables.y1 = 2
 
     function init() {
-        return this;
+        return this
     }
 
     function get() {
-        var name = getFunctionCalledName();
-        return variables[mid(name,4,len(name)-3)];
+        var name = getFunctionCalledName()
+        return variables[mid(name,4,len(name)-3)]
     }
 
     function set(value) {
-        var name = getFunctionCalledName();
-        variables[mid(name,4,len(name)-3)] = value;
+        var name = getFunctionCalledName()
+        variables[mid(name,4,len(name)-3)] = value
     }
 
-    this.getX1 = get;
-    this.getY1 = get;
-    this.setX1 = set;
-    this.setY1 = set;
+    this.getX1 = get
+    this.getY1 = get
+    this.setX1 = set
+    this.setY1 = set
 }
 
 <!--- calledname.bxm --->
@@ -55,18 +55,18 @@ component
 <bx:script>
 
 	function test() {
-		return getFunctionCalledName();
+		return getFunctionCalledName()
 	}
 	writeOutput( test() & "<br>" ); // test
-	a = test;
+	a = test
 	writeOutput( variables.a() & "<br>" ); // a
-	o = new callednamedemo();
+	o = new callednamedemo()
 	// shows *real* methods get(), SetX1() and getY1(), etc.
-	writeDump( o );
-	o.setX1( 10 );
-	o.setY1( 20 );
+	writeDump( o )
+	o.setX1( 10 )
+	o.setY1( 20 )
 	writeOutput( o.getX1() & "<br>" ); // 10
-	writeOutput( o.getY1() & "<br>" );
+	writeOutput( o.getY1() & "<br>" )
 </bx:script>
  <!--- 20 --->
 ```
@@ -78,14 +78,14 @@ component
 
 ```java
 yell = ( Any name ) => {
-	echo( name );
-	dump( var=getFunctionCalledName(), label="Function was called as" );
-};
-yell( "yell" );
+	echo( name )
+	dump( var=getFunctionCalledName(), label="Function was called as" )
+}
+yell( "yell" )
 say = yell; // copy function
-say( "say from " );
+say( "say from " )
 yell = say; // copy function again
-yell( "yell from say" );
+yell( "yell from say" )
 
 ```
 

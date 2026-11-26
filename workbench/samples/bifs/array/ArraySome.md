@@ -11,13 +11,13 @@ arrayList = [
 	"pineapple",
 	"mango",
 	"apricot"
-];
+]
 // Match some
 result = arraySome( arrayList, ( Any fruit ) => {
-	return fruit.startsWith( "a" );
-} );
+	return fruit.startsWith( "a" )
+} )
 // Print result
-writeOutput( (result ? "Some" : "No") & " matches  were found!" );
+writeOutput( (result ? "Some" : "No") & " matches  were found!" )
 
 ```
 
@@ -36,13 +36,13 @@ arrayList = [
 	"pineapple",
 	"mango",
 	"apricot"
-];
+]
 // Match some
 result = arrayList.some( ( Any fruit ) => {
-	return fruit.endsWith( "a" );
-} );
+	return fruit.endsWith( "a" )
+} )
 // Print result
-writeOutput( (result ? "Some" : "No") & " matches  were found!" );
+writeOutput( (result ? "Some" : "No") & " matches  were found!" )
 
 ```
 
@@ -62,17 +62,17 @@ newArray = [
 	"b",
 	"e",
 	"f"
-];
-dump( newArray );
+]
+dump( newArray )
 hasSome1 = arraySome( newArray, ( Any item, Any idx, Any arr ) => {
-	return item == "b";
-} );
-dump( hasSome1 );
+	return item == "b"
+} )
+dump( hasSome1 )
 // member function
 hasSome2 = newArray.some( ( Any item, Any idx, Any arr ) => {
-	return item == "k";
-} );
-dump( hasSome2 );
+	return item == "k"
+} )
+dump( hasSome2 )
 
 ```
 

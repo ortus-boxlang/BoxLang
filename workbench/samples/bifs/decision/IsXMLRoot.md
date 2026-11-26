@@ -21,7 +21,7 @@
 	</boxlangengines>
 </bx:xml>
 <bx:script>
-	writeOutput( isXMLRoot( example.BOXLANGENGINES ) );
+	writeOutput( isXMLRoot( example.BOXLANGENGINES ) )
 </bx:script>
 
 ```
@@ -51,7 +51,7 @@ Result: YES
 	</boxlangengines>
 </bx:xml>
 <bx:script>
-	writeOutput( isXMLRoot( example.BOXLANGENGINES.ENGINE ) );
+	writeOutput( isXMLRoot( example.BOXLANGENGINES.ENGINE ) )
 </bx:script>
 
 ```

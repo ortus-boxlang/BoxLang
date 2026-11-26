@@ -10,12 +10,12 @@ rainbow = {
 	"Orange" : "Karaka",
 	"Yellow" : "Kowhai",
 	"Green" : "Kakariki"
-};
+}
 ui = structReduce( rainbow, ( Any previousValue, Any key, Any value ) => {
-	return previousValue & "<dt>#key#</dt><dd>#value#</dd>";
-}, "<dl>" ) & "</dl>";
-writeDump( rainbow );
-writeOutput( ui );
+	return previousValue & "<dt>#key#</dt><dd>#value#</dd>"
+}, "<dl>" ) & "</dl>"
+writeDump( rainbow )
+writeOutput( ui )
 
 ```
 
@@ -32,12 +32,12 @@ rainbow = {
 	"Orange" : "Karaka",
 	"Yellow" : "Kowhai",
 	"Green" : "Kakariki"
-};
+}
 ui = rainbow.reduce( ( Any previousValue, Any key, Any value ) => {
-	return previousValue & "<dt>#key#</dt><dd>#value#</dd>";
-}, "<dl>" ) & "</dl>";
-writeDump( rainbow );
-writeOutput( ui );
+	return previousValue & "<dt>#key#</dt><dd>#value#</dd>"
+}, "<dl>" ) & "</dl>"
+writeDump( rainbow )
+writeOutput( ui )
 
 ```
 
@@ -60,13 +60,13 @@ animals = {
 		NOISE : "meow",
 		SIZE : "small"
 	}
-};
-dump( label="All animals", var=animals );
+}
+dump( label="All animals", var=animals )
 animalInfo = StructReduce( animals, ( Any result, Any key, Any value ) => {
-	return arguments.RESULT & "<li>" & arguments.KEY & "<ul><li>Noise: " & arguments.VALUE.NOISE & "</li><li>Size: " & arguments.VALUE.SIZE & "</li></ul></li>";
-}, "<ul>" ) & "</ul>";
+	return arguments.RESULT & "<li>" & arguments.KEY & "<ul><li>Noise: " & arguments.VALUE.NOISE & "</li><li>Size: " & arguments.VALUE.SIZE & "</li></ul></li>"
+}, "<ul>" ) & "</ul>"
 // Show result
-echo( animalInfo );
+echo( animalInfo )
 
 ```
 

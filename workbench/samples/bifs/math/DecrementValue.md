@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJxLSU0uSs1NzSsJS8wpTdVQMFfQtOYCAFb4BsI%3D" target="_blank">Run Example</a>
 
 ```java
-decrementValue( 7 );
+decrementValue( 7 )
 
 ```
 
@@ -16,7 +16,7 @@ Result: 6
 <a href="https://try.boxlang.io/?code=eJxLSU0uSs1NzSsJS8wpTdVQMNczVdC05gIAZX0HJQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
-decrementValue( 7.5 );
+decrementValue( 7.5 )
 
 ```
 
@@ -28,7 +28,7 @@ Result: 6.5
 
 ```java
 writeDump( decrementValue( 6 ) ); // 5
-writeDump( decrementValue( 6.5 ) );
+writeDump( decrementValue( 6.5 ) )
  // 5.5
 
 ```

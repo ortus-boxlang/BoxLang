@@ -9,9 +9,9 @@ someArray = [
 	1,
 	2,
 	3
-];
-arrayInsertAt( someArray, 2, 4 );
-writeOutput( JSONSerialize( someArray ) );
+]
+arrayInsertAt( someArray, 2, 4 )
+writeOutput( JSONSerialize( someArray ) )
 
 ```
 
@@ -29,12 +29,12 @@ fruitArray = [
 	"orange",
 	"mango",
 	"kiwi"
-];
-arrayInsertAt( fruitArray, 3, "new inserted item" );
-dump( fruitArray );
+]
+arrayInsertAt( fruitArray, 3, "new inserted item" )
+dump( fruitArray )
 // member function
-fruitArray.insertAt( 3, "member added item" );
-dump( fruitArray );
+fruitArray.insertAt( 3, "member added item" )
+dump( fruitArray )
 
 ```
 

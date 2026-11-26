@@ -6,13 +6,13 @@ Prints the statements using application meta data.
 
 ```java
 // Fetch application meta data
-data = getApplicationMetadata();
+data = getApplicationMetadata()
 // Print application name
-writeOutput( "Application name is " & (data.NAME.length() ? data.NAME : "unspecified") & "<br>" );
+writeOutput( "Application name is " & (data.NAME.length() ? data.NAME : "unspecified") & "<br>" )
 // Print session timeout
-writeOutput( "Session timeout is " & data.SESSIONTIMEOUT & "<br>" );
+writeOutput( "Session timeout is " & data.SESSIONTIMEOUT & "<br>" )
 // Print session management
-writeOutput( "Session management is " & (data.SESSIONMANAGEMENT ? "enabled" : "disabled") );
+writeOutput( "Session management is " & (data.SESSIONMANAGEMENT ? "enabled" : "disabled") )
 
 ```
 
@@ -22,8 +22,8 @@ writeOutput( "Session management is " & (data.SESSIONMANAGEMENT ? "enabled" : "d
 <a href="https://try.boxlang.io/?code=eJzLTS1JVLBVSE8tcSwoyMlMTizJzM%2FzBQq6JJYkamhac6WU5hZoKOSClAF5AI%2FJD6M%3D" target="_blank">Run Example</a>
 
 ```java
-meta = getApplicationMetaData();
-dump( meta );
+meta = getApplicationMetaData()
+dump( meta )
 
 ```
 

@@ -4,9 +4,9 @@ Checks if the fileObj is a filestream-object.
 
 
 ```java
-filePath = expandPath( "./myfile.txt" );
-fileObj = fileOpen( filePath );
-writeOutput( isFileObject( fileObj ) );
+filePath = expandPath( "./myfile.txt" )
+fileObj = fileOpen( filePath )
+writeOutput( isFileObject( fileObj ) )
 
 ```
 

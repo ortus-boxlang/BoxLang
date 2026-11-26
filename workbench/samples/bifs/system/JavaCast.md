@@ -5,7 +5,7 @@ Converts the number 180.0 degrees to radians using Java method: Math.toRadians(d
 <a href="https://try.boxlang.io/?code=eJxLLkpNLEn1T8pKTS7RUFDKSixLVNKB0Ho5iXnper6JJRlKCpp6JflBiSmZiXnFGgogSefEYpD6lPzSpJxUoA5DCwM9AwVNBU1rLgCAgBlm" target="_blank">Run Example</a>
 
 ```java
-createObject( "java", "java.lang.Math" ).toRadians( javaCast( "double", 180.0 ) );
+createObject( "java", "java.lang.Math" ).toRadians( javaCast( "double", 180.0 ) )
 
 ```
 
@@ -18,7 +18,7 @@ Result: 3.141592653589793
 ```java
 // Convert a Boxlang Number to a Java double primitive
 // Converts the number 180.0 degrees to radians using Java method: Math.toRadians(double degrees)
-writeDump( createObject( "java", "java.lang.Math" ).toRadians( javacast( "double", 180.0 ) ) );
+writeDump( createObject( "java", "java.lang.Math" ).toRadians( javacast( "double", 180.0 ) ) )
 
 ```
 

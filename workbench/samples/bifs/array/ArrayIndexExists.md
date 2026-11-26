@@ -11,8 +11,8 @@ someArray = [
 	3,
 	4,
 	5
-];
-writeOutput( arrayIsDefined( someArray, 3 ) );
+]
+writeOutput( arrayIsDefined( someArray, 3 ) )
 
 ```
 
@@ -31,8 +31,8 @@ someArray = [
 	3,
 	4,
 	5
-];
-writeOutput( arrayIsDefined( someArray, 6 ) );
+]
+writeOutput( arrayIsDefined( someArray, 6 ) )
 
 ```
 
@@ -49,16 +49,16 @@ FirstArray = [
 	1,
 	2,
 	3
-];
+]
 secondArray = [
 	11,
 	12,
 	13
-];
-combineArray = arrayNew( 2 );
-arrayAppend( combineArray, firstArray );
-arrayAppend( combineArray, secondArray );
-writeOutput( arrayIsDefined( combineArray, 3 ) );
+]
+combineArray = arrayNew( 2 )
+arrayAppend( combineArray, firstArray )
+arrayAppend( combineArray, secondArray )
+writeOutput( arrayIsDefined( combineArray, 3 ) )
 
 ```
 
@@ -75,16 +75,16 @@ FirstArray = [
 	1,
 	2,
 	3
-];
+]
 secondArray = [
 	11,
 	12,
 	13
-];
-combineArray = arrayNew( 2 );
-arrayAppend( combineArray, firstArray );
-arrayAppend( combineArray, secondArray );
-writeOutput( arrayIsDefined( combineArray, 2 ) );
+]
+combineArray = arrayNew( 2 )
+arrayAppend( combineArray, firstArray )
+arrayAppend( combineArray, secondArray )
+writeOutput( arrayIsDefined( combineArray, 2 ) )
 
 ```
 
@@ -102,10 +102,10 @@ fruitArray = [
 	"orange",
 	"mango",
 	"kiwi"
-];
+]
 dump( arrayIsDefined( fruitArray, 3 ) ); // true
 // member function
-dump( fruitArray.isDefined( 30 ) );
+dump( fruitArray.isDefined( 30 ) )
  // false
 
 ```

@@ -14,8 +14,8 @@ news = queryNew( "id,title", "integer,varchar", [
 		"id" : 2,
 		"title" : "Man walks on Moon"
 	}
-] );
-writeOutput( news.keyExists( "title" ) );
+] )
+writeOutput( news.keyExists( "title" ) )
 
 ```
 
@@ -26,9 +26,9 @@ Result: true
 <a href="https://try.boxlang.io/?code=eJzLrQwsTS2qVLBVKATRfqnlGgpKyaXFJZ4uOiDKLzE3VUlB05qrvCizJNWlNLdAA6LSO7XStSKzuKRYQyEXYoaOglJiOkgx0cqRLADpAQBbsC8%2F" target="_blank">Run Example</a>
 
 ```java
-myQuery = queryNew( "custID,custName" );
-writeDump( queryKeyExists( myQuery, "age" ) );
-writeDump( queryKeyExists( myQuery, "custName" ) );
+myQuery = queryNew( "custID,custName" )
+writeDump( queryKeyExists( myQuery, "age" ) )
+writeDump( queryKeyExists( myQuery, "custName" ) )
 
 ```
 

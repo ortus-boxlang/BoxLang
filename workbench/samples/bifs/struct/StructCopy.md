@@ -9,12 +9,12 @@ myStruct = {
 	"a" : 1,
 	"b" : 2,
 	"c" : 3
-};
-myNewStruct = structCopy( myStruct );
-myNewStruct.B = 5;
-myNewStruct[ "d" ] = 4;
-structDelete( myNewStruct, "c" );
-writeOutput( structKeyList( myStruct ) & " → " & structKeyList( myNewStruct ) );
+}
+myNewStruct = structCopy( myStruct )
+myNewStruct.B = 5
+myNewStruct[ "d" ] = 4
+structDelete( myNewStruct, "c" )
+writeOutput( structKeyList( myStruct ) & " → " & structKeyList( myNewStruct ) )
 
 ```
 
@@ -28,21 +28,21 @@ Result: b,a,c → b,a,d
 animals = { 
 	COW : "moo",
 	PIG : "oink"
-};
+}
 // Show current animals
-Dump( label="Current animals", var=animals );
+Dump( label="Current animals", var=animals )
 // Copy animals struct to farm
-farm = StructCopy( animals );
+farm = StructCopy( animals )
 // Show farm, looks like animals
-Dump( label="Farm after StructCopy()", var=farm );
+Dump( label="Farm after StructCopy()", var=farm )
 // Add another animal. Will not affect farm.
 StructAppend( animals, {
 	CAT : "meow"
-} );
+} )
 // Show animals, now includes cat
-Dump( label="Animals with cat added", var=animals );
+Dump( label="Animals with cat added", var=animals )
 // Show farm, does not have cat
-Dump( label="Farm copied from animals before cat was added", var=farm );
+Dump( label="Farm copied from animals before cat was added", var=farm )
 
 ```
 

@@ -8,8 +8,8 @@ Converting a struct to a query string using the default delimiter (&amp;)
 someStruct = { 
 	"firstName" : "John",
 	"lastName" : "Doe"
-};
-writeDump( structToQueryString( someStruct ) );
+}
+writeDump( structToQueryString( someStruct ) )
 
 ```
 

@@ -9,7 +9,7 @@ writeOutput( arrayFindNoCase( [
 	"orange",
 	"pineapple",
 	"apple"
-], "Apple" ) );
+], "Apple" ) )
 
 ```
 
@@ -26,7 +26,7 @@ writeOutput( arrayFindNoCase( [
 	"orange",
 	"pineapple",
 	"apple"
-], "Apple" ) );
+], "Apple" ) )
 
 ```
 
@@ -43,8 +43,8 @@ fruit = [
 	"orange",
 	"pineapple",
 	"apple"
-];
-writeOutput( fruit.findNoCase( "Apple" ) );
+]
+writeOutput( fruit.findNoCase( "Apple" ) )
 
 ```
 
@@ -60,10 +60,10 @@ arrVariable = [
 	"Sky",
 	2,
 	"Air"
-];
+]
 WriteDump( ArrayFindNoCase( arrVariable, 5 ) ); // Outputs 0
 WriteDump( ArrayFindNoCase( arrVariable, "air" ) ); // Outputs 4
-WriteDump( ArrayFindNoCase( arrVariable, 2 ) );
+WriteDump( ArrayFindNoCase( arrVariable, 2 ) )
  // Outputs 3
 
 ```

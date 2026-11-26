@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJwrLikqTS7xTq10rcgsLinWUChOLSpLLdJRUMovVlLQtOYCANfYCy4%3D" target="_blank">Run Example</a>
 
 ```java
-structKeyExists( server, "os" );
+structKeyExists( server, "os" )
 
 ```
 
@@ -18,7 +18,7 @@ Calling the keyExists member function on a struct.
 <a href="https://try.boxlang.io/?code=eJwrTi0qSy3Sy06tdK3ILC4p1lBQyi9WUtC05gIAhJEIiw%3D%3D" target="_blank">Run Example</a>
 
 ```java
-server.keyExists( "os" );
+server.keyExists( "os" )
 
 ```
 
@@ -34,13 +34,13 @@ animals = {
 	PIG : "oink",
 	CAT : "meow",
 	BIRD : "chirp"
-};
+}
 // Check to see if key exists in struct
 if( StructKeyExists( animals, "snail" ) ) {
-	echo( "There is a snail in 'animals'" );
+	echo( "There is a snail in 'animals'" )
 }
  else {
-	echo( "No snail exists in 'animals'" );
+	echo( "No snail exists in 'animals'" )
 }
 
 ```

@@ -20,7 +20,7 @@ Use getBaseTagData() to retrieve the attributes of the parent cf_iframe tag
 
 
 ```java
-variables.PARENTATTRIBUTES = getBaseTagData( "cf_iframe" ).ATTRIBUTES;
+variables.PARENTATTRIBUTES = getBaseTagData( "cf_iframe" ).ATTRIBUTES
 
 ```
 

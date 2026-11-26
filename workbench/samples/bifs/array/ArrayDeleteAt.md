@@ -11,9 +11,9 @@ someArray = [
 	"Green",
 	"Blue",
 	"Pink"
-];
-arrayDeleteAt( someArray, 3 );
-writeOutput( JSONSerialize( someArray ) );
+]
+arrayDeleteAt( someArray, 3 )
+writeOutput( JSONSerialize( someArray ) )
 
 ```
 
@@ -32,9 +32,9 @@ someArray = [
 	"Green",
 	"Blue",
 	"Pink"
-];
-someArray.DeleteAt( 2 );
-writeOutput( JSONSerialize( someArray ) );
+]
+someArray.DeleteAt( 2 )
+writeOutput( JSONSerialize( someArray ) )
 
 ```
 
@@ -54,10 +54,10 @@ arr = [
 	4,
 	5,
 	6
-];
-dump( arr );
-arrayDeleteAt( arr, 4 );
-dump( arr );
+]
+dump( arr )
+arrayDeleteAt( arr, 4 )
+dump( arr )
 
 ```
 
@@ -74,10 +74,10 @@ arr = [
 	4,
 	5,
 	6
-];
-dump( arr );
-arr.deleteAt( 4 );
-dump( arr );
+]
+dump( arr )
+arr.deleteAt( 4 )
+dump( arr )
 
 ```
 

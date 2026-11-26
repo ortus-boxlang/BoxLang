@@ -5,8 +5,8 @@
 <a href="https://try.boxlang.io/?code=eJwrTi0JycxNrcrPS9VQUHJ2DVFS0LTmKi%2FKLEnNLy0pKC3RUEhHKPHMS8vX0NQL8fR1jfL3cwUpBQDe0hVB" target="_blank">Run Example</a>
 
 ```java
-setTimezone( "CET" );
-writeoutput( getTimezoneInfo().TIMEZONE );
+setTimezone( "CET" )
+writeoutput( getTimezoneInfo().TIMEZONE )
 
 ```
 

@@ -14,9 +14,9 @@ news = queryNew( "id,title", "integer,varchar", [
 		"id" : 2,
 		"title" : "Man walks on Moon"
 	}
-] );
-queryDeleteColumn( news, "id" );
-writeOutput( JSONSerialize( news ) );
+] )
+queryDeleteColumn( news, "id" )
+writeOutput( JSONSerialize( news ) )
 
 ```
 
@@ -43,9 +43,9 @@ qry1 = queryNew( "a,b,c", "varchar,varchar,varchar", [
 		"b3",
 		"c3"
 	]
-] );
-queryDeleteColumn( qry1, "c" );
-writeOutput( qry1.COLUMNLIST );
+] )
+queryDeleteColumn( qry1, "c" )
+writeOutput( qry1.COLUMNLIST )
 qry2 = queryNew( "x,y,z", "varchar,varchar,varchar", [
 	[
 		"x1",
@@ -62,11 +62,11 @@ qry2 = queryNew( "x,y,z", "varchar,varchar,varchar", [
 		"y3",
 		"z3"
 	]
-] );
+] )
 bx:loop query="qry2" {
-	queryDeleteColumn( qry2, listFirst( qry2.COLUMNLIST ) );
+	queryDeleteColumn( qry2, listFirst( qry2.COLUMNLIST ) )
 }
-writeDump( qry2.COLUMNLIST );
+writeDump( qry2.COLUMNLIST )
 
 ```
 

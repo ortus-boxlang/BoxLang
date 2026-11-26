@@ -5,7 +5,7 @@
 
 ```java
 <bx:script>
-	fileSetAccessMode( "test1.txt", "004" );
+	fileSetAccessMode( "test1.txt", "004" )
 </bx:script>
    
 ```
@@ -15,7 +15,7 @@
 
 
 ```java
-fileSetAccessMode( "sample_test.txt", "004" );
+fileSetAccessMode( "sample_test.txt", "004" )
 
 ```
 

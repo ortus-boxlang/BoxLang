@@ -2,11 +2,11 @@
 
 ```java
 t = threadNew( () => {
-    sleep( 100 );
-    println( "thread running" );
-} );
-threadJoin( t );
-writeOutput( "done" );
+    sleep( 100 )
+    println( "thread running" )
+} )
+threadJoin( t )
+writeOutput( "done" )
 
 ```
 
@@ -16,9 +16,9 @@ Result: done
 
 ```java
 t = threadNew( "myThread", () => {
-    return "hello";
-} );
-writeOutput( t.getName() );
+    return "hello"
+} )
+writeOutput( t.getName() )
 
 ```
 

@@ -2,12 +2,12 @@
 
 ```java
 future = asyncRun( () => {
-    sleep( 5000 );
-    return "done";
-} );
-threadId = future.getThread().getId();
-threadInterrupt( threadId );
-writeOutput( "interrupted" );
+    sleep( 5000 )
+    return "done"
+} )
+threadId = future.getThread().getId()
+threadInterrupt( threadId )
+writeOutput( "interrupted" )
 
 ```
 

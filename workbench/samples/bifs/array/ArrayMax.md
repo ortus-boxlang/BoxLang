@@ -5,8 +5,8 @@ To get the largest numeric value of an array
 <a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFVIBNF%2BqeUaCoYKmtZc5UWZJan%2BpSUFpSUaEDnfxAoNhWK4Dk2QKgDlCBWc" target="_blank">Run Example</a>
 
 ```java
-someArray = arrayNew( 1 );
-writeOutput( arrayMax( someArray ) );
+someArray = arrayNew( 1 )
+writeOutput( arrayMax( someArray ) )
 
 ```
 
@@ -25,8 +25,8 @@ someArray = [
 	87,
 	1,
 	4
-];
-writeOutput( arrayMax( someArray ) );
+]
+writeOutput( arrayMax( someArray ) )
 
 ```
 
@@ -45,8 +45,8 @@ someArray = [
 	0,
 	1,
 	4
-];
-writeOutput( someArray.max() );
+]
+writeOutput( someArray.max() )
 
 ```
 
@@ -56,10 +56,10 @@ Result: 45
 
 
 ```java
-aNames = array( 10412, 42, 33, 2, 999, 12769, 888 );
-dump( arrayMax( aNames ) );
+aNames = array( 10412, 42, 33, 2, 999, 12769, 888 )
+dump( arrayMax( aNames ) )
 // member function
-dump( aNames.max() );
+dump( aNames.max() )
 
 ```
 

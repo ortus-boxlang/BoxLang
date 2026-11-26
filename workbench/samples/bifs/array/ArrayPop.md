@@ -9,9 +9,9 @@ arr = [
 	1,
 	2,
 	42
-];
-p = arrayPop( array=arr );
-writeOutput( p );
+]
+p = arrayPop( array=arr )
+writeOutput( p )
 
 ```
 
@@ -28,9 +28,9 @@ arr = [
 	1,
 	2,
 	42
-];
-p = arr.pop();
-writeOutput( p );
+]
+p = arr.pop()
+writeOutput( p )
 
 ```
 
@@ -46,7 +46,7 @@ numbers = [
 	2,
 	3,
 	4
-];
+]
 dump( ArrayPop( numbers ) ); // Outputs 4
 dump( numbers ); // Outputs [ 1, 2, 3 ]
 moreNumbers = [
@@ -54,9 +54,9 @@ moreNumbers = [
 	6,
 	7,
 	8
-];
+]
 dump( ArrayPop( moreNumbers, 4 ) ); // Outputs 8
-dump( moreNumbers );
+dump( moreNumbers )
  // Outputs [ 5, 6, 7 ]
 
 ```
