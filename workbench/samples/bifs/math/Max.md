@@ -21,4 +21,21 @@ echo( max( 45.94, 34.05 ) )
 
 ```
 
+### Larger of two numbers
 
+```java
+writeOutput( max( 3, 8 ) )
+
+```
+
+Result: 8
+
+### Member function
+
+```java
+n = 4
+writeOutput( n.max( 9 ) )
+
+```
+
+Result: 9

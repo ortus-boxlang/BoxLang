@@ -38,8 +38,8 @@ public class IsLocalHost extends BIF {
 	}
 
 	/**
-	 * Determines whether a given string is a loopback address, like `localhost`, `127.0.0.1` or `::1`. The value is resolved with DNS if needed. Blank
-	 * values and values which cannot be resolved return false.
+	 * Determines whether a given string is a loopback address, like `localhost`, `127.0.0.1` or `::1`. The value is resolved with DNS if needed.
+	 * Blank values and values which cannot be resolved return false.
 	 *
 	 * @argument.ip The IP address or hostname to test.
 	 *

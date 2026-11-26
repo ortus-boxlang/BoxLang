@@ -44,3 +44,12 @@ Result: YES
 ```
 
 
+
+### Documents and strings are not elements
+
+```java
+doc = xmlParse( "<root><a/></root>" )
+writeOutput( isXmlElem( doc.xmlRoot.a ) & " " & isXmlElem( doc ) & " " & isXmlElem( "<root/>" ) )
+```
+
+Result: true false false

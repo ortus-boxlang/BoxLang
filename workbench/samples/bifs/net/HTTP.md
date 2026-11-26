@@ -1,7 +1,9 @@
 ### Make an HTTP request
 
+`http()` returns a fluent request. Call `send()` to execute it and get the result struct.
+
 ```java
-result = http( method: "GET", url: "https://httpbin.org/get" )
+result = http( "https://httpbin.org/get" ).send()
 writeOutput( result.statusCode )
 
 ```
@@ -11,7 +13,10 @@ Result: 200
 ### POST with body
 
 ```java
-result = http( method: "POST", url: "https://httpbin.org/post", body: "hello" )
+result = http( "https://httpbin.org/post" )
+	.post()
+	.body( "hello" )
+	.send()
 writeOutput( result.statusCode )
 
 ```

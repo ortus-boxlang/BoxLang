@@ -14,9 +14,27 @@ myArray = [
 newArray = arrayReduceRight( myArray, ( Any prev, Any next, Any idx, Any arr ) => {
 	return prev & next & idx
 }, "" )
-writedump( newArray )
+writeOutput( newArray )
 
 ```
 
 Result: d4c3b2a1
 
+### Reduce from the right using the member function
+
+The accumulator receives the last element first.
+
+```java
+letters = [ "a", "b", "c" ]
+writeOutput( letters.reduceRight( ( acc, letter ) -> acc & letter, "" ) )
+```
+
+Result: cba
+
+### Subtract from the right
+
+```java
+writeOutput( arrayReduceRight( [ 1, 2, 3 ], ( acc, n ) -> acc - n, 10 ) )
+```
+
+Result: 4

@@ -43,8 +43,8 @@ public class SOAP extends BIF {
 	 *
 	 * This BIF creates a new or retrieves an existing BoxSoapClient instance based on the provided
 	 * WSDL URL. The client can be used to fluently invoke SOAP operations discovered from the WSDL.
-	 * The client provides fluent methods for configuring connection settings like setTimeout(),
-	 * setAuthentication(), and addHeader().
+	 * The client provides fluent methods for configuring connection settings like timeout(),
+	 * withBasicAuth(), and header().
 	 *
 	 * Example usage:
 	 *
@@ -57,8 +57,8 @@ public class SOAP extends BIF {
 	 *
 	 * // With authentication and timeout configuration
 	 * ws = soap( "http://example.com/service.wsdl" )
-	 *     .setTimeout( 60 )
-	 *     .setAuthentication( "user", "pass" )
+	 *     .timeout( 60 )
+	 *     .withBasicAuth( "user", "pass" )
 	 *
 	 * result = ws.invoke( "methodName", [ arg1, arg2 ] )
 	 * </pre>
@@ -66,7 +66,7 @@ public class SOAP extends BIF {
 	 * @param context   The BoxLang execution context
 	 * @param arguments The arguments provided to the BIF
 	 *
-	 * @argument.url The URL to the WSDL document describing the web service
+	 * @argument.URL The URL to the WSDL document describing the web service
 	 *
 	 * @return A BoxSoapClient instance configured with WSDL operations
 	 */

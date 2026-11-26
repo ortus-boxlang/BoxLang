@@ -24,4 +24,24 @@ bx:loop index="i" from="1" to="3" {
 
 ```
 
+### Seed the generator
 
+```java
+randomize( 42 )
+
+```
+
+Result: No output. The random number generator is seeded for the rest of the request.
+
+### The algorithm argument is not implemented
+
+```java
+try {
+	randomize( 42, "SHA1PRNG" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: The algorithm argument has not yet been implemented

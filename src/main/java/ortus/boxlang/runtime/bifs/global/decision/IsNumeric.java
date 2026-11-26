@@ -44,9 +44,10 @@ public class IsNumeric extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is numeric. Numbers, numeric strings (including grouped numbers such as `1,000` and exponent notation such as `1e3`) and
-	 * any value castable to a number return true. Booleans, boolean strings (`true`, `false`, `yes`, `no`), empty strings and null return false. If the
-	 * value is not castable directly, string values are also parsed using the given (or context) locale, so `1.321,00` is numeric in a German locale.
+	 * Determines whether a value is numeric. Numbers, numeric strings (including grouped numbers such as `1,000` and exponent notation such as
+	 * `1e3`) and any value castable to a number return true. Booleans, boolean strings (`true`, `false`, `yes`, `no`), empty strings and null
+	 * return false. If the value is not castable directly, string values are also parsed using the given (or context) locale, so `1.321,00` is
+	 * numeric in a German locale.
 	 *
 	 * This BIF is also registered as `LSIsNumeric`.
 	 *

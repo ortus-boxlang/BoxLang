@@ -38,7 +38,8 @@ public class IsJSON extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is a string containing valid JSON (JavaScript Object Notation). Values which cannot be cast to a string return false.
+	 * Determines whether a value is a string containing valid JSON (JavaScript Object Notation). Values which cannot be cast to a string return
+	 * false.
 	 *
 	 * @argument.var The value to test for JSON.
 	 *

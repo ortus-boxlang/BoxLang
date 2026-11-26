@@ -37,9 +37,26 @@ The following example calls the Randomize function to seed the random number gen
 
 
 ```java
-writeDump( randRange( 25, 125, "bxmX_COMPAT" ) )
+writeDump( randRange( 25, 125, "SHA1PRNG" ) )
 writeDump( randRange( 100, 500, "SHA1PRNG" ) )
 
 ```
 
+### Random integer within a range
 
+```java
+n = randRange( 5, 10 )
+writeOutput( n >= 5 && n <= 10 )
+
+```
+
+Result: true
+
+### Both bounds are the same
+
+```java
+writeOutput( randRange( 7, 7 ) )
+
+```
+
+Result: 7

@@ -15,7 +15,30 @@ writeOutput( lastOne )
 
 ```
 
-Result: "third"
+Result: third
+
+### Using the member function
+
+```java
+names = [ "Marcus", "Sarah", "Josefine" ]
+writeOutput( names.last() )
+```
+
+Result: Josefine
+
+### Empty array
+
+An exception is thrown when the array is empty.
+
+```java
+try {
+	arrayLast( [] )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Cannot return last element of array; array is empty
 
 ### Additional Examples
 

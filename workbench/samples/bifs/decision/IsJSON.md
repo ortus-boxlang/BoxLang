@@ -37,3 +37,11 @@ writeDump( label="Query", var=isJson( qry ) )
 ```
 
 
+
+### Test objects, arrays and plain text
+
+```java
+writeOutput( isJSON( '{"name":"BoxLang","version":1}' ) & " " & isJSON( "not json" ) & " " & isJSON( "{name:" ) )
+```
+
+Result: true false false

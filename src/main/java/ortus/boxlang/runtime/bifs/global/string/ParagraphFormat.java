@@ -48,12 +48,15 @@ public class ParagraphFormat extends BIF {
 	}
 
 	/**
-	 * Replaces characters in a string: Single newline characters (CR/LF sequences) with spaces and double newline characters with HTML paragraph tags
+	 * Format text into HTML paragraphs. The string is split on every line break (a single CR, LF or CRLF), and each line is wrapped in
+	 * <code>&lt;p&gt;</code> tags. The paragraphs are joined with a newline character.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string The string to format.
+	 *
+	 * @return The string with every line wrapped in paragraph tags.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.asString(

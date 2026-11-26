@@ -21,4 +21,4 @@ writeOutput( isIPv6( ip ) )
 
 ```
 
-
+Result: true

@@ -9,7 +9,7 @@ writeOutput( isNull( nullValue() ) )
 
 ```
 
-Result: YES
+Result: true
 
 ### Additional Examples
 
@@ -22,3 +22,19 @@ dump( isNull( my_null ) )
 ```
 
 
+### Check that the value is null
+
+```java
+writeOutput( isNull( nullValue() ) )
+```
+
+Result: true
+
+### Assign a null to a variable
+
+```java
+x = nullValue()
+writeOutput( isNull( x ) )
+```
+
+Result: true

@@ -35,15 +35,16 @@ public class ReEscape extends BIF {
 	}
 
 	/**
-	 * Escapes regular expression control characters within a string.
-	 * If a string is "foo.bar" and you want to escape it for use in a regular expression, you would use this BIF.
-	 * Escaped Pattern will be "foo\\.bar"
+	 * Escapes regular expression control characters within a string so it can be matched literally in a regular expression.
+	 * For example, the string <code>foo.bar</code> becomes <code>foo\.bar</code>. The escaped characters are <code>\ . ^ $ | ( ) [ ] { } * +
+	 * ?</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string you that to escape.
+	 * @argument.string The string to escape.
 	 *
+	 * @return The string with the regular expression control characters escaped with a backslash.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String			string			= arguments.getAsString( Key.string );

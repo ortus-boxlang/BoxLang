@@ -43,7 +43,7 @@ public class Ceiling extends BIF {
 
 	/**
 	 * Rounds a number up to the closest integer that is greater than or equal to it. Also available as
-	 *     <code>number.ceiling()</code>.
+	 * <code>number.ceiling()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

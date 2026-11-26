@@ -15,14 +15,14 @@ writeOutput( arrayFindNoCase( [
 
 Result: 3
 
-### arrayFind is not Case Sensitive
+### arrayFind is Case Sensitive
 
-Not case sensitive so "Apple" will be found in the array, returns 1. Use arrayFind for case sensitive matching.
+arrayFind compares case sensitively, so "Apple" is not found in the array and 0 is returned. Use arrayFindNoCase for case insensitive matching.
 
 <a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQSCwqSqx0y8xL8ct3TixO1VCIVuDiVMovSsxLT1XSATILMvNSEwsKciA8CIsrVkdByRHMVNBU0LTmAgCKPhkK" target="_blank">Run Example</a>
 
 ```java
-writeOutput( arrayFindNoCase( [ 
+writeOutput( arrayFind( [ 
 	"orange",
 	"pineapple",
 	"apple"
@@ -30,7 +30,7 @@ writeOutput( arrayFindNoCase( [
 
 ```
 
-Result: 1
+Result: 0
 
 ### Member Functions: Find an "Apple" in an array of fruit
 
@@ -49,6 +49,28 @@ writeOutput( fruit.findNoCase( "Apple" ) )
 ```
 
 Result: 3
+
+### Find with a function
+
+When the value is a function it is used as the search predicate and the index of the first element it returns true for is returned.
+
+```java
+numbers = [ 5, 8, 12, 3 ]
+writeOutput( numbers.find( ( value ) -> value > 10 ) )
+```
+
+Result: 3
+
+### Contains returns a boolean
+
+The `contains` variants return true or false instead of an index. `contains` is case sensitive and `containsNoCase` is not.
+
+```java
+letters = [ "a", "b" ]
+writeOutput( letters.contains( "B" ) & "," & letters.containsNoCase( "B" ) )
+```
+
+Result: false,true
 
 ### Additional Examples
 

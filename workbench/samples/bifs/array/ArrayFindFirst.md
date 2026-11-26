@@ -16,7 +16,7 @@ Result: Grace
 ```java
 users = [ { name: "Ada" } ]
 found = users.findFirst( ( user ) => user.name == "Nobody", "Unknown" )
-writeOutput( found.name )
+writeOutput( found )
 
 ```
 
@@ -32,3 +32,17 @@ writeOutput( found )
 ```
 
 Result: 6
+
+### Nothing matches and no default is given
+
+An exception is thrown when no element matches and no default value was provided.
+
+```java
+try {
+	[ 1, 2, 3 ].findFirst( ( n ) -> n > 10 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Could not find any results that matched the predicate function.

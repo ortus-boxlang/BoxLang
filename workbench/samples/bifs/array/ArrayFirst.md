@@ -34,7 +34,32 @@ WriteOutput( arrayFirst( seinfeldArray ) )
 
 ```
 
-Result: "Jerry"
+Result: Jerry
+
+### Default value for an empty array
+
+The optional default value is returned when the array is empty.
+
+```java
+empty = []
+writeOutput( empty.first( "none" ) )
+```
+
+Result: none
+
+### Empty array without a default
+
+An exception is thrown when the array is empty and no default value is given.
+
+```java
+try {
+	arrayFirst( [] )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Cannot return first element of array; array is empty
 
 ### Additional Examples
 

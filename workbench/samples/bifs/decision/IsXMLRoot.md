@@ -74,3 +74,12 @@ Result: NO
 ```
 
 
+
+### The document itself is not the root element
+
+```java
+doc = xmlParse( "<root><a/></root>" )
+writeOutput( isXmlRoot( doc.xmlRoot ) & " " & isXmlRoot( doc ) )
+```
+
+Result: true false

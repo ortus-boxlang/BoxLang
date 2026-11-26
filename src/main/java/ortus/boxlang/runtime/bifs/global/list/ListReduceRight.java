@@ -50,7 +50,7 @@ public class ListReduceRight extends ArrayReduce {
 
 	/**
 	 * Reduces a delimited list to a single value by invoking the callback on each element, starting from the last element and moving
-	 *     to the first.
+	 * to the first.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -58,19 +58,19 @@ public class ListReduceRight extends ArrayReduce {
 	 * @argument.list The delimited list to operate on.
 	 *
 	 * @argument.callback The reducer function. It receives the accumulator, the current value, the one-based index within the
-	 *     reversed list, and the reversed array of items. You can alternatively pass a Java BiFunction, which receives only the
-	 *     accumulator and value.
+	 *                    reversed list, and the reversed array of items. You can alternatively pass a Java BiFunction, which receives only the
+	 *                    accumulator and value.
 	 *
 	 * @argument.initialValue The initial value of the accumulator.
 	 *
 	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
-	 *     multiCharacterDelimiter is true. Defaults to a comma.
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
 	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
-	 *     to false.
+	 *                              to false.
 	 *
 	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
-	 *     single-character delimiters. Defaults to false.
+	 *                                   single-character delimiters. Defaults to false.
 	 *
 	 * @return The final accumulated value.
 	 */

@@ -38,8 +38,8 @@ public class IsArray extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is an array. Returns true for native BoxLang Arrays, native Java arrays, and any value that can be cast to an Array
-	 * (for example a java.util.List). Returns false for null and for non-array values such as strings or structs.
+	 * Determines whether a value is an array. Returns true for native BoxLang Arrays, native Java arrays, and any value that can be cast to an
+	 * Array (for example a java.util.List). Returns false for null and for non-array values such as strings or structs.
 	 *
 	 * @argument.value The value to test for array-ness.
 	 *

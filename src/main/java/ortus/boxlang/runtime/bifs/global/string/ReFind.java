@@ -53,27 +53,36 @@ public class ReFind extends BIF {
 	}
 
 	/**
-	 *
-	 * Uses a regular expression (RE) to search a string for a pattern, starting from a specified position. The search is case-sensitive.
-	 * It will return numeric if returnsubexpressions is false and a struct of arrays named "len", "match" and "pos" when returnsubexpressions is true.
+	 * Uses a regular expression (RE) to search a string for a pattern, starting from a specified position. <code>ReFind</code> is
+	 * case-sensitive and its alias <code>ReFindNoCase</code> is case-insensitive.
+	 * Both are also available as string member functions. POSIX character classes are supported and the dot matches newlines.
+	 * <p>
+	 * The return value depends on the arguments:
+	 * <ul>
+	 * <li>returnSubExpressions false, scope "one": the position of the first match, or 0 if there is no match.</li>
+	 * <li>returnSubExpressions false, scope "all": an array with the position of every match, or 0 if there is no match.</li>
+	 * <li>returnSubExpressions true, scope "one": a struct with the arrays <code>len</code>, <code>match</code> and <code>pos</code>.</li>
+	 * <li>returnSubExpressions true, scope "all": an array of those structs, one per match.</li>
+	 * </ul>
+	 * In the subexpression arrays the first element is the whole match and each following element is a group. When nothing matches, each array
+	 * contains a single 0 (or an empty string for match).
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.reg_expression The regular expression to search for
+	 * @argument.reg_expression The regular expression to search for.
 	 *
-	 * @argument.string The string to serach in
+	 * @argument.string The string to search in.
 	 *
-	 * @argument.start The position from which to start searching in the string. Default is 1.
+	 * @argument.start The 1-based position from which to start searching in the string. Values lower than 1 are treated as 1. Defaults to 1.
 	 *
-	 * @argument.returnSubExpressions True: if the regular expression is found, the first array element contains the length and position, respectively, of
-	 *                                the first match. If the regular expression contains parentheses that group subexpressions, each subsequent array
-	 *                                element contains the length and position, respectively, of the first occurrence of each group. If the regular
-	 *                                expression is not found, the arrays each contain one element with the value 0. False: the function returns the
-	 *                                position in the string where the match begins. Default.
+	 * @argument.returnSubExpressions If true, return the length, match and position of the match and of each group of the regular expression
+	 *                                instead of just the position. Defaults to false.
 	 *
-	 * @argument.scope "one": returns the first value that matches the regex. "all": returns all values that match the regex.
+	 * @argument.scope "one" returns only the first match. "all" returns every match. Must be one of "one" or "all". Defaults to "one".
 	 *
+	 * @return A position number, an array of positions, a struct of arrays, or an array of structs, depending on returnSubExpressions and
+	 *         scope. See the description.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	reg_expression			= arguments.getAsString( Key.reg_expression );

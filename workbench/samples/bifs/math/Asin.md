@@ -22,4 +22,24 @@ dump( Asin( sine ) )
 
 ```
 
+### Arcsine of 1
 
+```java
+writeOutput( asin( 1 ) )
+
+```
+
+Result: 1.5707963267948966
+
+### Input outside the range -1 to 1
+
+```java
+try {
+	asin( 2 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+
+```
+
+Result: Input value must be in the range [-1, 1] for ASin function.

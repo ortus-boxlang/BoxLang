@@ -40,16 +40,19 @@ public class Mid extends BIF {
 	}
 
 	/**
-	 * Extract a substring from a string
+	 * Extract a substring from the middle of a string.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to extract from
+	 * @argument.string The string to extract from.
 	 *
-	 * @argument.start The position of the first character to retrieve.
+	 * @argument.start The 1-based position of the first character to retrieve. Values lower than 1 are treated as 1.
 	 *
-	 * @argument.count The number of characters to retrieve.
+	 * @argument.count The number of characters to retrieve. Defaults to the rest of the string. If it is zero or negative an empty string is
+	 *                 returned, and if it runs past the end of the string the characters up to the end are returned.
+	 *
+	 * @return The extracted substring, or an empty string if the start is past the end of the string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return mid( arguments.getAsString( Key.string ), arguments.getAsInteger( Key.start ), arguments.getAsInteger( Key.count ) );

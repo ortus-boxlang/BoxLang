@@ -39,7 +39,7 @@ public class Rand extends BIF {
 
 	/**
 	 * Returns a pseudo-random double greater than or equal to 0 and less than 1. If a seed was set with randomize() in the current
-	 *     request, the sequence is repeatable.
+	 * request, the generator is re-seeded with that seed on every call.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

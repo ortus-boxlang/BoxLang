@@ -43,18 +43,20 @@ public class Find extends BIF {
 	}
 
 	/**
-	 * Finds the first occurrence of a substring in a string, from a specified start position.
+	 * Finds the first occurrence of a substring in a string, from a specified start position. Find is case-sensitive; its alias
+	 * <code>FindNoCase</code> ignores case.
+	 * Both are also available as string member functions.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.substring The string you are looking for.
-	 * 
-	 * @argument.string The string to search in.
-	 * 
-	 * @argument.start The position from which to start searching in the string. Default is 1.
 	 *
-	 * @return Returns the position of the first occurrence of the substring. If the substring is not found, returns zero.
+	 * @argument.string The string to search in.
+	 *
+	 * @argument.start The position, 1-based, from which to start searching. Values lower than 1 are treated as 1. Defaults to 1.
+	 *
+	 * @return The 1-based position of the first occurrence of the substring, or 0 if it is not found.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key bifMethodKey = arguments.getAsKey( BIF.__functionName );

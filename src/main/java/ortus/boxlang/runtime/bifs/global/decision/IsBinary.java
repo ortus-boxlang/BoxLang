@@ -36,8 +36,8 @@ public class IsBinary extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is binary data (a byte[] or a BoxLang binary value). Strings, numbers and other types return false, even if they contain
-	 * Base64-encoded text. Use `toBinary()` to convert Base64 text into binary data.
+	 * Determines whether a value is binary data (a byte[] or a BoxLang binary value). Strings, numbers and other types return false, even if
+	 * they contain Base64-encoded text. Use `toBinary()` to convert Base64 text into binary data.
 	 *
 	 * @argument.value The value to test.
 	 *

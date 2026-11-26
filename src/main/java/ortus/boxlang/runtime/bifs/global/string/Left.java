@@ -40,14 +40,19 @@ public class Left extends BIF {
 	}
 
 	/**
-	 * Extract the leftmost count characters from a string
+	 * Extract the leftmost characters of a string.
+	 * A negative count returns all but the last |count| characters of the string; if |count| is larger than the string, the whole string is returned.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to extract from
+	 * @argument.string The string to extract from.
 	 *
-	 * @argument.count The number of characters to retrieve.
+	 * @argument.count The number of characters to retrieve. If it is larger than the string, the whole string is returned.
+	 *
+	 * @throws BoxRuntimeException if the count is zero.
+	 *
+	 * @return The leftmost characters of the string, or an empty string if the string is null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return left( arguments.getAsString( Key.string ), arguments.getAsInteger( Key.count ) );

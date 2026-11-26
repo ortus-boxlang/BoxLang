@@ -45,8 +45,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * The {@code listener} argument accepts three forms:
  * <ul>
  * <li>A <strong>Function</strong> (closure/lambda) — invoked for every event</li>
- * <li>An <strong>IStruct</strong> of named functions — keys: {@code onCreate}, {@code onModify}, {@code onDelete}, {@code onOverflow}, {@code onError}</li>
- * <li>A <strong>String</strong> class name — the class is instantiated and its {@code onEvent} method is called</li>
+ * <li>An <strong>IStruct</strong> of named functions — keys: {@code onCreate}, {@code onModify}, {@code onDelete}, {@code onOverflow}, {@code onEvent}, {@code onError}</li>
+ * <li>A <strong>String</strong> class name (or a class instance) — the class is instantiated and its {@code onEvent} method is called</li>
  * </ul>
  */
 @BoxBIF( description = "Create and register a new filesystem watcher. Returns the WatcherInstance." )
@@ -76,8 +76,10 @@ public class WatcherNew extends BIF {
 	 *
 	 * You can register three types of listeners, which BoxLang will automatically wrap into an IWatcherListener implementation:
 	 * <ul>
-	 * <li>{@link Function}: wrapped as a {@code ClosureListener}. Can only handle the {@code onEvent} method.</li>
-	 * <li>{@link IStruct}: wrapped as a {@code StructListener}. Can handle {@code onEvent} and {@code onError} methods.</li>
+	 * <li>{@link Function}: wrapped as a {@code ClosureListener}. Is invoked for every event with a struct argument containing
+	 * {@code kind} (created, modified, deleted or overflow), {@code path}, {@code relativePath}, {@code watchRoot} and {@code timestamp}.</li>
+	 * <li>{@link IStruct}: wrapped as a {@code StructListener}. Can define {@code onCreate}, {@code onModify}, {@code onDelete}, {@code onOverflow},
+	 * a catch-all {@code onEvent}, and {@code onError}.</li>
 	 * <li>{@link String}: treated as a class name and wrapped as a {@code ClassListener}. The class must implement {@code IWatcherListener}.</li>
 	 * </ul>
 	 *
@@ -88,25 +90,25 @@ public class WatcherNew extends BIF {
 	 *
 	 * @argument.name Optional watcher name. If blank, an auto-generated name is used.
 	 *
-	 * @argument.paths A directory path string or an array of directory path strings to watch.
+	 * @argument.paths A directory path string or an array of directory path strings to watch. Any other type throws an exception.
 	 *
-	 * @argument.listener Listener definition: function, struct listener map, or listener class name string.
+	 * @argument.listener Listener definition: function, struct listener map, class instance, or listener class name string. Required.
 	 *
-	 * @argument.recursive Whether to watch subdirectories recursively.
+	 * @argument.recursive Whether to watch subdirectories recursively. Defaults to true.
 	 *
-	 * @argument.debounce Debounce window in milliseconds.
+	 * @argument.debounce Debounce window in milliseconds. Defaults to 0 (disabled).
 	 *
-	 * @argument.throttle Throttle window in milliseconds.
+	 * @argument.throttle Throttle window in milliseconds. Defaults to 0 (disabled).
 	 *
-	 * @argument.atomicWrites Whether atomic write filtering is enabled.
+	 * @argument.atomicWrites Whether atomic write filtering is enabled. Defaults to true.
 	 *
-	 * @argument.delay Startup delay in milliseconds.
+	 * @argument.delay Startup delay in milliseconds. Defaults to 0. Currently declared but not applied by this BIF.
 	 *
-	 * @argument.errorThreshold Consecutive listener errors before auto-stop.
+	 * @argument.errorThreshold Consecutive listener errors before auto-stop. Defaults to 10.
 	 *
-	 * @argument.force Whether to replace an existing watcher with the same name.
+	 * @argument.force Whether to replace an existing watcher with the same name. Defaults to false, in which case a duplicate name throws an exception.
 	 *
-	 * @return The registered {@link WatcherInstance}.
+	 * @return The registered {@link WatcherInstance}, in the CREATED state.
 	 *
 	 * @throws BoxRuntimeException If listener resolution fails or the watcher cannot be registered.
 	 */

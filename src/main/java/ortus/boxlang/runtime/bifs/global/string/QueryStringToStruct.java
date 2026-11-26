@@ -37,15 +37,14 @@ public class QueryStringToStruct extends BIF {
 	}
 
 	/**
-	 * Convert a query string to a struct.
-	 * Each key-value pair in the query string is separated by a delimiter.
-	 * The default delimiter is {@code "&"}
+	 * Convert a query string to a struct. Each key-value pair in the query string is separated by the delimiter, and keys and values are URL
+	 * decoded and trimmed.
+	 * A leading <code>?</code> is ignored, a key without a value gets an empty string, and an empty string returns an empty struct. The struct
+	 * is ordered, so keys keep their order in the query string.
 	 * <p>
 	 * Example:
-	 *
 	 * <pre>
-	 * queryStringToStruct( "foo=bar&amp;baz=qux" );
-	 * "foo=bar&amp;baz=qux".toStruct();
+	 * queryStringToStruct( "foo=bar&amp;baz=qux" )
 	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -53,7 +52,10 @@ public class QueryStringToStruct extends BIF {
 	 *
 	 * @argument.target The query string to convert.
 	 *
-	 * @argument.delimiter The delimiter used to separate key-value pairs in the query string.
+	 * @argument.delimiter The delimiter used to separate key-value pairs in the query string. It is used as a regular expression. Defaults to
+	 *                     "&amp;".
+	 *
+	 * @return An ordered struct with the keys and values of the query string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	target		= arguments.getAsString( Key.target );

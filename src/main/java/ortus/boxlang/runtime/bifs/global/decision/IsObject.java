@@ -39,8 +39,7 @@ public class IsObject extends BIF {
 
 	/**
 	 * Determines whether a value is an object.
-	 * <p>
-	 * True conditions are:
+	 * <p> True conditions are:
 	 * <ul>
 	 * <li>Box Class instances are "objects"</li>
 	 * <li>All other classes that represent a BoxLang type are NOT "objects" (query, array, struct, XML, etc)</li>

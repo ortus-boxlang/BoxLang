@@ -39,12 +39,18 @@ public class Ascii extends BIF {
 	}
 
 	/**
-	 * Determine the ASCII value of a character
+	 * Return the numeric character code of the first character of a string. Only the first character is used; any remaining characters are
+	 * ignored.
+	 * The value is the UTF-16 code unit of that character.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string containing a single character to determine the ASCII value.
+	 * @argument.string The string whose first character is converted. Must contain at least one character.
+	 *
+	 * @throws BoxRuntimeException if the string is empty.
+	 *
+	 * @return The integer code of the first character.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String inputString = arguments.getAsString( Key.string );

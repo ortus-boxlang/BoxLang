@@ -1,37 +1,35 @@
-### Swap rows and columns in a 2D array
+### Swap rows and columns
+
+Pass two or more arrays of the same length. The first elements of every array become the first row of the result, and so on.
 
 ```java
-matrix = [
-    [ 1, 2, 3 ],
-    [ 4, 5, 6 ]
-]
-result = matrix.transpose()
-writeOutput( result.len() & "," & result[ 1 ].len() )
-
+result = arrayTranspose( [ 1, 2, 3 ], [ 4, 5, 6 ] )
+writeOutput( JSONSerialize( result ) )
 ```
 
-Result: 3,2
+Result: [[1,4],[2,5],[3,6]]
 
-### Transposed result
+### Using the member function
+
+The array the member function is called on is the first array to transpose.
 
 ```java
-matrix = [
-    [ 1, 2 ],
-    [ 3, 4 ]
-]
-result = matrix.transpose()
-writeOutput( result[ 1 ].toString() )
-
+result = [ 1, 2 ].transpose( [ 3, 4 ], [ 5, 6 ] )
+writeOutput( JSONSerialize( result ) )
 ```
 
-Result: [1, 3]
+Result: [[1,3,5],[2,4,6]]
 
-### Using the global function form
+### Arrays must have the same length
+
+An exception is thrown when the arrays have different lengths.
 
 ```java
-result = arrayTranspose( [ [ "a", "b" ], [ "c", "d" ] ] )
-writeOutput( result[ 2 ].toString() )
-
+try {
+	arrayTranspose( [ 1, 2, 3 ], [ 4, 5 ] )
+} catch ( any e ) {
+	writeOutput( e.message.left( 55 ) )
+}
 ```
 
-Result: [b, d]
+Result: All arrays passed in to arrayTranspose must be the sa

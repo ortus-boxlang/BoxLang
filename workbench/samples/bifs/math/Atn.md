@@ -22,4 +22,21 @@ dump( Atn( angle_tangent ) )
 
 ```
 
+### Arctangent of 1
 
+```java
+writeOutput( atn( 1 ) )
+
+```
+
+Result: 0.7853981633974483
+
+### Member function
+
+```java
+n = 0
+writeOutput( n.atn() )
+
+```
+
+Result: 0

@@ -5,14 +5,23 @@
 <a href="https://try.boxlang.io/?code=eJzzCvb3C04tykzMyaxK1VBILCpKrAzJDy4pKk0u0VCIVuDiVEpU0gGSSUpcsQqaCprWXACxsA4w" target="_blank">Run Example</a>
 
 ```java
-JSONSerialize( arrayToStruct( [ 
-	"a",
-	"b"
-] ) )
+writeOutput( JSONSerialize( arrayToStruct( [ "a", "b" ] ) ) )
 
 ```
 
 Result: {"1":"a","2":"b"}
+
+### Using the member function
+
+The struct keys are the one-based array positions.
+
+```java
+letters = [ "x", "y" ]
+s = letters.toStruct()
+writeOutput( s[ "1" ] & s[ "2" ] )
+```
+
+Result: xy
 
 ### Additional Examples
 
@@ -28,7 +37,6 @@ arr = [
 	"g"
 ]
 dump( arrayToStruct( arr ) )
-if( listFirst( server.BOXLANG.VERSION, "." ) >= 6 ) dump( arrayToStruct( arr, true ) )
 // member function
 dump( arr.toStruct() )
 

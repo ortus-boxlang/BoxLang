@@ -176,6 +176,8 @@ Result: dumps of the soft, weak and linked structs (all empty), followed by dump
 <bx:dump var="#st#">
 ```
 
+Result: a dump of the struct with the keys name, age and city
+
 ### Sorted struct with a sort type
 
 Passing a sort type creates a sorted struct, so keys come back in sorted order.
@@ -201,5 +203,3 @@ try {
 ```
 
 Result: Could not create a struct with a type of [BOGUS] as it is not a known type.
-
-Result: a dump of the struct with the keys name, age and city

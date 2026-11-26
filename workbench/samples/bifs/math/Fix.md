@@ -21,4 +21,20 @@ writeOutput( fix( 7.546 ) )
 
 ```
 
+### Positive number is rounded down
 
+```java
+writeOutput( fix( 3.7 ) )
+
+```
+
+Result: 3
+
+### Negative number is rounded toward zero
+
+```java
+writeOutput( fix( -3.7 ) )
+
+```
+
+Result: -3

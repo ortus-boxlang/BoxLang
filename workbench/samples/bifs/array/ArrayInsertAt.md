@@ -17,6 +17,28 @@ writeOutput( JSONSerialize( someArray ) )
 
 Result: [1,4,2,3]
 
+### Insert using the member function
+
+```java
+letters = [ "a", "c" ]
+letters.insertAt( 2, "b" )
+writeOutput( letters.toList() )
+```
+
+Result: a,b,c
+
+### Insert at the end of an array
+
+Using a position one greater than the array size appends the value.
+
+```java
+numbers = [ 1, 2 ]
+arrayInsertAt( numbers, 3, 9 )
+writeOutput( numbers.toList() )
+```
+
+Result: 1,2,9
+
 ### Additional Examples
 
 <a href="https://try.boxlang.io/?code=eJyFjTsOwjAMQGdyCisTSBUdGCuGjpwBMbjEQRbkI5Oo4vYkAbVsyMuT%2FfRsJXMaRfAFRziD2miM8UG6K3TnmRtM6Ms0DIL%2B9jm7QmEV1WVQWEMn%2FyRJY9qCXeIdHDrQnmbgdiUDnMhp2A3KZBd%2F3brre3DkJhKw2V8TB69WYc%2FLh1r9imjMv%2Bobm5pKjg%3D%3D" target="_blank">Run Example</a>

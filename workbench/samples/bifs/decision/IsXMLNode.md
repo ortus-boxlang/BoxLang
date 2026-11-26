@@ -44,3 +44,12 @@ Result: YES
 ```
 
 
+
+### Documents and XML strings are nodes, plain text is not
+
+```java
+doc = xmlParse( "<root><a/></root>" )
+writeOutput( isXmlNode( doc ) & " " & isXmlNode( "<root/>" ) & " " & isXmlNode( "plain text" ) )
+```
+
+Result: true true false

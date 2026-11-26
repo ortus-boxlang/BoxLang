@@ -63,10 +63,10 @@ public class ListChangeDelims extends BIF {
 	 * @argument.delimiter The delimiter(s) currently used in the list. Defaults to a comma.
 	 *
 	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
-	 *     to false.
+	 *                              to false.
 	 *
 	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
-	 *     single-character delimiters. Defaults to false.
+	 *                                   single-character delimiters. Defaults to false.
 	 *
 	 * @return The list rewritten using the new delimiter.
 	 */

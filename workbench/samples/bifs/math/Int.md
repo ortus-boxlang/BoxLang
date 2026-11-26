@@ -23,4 +23,21 @@ writeDump( int( -2.9 ) )
 
 ```
 
+### Negative numbers round down
 
+```java
+writeOutput( int( -3.7 ) )
+
+```
+
+Result: -4
+
+### Member function
+
+```java
+n = 9.99
+writeOutput( n.int() )
+
+```
+
+Result: 9

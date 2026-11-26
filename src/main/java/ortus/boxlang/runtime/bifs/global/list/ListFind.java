@@ -72,15 +72,15 @@ public class ListFind extends ArrayFind {
 	 * @argument.value The string value to locate in the list. For listContains and listContainsNoCase it is matched as a substring of each element.
 	 *
 	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
-	 *     multiCharacterDelimiter is true. Defaults to a comma.
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
 	 * @argument.includeEmptyFields Whether empty elements are counted when computing positions. Defaults to false.
 	 *
 	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
-	 *     single-character delimiters. Defaults to false.
+	 *                                   single-character delimiters. Defaults to false.
 	 *
 	 * @return The one-based index of the first match (0 if none) for listFind and listFindNoCase; a boolean for listContains and
-	 *     listContainsNoCase.
+	 *         listContainsNoCase.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

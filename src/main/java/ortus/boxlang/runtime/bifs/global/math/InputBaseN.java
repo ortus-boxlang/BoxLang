@@ -46,7 +46,7 @@ public class InputBaseN extends BIF {
 
 	/**
 	 * Converts a string representing a number in the given base (radix) to its decimal value. A leading "0x" prefix is removed
-	 *     before parsing. Throws an exception if the string is not a valid number in that base.
+	 * before parsing. Throws an exception if the string is not a valid number in that base.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

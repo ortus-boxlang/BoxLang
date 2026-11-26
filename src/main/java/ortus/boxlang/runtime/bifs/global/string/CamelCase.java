@@ -39,12 +39,15 @@ public class CamelCase extends BIF {
 	}
 
 	/**
-	 * Convert a string to camel case
+	 * Convert a string to camelCase: the words of the string are joined, the first word is lowercase and each following word starts with an
+	 * uppercase letter.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The target string
+	 * @argument.string The string to convert.
+	 *
+	 * @return The camelCase version of the string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return StringUtil.camelCase( arguments.getAsString( Key.string ) );

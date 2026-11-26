@@ -55,7 +55,7 @@ public class HTTP extends BIF {
 	}
 
 	/**
-	 * Returns a fluent HTTP client for making HTTP requests.
+	 * Returns a fluent HTTP request builder for making HTTP requests.
 	 *
 	 * This BIF creates a new or retrieves an existing BoxHttpClient instance based on the provided
 	 * connection parameters. The client can be used to fluently build and execute HTTP requests
@@ -64,19 +64,19 @@ public class HTTP extends BIF {
 	 * Example usage:
 	 *
 	 * <pre>
-	 * // Simple GET request
-	 * http( "https://api.example.com/data" )
-	 *     .invoke()
-	 *     .ifSuccess( result -> {
-	 * 		// Handle successful response
-	 * 	} )
-	 *     .ifError( error -> {
-	 * 		// Handle error response
-	 * 	} )
+	 * // Simple GET request, returning the result struct (statusCode, fileContent, responseHeader, etc)
+	 * result = http( "https://api.example.com/data" ).send()
 	 *
-	 * // Invoke and get the result immediately, throwing an exception on error
+	 * // POST a JSON body with a header and a request timeout in seconds
 	 * result = http( "https://api.example.com/data" )
-	 * 	.invokeAndGet().
+	 *     .post()
+	 *     .header( "Accept", "application/json" )
+	 *     .jsonBody( '{"name":"BoxLang"}' )
+	 *     .timeout( 30 )
+	 *     .send()
+	 *
+	 * // Throw an exception for 4xx and 5xx responses
+	 * result = http( "https://api.example.com/data" ).throwOnError( true ).send()
 	 * </pre>
 	 *
 	 * Streaming raw binary responses (New in 1.19.0):
@@ -133,11 +133,14 @@ public class HTTP extends BIF {
 	 * @param context   The BoxLang execution context
 	 * @param arguments The arguments provided to the BIF
 	 *
-	 * @argument.connectionTimeout The connection timeout in milliseconds (default: BoxHttpClient.DEFAULT_CONNECTION_TIMEOUT)
+	 * @argument.URL The URL the request will be sent to. The returned request can be refined with fluent methods such as
+	 *               get(), post(), header(), body(), jsonBody() and timeout(), and is executed with send().
+	 *
+	 * @argument.connectionTimeout The connection timeout in seconds (default: 15)
 	 *
 	 * @argument.redirect Whether to automatically follow HTTP redirects (default: true)
 	 *
-	 * @argument.httpVersion The HTTP version to use (default: HTTP/2)
+	 * @argument.httpVersion The HTTP version to use, either "HTTP/2" or "HTTP/1.1" (default: HTTP/2)
 	 *
 	 * @argument.proxyServer The proxy server address (requires proxyPort)
 	 *
@@ -151,7 +154,7 @@ public class HTTP extends BIF {
 	 *
 	 * @argument.clientCertPassword The password for the client certificate
 	 *
-	 * @return A BoxHttpClient instance configured with the specified parameters
+	 * @return A new HTTP request object (BoxHttpClient.BoxHttpRequest) bound to a pooled client that matches the connection settings. Call send() to execute it.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

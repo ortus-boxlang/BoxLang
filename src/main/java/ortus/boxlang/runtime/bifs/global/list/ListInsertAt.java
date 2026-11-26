@@ -49,7 +49,7 @@ public class ListInsertAt extends BIF {
 
 	/**
 	 * Inserts a value at a one-based position in a list and returns the new list. Valid positions range from 1 to the number of
-	 *     elements plus one (to append); other positions throw an exception.
+	 * elements plus one (to append); other positions throw an exception.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -61,13 +61,13 @@ public class ListInsertAt extends BIF {
 	 * @argument.value The value to insert.
 	 *
 	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
-	 *     multiCharacterDelimiter is true. Defaults to a comma.
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
 	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
-	 *     to false.
+	 *                              to false.
 	 *
 	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
-	 *     single-character delimiters. Defaults to false.
+	 *                                   single-character delimiters. Defaults to false.
 	 *
 	 * @return The list with the value inserted.
 	 */

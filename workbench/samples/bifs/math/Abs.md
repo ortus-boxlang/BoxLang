@@ -27,4 +27,12 @@ dump( absVal )
 
 ```
 
+### Member function
 
+```java
+n = -5
+writeOutput( n.abs() )
+
+```
+
+Result: 5

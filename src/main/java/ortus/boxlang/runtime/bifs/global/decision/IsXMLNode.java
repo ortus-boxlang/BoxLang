@@ -38,7 +38,8 @@ public class IsXMLNode extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is any XML node (document, element, attribute, etc) or can be parsed into one. Well-formed XML strings return true.
+	 * Determines whether a value is any XML node (document, element, attribute, etc) or can be parsed into one. Well-formed XML strings return
+	 * true.
 	 *
 	 * @argument.value The value to test.
 	 *

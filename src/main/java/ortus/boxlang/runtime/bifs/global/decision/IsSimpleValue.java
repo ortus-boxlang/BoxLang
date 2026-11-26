@@ -41,8 +41,8 @@ public class IsSimpleValue extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is a simple value: a string, character, boolean, number, date/time, Key, locale or timezone. Null, StringBuilders,
-	 * arrays, structs, queries, classes and other complex types return false.
+	 * Determines whether a value is a simple value: a string, character, boolean, number, date/time, Key, locale or timezone. Null,
+	 * StringBuilders, arrays, structs, queries, classes and other complex types return false.
 	 *
 	 * @argument.value Optional. The value to test for simple-ness.
 	 *

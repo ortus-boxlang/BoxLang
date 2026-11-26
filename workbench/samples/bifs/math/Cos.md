@@ -20,4 +20,20 @@ writeDump( cos( 90 ) )
 
 ```
 
+### Cosine of 0 radians
 
+```java
+writeOutput( cos( 0 ) )
+
+```
+
+Result: 1
+
+### Cosine of pi radians
+
+```java
+writeOutput( cos( pi() ) )
+
+```
+
+Result: -1

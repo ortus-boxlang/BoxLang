@@ -35,17 +35,15 @@ writeOutput( JSONSerialize( myArray.reverse() ) )
 
 Result: [3,2,1]
 
-### Reverse an Array using array slice syntax
-
-Reverse an Array using array slice syntax adding in Boxlang 2018
-
+### The original array is not modified
 
 ```java
-myArray = [1,2,3]
-writeOutput( serializeJSON( myArray[::-1] ) )
+original = [ 1, 2, 3 ]
+reversed = original.reverse()
+writeOutput( original.toList() & " | " & reversed.toList() )
 ```
 
-Result: [3,2,1]
+Result: 1,2,3 | 3,2,1
 
 ### Additional Examples
 
@@ -59,11 +57,9 @@ numbers = [
 	4
 ]
 arrayReverse( numbers )
-Dump( numbers ); // [4,3,2,1]
+Dump( numbers ); // [1,2,3,4] - the original array is not modified
 // member function
 reversed = numbers.reverse()
 Dump( reversed )
 
 ```
-
-

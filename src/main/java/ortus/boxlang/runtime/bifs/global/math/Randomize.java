@@ -38,8 +38,9 @@ public class Randomize extends BIF {
 	}
 
 	/**
-	 * Seeds the random number generator for the current request so that subsequent calls to rand() and randRange() produce a
-	 *     repeatable sequence. Passing the algorithm argument throws an exception because it is not yet implemented.
+	 * Seeds the random number generator for the current request so that subsequent calls to rand() and randRange() in the request
+	 * are driven by that seed (the generator is re-seeded with it on every call). Passing the algorithm argument throws an exception
+	 * because it is not yet implemented.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

@@ -68,22 +68,22 @@ public class ListMap extends ArrayMap {
 	 * @argument.list The delimited list to map over.
 	 *
 	 * @argument.callback The function to invoke for each element. It receives the value, the one-based index, and the array of list
-	 *     items, and its return value replaces the element. You can alternatively pass a Java Function, which receives only the
-	 *     value.
+	 *                    items, and its return value replaces the element. You can alternatively pass a Java Function, which receives only the
+	 *                    value.
 	 *
 	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
-	 *     multiCharacterDelimiter is true. Defaults to a comma.
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
 	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
-	 *     to false.
+	 *                              to false.
 	 *
 	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
-	 *     single-character delimiters. Defaults to false.
+	 *                                   single-character delimiters. Defaults to false.
 	 *
 	 * @argument.parallel Whether to run the callback in parallel. Defaults to false.
 	 *
 	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If omitted, the default ForkJoinPool
-	 *     parallelism is used. Ignored if parallel is false. If a boolean is passed it is assigned to the virtual argument instead.
+	 *                      parallelism is used. Ignored if parallel is false. If a boolean is passed it is assigned to the virtual argument instead.
 	 *
 	 * @argument.virtual If true, the callback is invoked using virtual threads. Defaults to false. Ignored if parallel is false.
 	 *

@@ -51,14 +51,15 @@ public class IsValid extends BIF {
 	 * Validates a value against a named type, using the type's own rules. Some types take extra arguments:
 	 * <ul>
 	 * <li><code>range</code> checks that the value is numeric and between <code>min</code> and <code>max</code></li>
-	 * <li><code>regex</code> / <code>regular_expression</code> checks the value against <code>pattern</code> (or <code>min</code> if no pattern is given)</li>
+	 * <li><code>regex</code> / <code>regular_expression</code> checks the value against <code>pattern</code> (or <code>min</code> if no pattern
+	 * is given)</li>
 	 * </ul>
-	 * <strong>Note:</strong> the CFML <code>eurodate</code> type is deliberately not supported, since date formats vary across EU countries. Prefer
+	 * <strong>Note:</strong> the CFML <code>eurodate</code> type is deliberately not supported, since date formats vary across EU countries.
+	 * Prefer
 	 * <code>lsIsDate( date, locale )</code> instead.
-	 * <p>
-	 * Valid types: any, array, binary, boolean, class, closure, component, creditcard, date, email, float, function, guid, hex, integer, lambda, number,
-	 * numeric, query, range, regex, regular_expression, social_security_number, ssn, string, struct, telephone, time, udf, url, usdate, uuid,
-	 * variablename, xml and zipcode. An unknown type throws an IllegalArgumentException, as does the regex type with no pattern.
+	 * <p> Valid types: any, array, binary, boolean, class, closure, component, creditcard, date, email, float, function, guid, hex, integer,
+	 * lambda, number, numeric, query, range, regex, regular_expression, social_security_number, ssn, string, struct, telephone, time, udf, url,
+	 * usdate, uuid, variablename, xml and zipcode. An unknown type throws an IllegalArgumentException, as does the regex type with no pattern.
 	 *
 	 * @argument.type The type to validate the value against (case-insensitive).
 	 *

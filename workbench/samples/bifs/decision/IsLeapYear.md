@@ -11,6 +11,8 @@ writeOutput( isLeapYear )
 
 ```
 
+Result: true when the current year is a leap year, otherwise false
+
 
 ### Additional Examples
 
@@ -23,4 +25,4 @@ writeDump( label="1", var=IsLeapYear( 1 ) )
 
 ```
 
-
+Result: false, true, false (for 2018, 2020 and 1)

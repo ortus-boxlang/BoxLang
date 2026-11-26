@@ -36,8 +36,8 @@ public class IsClosure extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is a closure (a function defined with the `=>` or `function(){}` expression syntax that captures its enclosing scope).
-	 * Lambdas (`->`), named UDFs and non-function values return false.
+	 * Determines whether a value is a closure (a function defined with the `=>` or `function(){}` expression syntax that captures its enclosing
+	 * scope). Lambdas (`->`), named UDFs and non-function values return false.
 	 *
 	 * @argument.object The value to test for closure-ness.
 	 *

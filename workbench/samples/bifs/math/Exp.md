@@ -18,4 +18,20 @@ Result: 3.099999999991346707809724952544356
 <bx:output>#exp( 10 )#</bx:output>
 ```
 
+### e raised to the power of 0
 
+```java
+writeOutput( exp( 0 ) )
+
+```
+
+Result: 1
+
+### e raised to the power of 1
+
+```java
+writeOutput( exp( 1 ) )
+
+```
+
+Result: 2.718281828459045

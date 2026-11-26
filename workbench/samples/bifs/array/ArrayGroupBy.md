@@ -5,11 +5,11 @@ Returns a struct where each key is a value returned by the callback and each val
 ```java
 numbers = [ 1, 2, 3, 4, 5, 6 ]
 groups = numbers.groupBy( ( n ) => n % 2 == 0 ? "even" : "odd" )
-writeOutput( groups.keyList() )
+writeOutput( groups.len() )
 
 ```
 
-Result: odd,even
+Result: 2
 
 ### Group objects by a property
 

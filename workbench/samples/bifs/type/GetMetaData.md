@@ -19,3 +19,22 @@ dump( GetMetadata( q ) )
 ```
 
 
+### Metadata of a function
+
+```java
+function greet( required string name, numeric times = 1 ) {
+	return name
+}
+meta = getMetadata( greet )
+writeOutput( meta.name & " " & meta.parameters.len() )
+```
+
+Result: greet 2
+
+### Non-BoxLang values return their Java class
+
+```java
+writeOutput( getMetadata( "abc" ).getName() )
+```
+
+Result: java.lang.String

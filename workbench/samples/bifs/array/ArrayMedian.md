@@ -17,6 +17,27 @@ writeOutput( m )
 
 Result: 2
 
+### Median of an even number of values
+
+With an even number of elements the median is the average of the two middle values.
+
+```java
+writeOutput( arrayMedian( [ 1, 2, 3, 4 ] ) )
+```
+
+Result: 2.5
+
+### Using the member function
+
+The array is not modified and does not need to be sorted.
+
+```java
+numbers = [ 10, 2, 5 ]
+writeOutput( numbers.median() )
+```
+
+Result: 5
+
 ### Additional Examples
 
 

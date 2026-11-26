@@ -42,7 +42,7 @@ public class Abs extends BIF {
 
 	/**
 	 * Returns the absolute value of a number. BigDecimal inputs keep their precision; other numbers are returned as doubles. Also
-	 *     available as the member function <code>number.abs()</code>.
+	 * available as the member function <code>number.abs()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

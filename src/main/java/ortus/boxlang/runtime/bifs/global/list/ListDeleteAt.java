@@ -48,7 +48,7 @@ public class ListDeleteAt extends BIF {
 
 	/**
 	 * Deletes the element at a one-based position and returns a copy of the list without it. Throws an exception if the position is
-	 *     out of bounds.
+	 * out of bounds.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -58,13 +58,13 @@ public class ListDeleteAt extends BIF {
 	 * @argument.position The one-based position of the element to delete.
 	 *
 	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
-	 *     multiCharacterDelimiter is true. Defaults to a comma.
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
 	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
-	 *     to false.
+	 *                              to false.
 	 *
 	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
-	 *     single-character delimiters. Defaults to false.
+	 *                                   single-character delimiters. Defaults to false.
 	 *
 	 * @return The list without the deleted element.
 	 */

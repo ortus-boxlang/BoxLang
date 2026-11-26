@@ -39,8 +39,8 @@ public class IsStruct extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is a struct. This is true for BoxLang Structs and any value which can be cast to a struct, such as a Java Map. Arrays,
-	 * strings and other types return false.
+	 * Determines whether a value is a struct. This is true for BoxLang Structs and any value which can be cast to a struct, such as a Java Map.
+	 * Arrays, strings and other types return false.
 	 *
 	 * @argument.variable The value to test for struct-ness.
 	 *

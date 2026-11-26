@@ -40,6 +40,20 @@ writeOutput( JSONSerialize( someArray ) )
 
 Result: ["Red", "Green", "Blue", "Pink"]
 
+### Index out of bounds
+
+An index lower than 1 or greater than the array size throws an exception.
+
+```java
+try {
+	arrayDeleteAt( [ 1, 2 ], 5 )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: Index [5] out of bounds for list with 2 elements.
+
 ### Additional Examples
 
 <a href="https://try.boxlang.io/?code=eJxLLCpSsFWIVuDiNDTS4eI0AGJDIAaxjYHYBIhNgdiMK9aaK6U0t0BDIRGoQ9OaC0glVrqk5qSWpDqWgEV1FExAEiiqAJteFeI%3D" target="_blank">Run Example</a>

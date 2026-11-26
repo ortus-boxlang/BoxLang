@@ -51,7 +51,7 @@ public class WatcherShutdown extends BIF {
 	 *
 	 * @argument.name The unique watcher name to shut down.
 	 *
-	 * @return {@code true} if the watcher was removed; otherwise {@code false}.
+	 * @return {@code true} if the watcher was found, stopped and removed; {@code false} if no watcher with that name was registered.
 	 */
 	@Override
 	public Boolean _invoke( IBoxContext context, ArgumentsScope arguments ) {

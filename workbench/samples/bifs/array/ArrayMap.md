@@ -19,11 +19,23 @@ complexData = [
 newArray = arrayMap( complexData, ( Any item ) => {
 	return item.A
 } )
-writeDump( newArray )
+writeOutput( arrayToList( newArray ) )
 
 ```
 
-Result: [4, 18, 51]
+Result: 4,18,51
+
+### Using the member function
+
+The callback can use a lambda since it only uses its own argument.
+
+```java
+numbers = [ 1, 2, 3 ]
+doubled = numbers.map( ( n ) -> n * 2 )
+writeOutput( doubled.toList() )
+```
+
+Result: 2,4,6
 
 ### Additional Examples
 

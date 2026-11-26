@@ -12,11 +12,11 @@ superiorArray = [
 	"Venom"
 ]
 arraySwap( superiorArray, 1, 3 )
-writeDump( superiorArray )
+writeOutput( JSONSerialize( superiorArray ) )
 
 ```
 
-Result: ['Doctor Octopus', 'Green Goblin', 'Spider-Man', 'Venom']
+Result: ["Doctor Octopus","Green Goblin","Spider-Man","Venom"]
 
 ### Swap the position of two values in an array using the member function
 
@@ -30,11 +30,11 @@ superiorArray = [
 	"Venom"
 ]
 superiorArray.swap( 1, 3 )
-writeDump( superiorArray )
+writeOutput( JSONSerialize( superiorArray ) )
 
 ```
 
-Result: ['Doctor Octopus', 'Green Goblin', 'Spider-Man', 'Venom']
+Result: ["Doctor Octopus","Green Goblin","Spider-Man","Venom"]
 
 ### Additional Examples
 

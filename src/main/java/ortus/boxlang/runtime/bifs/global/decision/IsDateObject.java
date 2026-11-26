@@ -38,8 +38,8 @@ public class IsDateObject extends BIF {
 	/**
 	 * Determines whether a value is a BoxLang DateTime object.
 	 *
-	 * Note that date strings, such as `2021-01-01`, and timespans returned from `createTimespan()` are NOT date objects. The former are strings and the
-	 * latter are numeric values.
+	 * Note that date strings, such as `2021-01-01`, and timespans returned from `createTimespan()` are NOT date objects. The former are strings
+	 * and the latter are numeric values.
 	 *
 	 * @argument.value The value to test for date object-ness.
 	 *

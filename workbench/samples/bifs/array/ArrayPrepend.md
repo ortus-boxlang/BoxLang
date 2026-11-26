@@ -11,7 +11,7 @@ someArray = [
 	1
 ]
 arrayPrepend( someArray, 4 )
-writeDump( someArray )
+writeOutput( JSONSerialize( someArray ) )
 
 ```
 
@@ -31,11 +31,11 @@ doctorArray = [
 	"Capaldi"
 ]
 doctorArray.prepend( "Hurt" )
-writeDump( doctorArray )
+writeOutput( JSONSerialize( doctorArray ) )
 
 ```
 
-Result: ['Hurt','Eccleston','Tennant','Smith','Capaldi']
+Result: ["Hurt","Eccleston","Tennant","Smith","Capaldi"]
 
 ### Additional Examples
 

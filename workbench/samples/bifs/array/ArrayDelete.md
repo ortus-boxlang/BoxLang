@@ -12,11 +12,57 @@ arr = [
 	"Apple"
 ]
 arrayDeleteNoCase( arr, "Apple" )
-writeDump( arr )
+writeOutput( JSONSerialize( arr ) )
 
 ```
 
-Result: ['orange','pear','Apple']
+Result: ["orange","pear","Apple"]
+
+### Case sensitive delete
+
+`arrayDelete` and the `delete` member function match case sensitively, so only the exact `apple` value is removed.
+
+```java
+fruits = [ "apple", "Apple", "pear" ]
+fruits.delete( "apple" )
+writeOutput( fruits.toList() )
+```
+
+Result: Apple,pear
+
+### Delete all matching values
+
+Pass `"all"` as the scope to remove every match instead of only the first.
+
+```java
+letters = [ "a", "b", "a", "A" ]
+arrayDelete( letters, "a", "all" )
+writeOutput( letters.toList() )
+```
+
+Result: b,A
+
+### Delete ignoring case using the member function
+
+```java
+letters = [ "a", "A", "b" ]
+letters.deleteNoCase( "a", "all" )
+writeOutput( letters.toList() )
+```
+
+Result: b
+
+### Value not found
+
+If the value does not exist the array is left unchanged.
+
+```java
+numbers = [ 1, 2, 3 ]
+arrayDelete( numbers, 99 )
+writeOutput( numbers.len() )
+```
+
+Result: 3
 
 ### Additional Examples
 

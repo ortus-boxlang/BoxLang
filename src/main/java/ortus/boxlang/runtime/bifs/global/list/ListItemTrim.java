@@ -55,7 +55,7 @@ public class ListItemTrim extends BIF {
 
 	/**
 	 * Trims leading and trailing whitespace from every element of a list and returns the result as a string. Existing delimiters are
-	 *     preserved. Empty elements are removed unless includeEmptyFields is true.
+	 * preserved. Empty elements are removed unless includeEmptyFields is true.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -63,13 +63,13 @@ public class ListItemTrim extends BIF {
 	 * @argument.list The list whose elements are trimmed.
 	 *
 	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
-	 *     multiCharacterDelimiter is true. Defaults to a comma.
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
 	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
-	 *     to false.
+	 *                              to false.
 	 *
 	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
-	 *     single-character delimiters. Defaults to false.
+	 *                                   single-character delimiters. Defaults to false.
 	 *
 	 * @return The list with each element trimmed.
 	 */

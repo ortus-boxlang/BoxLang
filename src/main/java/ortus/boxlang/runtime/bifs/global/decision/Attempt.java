@@ -35,11 +35,12 @@ public class Attempt extends BIF {
 	}
 
 	/**
-	 * Creates an Attempt: a fluent, null-safe wrapper around a value, similar to a Java Optional or a JavaScript promise. If the argument is a closure/lambda
-	 * it is executed and its result (or the exception it throws) is captured, otherwise the value itself is wrapped. Calling it with no argument creates an
-	 * empty attempt. See the Attempt class for the fluent API (get, map, filter, ifPresent, orElse, etc).
+	 * Creates an Attempt: a fluent, null-safe wrapper around a value, similar to a Java Optional or a JavaScript promise. If the argument is a
+	 * closure/lambda it is executed and its result (or the exception it throws) is captured, otherwise the value itself is wrapped. Calling it
+	 * with no argument creates an empty attempt. See the Attempt class for the fluent API (get, map, filter, ifPresent, orElse, etc).
 	 *
-	 * @argument.value Optional. The value to wrap, or a closure/lambda which will be executed to produce the value. Omit it to create an empty attempt.
+	 * @argument.value Optional. The value to wrap, or a closure/lambda which will be executed to produce the value. Omit it to create an empty
+	 *                 attempt.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

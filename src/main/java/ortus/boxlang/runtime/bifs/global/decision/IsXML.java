@@ -38,8 +38,8 @@ public class IsXML extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is well-formed XML text or an XML object. Note that this returns true for XML containing XXE (XML External Entity)
-	 * or doctype definitions, which may be prohibited by your XML settings.
+	 * Determines whether a value is well-formed XML text or an XML object. Note that this returns true for XML containing XXE (XML External
+	 * Entity) or doctype definitions, which may be prohibited by your XML settings.
 	 *
 	 * @argument.value A string containing XML document text, or an XML object.
 	 *

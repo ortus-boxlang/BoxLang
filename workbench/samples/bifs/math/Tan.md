@@ -18,4 +18,21 @@ Result: 0.309336249609623215277756009824263
 <bx:output>#tan( 90 )#</bx:output>
 ```
 
+### Tangent of 0 radians
 
+```java
+writeOutput( tan( 0 ) )
+
+```
+
+Result: 0
+
+### Member function
+
+```java
+n = 0
+writeOutput( n.tan() )
+
+```
+
+Result: 0

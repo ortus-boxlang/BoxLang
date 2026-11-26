@@ -36,9 +36,9 @@ public class IsBoolean extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is a boolean, or can be cast to a boolean. This is true for the booleans `true`/`false`, the strings `true`, `false`, `yes`
-	 * and `no` (case-insensitive), and numbers (or numeric strings), where zero is `false` and non-zero is `true`. Null, empty strings, arrays, structs, dates
-	 * and other strings return false.
+	 * Determines whether a value is a boolean, or can be cast to a boolean. This is true for the booleans `true`/`false`, the strings `true`,
+	 * `false`, `yes` and `no` (case-insensitive), and numbers (or numeric strings), where zero is `false` and non-zero is `true`. Null, empty
+	 * strings, arrays, structs, dates and other strings return false.
 	 *
 	 * @argument.object The value to test for boolean-ness.
 	 *

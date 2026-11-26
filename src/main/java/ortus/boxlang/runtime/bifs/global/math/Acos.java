@@ -40,7 +40,7 @@ public class Acos extends BIF {
 
 	/**
 	 * Returns the arccosine (inverse cosine) of a number, in radians. The input must be between -1 and 1 inclusive, otherwise an
-	 *     exception is thrown. Also available as <code>number.acos()</code>.
+	 * exception is thrown. Also available as <code>number.acos()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

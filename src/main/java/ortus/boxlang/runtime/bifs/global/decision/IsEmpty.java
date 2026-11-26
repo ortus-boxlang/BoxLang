@@ -58,12 +58,12 @@ public class IsEmpty extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is empty. Null is always empty. Lists, maps, sets and StringBuilders are checked directly; otherwise the value is cast
-	 * (in order) to an Array, Struct, Query and finally a String, and the emptiness of the first successful cast is returned. Values which can't be cast
-	 * to any of those return false.
+	 * Determines whether a value is empty. Null is always empty. Lists, maps, sets and StringBuilders are checked directly; otherwise the value
+	 * is cast (in order) to an Array, Struct, Query and finally a String, and the emptiness of the first successful cast is returned. Values
+	 * which can't be cast to any of those return false.
 	 *
-	 * This BIF is also registered as the `structIsEmpty` and `arrayIsEmpty` BIFs, and as a member function on arrays, structs, StringBuilders, strings,
-	 * queries and sets, for example `[].isEmpty()`.
+	 * This BIF is also registered as the `structIsEmpty` and `arrayIsEmpty` BIFs, and as a member function on arrays, structs, StringBuilders,
+	 * strings, queries and sets, for example `[].isEmpty()`.
 	 *
 	 * @argument.value The value/object to check for emptiness.
 	 *

@@ -16,6 +16,8 @@ if( isQuery( names ) ) {
 
 ```
 
+Result: Seth,Jen
+
 
 ### Additional Examples
 
@@ -32,3 +34,11 @@ dump( IsQuery( testQuery ) )
 ```
 
 
+
+### Structs and arrays are not queries
+
+```java
+writeOutput( isQuery( { name: "Seth" } ) & " " & isQuery( [ "Seth" ] ) & " " & isQuery( queryNew( "name" ) ) )
+```
+
+Result: false false true

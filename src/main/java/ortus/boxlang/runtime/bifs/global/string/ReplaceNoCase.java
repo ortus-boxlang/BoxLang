@@ -53,21 +53,26 @@ public class ReplaceNoCase extends BIF {
 	}
 
 	/**
-	 *
-	 * Replaces occurrences of substring1 in a string with obj, in a specified scope. The search is case-sensitive. Function returns original string with
-	 * replacements made
+	 * Replaces occurrences of substring1 in a string with obj, in a specified scope. The search is case-insensitive.
+	 * The replacement can also be a function. In that case it is invoked for each match with the matched text, the 1-based position of the
+	 * match and the original string, and its result is used as the replacement.
+	 * Also available as a string member function.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to search
+	 * @argument.string The string to search.
 	 *
-	 * @argument.substring1 The substring to search for
+	 * @argument.substring1 The substring to search for, ignoring case.
 	 *
-	 * @argument.obj The string to replace substring1 with
+	 * @argument.obj The string to replace substring1 with, or a function that returns the replacement.
 	 *
-	 * @argument.scope The scope to search in
+	 * @argument.scope "one" replaces only the first occurrence. "all" replaces every occurrence. Must be one of "one" or "all". Defaults to
+	 *                 "one".
 	 *
+	 * @argument.start Accepted for compatibility but currently not used. Defaults to "1".
+	 *
+	 * @return The original string with the replacements made.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String									string				= arguments.getAsString( Key.string );

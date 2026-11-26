@@ -38,14 +38,14 @@ public class LCase extends BIF {
 	}
 
 	/**
-	 *
-	 * Uppercase a string
+	 * Convert a string to lowercase.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to uppercase
+	 * @argument.string The string to convert.
 	 *
+	 * @return The lowercase string, or an empty string if the input is null.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String input = arguments.getAsString( Key.string );

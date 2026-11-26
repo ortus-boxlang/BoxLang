@@ -36,6 +36,17 @@ writeOutput( p )
 
 Result: 42
 
+### Default value for an empty array
+
+The default value is returned when the array is empty.
+
+```java
+empty = []
+writeOutput( empty.pop( "nothing left" ) )
+```
+
+Result: nothing left
+
 ### Additional Examples
 
 <a href="https://try.boxlang.io/?code=eJxtjb0Kg0AQhOvbp5gyBwuinj9wWOQFEnuxSIjlqZxe4du7xZEopvhgYWb2G4N7D35Bgw6kUiaVCblgqLf0CW6%2B4e79a2snucZY19AWSYJnWOewLjCx%2Bc1PaYeUkTFy9OQmPzx%2BUlKFuEqhEup%2FzsOCYS7qOg6Oj7Wls79glIxK%2FDtWokMS" target="_blank">Run Example</a>

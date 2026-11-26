@@ -42,8 +42,8 @@ public class IsBoxSet extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is a Set: either a BoxLang Set (`BoxSet`, created with `setNew()`, `setOf()`, `set{}` or `array.toSet()`) or any native
-	 * `java.util.Set`. Null, arrays, structs and other types return false.
+	 * Determines whether a value is a Set: either a BoxLang Set (`BoxSet`, created with `setNew()`, `setOf()`, `set{}` or `array.toSet()`) or
+	 * any native `java.util.Set`. Null, arrays, structs and other types return false.
 	 *
 	 * @argument.variable The value to test for set-ness.
 	 *

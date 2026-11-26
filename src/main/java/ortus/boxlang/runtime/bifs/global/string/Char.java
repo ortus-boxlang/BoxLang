@@ -36,12 +36,16 @@ public class Char extends BIF {
 	}
 
 	/**
-	 * Convert a numeric UCS-2 code to a character
+	 * Convert a numeric character code (UCS-2 / UTF-16 code unit) into the corresponding single-character string.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number The UCS-2 code value to convert.
+	 * @argument.number The character code to convert, from 0 to 65535.
+	 *
+	 * @throws BoxRuntimeException if the code is negative.
+	 *
+	 * @return A single-character string, or an empty string if the code is greater than 65535.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		int code = arguments.getAsInteger( Key.number );

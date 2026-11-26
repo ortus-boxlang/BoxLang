@@ -46,8 +46,8 @@ public class GetToken extends BIF {
 
 	/**
 	 * Returns the token at the given one-based index of a delimited string, as a string. Empty tokens are skipped (consecutive
-	 *     delimiters count as one). If the index is greater than the number of tokens, an empty string is returned. An index of zero
-	 *     throws an exception.
+	 * delimiters count as one). If the index is greater than the number of tokens, an empty string is returned. An index of zero
+	 * throws an exception.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -57,7 +57,7 @@ public class GetToken extends BIF {
 	 * @argument.index The one-based position of the token to return.
 	 *
 	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
-	 *     multiCharacterDelimiter is true. Defaults to a comma.
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
 	 * @return The token at the given position, or an empty string if the index is past the last token.
 	 */

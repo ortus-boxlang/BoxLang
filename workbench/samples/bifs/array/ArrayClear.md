@@ -21,7 +21,7 @@ writeOutput(
 
 ```
 
-Result: Yes
+Result: true
 
 ### Clear the value of an array
 To clear the value of an array
@@ -59,11 +59,12 @@ numberArray = [
 	2,
 	3
 ]
-writeOutput( numberArray.Clear() )
+numberArray.clear()
+writeOutput( numberArray.len() )
 
 ```
 
-Result: Yes
+Result: 0
 
 ### Additional Examples
 

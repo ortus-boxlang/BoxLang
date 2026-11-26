@@ -67,12 +67,20 @@ public class Len extends BIF {
 	}
 
 	/**
-	 * Returns the absolute value of a number
+	 * Returns the length of a value: the number of characters in a string, elements in an array, keys in a struct, rows in a query
+	 * or items in a set. This one function backs the aliases {@code arrayLen()}, {@code structCount()}, {@code stringLen()} and
+	 * {@code queryRecordCount()}, and is available as a member function on arrays, strings, string builders, structs
+	 * ({@code count()} and {@code len()}), queries, sets and dates. A null value has a length of 0. Simple values such as numbers and
+	 * dates are measured by their string representation. A value which has no meaningful length throws an exception.
+	 * When invoked as {@code stringLen()} arrays are not measured by element count but by their string form.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value The number to return the absolute value of
+	 * @argument.value The value to measure. When using the aliases with named arguments, the arguments {@code string}, {@code array},
+	 *                 {@code struct} and {@code query} are also accepted in its place.
+	 *
+	 * @return The length as an integer.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	object	= arguments.get( Key.value );

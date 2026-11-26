@@ -16,7 +16,7 @@ array = [
 	8
 ]
 newArray = arraySlice( array, 2, 3 )
-writedump( newArray )
+writeOutput( JSONSerialize( newArray ) )
 
 ```
 
@@ -40,7 +40,7 @@ array = [
 	8
 ]
 newArray = arraySlice( array, 4 )
-writedump( newArray )
+writeOutput( JSONSerialize( newArray ) )
 
 ```
 
@@ -64,7 +64,7 @@ array = [
 	8
 ]
 newArray = arraySlice( array, -5, 3 )
-writedump( newArray )
+writeOutput( JSONSerialize( newArray ) )
 
 ```
 
@@ -88,11 +88,30 @@ array = [
 	8
 ]
 newArray = array.slice( 2, 3 )
-writedump( newArray )
+writeOutput( JSONSerialize( newArray ) )
 
 ```
 
 Result: [2,3,4]
+
+### Negative length
+
+A negative length leaves out that many elements from the end of the array.
+
+```java
+numbers = [ 1, 2, 3, 4, 5, 6, 7, 8 ]
+writeOutput( numbers.slice( 2, -2 ).toList() )
+```
+
+Result: 2,3,4,5,6
+
+### Using the arrayMid alias
+
+```java
+writeOutput( arrayMid( [ 1, 2, 3, 4 ], 2, 2 ).toList() )
+```
+
+Result: 2,3
 
 ### Additional Examples
 

@@ -40,7 +40,8 @@ public class IsXMLElem extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is an ELEMENT node of an XML document. Strings of XML text are parsed first, so `<a/>` is an element.
+	 * Determines whether a value is an ELEMENT node of an XML document. XML strings are parsed into a document, not an element, so they return false; use
+	 * `xmlParse()` first and test the root or a child.
 	 *
 	 * @argument.value The value to test.
 	 *

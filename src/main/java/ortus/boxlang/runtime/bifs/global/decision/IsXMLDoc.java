@@ -38,7 +38,8 @@ public class IsXMLDoc extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is an XML document object (the document node returned by `xmlParse()`), as opposed to an element or a string of XML.
+	 * Determines whether a value is an XML document object (the document node returned by `xmlParse()`), as opposed to an element or a string of
+	 * XML.
 	 *
 	 * @argument.value The value to test.
 	 *

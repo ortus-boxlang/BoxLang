@@ -24,3 +24,58 @@ dump( thisYear )
 ```
 
 
+### Month and day names
+
+Names use the request locale; results assume the default en-US locale and UTC timezone.
+
+```java
+dt = createDateTime( 2024, 3, 15, 10, 30, 45 )
+writeOutput( monthAsString( dt ) & " " & monthShortAsString( dt ) & " " & dayOfWeekAsString( dt ) & " " & dayOfWeekShortAsString( dt ) )
+```
+
+Result: March Mar Friday Fri
+
+### Calendar calculations
+
+```java
+dt = createDateTime( 2024, 3, 15, 10, 30, 45 )
+writeOutput( quarter( dt ) & " " & dayOfYear( dt ) & " " & daysInMonth( dt ) & " " & daysInYear( dt ) )
+```
+
+Result: 1 75 31 366
+
+### Use the member functions
+
+```java
+dt = createDateTime( 2024, 3, 15, 10, 30, 45 )
+writeOutput( dt.month() & " " & dt.hour() & " " & dt.minute() & " " & dt.second() )
+```
+
+Result: 3 10 30 45
+
+### Apply a timezone before extracting the hour
+
+10:30 UTC is 06:30 in New York (UTC-4).
+
+```java
+writeOutput( hour( createDateTime( 2024, 3, 15, 10, 30, 45 ), "America/New_York" ) )
+```
+
+Result: 6
+
+### Locale-specific month name
+
+```java
+writeOutput( monthAsString( createDate( 2024, 3, 15 ), "UTC", "fr-FR" ) )
+```
+
+Result: mars
+
+### Epoch based values
+
+```java
+dt = createDateTime( 2024, 3, 15, 10, 30, 45 )
+writeOutput( getTime( dt ) & " " & offset( dt ) )
+```
+
+Result: 1710498645000 +0000

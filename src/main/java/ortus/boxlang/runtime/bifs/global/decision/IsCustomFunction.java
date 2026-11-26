@@ -41,13 +41,13 @@ public class IsCustomFunction extends BIF {
 	}
 
 	/**
-	 * Determines whether a value is a user defined function: a named function (UDF), a closure or a lambda. With the `type` argument the check is narrowed
-	 * to just one of those kinds. Non-function values return false.
+	 * Determines whether a value is a user defined function: a named function (UDF), a closure or a lambda. With the `type` argument the check
+	 * is narrowed to just one of those kinds. Non-function values return false.
 	 *
 	 * @argument.object The value to test for custom-function-ness.
 	 *
-	 * @argument.type Optional. Narrows the check to a specific kind of function: `UDF`, `Lambda` or `Closure` (case-insensitive). If omitted or empty, any
-	 * of the three kinds matches. An unknown type throws an IllegalArgumentException.
+	 * @argument.type Optional. Narrows the check to a specific kind of function: `UDF`, `Lambda` or `Closure` (case-insensitive). If omitted or
+	 *                empty, any of the three kinds matches. An unknown type throws an IllegalArgumentException.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

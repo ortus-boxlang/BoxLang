@@ -16,7 +16,7 @@ writeOutput( someList )
 
 ```
 
-Result: "1|2|3|4"
+Result: 1|2|3|4
 
 ### Retrieve an array as a list using the Array member function
 
@@ -36,7 +36,17 @@ writeOutput( seinfeldList )
 
 ```
 
-Result: "Jerry,Elaine,Kramer,George"
+Result: Jerry,Elaine,Kramer,George
+
+### Using the join member function
+
+`join` is an alias of `toList`.
+
+```java
+writeOutput( [ "a", "b", "c" ].join( "-" ) )
+```
+
+Result: a-b-c
 
 ### Additional Examples
 

@@ -24,3 +24,12 @@ writeDump( isnull( v2 ) )
 ```
 
 
+
+### Non-null values
+
+```java
+name = "BoxLang"
+writeOutput( isNull( name ) & " " & isNull( "" ) )
+```
+
+Result: false false

@@ -16,7 +16,7 @@ writeOutput( arrayIsDefined( someArray, 3 ) )
 
 ```
 
-Result: Yes
+Result: true
 
 ### Simple example
 
@@ -62,7 +62,7 @@ writeOutput( arrayIsDefined( combineArray, 3 ) )
 
 ```
 
-Result: No
+Result: false
 
 ### Simple example with two dimensional array
 
@@ -89,6 +89,17 @@ writeOutput( arrayIsDefined( combineArray, 2 ) )
 ```
 
 Result: true
+
+### Using the indexExists member function
+
+Indexes are one-based, so index 0 never exists and neither does an index past the end of the array.
+
+```java
+letters = [ "a", "b" ]
+writeOutput( letters.indexExists( 2 ) & "," & letters.indexExists( 3 ) & "," & letters.indexExists( 0 ) )
+```
+
+Result: true,false,false
 
 ### Additional Examples
 

@@ -55,7 +55,7 @@ public class ListCompact extends BIF {
 
 	/**
 	 * Removes empty elements from the start and end of a list and returns the result as a string. Empty elements in the middle of
-	 *     the list are preserved. Also registered as the deprecated alias <code>ListTrim</code>.
+	 * the list are preserved. Also registered as the deprecated alias <code>ListTrim</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -63,10 +63,10 @@ public class ListCompact extends BIF {
 	 * @argument.list The list to compact.
 	 *
 	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
-	 *     multiCharacterDelimiter is true. Defaults to a comma.
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
 	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
-	 *     single-character delimiters. Defaults to false.
+	 *                                   single-character delimiters. Defaults to false.
 	 *
 	 * @return The list without leading or trailing empty elements.
 	 */

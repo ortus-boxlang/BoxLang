@@ -70,15 +70,15 @@ public class ListQualify extends BIF {
 	 * @argument.qualifier The string inserted before and after each qualified element.
 	 *
 	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
-	 *     multiCharacterDelimiter is true. Defaults to a comma.
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
 	 * @argument.elements Which elements to qualify: "all" (the default) or "char", which qualifies only elements made up entirely of
-	 *     letters.
+	 *                    letters.
 	 *
 	 * @argument.includeEmptyFields Whether empty elements are kept (and qualified). Defaults to false.
 	 *
 	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
-	 *     single-character delimiters. Defaults to false.
+	 *                                   single-character delimiters. Defaults to false.
 	 *
 	 * @return The list with the qualifier wrapped around the selected elements.
 	 */

@@ -64,3 +64,40 @@ echo( "There are " & animalCount & " animal(s) in the 'animals' struct" )
 ```
 
 
+### Length of a string, array and set
+
+```java
+writeOutput( len( "hello" ) & " " & len( [ 1, 2, 3 ] ) & " " & len( setOf( 1, 2, 2, 3 ) ) )
+```
+
+Result: 5 3 3
+
+### Length of a query using its alias
+
+```java
+q = queryNew( "id", "integer", [ [ 1 ], [ 2 ] ] )
+writeOutput( queryRecordCount( q ) & " " & len( q ) )
+```
+
+Result: 2 2
+
+### Use the string member function
+
+```java
+writeOutput( "hello".len() )
+```
+
+Result: 5
+
+### A null has a length of zero and unmeasurable objects throw
+
+```java
+writeOutput( len( nullValue() ) )
+try {
+	len( new java.lang.Object() )
+} catch( any e ) {
+	writeOutput( " " & e.message )
+}
+```
+
+Result: 0 Cannot determine length of object of type Object

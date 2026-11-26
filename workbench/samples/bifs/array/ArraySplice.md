@@ -15,7 +15,7 @@ item = [
 	"Feb"
 ]
 arraySplice( months, 2, 0, item )
-writedump( months )
+writeOutput( JSONSerialize( months ) )
 
 ```
 
@@ -38,7 +38,7 @@ item = [
 	"Feb"
 ]
 arraySplice( months, 3, 2, item )
-writedump( months )
+writeOutput( JSONSerialize( months ) )
 
 ```
 
@@ -61,7 +61,7 @@ item = [
 	"Feb"
 ]
 arraySplice( months, -3, 0, item )
-writedump( months )
+writeOutput( JSONSerialize( months ) )
 
 ```
 
@@ -84,7 +84,7 @@ item = [
 	"Feb"
 ]
 arraySplice( months, 5, 0, item )
-writedump( months )
+writeOutput( JSONSerialize( months ) )
 
 ```
 
@@ -107,11 +107,21 @@ item = [
 	"Feb"
 ]
 months.splice( 2, 0, item )
-writedump( months )
+writeOutput( JSONSerialize( months ) )
 
 ```
 
 Result: ["Jan","Feb","March","April","June"]
+
+### Remove elements without replacements
+
+```java
+months = [ "Jan", "Feb", "March", "April" ]
+months.splice( 2, 2 )
+writeOutput( months.toList() )
+```
+
+Result: Jan,April
 
 ### Additional Examples
 

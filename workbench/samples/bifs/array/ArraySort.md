@@ -128,6 +128,30 @@ writeDump( arrayOfStructs )
 
 Result: Sorts by active employees, then by their last name and finally by their first name
 
+### Default sort is a case insensitive text sort
+
+```java
+names = [ "bob", "Alice", "carol" ]
+names.sort()
+writeOutput( names.toList() )
+```
+
+Result: Alice,bob,carol
+
+### Invalid sort order
+
+Only "asc" and "desc" are accepted as the sort order when no callback is used.
+
+```java
+try {
+	arraySort( [ 3, 1, 2 ], "numeric", "sideways" )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: You must supply either a sortOrder or callback
+
 ### Additional Examples
 
 <a href="https://try.boxlang.io/?code=eJy1kE1rAjEQhs%2FJrxhyWiEoWuihorDYVQSrh%2BCpeFizIxU2myUftEvxvzeJWJRS8OJp3kyeeedDaIW5MWUHE3gHSthss3qdb8Vys2Y8PKWuq4O3R92kZ1npPSa18rIozmo7C4ruxrSMRkIbl4G4%2BHJgDr8cC7FCKxn0xrTyqr1CYmowAIVqjwYOvpEu9KO%2F%2F32bLO%2FyEdf7UPJNCVnnbwW8xHLrULW17jCtQPJFyj%2BNGCUnfgtfwFh0Az9H%2BP9lM8ibDnDIz3EEPZhMITgbdN40ILVqS4NZQPqxFw9MEnH4093Hgc%2Bj%2BwBZa%2BsN%2FrnUQ4b4ATj9oJY%3D" target="_blank">Run Example</a>

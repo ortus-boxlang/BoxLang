@@ -32,10 +32,12 @@ public class NullValue extends BIF {
 	}
 
 	/**
-	 * Returns a null value.
+	 * Returns a null value. This function takes no arguments and is mostly useful for CFML compatibility, where a null literal is not available.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return Always {@code null}.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return null;

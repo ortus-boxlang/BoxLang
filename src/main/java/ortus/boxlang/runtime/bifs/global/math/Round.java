@@ -46,7 +46,7 @@ public class Round extends BIF {
 
 	/**
 	 * Rounds a number to the nearest integer, or to a number of decimal places when precision is provided. Halves are rounded up
-	 *     (away from zero for positive numbers). Also available as <code>number.round()</code>.
+	 * (away from zero for positive numbers). Also available as <code>number.round()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

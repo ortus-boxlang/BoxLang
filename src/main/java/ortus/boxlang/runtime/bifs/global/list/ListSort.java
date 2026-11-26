@@ -53,8 +53,8 @@ public class ListSort extends ArraySort {
 
 	/**
 	 * Sorts a delimited list and returns the sorted list as a string. Provide either a sortType (text, textnocase or numeric) with a
-	 *     sortOrder, or a comparator callback. Note that this BIF declares no default for sortType, so it should always be supplied
-	 *     unless a callback is used.
+	 * sortOrder, or a comparator callback. Note that this BIF declares no default for sortType, so it should always be supplied
+	 * unless a callback is used.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -66,18 +66,18 @@ public class ListSort extends ArraySort {
 	 * @argument.sortOrder The sort direction: "asc" (the default) or "desc".
 	 *
 	 * @argument.delimiter The list delimiter. Each character of the string is treated as a separate delimiter unless
-	 *     multiCharacterDelimiter is true. Defaults to a comma.
+	 *                     multiCharacterDelimiter is true. Defaults to a comma.
 	 *
 	 * @argument.includeEmptyFields Whether empty elements (for example those created by consecutive delimiters) are kept. Defaults
-	 *     to false.
+	 *                              to false.
 	 *
 	 * @argument.multiCharacterDelimiter When true, the delimiter is treated as one multi-character separator instead of a set of
-	 *     single-character delimiters. Defaults to false.
+	 *                                   single-character delimiters. Defaults to false.
 	 *
 	 * @argument.localeSensitive Whether to sort using locale-specific rules. Defaults to false.
 	 *
 	 * @argument.callback An optional comparator function that receives two elements and returns a negative number, zero or a
-	 *     positive number. When supplied it takes precedence over sortType and sortOrder.
+	 *                    positive number. When supplied it takes precedence over sortType and sortOrder.
 	 *
 	 * @return The sorted list.
 	 */

@@ -20,4 +20,21 @@ echo( min( 1, 5 ) )
 
 ```
 
+### Smaller of two numbers
 
+```java
+writeOutput( min( 3, 8 ) )
+
+```
+
+Result: 3
+
+### Member function with a negative decimal
+
+```java
+n = -2.5
+writeOutput( n.min( 1 ) )
+
+```
+
+Result: -2.5

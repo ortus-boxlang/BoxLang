@@ -34,6 +34,20 @@ writeOutput( numberArray.avg() )
 
 Result: 2
 
+### Average of an empty array
+
+An empty array has no average, so dividing by zero throws an exception.
+
+```java
+try {
+	arrayAvg( [] )
+} catch ( any e ) {
+	writeOutput( e.message )
+}
+```
+
+Result: You cannot divide by zero.
+
 ### Additional Examples
 
 <a href="https://try.boxlang.io/?code=eJzLK81NSi0qVrBViFbg4jTU4eI0AmJjIDbhirXmSixLD0vMKU0FyjsWFSVWOpalayjkQfVoWnO5JmfkayjAVQFFFPT1FfJLSwpKS4oVjPRMuQD2qRrz" target="_blank">Run Example</a>

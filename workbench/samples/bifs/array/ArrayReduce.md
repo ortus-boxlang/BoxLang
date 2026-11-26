@@ -25,6 +25,24 @@ writeOutput( sum )
 
 Result: 73
 
+### Reduce using the member function
+
+```java
+numbers = [ 1, 2, 3, 4 ]
+writeOutput( numbers.reduce( ( acc, n ) -> acc + n, 0 ) )
+```
+
+Result: 10
+
+### Build a string from an array
+
+```java
+words = [ "box", "lang" ]
+writeOutput( words.reduce( ( acc, word ) -> acc & word, "" ) )
+```
+
+Result: boxlang
+
 ### Additional Examples
 
 <a href="https://try.boxlang.io?code=eJyVjs0KglAQhdfOUxzuwh8S1GonBr5C22hx0yGDm8akkUTv3uXqwkUtYjhwhrP4PuF6qLhGgVJEj3v3hjiAvCwmb22zsdnSMUaIsh1RaZExdvWhzcCIUOzwIk%2B4H6SddqymMad3jBRRTvVwvYWQGRflSBKMFzb1HVlK8kODPNWwMZ2yDqpvWNi1U%2Fc0uj2rf618KHv%2Bwk2pb3K0sAucABwcMzigD5k6WtY%3D" target="_blank">Run Example</a>

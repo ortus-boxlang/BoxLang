@@ -43,7 +43,8 @@ public class RandRange extends BIF {
 
 	/**
 	 * Returns a pseudo-random integer between number1 and number2. For integer inputs, both bounds are inclusive. If either input is
-	 *     a BigDecimal, the result is the lower bound plus a random fraction of the range, rounded down.
+	 * a BigDecimal, the result is the lower bound plus a random fraction of the range, rounded down. If a seed was set with
+	 * randomize(), the generator is re-seeded with that seed on every call.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

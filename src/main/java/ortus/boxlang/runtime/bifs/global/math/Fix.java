@@ -42,7 +42,7 @@ public class Fix extends BIF {
 
 	/**
 	 * Returns the integer portion of a number by truncating toward zero: positive numbers are rounded down and negative numbers are
-	 *     rounded up. Also available as <code>number.fix()</code>.
+	 * rounded up. Also available as <code>number.fix()</code>.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

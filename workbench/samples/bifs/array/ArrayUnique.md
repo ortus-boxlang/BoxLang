@@ -29,3 +29,14 @@ writeOutput( result.toString() )
 ```
 
 Result: [1, 2, 3]
+
+### Case sensitive deduplication
+
+Pass true to compare strings case sensitively.
+
+```java
+words = [ "Hello", "hello", "World" ]
+writeOutput( words.unique( true ).len() )
+```
+
+Result: 3

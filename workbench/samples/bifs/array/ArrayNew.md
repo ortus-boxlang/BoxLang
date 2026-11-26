@@ -69,31 +69,22 @@ writeOutput( JSONSerialize( newArray ) )
 
 Result: ["one", "two"]
 
-### Create an array with data type
-When using data types on array creation, items are converted if possible, otherwise an error is thrown.
-
+### Arrays are synchronized by default
 
 ```java
-typedArray = arrayNew[ "boolean" ]( 1 )
-typedArray[ 1 ] = true
-typedArray[ 2 ] = "true"
-typedArray[ 3 ] = 1
-typedArray[ 4 ] = "1"
-typedArray[ 5 ] = "yes"
-typelessArray = arrayNew( 1 )
-typelessArray[ 1 ] = true
-typelessArray[ 2 ] = "true"
-typelessArray[ 3 ] = 1
-typelessArray[ 4 ] = "1"
-typelessArray[ 5 ] = "yes"
-writeOutput( JSONSerialize( [
-	typedArray,
-	typelessArray
-] ) )
-
+writeOutput( arrayNew().getMetadata().type & "," & arrayNew( 1, false ).getMetadata().type )
 ```
 
-Result: [[true,true,true,true,null,true],[true,"true",1,"1",null,"yes"]]
+Result: synchronized,unsynchronized
+
+### Create an empty array
+
+```java
+arr = arrayNew()
+writeOutput( arr.len() )
+```
+
+Result: 0
 
 ### Additional Examples
 
@@ -118,5 +109,3 @@ a.append( [
 dump( a )
 
 ```
-
-

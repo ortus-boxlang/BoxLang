@@ -42,16 +42,14 @@ writeOutput( data.TYPE )
 
 Result: synchronized
 
-### Dump Metadata of Typed Array (Member syntax)
+### Metadata fields
 
-Return struct has a new key called `dimensions` and can also have a defined datatype. Supported datatypes are String, Numeric, Boolean, Date, Array, Struct, Query, Component, [Component name], Binary, and Function.
-
+The metadata struct contains `type` (synchronized or unsynchronized), `dimensions` and `datatype` (always `any`).
 
 ```java
-arr = arrayNew[ "String" ]( 1 )
-writeOutput( JSONSerialize( arr.getMetadata() ) )
-
+arr = arrayNew( 1, false )
+meta = arr.getMetadata()
+writeOutput( meta.type & "," & meta.dimensions & "," & meta.datatype )
 ```
 
-Result: {"dimensions":1,"datatype":"String","type":"synchronized"}
-
+Result: unsynchronized,1,any

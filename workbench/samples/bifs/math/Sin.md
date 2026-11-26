@@ -21,4 +21,20 @@ dump( result )
 
 ```
 
+### Sine of 0 radians
 
+```java
+writeOutput( sin( 0 ) )
+
+```
+
+Result: 0
+
+### Sine of pi / 2 radians
+
+```java
+writeOutput( sin( pi() / 2 ) )
+
+```
+
+Result: 1
