@@ -1,55 +1,55 @@
 ### Throw a custom exception
 
-Use the throw function to throw a custom application exception.
-
-
-```java
-<bx:script>
-	throw( type="MyCustomError", message="A custom error has been thrown!" )
-</bx:script>
-
-```
-
-
-### Throw a custom http response exception
-
-Use the throw function to throw a custom exception when the http response is invalid.
-
+Use throw to raise a custom application exception and catch it by its type.
 
 ```java
-if( !isJSON( httpResponse.FILECONTENT ) ) {
-	throw( type="InvalidHTTPResponse", message="The http response was not valid JSON" )
+try {
+    throw( type = "MyCustomError", message = "A custom error has been thrown!" )
+} catch ( any e ) {
+    writeOutput( e.type & ": " & e.message )
 }
-
 ```
 
+Result: MyCustomError: A custom error has been thrown!
 
-### Additional Examples
-
+### The default type is Custom
 
 ```java
-// thrown as a statement example
 try {
-	throw "thrown"
-} catch ( e) {
-	dump( var=bxcatch, label="single argument keyword" )
+    throw( "boom" )
+} catch ( any e ) {
+    writeOutput( e.type & ": " & e.message )
 }
-
-try {
-	throw message = "thrown"
-	detail = "deets"
-	errorCode = "403"
-	type = "Test"
-} catch ( e) {
-	dump( var=bxcatch, label="additional arguments are ignored" )
-}
-// use this syntax instead
-try {
-	throw( message="thrown", detail="deets", errorCode="403", type="Test" )
-} catch ( e) {
-	dump( var=bxcatch, label="script throw with arguments" )
-}
-
 ```
 
+Result: Custom: boom
 
+### Throw with details and an error code
+
+```java
+try {
+    throw( message = "thrown", detail = "deets", errorCode = "403", type = "Test" )
+} catch ( any e ) {
+    writeOutput( e.detail & " " & e.errorCode )
+}
+```
+
+Result: deets 403
+
+### Rethrow an existing exception
+
+When only an exception object is passed, it is thrown as-is.
+
+```java
+try {
+    try {
+        throw( "inner" )
+    } catch ( any e ) {
+        throw( e )
+    }
+} catch ( any e2 ) {
+    writeOutput( e2.message )
+}
+```
+
+Result: inner

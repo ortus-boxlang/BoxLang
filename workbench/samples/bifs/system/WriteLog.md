@@ -1,21 +1,17 @@
-### Simple writeLog Code Example
+### Write a log entry
 
-Logs an order processed successfully message to `orders.log` which will be located in the BX logs directory, eg: `{bx.root}/logs/`
-
-
-```java
-writeLog( text="Order #order.getOrderID()# Processed Successfully", type="information", log="orders" )
-
-```
-
-
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJwrL8osSfXJT9dQyMlPt1XyrQSylXQUSlIrSmzz8ss1NIHsyoJUW6XUoqL8IiUFTWsuAMW8EHs%3D" target="_blank">Run Example</a>
+Logs a message to orders.log in the BoxLang logs directory.
 
 ```java
-writeLog( log="MyLog", text=now(), type="error" )
-
+writeLog( text = "Order 1234 processed successfully", type = "information", log = "orders" )
 ```
 
+Result: the line is appended to the orders log file; no output
 
+### Log an error to the default application log
+
+```java
+writeLog( text = "Payment failed", type = "error" )
+```
+
+Result: the message is written to application.log at the error level; no output

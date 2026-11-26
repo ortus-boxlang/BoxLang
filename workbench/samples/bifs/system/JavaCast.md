@@ -1,25 +1,32 @@
-### Convert a Boxlang Number to a Java double primitive
+### Convert a BoxLang number to a Java double
 
-Converts the number 180.0 degrees to radians using Java method: Math.toRadians(double degrees)
-
-<a href="https://try.boxlang.io/?code=eJxLLkpNLEn1T8pKTS7RUFDKSixLVNKB0Ho5iXnper6JJRlKCpp6JflBiSmZiXnFGgogSefEYpD6lPzSpJxUoA5DCwM9AwVNBU1rLgCAgBlm" target="_blank">Run Example</a>
+Converts 180 degrees to radians using the Java method Math.toRadians( double ).
 
 ```java
-createObject( "java", "java.lang.Math" ).toRadians( javaCast( "double", 180.0 ) )
-
+writeOutput( createObject( "java", "java.lang.Math" ).toRadians( javaCast( "double", 180.0 ) ) )
 ```
 
 Result: 3.141592653589793
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJxNjsEKgzAMQO9%2BRfCkMKq7je244WGwDfYH0Qat2Fba1P3%2BWipj5JCQ5L2kaeBqzUaOAWO1yC54ZQ08g%2B7JAdvYvuOGIG3oF4LVKa1YbVQ0P9IDTwQmE8dTK1qQNDoin3iHUqHxEL1mzC5NPFl5hgfyJNi%2B80a1n9jZuvg4xXQLeq1gcIRMr36mgSso52gpDzmLBc0okqqE%2Bs8GaTigT%2FvZHIn8XZ3iUnwBDBpUJw%3D%3D" target="_blank">Run Example</a>
+### Cast a string to an int
 
 ```java
-// Convert a Boxlang Number to a Java double primitive
-// Converts the number 180.0 degrees to radians using Java method: Math.toRadians(double degrees)
-writeDump( createObject( "java", "java.lang.Math" ).toRadians( javacast( "double", 180.0 ) ) )
-
+value = javaCast( "int", "42" )
+writeOutput( value + 1 )
 ```
 
+Result: 43
 
+### Values that cannot be cast throw
+
+The cast is strict.
+
+```java
+try {
+    javaCast( "int", "abc" )
+} catch ( any e ) {
+    writeOutput( "cast failed" )
+}
+```
+
+Result: cast failed

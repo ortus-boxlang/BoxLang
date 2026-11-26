@@ -1,7 +1,7 @@
 ### Execute a system command
 
 ```java
-result = systemExecute( "echo hello" )
+result = systemExecute( "echo", "hello" )
 writeOutput( result.output.contains( "hello" ) )
 
 ```
@@ -11,8 +11,8 @@ Result: true
 ### Execute with working directory
 
 ```java
-result = systemExecute( "pwd", getCanonicalPath( "." ) )
-writeOutput( isStruct( result ) )
+result = systemExecute( name = "pwd", directory = getCanonicalPath( "." ) )
+writeOutput( result.output.trim() == getCanonicalPath( "." ) )
 
 ```
 
@@ -61,3 +61,14 @@ writeOutput( result.output.contains( "err" ) )
 ```
 
 Result: true
+
+### Inspect the result struct
+
+The result contains output, error, timeout, terminated, pid, exitCode and cancelled.
+
+```java
+result = systemExecute( "echo", "hello" )
+writeOutput( result.exitCode & " " & result.timeout )
+```
+
+Result: 0 false

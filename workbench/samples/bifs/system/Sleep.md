@@ -1,34 +1,21 @@
-### Sleep for 5 seconds
+### Sleep for one second
 
-Outputs the current date/time, sleeps for 5 seconds, then outputs the current date/time again.
-
+The duration is in milliseconds.
 
 ```java
-<bx:script>
-	writeOutput( now() )
-	writeOutput( "<br />" )
-	sleep( 5000 )
-	writeOutput( now() )
-</bx:script>
-
+start = getTickCount()
+sleep( 1000 )
+writeOutput( getTickCount() - start >= 1000 )
 ```
 
+Result: true
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJxLqrAqycxNLVLISUxKzbFVCs5JTS1QSMsvUjBUKE5Nzs9LUVIoqSxItVXKzMvJzEtVUqjm4iwGKdJQMDQwMFDQtOaq5dLXV8DUaAVWkFvMVV6UWZLqX1pSUFqioaBkk1RkpwTSloTTaiM9U6gZxbhtNzKF2a6AYj2SZiuwIqALAK6GRnM%3D" target="_blank">Run Example</a>
+### Time a sleep with bx:timer
 
 ```java
 bx:timer label="Sleep for 1 second" type="inline" {
-	sleep( 1000 )
+    sleep( 1000 )
 }
-// Sleep for 1 second: 1000ms
-writeOutput( "<br>" )
-bx:timer label="Sleep for 2.5 seconds" type="inline" {
-	sleep( 2500 )
-}
- // Sleep for 2.5 seconds: 2500ms
-
 ```
 
-
+Result: Sleep for 1 second: 1000ms (the timing is approximate)

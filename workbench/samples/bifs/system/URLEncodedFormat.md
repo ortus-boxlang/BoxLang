@@ -1,25 +1,25 @@
-### Simple urlEncodedFormat Example
+### Simple urlEncodedFormat example
 
-It returns url encoded string.
-
-<a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQCA3ycc1Lzk9JTXHLL8pNBIoohWRkFisAUaJCcUlRZl66QnlmSYZCcUFqcmZijkJyRmJRYnJJapGekoKmgqY1FwB4fhsa" target="_blank">Run Example</a>
+Spaces become %20; letters, digits and the characters . - * _ are left alone.
 
 ```java
-writeOutput( URLEncodedFormat( "This is a string with special character." ) )
-
+writeOutput( urlEncodedFormat( "This is a string with special character." ) )
 ```
 
-Result: This%20is%20string%20with%20special%20character%2E
+Result: This%20is%20a%20string%20with%20special%20character.
 
-### Additional Examples
-
-<a href="https://try.boxlang.io/?code=eJxFjcsKwjAQRff5iqEQaBfpSBQXFhdCm5UrwbVIEmqhbUo60d93DAVhHnA5nJvi%2BFgpDnMPZyheRMt6QnT%2BXY%2FJel%2BH2CPhx482TF5RUDlWDKDeHQ9FI1yalhLut2s32%2BC8MyFOTyoh%2Fc0VVI0ARMh%2Bub9IbXhYInWXhfy5iTPi3dqkbinw2YA24%2BbXKr7VkDpv" target="_blank">Run Example</a>
+### Encode a URL
 
 ```java
-url_string = "https://dev.boxlang.org/t/welcome-to-boxlang-dev/2064"
-dump( URLEncodedFormat( url_string ) )
- // https%3A%2F%2Fdev%2Eboxlang%2Eorg%2Ft%2Fwelcome%2Dto%2Dboxlang%2Ddev%2F2064
-
+writeOutput( urlEncodedFormat( "https://dev.boxlang.org/t/welcome-to-boxlang-dev/2064" ) )
 ```
 
+Result: https%3A%2F%2Fdev.boxlang.org%2Ft%2Fwelcome-to-boxlang-dev%2F2064
 
+### Using the member function
+
+```java
+writeOutput( "a b&c".urlEncodedFormat() )
+```
+
+Result: a%20b%26c

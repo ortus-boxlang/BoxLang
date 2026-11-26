@@ -64,7 +64,7 @@ public class Extract extends BIF {
 	 * <p>
 	 * The {@code filter} argument is used to filter the files to extract. It can be:
 	 * <p>
-	 * - A string with a regular expression to match the file names. Example: ".*\\.txt"
+	 * - A string with a glob pattern (several patterns can be separated with a pipe) matched against the entry path. Example: "**.txt"
 	 * - A Function/Lambda that receives the file name and returns a boolean. Example: (name) => name.endsWith(".txt")
 	 * <p>
 	 * The {@code entryPaths} argument is used to extract only the files that match the given paths. It can be a string
@@ -73,20 +73,22 @@ public class Extract extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.format The format to use for the compression. If omitted, it is detected from the source extension.
+	 * @argument.format The format of the archive: bzip, bzip2, gzip, tar, tar.bz, tbz, tbz2, tgz, tar.gz or zip. If omitted, it is detected from the source extension,
+	 *                  and an unrecognized extension throws an exception.
 	 *
-	 * @argument.source The absolute path to the source file or folder to compress.
+	 * @argument.source The absolute path to the archive file to extract. A missing source throws an exception.
 	 *
-	 * @argument.destination The absolute path with a file name to save as the compressed file. Extension is optional.
+	 * @argument.destination The absolute path of the folder to extract into. It is created if it does not exist.
 	 *
-	 * @argument.overwrite Whether to overwrite the destination file if it already exists. Default is false.
+	 * @argument.overwrite Whether to overwrite files that already exist in the destination. Default is false.
 	 *
 	 * @argument.recurse Whether to extract the files recursively. Default is true.
 	 *
-	 * @argument.filter A regular expression or a Function/Lambda to filter the files to extract.
+	 * @argument.filter A glob pattern matched against the entry path, or a Function/Lambda that receives the entry path and returns a boolean. Only matching entries are extracted.
 	 *
-	 * @argument.entryPaths The paths to extract. It can be a string or an array of strings.
+	 * @argument.entryPaths The exact entry paths inside the archive to extract. It can be a string or an array of strings.
 	 *
+	 * @return Always {@code null}.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String						format				= arguments.getAsString( Key.format );

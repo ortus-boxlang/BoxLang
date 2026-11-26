@@ -9,7 +9,7 @@ createUUID()
 
 ```
 
-Result: 65BA8F11-997D-429F-9BA5A4235FAA6833
+Result: a lowercase 36-character UUID such as 3f2b8c1e-9d4a-4e6b-8a7c-5d1e2f3a4b5c (different on every call)
 
 ### Additional Examples
 
@@ -19,5 +19,7 @@ Result: 65BA8F11-997D-429F-9BA5A4235FAA6833
 dump( CreateUUID() )
 
 ```
+
+Result: a dump of a new lowercase 36-character UUID in the form xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (different on every call)
 
 
