@@ -39,7 +39,7 @@ xml_stream = "
 				<body>Here is the message you requested.</body>
 			</note>"
 xml_document = XmlParse( trim( xml_stream ) )
-dump( xmlValidate( xml_document, validator ) )
+dump( xmlValidate( xml_document, trim( validator ) ) )
 
 ```
 

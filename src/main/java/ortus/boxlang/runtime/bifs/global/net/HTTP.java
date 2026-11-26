@@ -154,7 +154,8 @@ public class HTTP extends BIF {
 	 *
 	 * @argument.clientCertPassword The password for the client certificate
 	 *
-	 * @return A new HTTP request object (BoxHttpClient.BoxHttpRequest) bound to a pooled client that matches the connection settings. Call send() to execute it.
+	 * @return A new HTTP request object (BoxHttpClient.BoxHttpRequest) bound to a pooled client that matches the connection
+	 *         settings. Call send() to execute it.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
