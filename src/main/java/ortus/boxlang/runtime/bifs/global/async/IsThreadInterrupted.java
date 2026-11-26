@@ -41,7 +41,7 @@ public class IsThreadInterrupted extends BIF {
 	 * 
 	 * <pre>
 	 * if ( !isThreadInterrupted() ) {
-	 * 	// Do work
+	 *     // Do work
 	 * }
 	 * </pre>
 	 *

@@ -28,3 +28,14 @@ writeOutput( future.get() )
 ```
 
 Result: later
+
+### Wrap a value that is not a function
+
+Any value that is not a function or a Java CompletableFuture produces an already completed future.
+
+```java
+future = futureNew( [ 1, 2, 3 ] )
+writeOutput( future.get().len() )
+```
+
+Result: 3

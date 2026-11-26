@@ -4,18 +4,16 @@
 executorNew( "tempPool", "fixed", 4 )
 executorDelete( "tempPool" )
 writeOutput( executorHas( "tempPool" ) )
-
 ```
 
 Result: false
 
-### Delete returns the deleted executor record
+### Deleting always returns true
+
+Names that are not registered are ignored.
 
 ```java
-executorNew( "myPool", "cached" )
-deleted = executorDelete( "myPool" )
-writeOutput( isNull( deleted ) ? "null" : "deleted" )
-
+writeOutput( executorDelete( "unknownPool" ) )
 ```
 
-Result: deleted
+Result: true

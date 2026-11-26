@@ -86,7 +86,7 @@ public class AsyncAllApply extends BIF {
 	 *
 	 * @throws KeyNotFoundException If the executor name passed is not valid.
 	 *
-	 * @throws BoxRuntimeException If the items are not an array or struct, or the timeout elapses.
+	 * @throws BoxRuntimeException  If the items are not an array or struct, or the timeout elapses.
 	 *
 	 * @return An array (or struct, if the items were a struct) of the results.
 	 */

@@ -1,18 +1,31 @@
-### Check if the current thread has been interrupted
+### Check the current thread
+
+Inside a thread, pass an empty name to check the current thread.
 
 ```java
-interrupted = isThreadInterrupted()
-writeOutput( isBoolean( interrupted ) )
-
+threadNew( () => {
+	request.result = isThreadInterrupted( "" )
+}, {}, "checker" )
+threadJoin( "checker" )
+writeOutput( request.result )
 ```
 
 Result: false
 
-### Returns false for a normal running thread
+### Stop a loop when the thread is interrupted
+
+A running thread can poll `isThreadInterrupted()` to know it should stop. The main code interrupts it by name.
 
 ```java
-writeOutput( isThreadInterrupted() )
-
+threadNew( () => {
+	while ( !isThreadInterrupted( "" ) ) {
+	}
+	request.stopped = true
+}, {}, "looper" )
+sleep( 100 )
+threadInterrupt( "looper" )
+threadJoin( "looper" )
+writeOutput( request.stopped )
 ```
 
-Result: false
+Result: true

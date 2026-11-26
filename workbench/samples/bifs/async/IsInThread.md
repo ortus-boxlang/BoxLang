@@ -17,5 +17,18 @@ writeOutput( request.INTHREAD )
 
 Result: falsetrue
 
+### Check from inside a thread created with threadNew()
+
+```java
+request.flag = false
+threadNew( () => {
+	request.flag = isInThread()
+}, {}, "inThreadCheck" )
+threadJoin( "inThreadCheck" )
+writeOutput( request.flag )
+```
+
+Result: true
+
 ### Additional Examples
 

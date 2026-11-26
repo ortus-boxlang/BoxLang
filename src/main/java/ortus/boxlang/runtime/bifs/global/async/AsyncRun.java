@@ -64,7 +64,7 @@ public class AsyncRun extends BIF {
 	 *
 	 * @throws KeyNotFoundException If the executor name passed is not valid.
 	 *
-	 * @throws BoxRuntimeException If the executor is not a supported type.
+	 * @throws BoxRuntimeException  If the executor is not a supported type.
 	 *
 	 * @return A BoxFuture object that you can use to interact with the asynchronously executed code.
 	 */

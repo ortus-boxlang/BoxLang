@@ -1,18 +1,24 @@
-### Check if the current thread is alive
+### Check if a thread is alive
 
 ```java
-alive = isThreadAlive()
-writeOutput( isBoolean( alive ) )
-
+threadNew( () => sleep( 300 ), {}, "worker" )
+writeOutput( isThreadAlive( "worker" ) )
+threadJoin( "worker" )
+writeOutput( "," & isThreadAlive( "worker" ) )
 ```
 
-Result: true
+Result: true,false
 
-### Returns true when called from the main thread
+### Unknown thread
+
+An exception is thrown if no thread has that name.
 
 ```java
-writeOutput( isThreadAlive() )
-
+try {
+	isThreadAlive( "ghost" )
+} catch ( any e ) {
+	writeOutput( e.message.left( 37 ) )
+}
 ```
 
-Result: true
+Result: No thread with name [ghost] not found

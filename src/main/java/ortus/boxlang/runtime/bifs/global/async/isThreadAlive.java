@@ -40,7 +40,7 @@ public class isThreadAlive extends BIF {
 	 * 
 	 * <pre>
 	 * if ( isThreadAlive( "myThread" ) ) {
-	 * 	// wait
+	 *     // wait
 	 * }
 	 * </pre>
 	 *
