@@ -38,6 +38,16 @@ public class BoxComponent extends BoxStatement {
 	public Boolean				requiresBody	= false;
 
 	/**
+	 * Set when the component was written as a tag of an imported tag library, e.g. &lt;app:menu&gt; after
+	 * &lt;cfimport taglib="/tags" prefix="app"&gt;. The node is then a custom tag call (the module/component component),
+	 * and these fields keep the prefix and tag name as written, plus the imported directory, so the runtime can locate
+	 * the tag template and the source can be printed back the way it was written.
+	 */
+	private String				taglibPrefix;
+	private String				taglibTagName;
+	private String				taglibPath;
+
+	/**
 	 * Create an AST for a component
 	 *
 	 * @param name       name of the component
@@ -137,11 +147,48 @@ public class BoxComponent extends BoxStatement {
 		this.name = name;
 	}
 
+	/**
+	 * Mark this component as a tag of an imported tag library
+	 *
+	 * @param prefix  the prefix as written, e.g. "app" for &lt;app:menu&gt;
+	 * @param tagName the tag name as written, e.g. "menu"
+	 * @param path    the imported tag library directory, as written in the taglib attribute of the import
+	 */
+	public void setTaglibTag( String prefix, String tagName, String path ) {
+		this.taglibPrefix	= prefix;
+		this.taglibTagName	= tagName;
+		this.taglibPath		= path;
+	}
+
+	/**
+	 * @return true if this component was written as a tag of an imported tag library
+	 */
+	public boolean isTaglibTag() {
+		return this.taglibPrefix != null;
+	}
+
+	public String getTaglibPrefix() {
+		return this.taglibPrefix;
+	}
+
+	public String getTaglibTagName() {
+		return this.taglibTagName;
+	}
+
+	public String getTaglibPath() {
+		return this.taglibPath;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "name", name );
+		if ( isTaglibTag() ) {
+			map.put( "taglibPrefix", this.taglibPrefix );
+			map.put( "taglibTagName", this.taglibTagName );
+			map.put( "taglibPath", this.taglibPath );
+		}
 		if ( attributes != null ) {
 			map.put( "attributes", attributes.stream().map( BoxNode::toMap ).collect( Collectors.toList() ) );
 		} else {

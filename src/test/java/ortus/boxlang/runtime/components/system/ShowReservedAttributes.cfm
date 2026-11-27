@@ -1,0 +1,1 @@
+<cfif thisTag.executionMode == "start"><cfoutput>[#structKeyExists( attributes, "name" ) ? attributes.name : ""#|#structKeyExists( attributes, "template" ) ? attributes.template : ""#|#structKeyExists( attributes, "taglib" ) ? attributes.taglib : ""#]</cfoutput></cfif>

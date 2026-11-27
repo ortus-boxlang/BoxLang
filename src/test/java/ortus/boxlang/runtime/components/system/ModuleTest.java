@@ -179,6 +179,27 @@ public class ModuleTest {
 	}
 
 	@Test
+	public void testCustomTagUnderscorePassesReservedAttributesToTheTag() {
+		// name, template and taglib are attributes of cfmodule itself, but ordinary attributes of a cf_ call
+		instance.executeSource(
+		    """
+		    <cf_ShowReservedAttributes name="n" template="other.cfm" taglib="t" />
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( buffer.toString().trim() ).isEqualTo( "[n|other.cfm|t]" );
+	}
+
+	@Test
+	public void testCustomTagUnderscoreKeepsAnAttributeCollectionKey() {
+		instance.executeSource(
+		    """
+		    <cf_ShowReservedAttributes template="written" attributeCollection="#{ template : 'collected' }#" />
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( buffer.toString().trim() ).isEqualTo( "[|collected|]" );
+	}
+
+	@Test
 	public void testCanRunCustomTagUnderscoreSelfClose() {
 		instance.executeSource(
 		    """

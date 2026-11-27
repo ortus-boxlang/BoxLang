@@ -54,8 +54,8 @@ public class ComponentPrinter {
 		var currentDoc = visitor.getCurrentDoc();
 
 		currentDoc
-		    .append( "<" + visitor.componentPrefix )
-		    .append( node.getName() );
+		    .append( "<" )
+		    .append( writtenTagName( node ) );
 
 		// Unwrap condition closures: the CF parser wraps cfloop condition expressions
 		// in a BoxClosure(BoxReturn(expr)). For pretty printing, we want to output
@@ -75,8 +75,8 @@ public class ComponentPrinter {
 				// existing body with statements gives us <bx:componentName> statements... </bx:componentName>
 				currentDoc.append( ">" );
 				visitor.helperPrinter.printTemplateBody( node.getBody() );
-				currentDoc.append( "</" + visitor.componentPrefix );
-				currentDoc.append( node.getName() );
+				currentDoc.append( "</" );
+				currentDoc.append( writtenTagName( node ) );
 				currentDoc.append( ">" );
 			}
 		} else {
@@ -87,6 +87,17 @@ public class ComponentPrinter {
 				currentDoc.append( ">" );
 			}
 		}
+	}
+
+	/**
+	 * The tag name as written in a template: prefix:tagName for a tag of an imported tag library, else the component prefix
+	 * followed by the component name
+	 */
+	private String writtenTagName( BoxComponent node ) {
+		if ( node.isTaglibTag() ) {
+			return node.getTaglibPrefix() + ":" + node.getTaglibTagName();
+		}
+		return visitor.componentPrefix + node.getName();
 	}
 
 	private void printCFScriptCall( BoxComponent node ) {

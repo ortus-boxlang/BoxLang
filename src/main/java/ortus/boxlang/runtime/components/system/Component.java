@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.components.system;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -60,7 +61,8 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.template, "string" ),
-		    new Attribute( Key._NAME, "string" )
+		    new Attribute( Key._NAME, "string" ),
+		    new Attribute( Key.tagLib, "string" )
 		};
 	}
 
@@ -75,18 +77,30 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 	 * @attribute.template Mutually exclusive with the name attribute. A path to the template that implements the tag.
 	 *
 	 * @attribute.name Mutually exclusive with the template attribute. A custom tag name, in the form "Name.Name.Name..." Identifies subdirectory, under
-	 *                 the tag root directory, that contains custom tag template.
+	 *                 the tag root directory, that contains custom tag template. Together with tagLib, the tag name within that
+	 *                 tag library.
+	 *
+	 * @attribute.tagLib A tag library directory imported with cfimport. Used with the name attribute: the tag template is the file of
+	 *                   that name in this directory.
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		String		template			= attributes.getAsString( Key.template );
 		String		name				= attributes.getAsString( Key._NAME );
+		String		tagLib				= attributes.getAsString( Key.tagLib );
 		IStruct		actualAttributes	= attributes.getAsStruct( Key.attributes );
 		BoxTemplate	bTemplate;
 		Key			tagName;
 
 		// Load template class, compiling if neccessary
-		if ( template != null && !template.isEmpty() ) {
+		if ( tagLib != null && !tagLib.isEmpty() ) {
+			if ( name == null || name.isEmpty() ) {
+				throw new CustomException( "The tagLib attribute requires the name attribute." );
+			}
+			tagName = Key.of( name );
+			executionState.put( Key.customTagName, tagName );
+			bTemplate = RunnableLoader.getInstance().loadTemplateAbsolute( context, findInTaglib( context, tagLib, name ) );
+		} else if ( template != null && !template.isEmpty() ) {
 			// This method already takes into account looking
 			// - relative to the current template
 			// - relative to a mapping
@@ -287,5 +301,35 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 		    .findFirst()
 		    .orElseThrow( () -> new BoxRuntimeException( "Could not find custom tag [" + name + "]. Paths searched: ["
 		        + pathToSearch.stream().map( p -> p.absolutePath().toString() ).collect( java.util.stream.Collectors.joining( ", " ) ) + "]" ) );
+	}
+
+	/**
+	 * Find the template of a tag in an imported tag library directory
+	 *
+	 * @param context The context, whose closest template a relative tag library path is resolved against
+	 * @param tagLib  The tag library directory as written in the taglib attribute of cfimport
+	 * @param name    The tag name
+	 *
+	 * @return The resolved template path
+	 */
+	private ResolvedFilePath findInTaglib( IBoxContext context, String tagLib, String name ) {
+		String			directory	= tagLib.endsWith( "/" ) || tagLib.endsWith( "\\" ) ? tagLib.substring( 0, tagLib.length() - 1 ) : tagLib;
+		List<String>	searched	= new ArrayList<>();
+		for ( String extension : VALID_EXTENSIONS ) {
+			ResolvedFilePath	candidate	= FileSystemUtil.expandPath(
+			    context.getConfig().getAsStruct( Key.mappings ),
+			    directory + "/" + name + "." + extension,
+			    context.findClosestTemplate(),
+			    false,
+			    true
+			);
+			Path				existing	= FileSystemUtil.pathExistsCaseInsensitive( candidate.absolutePath() );
+			if ( existing != null ) {
+				return ResolvedFilePath.of( candidate.mappingName(), candidate.mappingPath(), candidate.relativePath(), existing );
+			}
+			searched.add( candidate.absolutePath().toString() );
+		}
+		throw new BoxRuntimeException( "Could not find custom tag [" + name + "] in tag library [" + tagLib + "]. Paths searched: ["
+		    + String.join( ", ", searched ) + "]" );
 	}
 }

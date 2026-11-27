@@ -152,6 +152,37 @@ public class CFLexerCustom extends CFLexer {
 	Deque<Boolean>								functionOutputStack		= new ArrayDeque<>();
 
 	/**
+	 * Are we inside the opening tag of a <cfimport>?
+	 */
+	boolean										inImportTag				= false;
+
+	/**
+	 * The import attribute (prefix or taglib) whose value we expect after the next equals sign, or null
+	 */
+	String										importAttributeName		= null;
+
+	/**
+	 * Are we currently capturing the value of the import attribute named in importAttributeName?
+	 */
+	boolean										capturingImportValue	= false;
+
+	/**
+	 * Did the captured import attribute value contain an expression? Only literal values can be resolved while lexing.
+	 */
+	boolean										importValueIsDynamic	= false;
+
+	/**
+	 * The captured import attribute value text
+	 */
+	StringBuilder								importValueCapture		= new StringBuilder();
+
+	/**
+	 * The literal prefix and taglib values of the current <cfimport> tag
+	 */
+	String										importPrefix			= null;
+	String										importTaglib			= null;
+
+	/**
 	 * Tokens that end an operator. Instead of having "less than" or "less than or equal to" as a single token sequence,
 	 * we'll just check for the ending token ("than", or "to")
 	 */
@@ -389,6 +420,9 @@ public class CFLexerCustom extends CFLexer {
 
 				// --- Function output=true tracking ---
 				handleFunctionOutputTracking( nextToken, nextTokenType );
+
+				// --- <cfimport taglib="..." prefix="..."> tracking ---
+				handleTaglibImportTracking( nextToken, nextTokenType );
 
 				if ( keywordsThatMayBeIdentifiers.contains( nextTokenType ) ) {
 					// Let's run a series of tests to determine if this keyword is being used as an identifier (variable, function name) and is NOT a keyword
@@ -800,6 +834,86 @@ public class CFLexerCustom extends CFLexer {
 	}
 
 	/**
+	 * Track the attributes of a <cfimport> tag. When a tag with a literal taglib and prefix closes, the prefix is added to the
+	 * imported prefixes, which gates the lexer rule for <prefix:name>, and the parser is told which directory the prefix maps to.
+	 * Like in Lucee and Adobe ColdFusion, the import applies to the tags after it in the same file.
+	 *
+	 * @param nextToken     the current token
+	 * @param nextTokenType the token type
+	 */
+	private void handleTaglibImportTracking( Token nextToken, int nextTokenType ) {
+		if ( nextTokenType == TEMPLATE_IMPORT && lastTokenWas( PREFIX ) ) {
+			resetImportTracking();
+			this.inImportTag = true;
+			return;
+		}
+		if ( !this.inImportTag || nextToken.getChannel() != DEFAULT_TOKEN_CHANNEL ) {
+			return;
+		}
+
+		boolean tagEnds = nextTokenType == COMPONENT_CLOSE || nextTokenType == COMPONENT_SLASH_CLOSE;
+		if ( this.capturingImportValue ) {
+			if ( tagEnds || nextTokenType == ATTRIBUTE_NAME ) {
+				storeImportValue();
+			} else if ( nextTokenType == ICHAR ) {
+				this.importValueIsDynamic = true;
+			} else if ( nextTokenType == HASHHASH ) {
+				this.importValueCapture.append( '#' );
+			} else if ( nextTokenType == STRING_LITERAL || nextTokenType == UNQUOTED_VALUE_PART ) {
+				this.importValueCapture.append( nextToken.getText() );
+			}
+		}
+
+		if ( !this.capturingImportValue ) {
+			if ( nextTokenType == ATTRIBUTE_NAME ) {
+				String attributeName = nextToken.getText().toLowerCase();
+				this.importAttributeName = attributeName.equals( "prefix" ) || attributeName.equals( "taglib" ) ? attributeName : null;
+			} else if ( nextTokenType == COMPONENT_EQUALS && this.importAttributeName != null ) {
+				this.capturingImportValue	= true;
+				this.importValueIsDynamic	= false;
+				this.importValueCapture.setLength( 0 );
+			}
+		}
+
+		if ( tagEnds ) {
+			if ( this.importPrefix != null && !this.importPrefix.isEmpty() && this.importTaglib != null && !this.importTaglib.isEmpty() ) {
+				this.taglibPrefixes.add( this.importPrefix.toLowerCase() );
+				this.parser.registerTaglibImport( this.importPrefix, this.importTaglib );
+			}
+			resetImportTracking();
+		}
+	}
+
+	/**
+	 * Store the captured value of a prefix or taglib attribute, unless it contained an expression
+	 */
+	private void storeImportValue() {
+		this.capturingImportValue = false;
+		if ( !this.importValueIsDynamic ) {
+			String value = this.importValueCapture.toString().trim();
+			if ( this.importAttributeName.equals( "prefix" ) ) {
+				this.importPrefix = value;
+			} else {
+				this.importTaglib = value;
+			}
+		}
+		this.importAttributeName = null;
+	}
+
+	/**
+	 * Clear the state of the <cfimport> tag tracking
+	 */
+	private void resetImportTracking() {
+		this.inImportTag			= false;
+		this.importAttributeName	= null;
+		this.capturingImportValue	= false;
+		this.importValueIsDynamic	= false;
+		this.importValueCapture.setLength( 0 );
+		this.importPrefix	= null;
+		this.importTaglib	= null;
+	}
+
+	/**
 	 * Evaluate the captured output attribute value and set functionOutputIsTrue if it's truthy.
 	 */
 	private void evaluateOutputValue() {
@@ -917,6 +1031,7 @@ public class CFLexerCustom extends CFLexer {
 		functionOutputIsTrue	= false;
 		componentOutputIsTrue	= false;
 		functionOutputStack.clear();
+		resetImportTracking();
 	}
 
 	/**

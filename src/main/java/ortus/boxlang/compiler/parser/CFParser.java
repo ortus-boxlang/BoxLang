@@ -19,7 +19,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -152,6 +154,12 @@ public class CFParser extends AbstractParser {
 	private boolean				transpile			= true;
 
 	/**
+	 * Tag library directories imported with &lt;cfimport taglib="..." prefix="..."&gt;, keyed by the lower-cased prefix.
+	 * Filled by the lexer as it reaches each import.
+	 */
+	private Map<String, String>	taglibImports		= new HashMap<>();
+
+	/**
 	 * Constructor
 	 */
 	public CFParser() {
@@ -169,6 +177,16 @@ public class CFParser extends AbstractParser {
 
 	public boolean getInOutputBlock() {
 		return inOutputBlock;
+	}
+
+	/**
+	 * Record a tag library import, so tags written with its prefix resolve to its directory
+	 *
+	 * @param prefix the prefix, e.g. "app" for &lt;app:menu&gt;
+	 * @param path   the tag library directory as written in the taglib attribute
+	 */
+	public void registerTaglibImport( String prefix, String path ) {
+		this.taglibImports.put( prefix.toLowerCase(), path );
 	}
 
 	public void setInOutputBlock( boolean inOutputBlock ) {
@@ -857,7 +875,15 @@ public class CFParser extends AbstractParser {
 			    aliasSearch.getSourceText() );
 		}
 
-		return new BoxImport( nameFQN, alias, getPosition( node ), getSourceText( node ) );
+		BoxImport boxImport = new BoxImport( nameFQN, alias, getPosition( node ), getSourceText( node ) );
+		if ( nameSearch == null ) {
+			String taglib = getBoxExprAsString( findExprInAnnotations( annotations, "taglib", false, null, null, null ), "taglib", false );
+			if ( taglib != null ) {
+				boxImport.setTaglib( taglib,
+				    getBoxExprAsString( findExprInAnnotations( annotations, "prefix", false, null, null, null ), "prefix", false ) );
+			}
+		}
+		return boxImport;
 	}
 
 	public List<BoxStatement> toAst( File file, Template_statementsContext node ) {
@@ -871,6 +897,9 @@ public class CFParser extends AbstractParser {
 				if ( child instanceof Template_statementContext statement ) {
 					if ( statement.template_genericCloseComponent() != null ) {
 						String				componentName	= statement.template_genericCloseComponent().template_componentName().getText();
+						// </prefix:name> of an imported tag library: the prefix without its leading slash and trailing colon, else null
+						var					taglibEnd		= statement.template_genericCloseComponent().TAGLIB_SLASH_PREFIX();
+						String				taglibPrefix	= taglibEnd == null ? null : taglibEnd.getText().substring( 1, taglibEnd.getText().length() - 1 );
 						// see if statements list has a BoxComponent with this name
 						int					size			= statements.size();
 						boolean				foundStart		= false;
@@ -880,7 +909,7 @@ public class CFParser extends AbstractParser {
 						for ( int i = size - 1; i >= 0; i-- ) {
 							BoxStatement boxStatement = statements.get( i );
 							if ( boxStatement instanceof BoxComponent boxComponent ) {
-								if ( boxComponent.getName().equalsIgnoreCase( componentName ) && boxComponent.getBody() == null ) {
+								if ( isStartOf( boxComponent, taglibPrefix, componentName ) && boxComponent.getBody() == null ) {
 									foundStart = true;
 									// slice all statements from this position to the end and set them as the body of the start component
 									boxComponent.setBody( new ArrayList<>( statements.subList( i + 1, size ) ) );
@@ -900,11 +929,13 @@ public class CFParser extends AbstractParser {
 							statements.subList( removeAfter + 1, size ).clear();
 						}
 						if ( !foundStart ) {
-							issues.add( new Issue( "Found end component [" + componentName + "] without matching start component",
+							String writtenName = taglibPrefix == null ? componentName : taglibPrefix + ":" + componentName;
+							issues.add( new Issue( "Found end component [" + writtenName + "] without matching start component",
 							    getPosition( statement.template_genericCloseComponent() ) ) );
 						}
 
-						ComponentDescriptor descriptor = componentService.getComponent( componentName );
+						// a custom tag of an imported tag library is not the built-in component of the same name
+						ComponentDescriptor descriptor = taglibPrefix == null ? componentService.getComponent( componentName ) : null;
 						if ( descriptor != null ) {
 							if ( !descriptor.allowsBody() && ( !allStatementsAreWhitespace( bodyStatements ) ) ) {
 								issues.add( new Issue( "The [" + componentName + "] component does not allow a body", getPosition( node ) ) );
@@ -1041,14 +1072,62 @@ public class CFParser extends AbstractParser {
 		for ( var attr : node.template_attribute() ) {
 			attributes.add( toAst( file, attr ) );
 		}
+		if ( node.TAGLIB_PREFIX() != null ) {
+			return toTaglibComponent( node.TAGLIB_PREFIX().getText(), node.template_componentName().getText(), attributes, List.of(), node );
+		}
 		return new BoxComponent( node.template_componentName().getText(), attributes, List.of(), node.getStart().getStartIndex(), getPosition( node ),
 		    getSourceText( node ) );
+	}
+
+	/**
+	 * Does an end tag close this component? A plain end tag (taglibPrefix null) closes a component of its name, an end tag of an
+	 * imported tag library closes a tag with the same prefix and tag name.
+	 *
+	 * @param component     a component without a body yet
+	 * @param taglibPrefix  the prefix of the end tag, or null for a plain end tag
+	 * @param componentName the name of the end tag
+	 *
+	 * @return true if the end tag closes the component
+	 */
+	private boolean isStartOf( BoxComponent component, String taglibPrefix, String componentName ) {
+		if ( taglibPrefix == null ) {
+			return !component.isTaglibTag() && component.getName().equalsIgnoreCase( componentName );
+		}
+		return component.isTaglibTag()
+		    && component.getTaglibPrefix().equalsIgnoreCase( taglibPrefix )
+		    && component.getTaglibTagName().equalsIgnoreCase( componentName );
+	}
+
+	/**
+	 * Build the custom tag call for a tag of an imported tag library, e.g. &lt;app:menu&gt; after
+	 * &lt;cfimport taglib="/tags" prefix="app"&gt;. It is the same call as &lt;cfmodule&gt;, with the prefix, tag name and
+	 * tag library directory baked into the node.
+	 *
+	 * @param prefixText the prefix token text, including the trailing colon
+	 * @param tagName    the tag name as written
+	 * @param attributes the attributes as written
+	 * @param body       the body, or null if it may be set later by a matching end tag
+	 * @param node       the parse tree node
+	 *
+	 * @return the component node
+	 */
+	private BoxComponent toTaglibComponent( String prefixText, String tagName, List<BoxAnnotation> attributes, List<BoxStatement> body,
+	    ParserRuleContext node ) {
+		String			prefix		= prefixText.substring( 0, prefixText.length() - 1 );
+		BoxComponent	component	= new BoxComponent( "module", attributes, body, node.getStart().getStartIndex(), getPosition( node ),
+		    getSourceText( node ) );
+		component.setTaglibTag( prefix, tagName, this.taglibImports.get( prefix.toLowerCase() ) );
+		return component;
 	}
 
 	private BoxStatement toAst( File file, Template_genericOpenComponentContext node ) {
 		List<BoxAnnotation> attributes = new ArrayList<>();
 		for ( var attr : node.template_attribute() ) {
 			attributes.add( toAst( file, attr ) );
+		}
+		if ( node.TAGLIB_PREFIX() != null ) {
+			// Body may get set later, if we find an end component
+			return toTaglibComponent( node.TAGLIB_PREFIX().getText(), node.template_componentName().getText(), attributes, null, node );
 		}
 		String name = node.template_componentName().getText();
 

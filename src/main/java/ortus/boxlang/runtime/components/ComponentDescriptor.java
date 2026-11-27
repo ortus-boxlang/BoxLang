@@ -295,10 +295,10 @@ public class ComponentDescriptor {
 	public BodyResult invokeModule( IBoxContext context, IStruct attributes, Component.ComponentBody componentBody ) {
 		Component	component			= getComponent();
 		Struct		moduleAttributes	= new Struct();
-		// Add all attributes not named "name" or "template"
+		// Add all attributes not named "name", "template" or "tagLib"
 		List<Key>	keysToRemove		= new ArrayList<>();
 		for ( var key : attributes.keySet() ) {
-			if ( !key.equals( Key._NAME ) && !key.equals( Key.template ) ) {
+			if ( !key.equals( Key._NAME ) && !key.equals( Key.template ) && !key.equals( Key.tagLib ) ) {
 				moduleAttributes.put( key, attributes.get( key ) );
 				keysToRemove.add( key );
 			}
