@@ -155,7 +155,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
 	implementation 'com.zaxxer:HikariCP:7.1.0'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
-	implementation 'org.ow2.asm:asm-tree:9.10.1'
+	implementation 'org.ow2.asm:asm-tree:9.11.1'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
 	implementation 'org.ow2.asm:asm-util:9.10.1'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-commons
