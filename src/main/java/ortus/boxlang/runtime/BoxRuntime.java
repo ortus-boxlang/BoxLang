@@ -577,14 +577,16 @@ public class BoxRuntime implements java.io.Closeable {
 		this.cacheService.onStartup();
 		// Now the cluster service can be started, since it needs the coordination cache to exist
 		this.clusterService.onStartup();
+		// Now the HTTP service can be started, this allows for modules to register
+		// HTTP clients or settings. It only needs the cache service, and it must run before
+		// the schedulers: a persisted URL task (cfschedule) can fire right away and needs
+		// the HTTP client cache.
+		this.httpService.onStartup();
 		// Now all schedulers can be started, this allows for modules to register
 		// schedulers
 		this.schedulerService.onStartup();
 		// Now all watchers can be started
 		this.watcherService.onStartup();
-		// Now the HTTP service can be started, this allows for modules to register
-		// HTTP clients or settings
-		this.httpService.onStartup();
 		// Now the Code Profiler Service can be started
 		this.codeProfilerService.onStartup();
 
