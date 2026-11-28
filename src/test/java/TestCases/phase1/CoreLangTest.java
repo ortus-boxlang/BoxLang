@@ -4727,6 +4727,21 @@ public class CoreLangTest {
 		// @formatter:on
 	}
 
+	@Test
+	public void testWholeNumberExpressionAsStructKey() {
+		// x - 1 is a BigDecimal; as a struct key it must name the key 0, not 0.0
+		instance.executeSource(
+		    """
+		    <cfset tmp = {}>
+		    <cfloop from="1" to="3" index="x"><cfset tmp[x-1] = x></cfloop>
+		    <cfset keys = listSort( structKeyList( tmp ), "numeric" )>
+		    <cfset first = tmp[0]>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( Key.of( "keys" ) ) ).isEqualTo( "0,1,2" );
+		assertThat( ( ( Number ) variables.get( Key.of( "first" ) ) ).intValue() ).isEqualTo( 1 );
+	}
+
 	@DisplayName( "for in loop struct keys are strings" )
 	@Test
 	public void testForInLoopStructKeysAreStrings() {
