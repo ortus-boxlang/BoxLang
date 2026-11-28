@@ -120,6 +120,11 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		// Mark this function as compiled to prevent duplicate method generation
 		// (e.g., when the same function is encountered via multiple AST traversal paths in tag-based CFCs with cfscript blocks)
 		transpiler.markFunctionCompiled( function.getName() );
+		// A function body starts outside of any component, even when the function is declared inside one (e.g. a tag-based CFC
+		// wrapping its functions in <cfprocessingdirective>), as the closure and lambda transformers and the Java boxpiler do it.
+		// Otherwise a return inside a loop of the function would hand the component BodyResult back as the return value.
+		int componentCounter = transpiler.getComponentCounter();
+		transpiler.setComponentCounter( 0 );
 		transpiler.incrementfunctionBodyCounter();
 		AsmHelper.methodWithContextAndClassLocator( owningClass, invokerMethodName, Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ),
 		    true,
@@ -152,6 +157,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    return bodyNodes;
 		    } );
 		transpiler.decrementfunctionBodyCounter();
+		transpiler.setComponentCounter( componentCounter );
 
 		// Generate the UDF instantiation bytecode: new UDF(name, arguments, returnType, access, annotations, documentation, modifiers, defaultOutput,
 		// imports, sourceType, path, ClassName::invokerMethodName)
