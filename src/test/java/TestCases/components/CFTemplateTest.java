@@ -1075,6 +1075,22 @@ public class CFTemplateTest {
 	}
 
 	@Test
+	public void testReturnInsideLoopOfFunctionDeclaredInsideComponent() {
+		// The functions of this CFC sit inside <cfprocessingdirective>; a return inside their loops must still return the value
+		instance.executeSource(
+		    """
+		    <cfset finder = new src.test.java.TestCases.components.FunctionsInsideProcessingDirective()>
+		    <cfset found = finder.find( "b" )>
+		    <cfset notFound = finder.find( "x" )>
+		    <cfset even = finder.firstEven()>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( Key.of( "found" ) ) ).isEqualTo( "found-b" );
+		assertThat( variables.get( Key.of( "notFound" ) ) ).isEqualTo( "none" );
+		assertThat( variables.get( Key.of( "even" ) ) ).isEqualTo( 2 );
+	}
+
+	@Test
 	public void testGenericComponentsDanglingEnd() {
 		Throwable e = assertThrows( ParseException.class, () -> instance.executeSource(
 		    """
