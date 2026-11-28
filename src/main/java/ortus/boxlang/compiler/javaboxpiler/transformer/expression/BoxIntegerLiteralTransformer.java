@@ -20,6 +20,7 @@ import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.LongLiteralExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 
+import ortus.boxlang.runtime.dynamic.casters.CasterNumberUtil;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
@@ -51,11 +52,11 @@ public class BoxIntegerLiteralTransformer extends AbstractTransformer {
 		// 10 or fewer chars can use an int literal
 		if ( len < 10 ) {
 			javaExpr = new IntegerLiteralExpr( literal.getValue() );
-		} else if ( len <= 19 ) {
-			// 11-19 chars needs a long literal
+		} else if ( CasterNumberUtil.integerStringFitsInLong( literal.getValue() ) ) {
+			// up to Long.MAX_VALUE needs a long literal
 			javaExpr = new LongLiteralExpr( literal.getValue() + "L" );
 		} else {
-			// 20 or more chars needs a BigDecimal
+			// beyond Long.MAX_VALUE needs a BigDecimal
 			// Do NOT enforce a match context precision here. Whatever the user typed is what they want.
 			// Precision may be lost when they perform a math operation on this number, but don't throw away what they typed in the source.
 			javaExpr = new ObjectCreationExpr()

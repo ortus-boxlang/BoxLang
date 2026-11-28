@@ -4150,6 +4150,28 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testNineteenDigitIntegerLiteralsAroundTheLongRange() {
+		// 19 digits fit into a long only up to Long.MAX_VALUE; one more must compile as a BigDecimal
+		instance.executeSource(
+		    """
+		    maxLong = 9223372036854775807;
+		    maxLongType = maxLong.getClass().getName();
+		    aboveMaxLong = 9223372036854775808;
+		    aboveMaxLongType = aboveMaxLong.getClass().getName();
+		    minLong = -9223372036854775808;
+		    inRange = 5 GTE -9223372036854775808 AND 5 LTE 9223372036854775807;
+		    castAboveMaxLong = "9223372036854775808" + 0;
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "maxLongType" ) ) ).isEqualTo( "java.lang.Long" );
+		assertThat( variables.get( Key.of( "aboveMaxLongType" ) ) ).isEqualTo( "java.math.BigDecimal" );
+		assertThat( variables.get( Key.of( "aboveMaxLong" ) ).toString() ).isEqualTo( "9223372036854775808" );
+		assertThat( variables.get( Key.of( "minLong" ) ).toString() ).isEqualTo( "-9223372036854775808" );
+		assertThat( variables.get( Key.of( "inRange" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "castAboveMaxLong" ) ).toString() ).isEqualTo( "9223372036854775808" );
+	}
+
+	@Test
 	public void testBigDecimalToJavaMethod() {
 
 		instance.executeSource(

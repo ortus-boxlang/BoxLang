@@ -26,6 +26,7 @@ import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
+import ortus.boxlang.runtime.dynamic.casters.CasterNumberUtil;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -55,7 +56,7 @@ public class BoxIntegerLiteralTransformer extends AbstractTransformer {
 			    false
 			)
 			);
-		} else if ( len <= 19 ) {
+		} else if ( CasterNumberUtil.integerStringFitsInLong( literal.getValue() ) ) {
 			nodes.add(
 			    new LdcInsnNode( Long.valueOf( literal.getValue() ) ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
