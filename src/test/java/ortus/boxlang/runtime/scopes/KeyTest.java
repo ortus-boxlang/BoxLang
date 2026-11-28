@@ -27,6 +27,19 @@ import ortus.boxlang.runtime.types.Array;
 public class KeyTest {
 
 	@Test
+	@DisplayName( "A BigDecimal or BigInteger names the key of its plain number" )
+	public void testBigNumberKeys() {
+		assertThat( Key.of( ( Object ) new java.math.BigDecimal( "0.0" ) ).getName() ).isEqualTo( "0" );
+		assertThat( Key.of( ( Object ) new java.math.BigDecimal( "2.00" ) ) ).isEqualTo( Key.of( 2 ) );
+		assertThat( Key.of( ( Object ) new java.math.BigDecimal( "-3.0" ) ).getName() ).isEqualTo( "-3" );
+		assertThat( Key.of( ( Object ) new java.math.BigDecimal( "1E+3" ) ).getName() ).isEqualTo( "1000" );
+		assertThat( Key.of( ( Object ) new java.math.BigDecimal( "1.50" ) ).getName() ).isEqualTo( "1.5" );
+		assertThat( Key.of( ( Object ) new java.math.BigDecimal( "12345678901234567890.0" ) ).getName() ).isEqualTo( "12345678901234567890" );
+		assertThat( Key.of( ( Object ) java.math.BigInteger.valueOf( 7 ) ) ).isEqualTo( Key.of( 7 ) );
+		assertThat( Key.of( ( Object ) new java.math.BigInteger( "12345678901234567890" ) ).getName() ).isEqualTo( "12345678901234567890" );
+	}
+
+	@Test
 	public void testGetNameNoCase() {
 		Key key = new Key( "Test" );
 		assertThat( key.getName().toUpperCase() ).isEqualTo( "TEST" );

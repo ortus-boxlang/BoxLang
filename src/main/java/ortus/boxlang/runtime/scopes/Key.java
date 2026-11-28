@@ -1678,6 +1678,21 @@ public class Key implements Comparable<Key>, Serializable {
 		if ( obj instanceof Long l && l >= Integer.MIN_VALUE && l <= Integer.MAX_VALUE ) {
 			return Key.of( l.intValue() );
 		}
+		// A BigDecimal names the key its plain number would (0.0 from x - 1 is the key 0, as a whole-number Double is),
+		// not its toString(), which keeps the scale (0.0) or switches to scientific notation (1E+3)
+		if ( obj instanceof java.math.BigDecimal bigDecimal ) {
+			java.math.BigDecimal stripped = bigDecimal.stripTrailingZeros();
+			if ( stripped.scale() <= 0 && stripped.toBigInteger().bitLength() < 32 ) {
+				return Key.of( stripped.intValue() );
+			}
+			return new Key( stripped.toPlainString(), obj );
+		}
+		if ( obj instanceof java.math.BigInteger bigInteger ) {
+			if ( bigInteger.bitLength() < 32 ) {
+				return Key.of( bigInteger.intValue() );
+			}
+			return new Key( bigInteger.toString(), obj );
+		}
 		if ( obj instanceof String str ) {
 			return Key.of( str );
 		}
