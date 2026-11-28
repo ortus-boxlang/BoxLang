@@ -32,6 +32,23 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class NumberCasterTest {
 
+	@DisplayName( "It casts 19-digit integer strings to a Long up to the range of a long, beyond it to a BigDecimal" )
+	@Test
+	void testItCastsNineteenDigitStringsAroundTheLongRange() {
+		assertThat( NumberCaster.cast( "9223372036854775807" ) ).isEqualTo( Long.MAX_VALUE );
+		assertThat( NumberCaster.cast( "-9223372036854775808" ) ).isEqualTo( Long.MIN_VALUE );
+
+		Number aboveMax = NumberCaster.cast( "9223372036854775808" );
+		assertThat( aboveMax ).isInstanceOf( BigDecimal.class );
+		assertThat( aboveMax.toString() ).isEqualTo( "9223372036854775808" );
+
+		Number belowMin = NumberCaster.cast( "-9223372036854775809" );
+		assertThat( belowMin ).isInstanceOf( BigDecimal.class );
+		assertThat( belowMin.toString() ).isEqualTo( "-9223372036854775809" );
+
+		assertThat( NumberCaster.cast( "9999999999999999999" ) ).isInstanceOf( BigDecimal.class );
+	}
+
 	@DisplayName( "It can cast a Double to a Number" )
 	@Test
 	void testItCanCastADouble() {

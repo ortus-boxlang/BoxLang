@@ -256,11 +256,11 @@ public class NumberCaster implements IBoxCaster {
 				// 10 or fewer chars can use an int literal
 				if ( len < 10 ) {
 					return Integer.parseInt( value );
-				} else if ( len <= 19 ) {
-					// 11-19 chars needs a long literal
+				} else if ( CasterNumberUtil.integerStringFitsInLong( value ) ) {
+					// up to Long.MAX_VALUE / Long.MIN_VALUE needs a long
 					return Long.parseLong( value );
 				} else {
-					// 20 or more chars needs a BigDecimal
+					// beyond the range of a long needs a BigDecimal
 					return new BigDecimal( value, MathUtil.getMathContext() );
 				}
 			} catch ( Exception e ) {

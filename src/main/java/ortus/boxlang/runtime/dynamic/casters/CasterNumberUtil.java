@@ -57,4 +57,40 @@ public class CasterNumberUtil {
 		}
 		return NumberUtils.isCreatable( checkValue );
 	}
+
+	/**
+	 * Determine whether an integer string fits into a long. A number of up to 18 digits always does, a 19-digit number only up to
+	 * Long.MAX_VALUE (9223372036854775807), or Long.MIN_VALUE when negative, and a longer number never does. The compiler (integer
+	 * literals) and the number casters use this same rule, so a literal and the same digits cast at runtime get the same type.
+	 *
+	 * @param value An integer string: digits with an optional leading plus/minus sign and leading zeros.
+	 *
+	 * @return True if the value can be parsed as a long.
+	 */
+	public static boolean integerStringFitsInLong( String value ) {
+		int		len			= value.length();
+		int		start		= 0;
+		boolean	negative	= false;
+		if ( len > 0 && ( value.charAt( 0 ) == '+' || value.charAt( 0 ) == '-' ) ) {
+			negative	= value.charAt( 0 ) == '-';
+			start		= 1;
+		}
+		while ( start < len - 1 && value.charAt( start ) == '0' ) {
+			start++;
+		}
+		int digits = len - start;
+		if ( digits != 19 ) {
+			return digits < 19;
+		}
+		// 19 digits: compare digit by digit against the bound
+		String bound = negative ? "9223372036854775808" : "9223372036854775807";
+		for ( int i = 0; i < 19; i++ ) {
+			char	digit	= value.charAt( start + i );
+			char	limit	= bound.charAt( i );
+			if ( digit != limit ) {
+				return digit < limit;
+			}
+		}
+		return true;
+	}
 }
